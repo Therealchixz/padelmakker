@@ -15,53 +15,59 @@ export function AuthProvider({ children }) {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single()
-      if (error) throw error
+        .maybeSingle()
+      if (error) {
+        console.error('Profile fetch error:', error)
+        return null
+      }
       setProfile(data)
       return data
-    } catch {
+    } catch (e) {
+      console.error('Profile fetch exception:', e)
       setProfile(null)
       return null
     }
   }
 
-  const fetchProfileWithRetry = async (userId, retries = 3) => {
-    for (let i = 0; i < retries; i++) {
-      const result = await fetchProfile(userId)
-      if (result) return result
-      await new Promise(r => setTimeout(r, 1000))
-    }
-    return null
-  }
-
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s)
-      setUser(s?.user ?? null)
-      if (s?.user) {
-        fetchProfileWithRetry(s.user.id).finally(() => setLoading(false))
-      } else {
-        setLoading(false)
-      }
-    })
+    let mounted = true
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, s) => {
+    const init = async () => {
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession()
+        if (!mounted) return
         setSession(s)
         setUser(s?.user ?? null)
         if (s?.user) {
-          if (event === 'SIGNED_IN') {
-            await fetchProfileWithRetry(s.user.id)
-          } else {
-            await fetchProfile(s.user.id)
-          }
+          await fetchProfile(s.user.id)
+        }
+      } catch (e) {
+        console.error('Auth init error:', e)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    init()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, s) => {
+        if (!mounted) return
+        setSession(s)
+        setUser(s?.user ?? null)
+        if (s?.user) {
+          await fetchProfile(s.user.id)
         } else {
           setProfile(null)
         }
         setLoading(false)
       }
     )
-    return () => subscription.unsubscribe()
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signUp = async (email, password, metadata = {}) => {
@@ -72,14 +78,13 @@ export function AuthProvider({ children }) {
     })
     if (error) throw error
 
-    if (data.user && data.session) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
+    if (data.user) {
+      try {
+        await supabase.from('profiles').upsert({
           id: data.user.id,
           email: email,
-          name: metadata.full_name || metadata.name || 'Ny spiller',
-          full_name: metadata.full_name || metadata.name || 'Ny spiller',
+          name: metadata.full_name || 'Ny spiller',
+          full_name: metadata.full_name || 'Ny spiller',
           level: metadata.level || 5,
           play_style: metadata.play_style || 'Ved ikke endnu',
           area: metadata.area || 'København',
@@ -90,10 +95,15 @@ export function AuthProvider({ children }) {
           games_played: 0,
           games_won: 0,
         })
-      if (profileError) console.error('Profile creation error:', profileError)
-      await fetchProfileWithRetry(data.user.id)
-      setUser(data.user)
-      setSession(data.session)
+      } catch (e) {
+        console.error('Profile upsert error:', e)
+      }
+
+      if (data.session) {
+        setSession(data.session)
+        setUser(data.user)
+        await fetchProfile(data.user.id)
+      }
     }
 
     return data
@@ -106,14 +116,15 @@ export function AuthProvider({ children }) {
     })
     if (error) throw error
     if (data.user) {
-      await fetchProfileWithRetry(data.user.id)
+      setSession(data.session)
+      setUser(data.user)
+      await fetchProfile(data.user.id)
     }
     return data
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    await supabase.auth.signOut()
     setSession(null)
     setUser(null)
     setProfile(null)
