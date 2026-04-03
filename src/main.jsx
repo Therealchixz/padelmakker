@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import './styles/variables.css'
 import './responsive.css'
 import { AuthProvider } from './lib/AuthContext'
 import PadelMakker from './padelmakker-platform'

@@ -104,7 +104,7 @@ button,
 
 .pm-dash-user .pm-dash-name {
   font-size: 13px;
-  color: var(--pm-text-mid, #555d66);
+  color: var(--pm-text-mid);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
