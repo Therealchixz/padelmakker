@@ -5,7 +5,7 @@ import { supabase } from "./lib/supabase";
 import {
   Home, Users, MapPin, Swords, Trophy,
   UserPlus, TrendingUp, MessageCircle, Search,
-  LogOut, Plus, Star, Clock, Building2, Sun, ArrowRight,
+  LogOut, Plus, Star, Clock, Building2, Sun, ArrowRight, Trash2, UserMinus,
 } from "lucide-react";
 
 const LEVELS      = ["1-2 (Helt ny)", "3-4 (Begynder)", "5-6 (Øvet)", "7-8 (Avanceret)", "9-10 (Elite)"];
@@ -510,6 +510,34 @@ function eloOf(p) {
   return Number.isFinite(v) ? Math.round(v) : 1000;
 }
 
+function fmtClock(t) {
+  if (t == null || t === "") return "";
+  return String(t).slice(0, 5);
+}
+
+/** Viser "20:00–22:00" når time_end findes, ellers kun starttid. */
+function matchTimeLabel(m) {
+  const a = fmtClock(m.time);
+  const b = m.time_end ? fmtClock(m.time_end) : "";
+  if (a && b) return `${a}–${b}`;
+  return a || "—";
+}
+
+function timeToMinutes(hhmm) {
+  const s = fmtClock(hhmm);
+  const [h, min] = s.split(":").map((x) => parseInt(x, 10));
+  if (!Number.isFinite(h) || !Number.isFinite(min)) return NaN;
+  return h * 60 + min;
+}
+
+/** Nyere kampe: level_range er ren ELO-tal som string. Ældre: "4-6" osv. */
+function matchSkillLabel(m) {
+  const lr = m?.level_range;
+  if (lr != null && /^\d+$/.test(String(lr).trim())) return `ELO ${lr}`;
+  if (m?.level_range) return `Niveau ${m.level_range}`;
+  return "ELO —";
+}
+
 function MakkereTab({ user, showToast }) {
   const [search, setSearch]           = useState("");
   const [filterElo, setFilterElo]     = useState("all");
@@ -685,22 +713,29 @@ function BanerTab({ showToast }) {
 function KampeTab({ user, showToast }) {
   const { user: authUser }            = useAuth();
   const myDisplayName                 = resolveDisplayName(user, authUser);
+  const myElo                         = eloOf(user);
   const [showCreate, setShowCreate]   = useState(false);
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
   const [matchPlayers, setMatchPlayers] = useState({});
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [creating, setCreating]       = useState(false);
-  const [newMatch, setNewMatch]       = useState({ court_id: "", date: new Date().toISOString().split("T")[0], time: "18:00", level_range: "4-6" });
+  const [busyId, setBusyId]           = useState(null);
+  const [newMatch, setNewMatch]       = useState({
+    court_id: "",
+    date: new Date().toISOString().split("T")[0],
+    time: "20:00",
+    time_end: "22:00",
+  });
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
-      const [cd, md, ap] = await Promise.all([Court.filter(), Match.filter(), Profile.filter()]);
+      const [cd, md] = await Promise.all([Court.filter(), Match.filter()]);
       setCourts(cd || []);
       setMatches((md || []).filter(m => m.status === "open"));
-      if (cd?.length > 0 && !newMatch.court_id) setNewMatch(m => ({ ...m, court_id: cd[0].id }));
+      if (cd?.length > 0) setNewMatch(m => (m.court_id ? m : { ...m, court_id: cd[0].id }));
       const { data: mpd } = await supabase.from("match_players").select("*");
       const mm = {};
       (mpd || []).forEach(mp => { if (!mm[mp.match_id]) mm[mp.match_id] = []; mm[mp.match_id].push(mp); });
@@ -710,18 +745,40 @@ function KampeTab({ user, showToast }) {
   };
 
   const createMatch = async () => {
+    const startM = timeToMinutes(newMatch.time);
+    const endM = timeToMinutes(newMatch.time_end);
+    if (!Number.isFinite(startM) || !Number.isFinite(endM)) {
+      showToast("Vælg gyldige start- og sluttider.");
+      return;
+    }
+    if (endM <= startM) {
+      showToast("Sluttid skal være efter starttid.");
+      return;
+    }
     setCreating(true);
     try {
       const court = courts.find(c => c.id === newMatch.court_id);
-      const { data: created, error } = await supabase.from("matches").insert({
-        creator_id: user.id, court_id: newMatch.court_id, court_name: court?.name || "",
-        date: newMatch.date, time: newMatch.time, level_range: newMatch.level_range,
-        status: "open", max_players: 4, current_players: 1,
-      }).select().single();
+      const row = {
+        creator_id: user.id,
+        court_id: newMatch.court_id,
+        court_name: court?.name || "",
+        date: newMatch.date,
+        time: fmtClock(newMatch.time),
+        time_end: fmtClock(newMatch.time_end),
+        level_range: String(myElo),
+        status: "open",
+        max_players: 4,
+        current_players: 1,
+      };
+      const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
       await supabase.from("match_players").insert({ match_id: created.id, user_id: user.id, user_name: myDisplayName, user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾" });
-      setShowCreate(false); showToast("Kamp oprettet! 🎾"); await loadData();
-    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+      setShowCreate(false);
+      showToast("Kamp oprettet! 🎾");
+      await loadData();
+    } catch (e) {
+      showToast("Fejl: " + (e.message || "Prøv igen"));
+    }
     finally { setCreating(false); }
   };
 
@@ -729,8 +786,33 @@ function KampeTab({ user, showToast }) {
     try {
       const { error } = await supabase.from("match_players").insert({ match_id: matchId, user_id: user.id, user_name: myDisplayName, user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾" });
       if (error) throw error;
-      showToast("Du er tilmeldt!"); await loadData();
+      showToast("Du er tilmeldt!");
+      await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+  };
+
+  const leaveMatch = async (matchId) => {
+    setBusyId(matchId);
+    try {
+      const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
+      if (error) throw error;
+      showToast("Du er afmeldt.");
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
+  const deleteMatch = async (matchId) => {
+    if (!window.confirm("Slet denne kamp for alle?")) return;
+    setBusyId(matchId);
+    try {
+      await supabase.from("match_players").delete().eq("match_id", matchId);
+      const { error } = await supabase.from("matches").delete().eq("id", matchId);
+      if (error) throw error;
+      showToast("Kamp slettet.");
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
   };
 
   if (loadingMatches) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>;
@@ -746,22 +828,23 @@ function KampeTab({ user, showToast }) {
 
       {showCreate && (
         <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "clamp(16px,3vw,20px)", boxShadow: theme.shadow, marginBottom: "20px", border: "1px solid " + theme.border }}>
-          <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "16px", letterSpacing: "-0.01em" }}>Opret ny kamp</h3>
+          <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px", letterSpacing: "-0.01em" }}>Opret ny kamp</h3>
+          <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px", lineHeight: 1.5 }}>
+            Din ELO <strong style={{ color: theme.text }}>{myElo}</strong> vises automatisk for andre spillere.
+          </p>
           <div className="pm-form-2col">
-            <div><label style={labelStyle}>Bane</label>
+            <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Bane</label>
               <select value={newMatch.court_id} onChange={e => setNewMatch(m => ({ ...m, court_id: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
-                {courts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select></div>
-            <div><label style={labelStyle}>Niveau</label>
-              <select value={newMatch.level_range} onChange={e => setNewMatch(m => ({ ...m, level_range: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
-                {["1-3","2-4","3-5","4-6","5-7","6-8","7-9","8-10"].map(r => <option key={r} value={r}>{r}</option>)}
+                {courts.length === 0 ? <option value="">Ingen baner</option> : courts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select></div>
             <div><label style={labelStyle}>Dato</label>
               <input type="date" value={newMatch.date} onChange={e => setNewMatch(m => ({ ...m, date: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
-            <div><label style={labelStyle}>Tid</label>
+            <div><label style={labelStyle}>Fra (start)</label>
               <input type="time" value={newMatch.time} onChange={e => setNewMatch(m => ({ ...m, time: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
+            <div><label style={labelStyle}>Til (slut)</label>
+              <input type="time" value={newMatch.time_end} onChange={e => setNewMatch(m => ({ ...m, time_end: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
           </div>
-          <button onClick={createMatch} disabled={creating} style={{ ...btn(true), marginTop: "16px", width: "100%", justifyContent: "center" }}>
+          <button onClick={createMatch} disabled={creating || !newMatch.court_id} style={{ ...btn(true), marginTop: "16px", width: "100%", justifyContent: "center", opacity: creating || !newMatch.court_id ? 0.55 : 1 }}>
             {creating ? "Opretter..." : "Opret kamp"}
           </button>
         </div>
@@ -769,23 +852,28 @@ function KampeTab({ user, showToast }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {matches.map(m => {
-          const mp     = matchPlayers[m.id] || [];
-          const left   = (m.max_players || 4) - mp.length;
-          const joined = mp.some(p => p.user_id === user.id);
+          const mp       = matchPlayers[m.id] || [];
+          const left     = (m.max_players || 4) - mp.length;
+          const joined   = mp.some(p => p.user_id === user.id);
+          const isCreator = m.creator_id === user.id;
+          const busy     = busyId === m.id;
           return (
             <div key={m.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-                <div>
-                  <div style={{ fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em" }}>{m.date} kl. {(m.time || "").slice(0, 5)}</div>
-                  <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "2px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                    <Clock size={15} color={theme.accent} style={{ flexShrink: 0 }} />
+                    <span>{m.date} · {matchTimeLabel(m)}</span>
+                  </div>
+                  <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
                 </div>
-                <span style={tag(left > 0 ? theme.accentBg : theme.redBg, left > 0 ? theme.accent : theme.red)}>
+                <span style={{ ...tag(left > 0 ? theme.accentBg : theme.redBg, left > 0 ? theme.accent : theme.red), flexShrink: 0 }}>
                   {left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld"}
                 </span>
               </div>
               <div style={{ display: "flex", gap: "5px", marginBottom: "14px", flexWrap: "wrap" }}>
-                <span style={tag(theme.accentBg, theme.accent)}>Niveau {m.level_range}</span>
-                <span style={tag(theme.blueBg,   theme.blue)}>{mp.length}/{m.max_players || 4} spillere</span>
+                <span style={tag(theme.accentBg, theme.accent)}>{matchSkillLabel(m)}</span>
+                <span style={tag(theme.blueBg, theme.blue)}>{mp.length}/{m.max_players || 4} spillere</span>
               </div>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "14px", flexWrap: "wrap" }}>
                 {mp.map(p => (
@@ -800,10 +888,24 @@ function KampeTab({ user, showToast }) {
                   </div>
                 ))}
               </div>
-              {left > 0 && !joined && (
-                <button onClick={() => joinMatch(m.id)} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>Tilmeld mig</button>
-              )}
-              {joined && <div style={{ textAlign: "center", fontSize: "13px", color: theme.accent, fontWeight: 600 }}>✅ Tilmeldt</div>}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {left > 0 && !joined && (
+                  <button onClick={() => joinMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>Tilmeld mig</button>
+                )}
+                {joined && (
+                  <div style={{ textAlign: "center", fontSize: "13px", color: theme.accent, fontWeight: 600 }}>✅ Tilmeldt</div>
+                )}
+                {joined && !isCreator && (
+                  <button type="button" onClick={() => leaveMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", borderColor: theme.border, color: theme.textMid }}>
+                    <UserMinus size={14} /> Afmeld mig
+                  </button>
+                )}
+                {isCreator && (
+                  <button type="button" onClick={() => deleteMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}>
+                    <Trash2 size={14} /> Slet kamp
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
