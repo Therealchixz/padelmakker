@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from './supabase'
 
 const AuthContext = createContext(null)
@@ -8,7 +8,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const initialized = useRef(false)
 
   const fetchProfile = async (userId) => {
     try {
@@ -24,12 +23,22 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    // Show app immediately if no session exists
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (!s) {
-        setLoading(false)
+    const init = async () => {
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession()
+        setSession(s)
+        setUser(s?.user ?? null)
+        if (s?.user) {
+          const p = await fetchProfile(s.user.id)
+          setProfile(p)
+        }
+      } catch (e) {
+        console.error('Auth init error:', e)
       }
-    })
+      setLoading(false)
+    }
+
+    init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, s) => {
@@ -41,19 +50,10 @@ export function AuthProvider({ children }) {
         } else {
           setProfile(null)
         }
-        setLoading(false)
-        initialized.current = true
       }
     )
 
-    const timeout = setTimeout(() => {
-      if (!initialized.current) setLoading(false)
-    }, 3000)
-
-    return () => {
-      clearTimeout(timeout)
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   const signUp = async (email, password, metadata = {}) => {
@@ -79,6 +79,12 @@ export function AuthProvider({ children }) {
         games_played: 0,
         games_won: 0,
       })
+      if (data.session) {
+        setSession(data.session)
+        setUser(data.user)
+        const p = await fetchProfile(data.user.id)
+        setProfile(p)
+      }
     }
     return data
   }
@@ -86,6 +92,12 @@ export function AuthProvider({ children }) {
   const signIn = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+    if (data.user) {
+      setSession(data.session)
+      setUser(data.user)
+      const p = await fetchProfile(data.user.id)
+      setProfile(p)
+    }
     return data
   }
 
