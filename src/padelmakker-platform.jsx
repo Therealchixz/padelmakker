@@ -23,12 +23,12 @@ const inputStyle = { fontFamily: font, fontSize: "14px", padding: "11px 14px", b
 const tag = (bg, color) => ({ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", background: bg, color: color, display: "inline-block" });
 
 export default function PadelMakker() {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading, profileLoading, signOut } = useAuth();
   const [toast, setToast] = useState(null);
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
   const handleLogout = async () => { await signOut(); };
 
-  if (loading) return (<div style={{ fontFamily: font, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: theme.bg }}><div style={{ fontSize: "24px" }}>🎾</div></div>);
+  if (loading || (user && profileLoading)) return (<div style={{ fontFamily: font, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: theme.bg }}><div style={{ fontSize: "24px" }}>🎾</div></div>);
 
   const isLoggedIn = user && profile;
 

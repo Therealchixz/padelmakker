@@ -1,62 +1,116 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { supabase } from './supabase'
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
+import { supabase, isSupabaseConfigured } from './supabase'
 
 const AuthContext = createContext(null)
+
+const SESSION_TIMEOUT_MS = 12000
+const PROFILE_TIMEOUT_MS = 12000
+
+function fetchProfileQuery(userId) {
+  return supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle()
+    .then(({ data, error }) => {
+      if (error) console.warn('profiles:', error.message)
+      return data || null
+    })
+    .catch(() => null)
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), ms)
+    ),
+  ])
+}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [profileLoading, setProfileLoading] = useState(false)
+  const profileReqId = useRef(0)
 
-  const fetchProfile = async (userId) => {
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle()
-      return data || null
-    } catch {
-      return null
-    }
-  }
+  const loadProfile = useCallback((userId) => {
+    const id = ++profileReqId.current
+    setProfileLoading(true)
+    Promise.race([
+      fetchProfileQuery(userId),
+      new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
+    ])
+      .then((p) => {
+        if (profileReqId.current !== id) return
+        setProfile(p)
+      })
+      .finally(() => {
+        if (profileReqId.current !== id) return
+        setProfileLoading(false)
+      })
+  }, [])
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      console.error(
+        'Supabase mangler: sæt VITE_SUPABASE_URL og VITE_SUPABASE_ANON_KEY (fx i Vercel / .env.local)'
+      )
+      setLoading(false)
+      return
+    }
+
+    let cancelled = false
+
     const init = async () => {
       try {
-        const { data: { session: s } } = await supabase.auth.getSession()
+        const result = await withTimeout(
+          supabase.auth.getSession(),
+          SESSION_TIMEOUT_MS
+        )
+        if (cancelled) return
+        const s = result?.data?.session ?? null
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) {
-          const p = await fetchProfile(s.user.id)
-          setProfile(p)
-        }
+        if (s?.user) loadProfile(s.user.id)
+        else setProfile(null)
       } catch (e) {
-        console.error('Auth init error:', e)
+        if (!cancelled) {
+          console.error('Auth init error:', e)
+          setSession(null)
+          setUser(null)
+          setProfile(null)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setLoading(false)
     }
 
     init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, s) => {
+      (_event, s) => {
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) {
-          const p = await fetchProfile(s.user.id)
-          setProfile(p)
-        } else {
+        if (s?.user) loadProfile(s.user.id)
+        else {
+          profileReqId.current += 1
           setProfile(null)
+          setProfileLoading(false)
         }
       }
     )
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
+  }, [loadProfile])
 
   const signUp = async (email, password, metadata = {}) => {
+    if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -82,30 +136,41 @@ export function AuthProvider({ children }) {
       if (data.session) {
         setSession(data.session)
         setUser(data.user)
-        const p = await fetchProfile(data.user.id)
+        const p = await Promise.race([
+          fetchProfileQuery(data.user.id),
+          new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
+        ])
         setProfile(p)
+        setProfileLoading(false)
       }
     }
     return data
   }
 
   const signIn = async (email, password) => {
+    if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     if (data.user) {
       setSession(data.session)
       setUser(data.user)
-      const p = await fetchProfile(data.user.id)
+      const p = await Promise.race([
+        fetchProfileQuery(data.user.id),
+        new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
+      ])
       setProfile(p)
+      setProfileLoading(false)
     }
     return data
   }
 
   const signOut = async () => {
+    profileReqId.current += 1
     await supabase.auth.signOut()
     setSession(null)
     setUser(null)
     setProfile(null)
+    setProfileLoading(false)
   }
 
   const updateProfile = async (updates) => {
@@ -116,8 +181,25 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  const refreshProfile = () => {
+    if (user) loadProfile(user.id)
+  }
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signUp, signIn, signOut, updateProfile, refreshProfile: () => user && fetchProfile(user.id).then(setProfile) }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        profile,
+        loading,
+        profileLoading,
+        signUp,
+        signIn,
+        signOut,
+        updateProfile,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )
