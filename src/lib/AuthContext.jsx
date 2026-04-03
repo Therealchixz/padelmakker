@@ -24,6 +24,13 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    // Show app immediately if no session exists
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (!s) {
+        setLoading(false)
+      }
+    })
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, s) => {
         setSession(s)
@@ -39,7 +46,6 @@ export function AuthProvider({ children }) {
       }
     )
 
-    // Safety: if onAuthStateChange never fires within 3s, stop loading
     const timeout = setTimeout(() => {
       if (!initialized.current) setLoading(false)
     }, 3000)
