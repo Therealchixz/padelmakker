@@ -1098,8 +1098,8 @@ function KampeTab({ user, showToast }) {
 
   const getStatus = (m) => (m.status ?? "open").toString().toLowerCase();
   const openMatches = matches.filter(m => { const s = getStatus(m); return s === "open" || s === "active" || s === "full"; });
-  const activeMatches = matches.filter(m => getStatus(m) === "in_progress");
-  const completedMatches = matches.filter(m => getStatus(m) === "completed").slice(0, 10);
+  const activeMatches = matches.filter(m => getStatus(m) === "in_progress" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id));
+  const completedMatches = matches.filter(m => getStatus(m) === "completed" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id)).slice(0, 20);
 
   if (loadingMatches) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>;
 
