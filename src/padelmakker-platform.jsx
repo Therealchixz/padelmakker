@@ -24,22 +24,36 @@ const tag = (bg, color) => ({ fontSize: "11px", fontWeight: 600, padding: "3px 1
 
 export default function PadelMakker() {
   const { user, profile, loading, signOut } = useAuth();
-  const [page, setPage] = useState(user ? "dashboard" : "landing");
   const [toast, setToast] = useState(null);
-  useEffect(() => { if (!loading && user && profile) setPage("dashboard"); else if (!loading && !user) setPage("landing"); }, [loading, user, profile]);
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-  const handleLogout = async () => { await signOut(); setPage("landing"); };
+  const handleLogout = async () => { await signOut(); };
+
   if (loading) return (<div style={{ fontFamily: font, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: theme.bg }}><div style={{ fontSize: "24px" }}>🎾</div></div>);
+
+  const isLoggedIn = user && profile;
+
   return (
     <div style={{ fontFamily: font, background: theme.bg, minHeight: "100vh", color: theme.text, position: "relative" }}>
       <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
       {toast && (<div style={{ position: "fixed", top: "20px", left: "50%", transform: "translateX(-50%)", background: theme.accent, color: "#fff", padding: "12px 24px", borderRadius: "12px", fontSize: "14px", fontWeight: 600, zIndex: 9999, boxShadow: theme.shadowLg }}>{toast}</div>)}
       <style>{`* { box-sizing: border-box; margin: 0; } input:focus, select:focus, textarea:focus { border-color: ${theme.accent} !important; } ::placeholder { color: ${theme.textLight}; } button:hover { opacity: 0.9; }`}</style>
-      {page === "landing" && <LandingPage onGetStarted={() => setPage("onboarding")} onLogin={() => setPage("login")} />}
-      {page === "onboarding" && <OnboardingPage onComplete={() => { setPage("dashboard"); showToast("Velkommen til PadelMakker! 🎾"); }} onBack={() => setPage("landing")} />}
-      {page === "login" && <LoginPage onLogin={() => setPage("dashboard")} onBack={() => setPage("landing")} />}
-      {page === "dashboard" && profile && <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} />}
+      {isLoggedIn ? (
+        <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} />
+      ) : (
+        <PublicPages showToast={showToast} />
+      )}
     </div>
+  );
+}
+
+function PublicPages({ showToast }) {
+  const [page, setPage] = useState("landing");
+  return (
+    <>
+      {page === "landing" && <LandingPage onGetStarted={() => setPage("onboarding")} onLogin={() => setPage("login")} />}
+      {page === "onboarding" && <OnboardingPage onComplete={() => showToast("Velkommen til PadelMakker! 🎾")} onBack={() => setPage("landing")} />}
+      {page === "login" && <LoginPage onBack={() => setPage("landing")} />}
+    </>
   );
 }
 
@@ -79,13 +93,21 @@ function LandingPage({ onGetStarted, onLogin }) {
   );
 }
 
-function LoginPage({ onLogin, onBack }) {
+function LoginPage({ onBack }) {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [err, setErr] = useState(""); const [submitting, setSubmitting] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) { setErr("Indtast email og password"); return; }
     setSubmitting(true); setErr("");
-    try { await signIn(email.trim(), password); onLogin(); } catch (e) { setErr(e.message || "Login fejlede."); } finally { setSubmitting(false); }
+    try {
+      await signIn(email.trim(), password);
+    } catch (e) {
+      setErr(e.message || "Login fejlede. Tjek email og password.");
+      setSubmitting(false);
+    }
   };
   return (
     <div style={{ maxWidth: "420px", margin: "0 auto", padding: "80px 24px" }}>
@@ -102,7 +124,9 @@ function LoginPage({ onLogin, onBack }) {
 
 function OnboardingPage({ onComplete, onBack }) {
   const { signUp } = useAuth();
-  const [step, setStep] = useState(0); const [submitting, setSubmitting] = useState(false); const [err, setErr] = useState("");
+  const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState("");
   const [form, setForm] = useState({ name: "", email: "", password: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾" });
   const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -113,8 +137,11 @@ function OnboardingPage({ onComplete, onBack }) {
     try {
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5") + Math.random() * 1.5;
       await signUp(form.email.trim(), form.password, { full_name: form.name, level: Math.round(levelNum * 10) / 10, play_style: form.style, area: form.area, availability: form.availability, bio: form.bio, avatar: form.avatar, elo_rating: 1000, games_played: 0, games_won: 0 });
-      onComplete();
-    } catch (e) { setErr(e.message || "Kunne ikke oprette profil."); } finally { setSubmitting(false); }
+      if (onComplete) onComplete();
+    } catch (e) {
+      setErr(e.message || "Kunne ikke oprette profil.");
+      setSubmitting(false);
+    }
   };
   const steps = [
     <div key={0}><h2 style={{ fontFamily: fontDisplay, fontSize: "24px", fontWeight: 800, marginBottom: "6px" }}>Velkommen! 👋</h2><p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px" }}>Lad os oprette din profil.</p><label style={{ fontSize: "13px", fontWeight: 600, display: "block", marginBottom: "6px" }}>Dit navn</label><input value={form.name} onChange={e => set("name", e.target.value)} placeholder="F.eks. Mikkel P." style={{ ...inputStyle, marginBottom: "16px" }} /><label style={{ fontSize: "13px", fontWeight: 600, display: "block", marginBottom: "6px" }}>Email</label><input value={form.email} onChange={e => set("email", e.target.value)} placeholder="din@email.dk" type="email" style={{ ...inputStyle, marginBottom: "16px" }} /><label style={{ fontSize: "13px", fontWeight: 600, display: "block", marginBottom: "6px" }}>Password</label><input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 6 tegn" type="password" style={inputStyle} /></div>,
