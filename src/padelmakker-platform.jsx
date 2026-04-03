@@ -22,6 +22,21 @@ const btn = (primary) => ({ fontFamily: font, fontSize: "14px", fontWeight: 600,
 const inputStyle = { fontFamily: font, fontSize: "14px", padding: "11px 14px", borderRadius: "10px", border: "1.5px solid " + theme.border, background: theme.surface, color: theme.text, width: "100%", boxSizing: "border-box", outline: "none" };
 const tag = (bg, color) => ({ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", background: bg, color: color, display: "inline-block" });
 
+/** Profil-rækken kan stadig være "Ny spiller" fra defaults — brug auth-metadata / email som fallback. */
+function resolveDisplayName(profileRow, authUser) {
+  const bad = (s) => {
+    if (s == null || String(s).trim() === "") return true;
+    const t = String(s).trim().toLowerCase();
+    return t === "ny spiller" || t === "ny";
+  };
+  const fromProfile = profileRow?.full_name || profileRow?.name;
+  if (fromProfile && !bad(fromProfile)) return String(fromProfile).trim();
+  const meta = authUser?.user_metadata?.full_name || authUser?.user_metadata?.name;
+  if (meta && !bad(meta)) return String(meta).trim();
+  const local = authUser?.email?.split("@")[0];
+  return local || "Spiller";
+}
+
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
   const [toast, setToast] = useState(null);
@@ -163,13 +178,15 @@ function OnboardingPage({ onComplete, onBack }) {
 }
 
 function DashboardPage({ user, onLogout, showToast }) {
+  const { user: authUser } = useAuth();
+  const displayName = resolveDisplayName(user, authUser);
   const [tab, setTab] = useState("hjem");
   const tabs = [{ id: "hjem", label: "Hjem", icon: "🏠" }, { id: "makkere", label: "Find Makker", icon: "🤝" }, { id: "baner", label: "Baner", icon: "📍" }, { id: "kampe", label: "Kampe", icon: "⚔️" }, { id: "ranking", label: "Ranking", icon: "🏆" }];
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderBottom: "1px solid " + theme.border, background: theme.surface }}>
         <div style={{ fontFamily: fontDisplay, fontSize: "18px", fontWeight: 800, color: theme.accent }}>🎾 PadelMakker</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}><span style={{ fontSize: "13px", color: theme.textMid }}>{user.full_name || user.name}</span><button onClick={onLogout} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>Log ud</button></div>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}><span style={{ fontSize: "13px", color: theme.textMid }}>{displayName}</span><button onClick={onLogout} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>Log ud</button></div>
       </div>
       <div style={{ display: "flex", gap: "4px", padding: "10px 16px", background: theme.surface, borderBottom: "1px solid " + theme.border, overflowX: "auto" }}>
         {tabs.map(t => (<button key={t.id} onClick={() => setTab(t.id)} style={{ background: tab === t.id ? theme.accentBg : "transparent", color: tab === t.id ? theme.accent : theme.textMid, border: "none", padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap", fontFamily: font }}><span>{t.icon}</span>{t.label}</button>))}
@@ -186,20 +203,33 @@ function DashboardPage({ user, onLogout, showToast }) {
 }
 
 function HomeTab({ user, setTab }) {
-  const name = user.full_name || user.name || "Spiller";
-  const level = user.level || 5;
+  const { user: authUser } = useAuth();
+  const displayName = resolveDisplayName(user, authUser);
+  const firstName = displayName.split(/\s+/)[0];
   const games = user.games_played || 0;
   const wins = user.games_won || 0;
+  const elo = Math.round(Number(user.elo_rating) || 1000);
+  const eloBarPct = Math.min(Math.max((elo / 2000) * 100, 0), 100);
   return (
     <div>
-      <h2 style={{ fontFamily: fontDisplay, fontSize: "26px", fontWeight: 800, marginBottom: "4px" }}>Hej {name.split(" ")[0]}! 👋</h2>
+      <h2 style={{ fontFamily: fontDisplay, fontSize: "26px", fontWeight: 800, marginBottom: "4px" }}>Hej {firstName}! 👋</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px" }}>Klar til at spille?</p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "28px" }}>
-        {[{ label: "Niveau", value: level, color: theme.accent }, { label: "Kampe", value: games, color: theme.blue }, { label: "Sejre", value: wins, color: theme.warm }, { label: "Win %", value: games > 0 ? Math.round((wins / games) * 100) + "%" : "—", color: theme.accent }].map((s, i) => (<div key={i} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, textAlign: "center" }}><div style={{ fontSize: "28px", fontWeight: 800, color: s.color, fontFamily: fontDisplay }}>{s.value}</div><div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px" }}>{s.label}</div></div>))}
+        {[{ label: "Kampe", value: games, color: theme.blue }, { label: "Sejre", value: wins, color: theme.warm }, { label: "Win %", value: games > 0 ? Math.round((wins / games) * 100) + "%" : "—", color: theme.accent }].map((s, i) => (<div key={i} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, textAlign: "center" }}><div style={{ fontSize: "28px", fontWeight: 800, color: s.color, fontFamily: fontDisplay }}>{s.value}</div><div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px" }}>{s.label}</div></div>))}
       </div>
-      <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, marginBottom: "28px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}><span style={{ fontSize: "14px", fontWeight: 600 }}>Din niveau-progression</span><span style={{ fontSize: "14px", fontWeight: 700, color: theme.accent }}>{level} / 10</span></div>
-        <div style={{ background: theme.border, borderRadius: "6px", height: "10px", overflow: "hidden" }}><div style={{ width: (level / 10) * 100 + "%", height: "100%", background: "linear-gradient(90deg, " + theme.accent + ", " + theme.blue + ")", borderRadius: "6px" }} /></div>
+      <div style={{ background: "linear-gradient(135deg, " + theme.accent + ", #0D5C3A)", borderRadius: theme.radius, padding: "24px", marginBottom: "28px", color: "#fff", boxShadow: theme.shadow }}>
+        <div style={{ fontSize: "12px", opacity: 0.85, marginBottom: "8px" }}>Din ELO-rating</div>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
+          <span style={{ fontFamily: fontDisplay, fontSize: "clamp(40px, 10vw, 52px)", fontWeight: 800, lineHeight: 1 }}>{elo}</span>
+          <span style={{ fontSize: "13px", opacity: 0.85, maxWidth: "220px", lineHeight: 1.45 }}>Jo højere ELO, jo stærkere matcher du ift. andre spillere på platformen.</span>
+        </div>
+        <div style={{ marginTop: "18px", background: "rgba(255,255,255,0.2)", borderRadius: "8px", height: "10px", overflow: "hidden" }}>
+          <div style={{ width: eloBarPct + "%", height: "100%", background: theme.warm, borderRadius: "8px", transition: "width 0.4s ease" }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px", fontSize: "11px", opacity: 0.75 }}>
+          <span>0</span>
+          <span>Skala op til 2000+</span>
+        </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
         {[{ icon: "🤝", title: "Find en makker", desc: "Se ledige spillere", tab: "makkere" }, { icon: "📍", title: "Book en bane", desc: "Ledige tider", tab: "baner" }, { icon: "⚔️", title: "Åbne kampe", desc: "Tilmeld dig nu", tab: "kampe" }, { icon: "🏆", title: "Se ranking", desc: "Din placering", tab: "ranking" }].map((a, i) => (<button key={i} onClick={() => setTab(a.tab)} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}><div style={{ fontSize: "24px", marginBottom: "8px" }}>{a.icon}</div><div style={{ fontSize: "15px", fontWeight: 700, color: theme.text }}>{a.title}</div><div style={{ fontSize: "12px", color: theme.textLight }}>{a.desc}</div></button>))}
@@ -256,12 +286,14 @@ function BanerTab({ showToast }) {
 }
 
 function KampeTab({ user, showToast }) {
+  const { user: authUser } = useAuth();
+  const myDisplayName = resolveDisplayName(user, authUser);
   const [showCreate, setShowCreate] = useState(false); const [courts, setCourts] = useState([]); const [matches, setMatches] = useState([]); const [matchPlayers, setMatchPlayers] = useState({}); const [profiles, setProfiles] = useState({}); const [loadingMatches, setLoadingMatches] = useState(true); const [creating, setCreating] = useState(false);
   const [newMatch, setNewMatch] = useState({ court_id: "", date: new Date().toISOString().split("T")[0], time: "18:00", level_range: "4-6" });
   useEffect(() => { loadData(); }, []);
   const loadData = async () => { try { const [cd, md, ap] = await Promise.all([Court.filter(), Match.filter(), Profile.filter()]); setCourts(cd || []); setMatches((md || []).filter(m => m.status === "open")); if (cd?.length > 0 && !newMatch.court_id) setNewMatch(m => ({ ...m, court_id: cd[0].id })); const pm = {}; (ap || []).forEach(p => { pm[p.id] = p; }); setProfiles(pm); const { data: mpd } = await supabase.from("match_players").select("*"); const mm = {}; (mpd || []).forEach(mp => { if (!mm[mp.match_id]) mm[mp.match_id] = []; mm[mp.match_id].push(mp); }); setMatchPlayers(mm); } catch (e) { console.error(e); } finally { setLoadingMatches(false); } };
-  const createMatch = async () => { setCreating(true); try { const court = courts.find(c => c.id === newMatch.court_id); const { data: created, error } = await supabase.from("matches").insert({ creator_id: user.id, court_id: newMatch.court_id, court_name: court?.name || "", date: newMatch.date, time: newMatch.time, level_range: newMatch.level_range, status: "open", max_players: 4, current_players: 1 }).select().single(); if (error) throw error; await supabase.from("match_players").insert({ match_id: created.id, user_id: user.id, user_name: user.full_name || user.name, user_email: user.email, user_emoji: user.avatar || "🎾" }); setShowCreate(false); showToast("Kamp oprettet! 🎾"); await loadData(); } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); } finally { setCreating(false); } };
-  const joinMatch = async (matchId) => { try { const { error } = await supabase.from("match_players").insert({ match_id: matchId, user_id: user.id, user_name: user.full_name || user.name, user_email: user.email, user_emoji: user.avatar || "🎾" }); if (error) throw error; showToast("Du er tilmeldt! ⚔️"); await loadData(); } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); } };
+  const createMatch = async () => { setCreating(true); try { const court = courts.find(c => c.id === newMatch.court_id); const { data: created, error } = await supabase.from("matches").insert({ creator_id: user.id, court_id: newMatch.court_id, court_name: court?.name || "", date: newMatch.date, time: newMatch.time, level_range: newMatch.level_range, status: "open", max_players: 4, current_players: 1 }).select().single(); if (error) throw error; await supabase.from("match_players").insert({ match_id: created.id, user_id: user.id, user_name: myDisplayName, user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾" }); setShowCreate(false); showToast("Kamp oprettet! 🎾"); await loadData(); } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); } finally { setCreating(false); } };
+  const joinMatch = async (matchId) => { try { const { error } = await supabase.from("match_players").insert({ match_id: matchId, user_id: user.id, user_name: myDisplayName, user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾" }); if (error) throw error; showToast("Du er tilmeldt! ⚔️"); await loadData(); } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); } };
   if (loadingMatches) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight }}>Indlæser kampe...</div>;
   return (
     <div>
