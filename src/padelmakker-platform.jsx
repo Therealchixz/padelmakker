@@ -710,6 +710,201 @@ function BanerTab({ showToast }) {
 /* ═══════════════════════════════════════════════════
    KAMPE TAB
 ═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════
+   ELO CALCULATION
+═══════════════════════════════════════════════════ */
+async function calculateAndApplyElo(matchId, matchResult, matchPlayersList, showToast) {
+  const K = 32;
+  const team1 = matchPlayersList.filter(p => p.team === 1);
+  const team2 = matchPlayersList.filter(p => p.team === 2);
+  if (team1.length !== 2 || team2.length !== 2) return;
+
+  // Fetch current profiles
+  const allIds = [...team1, ...team2].map(p => p.user_id);
+  const { data: profiles } = await supabase.from("profiles").select("id, elo_rating, games_played, games_won").in("id", allIds);
+  if (!profiles) return;
+  const pMap = {};
+  profiles.forEach(p => { pMap[p.id] = p; });
+
+  const getElo = (uid) => pMap[uid]?.elo_rating || 1000;
+  const team1Avg = (getElo(team1[0].user_id) + getElo(team1[1].user_id)) / 2;
+  const team2Avg = (getElo(team2[0].user_id) + getElo(team2[1].user_id)) / 2;
+
+  const team1Expected = 1 / (1 + Math.pow(10, (team2Avg - team1Avg) / 400));
+  const team1Won = matchResult === "team1";
+  const team1Actual = team1Won ? 1 : 0;
+  const team1Change = Math.round(K * (team1Actual - team1Expected));
+  const team2Change = -team1Change;
+
+  const updates = [];
+  const processTeam = (teamPlayers, change, won) => {
+    teamPlayers.forEach(mp => {
+      const p = pMap[mp.user_id];
+      if (!p) return;
+      const oldElo = p.elo_rating || 1000;
+      const newElo = Math.max(100, oldElo + change);
+      updates.push({
+        userId: mp.user_id,
+        profileUpdate: {
+          elo_rating: newElo,
+          games_played: (p.games_played || 0) + 1,
+          games_won: (p.games_won || 0) + (won ? 1 : 0),
+        },
+        history: {
+          user_id: mp.user_id,
+          match_id: matchId,
+          old_rating: oldElo,
+          new_rating: newElo,
+          change: change,
+          result: won ? "win" : "loss",
+          date: new Date().toISOString().split("T")[0],
+        },
+      });
+    });
+  };
+
+  processTeam(team1, team1Change, team1Won);
+  processTeam(team2, team2Change, !team1Won);
+
+  // Apply all updates
+  for (const u of updates) {
+    await supabase.from("profiles").update(u.profileUpdate).eq("id", u.userId);
+    await supabase.from("elo_history").insert(u.history);
+  }
+
+  // Mark match completed
+  await supabase.from("matches").update({ status: "completed" }).eq("id", matchId);
+
+  const sign = team1Change > 0 ? "+" : "";
+  if (showToast) showToast(`ELO opdateret! Hold 1: ${sign}${team1Change}, Hold 2: ${team1Change > 0 ? "" : "+"}${team2Change} 🏆`);
+}
+
+/* ═══════════════════════════════════════════════════
+   TEAM SELECTION MODAL
+═══════════════════════════════════════════════════ */
+function TeamSelectModal({ matchPlayers, onSelect, onClose }) {
+  const team1 = matchPlayers.filter(p => p.team === 1);
+  const team2 = matchPlayers.filter(p => p.team === 2);
+  const team1Full = team1.length >= 2;
+  const team2Full = team2.length >= 2;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
+      <div style={{ background: "#fff", borderRadius: "14px", padding: "28px", maxWidth: "360px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "6px", letterSpacing: "-0.02em" }}>Vælg hold</h3>
+        <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px", lineHeight: 1.5 }}>Hvilket hold vil du spille på?</p>
+
+        <button
+          onClick={() => onSelect(1)}
+          disabled={team1Full}
+          style={{ width: "100%", padding: "16px", marginBottom: "10px", borderRadius: "10px", border: "2px solid #166534", background: team1Full ? "#f1f5f9" : "#DCFCE7", color: team1Full ? "#94A3B8" : "#166534", fontSize: "15px", fontWeight: 700, cursor: team1Full ? "not-allowed" : "pointer", opacity: team1Full ? 0.5 : 1 }}
+        >
+          Hold 1 ({team1.length}/2)
+          {team1.length > 0 && <div style={{ fontSize: "12px", fontWeight: 400, marginTop: "4px" }}>{team1.map(p => (p.user_name || "?").split(" ")[0]).join(", ")}</div>}
+        </button>
+
+        <button
+          onClick={() => onSelect(2)}
+          disabled={team2Full}
+          style={{ width: "100%", padding: "16px", marginBottom: "16px", borderRadius: "10px", border: "2px solid #2563EB", background: team2Full ? "#f1f5f9" : "#EFF6FF", color: team2Full ? "#94A3B8" : "#2563EB", fontSize: "15px", fontWeight: 700, cursor: team2Full ? "not-allowed" : "pointer", opacity: team2Full ? 0.5 : 1 }}
+        >
+          Hold 2 ({team2.length}/2)
+          {team2.length > 0 && <div style={{ fontSize: "12px", fontWeight: 400, marginTop: "4px" }}>{team2.map(p => (p.user_name || "?").split(" ")[0]).join(", ")}</div>}
+        </button>
+
+        <button onClick={onClose} style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", background: "#fff", color: "#64748B", fontSize: "13px", cursor: "pointer" }}>
+          Annullér
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   RESULT MODAL (wraps PadelMatchResultInput)
+═══════════════════════════════════════════════════ */
+function ResultModal({ team1Names, team2Names, onSubmit, onClose }) {
+  // Dynamic import workaround - render inline form if PadelMatchResultInput unavailable
+  const [ResultComp, setResultComp] = useState(null);
+  useEffect(() => {
+    import("./components/PadelMatchResultInput").then(mod => {
+      setResultComp(() => mod.default);
+    }).catch(() => {
+      console.warn("PadelMatchResultInput not found, using inline form");
+    });
+  }, []);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px", overflowY: "auto" }}>
+      <div style={{ background: "#fff", borderRadius: "14px", padding: "24px", maxWidth: "500px", width: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        {ResultComp ? (
+          <ResultComp
+            playersEditable={false}
+            initialData={{ team1: team1Names, team2: team2Names, sets: [], winner: null, completed: false }}
+            onSubmit={onSubmit}
+            onCancel={onClose}
+          />
+        ) : (
+          <InlineResultForm team1Names={team1Names} team2Names={team2Names} onSubmit={onSubmit} onClose={onClose} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* Simpel fallback resultat-formular hvis PadelMatchResultInput ikke kan importeres */
+function InlineResultForm({ team1Names, team2Names, onSubmit, onClose }) {
+  const [sets, setSets] = useState([{ g1: "", g2: "" }, { g1: "", g2: "" }, { g1: "", g2: "" }]);
+
+  const handleSubmit = () => {
+    const parsedSets = sets.map((s, i) => ({
+      setNumber: i + 1,
+      gamesTeam1: parseInt(s.g1) || 0,
+      gamesTeam2: parseInt(s.g2) || 0,
+    })).filter(s => s.gamesTeam1 > 0 || s.gamesTeam2 > 0);
+
+    let t1wins = 0, t2wins = 0;
+    parsedSets.forEach(s => { if (s.gamesTeam1 > s.gamesTeam2) t1wins++; else if (s.gamesTeam2 > s.gamesTeam1) t2wins++; });
+    const winner = t1wins > t2wins ? "team1" : t2wins > t1wins ? "team2" : null;
+
+    onSubmit({
+      team1: team1Names,
+      team2: team2Names,
+      sets: parsedSets,
+      winner,
+      completed: winner !== null,
+    });
+  };
+
+  const setField = (idx, field, val) => {
+    setSets(prev => prev.map((s, i) => i === idx ? { ...s, [field]: val } : s));
+  };
+
+  return (
+    <div>
+      <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px" }}>Indrapportér resultat</h3>
+      <div style={{ fontSize: "13px", color: "#64748B", marginBottom: "16px" }}>
+        <strong style={{ color: "#166534" }}>{team1Names}</strong> vs <strong style={{ color: "#2563EB" }}>{team2Names}</strong>
+      </div>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+          <span style={{ fontSize: "13px", fontWeight: 600, width: "50px" }}>Sæt {i + 1}</span>
+          <input type="number" min="0" max="7" value={sets[i].g1} onChange={e => setField(i, "g1", e.target.value)} placeholder="H1" style={{ width: "60px", padding: "8px", borderRadius: "6px", border: "1px solid #E2E8F0", textAlign: "center", fontSize: "16px" }} />
+          <span style={{ fontWeight: 700 }}>-</span>
+          <input type="number" min="0" max="7" value={sets[i].g2} onChange={e => setField(i, "g2", e.target.value)} placeholder="H2" style={{ width: "60px", padding: "8px", borderRadius: "6px", border: "1px solid #E2E8F0", textAlign: "center", fontSize: "16px" }} />
+        </div>
+      ))}
+      <div style={{ display: "flex", gap: "8px", marginTop: "20px" }}>
+        <button onClick={onClose} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", background: "#fff", cursor: "pointer", fontSize: "13px" }}>Annullér</button>
+        <button onClick={handleSubmit} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "none", background: "#166534", color: "#fff", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>Gem resultat</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   KAMPE TAB (full rewrite with team selection, start, results, ELO)
+═══════════════════════════════════════════════════ */
 function KampeTab({ user, showToast }) {
   const { user: authUser }            = useAuth();
   const myDisplayName                 = resolveDisplayName(user, authUser);
@@ -718,10 +913,14 @@ function KampeTab({ user, showToast }) {
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
   const [matchPlayers, setMatchPlayers] = useState({});
+  const [matchResults, setMatchResults] = useState({});
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [creating, setCreating]       = useState(false);
   const [busyId, setBusyId]           = useState(null);
   const [eloByUserId, setEloByUserId] = useState({});
+  const [teamSelectMatch, setTeamSelectMatch] = useState(null);
+  const [resultMatch, setResultMatch] = useState(null);
+  const [viewTab, setViewTab]         = useState("open"); // "open" | "active" | "completed"
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
@@ -736,25 +935,27 @@ function KampeTab({ user, showToast }) {
       const [cd, md, profiles] = await Promise.all([Court.filter(), Match.filter(), Profile.filter()]);
       setCourts(cd || []);
       const eloMap = {};
-      (profiles || []).forEach((pr) => {
-        eloMap[String(pr.id)] = eloOf(pr);
-      });
+      (profiles || []).forEach((pr) => { eloMap[String(pr.id)] = eloOf(pr); });
       setEloByUserId(eloMap);
-      const open = (md || []).filter((m) => {
-        const s = (m.status ?? "open").toString().toLowerCase();
-        return s === "open" || s === "active";
-      });
-      setMatches(open);
-      const openIds = new Set(open.map((m) => m.id));
+
+      const allMatches = md || [];
+      setMatches(allMatches);
+
       if (cd?.length > 0) setNewMatch((m) => (m.court_id ? m : { ...m, court_id: cd[0].id }));
+
       const { data: mpd } = await supabase.from("match_players").select("*");
       const mm = {};
       (mpd || []).forEach((mp) => {
-        if (!openIds.has(mp.match_id)) return;
         if (!mm[mp.match_id]) mm[mp.match_id] = [];
         mm[mp.match_id].push(mp);
       });
       setMatchPlayers(mm);
+
+      // Load match results
+      const { data: mrd } = await supabase.from("match_results").select("*");
+      const mrMap = {};
+      (mrd || []).forEach((mr) => { mrMap[mr.match_id] = mr; });
+      setMatchResults(mrMap);
     } catch (e) { console.error(e); }
     finally { setLoadingMatches(false); }
   };
@@ -762,60 +963,53 @@ function KampeTab({ user, showToast }) {
   const createMatch = async () => {
     const startM = timeToMinutes(newMatch.time);
     const endM = timeToMinutes(newMatch.time_end);
-    if (!Number.isFinite(startM) || !Number.isFinite(endM)) {
-      showToast("Vælg gyldige start- og sluttider.");
-      return;
-    }
-    if (endM <= startM) {
-      showToast("Sluttid skal være efter starttid.");
-      return;
-    }
+    if (!Number.isFinite(startM) || !Number.isFinite(endM)) { showToast("Vælg gyldige tider."); return; }
+    if (endM <= startM) { showToast("Sluttid skal være efter starttid."); return; }
     setCreating(true);
     try {
       const court = courts.find(c => c.id === newMatch.court_id);
       const row = {
-        creator_id: user.id,
-        court_id: newMatch.court_id,
-        court_name: court?.name || "",
-        date: newMatch.date,
-        time: fmtClock(newMatch.time),
-        time_end: fmtClock(newMatch.time_end),
-        level_range: String(myElo),
-        status: "open",
-        max_players: 4,
-        current_players: 1,
+        creator_id: user.id, court_id: newMatch.court_id, court_name: court?.name || "",
+        date: newMatch.date, time: fmtClock(newMatch.time), time_end: fmtClock(newMatch.time_end),
+        level_range: String(myElo), status: "open", max_players: 4, current_players: 1,
       };
       const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
       await supabase.from("match_players").insert({
-        match_id: created.id,
-        user_id: user.id,
-        user_name: myDisplayName,
-        user_email: authUser?.email || user.email,
-        user_emoji: user.avatar || "🎾",
+        match_id: created.id, user_id: user.id, user_name: myDisplayName,
+        user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾", team: 1,
       });
       setShowCreate(false);
-      showToast("Kamp oprettet! 🎾");
+      showToast("Kamp oprettet! Du er på Hold 1 🎾");
       await loadData();
-    } catch (e) {
-      showToast("Fejl: " + (e.message || "Prøv igen"));
-    }
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setCreating(false); }
   };
 
-  const joinMatch = async (matchId) => {
+  const joinMatchWithTeam = async (matchId, teamNum) => {
+    setTeamSelectMatch(null);
+    setBusyId(matchId);
     try {
       const { error } = await supabase.from("match_players").insert({
-        match_id: matchId,
-        user_id: user.id,
-        user_name: myDisplayName,
-        user_email: authUser?.email || user.email,
-        user_emoji: user.avatar || "🎾",
+        match_id: matchId, user_id: user.id, user_name: myDisplayName,
+        user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾", team: teamNum,
       });
       if (error) throw error;
-      showToast("Du er tilmeldt!");
+
+      // Check if match is now full (4 players, 2 per team)
+      const mp = [...(matchPlayers[matchId] || []), { user_id: user.id, team: teamNum }];
+      const t1 = mp.filter(p => p.team === 1).length;
+      const t2 = mp.filter(p => p.team === 2).length;
+      if (t1 >= 2 && t2 >= 2) {
+        await supabase.from("matches").update({ status: "full", current_players: 4 }).eq("id", matchId);
+      } else {
+        await supabase.from("matches").update({ current_players: mp.length }).eq("id", matchId);
+      }
+
+      showToast(`Du er tilmeldt Hold ${teamNum}! ⚔️`);
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
   };
 
   const leaveMatch = async (matchId) => {
@@ -823,7 +1017,22 @@ function KampeTab({ user, showToast }) {
     try {
       const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
       if (error) throw error;
+      const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== user.id);
+      await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
       showToast("Du er afmeldt.");
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
+  const startMatch = async (matchId) => {
+    setBusyId(matchId);
+    try {
+      const { error } = await supabase.from("matches").update({
+        status: "in_progress", started_by: user.id, started_at: new Date().toISOString(),
+      }).eq("id", matchId);
+      if (error) throw error;
+      showToast("Kampen er startet! Held og lykke 🎾");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }
@@ -832,51 +1041,222 @@ function KampeTab({ user, showToast }) {
   const deleteMatch = async (matchId) => {
     if (!window.confirm("Slet denne kamp for alle?")) return;
     setBusyId(matchId);
-    const mid = String(matchId);
-    const uid = String(user.id);
     try {
-      const { error: ep } = await supabase.from("match_players").delete().eq("match_id", mid);
-      if (ep) console.warn("match_players:", ep.message);
-
-      // Soft-delete: mange Supabase-RLS tillader UPDATE men ikke DELETE på matches
-      const { data: updated, error: eu } = await supabase
-        .from("matches")
-        .update({ status: "cancelled" })
-        .eq("id", mid)
-        .eq("creator_id", uid)
-        .select("id");
-
-      if (eu) throw eu;
-      if (updated?.length) {
-        showToast("Kamp slettet.");
-        await loadData();
-        return;
-      }
-
-      // Fallback: hard delete med tjek for faktisk slettede rækker
-      const { data: deleted, error: ed } = await supabase
-        .from("matches")
-        .delete()
-        .eq("id", mid)
-        .eq("creator_id", uid)
-        .select("id");
-
-      if (ed) throw ed;
-      if (deleted?.length) {
-        showToast("Kamp slettet.");
-        await loadData();
-        return;
-      }
-
-      showToast("Kampen blev ikke fjernet. Tjek i Supabase at kolonnen status findes, og at RLS tillader opretter at opdatere/slette sin kamp.");
-    } catch (e) {
-      showToast("Fejl: " + (e.message || "Prøv igen"));
-    } finally {
-      setBusyId(null);
-    }
+      await supabase.from("match_players").delete().eq("match_id", matchId);
+      await supabase.from("matches").update({ status: "cancelled" }).eq("id", matchId).eq("creator_id", user.id);
+      showToast("Kamp slettet.");
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
   };
 
+  const submitResult = async (matchId, result) => {
+    setResultMatch(null);
+    setBusyId(matchId);
+    try {
+      const mp = matchPlayers[matchId] || [];
+      const t1 = mp.filter(p => p.team === 1);
+      const t2 = mp.filter(p => p.team === 2);
+
+      const scoreDisplay = result.sets
+        .filter(s => s.gamesTeam1 > 0 || s.gamesTeam2 > 0)
+        .map(s => `${s.gamesTeam1}-${s.gamesTeam2}`)
+        .join(", ");
+
+      const { error } = await supabase.from("match_results").insert({
+        match_id: matchId,
+        team1_player1_id: t1[0]?.user_id, team1_player2_id: t1[1]?.user_id,
+        team2_player1_id: t2[0]?.user_id, team2_player2_id: t2[1]?.user_id,
+        set1_team1: result.sets[0]?.gamesTeam1, set1_team2: result.sets[0]?.gamesTeam2,
+        set1_tb1: result.sets[0]?.tiebreakTeam1, set1_tb2: result.sets[0]?.tiebreakTeam2,
+        set2_team1: result.sets[1]?.gamesTeam1, set2_team2: result.sets[1]?.gamesTeam2,
+        set2_tb1: result.sets[1]?.tiebreakTeam1, set2_tb2: result.sets[1]?.tiebreakTeam2,
+        set3_team1: result.sets[2]?.gamesTeam1, set3_team2: result.sets[2]?.gamesTeam2,
+        set3_tb1: result.sets[2]?.tiebreakTeam1, set3_tb2: result.sets[2]?.tiebreakTeam2,
+        sets_won_team1: result.sets.filter(s => s.gamesTeam1 > s.gamesTeam2).length,
+        sets_won_team2: result.sets.filter(s => s.gamesTeam2 > s.gamesTeam1).length,
+        match_winner: result.winner,
+        score_display: scoreDisplay,
+        submitted_by: user.id,
+        confirmed: false,
+      });
+      if (error) throw error;
+      showToast("Resultat indsendt! Venter på bekræftelse ⏳");
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
+  const confirmResult = async (matchId) => {
+    setBusyId(matchId);
+    try {
+      const mr = matchResults[matchId];
+      if (!mr) return;
+      const { error } = await supabase.from("match_results").update({ confirmed: true, confirmed_by: user.id }).eq("id", mr.id);
+      if (error) throw error;
+
+      // Calculate ELO
+      const mp = matchPlayers[matchId] || [];
+      await calculateAndApplyElo(matchId, mr.match_winner, mp, showToast);
+      showToast("Resultat bekræftet! ELO opdateret 🏆");
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
+  const rejectResult = async (matchId) => {
+    setBusyId(matchId);
+    try {
+      const mr = matchResults[matchId];
+      if (!mr) return;
+      await supabase.from("match_results").delete().eq("id", mr.id);
+      showToast("Resultat afvist. Indrapportér igen.");
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
+  const getStatus = (m) => (m.status ?? "open").toString().toLowerCase();
+  const openMatches = matches.filter(m => { const s = getStatus(m); return s === "open" || s === "active" || s === "full"; });
+  const activeMatches = matches.filter(m => getStatus(m) === "in_progress");
+  const completedMatches = matches.filter(m => getStatus(m) === "completed").slice(0, 10);
+
   if (loadingMatches) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>;
+
+  const renderMatchCard = (m, mode) => {
+    const mp = matchPlayers[m.id] || [];
+    const mr = matchResults[m.id];
+    const left = (m.max_players || 4) - mp.length;
+    const joined = mp.some(p => p.user_id === user.id);
+    const isCreator = String(m.creator_id) === String(user.id);
+    const busy = busyId === m.id;
+    const status = getStatus(m);
+    const t1 = mp.filter(p => p.team === 1);
+    const t2 = mp.filter(p => p.team === 2);
+    const t1Names = t1.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "—";
+    const t2Names = t2.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "—";
+    const isFull = t1.length >= 2 && t2.length >= 2;
+    const isPlayerInMatch = mp.some(p => p.user_id === user.id);
+
+    const statusLabel = {
+      open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", bg: left > 0 ? theme.accentBg : theme.warmBg, color: left > 0 ? theme.accent : theme.warm },
+      full: { text: "Klar til start", bg: theme.blueBg, color: theme.blue },
+      in_progress: { text: "I gang", bg: theme.warmBg, color: theme.warm },
+      completed: { text: "Afsluttet", bg: "#F1F5F9", color: theme.textLight },
+    }[status] || { text: status, bg: "#F1F5F9", color: theme.textLight };
+
+    return (
+      <div key={m.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
+          <div>
+            <div style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+              <Clock size={15} color={theme.accent} />
+              <span>{m.date} · {matchTimeLabel(m)}</span>
+            </div>
+            <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
+          </div>
+          <span style={{ ...tag(statusLabel.bg, statusLabel.color), flexShrink: 0 }}>{statusLabel.text}</span>
+        </div>
+
+        {/* Teams display */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", padding: "12px", background: "#F8FAFC", borderRadius: "8px" }}>
+          {/* Team 1 */}
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Hold 1</div>
+            <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
+              {t1.map(p => (
+                <div key={p.id || p.user_id} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: theme.accentBg, border: "1.5px solid " + theme.accent + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>{p.user_emoji || "🎾"}</div>
+                  <span style={{ fontSize: "9px", color: theme.textLight, marginTop: "3px" }}>{(p.user_name || "?").split(" ")[0]}</span>
+                </div>
+              ))}
+              {Array.from({ length: Math.max(0, 2 - t1.length) }).map((_, i) => (
+                <div key={"t1e" + i} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={10} color={theme.textLight} /></div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ fontSize: "14px", fontWeight: 800, color: theme.textLight }}>vs</div>
+
+          {/* Team 2 */}
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Hold 2</div>
+            <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
+              {t2.map(p => (
+                <div key={p.id || p.user_id} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: theme.blueBg, border: "1.5px solid " + theme.blue + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>{p.user_emoji || "🎾"}</div>
+                  <span style={{ fontSize: "9px", color: theme.textLight, marginTop: "3px" }}>{(p.user_name || "?").split(" ")[0]}</span>
+                </div>
+              ))}
+              {Array.from({ length: Math.max(0, 2 - t2.length) }).map((_, i) => (
+                <div key={"t2e" + i} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={10} color={theme.textLight} /></div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Score display for completed/result pending */}
+        {mr && (
+          <div style={{ padding: "12px", background: mr.confirmed ? theme.accentBg : theme.warmBg, borderRadius: "8px", marginBottom: "12px", textAlign: "center" }}>
+            <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "0.05em" }}>{mr.score_display || "—"}</div>
+            <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>
+              {mr.confirmed ? `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt` : "⏳ Venter på bekræftelse"}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {/* Join (open matches only) */}
+          {status === "open" && left > 0 && !joined && (
+            <button onClick={() => setTeamSelectMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>Tilmeld mig</button>
+          )}
+
+          {/* Already joined indicator */}
+          {joined && status !== "completed" && (
+            <div style={{ textAlign: "center", fontSize: "13px", color: theme.accent, fontWeight: 600 }}>✅ Tilmeldt</div>
+          )}
+
+          {/* Start match (creator only, when full) */}
+          {isCreator && (status === "full" || (status === "open" && isFull)) && (
+            <button onClick={() => startMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm }}>
+              🎾 Start kamp
+            </button>
+          )}
+
+          {/* Report result (in_progress, any player) */}
+          {status === "in_progress" && isPlayerInMatch && !mr && (
+            <button onClick={() => setResultMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>
+              📊 Indrapportér resultat
+            </button>
+          )}
+
+          {/* Confirm/reject result (in_progress, result submitted, not by current user) */}
+          {mr && !mr.confirmed && mr.submitted_by !== user.id && isPlayerInMatch && (
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button onClick={() => confirmResult(m.id)} disabled={busy} style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px" }}>✅ Bekræft</button>
+              <button onClick={() => rejectResult(m.id)} disabled={busy} style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.red }}>❌ Afvis</button>
+            </div>
+          )}
+
+          {/* Leave match */}
+          {joined && !isCreator && (status === "open" || status === "full") && (
+            <button onClick={() => leaveMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.textMid }}>
+              <UserMinus size={14} /> Afmeld mig
+            </button>
+          )}
+
+          {/* Delete match (creator only) */}
+          {isCreator && status !== "completed" && status !== "in_progress" && (
+            <button onClick={() => deleteMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}>
+              <Trash2 size={14} /> Slet kamp
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -887,12 +1267,22 @@ function KampeTab({ user, showToast }) {
         </button>
       </div>
 
+      {/* View tabs */}
+      <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
+        {[
+          { id: "open", label: `Åbne (${openMatches.length})` },
+          { id: "active", label: `I gang (${activeMatches.length})` },
+          { id: "completed", label: `Afsluttede (${completedMatches.length})` },
+        ].map(t => (
+          <button key={t.id} onClick={() => setViewTab(t.id)} style={{ ...btn(viewTab === t.id), padding: "7px 14px", fontSize: "12px" }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* Create match form */}
       {showCreate && (
         <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "clamp(16px,3vw,20px)", boxShadow: theme.shadow, marginBottom: "20px", border: "1px solid " + theme.border }}>
-          <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px", letterSpacing: "-0.01em" }}>Opret ny kamp</h3>
-          <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px", lineHeight: 1.5 }}>
-            Din ELO <strong style={{ color: theme.text }}>{myElo}</strong> vises automatisk for andre spillere.
-          </p>
+          <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px" }}>Opret ny kamp</h3>
+          <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px" }}>Din ELO <strong>{myElo}</strong> — du sættes automatisk på Hold 1.</p>
           <div className="pm-form-2col">
             <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Bane</label>
               <select value={newMatch.court_id} onChange={e => setNewMatch(m => ({ ...m, court_id: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
@@ -900,90 +1290,57 @@ function KampeTab({ user, showToast }) {
               </select></div>
             <div><label style={labelStyle}>Dato</label>
               <input type="date" value={newMatch.date} onChange={e => setNewMatch(m => ({ ...m, date: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
-            <div><label style={labelStyle}>Fra (start)</label>
+            <div><label style={labelStyle}>Fra</label>
               <input type="time" value={newMatch.time} onChange={e => setNewMatch(m => ({ ...m, time: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
-            <div><label style={labelStyle}>Til (slut)</label>
+            <div><label style={labelStyle}>Til</label>
               <input type="time" value={newMatch.time_end} onChange={e => setNewMatch(m => ({ ...m, time_end: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
           </div>
-          <button onClick={createMatch} disabled={creating || !newMatch.court_id} style={{ ...btn(true), marginTop: "16px", width: "100%", justifyContent: "center", opacity: creating || !newMatch.court_id ? 0.55 : 1 }}>
+          <button onClick={createMatch} disabled={creating || !newMatch.court_id} style={{ ...btn(true), marginTop: "16px", width: "100%", justifyContent: "center", opacity: creating ? 0.55 : 1 }}>
             {creating ? "Opretter..." : "Opret kamp"}
           </button>
         </div>
       )}
 
+      {/* Match list */}
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {matches.map(m => {
-          const mp       = matchPlayers[m.id] || [];
-          const left     = (m.max_players || 4) - mp.length;
-          const joined   = mp.some(p => p.user_id === user.id);
-          const isCreator = String(m.creator_id) === String(user.id);
-          const busy     = busyId === m.id;
-          return (
-            <div key={m.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                    <Clock size={15} color={theme.accent} style={{ flexShrink: 0 }} />
-                    <span>{m.date} · {matchTimeLabel(m)}</span>
-                  </div>
-                  <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
-                </div>
-                <span style={{ ...tag(left > 0 ? theme.accentBg : theme.redBg, left > 0 ? theme.accent : theme.red), flexShrink: 0 }}>
-                  {left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld"}
-                </span>
-              </div>
-              <div style={{ display: "flex", gap: "5px", marginBottom: "14px", flexWrap: "wrap" }}>
-                <span style={tag(theme.accentBg, theme.accent)}>{matchSkillLabel(m)}</span>
-                <span style={tag(theme.blueBg, theme.blue)}>{mp.length}/{m.max_players || 4} spillere</span>
-              </div>
-              <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "14px", flexWrap: "wrap" }}>
-                {mp.map((p) => {
-                  const uid = p.user_id != null ? String(p.user_id) : "";
-                  const elo = uid && eloByUserId[uid] != null ? eloByUserId[uid] : null;
-                  return (
-                    <div key={p.id || p.user_id} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "56px", maxWidth: "72px" }}>
-                      <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#F1F5F9", border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0 }}>{p.user_emoji || "🎾"}</div>
-                      <span style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px", textAlign: "center", lineHeight: 1.2, wordBreak: "break-word", width: "100%" }}>{(p.user_name || "?").split(" ")[0]}</span>
-                      <span style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, marginTop: "2px", textAlign: "center" }}>{elo != null ? `ELO ${elo}` : "ELO —"}</span>
-                    </div>
-                  );
-                })}
-                {Array.from({ length: Math.max(0, left) }).map((_, i) => (
-                  <div key={"e" + i} style={{ width: "36px", height: "36px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Plus size={12} color={theme.textLight} />
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {left > 0 && !joined && (
-                  <button onClick={() => joinMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>Tilmeld mig</button>
-                )}
-                {joined && (
-                  <div style={{ textAlign: "center", fontSize: "13px", color: theme.accent, fontWeight: 600 }}>✅ Tilmeldt</div>
-                )}
-                {joined && !isCreator && (
-                  <button type="button" onClick={() => leaveMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", borderColor: theme.border, color: theme.textMid }}>
-                    <UserMinus size={14} /> Afmeld mig
-                  </button>
-                )}
-                {isCreator && (
-                  <button type="button" onClick={() => deleteMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}>
-                    <Trash2 size={14} /> Slet kamp
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-        {matches.length === 0 && <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Ingen åbne kampe. Opret den første!</div>}
+        {viewTab === "open" && openMatches.map(m => renderMatchCard(m, "open"))}
+        {viewTab === "active" && activeMatches.map(m => renderMatchCard(m, "active"))}
+        {viewTab === "completed" && completedMatches.map(m => renderMatchCard(m, "completed"))}
+
+        {viewTab === "open" && openMatches.length === 0 && <div style={{ textAlign: "center", padding: "40px", color: theme.textLight }}>Ingen åbne kampe. Opret den første!</div>}
+        {viewTab === "active" && activeMatches.length === 0 && <div style={{ textAlign: "center", padding: "40px", color: theme.textLight }}>Ingen aktive kampe.</div>}
+        {viewTab === "completed" && completedMatches.length === 0 && <div style={{ textAlign: "center", padding: "40px", color: theme.textLight }}>Ingen afsluttede kampe endnu.</div>}
       </div>
+
+      {/* Team selection modal */}
+      {teamSelectMatch && (
+        <TeamSelectModal
+          matchPlayers={matchPlayers[teamSelectMatch] || []}
+          onSelect={(teamNum) => joinMatchWithTeam(teamSelectMatch, teamNum)}
+          onClose={() => setTeamSelectMatch(null)}
+        />
+      )}
+
+      {/* Result input modal */}
+      {resultMatch && (() => {
+        const mp = matchPlayers[resultMatch] || [];
+        const t1 = mp.filter(p => p.team === 1);
+        const t2 = mp.filter(p => p.team === 2);
+        const t1Names = t1.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "Hold 1";
+        const t2Names = t2.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "Hold 2";
+        return (
+          <ResultModal
+            team1Names={t1Names}
+            team2Names={t2Names}
+            onSubmit={(result) => submitResult(resultMatch, result)}
+            onClose={() => setResultMatch(null)}
+          />
+        );
+      })()}
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   RANKING TAB
-═══════════════════════════════════════════════════ */
 function RankingTab({ user }) {
   const [players, setPlayers]   = useState([]);
   const [loading, setLoading]   = useState(true);
