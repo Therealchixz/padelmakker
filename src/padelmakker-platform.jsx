@@ -714,119 +714,49 @@ function BanerTab({ showToast }) {
    ELO CALCULATION
 ═══════════════════════════════════════════════════ */
 async function calculateAndApplyElo(matchId, matchWinner, ignoredPlayersList, showToast) {
-  const K = 32;
+  try {
+    // Hent match_result ID
+    const { data: mr, error: mrErr } = await supabase
+      .from("match_results")
+      .select("id")
+      .eq("match_id", matchId)
+      .eq("confirmed", true)
+      .single();
 
-  // Hent match_players direkte fra Supabase (ikke fra React state)
-  const { data: freshPlayers, error: mpErr } = await supabase
-    .from("match_players")
-    .select("*")
-    .eq("match_id", matchId);
-  
-  if (mpErr || !freshPlayers) {
-    console.error("ELO: Kunne ikke hente spillere:", mpErr);
-    return;
-  }
+    if (mrErr || !mr) {
+      console.error("ELO: Kunne ikke finde bekræftet resultat:", mrErr);
+      if (showToast) showToast("ELO fejl: Resultat ikke fundet.");
+      return;
+    }
 
-  const team1 = freshPlayers.filter(p => Number(p.team) === 1);
-  const team2 = freshPlayers.filter(p => Number(p.team) === 2);
-  
-  console.log("ELO calculation:", { matchId, matchWinner, team1: team1.length, team2: team2.length, allPlayers: freshPlayers });
-
-  if (team1.length === 0 || team2.length === 0) {
-    console.error("ELO: Hold mangler spillere. team1:", team1, "team2:", team2);
-    if (showToast) showToast("ELO fejl: Hold-data mangler.");
-    return;
-  }
-
-  // Hent alle 4 spilleres profiler direkte
-  const allIds = [...team1, ...team2].map(p => p.user_id);
-  const { data: profiles, error: prErr } = await supabase
-    .from("profiles")
-    .select("id, elo_rating, games_played, games_won")
-    .in("id", allIds);
-  
-  if (prErr || !profiles) {
-    console.error("ELO: Kunne ikke hente profiler:", prErr);
-    return;
-  }
-
-  console.log("ELO profiles found:", profiles.length, profiles.map(p => ({ id: p.id, elo: p.elo_rating })));
-
-  const pMap = {};
-  profiles.forEach(p => { pMap[p.id] = p; });
-
-  const getElo = (uid) => pMap[uid]?.elo_rating || 1000;
-  const team1Avg = (getElo(team1[0].user_id) + getElo(team1[1].user_id)) / 2;
-  const team2Avg = (getElo(team2[0].user_id) + getElo(team2[1].user_id)) / 2;
-
-  const team1Expected = 1 / (1 + Math.pow(10, (team2Avg - team1Avg) / 400));
-  const team1Won = matchWinner === "team1";
-  const team1Actual = team1Won ? 1 : 0;
-  const team1Change = Math.round(K * (team1Actual - team1Expected));
-  const team2Change = -team1Change;
-
-  console.log("ELO math:", { team1Avg, team2Avg, team1Expected, team1Won, team1Change, team2Change });
-
-  // Opdater HVER spiller individuelt
-  for (const mp of team1) {
-    const p = pMap[mp.user_id];
-    if (!p) { console.error("ELO: Profil ikke fundet for", mp.user_id); continue; }
-    const oldElo = p.elo_rating || 1000;
-    const newElo = Math.max(100, oldElo + team1Change);
-    const won = team1Won;
-
-    console.log("Updating team1 player:", mp.user_name, oldElo, "→", newElo);
-
-    const { error: upErr } = await supabase.from("profiles").update({
-      elo_rating: newElo,
-      games_played: (p.games_played || 0) + 1,
-      games_won: (p.games_won || 0) + (won ? 1 : 0),
-    }).eq("id", mp.user_id);
-
-    if (upErr) console.error("ELO update failed for", mp.user_name, upErr);
-
-    await supabase.from("elo_history").insert({
-      user_id: mp.user_id,
-      match_id: matchId,
-      old_rating: oldElo,
-      new_rating: newElo,
-      change: team1Change,
-      result: won ? "win" : "loss",
+    // Kald den sikre database-funktion
+    const { data, error } = await supabase.rpc("apply_elo_for_match", {
+      p_match_result_id: mr.id,
     });
+
+    console.log("ELO result:", data);
+
+    if (error) {
+      console.error("ELO rpc error:", error);
+      if (showToast) showToast("ELO fejl: " + error.message);
+      return;
+    }
+
+    if (data?.error) {
+      console.error("ELO function error:", data.error);
+      if (showToast) showToast("ELO fejl: " + data.error);
+      return;
+    }
+
+    if (data?.success) {
+      const t1c = data.team1_change;
+      const sign = t1c > 0 ? "+" : "";
+      if (showToast) showToast(`ELO opdateret for ${data.players_updated} spillere! Hold 1: ${sign}${t1c}, Hold 2: ${t1c > 0 ? "" : "+"}${-t1c} 🏆`);
+    }
+  } catch (e) {
+    console.error("ELO exception:", e);
+    if (showToast) showToast("ELO fejl: " + (e.message || "Ukendt fejl"));
   }
-
-  for (const mp of team2) {
-    const p = pMap[mp.user_id];
-    if (!p) { console.error("ELO: Profil ikke fundet for", mp.user_id); continue; }
-    const oldElo = p.elo_rating || 1000;
-    const newElo = Math.max(100, oldElo + team2Change);
-    const won = !team1Won;
-
-    console.log("Updating team2 player:", mp.user_name, oldElo, "→", newElo);
-
-    const { error: upErr } = await supabase.from("profiles").update({
-      elo_rating: newElo,
-      games_played: (p.games_played || 0) + 1,
-      games_won: (p.games_won || 0) + (won ? 1 : 0),
-    }).eq("id", mp.user_id);
-
-    if (upErr) console.error("ELO update failed for", mp.user_name, upErr);
-
-    await supabase.from("elo_history").insert({
-      user_id: mp.user_id,
-      match_id: matchId,
-      old_rating: oldElo,
-      new_rating: newElo,
-      change: team2Change,
-      result: won ? "win" : "loss",
-    });
-  }
-
-  // Markér kampen som afsluttet
-  await supabase.from("matches").update({ status: "completed" }).eq("id", matchId);
-
-  const sign = team1Change > 0 ? "+" : "";
-  if (showToast) showToast(`ELO opdateret for alle 4 spillere! Hold 1: ${sign}${team1Change}, Hold 2: ${team1Change > 0 ? "" : "+"}${team2Change} 🏆`);
 }
 
 /* ═══════════════════════════════════════════════════
