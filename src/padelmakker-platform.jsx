@@ -505,12 +505,19 @@ function HomeTab({ user, setTab }) {
 /* ═══════════════════════════════════════════════════
    MAKKERE TAB
 ═══════════════════════════════════════════════════ */
+function eloOf(p) {
+  const v = Number(p?.elo_rating);
+  return Number.isFinite(v) ? Math.round(v) : 1000;
+}
+
 function MakkereTab({ user, showToast }) {
   const [search, setSearch]           = useState("");
-  const [filterLevel, setFilterLevel] = useState("all");
+  const [filterElo, setFilterElo]     = useState("all");
   const [filterArea, setFilterArea]   = useState("all");
   const [players, setPlayers]         = useState([]);
   const [loading, setLoading]         = useState(true);
+
+  const myElo = eloOf(user);
 
   useEffect(() => {
     (async () => {
@@ -523,8 +530,8 @@ function MakkereTab({ user, showToast }) {
   const filtered = players.filter(p => {
     const n = p.full_name || p.name || "";
     if (search && !n.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filterArea  !== "all" && p.area  !== filterArea) return false;
-    if (filterLevel === "close" && Math.abs((p.level || 5) - (user.level || 5)) > 1.5) return false;
+    if (filterArea !== "all" && p.area !== filterArea) return false;
+    if (filterElo === "close" && Math.abs(eloOf(p) - myElo) > 150) return false;
     return true;
   });
 
@@ -541,9 +548,9 @@ function MakkereTab({ user, showToast }) {
       </div>
 
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
-        <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
-          <option value="all">Alle niveauer</option>
-          <option value="close">±1.5 af dit niveau</option>
+        <select value={filterElo} onChange={e => setFilterElo(e.target.value)} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
+          <option value="all">Alle ELO</option>
+          <option value="close">±150 ELO om dig ({myElo})</option>
         </select>
         <select value={filterArea} onChange={e => setFilterArea(e.target.value)} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
           <option value="all">Alle områder</option>
@@ -564,7 +571,7 @@ function MakkereTab({ user, showToast }) {
                   <span style={{ fontSize: "12px", color: theme.textLight, display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {p.area || "?"}</span>
                 </div>
                 <div style={{ display: "flex", gap: "5px", marginTop: "7px", flexWrap: "wrap" }}>
-                  <span style={tag(theme.accentBg, theme.accent)}>Lvl {p.level || "?"}</span>
+                  <span style={tag(theme.accentBg, theme.accent)}>ELO {eloOf(p)}</span>
                   <span style={tag(theme.blueBg,   theme.blue)}>{p.play_style || "?"}</span>
                   <span style={tag(theme.warmBg,   theme.warm)}>{p.games_played || 0} kampe</span>
                 </div>
