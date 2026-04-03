@@ -1,0 +1,315 @@
+/* —— Base: undgå vandret scroll, bedre mobil —— */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: clip;
+  max-width: 100vw;
+}
+
+#root {
+  min-height: 100dvh;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+.pm-root {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+button,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* Toast */
+.pm-toast {
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  word-break: break-word;
+  text-align: center;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+/* Landing */
+.pm-landing-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pm-landing-nav-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pm-landing-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 540px) {
+  .pm-landing-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pm-landing-nav-actions {
+    width: 100%;
+  }
+
+  .pm-landing-nav-actions button {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .pm-landing-footer {
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+/* Dashboard */
+.pm-dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pm-dash-brand {
+  min-width: 0;
+}
+
+.pm-dash-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.pm-dash-user .pm-dash-name {
+  font-size: 13px;
+  color: var(--pm-text-mid, #555d66);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: min(220px, 42vw);
+}
+
+@media (max-width: 420px) {
+  .pm-dash-user .pm-dash-name {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .pm-dash-user {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.pm-tab-strip {
+  display: flex;
+  gap: 4px;
+  padding: 10px clamp(10px, 3vw, 16px);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.pm-tab-strip::-webkit-scrollbar {
+  height: 4px;
+}
+
+/* Meget smal skærm: kun ikoner i faner (tekst i title/aria-label) */
+@media (max-width: 400px) {
+  .pm-tab-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+.pm-dash-main {
+  flex: 1;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(16px, 4vw, 24px) clamp(12px, 3vw, 16px);
+  box-sizing: border-box;
+}
+
+/* Hjem — hurtige handlinger */
+.pm-home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr));
+  gap: 12px;
+}
+
+/* Makker-kort — knapper */
+.pm-makker-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 400px) {
+  .pm-makker-card-actions {
+    flex-direction: column;
+  }
+
+  .pm-makker-card-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Baner — filtre */
+.pm-baner-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pm-baner-filters .pm-baner-sort {
+  margin-left: auto;
+}
+
+@media (max-width: 560px) {
+  .pm-baner-filters .pm-baner-sort {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0 !important;
+    flex-basis: 100%;
+  }
+}
+
+/* Kampe */
+.pm-kampe-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pm-kampe-head h2 {
+  margin: 0;
+}
+
+.pm-form-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 520px) {
+  .pm-form-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Ranking hero */
+.pm-rank-hero-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pm-rank-hero-elo {
+  text-align: right;
+}
+
+@media (max-width: 480px) {
+  .pm-rank-hero-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pm-rank-hero-elo {
+    text-align: left;
+    width: 100%;
+  }
+}
+
+/* Auth paneler */
+.pm-auth-narrow {
+  max-width: 420px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: clamp(40px, 12vw, 80px) clamp(16px, 4vw, 24px);
+}
+
+.pm-auth-wide {
+  max-width: 520px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: clamp(24px, 6vw, 40px) clamp(16px, 4vw, 24px);
+}
+
+.pm-onboarding-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 420px) {
+  .pm-onboarding-actions {
+    flex-direction: column;
+  }
+
+  .pm-onboarding-actions button {
+    width: 100%;
+  }
+}
+
+/* Statistik / kort — lidt mindre padding på meget små skærme */
+@media (max-width: 360px) {
+  .pm-stat-grid {
+    gap: 8px !important;
+  }
+}
+
+/* Ranking-liste: undgå overflow på smalle skærme */
+@media (max-width: 420px) {
+  .pm-rank-row {
+    flex-wrap: wrap;
+    gap: 10px !important;
+  }
+
+  .pm-rank-row .pm-rank-score {
+    margin-left: auto;
+  }
+}
