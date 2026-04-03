@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
-Show less
 import { supabase } from "./lib/supabase";
 // ─── Constants (UI only) ───
 const LEVELS = ["1-2 (Helt ny)", "3-4 (Begynder)", "5-6 (Øvet)", "7-8 (Avanceret)", "9-10 (Elite)"];
