@@ -715,8 +715,13 @@ function BanerTab({ showToast }) {
 ═══════════════════════════════════════════════════ */
 async function calculateAndApplyElo(matchId, matchResult, matchPlayersList, showToast) {
   const K = 32;
-  const team1 = matchPlayersList.filter(p => p.team === 1);
-  const team2 = matchPlayersList.filter(p => p.team === 2);
+  const team1 = matchPlayersList.filter(p => Number(p.team) === 1);
+const team2 = matchPlayersList.filter(p => Number(p.team) === 2);
+if (team1.length === 0 || team2.length === 0) {
+  console.error("ELO: Kunne ikke finde hold. team1:", team1.length, "team2:", team2.length, "players:", matchPlayersList);
+  if (showToast) showToast("ELO fejl: Hold-data mangler. Tjek at alle spillere har valgt hold.");
+  return;
+}
   if (team1.length !== 2 || team2.length !== 2) return;
 
   // Fetch current profiles
