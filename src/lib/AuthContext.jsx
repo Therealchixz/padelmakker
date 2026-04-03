@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from './supabase'
-import { Profile } from '../api/base44Client'
 
 const AuthContext = createContext(null)
 
@@ -10,44 +9,58 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Fetch profile from profiles table
   const fetchProfile = async (userId) => {
     try {
-      const data = await Profile.get(userId)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (error) throw error
       setProfile(data)
       return data
     } catch {
-      // Profile may not exist yet (trigger might be delayed)
       setProfile(null)
       return null
     }
   }
 
+  const fetchProfileWithRetry = async (userId, retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      const result = await fetchProfile(userId)
+      if (result) return result
+      await new Promise(r => setTimeout(r, 1000))
+    }
+    return null
+  }
+
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s)
       setUser(s?.user ?? null)
       if (s?.user) {
-        fetchProfile(s.user.id).finally(() => setLoading(false))
+        fetchProfileWithRetry(s.user.id).finally(() => setLoading(false))
       } else {
         setLoading(false)
       }
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, s) => {
+      async (event, s) => {
         setSession(s)
         setUser(s?.user ?? null)
         if (s?.user) {
-          await fetchProfile(s.user.id)
+          if (event === 'SIGNED_IN') {
+            await fetchProfileWithRetry(s.user.id)
+          } else {
+            await fetchProfile(s.user.id)
+          }
         } else {
           setProfile(null)
         }
+        setLoading(false)
       }
     )
-
     return () => subscription.unsubscribe()
   }, [])
 
@@ -58,6 +71,31 @@ export function AuthProvider({ children }) {
       options: { data: metadata },
     })
     if (error) throw error
+
+    if (data.user && data.session) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: data.user.id,
+          email: email,
+          name: metadata.full_name || metadata.name || 'Ny spiller',
+          full_name: metadata.full_name || metadata.name || 'Ny spiller',
+          level: metadata.level || 5,
+          play_style: metadata.play_style || 'Ved ikke endnu',
+          area: metadata.area || 'København',
+          availability: metadata.availability || [],
+          bio: metadata.bio || '',
+          avatar: metadata.avatar || '🎾',
+          elo_rating: metadata.elo_rating || 1000,
+          games_played: 0,
+          games_won: 0,
+        })
+      if (profileError) console.error('Profile creation error:', profileError)
+      await fetchProfileWithRetry(data.user.id)
+      setUser(data.user)
+      setSession(data.session)
+    }
+
     return data
   }
 
@@ -67,6 +105,9 @@ export function AuthProvider({ children }) {
       password,
     })
     if (error) throw error
+    if (data.user) {
+      await fetchProfileWithRetry(data.user.id)
+    }
     return data
   }
 
@@ -80,7 +121,13 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (updates) => {
     if (!user) throw new Error('Not authenticated')
-    const data = await Profile.update(user.id, updates)
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id)
+      .select()
+      .single()
+    if (error) throw error
     setProfile(data)
     return data
   }
