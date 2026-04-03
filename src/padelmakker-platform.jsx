@@ -721,6 +721,7 @@ function KampeTab({ user, showToast }) {
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [creating, setCreating]       = useState(false);
   const [busyId, setBusyId]           = useState(null);
+  const [eloByUserId, setEloByUserId] = useState({});
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
@@ -732,13 +733,27 @@ function KampeTab({ user, showToast }) {
 
   const loadData = async () => {
     try {
-      const [cd, md] = await Promise.all([Court.filter(), Match.filter()]);
+      const [cd, md, profiles] = await Promise.all([Court.filter(), Match.filter(), Profile.filter()]);
       setCourts(cd || []);
-      setMatches((md || []).filter(m => m.status === "open"));
-      if (cd?.length > 0) setNewMatch(m => (m.court_id ? m : { ...m, court_id: cd[0].id }));
+      const eloMap = {};
+      (profiles || []).forEach((pr) => {
+        eloMap[String(pr.id)] = eloOf(pr);
+      });
+      setEloByUserId(eloMap);
+      const open = (md || []).filter((m) => {
+        const s = (m.status ?? "open").toString().toLowerCase();
+        return s === "open" || s === "active";
+      });
+      setMatches(open);
+      const openIds = new Set(open.map((m) => m.id));
+      if (cd?.length > 0) setNewMatch((m) => (m.court_id ? m : { ...m, court_id: cd[0].id }));
       const { data: mpd } = await supabase.from("match_players").select("*");
       const mm = {};
-      (mpd || []).forEach(mp => { if (!mm[mp.match_id]) mm[mp.match_id] = []; mm[mp.match_id].push(mp); });
+      (mpd || []).forEach((mp) => {
+        if (!openIds.has(mp.match_id)) return;
+        if (!mm[mp.match_id]) mm[mp.match_id] = [];
+        mm[mp.match_id].push(mp);
+      });
       setMatchPlayers(mm);
     } catch (e) { console.error(e); }
     finally { setLoadingMatches(false); }
@@ -772,7 +787,13 @@ function KampeTab({ user, showToast }) {
       };
       const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
-      await supabase.from("match_players").insert({ match_id: created.id, user_id: user.id, user_name: myDisplayName, user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾" });
+      await supabase.from("match_players").insert({
+        match_id: created.id,
+        user_id: user.id,
+        user_name: myDisplayName,
+        user_email: authUser?.email || user.email,
+        user_emoji: user.avatar || "🎾",
+      });
       setShowCreate(false);
       showToast("Kamp oprettet! 🎾");
       await loadData();
@@ -784,7 +805,13 @@ function KampeTab({ user, showToast }) {
 
   const joinMatch = async (matchId) => {
     try {
-      const { error } = await supabase.from("match_players").insert({ match_id: matchId, user_id: user.id, user_name: myDisplayName, user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾" });
+      const { error } = await supabase.from("match_players").insert({
+        match_id: matchId,
+        user_id: user.id,
+        user_name: myDisplayName,
+        user_email: authUser?.email || user.email,
+        user_emoji: user.avatar || "🎾",
+      });
       if (error) throw error;
       showToast("Du er tilmeldt!");
       await loadData();
@@ -805,14 +832,48 @@ function KampeTab({ user, showToast }) {
   const deleteMatch = async (matchId) => {
     if (!window.confirm("Slet denne kamp for alle?")) return;
     setBusyId(matchId);
+    const mid = String(matchId);
+    const uid = String(user.id);
     try {
-      await supabase.from("match_players").delete().eq("match_id", matchId);
-      const { error } = await supabase.from("matches").delete().eq("id", matchId);
-      if (error) throw error;
-      showToast("Kamp slettet.");
-      await loadData();
-    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
-    finally { setBusyId(null); }
+      const { error: ep } = await supabase.from("match_players").delete().eq("match_id", mid);
+      if (ep) console.warn("match_players:", ep.message);
+
+      // Soft-delete: mange Supabase-RLS tillader UPDATE men ikke DELETE på matches
+      const { data: updated, error: eu } = await supabase
+        .from("matches")
+        .update({ status: "cancelled" })
+        .eq("id", mid)
+        .eq("creator_id", uid)
+        .select("id");
+
+      if (eu) throw eu;
+      if (updated?.length) {
+        showToast("Kamp slettet.");
+        await loadData();
+        return;
+      }
+
+      // Fallback: hard delete med tjek for faktisk slettede rækker
+      const { data: deleted, error: ed } = await supabase
+        .from("matches")
+        .delete()
+        .eq("id", mid)
+        .eq("creator_id", uid)
+        .select("id");
+
+      if (ed) throw ed;
+      if (deleted?.length) {
+        showToast("Kamp slettet.");
+        await loadData();
+        return;
+      }
+
+      showToast("Kampen blev ikke fjernet. Tjek i Supabase at kolonnen status findes, og at RLS tillader opretter at opdatere/slette sin kamp.");
+    } catch (e) {
+      showToast("Fejl: " + (e.message || "Prøv igen"));
+    } finally {
+      setBusyId(null);
+    }
   };
 
   if (loadingMatches) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>;
@@ -855,7 +916,7 @@ function KampeTab({ user, showToast }) {
           const mp       = matchPlayers[m.id] || [];
           const left     = (m.max_players || 4) - mp.length;
           const joined   = mp.some(p => p.user_id === user.id);
-          const isCreator = m.creator_id === user.id;
+          const isCreator = String(m.creator_id) === String(user.id);
           const busy     = busyId === m.id;
           return (
             <div key={m.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
@@ -875,13 +936,18 @@ function KampeTab({ user, showToast }) {
                 <span style={tag(theme.accentBg, theme.accent)}>{matchSkillLabel(m)}</span>
                 <span style={tag(theme.blueBg, theme.blue)}>{mp.length}/{m.max_players || 4} spillere</span>
               </div>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "14px", flexWrap: "wrap" }}>
-                {mp.map(p => (
-                  <div key={p.id || p.user_id} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#F1F5F9", border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>{p.user_emoji || "🎾"}</div>
-                    <span style={{ fontSize: "10px", color: theme.textLight, marginTop: "2px" }}>{(p.user_name || "?").split(" ")[0]}</span>
-                  </div>
-                ))}
+              <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "14px", flexWrap: "wrap" }}>
+                {mp.map((p) => {
+                  const uid = p.user_id != null ? String(p.user_id) : "";
+                  const elo = uid && eloByUserId[uid] != null ? eloByUserId[uid] : null;
+                  return (
+                    <div key={p.id || p.user_id} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "56px", maxWidth: "72px" }}>
+                      <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#F1F5F9", border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0 }}>{p.user_emoji || "🎾"}</div>
+                      <span style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px", textAlign: "center", lineHeight: 1.2, wordBreak: "break-word", width: "100%" }}>{(p.user_name || "?").split(" ")[0]}</span>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, marginTop: "2px", textAlign: "center" }}>{elo != null ? `ELO ${elo}` : "ELO —"}</span>
+                    </div>
+                  );
+                })}
                 {Array.from({ length: Math.max(0, left) }).map((_, i) => (
                   <div key={"e" + i} style={{ width: "36px", height: "36px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Plus size={12} color={theme.textLight} />
