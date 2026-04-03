@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
     }
   }
 
-  useEffect(() => {
+useEffect(() => {
     let mounted = true
 
     const init = async () => {
@@ -50,6 +50,13 @@ export function AuthProvider({ children }) {
 
     init()
 
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth loading timeout - forcing load complete')
+        setLoading(false)
+      }
+    }, 3000)
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, s) => {
         if (!mounted) return
@@ -66,6 +73,7 @@ export function AuthProvider({ children }) {
 
     return () => {
       mounted = false
+      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [])
