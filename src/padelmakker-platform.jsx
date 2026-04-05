@@ -494,7 +494,12 @@ function OnboardingPage({ onComplete, onBack }) {
 function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
-  const [tab, setTab] = useState("hjem");
+  const [tab, setTab] = useState(() => {
+    try { return localStorage.getItem("pm-tab") || "hjem"; } catch { return "hjem"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("pm-tab", tab); } catch {}
+  }, [tab]);
 
   const tabs = [
     { id: "hjem",    label: "Hjem",        icon: <Home    size={16} /> },
@@ -1095,6 +1100,8 @@ function KampeTab({ user, showToast }) {
   const [eloByUserId, setEloByUserId] = useState({});
   const [teamSelectMatch, setTeamSelectMatch] = useState(null);
   const [resultMatch, setResultMatch] = useState(null);
+  const [viewPlayer, setViewPlayer]   = useState(null);
+  const [profilesById, setProfilesById] = useState({});
   const [viewTab, setViewTab]         = useState("open"); // "open" | "active" | "completed"
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
@@ -1111,8 +1118,10 @@ function KampeTab({ user, showToast }) {
       const [cd, md, profiles] = await Promise.all([Court.filter(), Match.filter(), Profile.filter()]);
       setCourts(cd || []);
       const eloMap = {};
-      (profiles || []).forEach((pr) => { eloMap[String(pr.id)] = eloOf(pr); });
+      const pById = {};
+      (profiles || []).forEach((pr) => { eloMap[String(pr.id)] = eloOf(pr); pById[String(pr.id)] = pr; });
       setEloByUserId(eloMap);
+      setProfilesById(pById);
 
       const allMatches = md || [];
       setMatches(allMatches);
@@ -1349,7 +1358,7 @@ function KampeTab({ user, showToast }) {
             <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Hold 1</div>
             <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
               {t1.map(p => (
-                <div key={p.id || p.user_id} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
                   <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: theme.accentBg, border: "1.5px solid " + theme.accent + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>{p.user_emoji || "🎾"}</div>
                   <span style={{ fontSize: "9px", color: theme.textLight, marginTop: "3px" }}>{(p.user_name || "?").split(" ")[0]}</span>
                 </div>
@@ -1367,7 +1376,7 @@ function KampeTab({ user, showToast }) {
             <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Hold 2</div>
             <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
               {t2.map(p => (
-                <div key={p.id || p.user_id} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
                   <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: theme.blueBg, border: "1.5px solid " + theme.blue + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>{p.user_emoji || "🎾"}</div>
                   <span style={{ fontSize: "9px", color: theme.textLight, marginTop: "3px" }}>{(p.user_name || "?").split(" ")[0]}</span>
                 </div>
@@ -1517,12 +1526,12 @@ function KampeTab({ user, showToast }) {
           />
         );
       })()}
+
+      {/* Player profile modal */}
+      {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
     </div>
   );
 }
-
-/* ═══════════════════════════════════════════════════
-   PROFIL TAB
 ═══════════════════════════════════════════════════ */
 function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, refreshProfile, user: authUser } = useAuth();
@@ -1710,6 +1719,7 @@ function RankingTab({ user }) {
   const [players, setPlayers] = useState([]);
   const [eloHistory, setEloHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewPlayer, setViewPlayer] = useState(null);
   const [period, setPeriod] = useState(() => {
     try { return localStorage.getItem("pm-rank-period") || "all"; } catch { return "all"; }
   });
@@ -1869,7 +1879,7 @@ function RankingTab({ user }) {
             const isPositive = period !== "all" && score > 0;
             const isNegative = period !== "all" && score < 0;
             return (
-              <div key={p.id} className="pm-rank-row" style={{ background: me ? theme.accentBg : theme.surface, borderRadius: "8px", padding: "12px 14px", boxShadow: me ? "none" : theme.shadow, display: "flex", alignItems: "center", gap: "12px", border: me ? "1.5px solid " + theme.accent + "35" : "1px solid " + theme.border }}>
+              <div key={p.id} onClick={() => !me && setViewPlayer(p)} className="pm-rank-row" style={{ background: me ? theme.accentBg : theme.surface, borderRadius: "8px", padding: "12px 14px", boxShadow: me ? "none" : theme.shadow, display: "flex", alignItems: "center", gap: "12px", border: me ? "1.5px solid " + theme.accent + "35" : "1px solid " + theme.border, cursor: me ? "default" : "pointer" }}>
                 <div style={{ width: "28px", flexShrink: 0, textAlign: "center", fontSize: i < 3 ? "18px" : "13px", fontWeight: 700, color: i < 3 ? "inherit" : theme.textLight }}>
                   {i < 3 ? medals[i] : i + 1}
                 </div>
@@ -1895,6 +1905,7 @@ function RankingTab({ user }) {
           })}
         </div>
       )}
+      {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
     </div>
   );
 }
