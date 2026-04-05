@@ -493,10 +493,10 @@ function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
   const [tab, setTab] = useState(() => {
-    try { return sessionStorage.getItem("pm-tab") || "hjem"; } catch { return "hjem"; }
+    try { return localStorage.getItem("pm-tab") || "hjem"; } catch { return "hjem"; }
   });
   useEffect(() => {
-    try { sessionStorage.setItem("pm-tab", tab); } catch {}
+    try { localStorage.setItem("pm-tab", tab); } catch {}
   }, [tab]);
 
   const tabs = [
