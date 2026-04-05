@@ -1,0 +1,25 @@
+{
+  "name": "PadelMakker",
+  "short_name": "PadelMakker",
+  "description": "Find makker. Book bane. Spil padel.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F8FA",
+  "theme_color": "#166534",
+  "orientation": "portrait",
+  "lang": "da",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
