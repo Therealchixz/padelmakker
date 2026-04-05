@@ -1194,6 +1194,45 @@ function KampeTab({ user, showToast }) {
           );
         })()}
 
+        {/* Actions */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {status === "open" && left > 0 && !joined && (
+            <button onClick={() => setTeamSelectMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>Tilmeld mig</button>
+          )}
+          {joined && status !== "completed" && (
+            <div style={{ textAlign: "center", fontSize: "13px", color: theme.accent, fontWeight: 600 }}>✅ Tilmeldt</div>
+          )}
+          {isCreator && (status === "full" || (status === "open" && isFull)) && (
+            <button onClick={() => startMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm }}>
+              🎾 Start kamp
+            </button>
+          )}
+          {status === "in_progress" && isPlayerInMatch && !mr && (
+            <button onClick={() => setResultMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>
+              📊 Indrapportér resultat
+            </button>
+          )}
+          {mr && !mr.confirmed && mr.submitted_by !== user.id && isPlayerInMatch && (
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button onClick={() => confirmResult(m.id)} disabled={busy} style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px" }}>✅ Bekræft</button>
+              <button onClick={() => rejectResult(m.id)} disabled={busy} style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.red }}>❌ Afvis</button>
+            </div>
+          )}
+          {joined && !isCreator && (status === "open" || status === "full") && (
+            <button onClick={() => leaveMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.textMid }}>
+              <UserMinus size={14} /> Afmeld mig
+            </button>
+          )}
+          {isCreator && status !== "completed" && status !== "in_progress" && (
+            <button onClick={() => deleteMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}>
+              <Trash2 size={14} /> Slet kamp
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       <div className="pm-kampe-head" style={{ marginBottom: "20px" }}>
