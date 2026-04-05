@@ -1535,7 +1535,7 @@ function KampeTab({ user, showToast }) {
 /* ═══════════════════════════════════════════════════
    PROFIL TAB
 ═══════════════════════════════════════════════════ */
-function ProfilTab({ user, showToast, setTab }) {{
+function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, refreshProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
   const [editing, setEditing] = useState(false);
