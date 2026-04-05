@@ -121,13 +121,37 @@ function resolveDisplayName(profileRow, authUser) {
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
   const [toast, setToast] = useState(null);
+  const [resetMode, setResetMode] = useState(false);
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
   const handleLogout = async () => { await signOut(); };
+
+  // Detect password recovery event from Supabase
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setResetMode(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   if (loading || (user && profileLoading)) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100dvh", background: theme.bg, padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" }}>
         <div className="pm-spinner" />
+      </div>
+    );
+  }
+
+  if (resetMode) {
+    return (
+      <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text }}>
+        {toast && (
+          <div className="pm-toast" style={{ position: "fixed", top: "max(12px, env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", background: theme.accent, color: "#fff", padding: "11px 22px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, zIndex: 9999, boxShadow: theme.shadowLg }}>
+            {toast}
+          </div>
+        )}
+        <ResetPasswordPage onDone={() => { setResetMode(false); showToast("Adgangskode opdateret! ✅"); }} />
       </div>
     );
   }
@@ -159,8 +183,42 @@ function PublicPages({ showToast }) {
 }
 
 /* ═══════════════════════════════════════════════════
-   LANDING PAGE
+   RESET PASSWORD PAGE
 ═══════════════════════════════════════════════════ */
+function ResetPasswordPage({ onDone }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [err, setErr] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleReset = async () => {
+    if (!password || password.length < 6) { setErr("Adgangskode skal være mindst 6 tegn"); return; }
+    if (password !== confirm) { setErr("Adgangskoderne matcher ikke"); return; }
+    setSubmitting(true); setErr("");
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      onDone();
+    } catch (e) {
+      setErr(e.message || "Kunne ikke opdatere adgangskode. Prøv igen.");
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <div className="pm-auth-narrow">
+      <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Ny adgangskode</h1>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Vælg din nye adgangskode.</p>
+      <label style={labelStyle}>Ny adgangskode</label>
+      <input value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="Mindst 6 tegn" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+      <label style={labelStyle}>Gentag adgangskode</label>
+      <input value={confirm} onChange={e => { setConfirm(e.target.value); setErr(""); }} placeholder="Gentag adgangskode" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+      {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
+      <button onClick={handleReset} disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
+        {submitting ? "Opdaterer..." : <><KeyRound size={14} /> Gem ny adgangskode</>}
+      </button>
+    </div>
+  );
+}
 function LandingPage({ onGetStarted, onLogin }) {
   const steps = [
     { step: "01", icon: <UserPlus  size={22} color={theme.accent} />, title: "Opret profil", desc: "Angiv dit niveau og område." },
