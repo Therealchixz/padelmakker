@@ -492,7 +492,12 @@ function OnboardingPage({ onComplete, onBack }) {
 function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
-  const [tab, setTab] = useState("hjem");
+  const [tab, setTab] = useState(() => {
+    try { return sessionStorage.getItem("pm-tab") || "hjem"; } catch { return "hjem"; }
+  });
+  useEffect(() => {
+    try { sessionStorage.setItem("pm-tab", tab); } catch {}
+  }, [tab]);
 
   const tabs = [
     { id: "hjem",    label: "Hjem",        icon: <Home    size={16} /> },
