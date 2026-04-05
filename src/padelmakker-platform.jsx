@@ -384,13 +384,13 @@ function OnboardingPage({ onComplete, onBack }) {
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ name: "", email: "", password: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾" });
+  const [form, setForm]           = useState({ name: "", email: "", password: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
   const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
 
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
   const canNext = () => {
-    if (step === 0) return form.name.trim() && form.email.trim() && form.password.trim();
+    if (step === 0) return form.name.trim() && form.email.trim() && form.password.trim() && form.birth_year.length === 4;
     if (step === 1) return form.level && form.style;
     if (step === 2) return form.area && form.availability.length > 0;
     return true;
@@ -403,7 +403,7 @@ function OnboardingPage({ onComplete, onBack }) {
       await signUp(form.email.trim(), form.password, {
         full_name: form.name, level: Math.round(levelNum * 10) / 10,
         play_style: form.style, area: form.area, availability: form.availability,
-        bio: form.bio, avatar: form.avatar, elo_rating: 1000, games_played: 0, games_won: 0,
+        bio: form.bio, avatar: form.avatar, birth_year: parseInt(form.birth_year) || null, elo_rating: 1000, games_played: 0, games_won: 0,
       });
       if (onComplete) onComplete();
     } catch (e) {
@@ -423,7 +423,9 @@ function OnboardingPage({ onComplete, onBack }) {
       <label style={labelStyle}>Email</label>
       <input value={form.email}    onChange={e => set("email", e.target.value)}    placeholder="din@email.dk"      type="email"    style={{ ...inputStyle, marginBottom: "14px" }} />
       <label style={labelStyle}>Adgangskode</label>
-      <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 6 tegn"     type="password" style={inputStyle} />
+      <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 6 tegn"     type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+      <label style={labelStyle}>Fødselsår</label>
+      <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={inputStyle} />
     </div>,
 
     <div key={1}>
@@ -649,6 +651,7 @@ function MakkereTab({ user, showToast }) {
   const [filterArea, setFilterArea]   = useState("all");
   const [players, setPlayers]         = useState([]);
   const [loading, setLoading]         = useState(true);
+  const [viewPlayer, setViewPlayer]   = useState(null);
 
   const myElo = eloOf(user);
 
@@ -692,9 +695,11 @@ function MakkereTab({ user, showToast }) {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {filtered.map(p => (
+        {filtered.map(p => {
+          const age = p.birth_year ? new Date().getFullYear() - p.birth_year : null;
+          return (
           <div key={p.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "clamp(14px,3vw,18px)", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-            <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+            <div onClick={() => setViewPlayer(p)} style={{ display: "flex", gap: "14px", alignItems: "flex-start", cursor: "pointer" }}>
               <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#F1F5F9", border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
                 {p.avatar || "🎾"}
               </div>
@@ -705,24 +710,27 @@ function MakkereTab({ user, showToast }) {
                 </div>
                 <div style={{ display: "flex", gap: "5px", marginTop: "7px", flexWrap: "wrap" }}>
                   <span style={tag(theme.accentBg, theme.accent)}>ELO {eloOf(p)}</span>
-                  <span style={tag(theme.blueBg,   theme.blue)}>{p.play_style || "?"}</span>
-                  <span style={tag(theme.warmBg,   theme.warm)}>{p.games_played || 0} kampe</span>
+                  {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
+                  <span style={tag(theme.blueBg, theme.blue)}>{p.play_style || "?"}</span>
+                  <span style={tag(theme.warmBg, theme.warm)}>{p.games_played || 0} kampe</span>
                 </div>
                 {p.bio && <p style={{ fontSize: "12px", color: theme.textMid, marginTop: "8px", lineHeight: 1.5 }}>{p.bio}</p>}
               </div>
             </div>
             <div className="pm-makker-card-actions">
-              <button onClick={() => showToast("Besked sendt!")} style={{ ...btn(false), padding: "7px 14px", fontSize: "12px" }}>
-                <MessageCircle size={13} /> Skriv
+              <button onClick={() => setViewPlayer(p)} style={{ ...btn(false), padding: "7px 14px", fontSize: "12px" }}>
+                👤 Se profil
               </button>
               <button onClick={() => showToast("Invitation sendt! 🎾")} style={{ ...btn(true), padding: "7px 14px", fontSize: "12px" }}>
                 Invitér
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
         {filtered.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>🔍</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen spillere fundet</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Prøv at ændre filtre eller søg med et andet navn.</div></div>}
       </div>
+      {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
     </div>
   );
 }
@@ -867,6 +875,88 @@ async function calculateAndApplyElo(matchId, matchWinner, ignoredPlayersList, sh
 /* ═══════════════════════════════════════════════════
    TEAM SELECTION MODAL
 ═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════
+   PLAYER PROFILE MODAL
+═══════════════════════════════════════════════════ */
+function PlayerProfileModal({ player, onClose }) {
+  if (!player) return null;
+  const elo = eloOf(player);
+  const games = player.games_played || 0;
+  const wins = player.games_won || 0;
+  const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
+  const age = player.birth_year ? new Date().getFullYear() - player.birth_year : null;
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "14px", padding: "28px", maxWidth: "380px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        {/* Header */}
+        <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "20px" }}>
+          <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: theme.accentBg, border: "2px solid " + theme.accent + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", flexShrink: 0 }}>
+            {player.avatar || "🎾"}
+          </div>
+          <div>
+            <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{player.full_name || player.name || "Spiller"}</div>
+            <div style={{ display: "flex", gap: "5px", marginTop: "6px", flexWrap: "wrap" }}>
+              <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>
+              {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
+              <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {player.area || "?"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "16px" }}>
+          {[
+            { label: "ELO", value: elo, color: theme.accent },
+            { label: "Kampe", value: games, color: theme.blue },
+            { label: "Sejre", value: wins, color: theme.warm },
+            { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
+          ].map((s, i) => (
+            <div key={i} style={{ textAlign: "center", padding: "10px 4px", background: "#F8FAFC", borderRadius: "8px" }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Details */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+            <span style={{ color: theme.textLight }}>Spillestil</span>
+            <span style={{ fontWeight: 600 }}>{player.play_style || "Ikke angivet"}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+            <span style={{ color: theme.textLight }}>Område</span>
+            <span style={{ fontWeight: 600 }}>{player.area || "Ikke angivet"}</span>
+          </div>
+          {age && (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+              <span style={{ color: theme.textLight }}>Alder</span>
+              <span style={{ fontWeight: 600 }}>{age} år</span>
+            </div>
+          )}
+          {player.availability && player.availability.length > 0 && (
+            <div style={{ fontSize: "13px" }}>
+              <span style={{ color: theme.textLight }}>Tilgængelighed</span>
+              <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginTop: "4px" }}>
+                {player.availability.map(a => <span key={a} style={tag(theme.accentBg, theme.accent)}>{a}</span>)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {player.bio && (
+          <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", padding: "12px", background: "#F8FAFC", borderRadius: "8px", fontStyle: "italic" }}>
+            "{player.bio}"
+          </p>
+        )}
+
+        <button onClick={onClose} style={{ ...btn(false), width: "100%", justifyContent: "center" }}>Luk</button>
+      </div>
+    </div>
+  );
+}
+
 function TeamSelectModal({ matchPlayers, onSelect, onClose }) {
   const team1 = matchPlayers.filter(p => Number(p.team) === 1);
   const team2 = matchPlayers.filter(p => Number(p.team) === 2);
@@ -1011,6 +1101,7 @@ function KampeTab({ user, showToast }) {
     date: new Date().toISOString().split("T")[0],
     time: "20:00",
     time_end: "22:00",
+    description: "",
   });
 
   useEffect(() => { loadData(); }, []);
@@ -1057,6 +1148,7 @@ function KampeTab({ user, showToast }) {
         creator_id: user.id, court_id: newMatch.court_id, court_name: court?.name || "",
         date: newMatch.date, time: fmtClock(newMatch.time), time_end: fmtClock(newMatch.time_end),
         level_range: String(myElo), status: "open", max_players: 4, current_players: 1,
+        description: newMatch.description.trim() || null,
       };
       const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
@@ -1202,7 +1294,12 @@ function KampeTab({ user, showToast }) {
   };
 
   const getStatus = (m) => (m.status ?? "open").toString().toLowerCase();
-  const openMatches = matches.filter(m => { const s = getStatus(m); return s === "open" || s === "active" || s === "full"; });
+  const sortJoinedFirst = (list) => [...list].sort((a, b) => {
+    const aJ = (matchPlayers[a.id] || []).some(p => p.user_id === user.id) ? 1 : 0;
+    const bJ = (matchPlayers[b.id] || []).some(p => p.user_id === user.id) ? 1 : 0;
+    return bJ - aJ;
+  });
+  const openMatches = sortJoinedFirst(matches.filter(m => { const s = getStatus(m); return s === "open" || s === "active" || s === "full"; }));
   const activeMatches = matches.filter(m => getStatus(m) === "in_progress" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id));
   const completedMatches = matches.filter(m => getStatus(m) === "completed" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id)).slice(0, 20);
 
@@ -1240,6 +1337,7 @@ function KampeTab({ user, showToast }) {
               <span>{m.date} · {matchTimeLabel(m)}</span>
             </div>
             <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
+            {m.description && <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "4px", fontStyle: "italic", lineHeight: 1.4 }}>💬 {m.description}</div>}
           </div>
           <span style={{ ...tag(statusLabel.bg, statusLabel.color), flexShrink: 0 }}>{statusLabel.text}</span>
         </div>
@@ -1375,6 +1473,8 @@ function KampeTab({ user, showToast }) {
             <div><label style={labelStyle}>Til</label>
               <input type="time" value={newMatch.time_end} onChange={e => setNewMatch(m => ({ ...m, time_end: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
           </div>
+          <label style={{ ...labelStyle, marginTop: "12px" }}>Beskrivelse (valgfrit)</label>
+          <textarea value={newMatch.description} onChange={e => setNewMatch(m => ({ ...m, description: e.target.value }))} placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'" style={{ ...inputStyle, fontSize: "13px", height: "60px", resize: "vertical" }} />
           <button onClick={createMatch} disabled={creating || !newMatch.court_id} style={{ ...btn(true), marginTop: "16px", width: "100%", justifyContent: "center", opacity: creating ? 0.55 : 1 }}>
             {creating ? "Opretter..." : "Opret kamp"}
           </button>
@@ -1436,6 +1536,7 @@ function ProfilTab({ user, showToast, setTab }) {
     bio: user.bio || "",
     avatar: user.avatar || "🎾",
     availability: user.availability || [],
+    birth_year: user.birth_year ? String(user.birth_year) : "",
   });
 
   const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
@@ -1454,6 +1555,7 @@ function ProfilTab({ user, showToast, setTab }) {
         bio: form.bio.trim(),
         avatar: form.avatar,
         availability: form.availability,
+        birth_year: form.birth_year ? parseInt(form.birth_year) : null,
       });
       refreshProfile();
       setEditing(false);
@@ -1485,6 +1587,7 @@ function ProfilTab({ user, showToast, setTab }) {
               <div style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
               <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
                 <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>
+                {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{new Date().getFullYear() - user.birth_year} år</span>}
                 <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
                 <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.area || "?"}</span>
               </div>
@@ -1562,6 +1665,10 @@ function ProfilTab({ user, showToast, setTab }) {
         {/* Name */}
         <label style={labelStyle}>Navn</label>
         <input value={form.full_name} onChange={e => set("full_name", e.target.value)} placeholder="Dit navn" style={{ ...inputStyle, marginBottom: "14px" }} />
+
+        {/* Birth year */}
+        <label style={labelStyle}>Fødselsår</label>
+        <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={{ ...inputStyle, marginBottom: "14px" }} />
 
         {/* Area */}
         <label style={labelStyle}>Område</label>
