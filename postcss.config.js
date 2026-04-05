@@ -1,3 +1,6 @@
-node_modules/
-dist/
-.env
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
