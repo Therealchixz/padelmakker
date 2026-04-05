@@ -6,6 +6,7 @@ import {
   Home, Users, MapPin, Swords, Trophy,
   UserPlus, TrendingUp, MessageCircle, Search,
   LogOut, Plus, Star, Clock, Building2, Sun, ArrowRight, Trash2, UserMinus,
+  Settings, KeyRound, Save, X,
 } from "lucide-react";
 
 const LEVELS      = ["1-2 (Helt ny)", "3-4 (Begynder)", "5-6 (Øvet)", "7-8 (Avanceret)", "9-10 (Elite)"];
@@ -244,6 +245,8 @@ function LoginPage({ onBack }) {
   const [password, setPassword]   = useState("");
   const [err, setErr]             = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) { setErr("Indtast email og adgangskode"); return; }
@@ -255,6 +258,45 @@ function LoginPage({ onBack }) {
       setSubmitting(false);
     }
   };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim() || !email.includes("@")) { setErr("Indtast din email først"); return; }
+    setSubmitting(true); setErr("");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: window.location.origin,
+      });
+      if (error) throw error;
+      setForgotSent(true);
+    } catch (e) {
+      setErr(e.message || "Kunne ikke sende nulstillingsmail.");
+    } finally { setSubmitting(false); }
+  };
+
+  if (forgotMode) {
+    return (
+      <div className="pm-auth-narrow">
+        <button onClick={() => { setForgotMode(false); setForgotSent(false); setErr(""); }} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage til login</button>
+        <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Glemt adgangskode</h1>
+        {forgotSent ? (
+          <div style={{ background: theme.accentBg, padding: "20px", borderRadius: theme.radius, marginTop: "20px" }}>
+            <p style={{ fontSize: "14px", color: theme.accent, fontWeight: 600, marginBottom: "8px" }}>✉️ Mail sendt!</p>
+            <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5 }}>Tjek din indbakke på <strong>{email}</strong> og følg linket for at nulstille din adgangskode.</p>
+          </div>
+        ) : (
+          <>
+            <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Indtast din email, så sender vi et link til at nulstille din adgangskode.</p>
+            <label style={labelStyle}>Email</label>
+            <input value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
+            {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
+            <button onClick={handleForgotPassword} disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
+              {submitting ? "Sender..." : "Send nulstillingslink"}
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="pm-auth-narrow">
@@ -268,6 +310,9 @@ function LoginPage({ onBack }) {
       {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
       <button onClick={handleLogin} disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
         {submitting ? "Logger ind..." : "Log ind"}
+      </button>
+      <button onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", color: theme.accent, fontSize: "13px", marginTop: "16px", cursor: "pointer", fontFamily: font, fontWeight: 500, width: "100%", textAlign: "center" }}>
+        Glemt adgangskode?
       </button>
     </div>
   );
@@ -397,6 +442,7 @@ function DashboardPage({ user, onLogout, showToast }) {
     { id: "baner",   label: "Baner",       icon: <MapPin  size={16} /> },
     { id: "kampe",   label: "Kampe",       icon: <Swords  size={16} /> },
     { id: "ranking", label: "Ranking",     icon: <Trophy  size={16} /> },
+    { id: "profil",  label: "Profil",      icon: <Settings size={16} /> },
   ];
 
   return (
@@ -428,6 +474,7 @@ function DashboardPage({ user, onLogout, showToast }) {
         {tab === "baner"   && <BanerTab   showToast={showToast} />}
         {tab === "kampe"   && <KampeTab   user={user} showToast={showToast} />}
         {tab === "ranking" && <RankingTab user={user} />}
+        {tab === "profil"  && <ProfilTab  user={user} showToast={showToast} setTab={setTab} />}
       </div>
     </div>
   );
@@ -616,7 +663,7 @@ function MakkereTab({ user, showToast }) {
             </div>
           </div>
         ))}
-        {filtered.length === 0 && <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Ingen spillere fundet.</div>}
+        {filtered.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>🔍</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen spillere fundet</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Prøv at ændre filtre eller søg med et andet navn.</div></div>}
       </div>
     </div>
   );
@@ -1282,9 +1329,9 @@ function KampeTab({ user, showToast }) {
         {viewTab === "active" && activeMatches.map(m => renderMatchCard(m, "active"))}
         {viewTab === "completed" && completedMatches.map(m => renderMatchCard(m, "completed"))}
 
-        {viewTab === "open" && openMatches.length === 0 && <div style={{ textAlign: "center", padding: "40px", color: theme.textLight }}>Ingen åbne kampe. Opret den første!</div>}
-        {viewTab === "active" && activeMatches.length === 0 && <div style={{ textAlign: "center", padding: "40px", color: theme.textLight }}>Ingen aktive kampe.</div>}
-        {viewTab === "completed" && completedMatches.length === 0 && <div style={{ textAlign: "center", padding: "40px", color: theme.textLight }}>Ingen afsluttede kampe endnu.</div>}
+        {viewTab === "open" && openMatches.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>⚔️</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen åbne kampe</div><div style={{ fontSize: "13px", lineHeight: 1.5, marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med!</div><button onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}><Plus size={14} /> Opret kamp</button></div>}
+        {viewTab === "active" && activeMatches.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>🎾</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen aktive kampe</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Tilmeld dig en åben kamp for at komme i gang.</div></div>}
+        {viewTab === "completed" && completedMatches.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>📊</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen afsluttede kampe endnu</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Spil din første kamp og se dit resultat her.</div></div>}
       </div>
 
       {/* Team selection modal */}
@@ -1312,6 +1359,184 @@ function KampeTab({ user, showToast }) {
           />
         );
       })()}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   PROFIL TAB
+═══════════════════════════════════════════════════ */
+function ProfilTab({ user, showToast, setTab }) {
+  const { updateProfile, refreshProfile, user: authUser } = useAuth();
+  const displayName = resolveDisplayName(user, authUser);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    full_name: user.full_name || user.name || "",
+    area: user.area || "København",
+    play_style: user.play_style || "Ved ikke endnu",
+    bio: user.bio || "",
+    avatar: user.avatar || "🎾",
+    availability: user.availability || [],
+  });
+
+  const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
+
+  const handleSave = async () => {
+    if (!form.full_name.trim()) { showToast("Navn må ikke være tomt"); return; }
+    setSaving(true);
+    try {
+      await updateProfile({
+        full_name: form.full_name.trim(),
+        name: form.full_name.trim(),
+        area: form.area,
+        play_style: form.play_style,
+        bio: form.bio.trim(),
+        avatar: form.avatar,
+        availability: form.availability,
+      });
+      refreshProfile();
+      setEditing(false);
+      showToast("Profil opdateret! ✅");
+    } catch (e) {
+      console.error(e);
+      showToast("Kunne ikke gemme. Prøv igen.");
+    } finally { setSaving(false); }
+  };
+
+  const elo = Math.round(Number(user.elo_rating) || 1000);
+  const games = user.games_played || 0;
+  const wins = user.games_won || 0;
+  const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
+
+  if (!editing) {
+    return (
+      <div>
+        <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>
+
+        {/* Profile card */}
+        <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
+          <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "20px" }}>
+            <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: theme.accentBg, border: "2px solid " + theme.accent + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", flexShrink: 0 }}>
+              {user.avatar || "🎾"}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{displayName}</div>
+              <div style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
+              <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
+                <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>
+                <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
+                <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.area || "?"}</span>
+              </div>
+            </div>
+          </div>
+
+          {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>"{user.bio}"</p>}
+
+          {/* Stats */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
+            {[
+              { label: "ELO", value: elo, color: theme.accent },
+              { label: "Kampe", value: games, color: theme.blue },
+              { label: "Sejre", value: wins, color: theme.warm },
+              { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
+            ].map((s, i) => (
+              <div key={i} style={{ textAlign: "center", padding: "12px 4px", background: "#F8FAFC", borderRadius: "8px" }}>
+                <div style={{ fontSize: "18px", fontWeight: 800, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Availability */}
+          {user.availability && user.availability.length > 0 && (
+            <div style={{ marginBottom: "16px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tilgængelighed</div>
+              <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                {user.availability.map(a => <span key={a} style={tag(theme.accentBg, theme.accent)}>{a}</span>)}
+              </div>
+            </div>
+          )}
+
+          <button onClick={() => setEditing(true)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
+            <Settings size={14} /> Rediger profil
+          </button>
+        </div>
+
+        {/* Quick links */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          <button onClick={() => setTab("kampe")} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+            <Swords size={18} color={theme.accent} />
+            <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine kampe</div>
+            <div style={{ fontSize: "11px", color: theme.textLight }}>{games} spillet</div>
+          </button>
+          <button onClick={() => setTab("ranking")} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+            <Trophy size={18} color={theme.warm} />
+            <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Ranking</div>
+            <div style={{ fontSize: "11px", color: theme.textLight }}>ELO {elo}</div>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // EDIT MODE
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Rediger profil</h2>
+        <button onClick={() => setEditing(false)} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
+          <X size={14} /> Annullér
+        </button>
+      </div>
+
+      <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+        {/* Avatar */}
+        <label style={labelStyle}>Avatar</label>
+        <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
+          {avatars.map(a => (
+            <button key={a} onClick={() => set("avatar", a)} style={{ width: "48px", height: "48px", borderRadius: "50%", fontSize: "22px", border: form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border, background: form.avatar === a ? theme.accentBg : theme.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{a}</button>
+          ))}
+        </div>
+
+        {/* Name */}
+        <label style={labelStyle}>Navn</label>
+        <input value={form.full_name} onChange={e => set("full_name", e.target.value)} placeholder="Dit navn" style={{ ...inputStyle, marginBottom: "14px" }} />
+
+        {/* Area */}
+        <label style={labelStyle}>Område</label>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+          {AREAS.map(a => (
+            <button key={a} onClick={() => set("area", a)} style={{ ...btn(form.area === a), padding: "6px 12px", fontSize: "12px" }}>{a}</button>
+          ))}
+        </div>
+
+        {/* Play style */}
+        <label style={labelStyle}>Spillestil</label>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+          {PLAY_STYLES.map(s => (
+            <button key={s} onClick={() => set("play_style", s)} style={{ ...btn(form.play_style === s), padding: "6px 12px", fontSize: "12px" }}>{s}</button>
+          ))}
+        </div>
+
+        {/* Availability */}
+        <label style={labelStyle}>Hvornår kan du spille?</label>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+          {AVAILABILITY.map(a => (
+            <button key={a} onClick={() => toggleAvail(a)} style={{ ...btn(form.availability.includes(a)), padding: "6px 12px", fontSize: "12px" }}>{a}</button>
+          ))}
+        </div>
+
+        {/* Bio */}
+        <label style={labelStyle}>Bio</label>
+        <textarea value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl lidt om dig som spiller..." style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "20px" }} />
+
+        <button onClick={handleSave} disabled={saving} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: saving ? 0.6 : 1 }}>
+          {saving ? "Gemmer..." : <><Save size={14} /> Gem ændringer</>}
+        </button>
+      </div>
     </div>
   );
 }
