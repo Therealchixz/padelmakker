@@ -35,8 +35,14 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
   const profileReqId = useRef(0)
+  const justSignedUp = useRef(false)
 
   const loadProfile = useCallback((userId) => {
+    // Skip loading if we just signed up — profile is already set from upsert
+    if (justSignedUp.current) {
+      justSignedUp.current = false
+      return
+    }
     const id = ++profileReqId.current
     setProfileLoading(true)
     Promise.race([
@@ -118,7 +124,7 @@ export function AuthProvider({ children }) {
     })
     if (error) throw error
     if (data.user) {
-      await supabase.from('profiles').upsert({
+      const profileData = {
         id: data.user.id,
         email: email,
         name: metadata.full_name || 'Ny spiller',
@@ -129,20 +135,24 @@ export function AuthProvider({ children }) {
         availability: metadata.availability || [],
         bio: metadata.bio || '',
         avatar: metadata.avatar || '🎾',
-        elo_rating: 1000,
+        elo_rating: metadata.elo_rating || 1000,
         games_played: 0,
         games_won: 0,
         birth_year: metadata.birth_year || null,
-      })
+      }
+
+      const { error: upsertErr } = await supabase.from('profiles').upsert(profileData)
+      if (upsertErr) console.error('Profile upsert error:', upsertErr.message)
+
       if (data.session) {
+        // Mark that we just signed up so onAuthStateChange doesn't overwrite
+        justSignedUp.current = true
         setSession(data.session)
         setUser(data.user)
-        const p = await Promise.race([
-          fetchProfileQuery(data.user.id),
-          new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
-        ])
-        setProfile(p)
+        // Set profile directly from the data we just upserted — don't re-fetch
+        setProfile(profileData)
         setProfileLoading(false)
+        setLoading(false)
       }
     }
     return data
