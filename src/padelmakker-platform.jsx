@@ -1177,66 +1177,22 @@ function KampeTab({ user, showToast }) {
         </div>
 
         {/* Score display for completed/result pending */}
-        {mr && (
-          <div style={{ padding: "12px", background: mr.confirmed ? theme.accentBg : theme.warmBg, borderRadius: "8px", marginBottom: "12px", textAlign: "center" }}>
-            <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "0.05em" }}>{mr.score_display || "—"}</div>
-            <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>
-              {mr.confirmed ? `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt` : "⏳ Venter på bekræftelse"}
+        {mr && (() => {
+          const myTeam = t1.some(p => p.user_id === user.id) ? "team1" : t2.some(p => p.user_id === user.id) ? "team2" : null;
+          const iWon = mr.confirmed && myTeam === mr.match_winner;
+          const iLost = mr.confirmed && myTeam && myTeam !== mr.match_winner;
+          const bgColor = !mr.confirmed ? theme.warmBg : iWon ? theme.accentBg : iLost ? theme.redBg : "#F1F5F9";
+          const borderColor = !mr.confirmed ? theme.warm : iWon ? theme.accent : iLost ? theme.red : theme.border;
+          const textColor = !mr.confirmed ? theme.warm : iWon ? theme.accent : iLost ? theme.red : theme.textMid;
+          return (
+            <div style={{ padding: "14px", background: bgColor, borderRadius: "8px", marginBottom: "12px", textAlign: "center", border: "1.5px solid " + borderColor + "40" }}>
+              <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "0.05em", color: textColor }}>{mr.score_display || "—"}</div>
+              <div style={{ fontSize: "12px", color: textColor, marginTop: "5px", fontWeight: 600 }}>
+                {!mr.confirmed ? "⏳ Venter på bekræftelse" : iWon ? "🏆 Du vandt!" : iLost ? "😞 Du tabte" : `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt`}
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {/* Join (open matches only) */}
-          {status === "open" && left > 0 && !joined && (
-            <button onClick={() => setTeamSelectMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>Tilmeld mig</button>
-          )}
-
-          {/* Already joined indicator */}
-          {joined && status !== "completed" && (
-            <div style={{ textAlign: "center", fontSize: "13px", color: theme.accent, fontWeight: 600 }}>✅ Tilmeldt</div>
-          )}
-
-          {/* Start match (creator only, when full) */}
-          {isCreator && (status === "full" || (status === "open" && isFull)) && (
-            <button onClick={() => startMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm }}>
-              🎾 Start kamp
-            </button>
-          )}
-
-          {/* Report result (in_progress, any player) */}
-          {status === "in_progress" && isPlayerInMatch && !mr && (
-            <button onClick={() => setResultMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>
-              📊 Indrapportér resultat
-            </button>
-          )}
-
-          {/* Confirm/reject result (in_progress, result submitted, not by current user) */}
-          {mr && !mr.confirmed && mr.submitted_by !== user.id && isPlayerInMatch && (
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={() => confirmResult(m.id)} disabled={busy} style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px" }}>✅ Bekræft</button>
-              <button onClick={() => rejectResult(m.id)} disabled={busy} style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.red }}>❌ Afvis</button>
-            </div>
-          )}
-
-          {/* Leave match */}
-          {joined && !isCreator && (status === "open" || status === "full") && (
-            <button onClick={() => leaveMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.textMid }}>
-              <UserMinus size={14} /> Afmeld mig
-            </button>
-          )}
-
-          {/* Delete match (creator only) */}
-          {isCreator && status !== "completed" && status !== "in_progress" && (
-            <button onClick={() => deleteMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}>
-              <Trash2 size={14} /> Slet kamp
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
+          );
+        })()}
 
   return (
     <div>
