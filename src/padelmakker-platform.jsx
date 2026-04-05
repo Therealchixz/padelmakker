@@ -763,8 +763,8 @@ async function calculateAndApplyElo(matchId, matchWinner, ignoredPlayersList, sh
    TEAM SELECTION MODAL
 ═══════════════════════════════════════════════════ */
 function TeamSelectModal({ matchPlayers, onSelect, onClose }) {
-  const team1 = matchPlayers.filter(p => p.team === 1);
-  const team2 = matchPlayers.filter(p => p.team === 2);
+  const team1 = matchPlayers.filter(p => Number(p.team) === 1);
+  const team2 = matchPlayers.filter(p => Number(p.team) === 2);
   const team1Full = team1.length >= 2;
   const team2Full = team2.length >= 2;
 
