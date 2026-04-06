@@ -829,6 +829,33 @@ function eloOf(p) {
   return Number.isFinite(v) ? Math.round(v) : 1000;
 }
 
+/** Kræver rækker med `date` og `result` ("win" / andet). Sorterer kronologisk internt. */
+function winStreaksFromEloHistory(raw) {
+  if (!raw?.length) return { currentStreak: 0, bestStreak: 0 };
+  const sorted = [...raw].sort((a, b) => new Date(a.date) - new Date(b.date));
+  let bestStreak = 0;
+  for (let start = 0; start < sorted.length; start++) {
+    let s = 0;
+    for (let j = start; j < sorted.length; j++) {
+      if (sorted[j].result === "win") {
+        s++;
+        bestStreak = Math.max(bestStreak, s);
+      } else break;
+    }
+  }
+  let currentStreak = 0;
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if (sorted[i].result === "win") {
+      currentStreak++;
+      bestStreak = Math.max(bestStreak, currentStreak);
+    } else {
+      if (i === sorted.length - 1) currentStreak = 0;
+      break;
+    }
+  }
+  return { currentStreak, bestStreak };
+}
+
 function fmtClock(t) {
   if (t == null || t === "") return "";
   return String(t).slice(0, 5);
@@ -1089,6 +1116,39 @@ async function calculateAndApplyElo(matchId, matchWinner, ignoredPlayersList, sh
    PLAYER PROFILE MODAL
 ═══════════════════════════════════════════════════ */
 function PlayerProfileModal({ player, onClose }) {
+  const [streakLoading, setStreakLoading] = useState(true);
+  const [streakError, setStreakError] = useState(false);
+  const [streakStats, setStreakStats] = useState({ currentStreak: 0, bestStreak: 0 });
+
+  useEffect(() => {
+    if (!player?.id) {
+      setStreakLoading(false);
+      setStreakStats({ currentStreak: 0, bestStreak: 0 });
+      return;
+    }
+    let cancelled = false;
+    setStreakLoading(true);
+    setStreakError(false);
+    (async () => {
+      try {
+        const { data, error } = await supabase.from("elo_history").select("*")
+          .eq("user_id", player.id).order("date", { ascending: true });
+        if (cancelled) return;
+        if (error) throw error;
+        const rows = (data || []).filter(h => h.old_rating != null && h.match_id != null);
+        setStreakStats(winStreaksFromEloHistory(rows));
+      } catch {
+        if (!cancelled) {
+          setStreakError(true);
+          setStreakStats({ currentStreak: 0, bestStreak: 0 });
+        }
+      } finally {
+        if (!cancelled) setStreakLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [player?.id]);
+
   if (!player) return null;
   const elo = eloOf(player);
   const games = player.games_played || 0;
@@ -1127,6 +1187,23 @@ function PlayerProfileModal({ player, onClose }) {
               <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
             </div>
           ))}
+        </div>
+
+        {/* Sejrsstreak (samme logik som egen profil — data fra elo_history) */}
+        <div style={{ marginBottom: "16px", padding: "12px 14px", background: "#FFFBEB", borderRadius: "10px", border: "1px solid rgba(217, 119, 6, 0.2)" }}>
+          <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em" }}>Sejrsstreak</div>
+          {streakLoading ? (
+            <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "8px" }}>Indlæser…</div>
+          ) : streakError ? (
+            <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "6px", lineHeight: 1.4 }}>Kunne ikke hente kamphistorik.</div>
+          ) : (
+            <>
+              <div style={{ fontSize: "22px", fontWeight: 800, color: theme.warm, marginTop: "4px", letterSpacing: "-0.02em" }}>
+                {streakStats.currentStreak > 0 ? `🔥 ${streakStats.currentStreak}` : "0"}
+              </div>
+              <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste: {streakStats.bestStreak} i træk</div>
+            </>
+          )}
         </div>
 
         {/* Details */}
@@ -2119,17 +2196,7 @@ function ProfilTab({ user, showToast, setTab }) {
 
         {/* Ekstra statistik */}
         {!statsLoading && (() => {
-          let currentStreak = 0, bestStreak = 0;
-          for (let i = eloHistory.length - 1; i >= 0; i--) {
-            if (eloHistory[i].result === "win") { currentStreak++; bestStreak = Math.max(bestStreak, currentStreak); }
-            else if (i === eloHistory.length - 1 || eloHistory[i].result !== "win") { if (i === eloHistory.length - 1) currentStreak = 0; break; }
-          }
-          for (const h of eloHistory) {
-            let s = 0;
-            for (let j = eloHistory.indexOf(h); j < eloHistory.length; j++) {
-              if (eloHistory[j].result === "win") { s++; bestStreak = Math.max(bestStreak, s); } else break;
-            }
-          }
+          const { currentStreak, bestStreak } = winStreaksFromEloHistory(eloHistory);
 
           const monthStats = {};
           eloHistory.forEach(h => {
