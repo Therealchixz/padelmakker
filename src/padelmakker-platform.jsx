@@ -1840,12 +1840,29 @@ function EloGraph({ data }) {
     return { x, y, val: values[i], date: d.date };
   });
 
-  const pickNearestIndex = (clientX) => {
+  /** Map screen X to SVG user space (viewBox coords). Default "meet" scaling centers the graph, so rect-width ≠ viewBox width — getScreenCTM fixes that. */
+  const clientXToSvgX = (clientX) => {
     const el = svgRef.current;
-    if (!el || points.length === 0) return 0;
+    if (!el) return 0;
+    const pt = el.createSVGPoint();
+    pt.x = clientX;
+    pt.y = 0;
+    const ctm = el.getScreenCTM();
+    if (ctm) {
+      const inv = ctm.inverse();
+      return pt.matrixTransform(inv).x;
+    }
     const rect = el.getBoundingClientRect();
     if (rect.width <= 0) return 0;
-    const svgX = ((clientX - rect.left) / rect.width) * W;
+    return ((clientX - rect.left) / rect.width) * W;
+  };
+
+  const pickNearestIndex = (clientX) => {
+    if (points.length === 0) return 0;
+    let svgX = clientXToSvgX(clientX);
+    const xMin = points[0].x;
+    const xMax = points[points.length - 1].x;
+    svgX = Math.max(xMin, Math.min(xMax, svgX));
     let best = 0;
     let bestDist = Infinity;
     points.forEach((p, i) => {
