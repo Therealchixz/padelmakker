@@ -765,11 +765,11 @@ function HomeTab({ user, setTab }) {
   const displayName = resolveDisplayName(user, authUser);
   const firstName   = displayName.split(/\s+/)[0];
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
-  const { eloHistoryRows, eloHistoryLoading } = useRatedEloHistoryRows(user.id, eloSyncKey);
-  const { elo, games, wins } = useMemo(
-    () => displayEloStatsFromHistory(user, eloHistoryRows, eloHistoryLoading),
-    [user, eloHistoryRows, eloHistoryLoading]
-  );
+  const { bundleLoading, profileFresh, ratedRows } = useProfileEloBundle(user.id, eloSyncKey);
+  const histStats = useMemo(() => statsFromEloHistoryRows(ratedRows), [ratedRows]);
+  const elo = histStats?.elo ?? Math.round(Number(profileFresh?.elo_rating) || 1000);
+  const games = histStats?.games ?? (profileFresh?.games_played || 0);
+  const wins = histStats?.wins ?? (profileFresh?.games_won || 0);
   const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
 
   const actions = [
@@ -784,7 +784,11 @@ function HomeTab({ user, setTab }) {
       <h2 style={{ ...heading("clamp(22px,5vw,26px)"), marginBottom: "4px" }}>Hej {firstName}! 👋</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px" }}>Klar til at spille?</p>
 
-      {/* Stat cards */}
+      {/* Stat cards + ELO: vent på frisk DB (undgå flash af forældede tal fra React) */}
+      {bundleLoading ? (
+        <div style={{ textAlign: "center", padding: "32px 16px", color: theme.textLight, fontSize: "14px", marginBottom: "24px" }}>Indlæser dine tal…</div>
+      ) : (
+        <>
       <div className="pm-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,110px),1fr))", gap: "10px", marginBottom: "24px" }}>
         {[
           { label: "Kampe", value: games, color: theme.blue },
@@ -798,7 +802,6 @@ function HomeTab({ user, setTab }) {
         ))}
       </div>
 
-      {/* ELO card */}
       <div style={{ background: "linear-gradient(135deg, #1E3A5F, #1D4ED8)", borderRadius: theme.radius, padding: "clamp(18px,4vw,24px)", marginBottom: "24px", color: "#fff", boxShadow: theme.shadow }}>
         <div style={{ fontSize: "10px", opacity: 0.65, marginBottom: "8px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Din ELO-rating</div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
@@ -812,6 +815,8 @@ function HomeTab({ user, setTab }) {
           <span>0</span><span>Skala op til 2000+</span>
         </div>
       </div>
+        </>
+      )}
 
       {/* Quick actions */}
       <div className="pm-home-grid">
@@ -858,68 +863,55 @@ function statsFromEloHistoryRows(rows) {
 }
 
 /**
- * Kampe/sejre skal følge rated elo_history når den er indlæst. Tom historik = 0 kampe/sejre
- * (fx efter DB-reset), ikke forældede games_played/games_won i React.
+ * Frisk profiles-række + rated elo_history i ét trin. Ved syncKey (opdateret profil i context)
+ * vises loading igen så vi ikke flasher forældede tal. Ved fokus/genvisning opdateres stille.
  */
-function displayEloStatsFromHistory(profileLike, ratedHistoryRows, historyLoading) {
-  const fromHist = statsFromEloHistoryRows(ratedHistoryRows);
-  const profileElo = Math.round(Number(profileLike?.elo_rating) || 1000);
-  if (historyLoading) {
-    return {
-      elo: fromHist?.elo ?? profileElo,
-      games: fromHist?.games ?? (profileLike?.games_played || 0),
-      wins: fromHist?.wins ?? (profileLike?.games_won || 0),
-    };
-  }
-  if (fromHist) return fromHist;
-  return { elo: profileElo, games: 0, wins: 0 };
-}
-
-/**
- * Hent rated elo_history for én bruger. Genkører når syncKey ændrer sig (fx efter kamp: profiles opdateres)
- * og når brugeren vender tilbage til fanen/vinduet — så ELO-grafen ikke hænger på gammel state.
- */
-function useRatedEloHistoryRows(userId, syncKey) {
-  const [rows, setRows] = useState([]);
+function useProfileEloBundle(userId, syncKey) {
   const [loading, setLoading] = useState(true);
+  const [profileFresh, setProfileFresh] = useState(null);
+  const [ratedRows, setRatedRows] = useState([]);
 
-  const load = useCallback(async () => {
+  const fetchBundle = useCallback(async (showLoading) => {
     if (!userId) {
-      setRows([]);
+      setProfileFresh(null);
+      setRatedRows([]);
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (showLoading) setLoading(true);
     try {
-      const { data } = await supabase.from("elo_history").select("*")
-        .eq("user_id", userId)
-        .order("date", { ascending: true });
-      setRows(filterRatedEloHistoryRows(data || []));
+      const [pr, hist] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+        supabase.from("elo_history").select("*").eq("user_id", userId).order("date", { ascending: true }),
+      ]);
+      setProfileFresh(pr.data || null);
+      setRatedRows(filterRatedEloHistoryRows(hist.data || []));
     } catch {
-      setRows([]);
+      setProfileFresh(null);
+      setRatedRows([]);
     } finally {
       setLoading(false);
     }
   }, [userId]);
 
   useEffect(() => {
-    load();
-  }, [load, syncKey]);
+    fetchBundle(true);
+  }, [userId, syncKey, fetchBundle]);
 
   useEffect(() => {
     const onVis = () => {
-      if (document.visibilityState === "visible" && userId) load();
+      if (document.visibilityState === "visible" && userId) fetchBundle(false);
     };
-    const onFocus = () => { if (userId) load(); };
+    const onFocus = () => { if (userId) fetchBundle(false); };
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("focus", onFocus);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("focus", onFocus);
     };
-  }, [userId, load]);
+  }, [userId, fetchBundle]);
 
-  return { eloHistoryRows: rows, eloHistoryLoading: loading, reloadEloHistory: load };
+  return { bundleLoading: loading, profileFresh, ratedRows, reloadProfileEloBundle: () => fetchBundle(true) };
 }
 
 /** Per bruger: seneste ELO + kampe/sejre fra elo_history (til ranking all-time). */
@@ -1249,47 +1241,58 @@ async function calculateAndApplyElo(matchId, matchWinner, ignoredPlayersList, sh
    PLAYER PROFILE MODAL
 ═══════════════════════════════════════════════════ */
 function PlayerProfileModal({ player, onClose }) {
-  const [streakLoading, setStreakLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [streakError, setStreakError] = useState(false);
   const [streakStats, setStreakStats] = useState({ currentStreak: 0, bestStreak: 0 });
   const [ratedHistoryRows, setRatedHistoryRows] = useState([]);
+  const [profileRow, setProfileRow] = useState(null);
 
   useEffect(() => {
     if (!player?.id) {
-      setStreakLoading(false);
+      setDataLoading(false);
       setStreakStats({ currentStreak: 0, bestStreak: 0 });
       setRatedHistoryRows([]);
+      setProfileRow(null);
       return;
     }
     let cancelled = false;
-    setStreakLoading(true);
+    setDataLoading(true);
     setStreakError(false);
     setRatedHistoryRows([]);
+    setProfileRow(null);
     (async () => {
       try {
-        const { data, error } = await supabase.from("elo_history").select("*")
-          .eq("user_id", player.id).order("date", { ascending: true });
+        const [pr, hist] = await Promise.all([
+          supabase.from("profiles").select("*").eq("id", player.id).maybeSingle(),
+          supabase.from("elo_history").select("*").eq("user_id", player.id).order("date", { ascending: true }),
+        ]);
         if (cancelled) return;
-        if (error) throw error;
-        const rows = filterRatedEloHistoryRows(data || []);
+        if (hist.error) throw hist.error;
+        const rows = filterRatedEloHistoryRows(hist.data || []);
         setStreakStats(winStreaksFromEloHistory(rows));
         setRatedHistoryRows(rows);
+        setProfileRow(pr.data || player);
       } catch {
         if (!cancelled) {
           setStreakError(true);
           setStreakStats({ currentStreak: 0, bestStreak: 0 });
           setRatedHistoryRows([]);
+          setProfileRow(player);
         }
       } finally {
-        if (!cancelled) setStreakLoading(false);
+        if (!cancelled) setDataLoading(false);
       }
     })();
     return () => { cancelled = true; };
   }, [player?.id]);
 
   if (!player) return null;
-  const { elo, games, wins } = displayEloStatsFromHistory(player, ratedHistoryRows, streakLoading);
-  const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
+  const pRef = profileRow || player;
+  const histStatsModal = statsFromEloHistoryRows(ratedHistoryRows);
+  const elo = dataLoading ? null : (histStatsModal?.elo ?? eloOf(pRef));
+  const games = dataLoading ? null : (histStatsModal?.games ?? (pRef.games_played || 0));
+  const wins = dataLoading ? null : (histStatsModal?.wins ?? (pRef.games_won || 0));
+  const winPct = games != null && games > 0 ? Math.round((wins / games) * 100) : 0;
   const age = player.birth_year ? new Date().getFullYear() - player.birth_year : null;
 
   return (
@@ -1303,20 +1306,23 @@ function PlayerProfileModal({ player, onClose }) {
           <div>
             <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{player.full_name || player.name || "Spiller"}</div>
             <div style={{ display: "flex", gap: "5px", marginTop: "6px", flexWrap: "wrap" }}>
-              <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>
+              {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
               {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
               <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {player.area || "?"}</span>
             </div>
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats — først når elo_history er hentet (undgå forældede tal fra liste) */}
+        {dataLoading ? (
+          <div style={{ textAlign: "center", padding: "16px", color: theme.textMid, fontSize: "13px", marginBottom: "16px" }}>Indlæser statistik…</div>
+        ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "16px" }}>
           {[
             { label: "ELO", value: elo, color: theme.accent },
             { label: "Kampe", value: games, color: theme.blue },
             { label: "Sejre", value: wins, color: theme.warm },
-            { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
+            { label: "Win %", value: games != null && games > 0 ? winPct + "%" : "—", color: theme.accent },
           ].map((s, i) => (
             <div key={i} style={{ textAlign: "center", padding: "10px 4px", background: "#F8FAFC", borderRadius: "8px" }}>
               <div style={{ fontSize: "16px", fontWeight: 800, color: s.color }}>{s.value}</div>
@@ -1324,11 +1330,12 @@ function PlayerProfileModal({ player, onClose }) {
             </div>
           ))}
         </div>
+        )}
 
         {/* Sejrsstreak (samme logik som egen profil — data fra elo_history) */}
         <div style={{ marginBottom: "16px", padding: "12px 14px", background: "#FFFBEB", borderRadius: "10px", border: "1px solid rgba(217, 119, 6, 0.2)" }}>
           <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em" }}>Sejrsstreak</div>
-          {streakLoading ? (
+          {dataLoading ? (
             <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "8px" }}>Indlæser…</div>
           ) : streakError ? (
             <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "6px", lineHeight: 1.4 }}>Kunne ikke hente kamphistorik.</div>
@@ -2218,11 +2225,14 @@ function ProfilTab({ user, showToast, setTab }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
-  const { eloHistoryRows: eloHistory, eloHistoryLoading: statsLoading } = useRatedEloHistoryRows(user.id, eloSyncKey);
-  const { elo, games, wins } = useMemo(
-    () => displayEloStatsFromHistory(user, eloHistory, statsLoading),
-    [user, eloHistory, statsLoading]
-  );
+  const { bundleLoading, profileFresh, ratedRows } = useProfileEloBundle(user.id, eloSyncKey);
+  const pStats = profileFresh || user;
+  const histStats = useMemo(() => statsFromEloHistoryRows(ratedRows), [ratedRows]);
+  const elo = histStats?.elo ?? Math.round(Number(pStats.elo_rating) || 1000);
+  const games = histStats?.games ?? (pStats.games_played || 0);
+  const wins = histStats?.wins ?? (pStats.games_won || 0);
+  const eloHistory = ratedRows;
+  const statsLoading = bundleLoading;
   const [form, setForm] = useState({
     full_name: user.full_name || user.name || "",
     area: user.area || "København",
@@ -2277,7 +2287,7 @@ function ProfilTab({ user, showToast, setTab }) {
               <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{displayName}</div>
               <div style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
               <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
-                <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>
+                {!statsLoading && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
                 {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{new Date().getFullYear() - user.birth_year} år</span>}
                 <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
                 <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.area || "?"}</span>
@@ -2287,7 +2297,10 @@ function ProfilTab({ user, showToast, setTab }) {
 
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>"{user.bio}"</p>}
 
-          {/* Stats */}
+          {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
+          {statsLoading ? (
+            <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px", marginBottom: "20px" }}>Indlæser statistik…</div>
+          ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
             {[
               { label: "ELO", value: elo, color: theme.accent },
@@ -2301,6 +2314,7 @@ function ProfilTab({ user, showToast, setTab }) {
               </div>
             ))}
           </div>
+          )}
 
           {/* Availability */}
           {user.availability && user.availability.length > 0 && (
@@ -2463,11 +2477,11 @@ function RankingTab({ user }) {
   });
 
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
-  const { eloHistoryRows: myEloHistoryRows, eloHistoryLoading: myHistLoading } = useRatedEloHistoryRows(user.id, eloSyncKey);
-  const myAllTimeStats = useMemo(
-    () => displayEloStatsFromHistory(user, myEloHistoryRows, myHistLoading),
-    [user, myEloHistoryRows, myHistLoading]
-  );
+  const { bundleLoading: myBundleLoading, profileFresh: myProfileFresh, ratedRows: myRatedRows } = useProfileEloBundle(user.id, eloSyncKey);
+  const myHistStats = useMemo(() => statsFromEloHistoryRows(myRatedRows), [myRatedRows]);
+  const myAllTimeElo = myHistStats?.elo ?? Math.round(Number(myProfileFresh?.elo_rating ?? user.elo_rating) || 1000);
+  const myAllTimeGames = myHistStats?.games ?? (myProfileFresh?.games_played ?? user.games_played ?? 0);
+  const myAllTimeWins = myHistStats?.wins ?? (myProfileFresh?.games_won ?? user.games_won ?? 0);
 
   const allTimeFromHistory = useMemo(() => allTimeStatsMapFromEloHistory(eloHistory), [eloHistory]);
   const myId = user?.id != null ? String(user.id) : "";
@@ -2530,14 +2544,12 @@ function RankingTab({ user }) {
           const pid = String(p.id);
           const h = allTimeFromHistory[pid];
           const isMe = myId && pid === myId;
-          const me = isMe ? myAllTimeStats : null;
-          const fallbackGames = p.games_played || 0;
-          const fallbackWins = p.games_won || 0;
+          const isMeReady = isMe && !myBundleLoading;
           return {
             ...p,
-            score: me?.elo ?? h?.elo ?? Math.round(Number(p.elo_rating) || 1000),
-            periodGames: me?.games ?? h?.games ?? fallbackGames,
-            periodWins: me?.wins ?? h?.wins ?? fallbackWins,
+            score: isMeReady ? myAllTimeElo : (h?.elo ?? Math.round(Number(p.elo_rating) || 1000)),
+            periodGames: isMeReady ? myAllTimeGames : (h?.games ?? (p.games_played || 0)),
+            periodWins: isMeReady ? myAllTimeWins : (h?.wins ?? (p.games_won || 0)),
           };
         })
         .sort((a, b) => b.score - a.score);
@@ -2572,7 +2584,7 @@ function RankingTab({ user }) {
   const userRank = sorted.findIndex(p => String(p.id) === myId) + 1;
   const userEntry = sorted.find(p => String(p.id) === myId);
   const displayScore = period === "all"
-    ? (myAllTimeStats?.elo ?? allTimeFromHistory[myId]?.elo ?? Math.round(Number(user.elo_rating) || 1000))
+    ? (myBundleLoading ? null : (myAllTimeElo ?? allTimeFromHistory[myId]?.elo ?? Math.round(Number(user.elo_rating) || 1000)))
     : (userEntry?.score || 0);
   const medals = ["🥇", "🥈", "🥉"];
 
@@ -2614,27 +2626,27 @@ function RankingTab({ user }) {
         <div className="pm-rank-hero-inner">
           <div>
             <span style={{ fontFamily: font, fontSize: "clamp(32px,8vw,40px)", fontWeight: 800, letterSpacing: "-0.04em" }}>
-              {userRank > 0 ? `#${userRank}` : "—"}
+              {period === "all" && myBundleLoading ? "…" : userRank > 0 ? `#${userRank}` : "—"}
             </span>
             <span style={{ fontSize: "14px", marginLeft: "8px", opacity: 0.6 }}>
-              {sorted.length > 0 ? `af ${sorted.length}` : ""}
+              {period === "all" && myBundleLoading ? "" : sorted.length > 0 ? `af ${sorted.length}` : ""}
             </span>
           </div>
           <div className="pm-rank-hero-elo">
             <div style={{ fontFamily: font, fontSize: "clamp(20px,5vw,24px)", fontWeight: 800, letterSpacing: "-0.03em" }}>
-              {period === "all" ? displayScore : (displayScore > 0 ? "+" + displayScore : displayScore)}
+              {period === "all" && displayScore === null ? "…" : period === "all" ? displayScore : (displayScore > 0 ? "+" + displayScore : displayScore)}
             </div>
             <div style={{ fontSize: "10px", opacity: 0.65, letterSpacing: "0.06em", textTransform: "uppercase" }}>
               {period === "all" ? "ELO" : "ELO ændring"}
             </div>
           </div>
         </div>
-        {period === "all" && (
+        {period === "all" && displayScore != null && (
           <div style={{ marginTop: "14px", background: "rgba(255,255,255,0.15)", borderRadius: "6px", height: "6px" }}>
             <div style={{ width: Math.min((displayScore / 2000) * 100, 100) + "%", height: "100%", background: theme.warm, borderRadius: "6px" }} />
           </div>
         )}
-        {userEntry && (period !== "all" || userEntry.periodGames > 0) && (
+        {userEntry && (period !== "all" || !myBundleLoading) && (
           <div style={{ marginTop: "12px", fontSize: "12px", opacity: 0.7 }}>
             {userEntry.periodGames} kampe · {userEntry.periodWins} sejre
           </div>
