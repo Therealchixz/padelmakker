@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
@@ -17,24 +17,24 @@ const AVAILABILITY = ["Morgener", "Formiddage", "Eftermiddage", "Aftener", "Week
 /* ─── Design tokens (mirrors variables.css) ─── */
 const font = "'Inter', sans-serif";
 const theme = {
-  bg:          "#F6F8FA",
+  bg:          "#F0F4F8",
   surface:     "#FFFFFF",
-  text:        "#0F172A",
-  textMid:     "#475569",
-  textLight:   "#94A3B8",
-  accent:      "#166534",
-  accentHover: "#14532D",
-  accentBg:    "#DCFCE7",
+  text:        "#0B1120",
+  textMid:     "#3E4C63",
+  textLight:   "#8494A7",
+  accent:      "#1D4ED8",
+  accentHover: "#1E40AF",
+  accentBg:    "#DBEAFE",
   warm:        "#D97706",
   warmBg:      "#FEF3C7",
   blue:        "#2563EB",
   blueBg:      "#EFF6FF",
   red:         "#DC2626",
   redBg:       "#FEF2F2",
-  border:      "#E2E8F0",
+  border:      "#D5DDE8",
   shadow:      "0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)",
   shadowLg:    "0 8px 32px rgba(0,0,0,0.12)",
-  radius:      "10px",
+  radius:      "12px",
 };
 
 /* ─── Shared style helpers ─── */
@@ -100,6 +100,23 @@ const heading = (size = "24px") => ({
   letterSpacing: "-0.03em",
   color: theme.text,
 });
+
+/* ─── Scroll reveal hook ─── */
+function useScrollReveal() {
+  const containerRef = useRef(null);
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const els = root.querySelectorAll('.pm-reveal, .pm-reveal-left, .pm-reveal-right, .pm-reveal-scale');
+    if (!els.length) return;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('pm-visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    els.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+  return containerRef;
+}
 
 /* ─── Utility ─── */
 function sanitizeText(str) {
@@ -227,69 +244,124 @@ function ResetPasswordPage({ onDone }) {
   );
 }
 function LandingPage({ onGetStarted, onLogin }) {
+  const revealRef = useScrollReveal();
+
   const steps = [
-    { step: "01", icon: <UserPlus  size={22} color={theme.accent} />, title: "Opret profil", desc: "Angiv dit niveau og område." },
-    { step: "02", icon: <Users     size={22} color={theme.accent} />, title: "Find makker",  desc: "Se spillere nær dig på dit niveau." },
-    { step: "03", icon: <MapPin    size={22} color={theme.accent} />, title: "Book bane",    desc: "Find ledige baner og book direkte." },
-    { step: "04", icon: <TrendingUp size={22} color={theme.accent} />, title: "Rank op",     desc: "Se din ranking stige." },
+    { step: "01", icon: <UserPlus  size={24} color="#fff" />, title: "Opret profil", desc: "Angiv dit niveau, spillestil og område — det tager under et minut." },
+    { step: "02", icon: <Users     size={24} color="#fff" />, title: "Find makker",  desc: "Se spillere nær dig på dit niveau og invitér dem til en kamp." },
+    { step: "03", icon: <MapPin    size={24} color="#fff" />, title: "Book bane",    desc: "Find ledige baner med priser og tider — book direkte i appen." },
+    { step: "04", icon: <TrendingUp size={24} color="#fff" />, title: "Rank op",     desc: "Spil kampe, optjen ELO-point og klatr op ad ranglisten." },
+  ];
+
+  const features = [
+    { icon: <Trophy size={22} color={theme.accent} />, title: "ELO-ranking", desc: "Avanceret ranking-system der matcher dig med jævnbyrdige spillere." },
+    { icon: <Swords size={22} color={theme.accent} />, title: "Holdkampe", desc: "Opret 2v2 kampe, vælg hold og registrér resultater med tiebreak-validering." },
+    { icon: <MessageCircle size={22} color={theme.accent} />, title: "Fællesskab", desc: "Bliv en del af Danmarks voksende padel-community med hundredvis af aktive spillere." },
   ];
 
   return (
-    <div className="pm-landing">
+    <div className="pm-landing" ref={revealRef}>
       {/* Nav */}
-      <nav className="pm-landing-nav" style={{ padding: "clamp(14px, 3vw, 18px) clamp(16px, 4vw, 24px)", maxWidth: "1100px", margin: "0 auto" }}>
-        <div style={{ ...heading("clamp(17px,4.5vw,20px)"), color: theme.accent }}>🎾 PadelMakker</div>
-        <div className="pm-landing-nav-actions">
-          <button onClick={onLogin}       style={btn(false)}>Log ind</button>
-          <button onClick={onGetStarted}  style={btn(true)}>Kom i gang</button>
+      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid " + theme.border }}>
+        <div className="pm-landing-nav" style={{ padding: "clamp(12px, 2.5vw, 16px) clamp(16px, 4vw, 24px)", maxWidth: "1100px", margin: "0 auto" }}>
+          <div style={{ ...heading("clamp(17px,4.5vw,20px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px" }}>🎾 PadelMakker</div>
+          <div className="pm-landing-nav-actions">
+            <button onClick={onLogin} style={{ ...btn(false), borderColor: "transparent", background: "transparent" }}>Log ind</button>
+            <button onClick={onGetStarted} style={{ ...btn(true), borderRadius: "8px" }}>Kom i gang</button>
+          </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(48px,10vw,88px) clamp(16px,4vw,24px) clamp(40px,8vw,64px)", textAlign: "center" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: theme.accentBg, color: theme.accent, fontSize: "12px", fontWeight: 600, padding: "5px 14px", borderRadius: "20px", marginBottom: "28px", border: "1px solid " + theme.accent + "25", letterSpacing: "0.02em" }}>
-          🇩🇰 Danmarks padel-platform
-        </div>
-        <h1 style={{ ...heading("clamp(36px,6.5vw,68px)"), lineHeight: 1.04, letterSpacing: "-0.04em", marginBottom: "20px" }}>
-          Find makker.<br />Book bane.<br /><span style={{ color: theme.accent }}>Spil padel.</span>
-        </h1>
-        <p style={{ fontSize: "clamp(15px,3.8vw,17px)", color: theme.textMid, maxWidth: "440px", margin: "0 auto clamp(32px,6vw,44px)", lineHeight: 1.65 }}>
-          Stop med at søge i Facebook-grupper. PadelMakker matcher dig med spillere på dit niveau.
-        </p>
-        <button onClick={onGetStarted} style={{ ...btn(true), fontSize: "15px", padding: "13px 30px", borderRadius: "9px" }}>
-          Opret gratis profil <ArrowRight size={16} />
-        </button>
-      </section>
-
-      {/* How it works */}
-      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 clamp(16px,4vw,24px) clamp(56px,12vw,80px)" }}>
-        <div style={{ textAlign: "center", marginBottom: "clamp(24px,6vw,40px)" }}>
-          <p style={{ fontSize: "11px", fontWeight: 700, color: theme.accent, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: "8px" }}>Sådan virker det</p>
-          <h2 style={{ ...heading("clamp(22px,5vw,28px)"), letterSpacing: "-0.025em" }}>Fra profil til bane på minutter</h2>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,220px),1fr))", gap: "12px" }}>
-          {steps.map(s => (
-            <div key={s.step} style={{ background: theme.surface, borderRadius: theme.radius, padding: "28px 22px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "14px", letterSpacing: "0.08em" }}>{s.step}</div>
-              <div style={{ width: "44px", height: "44px", borderRadius: "8px", background: theme.accentBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "14px" }}>
-                {s.icon}
-              </div>
-              <div style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px", letterSpacing: "-0.01em", color: theme.text }}>{s.title}</div>
-              <div style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.55 }}>{s.desc}</div>
-            </div>
-          ))}
+      <section className="pm-hero-gradient" style={{ paddingTop: "clamp(100px,18vw,140px)", paddingBottom: "clamp(60px,14vw,100px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", textAlign: "center", position: "relative" }}>
+        <div style={{ maxWidth: "800px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div className="pm-reveal" style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: "12px", fontWeight: 600, padding: "6px 16px", borderRadius: "20px", marginBottom: "28px", border: "1px solid rgba(255,255,255,0.25)", letterSpacing: "0.03em", backdropFilter: "blur(4px)" }}>
+            🇩🇰 Danmarks padel-platform
+          </div>
+          <h1 className="pm-reveal pm-delay-1" style={{ fontFamily: font, fontSize: "clamp(40px,8vw,76px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#fff", marginBottom: "24px" }}>
+            Find makker.<br />Book bane.<br /><span style={{ color: "#93C5FD" }}>Spil padel.</span>
+          </h1>
+          <p className="pm-reveal pm-delay-2" style={{ fontSize: "clamp(16px,3.8vw,19px)", color: "rgba(255,255,255,0.80)", maxWidth: "480px", margin: "0 auto clamp(36px,7vw,48px)", lineHeight: 1.65 }}>
+            Stop med at søge i Facebook-grupper. PadelMakker matcher dig med spillere på dit niveau — gratis.
+          </p>
+          <div className="pm-reveal pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+            <button onClick={onGetStarted} style={{ fontFamily: font, fontSize: "16px", fontWeight: 700, padding: "14px 32px", borderRadius: "10px", border: "none", background: "#fff", color: theme.accent, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", letterSpacing: "-0.01em", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
+              Opret gratis profil <ArrowRight size={17} />
+            </button>
+            <button onClick={onLogin} style={{ fontFamily: font, fontSize: "16px", fontWeight: 600, padding: "14px 28px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.1)", color: "#fff", cursor: "pointer", backdropFilter: "blur(4px)", letterSpacing: "-0.01em" }}>
+              Log ind
+            </button>
+          </div>
         </div>
       </section>
 
       {/* Stats banner */}
-      <section style={{ background: theme.accent, padding: "clamp(32px,8vw,52px) clamp(16px,4vw,24px)" }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,140px),1fr))", gap: "20px", textAlign: "center" }}>
+      <section style={{ background: theme.surface, padding: "clamp(32px,6vw,48px) clamp(16px,4vw,24px)", borderBottom: "1px solid " + theme.border }}>
+        <div style={{ maxWidth: "900px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,140px),1fr))", gap: "20px", textAlign: "center" }}>
           {[{ n: "200+", l: "Aktive spillere" }, { n: "6", l: "Baner i København" }, { n: "50+", l: "Kampe ugentligt" }, { n: "4.7", l: "Gennemsnitlig rating" }].map((s, i) => (
-            <div key={i}>
-              <div style={{ fontFamily: font, fontSize: "clamp(28px,7vw,40px)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>{s.n}</div>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.70)", marginTop: "4px" }}>{s.l}</div>
+            <div key={i} className={"pm-reveal pm-delay-" + (i+1)}>
+              <div className="pm-stat-number" style={{ fontFamily: font, fontSize: "clamp(32px,7vw,44px)", fontWeight: 800, color: theme.accent, letterSpacing: "-0.04em" }}>{s.n}</div>
+              <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "4px", fontWeight: 500 }}>{s.l}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(56px,12vw,88px) clamp(16px,4vw,24px)" }}>
+        <div className="pm-reveal" style={{ textAlign: "center", marginBottom: "clamp(32px,7vw,48px)" }}>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: theme.accent, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "10px" }}>Sådan virker det</p>
+          <h2 style={{ ...heading("clamp(26px,5.5vw,36px)"), letterSpacing: "-0.03em" }}>Fra profil til bane på minutter</h2>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,230px),1fr))", gap: "16px" }}>
+          {steps.map((s, i) => (
+            <div key={s.step} className={"pm-feature-card pm-reveal pm-delay-" + (i+1)} style={{ background: theme.surface, borderRadius: "14px", padding: "32px 24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, position: "relative" }}>
+              <div style={{ fontSize: "48px", fontWeight: 900, color: theme.accent + "12", position: "absolute", top: "16px", right: "20px", letterSpacing: "-0.04em", fontFamily: font }}>{s.step}</div>
+              <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "linear-gradient(135deg, " + theme.accent + ", #3B82F6)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px" }}>
+                {s.icon}
+              </div>
+              <div style={{ fontSize: "17px", fontWeight: 700, marginBottom: "8px", letterSpacing: "-0.01em", color: theme.text }}>{s.title}</div>
+              <div style={{ fontSize: "14px", color: theme.textMid, lineHeight: 1.6 }}>{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Features */}
+      <section style={{ background: theme.bg, padding: "clamp(56px,12vw,88px) clamp(16px,4vw,24px)" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+          <div className="pm-reveal" style={{ textAlign: "center", marginBottom: "clamp(32px,7vw,48px)" }}>
+            <p style={{ fontSize: "12px", fontWeight: 700, color: theme.accent, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "10px" }}>Funktioner</p>
+            <h2 style={{ ...heading("clamp(26px,5.5vw,36px)"), letterSpacing: "-0.03em" }}>Alt hvad du behøver</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,280px),1fr))", gap: "16px" }}>
+            {features.map((f, i) => (
+              <div key={i} className={"pm-feature-card pm-reveal pm-delay-" + (i+1)} style={{ background: theme.surface, borderRadius: "14px", padding: "32px 24px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+                <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: theme.accentBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px" }}>
+                  {f.icon}
+                </div>
+                <div style={{ fontSize: "18px", fontWeight: 700, marginBottom: "10px", letterSpacing: "-0.02em", color: theme.text }}>{f.title}</div>
+                <div style={{ fontSize: "14px", color: theme.textMid, lineHeight: 1.65 }}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="pm-reveal-scale" style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(56px,12vw,88px) clamp(16px,4vw,24px)" }}>
+        <div style={{ background: "linear-gradient(135deg, #1E3A5F, #1D4ED8)", borderRadius: "20px", padding: "clamp(40px,8vw,64px) clamp(24px,5vw,48px)", textAlign: "center", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <h2 style={{ fontFamily: font, fontSize: "clamp(26px,5.5vw,40px)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", marginBottom: "16px", lineHeight: 1.1 }}>
+              Klar til at spille?
+            </h2>
+            <p style={{ fontSize: "clamp(15px,3.5vw,17px)", color: "rgba(255,255,255,0.75)", maxWidth: "420px", margin: "0 auto 32px", lineHeight: 1.6 }}>
+              Opret din profil på under et minut og find din første makker i dag.
+            </p>
+            <button onClick={onGetStarted} style={{ fontFamily: font, fontSize: "16px", fontWeight: 700, padding: "14px 36px", borderRadius: "10px", border: "none", background: "#fff", color: theme.accent, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>
+              Kom i gang — det er gratis <ArrowRight size={17} />
+            </button>
+          </div>
         </div>
       </section>
 
@@ -591,7 +663,7 @@ function HomeTab({ user, setTab }) {
       </div>
 
       {/* ELO card */}
-      <div style={{ background: "linear-gradient(135deg, #166534, #052E16)", borderRadius: theme.radius, padding: "clamp(18px,4vw,24px)", marginBottom: "24px", color: "#fff", boxShadow: theme.shadow }}>
+      <div style={{ background: "linear-gradient(135deg, #1E3A5F, #1D4ED8)", borderRadius: theme.radius, padding: "clamp(18px,4vw,24px)", marginBottom: "24px", color: "#fff", boxShadow: theme.shadow }}>
         <div style={{ fontSize: "10px", opacity: 0.65, marginBottom: "8px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Din ELO-rating</div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
           <span style={{ fontFamily: font, fontSize: "clamp(40px,10vw,52px)", fontWeight: 800, lineHeight: 1, letterSpacing: "-0.04em" }}>{elo}</span>
@@ -982,7 +1054,7 @@ function TeamSelectModal({ matchPlayers, onSelect, onClose }) {
         <button
           onClick={() => onSelect(1)}
           disabled={team1Full}
-          style={{ width: "100%", padding: "16px", marginBottom: "10px", borderRadius: "10px", border: "2px solid #166534", background: team1Full ? "#f1f5f9" : "#DCFCE7", color: team1Full ? "#94A3B8" : "#166534", fontSize: "15px", fontWeight: 700, cursor: team1Full ? "not-allowed" : "pointer", opacity: team1Full ? 0.5 : 1 }}
+          style={{ width: "100%", padding: "16px", marginBottom: "10px", borderRadius: "10px", border: "2px solid #1D4ED8", background: team1Full ? "#f1f5f9" : "#DBEAFE", color: team1Full ? "#94A3B8" : "#1D4ED8", fontSize: "15px", fontWeight: 700, cursor: team1Full ? "not-allowed" : "pointer", opacity: team1Full ? 0.5 : 1 }}
         >
           Hold 1 ({team1.length}/2)
           {team1.length > 0 && <div style={{ fontSize: "12px", fontWeight: 400, marginTop: "4px" }}>{team1.map(p => (p.user_name || "?").split(" ")[0]).join(", ")}</div>}
@@ -1069,7 +1141,7 @@ function InlineResultForm({ team1Names, team2Names, onSubmit, onClose }) {
     <div>
       <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px" }}>Indrapportér resultat</h3>
       <div style={{ fontSize: "13px", color: "#64748B", marginBottom: "16px" }}>
-        <strong style={{ color: "#166534" }}>{team1Names}</strong> vs <strong style={{ color: "#2563EB" }}>{team2Names}</strong>
+        <strong style={{ color: "#1D4ED8" }}>{team1Names}</strong> vs <strong style={{ color: "#2563EB" }}>{team2Names}</strong>
       </div>
       {[0, 1, 2].map(i => (
         <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
@@ -1081,7 +1153,7 @@ function InlineResultForm({ team1Names, team2Names, onSubmit, onClose }) {
       ))}
       <div style={{ display: "flex", gap: "8px", marginTop: "20px" }}>
         <button onClick={onClose} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", background: "#fff", cursor: "pointer", fontSize: "13px" }}>Annullér</button>
-        <button onClick={handleSubmit} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "none", background: "#166534", color: "#fff", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>Gem resultat</button>
+        <button onClick={handleSubmit} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "none", background: "#1D4ED8", color: "#fff", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>Gem resultat</button>
       </div>
     </div>
   );
@@ -1837,7 +1909,7 @@ function RankingTab({ user }) {
       </div>
 
       {/* Hero card */}
-      <div style={{ background: "linear-gradient(135deg, #166534, #052E16)", borderRadius: theme.radius, padding: "clamp(18px,4vw,24px)", marginBottom: "24px", color: "#fff" }}>
+      <div style={{ background: "linear-gradient(135deg, #1E3A5F, #1D4ED8)", borderRadius: theme.radius, padding: "clamp(18px,4vw,24px)", marginBottom: "24px", color: "#fff" }}>
         <div style={{ fontSize: "10px", opacity: 0.65, marginBottom: "6px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Din placering · {periodLabels[period]}</div>
         <div className="pm-rank-hero-inner">
           <div>
