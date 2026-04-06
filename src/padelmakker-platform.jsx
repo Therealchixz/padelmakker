@@ -3,7 +3,12 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
-import { normalizeProfileRow } from "./lib/profileUtils";
+import { normalizeProfileRow, normalizeStringArrayField } from "./lib/profileUtils";
+
+/** Sikker liste til .map() selv hvis profil kommer uden normalisering */
+function availabilityTags(profileLike) {
+  return normalizeStringArrayField(profileLike?.availability);
+}
 import {
   Home, Users, MapPin, Swords, Trophy,
   UserPlus, TrendingUp, MessageCircle, Search,
@@ -1376,11 +1381,11 @@ function PlayerProfileModal({ player, onClose }) {
               <span style={{ fontWeight: 600 }}>{age} år</span>
             </div>
           )}
-          {player.availability && player.availability.length > 0 && (
+          {availabilityTags(player).length > 0 && (
             <div style={{ fontSize: "13px" }}>
               <span style={{ color: theme.textLight }}>Tilgængelighed</span>
               <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginTop: "4px" }}>
-                {player.availability.map(a => <span key={a} style={tag(theme.accentBg, theme.accent)}>{a}</span>)}
+                {availabilityTags(player).map((a) => <span key={a} style={tag(theme.accentBg, theme.accent)}>{a}</span>)}
               </div>
             </div>
           )}
@@ -2250,13 +2255,16 @@ function ProfilTab({ user, showToast, setTab }) {
     play_style: user.play_style || "Ved ikke endnu",
     bio: user.bio || "",
     avatar: user.avatar || "🎾",
-    availability: user.availability || [],
+    availability: normalizeStringArrayField(user.availability),
     birth_year: user.birth_year ? String(user.birth_year) : "",
   });
 
   const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
+  const toggleAvail = (a) => setForm(f => {
+    const cur = normalizeStringArrayField(f.availability);
+    return { ...f, availability: cur.includes(a) ? cur.filter((x) => x !== a) : [...cur, a] };
+  });
 
   const handleSave = async () => {
     if (!form.full_name.trim()) { showToast("Navn må ikke være tomt"); return; }
@@ -2328,11 +2336,11 @@ function ProfilTab({ user, showToast, setTab }) {
           )}
 
           {/* Availability */}
-          {user.availability && user.availability.length > 0 && (
+          {availabilityTags(user).length > 0 && (
             <div style={{ marginBottom: "16px" }}>
               <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tilgængelighed</div>
               <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
-                {user.availability.map(a => <span key={a} style={tag(theme.accentBg, theme.accent)}>{a}</span>)}
+                {availabilityTags(user).map((a) => <span key={a} style={tag(theme.accentBg, theme.accent)}>{a}</span>)}
               </div>
             </div>
           )}
