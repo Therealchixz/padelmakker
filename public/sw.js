@@ -1,10 +1,11 @@
 /**
- * PWA service worker — undgå at cache index.html (forårsager hvid skærm efter deploy:
- * gammel HTML peger på slettede hashed JS-filer).
+ * Minimal service worker: ryd gamle caches, ingen fetch-intercept.
+ * Tidligere versioner kunne kalde respondWith(undefined) ved netværksfejl +
+ * tom cache → intermittent hvid skærm på mobil.
  */
-const CACHE_NAME = 'padelmakker-assets-v2';
+const VERSION = 'padelmakker-sw-v3-clear';
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
@@ -12,41 +13,9 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((k) => k !== CACHE_NAME)
-            .map((k) => caches.delete(k))
-        )
-      )
+      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  const url = event.request.url;
-  if (url.includes('supabase.co')) return;
-  if (url.includes('googleapis.com')) return;
-  if (url.includes('gstatic.com')) return;
-
-  /* Lad browseren hente dokumenter direkte — altid frisk index.html fra serveren */
-  if (event.request.mode === 'navigate') return;
-
-  /* Statiske assets: netværk først, cache som fallback (offline) */
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (
-          response.ok &&
-          url.startsWith(self.location.origin) &&
-          !url.endsWith('.html')
-        ) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      })
-      .catch(() => caches.match(event.request))
-  );
-});
+/* Ingen 'fetch' handler — browseren håndterer alt (altid friske bundles efter deploy). */
