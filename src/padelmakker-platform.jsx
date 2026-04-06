@@ -759,21 +759,9 @@ function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
   const firstName   = displayName.split(/\s+/)[0];
-  const [histStats, setHistStats] = useState(null);
-  useEffect(() => {
-    if (!user?.id) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await supabase.from("elo_history").select("*").eq("user_id", user.id).order("date", { ascending: true });
-        if (cancelled) return;
-        setHistStats(statsFromEloHistoryRows(data || []));
-      } catch {
-        if (!cancelled) setHistStats(null);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [user.id]);
+  const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
+  const { eloHistoryRows } = useRatedEloHistoryRows(user.id, eloSyncKey);
+  const histStats = useMemo(() => statsFromEloHistoryRows(eloHistoryRows), [eloHistoryRows]);
   const games       = histStats?.games ?? (user.games_played || 0);
   const wins        = histStats?.wins ?? (user.games_won || 0);
   const elo         = histStats?.elo ?? Math.round(Number(user.elo_rating) || 1000);
@@ -862,6 +850,53 @@ function statsFromEloHistoryRows(rows) {
     if (h.result === "win") wins++;
   }
   return { elo, games, wins };
+}
+
+/**
+ * Hent rated elo_history for én bruger. Genkører når syncKey ændrer sig (fx efter kamp: profiles opdateres)
+ * og når brugeren vender tilbage til fanen/vinduet — så ELO-grafen ikke hænger på gammel state.
+ */
+function useRatedEloHistoryRows(userId, syncKey) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    if (!userId) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data } = await supabase.from("elo_history").select("*")
+        .eq("user_id", userId)
+        .order("date", { ascending: true });
+      setRows(filterRatedEloHistoryRows(data || []));
+    } catch {
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    load();
+  }, [load, syncKey]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible" && userId) load();
+    };
+    const onFocus = () => { if (userId) load(); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [userId, load]);
+
+  return { eloHistoryRows: rows, eloHistoryLoading: loading, reloadEloHistory: load };
 }
 
 /** Per bruger: seneste ELO + kampe/sejre fra elo_history (til ranking all-time). */
@@ -2143,19 +2178,8 @@ function ProfilTab({ user, showToast, setTab }) {
   const displayName = resolveDisplayName(user, authUser);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [eloHistory, setEloHistory] = useState([]);
-  const [statsLoading, setStatsLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await supabase.from("elo_history").select("*")
-          .eq("user_id", user.id).order("date", { ascending: true });
-        setEloHistory(filterRatedEloHistoryRows(data || []));
-      } catch {}
-      finally { setStatsLoading(false); }
-    })();
-  }, [user.id]);
+  const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
+  const { eloHistoryRows: eloHistory, eloHistoryLoading: statsLoading } = useRatedEloHistoryRows(user.id, eloSyncKey);
   const [form, setForm] = useState({
     full_name: user.full_name || user.name || "",
     area: user.area || "København",
@@ -2393,13 +2417,15 @@ function ProfilTab({ user, showToast, setTab }) {
 function RankingTab({ user }) {
   const [players, setPlayers] = useState([]);
   const [eloHistory, setEloHistory] = useState([]);
-  /** Altid komplet historik for den loggede bruger (undgår at global batch-limit udelader egne rækker). */
-  const [myAllTimeStats, setMyAllTimeStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [viewPlayer, setViewPlayer] = useState(null);
   const [period, setPeriod] = useState(() => {
     try { return localStorage.getItem("pm-rank-period") || "all"; } catch { return "all"; }
   });
+
+  const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
+  const { eloHistoryRows: myEloHistoryRows } = useRatedEloHistoryRows(user.id, eloSyncKey);
+  const myAllTimeStats = useMemo(() => statsFromEloHistoryRows(myEloHistoryRows), [myEloHistoryRows]);
 
   const allTimeFromHistory = useMemo(() => allTimeStatsMapFromEloHistory(eloHistory), [eloHistory]);
   const myId = user?.id != null ? String(user.id) : "";
@@ -2408,39 +2434,35 @@ function RankingTab({ user }) {
     try { localStorage.setItem("pm-rank-period", period); } catch {}
   }, [period]);
 
-  useEffect(() => {
-    if (!user?.id) {
-      setMyAllTimeStats(null);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await supabase.from("elo_history").select("*")
-          .eq("user_id", user.id)
-          .order("date", { ascending: true });
-        if (!cancelled) setMyAllTimeStats(statsFromEloHistoryRows(data || []));
-      } catch {
-        if (!cancelled) setMyAllTimeStats(null);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [user.id]);
+  const loadRankingData = useCallback(async () => {
+    try {
+      const [profileData, historyData] = await Promise.all([
+        Profile.filter(),
+        supabase.from("elo_history").select("*").order("date", { ascending: false }).limit(10000),
+      ]);
+      setPlayers(profileData || []);
+      setEloHistory(historyData.data || []);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const [profileData, historyData] = await Promise.all([
-          Profile.filter(),
-          /* Høj limit: default 1000 rækker kan udelade spillere i all-time map (Profil henter per bruger og er komplet). */
-          supabase.from("elo_history").select("*").order("date", { ascending: false }).limit(10000),
-        ]);
-        setPlayers(profileData || []);
-        setEloHistory(historyData.data || []);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    })();
-  }, []);
+    setLoading(true);
+    loadRankingData();
+  }, [loadRankingData, eloSyncKey]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") loadRankingData();
+    };
+    const onFocus = () => { loadRankingData(); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [loadRankingData]);
 
   // Calculate period start dates
   const now = new Date();
