@@ -871,13 +871,14 @@ function allTimeStatsMapFromEloHistory(eloHistory) {
     if (h.old_rating == null || h.match_id == null) continue;
     const uid = h.user_id;
     if (uid == null) continue;
-    if (!byUser[uid]) byUser[uid] = [];
-    byUser[uid].push(h);
+    const key = String(uid);
+    if (!byUser[key]) byUser[key] = [];
+    byUser[key].push(h);
   }
   const out = {};
-  for (const uid of Object.keys(byUser)) {
-    const s = statsFromEloHistoryRows(byUser[uid]);
-    if (s) out[uid] = s;
+  for (const key of Object.keys(byUser)) {
+    const s = statsFromEloHistoryRows(byUser[key]);
+    if (s) out[key] = s;
   }
   return out;
 }
@@ -2392,6 +2393,8 @@ function ProfilTab({ user, showToast, setTab }) {
 function RankingTab({ user }) {
   const [players, setPlayers] = useState([]);
   const [eloHistory, setEloHistory] = useState([]);
+  /** Altid komplet historik for den loggede bruger (undgår at global batch-limit udelader egne rækker). */
+  const [myAllTimeStats, setMyAllTimeStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [viewPlayer, setViewPlayer] = useState(null);
   const [period, setPeriod] = useState(() => {
@@ -2399,17 +2402,38 @@ function RankingTab({ user }) {
   });
 
   const allTimeFromHistory = useMemo(() => allTimeStatsMapFromEloHistory(eloHistory), [eloHistory]);
+  const myId = user?.id != null ? String(user.id) : "";
 
   useEffect(() => {
     try { localStorage.setItem("pm-rank-period", period); } catch {}
   }, [period]);
 
   useEffect(() => {
+    if (!user?.id) {
+      setMyAllTimeStats(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.from("elo_history").select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: true });
+        if (!cancelled) setMyAllTimeStats(statsFromEloHistoryRows(data || []));
+      } catch {
+        if (!cancelled) setMyAllTimeStats(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user.id]);
+
+  useEffect(() => {
     (async () => {
       try {
         const [profileData, historyData] = await Promise.all([
           Profile.filter(),
-          supabase.from("elo_history").select("*").order("date", { ascending: false }),
+          /* Høj limit: default 1000 rækker kan udelade spillere i all-time map (Profil henter per bruger og er komplet). */
+          supabase.from("elo_history").select("*").order("date", { ascending: false }).limit(10000),
         ]);
         setPlayers(profileData || []);
         setEloHistory(historyData.data || []);
@@ -2439,12 +2463,15 @@ function RankingTab({ user }) {
     if (period === "all") {
       return [...players]
         .map(p => {
-          const h = allTimeFromHistory[p.id];
+          const pid = String(p.id);
+          const h = allTimeFromHistory[pid];
+          const isMe = myId && pid === myId;
+          const me = isMe ? myAllTimeStats : null;
           return {
             ...p,
-            score: h?.elo ?? Math.round(Number(p.elo_rating) || 1000),
-            periodGames: h?.games ?? (p.games_played || 0),
-            periodWins: h?.wins ?? (p.games_won || 0),
+            score: me?.elo ?? h?.elo ?? Math.round(Number(p.elo_rating) || 1000),
+            periodGames: me?.games ?? h?.games ?? (p.games_played || 0),
+            periodWins: me?.wins ?? h?.wins ?? (p.games_won || 0),
           };
         })
         .sort((a, b) => b.score - a.score);
@@ -2458,16 +2485,17 @@ function RankingTab({ user }) {
     eloHistory.forEach(h => {
       if (h.old_rating == null || h.match_id == null) return;
       if (h.date >= cutoffStr) {
-        if (!periodStats[h.user_id]) periodStats[h.user_id] = { change: 0, games: 0, wins: 0 };
-        periodStats[h.user_id].change += (h.change || 0);
-        periodStats[h.user_id].games += 1;
-        if (h.result === "win") periodStats[h.user_id].wins += 1;
+        const uid = String(h.user_id);
+        if (!periodStats[uid]) periodStats[uid] = { change: 0, games: 0, wins: 0 };
+        periodStats[uid].change += (h.change || 0);
+        periodStats[uid].games += 1;
+        if (h.result === "win") periodStats[uid].wins += 1;
       }
     });
 
     return [...players]
       .map(p => {
-        const stats = periodStats[p.id] || { change: 0, games: 0, wins: 0 };
+        const stats = periodStats[String(p.id)] || { change: 0, games: 0, wins: 0 };
         return { ...p, score: stats.change, periodGames: stats.games, periodWins: stats.wins };
       })
       .filter(p => p.periodGames > 0)
@@ -2475,10 +2503,10 @@ function RankingTab({ user }) {
   };
 
   const sorted = buildRanking();
-  const userRank = sorted.findIndex(p => p.id === user.id) + 1;
-  const userEntry = sorted.find(p => p.id === user.id);
+  const userRank = sorted.findIndex(p => String(p.id) === myId) + 1;
+  const userEntry = sorted.find(p => String(p.id) === myId);
   const displayScore = period === "all"
-    ? (allTimeFromHistory[user.id]?.elo ?? Math.round(Number(user.elo_rating) || 1000))
+    ? (myAllTimeStats?.elo ?? allTimeFromHistory[myId]?.elo ?? Math.round(Number(user.elo_rating) || 1000))
     : (userEntry?.score || 0);
   const medals = ["🥇", "🥈", "🥉"];
 
