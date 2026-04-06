@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
+import { normalizeProfileRow } from './profileUtils'
 
 const AuthContext = createContext(null)
 
@@ -14,7 +15,7 @@ function fetchProfileQuery(userId) {
     .maybeSingle()
     .then(({ data, error }) => {
       if (error) console.warn('profiles:', error.message)
-      return data || null
+      return normalizeProfileRow(data || null)
     })
     .catch(() => null)
 }
@@ -46,7 +47,7 @@ async function fetchOrCreateProfile(userRow) {
     console.warn('profiles upsert:', error.message)
     return null
   }
-  return row || null
+  return normalizeProfileRow(row || null)
 }
 
 function withTimeout(promise, ms) {
@@ -200,8 +201,9 @@ export function AuthProvider({ children }) {
     if (!user) throw new Error('Not authenticated')
     const { data, error } = await supabase.from('profiles').update(updates).eq('id', user.id).select().single()
     if (error) throw error
-    setProfile(data)
-    return data
+    const row = normalizeProfileRow(data)
+    setProfile(row)
+    return row
   }
 
   const refreshProfile = useCallback(() => {

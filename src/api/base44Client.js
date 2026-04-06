@@ -1,10 +1,18 @@
 import { supabase } from '../lib/supabase'
+import { normalizeProfileRow } from '../lib/profileUtils'
 
 /**
  * Creates a Supabase-backed entity with standard CRUD methods.
  * Each entity maps to a Supabase table.
  */
-function createEntity(tableName) {
+function createEntity(tableName, opts = {}) {
+  const norm = opts.normalizeRow
+  const mapRow = (row) => (row && norm ? norm(row) : row)
+  const mapData = (data) => {
+    if (data == null) return data
+    if (Array.isArray(data)) return data.map(mapRow)
+    return mapRow(data)
+  }
   return {
     /**
      * Filter rows by query object (key-value pairs for exact match).
@@ -18,7 +26,7 @@ function createEntity(tableName) {
       }
       const { data, error } = await q
       if (error) throw error
-      return data
+      return mapData(data)
     },
 
     /**
@@ -31,7 +39,7 @@ function createEntity(tableName) {
         .eq('id', id)
         .single()
       if (error) throw error
-      return data
+      return mapData(data)
     },
 
     /**
@@ -44,7 +52,7 @@ function createEntity(tableName) {
         .select()
         .single()
       if (error) throw error
-      return data
+      return mapData(data)
     },
 
     /**
@@ -58,7 +66,7 @@ function createEntity(tableName) {
         .select()
         .single()
       if (error) throw error
-      return data
+      return mapData(data)
     },
 
     /**
@@ -75,7 +83,7 @@ function createEntity(tableName) {
 }
 
 // Entity exports matching the database tables
-export const Profile = createEntity('profiles')
+export const Profile = createEntity('profiles', { normalizeRow: normalizeProfileRow })
 export const Court = createEntity('courts')
 export const CourtSlot = createEntity('court_slots')
 export const Match = createEntity('matches')

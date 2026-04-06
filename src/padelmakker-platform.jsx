@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
+import { normalizeProfileRow } from "./lib/profileUtils";
 import {
   Home, Users, MapPin, Swords, Trophy,
   UserPlus, TrendingUp, MessageCircle, Search,
@@ -894,7 +895,7 @@ function useProfileEloBundle(userId, syncKey) {
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
         supabase.from("elo_history").select("*").eq("user_id", userId).order("date", { ascending: true }),
       ]);
-      setProfileFresh(pr.data || null);
+      setProfileFresh(normalizeProfileRow(pr.data || null));
       setRatedRows(filterRatedEloHistoryRows(hist.data || []));
     } catch {
       setProfileFresh(null);
