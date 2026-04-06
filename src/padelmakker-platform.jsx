@@ -1181,7 +1181,7 @@ function KampeTab({ user, showToast }) {
     court_id: "",
     date: new Date().toISOString().split("T")[0],
     time: "20:00",
-    time_end: "22:00",
+    duration: "120",
     description: "",
   });
 
@@ -1221,15 +1221,19 @@ function KampeTab({ user, showToast }) {
 
   const createMatch = async () => {
     const startM = timeToMinutes(newMatch.time);
-    const endM = timeToMinutes(newMatch.time_end);
-    if (!Number.isFinite(startM) || !Number.isFinite(endM)) { showToast("Vælg gyldige tider."); return; }
-    if (endM <= startM) { showToast("Sluttid skal være efter starttid."); return; }
+    if (!Number.isFinite(startM)) { showToast("Vælg en gyldig starttid."); return; }
+    const dur = parseInt(newMatch.duration, 10);
+    if (!dur || dur < 60) { showToast("Varighed skal være mindst 1 time."); return; }
+    const endM = startM + dur;
+    const endH = String(Math.floor(endM / 60) % 24).padStart(2, "0");
+    const endMin = String(endM % 60).padStart(2, "0");
+    const timeEnd = endH + ":" + endMin;
     setCreating(true);
     try {
       const court = courts.find(c => c.id === newMatch.court_id);
       const row = {
         creator_id: user.id, court_id: newMatch.court_id, court_name: court?.name || "",
-        date: newMatch.date, time: fmtClock(newMatch.time), time_end: fmtClock(newMatch.time_end),
+        date: newMatch.date, time: fmtClock(newMatch.time), time_end: timeEnd,
         level_range: String(myElo), status: "open", max_players: 4, current_players: 1,
         description: sanitizeText(newMatch.description.trim()) || null,
       };
@@ -1567,10 +1571,16 @@ function KampeTab({ user, showToast }) {
               </select></div>
             <div><label style={labelStyle}>Dato</label>
               <input type="date" value={newMatch.date} onChange={e => setNewMatch(m => ({ ...m, date: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
-            <div><label style={labelStyle}>Fra</label>
+            <div><label style={labelStyle}>Starttid</label>
               <input type="time" value={newMatch.time} onChange={e => setNewMatch(m => ({ ...m, time: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
-            <div><label style={labelStyle}>Til</label>
-              <input type="time" value={newMatch.time_end} onChange={e => setNewMatch(m => ({ ...m, time_end: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
+            <div><label style={labelStyle}>Varighed</label>
+              <select value={newMatch.duration} onChange={e => setNewMatch(m => ({ ...m, duration: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
+                <option value="60">1 time</option>
+                <option value="90">1½ time</option>
+                <option value="120">2 timer</option>
+                <option value="150">2½ timer</option>
+                <option value="180">3 timer</option>
+              </select></div>
           </div>
           <label style={{ ...labelStyle, marginTop: "12px" }}>Beskrivelse (valgfrit)</label>
           <textarea value={newMatch.description} onChange={e => setNewMatch(m => ({ ...m, description: e.target.value }))} placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'" style={{ ...inputStyle, fontSize: "13px", height: "60px", resize: "vertical" }} />
