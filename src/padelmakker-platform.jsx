@@ -698,7 +698,7 @@ function NotificationBell({ userId }) {
    DASHBOARD SHELL
 ═══════════════════════════════════════════════════ */
 function DashboardPage({ user, onLogout, showToast }) {
-  const { user: authUser } = useAuth();
+  const { user: authUser, refreshProfileQuiet } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
   const navigate = useNavigate();
   const location = useLocation();
@@ -706,6 +706,11 @@ function DashboardPage({ user, onLogout, showToast }) {
   const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "profil"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
   const setTab = useCallback((t) => navigate("/dashboard/" + t), [navigate]);
+
+  /* Profil i React kan være forældet efter ændringer udefra (fx SQL-reset). Hent forfra på relevante faner uden fuld loading-skærm. */
+  useEffect(() => {
+    if (["hjem", "profil", "ranking", "kampe"].includes(tab)) refreshProfileQuiet();
+  }, [tab, refreshProfileQuiet]);
 
   const tabs = [
     { id: "hjem",    label: "Hjem",        icon: <Home    size={16} /> },
