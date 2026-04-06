@@ -7,7 +7,7 @@ import {
   Home, Users, MapPin, Swords, Trophy,
   UserPlus, TrendingUp, MessageCircle, Search,
   LogOut, Plus, Star, Clock, Building2, Sun, ArrowRight, Trash2, UserMinus,
-  Settings, KeyRound, Save, X,
+  Settings, KeyRound, Save, X, Bell, CheckCheck,
 } from "lucide-react";
 
 const LEVELS      = ["1-2 (Helt ny)", "3-4 (Begynder)", "5-6 (Øvet)", "7-8 (Avanceret)", "9-10 (Elite)"];
@@ -565,6 +565,136 @@ function OnboardingPage({ onComplete }) {
 }
 
 /* ═══════════════════════════════════════════════════
+   NOTIFICATIONS
+═══════════════════════════════════════════════════ */
+async function createNotification(userId, type, title, body, matchId = null) {
+  try {
+    await supabase.from("notifications").insert({
+      user_id: userId, type, title, body, match_id: matchId, read: false,
+    });
+  } catch (e) { console.warn("Notification error:", e); }
+}
+
+function NotificationBell({ userId }) {
+  const [open, setOpen] = useState(false);
+  const [notifs, setNotifs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const panelRef = useRef(null);
+
+  const unreadCount = notifs.filter(n => !n.read).length;
+
+  const load = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      setNotifs(data || []);
+    } catch {}
+  }, [userId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("notifs-" + userId)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: "user_id=eq." + userId }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId, load]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const markAllRead = async () => {
+    const unread = notifs.filter(n => !n.read).map(n => n.id);
+    if (!unread.length) return;
+    await supabase.from("notifications").update({ read: true }).in("id", unread);
+    setNotifs(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const timeAgo = (dateStr) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "nu";
+    if (mins < 60) return mins + " min";
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + "t";
+    return Math.floor(hours / 24) + "d";
+  };
+
+  const typeIcon = (type) => {
+    switch (type) {
+      case "match_join": return "⚔️";
+      case "match_full": return "✅";
+      case "result_submitted": return "📊";
+      case "result_confirmed": return "🏆";
+      case "elo_change": return "📈";
+      case "match_cancelled": return "❌";
+      case "welcome": return "👋";
+      default: return "🔔";
+    }
+  };
+
+  return (
+    <div ref={panelRef} style={{ position: "relative" }}>
+      <button
+        onClick={() => { setOpen(!open); if (!open) load(); }}
+        style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", borderRadius: "8px", display: "flex", alignItems: "center", position: "relative" }}
+        aria-label="Notifikationer"
+      >
+        <Bell size={18} color={theme.textMid} />
+        {unreadCount > 0 && (
+          <span style={{ position: "absolute", top: "2px", right: "2px", width: "16px", height: "16px", borderRadius: "50%", background: theme.red, color: "#fff", fontSize: "9px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div style={{ position: "absolute", top: "100%", right: 0, marginTop: "8px", width: "min(360px, calc(100vw - 32px))", background: theme.surface, borderRadius: "12px", boxShadow: theme.shadowLg, border: "1px solid " + theme.border, zIndex: 100, overflow: "hidden" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid " + theme.border }}>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: theme.text }}>Notifikationer</span>
+            {unreadCount > 0 && (
+              <button onClick={markAllRead} style={{ background: "none", border: "none", color: theme.accent, fontSize: "12px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontFamily: font }}>
+                <CheckCheck size={13} /> Markér alle læst
+              </button>
+            )}
+          </div>
+
+          <div style={{ maxHeight: "360px", overflowY: "auto" }}>
+            {notifs.length === 0 ? (
+              <div style={{ padding: "32px 16px", textAlign: "center", color: theme.textLight, fontSize: "13px" }}>
+                <Bell size={24} color={theme.textLight} style={{ marginBottom: "8px" }} />
+                <div>Ingen notifikationer endnu</div>
+              </div>
+            ) : notifs.map(n => (
+              <div key={n.id} style={{ padding: "12px 16px", borderBottom: "1px solid " + theme.border + "80", background: n.read ? "transparent" : theme.accentBg + "40", transition: "background 0.2s" }}>
+                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                  <span style={{ fontSize: "18px", flexShrink: 0, marginTop: "1px" }}>{typeIcon(n.type)}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "13px", fontWeight: n.read ? 500 : 700, color: theme.text, marginBottom: "2px" }}>{n.title}</div>
+                    <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.4 }}>{n.body}</div>
+                    <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{timeAgo(n.created_at)}</div>
+                  </div>
+                  {!n.read && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: theme.accent, flexShrink: 0, marginTop: "5px" }} />}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
    DASHBOARD SHELL
 ═══════════════════════════════════════════════════ */
 function DashboardPage({ user, onLogout, showToast }) {
@@ -593,6 +723,7 @@ function DashboardPage({ user, onLogout, showToast }) {
         <div className="pm-dash-brand" style={{ ...heading("clamp(16px,4vw,18px)"), color: theme.accent }}>🎾 PadelMakker</div>
         <div className="pm-dash-user">
           <span className="pm-dash-name">{displayName}</span>
+          <NotificationBell userId={user.id} />
           <button onClick={onLogout} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px", flexShrink: 0 }}>
             <LogOut size={13} /> Log ud
           </button>
@@ -1270,6 +1401,18 @@ function KampeTab({ user, showToast }) {
         await supabase.from("matches").update({ current_players: mp.length }).eq("id", matchId);
       }
 
+      // Notify match creator that someone joined
+      const match = matches.find(m => m.id === matchId);
+      if (match && match.creator_id !== user.id) {
+        createNotification(match.creator_id, "match_join", "Ny spiller tilmeldt!", `${myDisplayName} har tilmeldt sig Hold ${teamNum} i din kamp.`, matchId);
+      }
+      // Notify all players if match is now full
+      if (t1 >= 2 && t2 >= 2) {
+        mp.filter(p => p.user_id !== user.id).forEach(p => {
+          createNotification(p.user_id, "match_full", "Kampen er fuld! 🎾", "Alle 4 pladser er fyldt — kampen er klar til at starte.", matchId);
+        });
+      }
+
       showToast(`Du er tilmeldt Hold ${teamNum}! ⚔️`);
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
@@ -1322,8 +1465,12 @@ function KampeTab({ user, showToast }) {
     if (!window.confirm(msg)) return;
     setBusyId(matchId);
     try {
+      const mpBefore = matchPlayers[matchId] || [];
       await supabase.from("match_players").delete().eq("match_id", matchId);
       await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId).eq("creator_id", user.id);
+      mpBefore.filter(p => p.user_id !== user.id).forEach(p => {
+        createNotification(p.user_id, "match_cancelled", "Kamp aflyst ❌", `${myDisplayName} har aflyst kampen.`, matchId);
+      });
       showToast("Kamp slettet.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
@@ -1361,6 +1508,10 @@ function KampeTab({ user, showToast }) {
         confirmed: false,
       });
       if (error) throw error;
+      // Notify other players to confirm the result
+      mp.filter(p => p.user_id !== user.id).forEach(p => {
+        createNotification(p.user_id, "result_submitted", "Resultat indsendt 📊", `${myDisplayName} har indsendt et resultat (${scoreDisplay}). Bekræft venligst.`, matchId);
+      });
       showToast("Resultat indsendt! Venter på bekræftelse ⏳");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
@@ -1378,6 +1529,10 @@ function KampeTab({ user, showToast }) {
       // Calculate ELO
       const mp = matchPlayers[matchId] || [];
       await calculateAndApplyElo(matchId, mr.match_winner, mp, showToast);
+      // Notify all players about ELO update
+      mp.forEach(p => {
+        createNotification(p.user_id, "result_confirmed", "Resultat bekræftet! 🏆", `Kampen er afsluttet (${mr.score_display || "—"}). ELO er opdateret.`, matchId);
+      });
       showToast("Resultat bekræftet! ELO opdateret 🏆");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
