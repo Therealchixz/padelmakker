@@ -1278,8 +1278,19 @@ function KampeTab({ user, showToast }) {
       const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
       if (error) throw error;
       const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== user.id);
-      await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
-      showToast("Du er afmeldt.");
+      const match = matches.find(m => m.id === matchId);
+      const isCreator = match && String(match.creator_id) === String(user.id);
+
+      if (mp.length === 0) {
+        await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId);
+        showToast("Kampen er slettet (ingen spillere tilbage).");
+      } else if (isCreator) {
+        await supabase.from("matches").update({ creator_id: mp[0].user_id, status: "open", current_players: mp.length }).eq("id", matchId);
+        showToast("Du er afmeldt. Kampen er givet videre.");
+      } else {
+        await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
+        showToast("Du er afmeldt.");
+      }
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }
@@ -1299,11 +1310,16 @@ function KampeTab({ user, showToast }) {
   };
 
   const deleteMatch = async (matchId) => {
-    if (!window.confirm("Slet denne kamp for alle?")) return;
+    const mp = matchPlayers[matchId] || [];
+    const others = mp.filter(p => p.user_id !== user.id);
+    const msg = others.length > 0
+      ? `Slet denne kamp? ${others.length} andre spillere bliver også afmeldt.`
+      : "Slet denne kamp?";
+    if (!window.confirm(msg)) return;
     setBusyId(matchId);
     try {
       await supabase.from("match_players").delete().eq("match_id", matchId);
-      await supabase.from("matches").update({ status: "cancelled" }).eq("id", matchId).eq("creator_id", user.id);
+      await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId).eq("creator_id", user.id);
       showToast("Kamp slettet.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
@@ -1382,7 +1398,7 @@ function KampeTab({ user, showToast }) {
     const bJ = (matchPlayers[b.id] || []).some(p => p.user_id === user.id) ? 1 : 0;
     return bJ - aJ;
   });
-  const openMatches = sortJoinedFirst(matches.filter(m => { const s = getStatus(m); return s === "open" || s === "active" || s === "full"; }));
+  const openMatches = sortJoinedFirst(matches.filter(m => { const s = getStatus(m); if (s !== "open" && s !== "active" && s !== "full") return false; return (matchPlayers[m.id] || []).length > 0; }));
   const activeMatches = matches.filter(m => getStatus(m) === "in_progress" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id));
   const completedMatches = matches.filter(m => getStatus(m) === "completed" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id)).slice(0, 20);
 
@@ -1848,6 +1864,7 @@ function RankingTab({ user }) {
     // Sum ELO changes per player within the period
     const periodStats = {};
     eloHistory.forEach(h => {
+      if (h.old_rating == null || h.match_id == null) return;
       if (h.date >= cutoffStr) {
         if (!periodStats[h.user_id]) periodStats[h.user_id] = { change: 0, games: 0, wins: 0 };
         periodStats[h.user_id].change += (h.change || 0);
