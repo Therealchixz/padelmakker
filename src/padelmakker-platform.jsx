@@ -149,7 +149,7 @@ export default function PadelMakker() {
   const [resetMode, setResetMode] = useState(false);
   const navigate = useNavigate();
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-  const handleLogout = async () => { await signOut(); navigate("/"); };
+  const handleLogout = async () => { await signOut(); navigate("/login", { replace: true }); };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -191,7 +191,7 @@ export default function PadelMakker() {
       <Routes>
         <Route path="/" element={user && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
         <Route path="/login" element={user && profile ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-        <Route path="/opret" element={user && profile ? <Navigate to="/dashboard" replace /> : <OnboardingPage onComplete={() => showToast("Velkommen til PadelMakker! 🎾")} />} />
+        <Route path="/opret" element={user && profile ? <Navigate to="/dashboard" replace /> : <OnboardingPage onComplete={() => showToast("Tjek din email — bekræft kontoen, og log derefter ind.")} />} />
         <Route path="/dashboard" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/login" replace />} />
         <Route path="/dashboard/:tab" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -455,7 +455,7 @@ function LoginPage() {
    ONBOARDING
 ═══════════════════════════════════════════════════ */
 function OnboardingPage({ onComplete }) {
-  const { signUp } = useAuth();
+  const { signUp, signOut } = useAuth();
   const navigate = useNavigate();
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -482,8 +482,12 @@ function OnboardingPage({ onComplete }) {
         bio: sanitizeText(form.bio), avatar: form.avatar, birth_year: parseInt(form.birth_year) || null,
       });
       if (onComplete) onComplete();
+      /* Altid til login: undgå at blive på /opret eller auto-dashboard når der opstår en session */
+      try { await signOut(); } catch (_) { /* fortsæt til login alligevel */ }
+      navigate("/login", { replace: true });
     } catch (e) {
       setErr(e.message || "Kunne ikke oprette profil.");
+    } finally {
       setSubmitting(false);
     }
   };
