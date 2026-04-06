@@ -192,8 +192,8 @@ export default function PadelMakker() {
         <Route path="/" element={user && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
         <Route path="/login" element={user && profile ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
         <Route path="/opret" element={user && profile ? <Navigate to="/dashboard" replace /> : <OnboardingPage onComplete={() => showToast("Tjek din email — bekræft kontoen, og log derefter ind.")} />} />
-        <Route path="/dashboard" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/login" replace />} />
-        <Route path="/dashboard/:tab" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/login" replace />} />
+        <Route path="/dashboard" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
+        <Route path="/dashboard/:tab" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
