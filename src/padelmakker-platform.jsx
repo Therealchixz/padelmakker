@@ -1101,7 +1101,14 @@ async function calculateAndApplyElo(matchId, matchWinner, ignoredPlayersList, sh
     if (data?.success) {
       const t1c = data.team1_change;
       const sign = t1c > 0 ? "+" : "";
-      if (showToast) showToast(`ELO opdateret for ${data.players_updated} spillere! Hold 1: ${sign}${t1c}, Hold 2: ${t1c > 0 ? "" : "+"}${-t1c} 🏆`);
+      const n = Number(data.players_updated) || 0;
+      if (showToast) {
+        if (n === 0) {
+          showToast("ELO blev ikke opdateret for nogen spillere. Tjek at alle fire spillere var med på kampen da resultatet blev gemt.");
+        } else {
+          showToast(`ELO opdateret for ${n} spillere! Hold 1: ${sign}${t1c}, Hold 2: ${t1c > 0 ? "" : "+"}${-t1c} 🏆`);
+        }
+      }
     }
   } catch (e) {
     console.error("ELO exception:", e);
@@ -1367,6 +1374,11 @@ function InlineResultForm({ team1Names, team2Names, onSubmit, onClose }) {
 /* ═══════════════════════════════════════════════════
    KAMPE TAB (full rewrite with team selection, start, results, ELO)
 ═══════════════════════════════════════════════════ */
+/** match_players.team kan være tal eller streng fra DB — brug altid Number ved sammenligning. */
+function matchPlayerTeam(p) {
+  return Number(p?.team);
+}
+
 function KampeTab({ user, showToast }) {
   const { user: authUser }            = useAuth();
   const myDisplayName                 = resolveDisplayName(user, authUser);
@@ -1470,8 +1482,8 @@ function KampeTab({ user, showToast }) {
 
       // Check if match is now full (4 players, 2 per team)
       const mp = [...(matchPlayers[matchId] || []), { user_id: user.id, team: teamNum }];
-      const t1 = mp.filter(p => p.team === 1).length;
-      const t2 = mp.filter(p => p.team === 2).length;
+      const t1 = mp.filter(p => matchPlayerTeam(p) === 1).length;
+      const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
       if (t1 >= 2 && t2 >= 2) {
         await supabase.from("matches").update({ status: "full", current_players: 4 }).eq("id", matchId);
       } else {
@@ -1559,8 +1571,8 @@ function KampeTab({ user, showToast }) {
     setBusyId(matchId);
     try {
       const mp = matchPlayers[matchId] || [];
-      const t1 = mp.filter(p => p.team === 1);
-      const t2 = mp.filter(p => p.team === 2);
+      const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
+      const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
 
       const scoreDisplay = result.sets
         .filter(s => s.gamesTeam1 > 0 || s.gamesTeam2 > 0)
@@ -1648,8 +1660,8 @@ function KampeTab({ user, showToast }) {
     const isCreator = String(m.creator_id) === String(user.id);
     const busy = busyId === m.id;
     const status = getStatus(m);
-    const t1 = mp.filter(p => p.team === 1);
-    const t2 = mp.filter(p => p.team === 2);
+    const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
+    const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
     const t1Names = t1.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "—";
     const t2Names = t2.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "—";
     const isFull = t1.length >= 2 && t2.length >= 2;
@@ -1865,8 +1877,8 @@ function KampeTab({ user, showToast }) {
       {/* Result input modal */}
       {resultMatch && (() => {
         const mp = matchPlayers[resultMatch] || [];
-        const t1 = mp.filter(p => p.team === 1);
-        const t2 = mp.filter(p => p.team === 2);
+        const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
+        const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
         const t1Names = t1.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "Hold 1";
         const t2Names = t2.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "Hold 2";
         return (
