@@ -765,11 +765,11 @@ function HomeTab({ user, setTab }) {
   const displayName = resolveDisplayName(user, authUser);
   const firstName   = displayName.split(/\s+/)[0];
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
-  const { eloHistoryRows } = useRatedEloHistoryRows(user.id, eloSyncKey);
-  const histStats = useMemo(() => statsFromEloHistoryRows(eloHistoryRows), [eloHistoryRows]);
-  const games       = histStats?.games ?? (user.games_played || 0);
-  const wins        = histStats?.wins ?? (user.games_won || 0);
-  const elo         = histStats?.elo ?? Math.round(Number(user.elo_rating) || 1000);
+  const { eloHistoryRows, eloHistoryLoading } = useRatedEloHistoryRows(user.id, eloSyncKey);
+  const { elo, games, wins } = useMemo(
+    () => displayEloStatsFromHistory(user, eloHistoryRows, eloHistoryLoading),
+    [user, eloHistoryRows, eloHistoryLoading]
+  );
   const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
 
   const actions = [
@@ -855,6 +855,24 @@ function statsFromEloHistoryRows(rows) {
     if (h.result === "win") wins++;
   }
   return { elo, games, wins };
+}
+
+/**
+ * Kampe/sejre skal følge rated elo_history når den er indlæst. Tom historik = 0 kampe/sejre
+ * (fx efter DB-reset), ikke forældede games_played/games_won i React.
+ */
+function displayEloStatsFromHistory(profileLike, ratedHistoryRows, historyLoading) {
+  const fromHist = statsFromEloHistoryRows(ratedHistoryRows);
+  const profileElo = Math.round(Number(profileLike?.elo_rating) || 1000);
+  if (historyLoading) {
+    return {
+      elo: fromHist?.elo ?? profileElo,
+      games: fromHist?.games ?? (profileLike?.games_played || 0),
+      wins: fromHist?.wins ?? (profileLike?.games_won || 0),
+    };
+  }
+  if (fromHist) return fromHist;
+  return { elo: profileElo, games: 0, wins: 0 };
 }
 
 /**
@@ -1234,18 +1252,19 @@ function PlayerProfileModal({ player, onClose }) {
   const [streakLoading, setStreakLoading] = useState(true);
   const [streakError, setStreakError] = useState(false);
   const [streakStats, setStreakStats] = useState({ currentStreak: 0, bestStreak: 0 });
-  const [histStats, setHistStats] = useState(null);
+  const [ratedHistoryRows, setRatedHistoryRows] = useState([]);
 
   useEffect(() => {
     if (!player?.id) {
       setStreakLoading(false);
       setStreakStats({ currentStreak: 0, bestStreak: 0 });
-      setHistStats(null);
+      setRatedHistoryRows([]);
       return;
     }
     let cancelled = false;
     setStreakLoading(true);
     setStreakError(false);
+    setRatedHistoryRows([]);
     (async () => {
       try {
         const { data, error } = await supabase.from("elo_history").select("*")
@@ -1254,12 +1273,12 @@ function PlayerProfileModal({ player, onClose }) {
         if (error) throw error;
         const rows = filterRatedEloHistoryRows(data || []);
         setStreakStats(winStreaksFromEloHistory(rows));
-        setHistStats(statsFromEloHistoryRows(data || []));
+        setRatedHistoryRows(rows);
       } catch {
         if (!cancelled) {
           setStreakError(true);
           setStreakStats({ currentStreak: 0, bestStreak: 0 });
-          setHistStats(null);
+          setRatedHistoryRows([]);
         }
       } finally {
         if (!cancelled) setStreakLoading(false);
@@ -1269,9 +1288,7 @@ function PlayerProfileModal({ player, onClose }) {
   }, [player?.id]);
 
   if (!player) return null;
-  const elo = histStats?.elo ?? eloOf(player);
-  const games = histStats?.games ?? (player.games_played || 0);
-  const wins = histStats?.wins ?? (player.games_won || 0);
+  const { elo, games, wins } = displayEloStatsFromHistory(player, ratedHistoryRows, streakLoading);
   const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
   const age = player.birth_year ? new Date().getFullYear() - player.birth_year : null;
 
@@ -2202,6 +2219,10 @@ function ProfilTab({ user, showToast, setTab }) {
   const [saving, setSaving] = useState(false);
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { eloHistoryRows: eloHistory, eloHistoryLoading: statsLoading } = useRatedEloHistoryRows(user.id, eloSyncKey);
+  const { elo, games, wins } = useMemo(
+    () => displayEloStatsFromHistory(user, eloHistory, statsLoading),
+    [user, eloHistory, statsLoading]
+  );
   const [form, setForm] = useState({
     full_name: user.full_name || user.name || "",
     area: user.area || "København",
@@ -2239,10 +2260,6 @@ function ProfilTab({ user, showToast, setTab }) {
     } finally { setSaving(false); }
   };
 
-  const historyStats = statsFromEloHistoryRows(eloHistory);
-  const elo = historyStats?.elo ?? Math.round(Number(user.elo_rating) || 1000);
-  const games = historyStats?.games ?? (user.games_played || 0);
-  const wins = historyStats?.wins ?? (user.games_won || 0);
   const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
 
   if (!editing) {
@@ -2446,8 +2463,11 @@ function RankingTab({ user }) {
   });
 
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
-  const { eloHistoryRows: myEloHistoryRows } = useRatedEloHistoryRows(user.id, eloSyncKey);
-  const myAllTimeStats = useMemo(() => statsFromEloHistoryRows(myEloHistoryRows), [myEloHistoryRows]);
+  const { eloHistoryRows: myEloHistoryRows, eloHistoryLoading: myHistLoading } = useRatedEloHistoryRows(user.id, eloSyncKey);
+  const myAllTimeStats = useMemo(
+    () => displayEloStatsFromHistory(user, myEloHistoryRows, myHistLoading),
+    [user, myEloHistoryRows, myHistLoading]
+  );
 
   const allTimeFromHistory = useMemo(() => allTimeStatsMapFromEloHistory(eloHistory), [eloHistory]);
   const myId = user?.id != null ? String(user.id) : "";
@@ -2511,11 +2531,13 @@ function RankingTab({ user }) {
           const h = allTimeFromHistory[pid];
           const isMe = myId && pid === myId;
           const me = isMe ? myAllTimeStats : null;
+          const fallbackGames = p.games_played || 0;
+          const fallbackWins = p.games_won || 0;
           return {
             ...p,
             score: me?.elo ?? h?.elo ?? Math.round(Number(p.elo_rating) || 1000),
-            periodGames: me?.games ?? h?.games ?? (p.games_played || 0),
-            periodWins: me?.wins ?? h?.wins ?? (p.games_won || 0),
+            periodGames: me?.games ?? h?.games ?? fallbackGames,
+            periodWins: me?.wins ?? h?.wins ?? fallbackWins,
           };
         })
         .sort((a, b) => b.score - a.score);
