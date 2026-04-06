@@ -965,6 +965,20 @@ function timeToMinutes(hhmm) {
   return h * 60 + min;
 }
 
+/** Nyeste afsluttede kamp først: resultat-tidsstempel, ellers kamp dato+tid. */
+function matchCompletedSortMs(m, resultsByMatchId) {
+  const mr = resultsByMatchId[m.id];
+  const ts = mr?.updated_at || mr?.created_at || mr?.confirmed_at;
+  if (ts) {
+    const n = new Date(ts).getTime();
+    if (Number.isFinite(n)) return n;
+  }
+  const d = m.date || "1970-01-01";
+  const t = fmtClock(m.time) || "00:00";
+  const n = new Date(`${d}T${t}:00`).getTime();
+  return Number.isFinite(n) ? n : 0;
+}
+
 /** Nyere kampe: level_range er ren ELO-tal som string. Ældre: "4-6" osv. */
 function matchSkillLabel(m) {
   const lr = m?.level_range;
@@ -1742,7 +1756,10 @@ function KampeTab({ user, showToast }) {
   });
   const openMatches = sortJoinedFirst(matches.filter(m => { const s = getStatus(m); if (s !== "open" && s !== "active" && s !== "full") return false; return (matchPlayers[m.id] || []).length > 0; }));
   const activeMatches = matches.filter(m => getStatus(m) === "in_progress" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id));
-  const completedMatches = matches.filter(m => getStatus(m) === "completed" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id)).slice(0, 20);
+  const completedMatches = matches
+    .filter(m => getStatus(m) === "completed" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id))
+    .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults))
+    .slice(0, 20);
 
   if (loadingMatches) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>;
 
