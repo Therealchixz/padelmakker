@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
@@ -862,6 +862,24 @@ function statsFromEloHistoryRows(rows) {
     if (h.result === "win") wins++;
   }
   return { elo, games, wins };
+}
+
+/** Per bruger: seneste ELO + kampe/sejre fra elo_history (til ranking all-time). */
+function allTimeStatsMapFromEloHistory(eloHistory) {
+  const byUser = {};
+  for (const h of eloHistory || []) {
+    if (h.old_rating == null || h.match_id == null) continue;
+    const uid = h.user_id;
+    if (uid == null) continue;
+    if (!byUser[uid]) byUser[uid] = [];
+    byUser[uid].push(h);
+  }
+  const out = {};
+  for (const uid of Object.keys(byUser)) {
+    const s = statsFromEloHistoryRows(byUser[uid]);
+    if (s) out[uid] = s;
+  }
+  return out;
 }
 
 /** Kræver rækker med `date` og `result` ("win" / andet). Sorterer kronologisk internt. */
@@ -2380,6 +2398,8 @@ function RankingTab({ user }) {
     try { return localStorage.getItem("pm-rank-period") || "all"; } catch { return "all"; }
   });
 
+  const allTimeFromHistory = useMemo(() => allTimeStatsMapFromEloHistory(eloHistory), [eloHistory]);
+
   useEffect(() => {
     try { localStorage.setItem("pm-rank-period", period); } catch {}
   }, [period]);
@@ -2418,7 +2438,15 @@ function RankingTab({ user }) {
   const buildRanking = () => {
     if (period === "all") {
       return [...players]
-        .map(p => ({ ...p, score: Math.round(Number(p.elo_rating) || 1000), periodGames: p.games_played || 0, periodWins: p.games_won || 0 }))
+        .map(p => {
+          const h = allTimeFromHistory[p.id];
+          return {
+            ...p,
+            score: h?.elo ?? Math.round(Number(p.elo_rating) || 1000),
+            periodGames: h?.games ?? (p.games_played || 0),
+            periodWins: h?.wins ?? (p.games_won || 0),
+          };
+        })
         .sort((a, b) => b.score - a.score);
     }
 
@@ -2450,7 +2478,7 @@ function RankingTab({ user }) {
   const userRank = sorted.findIndex(p => p.id === user.id) + 1;
   const userEntry = sorted.find(p => p.id === user.id);
   const displayScore = period === "all"
-    ? Math.round(Number(user.elo_rating) || 1000)
+    ? (allTimeFromHistory[user.id]?.elo ?? Math.round(Number(user.elo_rating) || 1000))
     : (userEntry?.score || 0);
   const medals = ["🥇", "🥈", "🥉"];
 
@@ -2512,7 +2540,7 @@ function RankingTab({ user }) {
             <div style={{ width: Math.min((displayScore / 2000) * 100, 100) + "%", height: "100%", background: theme.warm, borderRadius: "6px" }} />
           </div>
         )}
-        {period !== "all" && userEntry && (
+        {userEntry && (period !== "all" || userEntry.periodGames > 0) && (
           <div style={{ marginTop: "12px", fontSize: "12px", opacity: 0.7 }}>
             {userEntry.periodGames} kampe · {userEntry.periodWins} sejre
           </div>
@@ -2549,7 +2577,7 @@ function RankingTab({ user }) {
                   </div>
                   <div style={{ fontSize: "11px", color: theme.textLight, marginTop: "1px" }}>
                     {period === "all"
-                      ? `${p.area || "?"} · ${p.games_played || 0} kampe`
+                      ? `${p.area || "?"} · ${p.periodGames} kampe · ${p.periodWins} sejre`
                       : `${p.periodGames} kampe · ${p.periodWins} sejre`
                     }
                   </div>
