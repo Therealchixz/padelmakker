@@ -1601,41 +1601,61 @@ function KampeTab({ user, showToast }) {
         </div>
 
         {/* Teams display */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", padding: "12px", background: "#F8FAFC", borderRadius: "8px" }}>
-          {/* Team 1 */}
-          <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Hold 1</div>
-            <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
-              {t1.map(p => (
-                <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
-                  <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: theme.accentBg, border: "1.5px solid " + theme.accent + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>{p.user_emoji || "🎾"}</div>
-                  <span style={{ fontSize: "9px", color: theme.textLight, marginTop: "3px" }}>{(p.user_name || "?").split(" ")[0]}</span>
+        {(() => {
+          const playerElo = (p) => eloByUserId[String(p.user_id)] || 1000;
+          const avgElo = (team) => team.length > 0 ? Math.round(team.reduce((s, p) => s + playerElo(p), 0) / team.length) : null;
+          const t1Avg = avgElo(t1);
+          const t2Avg = avgElo(t2);
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", padding: "12px", background: "#F8FAFC", borderRadius: "8px" }}>
+              {/* Team 1 */}
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>Hold 1</div>
+                {t1Avg !== null && <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, marginBottom: "6px", opacity: 0.7 }}>Ø {t1Avg} ELO</div>}
+                {t1Avg === null && <div style={{ height: "6px" }} />}
+                <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
+                  {t1.map(p => (
+                    <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", minWidth: "42px" }}>
+                      <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: theme.accentBg, border: "1.5px solid " + theme.accent + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>{p.user_emoji || "🎾"}</div>
+                      <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
+                      <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700 }}>{playerElo(p)}</span>
+                    </div>
+                  ))}
+                  {Array.from({ length: Math.max(0, 2 - t1.length) }).map((_, i) => (
+                    <div key={"t1e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
+                      <div style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={10} color={theme.textLight} /></div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              {Array.from({ length: Math.max(0, 2 - t1.length) }).map((_, i) => (
-                <div key={"t1e" + i} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={10} color={theme.textLight} /></div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          <div style={{ fontSize: "14px", fontWeight: 800, color: theme.textLight }}>vs</div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                <div style={{ fontSize: "14px", fontWeight: 800, color: theme.textLight }}>vs</div>
+              </div>
 
-          {/* Team 2 */}
-          <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Hold 2</div>
-            <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
-              {t2.map(p => (
-                <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
-                  <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: theme.blueBg, border: "1.5px solid " + theme.blue + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>{p.user_emoji || "🎾"}</div>
-                  <span style={{ fontSize: "9px", color: theme.textLight, marginTop: "3px" }}>{(p.user_name || "?").split(" ")[0]}</span>
+              {/* Team 2 */}
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>Hold 2</div>
+                {t2Avg !== null && <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, marginBottom: "6px", opacity: 0.7 }}>Ø {t2Avg} ELO</div>}
+                {t2Avg === null && <div style={{ height: "6px" }} />}
+                <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
+                  {t2.map(p => (
+                    <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", minWidth: "42px" }}>
+                      <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: theme.blueBg, border: "1.5px solid " + theme.blue + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>{p.user_emoji || "🎾"}</div>
+                      <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
+                      <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700 }}>{playerElo(p)}</span>
+                    </div>
+                  ))}
+                  {Array.from({ length: Math.max(0, 2 - t2.length) }).map((_, i) => (
+                    <div key={"t2e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
+                      <div style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={10} color={theme.textLight} /></div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              {Array.from({ length: Math.max(0, 2 - t2.length) }).map((_, i) => (
-                <div key={"t2e" + i} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={10} color={theme.textLight} /></div>
-              ))}
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Score display for completed/result pending */}
         {mr && (() => {
