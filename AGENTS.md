@@ -43,3 +43,7 @@ Without these, the app loads the UI with placeholder Supabase credentials and da
 - `src/lib/AuthContext.jsx` — Authentication context provider
 - `src/api/base44Client.js` — CRUD entity helpers for Supabase tables
 - `src/components/PadelMatchResultInput.tsx` — Match result input component (TypeScript)
+
+### Git: ny kode → ny PR
+
+Ved hver ny kodeændring: **ny branch fra opdateret `main`**, commit, push til `origin`, og **opret en ny pull request** mod `main`. Genbrug ikke en branch/PR der allerede er merged (GitHub tillader ikke at pushe til den samme merge igen). Hvis push fejler lokalt: `git pull origin main`, ny branch, og flyt ændringerne dertil (eller bed agenten om en ny PR).
