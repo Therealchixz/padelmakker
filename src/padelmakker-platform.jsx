@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
@@ -146,10 +147,10 @@ export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
   const [toast, setToast] = useState(null);
   const [resetMode, setResetMode] = useState(false);
+  const navigate = useNavigate();
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-  const handleLogout = async () => { await signOut(); };
+  const handleLogout = async () => { await signOut(); navigate("/"); };
 
-  // Detect password recovery event from Supabase
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
@@ -175,7 +176,7 @@ export default function PadelMakker() {
             {toast}
           </div>
         )}
-        <ResetPasswordPage onDone={() => { setResetMode(false); showToast("Adgangskode opdateret! ✅"); }} />
+        <ResetPasswordPage onDone={() => { setResetMode(false); navigate("/dashboard"); showToast("Adgangskode opdateret! ✅"); }} />
       </div>
     );
   }
@@ -187,22 +188,15 @@ export default function PadelMakker() {
           {toast}
         </div>
       )}
-      {user && profile
-        ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} />
-        : <PublicPages showToast={showToast} />
-      }
+      <Routes>
+        <Route path="/" element={user && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+        <Route path="/login" element={user && profile ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+        <Route path="/opret" element={user && profile ? <Navigate to="/dashboard" replace /> : <OnboardingPage onComplete={() => showToast("Velkommen til PadelMakker! 🎾")} />} />
+        <Route path="/dashboard" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/login" replace />} />
+        <Route path="/dashboard/:tab" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
-  );
-}
-
-function PublicPages({ showToast }) {
-  const [page, setPage] = useState("landing");
-  return (
-    <>
-      {page === "landing"    && <LandingPage    onGetStarted={() => setPage("onboarding")} onLogin={() => setPage("login")} />}
-      {page === "onboarding" && <OnboardingPage onComplete={() => showToast("Velkommen til PadelMakker! 🎾")} onBack={() => setPage("landing")} />}
-      {page === "login"      && <LoginPage      onBack={() => setPage("landing")} />}
-    </>
   );
 }
 
@@ -243,8 +237,9 @@ function ResetPasswordPage({ onDone }) {
     </div>
   );
 }
-function LandingPage({ onGetStarted, onLogin }) {
+function LandingPage() {
   const revealRef = useScrollReveal();
+  const navigate = useNavigate();
 
   const steps = [
     { step: "01", icon: <UserPlus  size={24} color="#fff" />, title: "Opret profil", desc: "Angiv dit niveau, spillestil og område — det tager under et minut." },
@@ -266,8 +261,8 @@ function LandingPage({ onGetStarted, onLogin }) {
         <div className="pm-landing-nav" style={{ padding: "clamp(12px, 2.5vw, 16px) clamp(16px, 4vw, 24px)", maxWidth: "1100px", margin: "0 auto" }}>
           <div style={{ ...heading("clamp(17px,4.5vw,20px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px" }}>🎾 PadelMakker</div>
           <div className="pm-landing-nav-actions">
-            <button onClick={onLogin} style={{ ...btn(false), borderColor: "transparent", background: "transparent" }}>Log ind</button>
-            <button onClick={onGetStarted} style={{ ...btn(true), borderRadius: "8px" }}>Kom i gang</button>
+            <button onClick={() => navigate("/login")} style={{ ...btn(false), borderColor: "transparent", background: "transparent" }}>Log ind</button>
+            <button onClick={() => navigate("/opret")} style={{ ...btn(true), borderRadius: "8px" }}>Kom i gang</button>
           </div>
         </div>
       </nav>
@@ -285,10 +280,10 @@ function LandingPage({ onGetStarted, onLogin }) {
             Stop med at søge i Facebook-grupper. PadelMakker matcher dig med spillere på dit niveau — gratis.
           </p>
           <div className="pm-reveal pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={onGetStarted} style={{ fontFamily: font, fontSize: "16px", fontWeight: 700, padding: "14px 32px", borderRadius: "10px", border: "none", background: "#fff", color: theme.accent, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", letterSpacing: "-0.01em", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
+            <button onClick={() => navigate("/opret")} style={{ fontFamily: font, fontSize: "16px", fontWeight: 700, padding: "14px 32px", borderRadius: "10px", border: "none", background: "#fff", color: theme.accent, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", letterSpacing: "-0.01em", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
               Opret gratis profil <ArrowRight size={17} />
             </button>
-            <button onClick={onLogin} style={{ fontFamily: font, fontSize: "16px", fontWeight: 600, padding: "14px 28px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.1)", color: "#fff", cursor: "pointer", backdropFilter: "blur(4px)", letterSpacing: "-0.01em" }}>
+            <button onClick={() => navigate("/login")} style={{ fontFamily: font, fontSize: "16px", fontWeight: 600, padding: "14px 28px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.1)", color: "#fff", cursor: "pointer", backdropFilter: "blur(4px)", letterSpacing: "-0.01em" }}>
               Log ind
             </button>
           </div>
@@ -358,7 +353,7 @@ function LandingPage({ onGetStarted, onLogin }) {
             <p style={{ fontSize: "clamp(15px,3.5vw,17px)", color: "rgba(255,255,255,0.75)", maxWidth: "420px", margin: "0 auto 32px", lineHeight: 1.6 }}>
               Opret din profil på under et minut og find din første makker i dag.
             </p>
-            <button onClick={onGetStarted} style={{ fontFamily: font, fontSize: "16px", fontWeight: 700, padding: "14px 36px", borderRadius: "10px", border: "none", background: "#fff", color: theme.accent, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>
+            <button onClick={() => navigate("/opret")} style={{ fontFamily: font, fontSize: "16px", fontWeight: 700, padding: "14px 36px", borderRadius: "10px", border: "none", background: "#fff", color: theme.accent, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>
               Kom i gang — det er gratis <ArrowRight size={17} />
             </button>
           </div>
@@ -376,8 +371,9 @@ function LandingPage({ onGetStarted, onLogin }) {
 /* ═══════════════════════════════════════════════════
    LOGIN
 ═══════════════════════════════════════════════════ */
-function LoginPage({ onBack }) {
+function LoginPage() {
   const { signIn } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
   const [err, setErr]             = useState("");
@@ -437,7 +433,7 @@ function LoginPage({ onBack }) {
 
   return (
     <div className="pm-auth-narrow">
-      <button onClick={onBack} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
+      <button onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
       <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Velkommen tilbage</h1>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Log ind med din email og adgangskode.</p>
       <label style={labelStyle}>Email</label>
@@ -458,8 +454,9 @@ function LoginPage({ onBack }) {
 /* ═══════════════════════════════════════════════════
    ONBOARDING
 ═══════════════════════════════════════════════════ */
-function OnboardingPage({ onComplete, onBack }) {
+function OnboardingPage({ onComplete }) {
   const { signUp } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
@@ -557,7 +554,7 @@ function OnboardingPage({ onComplete, onBack }) {
       {steps[step]}
       {err && <p style={{ color: theme.red, fontSize: "13px", marginTop: "12px" }}>{err}</p>}
       <div className="pm-onboarding-actions">
-        <button onClick={step > 0 ? () => setStep(s => s - 1) : onBack} style={btn(false)}>← Tilbage</button>
+        <button onClick={step > 0 ? () => setStep(s => s - 1) : () => navigate("/")} style={btn(false)}>← Tilbage</button>
         {step < 3
           ? <button onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.4 }}>Næste <ArrowRight size={15} /></button>
           : <button onClick={finish} disabled={submitting} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
@@ -573,12 +570,12 @@ function OnboardingPage({ onComplete, onBack }) {
 function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
-  const [tab, setTab] = useState(() => {
-    try { return localStorage.getItem("pm-tab") || "hjem"; } catch { return "hjem"; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem("pm-tab", tab); } catch {}
-  }, [tab]);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathTab = location.pathname.split("/")[2] || "hjem";
+  const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "profil"];
+  const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
+  const setTab = useCallback((t) => navigate("/dashboard/" + t), [navigate]);
 
   const tabs = [
     { id: "hjem",    label: "Hjem",        icon: <Home    size={16} /> },

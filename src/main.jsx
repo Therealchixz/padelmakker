@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import './styles/variables.css'
 import './responsive.css'
@@ -8,8 +9,10 @@ import PadelMakker from './padelmakker-platform'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AuthProvider>
-      <PadelMakker />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <PadelMakker />
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>
 )
