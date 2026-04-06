@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./lib/AuthContext";
 import KampeTab from "./features/matches/KampeTab";
-import { supabase } from "./lib/supabase";           // ← Vigtig import
+import { supabase } from "./lib/supabase";
 
 // Ikoner
 import { 
@@ -29,7 +29,6 @@ export default function PadelMakker() {
 
   const handleLogout = async () => await signOut();
 
-  // Password recovery
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setResetMode(true);
@@ -152,7 +151,6 @@ function DashboardPage({ user, onLogout, showToast }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="text-2xl font-bold text-emerald-700">🎾 PadelMakker</div>
@@ -167,7 +165,6 @@ function DashboardPage({ user, onLogout, showToast }) {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="max-w-5xl mx-auto px-4 flex gap-1 overflow-x-auto pb-3">
           {tabs.map(t => (
             <button
@@ -197,13 +194,21 @@ function DashboardPage({ user, onLogout, showToast }) {
 
 /* ====================== LANDING PAGE ====================== */
 function LandingPage({ onGetStarted, onLogin }) {
-  // Din originale landing page kode her
   return (
-    <div className="text-center py-20">
-      <h1 className="text-5xl font-bold mb-6">Find makker. Book bane. Spil padel.</h1>
-      <button onClick={onGetStarted} className="bg-emerald-700 text-white px-8 py-4 rounded-2xl text-lg">
-        Kom i gang
-      </button>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-5xl mx-auto px-6 py-24 text-center">
+        <div className="text-6xl mb-6">🎾</div>
+        <h1 className="text-5xl font-bold mb-6">Find makker.<br />Book bane.<br />Spil padel.</h1>
+        <p className="text-xl text-slate-600 mb-10 max-w-md mx-auto">
+          Stop med at søge i Facebook-grupper. PadelMakker matcher dig med spillere på dit niveau.
+        </p>
+        <button 
+          onClick={onGetStarted}
+          className="bg-emerald-700 text-white px-10 py-4 rounded-2xl text-lg font-semibold hover:bg-emerald-800"
+        >
+          Kom i gang gratis
+        </button>
+      </div>
     </div>
   );
 }
@@ -217,6 +222,10 @@ function LoginPage({ onBack }) {
   const [submitting, setSubmitting] = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      setErr("Indtast email og adgangskode");
+      return;
+    }
     setSubmitting(true);
     setErr("");
     try {
@@ -229,8 +238,9 @@ function LoginPage({ onBack }) {
   };
 
   return (
-    <div className="max-w-md mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-2">Log ind</h1>
+    <div className="max-w-md mx-auto p-8 pt-20">
+      <h1 className="text-3xl font-bold mb-6">Log ind</h1>
+      
       <input 
         type="email" 
         value={email} 
@@ -245,15 +255,36 @@ function LoginPage({ onBack }) {
         placeholder="Adgangskode" 
         className="w-full border border-slate-300 rounded-xl px-4 py-3 mb-6"
       />
+
       {err && <p className="text-red-600 mb-4">{err}</p>}
-      <button onClick={handleLogin} disabled={submitting} className="w-full bg-emerald-700 text-white py-3 rounded-xl">
+
+      <button 
+        onClick={handleLogin} 
+        disabled={submitting}
+        className="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-3 rounded-xl font-semibold"
+      >
         {submitting ? "Logger ind..." : "Log ind"}
       </button>
-      <button onClick={onBack} className="mt-4 text-sm text-slate-500">Tilbage</button>
+
+      <button onClick={onBack} className="mt-6 text-sm text-slate-500 block mx-auto">
+        ← Tilbage
+      </button>
     </div>
   );
 }
 
 /* ====================== ONBOARDING PAGE ====================== */
-// Indsæt din fulde originale OnboardingPage her, hvis du vil have den med.
-// For nu er den udeladt for at holde filen overskuelig. Du kan kopiere den ind fra din gamle version.
+// Tilføj din fulde OnboardingPage her hvis du vil have den med.
+// Du kan kopiere den fra din gamle version af filen.
+
+function OnboardingPage({ onComplete, onBack }) {
+  return (
+    <div className="max-w-md mx-auto p-8 pt-20">
+      <h1 className="text-3xl font-bold mb-6">Opret profil</h1>
+      <p className="text-slate-600 mb-8">Onboarding er under udvikling</p>
+      <button onClick={onComplete} className="w-full bg-emerald-700 text-white py-3 rounded-xl">
+        Fortsæt
+      </button>
+    </div>
+  );
+}
