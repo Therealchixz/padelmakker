@@ -5,14 +5,17 @@ import './index.css'
 import './styles/variables.css'
 import './responsive.css'
 import { AuthProvider } from './lib/AuthContext'
+import { ErrorBoundary } from './ErrorBoundary'
 import PadelMakker from './padelmakker-platform'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <PadelMakker />
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <PadelMakker />
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 )

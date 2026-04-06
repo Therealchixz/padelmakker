@@ -19,6 +19,36 @@ function fetchProfileQuery(userId) {
     .catch(() => null)
 }
 
+/** Eksisterende profil eller minimal upsert (auth uden profiles-række → ellers hvid dashboard). */
+async function fetchOrCreateProfile(userRow) {
+  if (!userRow?.id) return null
+  let p = await fetchProfileQuery(userRow.id)
+  if (p) return p
+  const meta = userRow.user_metadata || {}
+  const email = userRow.email || ''
+  const { data: row, error } = await supabase.from('profiles').upsert(
+    {
+      id: userRow.id,
+      email: email || '',
+      name: meta.full_name || meta.name || (email ? email.split('@')[0] : null) || 'Spiller',
+      full_name: meta.full_name || meta.name || (email ? email.split('@')[0] : null) || 'Spiller',
+      level: meta.level || 5,
+      play_style: meta.play_style || 'Ved ikke endnu',
+      area: meta.area || 'København',
+      availability: meta.availability || [],
+      bio: meta.bio || '',
+      avatar: meta.avatar || '🎾',
+      birth_year: meta.birth_year ?? null,
+    },
+    { onConflict: 'id' }
+  ).select().single()
+  if (error) {
+    console.warn('profiles upsert:', error.message)
+    return null
+  }
+  return row || null
+}
+
 function withTimeout(promise, ms) {
   return Promise.race([
     promise,
@@ -36,12 +66,17 @@ export function AuthProvider({ children }) {
   const [profileLoading, setProfileLoading] = useState(false)
   const profileReqId = useRef(0)
 
-  const loadProfile = useCallback((userId, opts = {}) => {
+  const loadProfile = useCallback((userRow, opts = {}) => {
     const quiet = opts.quiet === true
     const id = ++profileReqId.current
+    if (!userRow?.id) {
+      setProfile(null)
+      if (!quiet) setProfileLoading(false)
+      return
+    }
     if (!quiet) setProfileLoading(true)
     Promise.race([
-      fetchProfileQuery(userId),
+      fetchOrCreateProfile(userRow),
       new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
     ])
       .then((p) => {
@@ -75,7 +110,7 @@ export function AuthProvider({ children }) {
         const s = result?.data?.session ?? null
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) loadProfile(s.user.id)
+        if (s?.user) loadProfile(s.user)
         else setProfile(null)
       } catch (e) {
         if (!cancelled) {
@@ -95,7 +130,7 @@ export function AuthProvider({ children }) {
       (_event, s) => {
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) loadProfile(s.user.id)
+        if (s?.user) loadProfile(s.user)
         else {
           profileReqId.current += 1
           setProfile(null)
@@ -134,12 +169,7 @@ export function AuthProvider({ children }) {
       if (data.session) {
         setSession(data.session)
         setUser(data.user)
-        const p = await Promise.race([
-          fetchProfileQuery(data.user.id),
-          new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
-        ])
-        setProfile(p)
-        setProfileLoading(false)
+        loadProfile(data.user)
       }
     }
     return data
@@ -152,12 +182,7 @@ export function AuthProvider({ children }) {
     if (data.user) {
       setSession(data.session)
       setUser(data.user)
-      const p = await Promise.race([
-        fetchProfileQuery(data.user.id),
-        new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
-      ])
-      setProfile(p)
-      setProfileLoading(false)
+      loadProfile(data.user)
     }
     return data
   }
@@ -180,12 +205,12 @@ export function AuthProvider({ children }) {
   }
 
   const refreshProfile = useCallback(() => {
-    if (user) loadProfile(user.id)
+    if (user) loadProfile(user)
   }, [user, loadProfile])
 
   /** Genindlæs profiles-rækken uden fuldskærms-loading (fx efter DB-reset eller tab-skift). */
   const refreshProfileQuiet = useCallback(() => {
-    if (user) loadProfile(user.id, { quiet: true })
+    if (user) loadProfile(user, { quiet: true })
   }, [user, loadProfile])
 
   return (

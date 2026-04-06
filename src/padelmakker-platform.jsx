@@ -388,6 +388,7 @@ function LoginPage() {
       await signIn(email.trim(), password);
     } catch (e) {
       setErr(e.message || "Login fejlede. Tjek email og adgangskode.");
+    } finally {
       setSubmitting(false);
     }
   };
@@ -601,12 +602,17 @@ function NotificationBell({ userId }) {
 
   useEffect(() => { load(); }, [load]);
 
+  /* Realtime på notifications kræver at tabellen findes og Realtime er slået til — ellers kan nogle browsere crashe med hvid skærm */
   useEffect(() => {
     const channel = supabase
       .channel("notifs-" + userId)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: "user_id=eq." + userId }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          try { supabase.removeChannel(channel); } catch (_) { /* ignore */ }
+        }
+      });
+    return () => { try { supabase.removeChannel(channel); } catch (_) { /* ignore */ } };
   }, [userId, load]);
 
   useEffect(() => {
