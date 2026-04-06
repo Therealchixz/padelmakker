@@ -1,39 +1,47 @@
-const CACHE_NAME = 'padelmakker-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-];
+/**
+ * PWA service worker — undgå at cache index.html (forårsager hvid skærm efter deploy:
+ * gammel HTML peger på slettede hashed JS-filer).
+ */
+const CACHE_NAME = 'padelmakker-assets-v2';
 
-// Install: cache static assets
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
   self.skipWaiting();
 });
 
-// Activate: clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((k) => k !== CACHE_NAME)
+            .map((k) => caches.delete(k))
+        )
+      )
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch: network first, fallback to cache
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET and Supabase API calls
   if (event.request.method !== 'GET') return;
-  if (event.request.url.includes('supabase.co')) return;
-  if (event.request.url.includes('googleapis.com')) return;
+  const url = event.request.url;
+  if (url.includes('supabase.co')) return;
+  if (url.includes('googleapis.com')) return;
+  if (url.includes('gstatic.com')) return;
 
+  /* Lad browseren hente dokumenter direkte — altid frisk index.html fra serveren */
+  if (event.request.mode === 'navigate') return;
+
+  /* Statiske assets: netværk først, cache som fallback (offline) */
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses
-        if (response.ok) {
+        if (
+          response.ok &&
+          url.startsWith(self.location.origin) &&
+          !url.endsWith('.html')
+        ) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
