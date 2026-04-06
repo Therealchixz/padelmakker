@@ -129,9 +129,6 @@ export function AuthProvider({ children }) {
         availability: metadata.availability || [],
         bio: metadata.bio || '',
         avatar: metadata.avatar || '🎾',
-        elo_rating: 1000,
-        games_played: 0,
-        games_won: 0,
       })
       if (data.session) {
         setSession(data.session)

@@ -102,6 +102,13 @@ const heading = (size = "24px") => ({
 });
 
 /* ─── Utility ─── */
+function sanitizeText(str) {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function resolveDisplayName(profileRow, authUser) {
   const bad = (s) => {
     if (s == null || String(s).trim() === "") return true;
@@ -192,7 +199,7 @@ function ResetPasswordPage({ onDone }) {
   const [submitting, setSubmitting] = useState(false);
 
   const handleReset = async () => {
-    if (!password || password.length < 6) { setErr("Adgangskode skal være mindst 6 tegn"); return; }
+    if (!password || password.length < 8) { setErr("Adgangskode skal være mindst 8 tegn"); return; }
     if (password !== confirm) { setErr("Adgangskoderne matcher ikke"); return; }
     setSubmitting(true); setErr("");
     try {
@@ -209,7 +216,7 @@ function ResetPasswordPage({ onDone }) {
       <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Ny adgangskode</h1>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Vælg din nye adgangskode.</p>
       <label style={labelStyle}>Ny adgangskode</label>
-      <input value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="Mindst 6 tegn" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+      <input value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="Mindst 8 tegn" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
       <label style={labelStyle}>Gentag adgangskode</label>
       <input value={confirm} onChange={e => { setConfirm(e.target.value); setErr(""); }} placeholder="Gentag adgangskode" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
       {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
@@ -399,11 +406,11 @@ function OnboardingPage({ onComplete, onBack }) {
   const finish = async () => {
     setSubmitting(true); setErr("");
     try {
-      const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5") + Math.random() * 1.5;
+      const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
       await signUp(form.email.trim(), form.password, {
-        full_name: form.name, level: Math.round(levelNum * 10) / 10,
+        full_name: sanitizeText(form.name), level: levelNum,
         play_style: form.style, area: form.area, availability: form.availability,
-        bio: form.bio, avatar: form.avatar, birth_year: parseInt(form.birth_year) || null, elo_rating: 1000, games_played: 0, games_won: 0,
+        bio: sanitizeText(form.bio), avatar: form.avatar, birth_year: parseInt(form.birth_year) || null,
       });
       if (onComplete) onComplete();
     } catch (e) {
@@ -423,7 +430,7 @@ function OnboardingPage({ onComplete, onBack }) {
       <label style={labelStyle}>Email</label>
       <input value={form.email}    onChange={e => set("email", e.target.value)}    placeholder="din@email.dk"      type="email"    style={{ ...inputStyle, marginBottom: "14px" }} />
       <label style={labelStyle}>Adgangskode</label>
-      <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 6 tegn"     type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+      <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn"     type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
       <label style={labelStyle}>Fødselsår</label>
       <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={inputStyle} />
     </div>,
@@ -536,7 +543,7 @@ function DashboardPage({ user, onLogout, showToast }) {
       <div className="pm-dash-main">
         {tab === "hjem"    && <HomeTab    user={user} setTab={setTab} />}
         {tab === "makkere" && <MakkereTab user={user} showToast={showToast} />}
-        {tab === "baner"   && <BanerTab   showToast={showToast} />}
+        {tab === "baner"   && <BanerTab   user={user} showToast={showToast} />}
         {tab === "kampe"   && <KampeTab   user={user} showToast={showToast} />}
         {tab === "ranking" && <RankingTab user={user} />}
         {tab === "profil"  && <ProfilTab  user={user} showToast={showToast} setTab={setTab} />}
@@ -743,7 +750,7 @@ function MakkereTab({ user, showToast }) {
 /* ═══════════════════════════════════════════════════
    BANER TAB
 ═══════════════════════════════════════════════════ */
-function BanerTab({ showToast }) {
+function BanerTab({ user, showToast }) {
   const [filterType, setFilterType] = useState("all");
   const [sortBy, setSortBy]         = useState("price");
   const [courts, setCourts]         = useState([]);
@@ -809,7 +816,7 @@ function BanerTab({ showToast }) {
                 {times.length > 0 ? times.map(t => (
                   <button key={t} onClick={async () => {
                     try {
-                      await Booking.create({ court_id: c.id, date: new Date().toISOString().split("T")[0], time_slot: t, price: c.price_per_hour, court_name: c.name, status: "confirmed" });
+                      await Booking.create({ court_id: c.id, user_id: user?.id, date: new Date().toISOString().split("T")[0], time_slot: t, price: c.price_per_hour, court_name: c.name, status: "confirmed" });
                       showToast("Booket kl. " + t + "! ✅");
                     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
                   }} style={{ background: theme.accentBg, color: theme.accent, border: "1px solid " + theme.accent + "30", padding: "6px 13px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: font, transition: "all 0.15s", letterSpacing: "-0.01em" }}>
@@ -851,8 +858,6 @@ async function calculateAndApplyElo(matchId, matchWinner, ignoredPlayersList, sh
     const { data, error } = await supabase.rpc("apply_elo_for_match", {
       p_match_result_id: mr.id,
     });
-
-    console.log("ELO result:", data);
 
     if (error) {
       console.error("ELO rpc error:", error);
@@ -1157,7 +1162,7 @@ function KampeTab({ user, showToast }) {
         creator_id: user.id, court_id: newMatch.court_id, court_name: court?.name || "",
         date: newMatch.date, time: fmtClock(newMatch.time), time_end: fmtClock(newMatch.time_end),
         level_range: String(myElo), status: "open", max_players: 4, current_players: 1,
-        description: newMatch.description.trim() || null,
+        description: sanitizeText(newMatch.description.trim()) || null,
       };
       const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
@@ -1559,11 +1564,11 @@ function ProfilTab({ user, showToast, setTab }) {
     setSaving(true);
     try {
       await updateProfile({
-        full_name: form.full_name.trim(),
-        name: form.full_name.trim(),
+        full_name: sanitizeText(form.full_name.trim()),
+        name: sanitizeText(form.full_name.trim()),
         area: form.area,
         play_style: form.play_style,
-        bio: form.bio.trim(),
+        bio: sanitizeText(form.bio.trim()),
         avatar: form.avatar,
         availability: form.availability,
         birth_year: form.birth_year ? parseInt(form.birth_year) : null,
