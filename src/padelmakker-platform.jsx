@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
@@ -759,9 +759,24 @@ function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
   const firstName   = displayName.split(/\s+/)[0];
-  const games       = user.games_played || 0;
-  const wins        = user.games_won    || 0;
-  const elo         = Math.round(Number(user.elo_rating) || 1000);
+  const [histStats, setHistStats] = useState(null);
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.from("elo_history").select("*").eq("user_id", user.id).order("date", { ascending: true });
+        if (cancelled) return;
+        setHistStats(statsFromEloHistoryRows(data || []));
+      } catch {
+        if (!cancelled) setHistStats(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user.id]);
+  const games       = histStats?.games ?? (user.games_played || 0);
+  const wins        = histStats?.wins ?? (user.games_won || 0);
+  const elo         = histStats?.elo ?? Math.round(Number(user.elo_rating) || 1000);
   const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
 
   const actions = [
@@ -827,6 +842,44 @@ function HomeTab({ user, setTab }) {
 function eloOf(p) {
   const v = Number(p?.elo_rating);
   return Number.isFinite(v) ? Math.round(v) : 1000;
+}
+
+/** Samme filter som ELO-graf / streak (kun rigtige kampe med rating). */
+function filterRatedEloHistoryRows(rows) {
+  return (rows || []).filter((h) => h.old_rating != null && h.match_id != null);
+}
+
+/** Seneste ELO + antal kampe/sejre ud fra elo_history (kilde til graf). null hvis ingen rækker. */
+function statsFromEloHistoryRows(rows) {
+  const list = filterRatedEloHistoryRows(rows);
+  if (!list.length) return null;
+  const sorted = [...list].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const last = sorted[sorted.length - 1];
+  const elo = Math.round(Number(last.new_rating ?? last.old_rating) || 1000);
+  const games = sorted.length;
+  let wins = 0;
+  for (const h of sorted) {
+    if (h.result === "win") wins++;
+  }
+  return { elo, games, wins };
+}
+
+/** Per bruger: seneste ELO + kampe/sejre fra elo_history (til ranking all-time). */
+function allTimeStatsMapFromEloHistory(eloHistory) {
+  const byUser = {};
+  for (const h of eloHistory || []) {
+    if (h.old_rating == null || h.match_id == null) continue;
+    const uid = h.user_id;
+    if (uid == null) continue;
+    if (!byUser[uid]) byUser[uid] = [];
+    byUser[uid].push(h);
+  }
+  const out = {};
+  for (const uid of Object.keys(byUser)) {
+    const s = statsFromEloHistoryRows(byUser[uid]);
+    if (s) out[uid] = s;
+  }
+  return out;
 }
 
 /** Kræver rækker med `date` og `result` ("win" / andet). Sorterer kronologisk internt. */
@@ -1126,11 +1179,13 @@ function PlayerProfileModal({ player, onClose }) {
   const [streakLoading, setStreakLoading] = useState(true);
   const [streakError, setStreakError] = useState(false);
   const [streakStats, setStreakStats] = useState({ currentStreak: 0, bestStreak: 0 });
+  const [histStats, setHistStats] = useState(null);
 
   useEffect(() => {
     if (!player?.id) {
       setStreakLoading(false);
       setStreakStats({ currentStreak: 0, bestStreak: 0 });
+      setHistStats(null);
       return;
     }
     let cancelled = false;
@@ -1142,12 +1197,14 @@ function PlayerProfileModal({ player, onClose }) {
           .eq("user_id", player.id).order("date", { ascending: true });
         if (cancelled) return;
         if (error) throw error;
-        const rows = (data || []).filter(h => h.old_rating != null && h.match_id != null);
+        const rows = filterRatedEloHistoryRows(data || []);
         setStreakStats(winStreaksFromEloHistory(rows));
+        setHistStats(statsFromEloHistoryRows(data || []));
       } catch {
         if (!cancelled) {
           setStreakError(true);
           setStreakStats({ currentStreak: 0, bestStreak: 0 });
+          setHistStats(null);
         }
       } finally {
         if (!cancelled) setStreakLoading(false);
@@ -1157,9 +1214,9 @@ function PlayerProfileModal({ player, onClose }) {
   }, [player?.id]);
 
   if (!player) return null;
-  const elo = eloOf(player);
-  const games = player.games_played || 0;
-  const wins = player.games_won || 0;
+  const elo = histStats?.elo ?? eloOf(player);
+  const games = histStats?.games ?? (player.games_played || 0);
+  const wins = histStats?.wins ?? (player.games_won || 0);
   const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
   const age = player.birth_year ? new Date().getFullYear() - player.birth_year : null;
 
@@ -1380,7 +1437,7 @@ function matchPlayerTeam(p) {
 }
 
 function KampeTab({ user, showToast }) {
-  const { user: authUser }            = useAuth();
+  const { user: authUser, refreshProfile } = useAuth();
   const myDisplayName                 = resolveDisplayName(user, authUser);
   const myElo                         = eloOf(user);
   const [showCreate, setShowCreate]   = useState(false);
@@ -1618,6 +1675,7 @@ function KampeTab({ user, showToast }) {
       // Calculate ELO
       const mp = matchPlayers[matchId] || [];
       await calculateAndApplyElo(matchId, mr.match_winner, mp, showToast);
+      refreshProfile();
       // Notify all players about ELO update
       mp.forEach(p => {
         createNotification(p.user_id, "result_confirmed", "Resultat bekræftet! 🏆", `Kampen er afsluttet (${mr.score_display || "—"}). ELO er opdateret.`, matchId);
@@ -2092,7 +2150,7 @@ function ProfilTab({ user, showToast, setTab }) {
       try {
         const { data } = await supabase.from("elo_history").select("*")
           .eq("user_id", user.id).order("date", { ascending: true });
-        setEloHistory((data || []).filter(h => h.old_rating != null && h.match_id != null));
+        setEloHistory(filterRatedEloHistoryRows(data || []));
       } catch {}
       finally { setStatsLoading(false); }
     })();
@@ -2134,9 +2192,10 @@ function ProfilTab({ user, showToast, setTab }) {
     } finally { setSaving(false); }
   };
 
-  const elo = Math.round(Number(user.elo_rating) || 1000);
-  const games = user.games_played || 0;
-  const wins = user.games_won || 0;
+  const historyStats = statsFromEloHistoryRows(eloHistory);
+  const elo = historyStats?.elo ?? Math.round(Number(user.elo_rating) || 1000);
+  const games = historyStats?.games ?? (user.games_played || 0);
+  const wins = historyStats?.wins ?? (user.games_won || 0);
   const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
 
   if (!editing) {
@@ -2339,6 +2398,8 @@ function RankingTab({ user }) {
     try { return localStorage.getItem("pm-rank-period") || "all"; } catch { return "all"; }
   });
 
+  const allTimeFromHistory = useMemo(() => allTimeStatsMapFromEloHistory(eloHistory), [eloHistory]);
+
   useEffect(() => {
     try { localStorage.setItem("pm-rank-period", period); } catch {}
   }, [period]);
@@ -2377,7 +2438,15 @@ function RankingTab({ user }) {
   const buildRanking = () => {
     if (period === "all") {
       return [...players]
-        .map(p => ({ ...p, score: Math.round(Number(p.elo_rating) || 1000), periodGames: p.games_played || 0, periodWins: p.games_won || 0 }))
+        .map(p => {
+          const h = allTimeFromHistory[p.id];
+          return {
+            ...p,
+            score: h?.elo ?? Math.round(Number(p.elo_rating) || 1000),
+            periodGames: h?.games ?? (p.games_played || 0),
+            periodWins: h?.wins ?? (p.games_won || 0),
+          };
+        })
         .sort((a, b) => b.score - a.score);
     }
 
@@ -2409,7 +2478,7 @@ function RankingTab({ user }) {
   const userRank = sorted.findIndex(p => p.id === user.id) + 1;
   const userEntry = sorted.find(p => p.id === user.id);
   const displayScore = period === "all"
-    ? Math.round(Number(user.elo_rating) || 1000)
+    ? (allTimeFromHistory[user.id]?.elo ?? Math.round(Number(user.elo_rating) || 1000))
     : (userEntry?.score || 0);
   const medals = ["🥇", "🥈", "🥉"];
 
@@ -2471,7 +2540,7 @@ function RankingTab({ user }) {
             <div style={{ width: Math.min((displayScore / 2000) * 100, 100) + "%", height: "100%", background: theme.warm, borderRadius: "6px" }} />
           </div>
         )}
-        {period !== "all" && userEntry && (
+        {userEntry && (period !== "all" || userEntry.periodGames > 0) && (
           <div style={{ marginTop: "12px", fontSize: "12px", opacity: 0.7 }}>
             {userEntry.periodGames} kampe · {userEntry.periodWins} sejre
           </div>
@@ -2508,7 +2577,7 @@ function RankingTab({ user }) {
                   </div>
                   <div style={{ fontSize: "11px", color: theme.textLight, marginTop: "1px" }}>
                     {period === "all"
-                      ? `${p.area || "?"} · ${p.games_played || 0} kampe`
+                      ? `${p.area || "?"} · ${p.periodGames} kampe · ${p.periodWins} sejre`
                       : `${p.periodGames} kampe · ${p.periodWins} sejre`
                     }
                   </div>
