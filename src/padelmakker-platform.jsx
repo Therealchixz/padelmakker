@@ -1611,7 +1611,7 @@ function KampeTab({ user, showToast }) {
               {/* Team 1 */}
               <div style={{ flex: 1, textAlign: "center" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>Hold 1</div>
-                {t1Avg !== null && <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, marginBottom: "6px", opacity: 0.7 }}>Ø {t1Avg} ELO</div>}
+                {t1Avg !== null && <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, marginBottom: "6px", opacity: 0.7 }}>{t1Avg} ELO</div>}
                 {t1Avg === null && <div style={{ height: "6px" }} />}
                 <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
                   {t1.map(p => (
@@ -1636,7 +1636,7 @@ function KampeTab({ user, showToast }) {
               {/* Team 2 */}
               <div style={{ flex: 1, textAlign: "center" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>Hold 2</div>
-                {t2Avg !== null && <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, marginBottom: "6px", opacity: 0.7 }}>Ø {t2Avg} ELO</div>}
+                {t2Avg !== null && <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, marginBottom: "6px", opacity: 0.7 }}>{t2Avg} ELO</div>}
                 {t2Avg === null && <div style={{ height: "6px" }} />}
                 <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
                   {t2.map(p => (
@@ -1810,11 +1810,81 @@ function KampeTab({ user, showToast }) {
 /* ═══════════════════════════════════════════════════
    PROFIL TAB
 ═══════════════════════════════════════════════════ */
+function EloGraph({ data }) {
+  if (!data || data.length < 2) return (
+    <div style={{ textAlign: "center", padding: "24px", color: theme.textLight, fontSize: "13px" }}>
+      Spil mindst 2 kampe for at se din ELO-graf.
+    </div>
+  );
+
+  const W = 320, H = 140, PX = 32, PY = 20;
+  const sorted = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const values = sorted.map(d => d.new_rating ?? d.old_rating ?? 1000);
+  const minV = Math.min(...values) - 20;
+  const maxV = Math.max(...values) + 20;
+  const rangeV = maxV - minV || 1;
+
+  const points = sorted.map((d, i) => {
+    const x = PX + (i / (sorted.length - 1)) * (W - PX * 2);
+    const y = PY + (1 - (values[i] - minV) / rangeV) * (H - PY * 2);
+    return { x, y, val: values[i], date: d.date };
+  });
+
+  const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+  const areaPath = line + ` L${points[points.length - 1].x},${H - PY} L${points[0].x},${H - PY} Z`;
+
+  const gridLines = 3;
+  const gridVals = Array.from({ length: gridLines }, (_, i) => Math.round(minV + (rangeV * (i / (gridLines - 1)))));
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxHeight: "180px" }}>
+      {gridVals.map((v, i) => {
+        const y = PY + (1 - (v - minV) / rangeV) * (H - PY * 2);
+        return (
+          <g key={i}>
+            <line x1={PX} y1={y} x2={W - PX} y2={y} stroke={theme.border} strokeWidth="0.5" strokeDasharray="3,3" />
+            <text x={PX - 4} y={y + 3} textAnchor="end" fontSize="8" fill={theme.textLight} fontFamily={font}>{v}</text>
+          </g>
+        );
+      })}
+      <defs>
+        <linearGradient id="eloGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={theme.accent} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={theme.accent} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill="url(#eloGrad)" />
+      <path d={line} fill="none" stroke={theme.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      {points.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={i === points.length - 1 ? 4 : 2.5} fill={theme.accent} stroke="#fff" strokeWidth="1.5" />
+      ))}
+      {points.length > 0 && (
+        <text x={points[points.length - 1].x} y={points[points.length - 1].y - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill={theme.accent} fontFamily={font}>
+          {points[points.length - 1].val}
+        </text>
+      )}
+    </svg>
+  );
+}
+
 function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, refreshProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [eloHistory, setEloHistory] = useState([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.from("elo_history").select("*")
+          .eq("user_id", user.id).order("date", { ascending: true });
+        setEloHistory((data || []).filter(h => h.old_rating != null && h.match_id != null));
+      } catch {}
+      finally { setStatsLoading(false); }
+    })();
+  }, [user.id]);
   const [form, setForm] = useState({
     full_name: user.full_name || user.name || "",
     area: user.area || "København",
@@ -1911,6 +1981,72 @@ function ProfilTab({ user, showToast, setTab }) {
             <Settings size={14} /> Rediger profil
           </button>
         </div>
+
+        {/* ELO over tid */}
+        <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
+          <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+            <TrendingUp size={16} color={theme.accent} /> ELO over tid
+          </div>
+          {statsLoading ? (
+            <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px" }}>Indlæser...</div>
+          ) : (
+            <EloGraph data={eloHistory} />
+          )}
+        </div>
+
+        {/* Ekstra statistik */}
+        {!statsLoading && (() => {
+          let currentStreak = 0, bestStreak = 0;
+          for (let i = eloHistory.length - 1; i >= 0; i--) {
+            if (eloHistory[i].result === "win") { currentStreak++; bestStreak = Math.max(bestStreak, currentStreak); }
+            else if (i === eloHistory.length - 1 || eloHistory[i].result !== "win") { if (i === eloHistory.length - 1) currentStreak = 0; break; }
+          }
+          for (const h of eloHistory) {
+            let s = 0;
+            for (let j = eloHistory.indexOf(h); j < eloHistory.length; j++) {
+              if (eloHistory[j].result === "win") { s++; bestStreak = Math.max(bestStreak, s); } else break;
+            }
+          }
+
+          const monthStats = {};
+          eloHistory.forEach(h => {
+            const key = h.date?.slice(0, 7);
+            if (!key) return;
+            if (!monthStats[key]) monthStats[key] = { wins: 0, games: 0, change: 0 };
+            monthStats[key].games++;
+            if (h.result === "win") monthStats[key].wins++;
+            monthStats[key].change += (h.change || 0);
+          });
+          const months = Object.entries(monthStats);
+          const bestMonth = months.length > 0
+            ? months.reduce((best, [k, v]) => v.change > (best.change || -Infinity) ? { month: k, ...v } : best, { change: -Infinity })
+            : null;
+          const monthNames = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+          const fmtMonth = (m) => { const [y, mo] = m.split("-"); return monthNames[parseInt(mo, 10) - 1] + " " + y; };
+
+          return (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Sejrsstreak</div>
+                <div style={{ fontSize: "28px", fontWeight: 800, color: theme.warm, letterSpacing: "-0.03em" }}>{currentStreak > 0 ? `🔥 ${currentStreak}` : "0"}</div>
+                <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste: {bestStreak} i træk</div>
+              </div>
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Bedste måned</div>
+                {bestMonth && bestMonth.month ? (
+                  <>
+                    <div style={{ fontSize: "16px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.02em", textTransform: "capitalize" }}>{fmtMonth(bestMonth.month)}</div>
+                    <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>
+                      {bestMonth.wins}/{bestMonth.games} sejre · {bestMonth.change > 0 ? "+" : ""}{bestMonth.change} ELO
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: "14px", color: theme.textMid }}>Ingen data endnu</div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Quick links */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
