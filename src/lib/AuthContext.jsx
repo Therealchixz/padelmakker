@@ -36,9 +36,10 @@ export function AuthProvider({ children }) {
   const [profileLoading, setProfileLoading] = useState(false)
   const profileReqId = useRef(0)
 
-  const loadProfile = useCallback((userId) => {
+  const loadProfile = useCallback((userId, opts = {}) => {
+    const quiet = opts.quiet === true
     const id = ++profileReqId.current
-    setProfileLoading(true)
+    if (!quiet) setProfileLoading(true)
     Promise.race([
       fetchProfileQuery(userId),
       new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
@@ -49,7 +50,7 @@ export function AuthProvider({ children }) {
       })
       .finally(() => {
         if (profileReqId.current !== id) return
-        setProfileLoading(false)
+        if (!quiet) setProfileLoading(false)
       })
   }, [])
 
@@ -178,9 +179,14 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  const refreshProfile = () => {
+  const refreshProfile = useCallback(() => {
     if (user) loadProfile(user.id)
-  }
+  }, [user, loadProfile])
+
+  /** Genindlæs profiles-rækken uden fuldskærms-loading (fx efter DB-reset eller tab-skift). */
+  const refreshProfileQuiet = useCallback(() => {
+    if (user) loadProfile(user.id, { quiet: true })
+  }, [user, loadProfile])
 
   return (
     <AuthContext.Provider
@@ -195,6 +201,7 @@ export function AuthProvider({ children }) {
         signOut,
         updateProfile,
         refreshProfile,
+        refreshProfileQuiet,
       }}
     >
       {children}
