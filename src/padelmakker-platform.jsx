@@ -149,7 +149,7 @@ export default function PadelMakker() {
   const [resetMode, setResetMode] = useState(false);
   const navigate = useNavigate();
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-  const handleLogout = async () => { await signOut(); navigate("/login", { replace: true }); };
+  const handleLogout = async () => { await signOut(); navigate("/", { replace: true }); };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
