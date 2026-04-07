@@ -511,11 +511,8 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
   }
 
   const openAmericanos = rows.filter((t) => t.status === 'registration')
-  /** I gang / afsluttet: kun hvor du er opretter eller deltager (matcher stram RLS) */
-  const myTournament = (t: AmericanoTournament) =>
-    joinedIds.has(t.id) || String(t.creator_id) === String(profileId)
-  const playingAmericanos = rows.filter((t) => t.status === 'playing' && myTournament(t))
-  const completedAmericanos = rows.filter((t) => t.status === 'completed' && myTournament(t))
+  const playingAmericanos = rows.filter((t) => t.status === 'playing')
+  const completedAmericanos = rows.filter((t) => t.status === 'completed')
   const visibleRows =
     americanoView === 'open'
       ? openAmericanos
