@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import type { AmericanoPlayerSlots, AmericanoPoints } from './types'
+import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses } from './types'
 
 type CourtOption = { id: string; name: string }
 
@@ -28,6 +28,7 @@ export function CreateAmericanoTournamentForm({
   const [courtId, setCourtId] = useState(courts[0]?.id ?? '')
   const [playerSlots, setPlayerSlots] = useState<AmericanoPlayerSlots>(5)
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
+  const [opponentPasses, setOpponentPasses] = useState<AmericanoOpponentPasses>(1)
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,6 +57,7 @@ export function CreateAmericanoTournamentForm({
           court_id: courtId || null,
           player_slots: playerSlots,
           points_per_match: pointsPerMatch,
+          opponent_passes: opponentPasses,
           description: description.trim() || null,
           status: 'registration',
         })
@@ -153,6 +155,21 @@ export function CreateAmericanoTournamentForm({
         </select>
         <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
           Én bane: fire på banen, resten sidder over (5: én over, 6: to over, 7: tre over). Start når præcis dette antal har tilmeldt sig.
+        </p>
+      </div>
+
+      <div style={{ marginTop: 14 }}>
+        <label style={labelSmall}>Turneringens længde</label>
+        <select
+          value={opponentPasses}
+          onChange={(e) => setOpponentPasses(Number(e.target.value) as AmericanoOpponentPasses)}
+          style={inputStyle}
+        >
+          <option value={1}>Normal — én gennemgang af alle runder</option>
+          <option value={2}>Lang — samme rundeplan to gange (dobbelt så mange kampe)</option>
+        </select>
+        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
+          Ved &quot;Lang&quot; gentages hele rotationsplanen; du møder de andre oftere som modstander og makker uden at oprette en ny turnering.
         </p>
       </div>
 

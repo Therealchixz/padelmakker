@@ -3,6 +3,9 @@ export type AmericanoPlayerSlots = 5 | 6 | 7 | 8
 export type AmericanoPoints = 16 | 24 | 32
 export type AmericanoStatus = 'registration' | 'playing' | 'completed'
 
+/** 1 = normal længde; 2 = rundeplanen køres to gange (længere, flere modstander-/makker-møder) */
+export type AmericanoOpponentPasses = 1 | 2
+
 export type AmericanoTournament = {
   id: string
   creator_id: string
@@ -12,6 +15,7 @@ export type AmericanoTournament = {
   court_id: string | null
   player_slots: AmericanoPlayerSlots
   points_per_match: AmericanoPoints
+  opponent_passes?: AmericanoOpponentPasses | null
   description: string | null
   status: AmericanoStatus
   created_at: string

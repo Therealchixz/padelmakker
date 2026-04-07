@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS public.americano_tournaments (
   points_per_match integer NOT NULL CHECK (points_per_match IN (16, 24, 32)),
   description text,
   status text NOT NULL DEFAULT 'registration' CHECK (status IN ('registration', 'playing', 'completed')),
+  -- 1 = én gennemgang af rundeplanen; 2 = gentag hele planen (længere turnering, flere møder som modstander/makker)
+  opponent_passes integer NOT NULL DEFAULT 1 CHECK (opponent_passes IN (1, 2)),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
