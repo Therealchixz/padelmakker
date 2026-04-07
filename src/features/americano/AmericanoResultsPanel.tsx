@@ -70,13 +70,15 @@ function DualAvatar({ a, b }: { a: string; b: string }) {
   )
 }
 
+type TeamOutcome = 'win' | 'loss' | 'tie'
+
 function TeamBlock({
   name1,
   name2,
   pid1,
   pid2,
   score,
-  won,
+  outcome,
   showCheckForUser,
   userIdByPartId,
   currentUserId,
@@ -86,12 +88,16 @@ function TeamBlock({
   pid1: string
   pid2: string
   score: number | null
-  won: boolean
+  outcome: TeamOutcome
   showCheckForUser: boolean
   userIdByPartId: Map<string, string>
   currentUserId: string
 }) {
   const scoreStr = score != null && !Number.isNaN(score) ? String(score) : '—'
+  const nameColor = outcome === 'loss' ? c.muted : c.text
+  const scoreColor = outcome === 'loss' ? c.muted : c.text
+  const scoreSize = outcome === 'tie' ? 24 : 26
+  const scoreWeight = outcome === 'loss' ? 700 : 800
   return (
     <div
       style={{
@@ -111,7 +117,7 @@ function TeamBlock({
             gap: 6,
             fontSize: 14,
             fontWeight: 600,
-            color: won ? c.text : c.muted,
+            color: nameColor,
             lineHeight: 1.35,
           }}
         >
@@ -127,7 +133,7 @@ function TeamBlock({
             gap: 6,
             fontSize: 14,
             fontWeight: 600,
-            color: won ? c.text : c.muted,
+            color: nameColor,
             lineHeight: 1.35,
             marginTop: 2,
           }}
@@ -140,10 +146,10 @@ function TeamBlock({
       </div>
       <div
         style={{
-          fontSize: 26,
-          fontWeight: 800,
+          fontSize: scoreSize,
+          fontWeight: scoreWeight,
           letterSpacing: '-0.03em',
-          color: won ? c.text : c.muted,
+          color: scoreColor,
           fontVariantNumeric: 'tabular-nums',
           flexShrink: 0,
           minWidth: 36,
@@ -173,11 +179,10 @@ function isMatchResultLocked(m: AmericanoMatchRow): boolean {
   return true
 }
 
-/** Point på de to hold skal summere til formatet P (16/24/32), og der skal være en vinder (ikke uafgjort). */
+/** Point på de to hold skal summere til formatet P (16/24/32). Uafgjort (fx 8–8 ved 16) er tilladt. */
 function isValidAmericanoScore(a: number, b: number, P: number): boolean {
   if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) return false
-  if (a + b !== P) return false
-  return a !== b
+  return a + b === P
 }
 
 function resolvedMatchScores(
@@ -221,12 +226,8 @@ function buildLeaderboard(
     .sort((x, y) => y.points - x.points)
 }
 
-/** Udfylder det andet hold med P − side, hvis heltals-input er gyldigt og ikke uafgjort. */
-function complementFromOneSide(
-  raw: string,
-  P: number,
-  showToast: (msg: string) => void
-): number | null {
+/** Udfylder det andet hold med P − n (fx 10 → 6, 8 → 8 ved format 16). */
+function complementFromOneSide(raw: string, P: number, showToast: (msg: string) => void): number | null {
   const t = raw.trim()
   if (t === '') return null
   const n = parseInt(t, 10)
@@ -234,12 +235,7 @@ function complementFromOneSide(
     showToast(`Hold A/B: indtast et helt tal mellem 0 og ${P}.`)
     return null
   }
-  const other = P - n
-  if (n === other) {
-    showToast(`Uafgjort ${n}–${n} er ikke tilladt ved format ${P} point.`)
-    return null
-  }
-  return other
+  return P - n
 }
 
 export function AmericanoResultsPanel({
@@ -324,7 +320,7 @@ export function AmericanoResultsPanel({
     const a = parseInt(aStr, 10)
     const b = parseInt(bStr, 10)
     if (!isValidAmericanoScore(a, b, P)) {
-      showToast(`Summen skal være præcis ${P} point (format), og der skal være en vinder.`)
+      showToast(`Summen skal være præcis ${P} point (format). Uafgjort er ok (fx 8–8 ved 16).`)
       return
     }
     setSaving(true)
@@ -409,8 +405,8 @@ export function AmericanoResultsPanel({
         Resultater (ingen ELO)
       </div>
       <p style={{ fontSize: 11, color: c.muted, margin: '0 0 14px', lineHeight: 1.55, fontFamily: font }}>
-        <strong style={{ color: '#475569' }}>Format {P} point:</strong> De to tal skal altid give <strong>{P} i alt</strong> (fx 10–6). Når du skriver ét hold og går videre, udfyldes det andet automatisk. Efter{' '}
-        <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette.
+        <strong style={{ color: '#475569' }}>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
+        <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Uafgjort tæller ikke som V/T på profilen.
       </p>
       <div
         style={{
@@ -446,8 +442,11 @@ export function AmericanoResultsPanel({
           const a = parseInt(s.a, 10)
           const b = parseInt(s.b, 10)
           const hasValid = isValidAmericanoScore(a, b, P)
+          const isTie = hasValid && a === b
           const aWins = hasValid && a > b
           const bWins = hasValid && b > a
+          const outcomeA: TeamOutcome = !hasValid ? 'loss' : isTie ? 'tie' : aWins ? 'win' : 'loss'
+          const outcomeB: TeamOutcome = !hasValid ? 'loss' : isTie ? 'tie' : bWins ? 'win' : 'loss'
           const matchNum = matchesDisplay.length - displayIdx
           const showScores = hasValid
 
@@ -602,13 +601,27 @@ export function AmericanoResultsPanel({
 
               {locked && showScores && (
                 <div style={{ paddingBottom: 8 }}>
+                  {isTie && (
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#64748B',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        marginBottom: 4,
+                      }}
+                    >
+                      Uafgjort
+                    </div>
+                  )}
                   <TeamBlock
                     name1={n1}
                     name2={n2}
                     pid1={m.team_a_p1}
                     pid2={m.team_a_p2}
                     score={a}
-                    won={aWins}
+                    outcome={outcomeA}
                     showCheckForUser
                     userIdByPartId={userIdByPartId}
                     currentUserId={currentUserId}
@@ -620,7 +633,7 @@ export function AmericanoResultsPanel({
                     pid1={m.team_b_p1}
                     pid2={m.team_b_p2}
                     score={b}
-                    won={bWins}
+                    outcome={outcomeB}
                     showCheckForUser
                     userIdByPartId={userIdByPartId}
                     currentUserId={currentUserId}

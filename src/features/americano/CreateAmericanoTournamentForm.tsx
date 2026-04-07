@@ -187,7 +187,7 @@ export function CreateAmericanoTournamentForm({
           ))}
         </select>
         <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
-          Efter hver kamp indtastes stillingen så de to hold tilsammen giver det valgte format (fx 10+6 ved 16). Du kan skrive kun ét hold — app’en udfylder resten.
+          Efter hver kamp skal de to hold tilsammen give formatet (fx 10+6 eller 8+8 ved 16). Du kan skrive kun ét hold — app’en udfylder resten.
         </p>
       </div>
 
