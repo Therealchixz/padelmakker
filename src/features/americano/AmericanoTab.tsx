@@ -42,9 +42,6 @@ type ProfileSnippet = {
   avatar?: string | null
   full_name?: string | null
   name?: string | null
-  americano_wins?: number | null
-  americano_losses?: number | null
-  americano_draws?: number | null
 }
 
 function AmericanoParticipantStatsModal({
@@ -275,7 +272,6 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
   /** Under "I gang": deltagerlisten er sammenklappet som standard for at spare plads */
   const [playingParticipantsOpen, setPlayingParticipantsOpen] = useState<Set<string>>(() => new Set())
   const [participantSnippets, setParticipantSnippets] = useState<Record<string, ProfileSnippet>>({})
-  const [participantSnippetsLoading, setParticipantSnippetsLoading] = useState(false)
   const [participantStatsPick, setParticipantStatsPick] = useState<{ userId: string; name: string } | null>(
     null
   )
@@ -376,16 +372,14 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
     }
     if (uidSet.size === 0) {
       setParticipantSnippets({})
-      setParticipantSnippetsLoading(false)
       return
     }
     const idList = [...uidSet]
     let cancelled = false
-    setParticipantSnippetsLoading(true)
     ;(async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, avatar, full_name, name, americano_wins, americano_losses, americano_draws')
+        .select('id, avatar, full_name, name')
         .in('id', idList)
       if (cancelled) return
       if (error) {
@@ -394,31 +388,15 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
         return
       }
       const next: Record<string, ProfileSnippet> = {}
-      ;(data || []).forEach(
-        (r: {
-          id: string
-          avatar?: string | null
-          full_name?: string | null
-          name?: string | null
-          americano_wins?: number | null
-          americano_losses?: number | null
-          americano_draws?: number | null
-        }) => {
-          next[String(r.id)] = {
-            avatar: r.avatar,
-            full_name: r.full_name,
-            name: r.name,
-            americano_wins: r.americano_wins,
-            americano_losses: r.americano_losses,
-            americano_draws: r.americano_draws,
-          }
+      ;(data || []).forEach((r: { id: string; avatar?: string | null; full_name?: string | null; name?: string | null }) => {
+        next[String(r.id)] = {
+          avatar: r.avatar,
+          full_name: r.full_name,
+          name: r.name,
         }
-      )
+      })
       setParticipantSnippets(next)
     })()
-      .finally(() => {
-        if (!cancelled) setParticipantSnippetsLoading(false)
-      })
     return () => {
       cancelled = true
     }
@@ -822,14 +800,6 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
                             const label =
                               String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name
                             const isMe = String(p.user_id) === String(profileId)
-                            const w = Number(snap?.americano_wins) || 0
-                            const d = Number(snap?.americano_draws) || 0
-                            const l = Number(snap?.americano_losses) || 0
-                            const hasSnap = snap != null
-                            const statsLine =
-                              participantSnippetsLoading && !hasSnap
-                                ? 'Henter statistik…'
-                                : `Sejre ${w} · Uafgjort ${d} · Tab ${l}`
                             return (
                               <button
                                 key={p.id}
@@ -866,23 +836,20 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
                                 >
                                   {av}
                                 </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      fontSize: 13,
-                                      fontWeight: 600,
-                                      color: '#0F172A',
-                                    }}
-                                  >
-                                    {label}
-                                    {isMe ? (
-                                      <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
-                                    ) : null}
-                                  </div>
-                                  <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, lineHeight: 1.4 }}>
-                                    {statsLine}
-                                  </div>
-                                </div>
+                                <span
+                                  style={{
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    color: '#0F172A',
+                                    flex: 1,
+                                    minWidth: 0,
+                                  }}
+                                >
+                                  {label}
+                                  {isMe ? (
+                                    <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
+                                  ) : null}
+                                </span>
                               </button>
                             )
                           })}
