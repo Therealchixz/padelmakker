@@ -1498,7 +1498,7 @@ function BanerTab({ user, showToast }) {
 /* ═══════════════════════════════════════════════════
    ELO CALCULATION
 ═══════════════════════════════════════════════════ */
-async function calculateAndApplyElo(matchId, matchWinner, ignoredPlayersList, showToast) {
+async function calculateAndApplyElo(matchId, showToast) {
   try {
     // Hent match_result ID
     const { data: mr, error: mrErr } = await supabase
@@ -2165,7 +2165,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
 
       // Calculate ELO
       const mp = matchPlayers[matchId] || [];
-      await calculateAndApplyElo(matchId, mr.match_winner, mp, showToast);
+      await calculateAndApplyElo(matchId, showToast);
       refreshProfile();
       await reloadKampeEloBundle();
       // Notify all players about ELO update
