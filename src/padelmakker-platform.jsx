@@ -2686,9 +2686,6 @@ function ProfilTab({ user, showToast, setTab }) {
               <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano tab</div>
             </div>
           </div>
-          <p style={{ fontSize: "10px", color: theme.textLight, marginTop: "-12px", marginBottom: "16px", lineHeight: 1.4 }}>
-            Americano tæller ikke i ELO — sejr/tab/uafgjort opdateres når turneringsresultater gemmes (uafgjort = uafgjort kamp på banen, fx 8–8 ved 16).
-          </p>
           </>
           )}
 
