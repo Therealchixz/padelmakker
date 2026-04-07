@@ -359,8 +359,8 @@ export function AmericanoResultsPanel({
     const incomplete = matches.some((m) => {
       const s = scores[m.id]
       if (!s) return true
-      let aStr = s.a.trim()
-      let bStr = s.b.trim()
+      const aStr = s.a.trim()
+      const bStr = s.b.trim()
       if (aStr === '' || bStr === '') return true
       const a = parseInt(aStr, 10)
       const b = parseInt(bStr, 10)
