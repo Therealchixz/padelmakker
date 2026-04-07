@@ -36,6 +36,197 @@ type ParticipantListRow = {
   joined_at: string
 }
 
+type ProfileSnippet = {
+  avatar?: string | null
+  full_name?: string | null
+  name?: string | null
+}
+
+function AmericanoParticipantStatsModal({
+  userId,
+  fallbackName,
+  onClose,
+}: {
+  userId: string
+  fallbackName: string
+  onClose: () => void
+}) {
+  const [loading, setLoading] = useState(true)
+  const [row, setRow] = useState<{
+    full_name?: string | null
+    name?: string | null
+    avatar?: string | null
+    americano_wins?: number | null
+    americano_losses?: number | null
+    americano_draws?: number | null
+  } | null>(null)
+  const [fetchErr, setFetchErr] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      setFetchErr(false)
+      setRow(null)
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('full_name, name, avatar, americano_wins, americano_losses, americano_draws')
+          .eq('id', userId)
+          .maybeSingle()
+        if (cancelled) return
+        if (error) throw error
+        setRow(data)
+      } catch {
+        if (!cancelled) {
+          setFetchErr(true)
+          setRow(null)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  const w = Number(row?.americano_wins) || 0
+  const l = Number(row?.americano_losses) || 0
+  const d = Number(row?.americano_draws) || 0
+  const played = w + l + d
+  const title = String(row?.full_name || row?.name || fallbackName || 'Spiller').trim() || fallbackName
+
+  const cell = (label: string, value: string | number, color: string) => (
+    <div
+      key={label}
+      style={{
+        textAlign: 'center',
+        padding: '10px 6px',
+        background: '#F8FAFC',
+        borderRadius: 8,
+        border: '1px solid #E2E8F0',
+      }}
+    >
+      <div style={{ fontSize: 16, fontWeight: 800, color, fontFamily: font }}>{value}</div>
+      <div
+        style={{
+          fontSize: 9,
+          fontWeight: 700,
+          color: '#94A3B8',
+          marginTop: 4,
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+        }}
+      >
+        {label}
+      </div>
+    </div>
+  )
+
+  return (
+    <div
+      role="presentation"
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(15, 23, 42, 0.45)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: 16,
+        fontFamily: font,
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="americano-stats-title"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#fff',
+          borderRadius: 14,
+          padding: 24,
+          maxWidth: 380,
+          width: '100%',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+        }}
+      >
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 18 }}>
+          <div
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: '50%',
+              background: '#DBEAFE',
+              border: '2px solid #93C5FD',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 26,
+              flexShrink: 0,
+            }}
+          >
+            {row?.avatar || '🎾'}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div
+              id="americano-stats-title"
+              style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}
+            >
+              {loading ? '…' : title}
+            </div>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>Americano (alle turneringer)</div>
+          </div>
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 16, color: '#64748B', fontSize: 13 }}>Henter statistik…</div>
+        ) : fetchErr ? (
+          <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16, lineHeight: 1.5 }}>
+            Kunne ikke hente profil — tjek forbindelse eller rettigheder.
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 8,
+              marginBottom: 16,
+            }}
+          >
+            {cell('Kampe', played, '#1D4ED8')}
+            {cell('Sejre', w, '#D97706')}
+            {cell('Uafgjort', d, '#64748B')}
+            {cell('Tab', l, '#475569')}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            width: '100%',
+            padding: '10px 14px',
+            borderRadius: 8,
+            border: '1px solid #D5DDE8',
+            background: '#fff',
+            color: '#3E4C63',
+            fontWeight: 600,
+            fontSize: 13,
+            cursor: 'pointer',
+            fontFamily: font,
+          }}
+        >
+          Luk
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function resolveName(p: ProfileLike | null | undefined, authEmail?: string | null) {
   if (!p) {
     if (authEmail) return authEmail.split('@')[0]
@@ -71,6 +262,10 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
   >({})
   /** Under "I gang": deltagerlisten er sammenklappet som standard for at spare plads */
   const [playingParticipantsOpen, setPlayingParticipantsOpen] = useState<Set<string>>(() => new Set())
+  const [participantSnippets, setParticipantSnippets] = useState<Record<string, ProfileSnippet>>({})
+  const [participantStatsPick, setParticipantStatsPick] = useState<{ userId: string; name: string } | null>(
+    null
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -157,6 +352,46 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
       setAmericanoView(initialSubTab)
     }
   }, [initialSubTab])
+
+  useEffect(() => {
+    const playingIds = new Set(rows.filter((t) => t.status === 'playing').map((t) => t.id))
+    const uidSet = new Set<string>()
+    for (const tid of playingIds) {
+      for (const p of participantsByTournament[tid] || []) {
+        uidSet.add(p.user_id)
+      }
+    }
+    if (uidSet.size === 0) {
+      setParticipantSnippets({})
+      return
+    }
+    const idList = [...uidSet]
+    let cancelled = false
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, avatar, full_name, name')
+        .in('id', idList)
+      if (cancelled) return
+      if (error) {
+        console.warn('americano participant avatars:', error.message)
+        if (!cancelled) setParticipantSnippets({})
+        return
+      }
+      const next: Record<string, ProfileSnippet> = {}
+      ;(data || []).forEach((r: { id: string; avatar?: string | null; full_name?: string | null; name?: string | null }) => {
+        next[String(r.id)] = {
+          avatar: r.avatar,
+          full_name: r.full_name,
+          name: r.name,
+        }
+      })
+      setParticipantSnippets(next)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [rows, participantsByTournament])
 
   const startTournament = async (t: AmericanoTournament) => {
     if (String(t.creator_id) !== String(profileId)) {
@@ -474,6 +709,73 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
                         >
                           Ingen tilmeldt endnu — vær den første.
                         </div>
+                      ) : t.status === 'playing' ? (
+                        <div
+                          style={{
+                            marginTop: playingCollapsed ? 10 : 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8,
+                          }}
+                        >
+                          {parts.map((p) => {
+                            const snap = participantSnippets[p.user_id]
+                            const av = snap?.avatar || '🎾'
+                            const label = String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name
+                            const isMe = String(p.user_id) === String(profileId)
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() =>
+                                  setParticipantStatsPick({ userId: p.user_id, name: p.display_name })
+                                }
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 10,
+                                  padding: '8px 10px',
+                                  borderRadius: 8,
+                                  border: '1px solid #E2E8F0',
+                                  background: '#fff',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  fontFamily: font,
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    background: '#E2E8F0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: 18,
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {av}
+                                </div>
+                                <span
+                                  style={{
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    color: '#0F172A',
+                                    flex: 1,
+                                    minWidth: 0,
+                                  }}
+                                >
+                                  {label}
+                                  {isMe ? (
+                                    <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
+                                  ) : null}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
                       ) : (
                         <ul
                           style={{
@@ -580,6 +882,13 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
             </div>
           );})}
         </div>
+      )}
+      {participantStatsPick && (
+        <AmericanoParticipantStatsModal
+          userId={participantStatsPick.userId}
+          fallbackName={participantStatsPick.name}
+          onClose={() => setParticipantStatsPick(null)}
+        />
       )}
     </div>
   )
