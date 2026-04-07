@@ -41,6 +41,8 @@ export type AmericanoMatchRow = {
   team_b_p2: string
   team_a_score: number | null
   team_b_score: number | null
+  /** Efter Gem: sand; opretter kan låse op i UI for at rette */
+  results_locked?: boolean | null
 }
 
 /** Til insert før generering (uden scores) */
