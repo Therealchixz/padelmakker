@@ -173,26 +173,28 @@ function isMatchResultLocked(m: AmericanoMatchRow): boolean {
   return true
 }
 
-/** Faktiske kampoint (hvert vundet rally = 1 til holdet). Ikke krav om at vinderen rammer målet P — det er spillets format på banen (fx først til 16), slutstilling kan være 10–6. */
-function isValidAmericanoScore(a: number, b: number): boolean {
+/** Point på de to hold skal summere til formatet P (16/24/32), og der skal være en vinder (ikke uafgjort). */
+function isValidAmericanoScore(a: number, b: number, P: number): boolean {
   if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) return false
+  if (a + b !== P) return false
   return a !== b
 }
 
 function resolvedMatchScores(
   m: AmericanoMatchRow,
-  sc: Record<string, { a: string; b: string }>
+  sc: Record<string, { a: string; b: string }>,
+  P: number
 ): { a: number; b: number } | null {
   const row = sc[m.id]
   if (row && row.a !== '' && row.b !== '') {
     const a = parseInt(row.a, 10)
     const b = parseInt(row.b, 10)
-    if (isValidAmericanoScore(a, b)) return { a, b }
+    if (isValidAmericanoScore(a, b, P)) return { a, b }
   }
   if (m.team_a_score != null && m.team_b_score != null) {
     const a = m.team_a_score
     const b = m.team_b_score
-    if (isValidAmericanoScore(a, b)) return { a, b }
+    if (isValidAmericanoScore(a, b, P)) return { a, b }
   }
   return null
 }
@@ -200,12 +202,13 @@ function resolvedMatchScores(
 function buildLeaderboard(
   participants: AmericanoParticipant[],
   matches: AmericanoMatchRow[],
-  scores: Record<string, { a: string; b: string }>
+  scores: Record<string, { a: string; b: string }>,
+  P: number
 ): { id: string; name: string; points: number }[] {
   const totals = new Map<string, number>()
   participants.forEach((p) => totals.set(p.id, 0))
   for (const m of matches) {
-    const r = resolvedMatchScores(m, scores)
+    const r = resolvedMatchScores(m, scores, P)
     if (!r) continue
     const add = (pid: string, pts: number) => totals.set(pid, (totals.get(pid) ?? 0) + pts)
     add(m.team_a_p1, r.a)
@@ -216,6 +219,27 @@ function buildLeaderboard(
   return participants
     .map((p) => ({ id: p.id, name: p.display_name, points: totals.get(p.id) ?? 0 }))
     .sort((x, y) => y.points - x.points)
+}
+
+/** Udfylder det andet hold med P − side, hvis heltals-input er gyldigt og ikke uafgjort. */
+function complementFromOneSide(
+  raw: string,
+  P: number,
+  showToast: (msg: string) => void
+): number | null {
+  const t = raw.trim()
+  if (t === '') return null
+  const n = parseInt(t, 10)
+  if (!Number.isInteger(n) || n < 0 || n > P) {
+    showToast(`Hold A/B: indtast et helt tal mellem 0 og ${P}.`)
+    return null
+  }
+  const other = P - n
+  if (n === other) {
+    showToast(`Uafgjort ${n}–${n} er ikke tilladt ved format ${P} point.`)
+    return null
+  }
+  return other
 }
 
 export function AmericanoResultsPanel({
@@ -280,14 +304,27 @@ export function AmericanoResultsPanel({
   const saveRow = async (m: AmericanoMatchRow) => {
     const s = scores[m.id]
     if (!s) return
-    const a = parseInt(s.a, 10)
-    const b = parseInt(s.b, 10)
-    if (s.a === '' || s.b === '') {
-      showToast('Udfyld begge point.')
+    let aStr = s.a.trim()
+    let bStr = s.b.trim()
+    if (aStr !== '' && bStr === '') {
+      const o = complementFromOneSide(aStr, P, showToast)
+      if (o == null) return
+      bStr = String(o)
+      setScores((prev) => ({ ...prev, [m.id]: { a: aStr, b: bStr } }))
+    } else if (bStr !== '' && aStr === '') {
+      const o = complementFromOneSide(bStr, P, showToast)
+      if (o == null) return
+      aStr = String(o)
+      setScores((prev) => ({ ...prev, [m.id]: { a: aStr, b: bStr } }))
+    }
+    if (aStr === '' || bStr === '') {
+      showToast(`Indtast mindst ét hold — det andet sættes til resten op til ${P}.`)
       return
     }
-    if (!isValidAmericanoScore(a, b)) {
-      showToast('Ugyldigt: to hele tal ≥ 0, og ikke uafgjort.')
+    const a = parseInt(aStr, 10)
+    const b = parseInt(bStr, 10)
+    if (!isValidAmericanoScore(a, b, P)) {
+      showToast(`Summen skal være præcis ${P} point (format), og der skal være en vinder.`)
       return
     }
     setSaving(true)
@@ -318,9 +355,12 @@ export function AmericanoResultsPanel({
     const incomplete = matches.some((m) => {
       const s = scores[m.id]
       if (!s) return true
-      const a = parseInt(s.a, 10)
-      const b = parseInt(s.b, 10)
-      return !isValidAmericanoScore(a, b)
+      let aStr = s.a.trim()
+      let bStr = s.b.trim()
+      if (aStr === '' || bStr === '') return true
+      const a = parseInt(aStr, 10)
+      const b = parseInt(bStr, 10)
+      return !isValidAmericanoScore(a, b, P)
     })
     if (incomplete) {
       showToast('Alle kampe skal have gyldige resultater før afslutning.')
@@ -348,7 +388,7 @@ export function AmericanoResultsPanel({
     return <div style={{ fontSize: 12, color: '#8494A7', marginTop: 12 }}>Henter kampe…</div>
   }
 
-  const leaderboard = buildLeaderboard(participants, matches, scores)
+  const leaderboard = buildLeaderboard(participants, matches, scores, P)
 
   const userIdByPartId = useMemo(() => {
     const m = new Map<string, string>()
@@ -369,7 +409,7 @@ export function AmericanoResultsPanel({
         Resultater (ingen ELO)
       </div>
       <p style={{ fontSize: 11, color: c.muted, margin: '0 0 14px', lineHeight: 1.55, fontFamily: font }}>
-        <strong style={{ color: '#475569' }}>Format {P} point:</strong> Indtast den faktiske slutstilling (fx 10–6). Summen vises ovenfor. Efter{' '}
+        <strong style={{ color: '#475569' }}>Format {P} point:</strong> De to tal skal altid give <strong>{P} i alt</strong> (fx 10–6). Når du skriver ét hold og går videre, udfyldes det andet automatisk. Efter{' '}
         <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette.
       </p>
       <div
@@ -405,7 +445,7 @@ export function AmericanoResultsPanel({
           const n4 = nameByPartId(m.team_b_p2)
           const a = parseInt(s.a, 10)
           const b = parseInt(s.b, 10)
-          const hasValid = isValidAmericanoScore(a, b)
+          const hasValid = isValidAmericanoScore(a, b, P)
           const aWins = hasValid && a > b
           const bWins = hasValid && b > a
           const matchNum = matchesDisplay.length - displayIdx
@@ -494,11 +534,25 @@ export function AmericanoResultsPanel({
                   <input
                     type="number"
                     min={0}
+                    max={P}
                     value={s.a}
                     onChange={(e) =>
                       setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value, b: prev[m.id]?.b ?? '' } }))
                     }
+                    onBlur={() => {
+                      const row = scores[m.id]
+                      if (!row || row.a.trim() === '') return
+                      if (row.b.trim() !== '') return
+                      const o = complementFromOneSide(row.a, P, showToast)
+                      if (o != null) {
+                        setScores((prev) => ({
+                          ...prev,
+                          [m.id]: { ...prev[m.id], a: prev[m.id]?.a?.trim() ?? row.a.trim(), b: String(o) },
+                        }))
+                      }
+                    }}
                     placeholder="Hold A"
+                    aria-label="Hold A point"
                     style={{
                       width: 72,
                       padding: '8px 10px',
@@ -513,11 +567,25 @@ export function AmericanoResultsPanel({
                   <input
                     type="number"
                     min={0}
+                    max={P}
                     value={s.b}
                     onChange={(e) =>
                       setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: e.target.value } }))
                     }
+                    onBlur={() => {
+                      const row = scores[m.id]
+                      if (!row || row.b.trim() === '') return
+                      if (row.a.trim() !== '') return
+                      const o = complementFromOneSide(row.b, P, showToast)
+                      if (o != null) {
+                        setScores((prev) => ({
+                          ...prev,
+                          [m.id]: { a: String(o), b: prev[m.id]?.b?.trim() ?? row.b.trim() },
+                        }))
+                      }
+                    }}
                     placeholder="Hold B"
+                    aria-label="Hold B point"
                     style={{
                       width: 72,
                       padding: '8px 10px',
@@ -528,6 +596,7 @@ export function AmericanoResultsPanel({
                       fontFamily: font,
                     }}
                   />
+                  <span style={{ fontSize: 11, color: c.muted, flexBasis: '100%' }}>Sum = {P} (auto)</span>
                 </div>
               )}
 

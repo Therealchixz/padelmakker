@@ -327,7 +327,7 @@ export function AmericanoTab({ profile, showToast }: Props) {
       <p style={{ fontSize: 13, color: '#3E4C63', marginBottom: 16, lineHeight: 1.5 }}>
         <strong>Americano bruger ikke ELO.</strong> Kampe tæller kun i separat V/T på profilen (som i apps som Padelboard — turnering og stilling for sig selv).
         Makkere og modstandere roterer hver runde. Valget 16/24/32 er <strong>spilformat på banen</strong> (typisk først til det tal); når kampen er slut, indtastes den{' '}
-        <strong>faktiske stilling</strong> (fx 10–6) — hvert rally tæller ét point til holdet, og hver spiller får sine holdpoint med i turneringssummen.
+        <strong>slutstilling</strong> der summerer til formatet (fx 10–6 ved 16 point) — hvert rally tæller ét point til holdet; det andet hold udfyldes automatisk hvis du kun skriver ét tal.
       </p>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
