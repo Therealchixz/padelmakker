@@ -720,9 +720,15 @@ function NotificationBell() {
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const closeIfOutside = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", closeIfOutside);
+    document.addEventListener("touchstart", closeIfOutside, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", closeIfOutside);
+      document.removeEventListener("touchstart", closeIfOutside);
+    };
   }, [open]);
 
   const markAllRead = async () => {
@@ -730,6 +736,27 @@ function NotificationBell() {
     if (!unread.length) return;
     await supabase.from("notifications").update({ read: true }).in("id", unread);
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const deleteOne = async (id) => {
+    if (!userId) return;
+    const { error } = await supabase.from("notifications").delete().eq("id", id).eq("user_id", userId);
+    if (error) {
+      console.warn("notifications delete:", error.message || error);
+      return;
+    }
+    setNotifs((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  const clearAll = async () => {
+    if (!userId || !notifs.length) return;
+    const ids = notifs.map((n) => n.id);
+    const { error } = await supabase.from("notifications").delete().in("id", ids).eq("user_id", userId);
+    if (error) {
+      console.warn("notifications clear:", error.message || error);
+      return;
+    }
+    setNotifs([]);
   };
 
   const timeAgo = (dateStr) => {
@@ -755,48 +782,99 @@ function NotificationBell() {
     }
   };
 
+  const iconBtn = {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "6px",
+    borderRadius: "8px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    WebkitTapHighlightColor: "transparent",
+  };
+
   return (
-    <div ref={panelRef} style={{ position: "relative" }}>
+    <div ref={panelRef} className="pm-notification-bell-root" style={{ position: "relative", flexShrink: 0 }}>
       <button
+        type="button"
         onClick={() => { setOpen(!open); if (!open) load(); }}
-        style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", borderRadius: "8px", display: "flex", alignItems: "center", position: "relative" }}
+        style={{ ...iconBtn, position: "relative" }}
         aria-label="Notifikationer"
+        aria-expanded={open}
       >
-        <Bell size={18} color={theme.textMid} />
+        <Bell size={20} color={theme.textMid} strokeWidth={2} />
         {unreadCount > 0 && (
-          <span style={{ position: "absolute", top: "2px", right: "2px", width: "16px", height: "16px", borderRadius: "50%", background: theme.red, color: "#fff", fontSize: "9px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
+          <span style={{ position: "absolute", top: "-2px", right: "-2px", minWidth: "17px", height: "17px", padding: "0 4px", borderRadius: "999px", background: theme.red, color: "#fff", fontSize: "9px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, boxSizing: "border-box" }}>
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div style={{ position: "absolute", top: "100%", right: 0, marginTop: "8px", width: "min(360px, calc(100vw - 32px))", background: theme.surface, borderRadius: "12px", boxShadow: theme.shadowLg, border: "1px solid " + theme.border, zIndex: 100, overflow: "hidden" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid " + theme.border }}>
-            <span style={{ fontSize: "14px", fontWeight: 700, color: theme.text }}>Notifikationer</span>
-            {unreadCount > 0 && (
-              <button onClick={markAllRead} style={{ background: "none", border: "none", color: theme.accent, fontSize: "12px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontFamily: font }}>
-                <CheckCheck size={13} /> Markér alle læst
-              </button>
-            )}
+        <div
+          className="pm-notification-panel"
+          style={{
+            position: "absolute",
+            top: "100%",
+            right: 0,
+            marginTop: "8px",
+            width: "min(360px, calc(100vw - 24px))",
+            maxHeight: "min(420px, 70dvh)",
+            background: theme.surface,
+            borderRadius: "12px",
+            boxShadow: theme.shadowLg,
+            border: "1px solid " + theme.border,
+            zIndex: 200,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "12px 14px", borderBottom: "1px solid " + theme.border }}>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: theme.text, flex: "1 1 auto", minWidth: "100px" }}>Notifikationer</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", marginLeft: "auto" }}>
+              {unreadCount > 0 && (
+                <button type="button" onClick={markAllRead} style={{ background: "none", border: "none", color: theme.accent, fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontFamily: font, padding: "4px 6px" }}>
+                  <CheckCheck size={13} /> Læst
+                </button>
+              )}
+              {notifs.length > 0 && (
+                <button type="button" onClick={() => { if (window.confirm("Ryd alle notifikationer?")) clearAll(); }} style={{ background: "none", border: "none", color: theme.textMid, fontSize: "11px", fontWeight: 600, cursor: "pointer", fontFamily: font, padding: "4px 6px" }}>
+                  Ryd alle
+                </button>
+              )}
+            </div>
           </div>
 
-          <div style={{ maxHeight: "360px", overflowY: "auto" }}>
+          <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
             {notifs.length === 0 ? (
               <div style={{ padding: "32px 16px", textAlign: "center", color: theme.textLight, fontSize: "13px" }}>
                 <Bell size={24} color={theme.textLight} style={{ marginBottom: "8px" }} />
                 <div>Ingen notifikationer endnu</div>
               </div>
             ) : notifs.map(n => (
-              <div key={n.id} style={{ padding: "12px 16px", borderBottom: "1px solid " + theme.border + "80", background: n.read ? "transparent" : theme.accentBg + "40", transition: "background 0.2s" }}>
-                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+              <div key={n.id} style={{ padding: "10px 12px 10px 14px", borderBottom: "1px solid " + theme.border + "80", background: n.read ? "transparent" : theme.accentBg + "40", transition: "background 0.2s" }}>
+                <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
                   <span style={{ fontSize: "18px", flexShrink: 0, marginTop: "1px" }}>{typeIcon(n.type)}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: "13px", fontWeight: n.read ? 500 : 700, color: theme.text, marginBottom: "2px" }}>{n.title}</div>
                     <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.4 }}>{n.body}</div>
                     <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{timeAgo(n.created_at)}</div>
                   </div>
-                  {!n.read && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: theme.accent, flexShrink: 0, marginTop: "5px" }} />}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", flexShrink: 0 }}>
+                    {!n.read && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: theme.accent }} />}
+                    <button
+                      type="button"
+                      onClick={() => deleteOne(n.id)}
+                      title="Slet"
+                      aria-label="Slet notifikation"
+                      style={{ ...iconBtn, padding: "4px", color: theme.textLight }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -837,14 +915,16 @@ function DashboardPage({ user, onLogout, showToast }) {
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", paddingBottom: "env(safe-area-inset-bottom)" }}>
       {/* Header */}
-      <div className="pm-dash-header" style={{ padding: "clamp(10px,2.5vw,14px) clamp(12px,3vw,20px)", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
+      <div className="pm-dash-header" style={{ padding: "clamp(10px,2.5vw,14px) clamp(12px,3vw,20px)", paddingTop: "max(clamp(10px,2.5vw,14px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <div className="pm-dash-brand" style={{ ...heading("clamp(16px,4vw,18px)"), color: theme.accent }}>🎾 PadelMakker</div>
         <div className="pm-dash-user">
           <span className="pm-dash-name">{displayName}</span>
-          <NotificationBell />
-          <button onClick={onLogout} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px", flexShrink: 0 }}>
-            <LogOut size={13} /> Log ud
-          </button>
+          <div className="pm-dash-header-actions">
+            <NotificationBell />
+            <button type="button" onClick={onLogout} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px", flexShrink: 0 }}>
+              <LogOut size={13} /> Log ud
+            </button>
+          </div>
         </div>
       </div>
 

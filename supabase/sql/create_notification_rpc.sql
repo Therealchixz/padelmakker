@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- PostgREST: loggede brugere skal kunne SELECT/UPDATE egne rækker (RLS begrænser; INSERT sker via RPC som ejer)
-GRANT SELECT, UPDATE ON public.notifications TO authenticated;
+GRANT SELECT, UPDATE, DELETE ON public.notifications TO authenticated;
 
 -- Valgfrit — live-opdatering af klokken (Database → Replication i Dashboard kan samme ting):
 -- ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
@@ -41,6 +41,11 @@ CREATE POLICY "notifications_update_own"
   ON public.notifications FOR UPDATE TO authenticated
   USING ((select auth.uid()) = user_id)
   WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "notifications_delete_own" ON public.notifications;
+CREATE POLICY "notifications_delete_own"
+  ON public.notifications FOR DELETE TO authenticated
+  USING ((select auth.uid()) = user_id);
 
 -- INSERT kun via RPC (SECURITY DEFINER) — ingen åben insert-policy nødvendig
 

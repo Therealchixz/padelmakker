@@ -217,6 +217,32 @@ button,
   min-width: 0;
 }
 
+/* Klokke + log ud holdes sammen; undgår at klokken hopper væk fra knappen på mobil */
+.pm-dash-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Panel: på smal skærm som bund-sheet så den ikke klippes af header/viewport */
+@media (max-width: 480px) {
+  .pm-notification-panel {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-top: 0 !important;
+    margin-bottom: env(safe-area-inset-bottom, 0) !important;
+    max-height: min(52dvh, 340px) !important;
+    border-radius: 16px 16px 0 0 !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12) !important;
+  }
+}
+
 .pm-dash-user .pm-dash-name {
   font-size: 13px;
   color: var(--pm-text-mid);
