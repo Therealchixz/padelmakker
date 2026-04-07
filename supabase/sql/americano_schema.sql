@@ -1,6 +1,7 @@
 -- =============================================================================
 -- Americano-turneringer (individuel / roterende makkere)
 -- Påvirker IKKE ELO / elo_history — kun egne tabeller (+ valgfrit americano_wins/losses på profiles via americano_profile_stats.sql).
+-- Spillervalg: 5, 6 eller 7 (8 kun bagudkompatibilitet). Kør migration hvis DB har gammel CHECK.
 -- Kør i Supabase SQL Editor. Juster RLS efter jeres sikkerhedsmodel.
 -- =============================================================================
 
@@ -11,7 +12,8 @@ CREATE TABLE IF NOT EXISTS public.americano_tournaments (
   tournament_date date NOT NULL,
   time_slot text NOT NULL DEFAULT '18:00',
   court_id uuid REFERENCES public.courts (id) ON DELETE SET NULL,
-  player_slots integer NOT NULL CHECK (player_slots IN (8, 12, 16)),
+  -- Nye turneringer: 5, 6 eller 7. Værdien 8 er kun til bagudkompatibilitet (ældre rækker før skift fra 8/12/16).
+  player_slots integer NOT NULL CHECK (player_slots IN (5, 6, 7, 8)),
   points_per_match integer NOT NULL CHECK (points_per_match IN (16, 24, 32)),
   description text,
   status text NOT NULL DEFAULT 'registration' CHECK (status IN ('registration', 'playing', 'completed')),

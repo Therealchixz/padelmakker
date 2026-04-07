@@ -1,4 +1,5 @@
-export type AmericanoPlayerSlots = 8 | 12 | 16
+/** Nye turneringer: 5, 6 eller 7. 8 = kun ældre rækker fra før skiftet (stadig startbar med 8 deltagere). */
+export type AmericanoPlayerSlots = 5 | 6 | 7 | 8
 export type AmericanoPoints = 16 | 24 | 32
 export type AmericanoStatus = 'registration' | 'playing' | 'completed'
 

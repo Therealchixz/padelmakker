@@ -74,7 +74,10 @@ export function buildAmericano578MatchRows(
   throw new Error(`Forventet 5, 6 eller 7 tilmeldte, fik ${n}`)
 }
 
-/** For 8-plads turnering: start når 5–8 er tilmeldt (matcher nuværende rundeplan). */
-export function canStartAmericanoEightSlot(playerCount: number): boolean {
-  return playerCount >= 5 && playerCount <= 8
+/** Start når antal tilmeldte matcher valgt turneringsstørrelse (5, 6 eller 7). */
+export function canStartAmericano5767(playerCount: number, configuredSlots: number): boolean {
+  return (
+    (configuredSlots === 5 || configuredSlots === 6 || configuredSlots === 7) &&
+    playerCount === configuredSlots
+  )
 }
