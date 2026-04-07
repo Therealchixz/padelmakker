@@ -522,7 +522,7 @@ function OnboardingPage({ onComplete }) {
       <label style={labelStyle}>Efternavn</label>
       <input value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
       <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
-        Begge felter skal udfyldes. Dobbeltnavne med bindestreg er ok (f.eks. Anne-Marie). Samme krav som under profil — ingen tastatur-gibberish.
+        Begge felter skal udfyldes. Dobbeltnavne med bindestreg er ok (f.eks. Anne-Marie).
       </p>
       <label style={labelStyle}>Email</label>
       <input value={form.email}    onChange={e => set("email", e.target.value)}    placeholder="din@email.dk"      type="email"    style={{ ...inputStyle, marginBottom: "14px" }} />
