@@ -6,9 +6,18 @@ const font = "'Inter', sans-serif"
 
 type Props = {
   tournament: AmericanoTournament
+  /** Opretteren af turneringen — kan låse op og rette gemte resultater */
+  currentUserId: string
   onSaved: () => void
   showToast: (msg: string) => void
   onProfileStatsRefresh?: () => void
+}
+
+function isMatchResultLocked(m: AmericanoMatchRow): boolean {
+  const hasScores = m.team_a_score != null && m.team_b_score != null
+  if (!hasScores) return false
+  if (m.results_locked === false) return false
+  return true
 }
 
 /** Faktiske kampoint (hvert vundet rally = 1 til holdet). Ikke krav om at vinderen rammer målet P — det er spillets format på banen (fx først til 16), slutstilling kan være 10–6. */
@@ -56,14 +65,23 @@ function buildLeaderboard(
     .sort((x, y) => y.points - x.points)
 }
 
-export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfileStatsRefresh }: Props) {
+export function AmericanoResultsPanel({
+  tournament,
+  currentUserId,
+  onSaved,
+  showToast,
+  onProfileStatsRefresh,
+}: Props) {
   const [participants, setParticipants] = useState<AmericanoParticipant[]>([])
   const [matches, setMatches] = useState<AmericanoMatchRow[]>([])
   const [scores, setScores] = useState<Record<string, { a: string; b: string }>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  /** Midlertidigt ulåst af opretter — nulstilles ved genindlæsning */
+  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(() => new Set())
 
   const P = tournament.points_per_match
+  const isCreator = String(tournament.creator_id) === String(currentUserId)
 
   const nameByPartId = useCallback(
     (pid: string) => participants.find((p) => p.id === pid)?.display_name || '?',
@@ -94,6 +112,7 @@ export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfil
         }
       })
       setScores(sc)
+      setUnlockedIds(new Set())
     } catch (e) {
       console.warn(e)
     } finally {
@@ -122,7 +141,12 @@ export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfil
     try {
       const { error } = await supabase
         .from('americano_matches')
-        .update({ team_a_score: a, team_b_score: b, updated_at: new Date().toISOString() })
+        .update({
+          team_a_score: a,
+          team_b_score: b,
+          results_locked: true,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', m.id)
       if (error) throw error
       showToast('Resultat gemt.')
@@ -182,6 +206,7 @@ export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfil
         <strong>Format {P} point:</strong> Det er det I spiller til på banen (fx først til {P}). Her skriver I den{' '}
         <strong>faktiske slutstilling</strong> — fx <strong>10–6</strong>: hvert vundet rally giver ét point til holdet. De to tal I indtaster,{' '}
         lægges til hver spillers <strong>turneringssum</strong> (vinderholdets spillere får vinderholdets point, taberholdets får deres).
+        Efter <strong>Gem</strong> er kampen låst — kun du som opretter kan trykke <strong>Ret resultat</strong> for at ændre den.
       </p>
       <div
         style={{
@@ -206,6 +231,7 @@ export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfil
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {matches.map((m) => {
           const s = scores[m.id] || { a: '', b: '' }
+          const locked = isMatchResultLocked(m) && !unlockedIds.has(m.id)
           const n1 = nameByPartId(m.team_a_p1)
           const n2 = nameByPartId(m.team_a_p2)
           const n3 = nameByPartId(m.team_b_p1)
@@ -236,42 +262,95 @@ export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfil
                 <input
                   type="number"
                   min={0}
+                  readOnly={locked}
                   value={s.a}
                   onChange={(e) =>
                     setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value, b: prev[m.id]?.b ?? '' } }))
                   }
                   placeholder="Hold A"
-                  style={{ width: 72, padding: 6, borderRadius: 6, border: '1px solid #D5DDE8', fontSize: 13 }}
+                  style={{
+                    width: 72,
+                    padding: 6,
+                    borderRadius: 6,
+                    border: '1px solid #D5DDE8',
+                    fontSize: 13,
+                    background: locked ? '#F1F5F9' : '#fff',
+                  }}
                 />
                 <span style={{ fontWeight: 700 }}>—</span>
                 <input
                   type="number"
                   min={0}
+                  readOnly={locked}
                   value={s.b}
                   onChange={(e) =>
                     setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: e.target.value } }))
                   }
                   placeholder="Hold B"
-                  style={{ width: 72, padding: 6, borderRadius: 6, border: '1px solid #D5DDE8', fontSize: 13 }}
-                />
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => saveRow(m)}
                   style={{
-                    fontFamily: font,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    padding: '6px 12px',
+                    width: 72,
+                    padding: 6,
                     borderRadius: 6,
-                    border: 'none',
-                    background: '#1D4ED8',
-                    color: '#fff',
-                    cursor: saving ? 'wait' : 'pointer',
+                    border: '1px solid #D5DDE8',
+                    fontSize: 13,
+                    background: locked ? '#F1F5F9' : '#fff',
                   }}
-                >
-                  Gem
-                </button>
+                />
+                {locked ? (
+                  <>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: '#64748B',
+                        padding: '4px 8px',
+                        background: '#E2E8F0',
+                        borderRadius: 6,
+                      }}
+                    >
+                      Låst
+                    </span>
+                    {isCreator && (
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => setUnlockedIds((prev) => new Set(prev).add(m.id))}
+                        style={{
+                          fontFamily: font,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          padding: '6px 12px',
+                          borderRadius: 6,
+                          border: '1px solid #D97706',
+                          background: '#fff',
+                          color: '#B45309',
+                          cursor: saving ? 'wait' : 'pointer',
+                        }}
+                      >
+                        Ret resultat
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => saveRow(m)}
+                    style={{
+                      fontFamily: font,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      padding: '6px 12px',
+                      borderRadius: 6,
+                      border: 'none',
+                      background: '#1D4ED8',
+                      color: '#fff',
+                      cursor: saving ? 'wait' : 'pointer',
+                    }}
+                  >
+                    Gem
+                  </button>
+                )}
               </div>
             </div>
           )

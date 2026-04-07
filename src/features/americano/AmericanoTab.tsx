@@ -487,6 +487,7 @@ export function AmericanoTab({ profile, showToast }: Props) {
               {isCreator && t.status === 'playing' && (
                 <AmericanoResultsPanel
                   tournament={t}
+                  currentUserId={profileId}
                   onSaved={load}
                   showToast={showToast}
                   onProfileStatsRefresh={refreshProfileQuiet}

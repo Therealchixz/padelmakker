@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS public.americano_matches (
   team_b_p2 uuid NOT NULL REFERENCES public.americano_participants (id) ON DELETE CASCADE,
   team_a_score integer,
   team_b_score integer,
+  results_locked boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
