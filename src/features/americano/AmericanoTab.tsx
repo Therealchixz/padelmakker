@@ -17,11 +17,15 @@ type ProfileLike = {
 }
 
 type Props = {
-  profile: ProfileLike
+  profile?: ProfileLike | null
   showToast: (msg: string) => void
 }
 
-function resolveName(p: ProfileLike, authEmail?: string | null) {
+function resolveName(p: ProfileLike | null | undefined, authEmail?: string | null) {
+  if (!p) {
+    if (authEmail) return authEmail.split('@')[0]
+    return 'Spiller'
+  }
   const n = (p.full_name || p.name || '').trim()
   if (n) return n
   if (authEmail) return authEmail.split('@')[0]
@@ -34,6 +38,11 @@ export function AmericanoTab({ profile, showToast }: Props) {
     authUser && typeof authUser === 'object' && 'email' in authUser
       ? String((authUser as { email?: string }).email || '')
       : ''
+  const authUserId =
+    authUser && typeof authUser === 'object' && 'id' in authUser
+      ? String((authUser as { id?: string }).id || '')
+      : ''
+  const profileId = profile?.id ?? authUserId
   const displayName = resolveName(profile, authEmail || null)
   const [courts, setCourts] = useState<{ id: string; name: string }[]>([])
   const [rows, setRows] = useState<AmericanoTournament[]>([])
@@ -45,10 +54,16 @@ export function AmericanoTab({ profile, showToast }: Props) {
   const load = useCallback(async () => {
     setLoading(true)
     try {
+      if (!profileId) {
+        setCourts([])
+        setRows([])
+        setJoinedIds(new Set())
+        return
+      }
       const [cd, trRes, myRes] = await Promise.all([
         Court.filter(),
         supabase.from('americano_tournaments').select('*').order('tournament_date', { ascending: false }).limit(40),
-        supabase.from('americano_participants').select('tournament_id').eq('user_id', profile.id),
+        supabase.from('americano_participants').select('tournament_id').eq('user_id', profileId),
       ])
       setCourts(
         (cd || []).map((c: { id: string; name?: string | null }) => ({
@@ -73,14 +88,14 @@ export function AmericanoTab({ profile, showToast }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [profile.id])
+  }, [profileId])
 
   useEffect(() => {
     load()
   }, [load])
 
   const startTournament = async (t: AmericanoTournament) => {
-    if (String(t.creator_id) !== String(profile.id)) {
+    if (String(t.creator_id) !== String(profileId)) {
       showToast('Kun opretteren kan starte turneringen.')
       return
     }
@@ -135,7 +150,7 @@ export function AmericanoTab({ profile, showToast }: Props) {
       }
       const { error } = await supabase.from('americano_participants').insert({
         tournament_id: tournamentId,
-        user_id: profile.id,
+        user_id: profileId,
         display_name: displayName,
       })
       if (error) throw error
@@ -156,7 +171,7 @@ export function AmericanoTab({ profile, showToast }: Props) {
         .from('americano_participants')
         .delete()
         .eq('tournament_id', tournamentId)
-        .eq('user_id', profile.id)
+        .eq('user_id', profileId)
       if (error) throw error
       showToast('Du er afmeldt.')
       await load()
@@ -172,6 +187,14 @@ export function AmericanoTab({ profile, showToast }: Props) {
     return (
       <div style={{ textAlign: 'center', padding: 40, color: '#8494A7', fontSize: 14, fontFamily: font }}>
         Indlæser Americano…
+      </div>
+    )
+  }
+
+  if (!profileId) {
+    return (
+      <div style={{ textAlign: 'center', padding: 40, color: '#8494A7', fontSize: 14, fontFamily: font }}>
+        Du skal være logget ind for at bruge Americano.
       </div>
     )
   }
@@ -204,7 +227,7 @@ export function AmericanoTab({ profile, showToast }: Props) {
       {showCreate && (
         <div style={{ marginBottom: 24 }}>
           <CreateAmericanoTournamentForm
-            userId={profile.id}
+            userId={profileId}
             displayName={displayName}
             courts={courts}
             onCreated={async () => {
@@ -229,7 +252,7 @@ export function AmericanoTab({ profile, showToast }: Props) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {rows.map((t) => {
-            const isCreator = String(t.creator_id) === String(profile.id)
+            const isCreator = String(t.creator_id) === String(profileId)
             const joined = joinedIds.has(t.id)
             return (
             <div
