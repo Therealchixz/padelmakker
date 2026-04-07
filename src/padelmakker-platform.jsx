@@ -6,6 +6,7 @@ import { supabase } from "./lib/supabase";
 import { normalizeProfileRow, normalizeStringArrayField, validateFirstLastName } from "./lib/profileUtils";
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from "./lib/kampeSessionPrefs";
 import { AmericanoTab } from "./features/americano/AmericanoTab";
+import { americanoOutcomeColors } from "./features/americano/americanoOutcomeColors";
 
 /** Sikker liste til .map() selv hvis profil kommer uden normalisering */
 function availabilityTags(profileLike) {
@@ -2673,16 +2674,16 @@ function ProfilTab({ user, showToast, setTab }) {
             ))}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "20px" }}>
-            <div style={{ textAlign: "center", padding: "10px 4px", background: "#FFFBEB", borderRadius: "8px", border: "1px solid " + theme.warm + "33" }}>
-              <div style={{ fontSize: "16px", fontWeight: 800, color: theme.warm }}>{Number(user.americano_wins) || 0}</div>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: americanoOutcomeColors.win.bg, borderRadius: "8px", border: "1px solid " + americanoOutcomeColors.win.border }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: americanoOutcomeColors.win.text }}>{Number(user.americano_wins) || 0}</div>
               <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano sejre</div>
             </div>
-            <div style={{ textAlign: "center", padding: "10px 4px", background: "#F1F5F9", borderRadius: "8px", border: "1px solid " + theme.border }}>
-              <div style={{ fontSize: "16px", fontWeight: 800, color: theme.textMid }}>{Number(user.americano_draws) || 0}</div>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: americanoOutcomeColors.tie.bg, borderRadius: "8px", border: "1px solid " + americanoOutcomeColors.tie.border }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: americanoOutcomeColors.tie.text }}>{Number(user.americano_draws) || 0}</div>
               <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano uafgjort</div>
             </div>
-            <div style={{ textAlign: "center", padding: "10px 4px", background: "#F8FAFC", borderRadius: "8px", border: "1px solid " + theme.border }}>
-              <div style={{ fontSize: "16px", fontWeight: 800, color: theme.textMid }}>{Number(user.americano_losses) || 0}</div>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: americanoOutcomeColors.loss.bg, borderRadius: "8px", border: "1px solid " + americanoOutcomeColors.loss.border }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: americanoOutcomeColors.loss.text }}>{Number(user.americano_losses) || 0}</div>
               <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano tab</div>
             </div>
           </div>

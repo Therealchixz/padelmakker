@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoMatchRow, AmericanoTournament } from './types'
+import { americanoOutcomeColors, americanoOutcomeForUserInMatch } from './americanoOutcomeColors'
 
 const font = "'Inter', sans-serif"
 
@@ -50,6 +51,8 @@ export function AmericanoCompletedSummary({ tournament, participants, currentUse
 
   const P = coercePointsPerMatch(tournament)
   const nameBy = (pid: string) => participants.find((p) => p.id === pid)?.display_name || '?'
+  const userIdByPartId = new Map<string, string>()
+  participants.forEach((p) => userIdByPartId.set(p.id, p.user_id))
 
   useEffect(() => {
     if (!open || matches !== undefined) return
@@ -196,38 +199,42 @@ export function AmericanoCompletedSummary({ tournament, participants, currentUse
                     const n2 = nameBy(m.team_a_p2)
                     const n3 = nameBy(m.team_b_p1)
                     const n4 = nameBy(m.team_b_p2)
+                    const vOut = americanoOutcomeForUserInMatch(m, userIdByPartId, currentUserId, P)
+                    const palKey =
+                      vOut === 'win' ? 'win' : vOut === 'loss' ? 'loss' : vOut === 'tie' ? 'tie' : 'neutral'
+                    const mpal = americanoOutcomeColors[palKey]
                     return (
                       <div
                         key={m.id}
                         style={{
                           padding: '10px 12px',
-                          background: '#fff',
+                          background: mpal.bg,
                           borderRadius: 8,
-                          border: '1px solid #E2E8F0',
+                          border: `1px solid ${mpal.border}`,
                           fontSize: 12,
-                          color: '#475569',
+                          color: mpal.text,
                         }}
                       >
-                        <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>
+                        <div style={{ fontWeight: 700, color: mpal.text, marginBottom: 6 }}>
                           #{i + 1} · Runde {m.round_number}
                           {tie ? (
-                            <span style={{ fontWeight: 600, color: '#64748B', marginLeft: 8 }}>· Uafgjort</span>
+                            <span style={{ fontWeight: 600, opacity: 0.85, marginLeft: 8 }}>· Uafgjort</span>
                           ) : null}
                         </div>
                         <div style={{ lineHeight: 1.5 }}>
                           <span style={{ fontWeight: 600 }}>{n1}</span> &{' '}
                           <span style={{ fontWeight: 600 }}>{n2}</span>
-                          <span style={{ margin: '0 6px', color: '#94A3B8' }}>mod</span>
+                          <span style={{ margin: '0 6px', opacity: 0.75 }}>mod</span>
                           <span style={{ fontWeight: 600 }}>{n3}</span> &{' '}
                           <span style={{ fontWeight: 600 }}>{n4}</span>
                         </div>
-                        <div style={{ marginTop: 6, fontWeight: 700, color: '#1D4ED8', fontSize: 13 }}>
+                        <div style={{ marginTop: 6, fontWeight: 700, color: mpal.text, fontSize: 13 }}>
                           {ok ? (
                             <>
                               {a} — {b}
                             </>
                           ) : (
-                            <span style={{ color: '#94A3B8', fontWeight: 600 }}>Ikke registreret</span>
+                            <span style={{ opacity: 0.65, fontWeight: 600 }}>Ikke registreret</span>
                           )}
                         </div>
                       </div>

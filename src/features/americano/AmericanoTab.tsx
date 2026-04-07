@@ -9,6 +9,7 @@ import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
 import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
+import { americanoOutcomeColors } from './americanoOutcomeColors'
 
 const font = "'Inter', sans-serif"
 
@@ -98,32 +99,39 @@ function AmericanoParticipantStatsModal({
   const played = w + l + d
   const title = String(row?.full_name || row?.name || fallbackName || 'Spiller').trim() || fallbackName
 
-  const cell = (label: string, value: string | number, color: string) => (
-    <div
-      key={label}
-      style={{
-        textAlign: 'center',
-        padding: '10px 6px',
-        background: '#F8FAFC',
-        borderRadius: 8,
-        border: '1px solid #E2E8F0',
-      }}
-    >
-      <div style={{ fontSize: 16, fontWeight: 800, color, fontFamily: font }}>{value}</div>
+  const cell = (
+    label: string,
+    value: string | number,
+    opts: { bg: string; border: string; text: string; valueColor?: string }
+  ) => {
+    const valueColor = opts.valueColor ?? opts.text
+    return (
       <div
+        key={label}
         style={{
-          fontSize: 9,
-          fontWeight: 700,
-          color: '#94A3B8',
-          marginTop: 4,
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
+          textAlign: 'center',
+          padding: '10px 6px',
+          background: opts.bg,
+          borderRadius: 8,
+          border: `1px solid ${opts.border}`,
         }}
       >
-        {label}
+        <div style={{ fontSize: 16, fontWeight: 800, color: valueColor, fontFamily: font }}>{value}</div>
+        <div
+          style={{
+            fontSize: 9,
+            fontWeight: 700,
+            color: '#94A3B8',
+            marginTop: 4,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}
+        >
+          {label}
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div
@@ -198,10 +206,10 @@ function AmericanoParticipantStatsModal({
               marginBottom: 16,
             }}
           >
-            {cell('Kampe', played, '#1D4ED8')}
-            {cell('Sejre', w, '#D97706')}
-            {cell('Uafgjort', d, '#64748B')}
-            {cell('Tab', l, '#475569')}
+            {cell('Kampe', played, { ...americanoOutcomeColors.neutral, valueColor: '#1D4ED8' })}
+            {cell('Sejre', w, { ...americanoOutcomeColors.win })}
+            {cell('Uafgjort', d, { ...americanoOutcomeColors.tie })}
+            {cell('Tab', l, { ...americanoOutcomeColors.loss })}
           </div>
         )}
 
