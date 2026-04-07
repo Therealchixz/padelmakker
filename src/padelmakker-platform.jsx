@@ -2055,6 +2055,18 @@ function KampeTab({ user, showToast }) {
 /* ═══════════════════════════════════════════════════
    PROFIL TAB
 ═══════════════════════════════════════════════════ */
+function profileFormState(p) {
+  return {
+    full_name: p.full_name || p.name || "",
+    area: p.area || "København",
+    play_style: p.play_style || "Ved ikke endnu",
+    bio: p.bio || "",
+    avatar: p.avatar || "🎾",
+    availability: normalizeStringArrayField(p.availability),
+    birth_year: p.birth_year ? String(p.birth_year) : "",
+  };
+}
+
 function formatEloHistoryDate(dateStr) {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
@@ -2249,15 +2261,11 @@ function ProfilTab({ user, showToast, setTab }) {
   const wins = histStats?.wins ?? (pStats.games_won || 0);
   const eloHistory = ratedRows;
   const statsLoading = bundleLoading;
-  const [form, setForm] = useState({
-    full_name: user.full_name || user.name || "",
-    area: user.area || "København",
-    play_style: user.play_style || "Ved ikke endnu",
-    bio: user.bio || "",
-    avatar: user.avatar || "🎾",
-    availability: normalizeStringArrayField(user.availability),
-    birth_year: user.birth_year ? String(user.birth_year) : "",
-  });
+  const [form, setForm] = useState(() => profileFormState(user));
+
+  useEffect(() => {
+    if (!editing) setForm(profileFormState(user));
+  }, [user, editing]);
 
   const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -2345,7 +2353,7 @@ function ProfilTab({ user, showToast, setTab }) {
             </div>
           )}
 
-          <button onClick={() => setEditing(true)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
+          <button onClick={() => { setForm(profileFormState(user)); setEditing(true); }} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
             <Settings size={14} /> Rediger profil
           </button>
         </div>
@@ -2428,7 +2436,7 @@ function ProfilTab({ user, showToast, setTab }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Rediger profil</h2>
-        <button onClick={() => setEditing(false)} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
+        <button onClick={() => { setForm(profileFormState(user)); setEditing(false); }} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
           <X size={14} /> Annullér
         </button>
       </div>
