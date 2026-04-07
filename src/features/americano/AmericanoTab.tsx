@@ -22,6 +22,14 @@ type Props = {
   showToast: (msg: string) => void
 }
 
+type ParticipantListRow = {
+  id: string
+  tournament_id: string
+  user_id: string
+  display_name: string
+  joined_at: string
+}
+
 function resolveName(p: ProfileLike | null | undefined, authEmail?: string | null) {
   if (!p) {
     if (authEmail) return authEmail.split('@')[0]
@@ -52,6 +60,9 @@ export function AmericanoTab({ profile, showToast }: Props) {
   const [showCreate, setShowCreate] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [americanoView, setAmericanoView] = useState<'open' | 'playing' | 'completed'>('open')
+  const [participantsByTournament, setParticipantsByTournament] = useState<
+    Record<string, ParticipantListRow[]>
+  >({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -60,6 +71,7 @@ export function AmericanoTab({ profile, showToast }: Props) {
         setCourts([])
         setRows([])
         setJoinedIds(new Set())
+        setParticipantsByTournament({})
         return
       }
       const [cd, trRes, myRes] = await Promise.all([
@@ -73,20 +85,56 @@ export function AmericanoTab({ profile, showToast }: Props) {
           name: c.name || 'Bane',
         }))
       )
+      let tournamentList: AmericanoTournament[] = []
       if (trRes.error) {
         console.warn('americano_tournaments:', trRes.error.message)
         setRows([])
+        setParticipantsByTournament({})
       } else {
-        setRows((trRes.data || []) as AmericanoTournament[])
+        tournamentList = (trRes.data || []) as AmericanoTournament[]
+        setRows(tournamentList)
       }
       if (!myRes.error && myRes.data) {
         setJoinedIds(new Set(myRes.data.map((r: { tournament_id: string }) => r.tournament_id)))
       } else {
         setJoinedIds(new Set())
       }
+
+      const tids = tournamentList.map((t) => t.id)
+      if (tids.length === 0) {
+        setParticipantsByTournament({})
+      } else {
+        const { data: allParts, error: partErr } = await supabase
+          .from('americano_participants')
+          .select('id, tournament_id, user_id, display_name, joined_at')
+          .in('tournament_id', tids)
+        if (partErr) {
+          console.warn('americano_participants list:', partErr.message)
+          setParticipantsByTournament({})
+        } else {
+          const grouped: Record<string, ParticipantListRow[]> = {}
+          ;(allParts || []).forEach((raw: Record<string, unknown>) => {
+            const tid = String(raw.tournament_id)
+            const row: ParticipantListRow = {
+              id: String(raw.id),
+              tournament_id: tid,
+              user_id: String(raw.user_id),
+              display_name: String(raw.display_name || 'Spiller').trim() || 'Spiller',
+              joined_at: String(raw.joined_at || ''),
+            }
+            if (!grouped[tid]) grouped[tid] = []
+            grouped[tid].push(row)
+          })
+          Object.keys(grouped).forEach((tid) => {
+            grouped[tid].sort((a, b) => a.joined_at.localeCompare(b.joined_at))
+          })
+          setParticipantsByTournament(grouped)
+        }
+      }
     } catch (e) {
       console.warn(e)
       setRows([])
+      setParticipantsByTournament({})
     } finally {
       setLoading(false)
     }
@@ -329,6 +377,47 @@ export function AmericanoTab({ profile, showToast }: Props) {
               {t.description && (
                 <div style={{ fontSize: 12, color: '#8494A7', marginTop: 8, fontStyle: 'italic' }}>{t.description}</div>
               )}
+              {(() => {
+                const parts = participantsByTournament[t.id] || []
+                const maxSlots = t.player_slots
+                return (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: '10px 12px',
+                      background: '#F8FAFC',
+                      borderRadius: 8,
+                      border: '1px solid #E2E8F0',
+                    }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#0B1120', marginBottom: 8 }}>
+                      Deltagere ({parts.length}/{maxSlots})
+                    </div>
+                    {parts.length === 0 ? (
+                      <div style={{ fontSize: 12, color: '#8494A7' }}>Ingen tilmeldt endnu — vær den første.</div>
+                    ) : (
+                      <ul
+                        style={{
+                          margin: 0,
+                          paddingLeft: 18,
+                          fontSize: 12,
+                          color: '#3E4C63',
+                          lineHeight: 1.65,
+                        }}
+                      >
+                        {parts.map((p) => (
+                          <li key={p.id}>
+                            {p.display_name}
+                            {String(p.user_id) === String(profileId) ? (
+                              <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )
+              })()}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
                 {t.status === 'registration' && !joined && (
                   <button
