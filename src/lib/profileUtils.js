@@ -75,6 +75,82 @@ export function normalizeProfileRow(p) {
 const VOWEL_RE = /[aeiouyæøåäöü]/gi
 
 /**
+ * Én navnedel (fornavn eller efternavn): ingen mellemrum — brug to felter eller bindestreg (Hansen-Nielsen).
+ * Samme gibberish-heuristik som fuldt navn.
+ * @param {string} raw
+ * @param {string} fieldLabel — f.eks. "Fornavn" / "Efternavn"
+ * @returns {{ valid: true } | { valid: false, message: string }}
+ */
+export function validateSingleNameField(raw, fieldLabel) {
+  const label = fieldLabel || "Navn"
+  const s =
+    typeof raw === "string"
+      ? raw.trim().replace(/\u00AD/g, "")
+      : ""
+  if (!s) return { valid: false, message: `${label} må ikke være tomt.` }
+  if (/\s/.test(s)) {
+    return {
+      valid: false,
+      message: `${label} må ikke indeholde mellemrum — brug feltet til ${label.toLowerCase()} og evt. bindestreg (f.eks. Anne-Marie).`,
+    }
+  }
+  if (s.length < 2) return { valid: false, message: `${label} skal være mindst 2 tegn.` }
+  if (s.length > 40) return { valid: false, message: `${label} må højst være 40 tegn.` }
+
+  if (!/^\p{L}/u.test(s) || !/\p{L}$/u.test(s)) {
+    return { valid: false, message: `${label} skal starte og slutte med et bogstav.` }
+  }
+
+  if (!/^[\p{L}'.-]+$/u.test(s)) {
+    return {
+      valid: false,
+      message: `${label}: brug kun bogstaver, bindestreg og apostrof.`,
+    }
+  }
+
+  const letterCount = (s.match(/\p{L}/gu) || []).length
+  if (letterCount < 2) {
+    return { valid: false, message: `${label} skal indeholde mindst to bogstaver.` }
+  }
+
+  if (/(.)\1{3,}/u.test(s)) {
+    return { valid: false, message: `${label}: for mange gentagne tegn — brug dit rigtige navn.` }
+  }
+
+  const lettersOnly = s.replace(/[^\p{L}]/gu, "")
+  if (lettersOnly.length >= 9) {
+    const vowels = lettersOnly.match(VOWEL_RE) || []
+    const ratio = vowels.length / lettersOnly.length
+    if (ratio < 0.22) {
+      return {
+        valid: false,
+        message: `${label} ligner ikke et rigtigt navn (for få vokaler).`,
+      }
+    }
+  }
+  if (lettersOnly.length >= 4 && lettersOnly.length < 9) {
+    const vowels = lettersOnly.match(VOWEL_RE) || []
+    if (vowels.length === 0) {
+      return { valid: false, message: `${label} skal indeholde mindst én vokal.` }
+    }
+  }
+
+  return { valid: true }
+}
+
+/**
+ * Fornavn + efternavn (begge påkrævet), samme heuristik som enkeltfelter.
+ * @returns {{ valid: true } | { valid: false, message: string }}
+ */
+export function validateFirstLastName(firstRaw, lastRaw) {
+  const f = validateSingleNameField(firstRaw, "Fornavn")
+  if (!f.valid) return f
+  const l = validateSingleNameField(lastRaw, "Efternavn")
+  if (!l.valid) return l
+  return { valid: true }
+}
+
+/**
  * Klient-side tjek af visningsnavn (forhindrer åbenlys tastatur-gibberish).
  * Kan ikke garantere "rigtige" navne — kun rimelig format + heuristik.
  * @returns {{ valid: true } | { valid: false, message: string }}
