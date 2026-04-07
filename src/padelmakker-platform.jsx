@@ -648,10 +648,18 @@ function OnboardingPage({ onComplete }) {
 ═══════════════════════════════════════════════════ */
 async function createNotification(userId, type, title, body, matchId = null) {
   try {
-    await supabase.from("notifications").insert({
-      user_id: userId, type, title, body, match_id: matchId, read: false,
+    /* Direkte insert fejler under RLS når user_id ≠ auth.uid(). Brug RPC (create_notification_rpc.sql). */
+    const { error } = await supabase.rpc("create_notification_for_user", {
+      p_user_id: userId,
+      p_type: type,
+      p_title: title,
+      p_body: body,
+      p_match_id: matchId,
     });
-  } catch (e) { console.warn("Notification error:", e); }
+    if (error) console.warn("Notification error:", error.message || error);
+  } catch (e) {
+    console.warn("Notification error:", e);
+  }
 }
 
 function NotificationBell({ userId }) {
