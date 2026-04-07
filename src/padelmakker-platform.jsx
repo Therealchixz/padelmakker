@@ -245,7 +245,24 @@ function ResetPasswordPage({ onDone }) {
 }
 function LandingPage() {
   const revealRef = useScrollReveal();
+  const heroRef = useRef(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const maxExtra = 120;
+    const fadeStart = 24;
+    const fadeRange = 200;
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      const t = Math.max(0, Math.min(1, (y - fadeStart) / fadeRange));
+      el.style.setProperty("--pm-hero-fade-extra", `${Math.round(t * maxExtra)}px`);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const steps = [
     { step: "01", icon: <UserPlus  size={24} color="#fff" />, title: "Opret profil", desc: "Angiv dit niveau, spillestil og område — det tager under et minut." },
@@ -274,8 +291,12 @@ function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="pm-hero-gradient" style={{ paddingTop: "clamp(100px,18vw,140px)", paddingBottom: "clamp(60px,14vw,100px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", textAlign: "center", position: "relative" }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+      <section
+        ref={heroRef}
+        className="pm-hero-gradient"
+        style={{ paddingTop: "clamp(100px,18vw,140px)", paddingBottom: "clamp(60px,14vw,100px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", textAlign: "center", position: "relative" }}
+      >
+        <div style={{ maxWidth: "800px", margin: "0 auto", position: "relative", zIndex: 2 }}>
           <div className="pm-reveal" style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: "12px", fontWeight: 600, padding: "6px 16px", borderRadius: "20px", marginBottom: "28px", border: "1px solid rgba(255,255,255,0.25)", letterSpacing: "0.03em", backdropFilter: "blur(4px)" }}>
             🇩🇰 Danmarks padel-platform
           </div>
