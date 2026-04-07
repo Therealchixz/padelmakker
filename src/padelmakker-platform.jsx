@@ -1189,7 +1189,12 @@ function useProfileEloBundle(userId, syncKey) {
     };
   }, [userId, fetchBundle]);
 
-  return { bundleLoading: loading, profileFresh, ratedRows, reloadProfileEloBundle: () => fetchBundle(true) };
+  return {
+    bundleLoading: loading,
+    profileFresh,
+    ratedRows,
+    reloadProfileEloBundle: () => fetchBundle(true),
+  };
 }
 
 /** Per bruger: seneste ELO + kampe/sejre fra elo_history (til ranking all-time). */
@@ -1801,9 +1806,14 @@ function KampeTab({ user, showToast, tabActive = true }) {
   const { user: authUser, refreshProfile } = useAuth();
   const myDisplayName                 = resolveDisplayName(user, authUser);
   const eloSyncKeyKampe = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
-  const { ratedRows: kampeRatedRows } = useProfileEloBundle(user.id, eloSyncKeyKampe);
-  const myEloFromHistory = useMemo(() => statsFromEloHistoryRows(kampeRatedRows)?.elo ?? null, [kampeRatedRows]);
-  const myElo                         = myEloFromHistory != null ? myEloFromHistory : eloOf(user);
+  const { profileFresh: kampeProfileFresh, ratedRows: kampeRatedRows, reloadProfileEloBundle: reloadKampeEloBundle } =
+    useProfileEloBundle(user.id, eloSyncKeyKampe);
+  /** Samme prioritering som ProfilTab: elo_history → frisk profiles-række → context (undgår 1000 på "Opret kamp" når DB allerede har 1020). */
+  const myElo = useMemo(() => {
+    const fromHist = statsFromEloHistoryRows(kampeRatedRows)?.elo;
+    if (fromHist != null) return fromHist;
+    return Math.round(Number(kampeProfileFresh?.elo_rating ?? user.elo_rating) || 1000);
+  }, [kampeRatedRows, kampeProfileFresh?.elo_rating, user.elo_rating]);
   const [showCreate, setShowCreate]   = useState(false);
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
@@ -2092,6 +2102,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
       const mp = matchPlayers[matchId] || [];
       await calculateAndApplyElo(matchId, mr.match_winner, mp, showToast);
       refreshProfile();
+      await reloadKampeEloBundle();
       // Notify all players about ELO update
       mp.forEach(p => {
         createNotification(p.user_id, "result_confirmed", "Resultat bekræftet! 🏆", `Kampen er afsluttet (${mr.score_display || "—"}). ELO er opdateret.`, matchId);
@@ -2169,7 +2180,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
           const myUid = String(user.id);
           const playerElo = (p) => {
             const uid = String(p.user_id);
-            if (uid === myUid && myEloFromHistory != null) return myEloFromHistory;
+            if (uid === myUid) return myElo;
             return eloByUserId[uid] ?? 1000;
           };
           const avgElo = (team) => team.length > 0 ? Math.round(team.reduce((s, p) => s + playerElo(p), 0) / team.length) : null;
