@@ -943,7 +943,7 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
                   {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
                 </button>
               )}
-              {isCreator && t.status === 'playing' && (
+              {joined && t.status === 'playing' && (
                 <AmericanoResultsPanel
                   tournament={t}
                   currentUserId={profileId}
