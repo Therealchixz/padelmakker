@@ -1,133 +1,166 @@
 -- =============================================================================
 -- Synkroniser profiles.elo_rating, games_played, games_won med elo_history
 -- =============================================================================
--- Kør i Supabase: SQL Editor (eller som migration).
+-- LOGIK (matcher PadelMakker-appen efter fix):
+--   elo_rating = GREATEST(100, første rated rækkes old_rating + SUM(change))
+--   Hvis change mangler på en række: brug (new_rating - old_rating) i summen.
+--   Kronologi: date ASC, match_id ASC, id ASC (samme som app).
 --
--- FORUDSÆTNINGER (tilpas hvis dit skema afviger):
---   public.profiles: id (uuid), elo_rating, games_played, games_won
---   public.elo_history: user_id, match_id, old_rating, new_rating, result, date
---                     + helst en unik kolonne til tie-break (fx id) i ORDER BY
---
--- LOGIK (samme som app’en):
---   Kun rækker hvor old_rating IS NOT NULL AND match_id IS NOT NULL
---   Seneste ELO = COALESCE(new_rating, old_rating) på seneste række (date, id)
---   games_played = antal sådanne rækker
---   games_won    = antal hvor result (case-insensitive) = 'win'
---
--- TRIN:
---   1) Kør hele scriptet én gang.
---   2) Hvis fejl på ORDER BY: fjern ", e.id DESC NULLS LAST" overalt hvis elo_history ikke har id.
---   3) Hvis fejl på kolonnenavne: ret til dit rigtige skema.
---   4) Trigger-syntaks: Supabase bruger typisk PG14+. Hvis CREATE TRIGGER fejler, prøv
---      "EXECUTE FUNCTION ..." i stedet for "EXECUTE PROCEDURE ..." (nyere PG).
+-- Kør hele filen i Supabase SQL Editor.
+-- Hvis elo_history ikke har id-kolonne: fjern ", e.id ASC" / "e.id DESC" i ORDER BY.
+-- Hvis CREATE TRIGGER fejler: prøv EXECUTE FUNCTION i stedet for EXECUTE PROCEDURE.
 -- =============================================================================
 
-
 -- -----------------------------------------------------------------------------
--- 1) Funktion: genberegn én bruger fra elo_history
+-- 1) Genberegn én bruger
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.recalc_profile_stats_from_elo_history(p_user_id uuid)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
+SET row_security = off
 AS $$
+DECLARE
+  v_first numeric;
+  v_delta numeric;
+  v_games int;
+  v_wins int;
 BEGIN
+  SELECT COUNT(*)::int INTO v_games
+  FROM public.elo_history e
+  WHERE e.user_id = p_user_id
+    AND e.old_rating IS NOT NULL
+    AND e.match_id IS NOT NULL;
+
+  IF v_games IS NULL OR v_games = 0 THEN
+    UPDATE public.profiles
+    SET elo_rating = 1000, games_played = 0, games_won = 0
+    WHERE id = p_user_id;
+    RETURN;
+  END IF;
+
+  SELECT e.old_rating::numeric INTO v_first
+  FROM public.elo_history e
+  WHERE e.user_id = p_user_id
+    AND e.old_rating IS NOT NULL
+    AND e.match_id IS NOT NULL
+  ORDER BY e.date ASC NULLS LAST, e.match_id ASC NULLS LAST, e.id ASC NULLS LAST
+  LIMIT 1;
+
+  SELECT COALESCE(SUM(
+    CASE
+      WHEN e.change IS NOT NULL THEN e.change::numeric
+      WHEN e.new_rating IS NOT NULL AND e.old_rating IS NOT NULL
+        THEN (e.new_rating - e.old_rating)::numeric
+      ELSE 0::numeric
+    END
+  ), 0) INTO v_delta
+  FROM public.elo_history e
+  WHERE e.user_id = p_user_id
+    AND e.old_rating IS NOT NULL
+    AND e.match_id IS NOT NULL;
+
+  SELECT COUNT(*)::int INTO v_wins
+  FROM public.elo_history e
+  WHERE e.user_id = p_user_id
+    AND e.old_rating IS NOT NULL
+    AND e.match_id IS NOT NULL
+    AND lower(COALESCE(e.result, '')) = 'win';
+
   UPDATE public.profiles AS p
   SET
-    elo_rating = COALESCE(
-      (
-        SELECT ROUND(COALESCE(e.new_rating, e.old_rating, 1000)::numeric)::int
-        FROM public.elo_history AS e
-        WHERE e.user_id = p_user_id
-          AND e.old_rating IS NOT NULL
-          AND e.match_id IS NOT NULL
-        ORDER BY e.date DESC NULLS LAST, e.id DESC NULLS LAST
-        LIMIT 1
-      ),
-      1000
-    ),
-    games_played = COALESCE(
-      (
-        SELECT COUNT(*)::int
-        FROM public.elo_history AS e
-        WHERE e.user_id = p_user_id
-          AND e.old_rating IS NOT NULL
-          AND e.match_id IS NOT NULL
-      ),
-      0
-    ),
-    games_won = COALESCE(
-      (
-        SELECT COUNT(*)::int
-        FROM public.elo_history AS e
-        WHERE e.user_id = p_user_id
-          AND e.old_rating IS NOT NULL
-          AND e.match_id IS NOT NULL
-          AND lower(COALESCE(e.result, '')) = 'win'
-      ),
-      0
-    )
+    elo_rating = GREATEST(100, ROUND(COALESCE(v_first, 1000) + COALESCE(v_delta, 0))::int),
+    games_played = v_games,
+    games_won = v_wins
   WHERE p.id = p_user_id;
 END;
 $$;
 
 COMMENT ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) IS
-  'Sætter profiles.elo_rating / games_* ud fra rated elo_history-rækker (matcher PadelMakker-appen).';
+  'profiles.elo_rating = første old_rating + sum(change); matcher app UI.';
 
 
 -- -----------------------------------------------------------------------------
--- 2) Engangskørsel: ret alle profiler der har elo_history
+-- 2) Engangskørsel: alle profiler der har rated elo_history
 -- -----------------------------------------------------------------------------
 WITH rated AS (
-  SELECT *
-  FROM public.elo_history
-  WHERE old_rating IS NOT NULL
-    AND match_id IS NOT NULL
+  SELECT
+    e.user_id,
+    e.old_rating,
+    e.new_rating,
+    e.change,
+    e.result,
+    ROW_NUMBER() OVER (
+      PARTITION BY e.user_id
+      ORDER BY e.date ASC NULLS LAST, e.match_id ASC NULLS LAST, e.id ASC NULLS LAST
+    ) AS rn_first
+  FROM public.elo_history e
+  WHERE e.old_rating IS NOT NULL
+    AND e.match_id IS NOT NULL
 ),
-latest AS (
-  SELECT DISTINCT ON (user_id)
-    user_id,
-    ROUND(COALESCE(new_rating, old_rating, 1000)::numeric)::int AS elo
+first_old AS (
+  SELECT user_id, old_rating::numeric AS first_rating
   FROM rated
-  ORDER BY user_id, date DESC NULLS LAST, id DESC NULLS LAST
+  WHERE rn_first = 1
+),
+delta AS (
+  SELECT
+    user_id,
+    COALESCE(SUM(
+      CASE
+        WHEN change IS NOT NULL THEN change::numeric
+        WHEN new_rating IS NOT NULL AND old_rating IS NOT NULL
+          THEN (new_rating - old_rating)::numeric
+        ELSE 0::numeric
+      END
+    ), 0) AS total_delta
+  FROM rated
+  GROUP BY user_id
 ),
 cnt AS (
   SELECT
     user_id,
     COUNT(*)::int AS games,
-    COUNT(*) FILTER (
-      WHERE lower(COALESCE(result, '')) = 'win'
-    )::int AS wins
+    COUNT(*) FILTER (WHERE lower(COALESCE(result, '')) = 'win')::int AS wins
   FROM rated
   GROUP BY user_id
 )
 UPDATE public.profiles AS p
 SET
-  elo_rating   = l.elo,
+  elo_rating = GREATEST(
+    100,
+    ROUND(COALESCE(f.first_rating, 1000) + COALESCE(d.total_delta, 0))::int
+  ),
   games_played = c.games,
-  games_won    = c.wins
-FROM latest AS l
-JOIN cnt AS c ON c.user_id = l.user_id
-WHERE p.id = l.user_id;
+  games_won = c.wins
+FROM first_old AS f
+JOIN delta AS d ON d.user_id = f.user_id
+JOIN cnt AS c ON c.user_id = f.user_id
+WHERE p.id = f.user_id;
+
+-- Profiler uden rated historik: stadig 1000 / 0 / 0 (kun hvis du vil nulstille dem eksplicit)
+-- UPDATE public.profiles SET elo_rating = 1000, games_played = 0, games_won = 0
+-- WHERE id NOT IN (SELECT DISTINCT user_id FROM public.elo_history WHERE old_rating IS NOT NULL AND match_id IS NOT NULL);
 
 
 -- -----------------------------------------------------------------------------
--- 3) Fremtidig synk: trigger ved ændringer i elo_history
+-- 3) Trigger: hold profiles synket ved ændringer i elo_history
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.trg_elo_history_sync_profile()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
+SET row_security = off
 AS $$
 DECLARE
   uid uuid;
 BEGIN
   IF tg_op = 'DELETE' THEN
-    uid := old.user_id;
+    uid := OLD.user_id;
   ELSE
-    uid := new.user_id;
+    uid := NEW.user_id;
   END IF;
 
   IF uid IS NOT NULL THEN
@@ -135,32 +168,15 @@ BEGIN
   END IF;
 
   IF tg_op = 'DELETE' THEN
-    RETURN old;
+    RETURN OLD;
   END IF;
-  RETURN new;
+  RETURN NEW;
 END;
 $$;
 
 DROP TRIGGER IF EXISTS elo_history_sync_profile ON public.elo_history;
 
 CREATE TRIGGER elo_history_sync_profile
-AFTER INSERT OR UPDATE OR DELETE ON public.elo_history
-FOR EACH ROW
-EXECUTE PROCEDURE public.trg_elo_history_sync_profile();
-
-
--- -----------------------------------------------------------------------------
--- Valgfrit: giv authenticated lov til at kalde genberegning (fx fra Edge Function)
--- -----------------------------------------------------------------------------
--- GRANT EXECUTE ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) TO service_role;
-
-
--- =============================================================================
--- Valgfrit: ret inde i apply_elo_for_match
--- =============================================================================
--- Hvis din RPC allerede opdaterer profiles forkert, kan du tilføje til SLUTNINGEN
--- (for hver berørt user_id):
---   PERFORM public.recalc_profile_stats_from_elo_history(user_uuid);
--- Så stemmer DB uanset gammel logik. Triggeren ovenfor gør det som regel overflødigt
--- for INSERT/UPDATE/DELETE på elo_history — men ikke hvis ELO kun ændres andre steder.
--- =============================================================================
+  AFTER INSERT OR UPDATE OR DELETE ON public.elo_history
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_elo_history_sync_profile();
