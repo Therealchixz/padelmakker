@@ -55,3 +55,34 @@ export function americanoOutcomeForUserInMatch(
   if (onA) return a > b ? 'win' : 'loss'
   return b > a ? 'win' : 'loss'
 }
+
+export function userIsOnCourtInAmericanoMatch(
+  m: {
+    team_a_p1: string
+    team_a_p2: string
+    team_b_p1: string
+    team_b_p2: string
+  },
+  userIdByParticipantId: Map<string, string>,
+  currentUserId: string
+): boolean {
+  const uid = String(currentUserId)
+  return (
+    userIdByParticipantId.get(m.team_a_p1) === uid ||
+    userIdByParticipantId.get(m.team_a_p2) === uid ||
+    userIdByParticipantId.get(m.team_b_p1) === uid ||
+    userIdByParticipantId.get(m.team_b_p2) === uid
+  )
+}
+
+/** Vist under hver kamp: din status som spiller eller at du sidder over. */
+export function americanoViewerStatusLabel(
+  outcome: AmericanoViewerMatchOutcome,
+  onCourt: boolean
+): string {
+  if (!onCourt) return 'Sidder over'
+  if (outcome === 'win') return 'Vundet'
+  if (outcome === 'loss') return 'Tabt'
+  if (outcome === 'tie') return 'Uafgjort'
+  return 'Afventer resultat'
+}
