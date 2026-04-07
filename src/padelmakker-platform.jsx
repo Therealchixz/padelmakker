@@ -1901,9 +1901,11 @@ function KampeTab({ user, showToast, tabActive = true }) {
       setCourts(cd || []);
       const eloMap = {};
       const pById = {};
-      (profiles || []).forEach((pr) => { eloMap[String(pr.id)] = eloOf(pr); pById[String(pr.id)] = pr; });
-      setEloByUserId(eloMap);
-      setProfilesById(pById);
+      (profiles || []).forEach((pr) => {
+        const id = String(pr.id);
+        eloMap[id] = eloOf(pr);
+        pById[id] = pr;
+      });
 
       const allMatches = md || [];
       setMatches(allMatches);
@@ -1916,6 +1918,37 @@ function KampeTab({ user, showToast, tabActive = true }) {
         if (!mm[mp.match_id]) mm[mp.match_id] = [];
         mm[mp.match_id].push(mp);
       });
+
+      /** Frisk elo_rating fra DB for alle på banen — Profile.filter() kan være forældet (forkert modstander-ELO). */
+      const onCourtIds = new Set();
+      for (const arr of Object.values(mm)) {
+        for (const row of arr || []) {
+          if (row?.user_id) onCourtIds.add(String(row.user_id));
+        }
+      }
+      const idList = [...onCourtIds];
+      const chunkSize = 120;
+      for (let i = 0; i < idList.length; i += chunkSize) {
+        const chunk = idList.slice(i, i + chunkSize);
+        const { data: freshEloRows, error: feErr } = await supabase
+          .from("profiles")
+          .select("id, elo_rating")
+          .in("id", chunk);
+        if (feErr) {
+          console.warn("profiles elo refresh:", feErr.message);
+          continue;
+        }
+        for (const row of freshEloRows || []) {
+          const pid = String(row.id);
+          eloMap[pid] = eloOf(row);
+          if (pById[pid]) {
+            pById[pid] = { ...pById[pid], elo_rating: row.elo_rating };
+          }
+        }
+      }
+
+      setEloByUserId(eloMap);
+      setProfilesById(pById);
       setMatchPlayers(mm);
 
       // Load match results
