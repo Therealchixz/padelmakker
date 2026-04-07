@@ -4,7 +4,8 @@ import { useAuth } from '../../lib/AuthContext'
 import { Court } from '../../api/base44Client'
 import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
-import { buildAmericano8MatchRows, canScheduleAmericano } from './schedule8'
+import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
+import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 
 const font = "'Inter', sans-serif"
@@ -108,12 +109,22 @@ export function AmericanoTab({ profile, showToast }: Props) {
         .order('joined_at', { ascending: true })
       if (pErr) throw pErr
       const list = (parts || []) as Pick<AmericanoParticipant, 'id' | 'joined_at'>[]
-      if (!canScheduleAmericano(list.length, t.player_slots)) {
-        showToast(`Americano med ${t.player_slots} spillere kræver præcis ${t.player_slots} tilmeldte. Nu: ${list.length}.`)
+      const slots = Number(t.player_slots)
+      const n = list.length
+      let matchRows
+      if (canStartAmericano5767(n, slots)) {
+        matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id))
+      } else if (slots === 8 && n === 8) {
+        // Gamle turneringer oprettet med 8 pladser (før skift til 5–7)
+        matchRows = buildAmericano8MatchRows(t.id, list.map((p) => p.id))
+      } else {
+        showToast(
+          slots === 8
+            ? `Denne turnering kræver præcis 8 tilmeldte (gammel type). Nu: ${n}.`
+            : `Du skal have præcis ${slots} tilmeldte for at starte. Nu: ${n}.`
+        )
         return
       }
-      const ids = list.map((p) => p.id)
-      const matchRows = buildAmericano8MatchRows(t.id, ids)
 
       await supabase.from('americano_matches').delete().eq('tournament_id', t.id)
 

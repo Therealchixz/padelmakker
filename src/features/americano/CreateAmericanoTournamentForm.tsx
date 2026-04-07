@@ -12,7 +12,7 @@ type Props = {
   onCancel?: () => void
 }
 
-const PLAYER_OPTIONS: AmericanoPlayerSlots[] = [8, 12, 16]
+const PLAYER_OPTIONS: AmericanoPlayerSlots[] = [5, 6, 7]
 const POINT_OPTIONS: AmericanoPoints[] = [16, 24, 32]
 
 export function CreateAmericanoTournamentForm({
@@ -26,7 +26,7 @@ export function CreateAmericanoTournamentForm({
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [timeSlot, setTimeSlot] = useState('18:00')
   const [courtId, setCourtId] = useState(courts[0]?.id ?? '')
-  const [playerSlots, setPlayerSlots] = useState<AmericanoPlayerSlots>(8)
+  const [playerSlots, setPlayerSlots] = useState<AmericanoPlayerSlots>(5)
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -152,7 +152,7 @@ export function CreateAmericanoTournamentForm({
           ))}
         </select>
         <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
-          Rundeplan er klar til 8 spillere. 12 og 16 kommer i næste iteration.
+          Én bane: fire på banen, resten sidder over (5: én over, 6: to over, 7: tre over). Start når præcis dette antal har tilmeldt sig.
         </p>
       </div>
 
