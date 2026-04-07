@@ -2617,7 +2617,8 @@ function ProfilTab({ user, showToast, setTab }) {
           {statsLoading ? (
             <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px", marginBottom: "20px" }}>Indlæser statistik…</div>
           ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
+          <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "12px" }}>
             {[
               { label: "ELO", value: elo, color: theme.accent },
               { label: "Kampe", value: games, color: theme.blue },
@@ -2630,6 +2631,20 @@ function ProfilTab({ user, showToast, setTab }) {
               </div>
             ))}
           </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px", marginBottom: "20px" }}>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: "#FFFBEB", borderRadius: "8px", border: "1px solid " + theme.warm + "33" }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: theme.warm }}>{Number(user.americano_wins) || 0}</div>
+              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano sejre</div>
+            </div>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: "#F8FAFC", borderRadius: "8px", border: "1px solid " + theme.border }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: theme.textMid }}>{Number(user.americano_losses) || 0}</div>
+              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano tab</div>
+            </div>
+          </div>
+          <p style={{ fontSize: "10px", color: theme.textLight, marginTop: "-12px", marginBottom: "16px", lineHeight: 1.4 }}>
+            Americano tæller ikke i ELO — kun i felterne ovenfor (opdateres når turneringsresultater gemmes).
+          </p>
+          </>
           )}
 
           {/* Availability */}

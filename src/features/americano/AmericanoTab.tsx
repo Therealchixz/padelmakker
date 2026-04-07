@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
 import { Court } from '../../api/base44Client'
 import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
+import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { buildAmericano8MatchRows, canScheduleAmericano } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 
@@ -28,7 +29,7 @@ function resolveName(p: ProfileLike, authEmail?: string | null) {
 }
 
 export function AmericanoTab({ profile, showToast }: Props) {
-  const { user: authUser } = useAuth()
+  const { user: authUser, refreshProfileQuiet } = useAuth()
   const authEmail =
     authUser && typeof authUser === 'object' && 'email' in authUser
       ? String((authUser as { email?: string }).email || '')
@@ -217,7 +218,8 @@ export function AmericanoTab({ profile, showToast }: Props) {
       )}
 
       <p style={{ fontSize: 13, color: '#3E4C63', marginBottom: 16, lineHeight: 1.5 }}>
-        Individuel turnering: makkere og modstandere roterer hver runde. Kamp spilles til valgt pointtal (16/24/32). Server skifter efter 4 bolde — registreres manuelt i næste trin.
+        <strong>Americano bruger ikke ELO.</strong> Kampe tæller kun i separat V/T på profilen (som i apps som Padelboard — turnering og stilling for sig selv).
+        Makkere og modstandere roterer hver runde. Første til valgt pointtal vinder; uafgjort accepteres ikke.
       </p>
 
       {rows.length === 0 ? (
@@ -313,6 +315,19 @@ export function AmericanoTab({ profile, showToast }: Props) {
                 >
                   {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
                 </button>
+              )}
+              {isCreator && t.status === 'playing' && (
+                <AmericanoResultsPanel
+                  tournament={t}
+                  onSaved={load}
+                  showToast={showToast}
+                  onProfileStatsRefresh={refreshProfileQuiet}
+                />
+              )}
+              {t.status === 'completed' && (
+                <div style={{ fontSize: 12, color: '#8494A7', marginTop: 10 }}>
+                  Afsluttet — Americano V/T er opdateret på deltagernes profiler (påvirker ikke ELO).
+                </div>
               )}
             </div>
           );})}

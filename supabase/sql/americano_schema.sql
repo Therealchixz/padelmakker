@@ -1,5 +1,6 @@
 -- =============================================================================
 -- Americano-turneringer (individuel / roterende makkere)
+-- Påvirker IKKE ELO / elo_history — kun egne tabeller (+ valgfrit americano_wins/losses på profiles via americano_profile_stats.sql).
 -- Kør i Supabase SQL Editor. Juster RLS efter jeres sikkerhedsmodel.
 -- =============================================================================
 
