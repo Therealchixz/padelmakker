@@ -7,6 +7,43 @@ const AuthContext = createContext(null)
 const SESSION_TIMEOUT_MS = 12000
 const PROFILE_TIMEOUT_MS = 12000
 
+/** Trigger/default-rækker sætter ofte "Ny spiller" før app-metadata når email skal bekræftes først. */
+function isGenericProfileName(s) {
+  if (s == null || String(s).trim() === '') return true
+  const t = String(s).trim().toLowerCase()
+  return t === 'ny spiller' || t === 'ny' || t === 'spiller'
+}
+
+function safeNameFromAuthUser(userRow) {
+  const meta = userRow?.user_metadata || {}
+  let s = String(meta.full_name || meta.name || '').trim()
+  if (!s || isGenericProfileName(s)) {
+    const em = userRow?.email
+    s = em ? String(em).split('@')[0].trim() : ''
+  }
+  if (!s) return null
+  return s.replace(/</g, '').replace(/>/g, '').slice(0, 120)
+}
+
+async function syncProfileNameFromAuthIfNeeded(p, userRow) {
+  if (!p?.id || !userRow) return p
+  const dbName = String(p.full_name || p.name || '').trim()
+  if (dbName && !isGenericProfileName(dbName)) return p
+  const newName = safeNameFromAuthUser(userRow)
+  if (!newName) return p
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ full_name: newName, name: newName })
+    .eq('id', p.id)
+    .select()
+    .single()
+  if (error) {
+    console.warn('profiles name sync:', error.message)
+    return p
+  }
+  return normalizeProfileRow(data)
+}
+
 function fetchProfileQuery(userId) {
   return supabase
     .from('profiles')
@@ -24,7 +61,10 @@ function fetchProfileQuery(userId) {
 async function fetchOrCreateProfile(userRow) {
   if (!userRow?.id) return null
   let p = await fetchProfileQuery(userRow.id)
-  if (p) return p
+  if (p) {
+    p = await syncProfileNameFromAuthIfNeeded(p, userRow)
+    return p
+  }
   const meta = userRow.user_metadata || {}
   const email = userRow.email || ''
   const { data: row, error } = await supabase.from('profiles').upsert(
@@ -155,11 +195,16 @@ export function AuthProvider({ children }) {
     })
     if (error) throw error
     if (data.user) {
+      const displayName =
+        (metadata.full_name && String(metadata.full_name).trim()) ||
+        (metadata.name && String(metadata.name).trim()) ||
+        email.trim().split('@')[0] ||
+        'Spiller'
       await supabase.from('profiles').upsert({
         id: data.user.id,
         email: email,
-        name: metadata.full_name || 'Ny spiller',
-        full_name: metadata.full_name || 'Ny spiller',
+        name: displayName,
+        full_name: displayName,
         level: metadata.level || 5,
         play_style: metadata.play_style || 'Ved ikke endnu',
         area: metadata.area || 'København',
