@@ -386,8 +386,8 @@ export function AmericanoResultsPanel({
   participants.forEach((p) => userIdByPartId.set(p.id, p.user_id))
 
   const matchesDisplay = [...matches].sort((a, b) => {
-    if (b.round_number !== a.round_number) return b.round_number - a.round_number
-    return b.court_index - a.court_index
+    if (a.round_number !== b.round_number) return a.round_number - b.round_number
+    return a.court_index - b.court_index
   })
 
   const leaderboard = buildLeaderboard(participants, matches, scores, P)
@@ -436,16 +436,17 @@ export function AmericanoResultsPanel({
           const n2 = nameByPartId(m.team_a_p2)
           const n3 = nameByPartId(m.team_b_p1)
           const n4 = nameByPartId(m.team_b_p2)
-          const a = parseInt(s.a, 10)
-          const b = parseInt(s.b, 10)
-          const hasValid = isValidAmericanoScore(a, b, P)
-          const isTie = hasValid && a === b
-          const aWins = hasValid && a > b
-          const bWins = hasValid && b > a
-          const outcomeA: TeamOutcome = !hasValid ? 'loss' : isTie ? 'tie' : aWins ? 'win' : 'loss'
-          const outcomeB: TeamOutcome = !hasValid ? 'loss' : isTie ? 'tie' : bWins ? 'win' : 'loss'
-          const matchNum = matchesDisplay.length - displayIdx
-          const showScores = hasValid
+          const resolved = resolvedMatchScores(m, scores, P)
+          const displayA = resolved?.a ?? null
+          const displayB = resolved?.b ?? null
+          const hasDisplayScores = resolved != null
+          const isTie = hasDisplayScores && displayA === displayB
+          const aWins = hasDisplayScores && resolved.a > resolved.b
+          const bWins = hasDisplayScores && resolved.b > resolved.a
+          const outcomeA: TeamOutcome = !hasDisplayScores ? 'tie' : isTie ? 'tie' : aWins ? 'win' : 'loss'
+          const outcomeB: TeamOutcome = !hasDisplayScores ? 'tie' : isTie ? 'tie' : bWins ? 'win' : 'loss'
+          const matchNum = displayIdx + 1
+          const isLastInPlan = displayIdx === matchesDisplay.length - 1
 
           return (
             <div key={m.id} style={{ borderBottom: `1px solid ${c.line}` }}>
@@ -461,7 +462,8 @@ export function AmericanoResultsPanel({
               >
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: c.text, lineHeight: 1.3 }}>
-                    {displayIdx === 0 ? `Seneste kamp — #${matchNum}` : `#${matchNum}`}
+                    #{matchNum}
+                    {isLastInPlan ? ' · Sidste i plan' : ''}
                   </div>
                   <div style={{ fontSize: 12, color: c.muted, marginTop: 4 }}>
                     Runde {m.round_number}
@@ -514,6 +516,46 @@ export function AmericanoResultsPanel({
                     )}
                   </div>
                 )}
+              </div>
+
+              <div style={{ paddingBottom: locked ? 8 : 4 }}>
+                {hasDisplayScores && isTie && (
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: '#64748B',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Uafgjort
+                  </div>
+                )}
+                <TeamBlock
+                  name1={n1}
+                  name2={n2}
+                  pid1={m.team_a_p1}
+                  pid2={m.team_a_p2}
+                  score={displayA}
+                  outcome={outcomeA}
+                  showCheckForUser
+                  userIdByPartId={userIdByPartId}
+                  currentUserId={currentUserId}
+                />
+                <div style={{ height: 1, background: c.line, marginLeft: 56 }} />
+                <TeamBlock
+                  name1={n3}
+                  name2={n4}
+                  pid1={m.team_b_p1}
+                  pid2={m.team_b_p2}
+                  score={displayB}
+                  outcome={outcomeB}
+                  showCheckForUser
+                  userIdByPartId={userIdByPartId}
+                  currentUserId={currentUserId}
+                />
               </div>
 
               {!locked && (
@@ -594,52 +636,6 @@ export function AmericanoResultsPanel({
                   />
                   <span style={{ fontSize: 11, color: c.muted, flexBasis: '100%' }}>Sum = {P} (auto)</span>
                 </div>
-              )}
-
-              {locked && showScores && (
-                <div style={{ paddingBottom: 8 }}>
-                  {isTie && (
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: '#64748B',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                        marginBottom: 4,
-                      }}
-                    >
-                      Uafgjort
-                    </div>
-                  )}
-                  <TeamBlock
-                    name1={n1}
-                    name2={n2}
-                    pid1={m.team_a_p1}
-                    pid2={m.team_a_p2}
-                    score={a}
-                    outcome={outcomeA}
-                    showCheckForUser
-                    userIdByPartId={userIdByPartId}
-                    currentUserId={currentUserId}
-                  />
-                  <div style={{ height: 1, background: c.line, marginLeft: 56 }} />
-                  <TeamBlock
-                    name1={n3}
-                    name2={n4}
-                    pid1={m.team_b_p1}
-                    pid2={m.team_b_p2}
-                    score={b}
-                    outcome={outcomeB}
-                    showCheckForUser
-                    userIdByPartId={userIdByPartId}
-                    currentUserId={currentUserId}
-                  />
-                </div>
-              )}
-
-              {locked && !showScores && (
-                <div style={{ fontSize: 12, color: c.muted, paddingBottom: 16 }}>Ingen resultat endnu.</div>
               )}
             </div>
           )
