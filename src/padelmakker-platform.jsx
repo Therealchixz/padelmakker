@@ -1096,24 +1096,29 @@ function sortEloHistoryChronological(rows) {
 }
 
 /**
- * Nuværende ELO efter hele sekvensen (tåler manglende new_rating på sidste række hvis change findes).
+ * Nuværende ELO = rating før første kamp i listen + sum af alle `change`.
+ * Matcher uge/måned-ranking (som summerer `change`) og ignorerer `new_rating`,
+ * som i nogle DB-rækker kan være ét skridt bagud eller forkert.
  */
 function currentEloFromSortedHistory(sorted) {
   if (!sorted.length) return 1000;
-  let r = Math.round(Number(sorted[0].old_rating) || 1000);
-  for (let i = 0; i < sorted.length; i++) {
-    const row = sorted[i];
-    const nr = row.new_rating;
-    if (nr != null && nr !== "" && Number.isFinite(Number(nr))) {
-      r = Math.round(Number(nr));
-      continue;
-    }
+  const base = Math.round(Number(sorted[0].old_rating) || 1000);
+  let sumCh = 0;
+  for (const row of sorted) {
     const ch = row.change;
     if (ch != null && ch !== "" && Number.isFinite(Number(ch))) {
-      r = Math.round(r + Number(ch));
+      sumCh += Number(ch);
+    } else if (
+      row.old_rating != null &&
+      row.new_rating != null &&
+      Number.isFinite(Number(row.old_rating)) &&
+      Number.isFinite(Number(row.new_rating))
+    ) {
+      sumCh += Math.round(Number(row.new_rating) - Number(row.old_rating));
     }
   }
-  return r;
+  const r = Math.round(base + sumCh);
+  return Math.max(100, r);
 }
 
 /** Seneste ELO + antal kampe/sejre ud fra elo_history (kilde til graf). null hvis ingen rækker. */
@@ -1121,11 +1126,7 @@ function statsFromEloHistoryRows(rows) {
   const list = filterRatedEloHistoryRows(rows);
   if (!list.length) return null;
   const sorted = sortEloHistoryChronological(list);
-  const last = sorted[sorted.length - 1];
-  const fromLast = last.new_rating != null && last.new_rating !== "" && Number.isFinite(Number(last.new_rating))
-    ? Math.round(Number(last.new_rating))
-    : null;
-  const elo = fromLast != null ? fromLast : currentEloFromSortedHistory(sorted);
+  const elo = currentEloFromSortedHistory(sorted);
   const games = sorted.length;
   let wins = 0;
   for (const h of sorted) {
@@ -2450,7 +2451,24 @@ function EloGraph({ data }) {
   const W = 320, H = 140, PX = 32, PY = 20;
   const hasGraph = data && data.length >= 2;
   const sorted = hasGraph ? sortEloHistoryChronological(data) : [];
-  const values = sorted.map(d => d.new_rating ?? d.old_rating ?? 1000);
+  const values = (() => {
+    if (!sorted.length) return [];
+    let r = Math.round(Number(sorted[0].old_rating) || 1000);
+    return sorted.map((d) => {
+      const ch = d.change;
+      if (ch != null && ch !== "" && Number.isFinite(Number(ch))) {
+        r = Math.round(r + Number(ch));
+      } else if (
+        d.old_rating != null &&
+        d.new_rating != null &&
+        Number.isFinite(Number(d.old_rating)) &&
+        Number.isFinite(Number(d.new_rating))
+      ) {
+        r = Math.round(Number(d.new_rating));
+      }
+      return r;
+    });
+  })();
   const minV = hasGraph ? Math.min(...values) - 20 : 1000;
   const maxV = hasGraph ? Math.max(...values) + 20 : 1000;
   const rangeV = maxV - minV || 1;
