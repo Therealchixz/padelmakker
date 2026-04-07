@@ -70,3 +70,69 @@ export function normalizeProfileRow(p) {
   if (p == null || typeof p !== "object") return p
   return { ...p, availability: normalizeStringArrayField(p.availability) }
 }
+
+/** Danske + almindelige europæiske vokaler til navne-tjek */
+const VOWEL_RE = /[aeiouyæøåäöü]/gi
+
+/**
+ * Klient-side tjek af visningsnavn (forhindrer åbenlys tastatur-gibberish).
+ * Kan ikke garantere "rigtige" navne — kun rimelig format + heuristik.
+ * @returns {{ valid: true } | { valid: false, message: string }}
+ */
+export function validateDisplayName(raw) {
+  const s =
+    typeof raw === "string"
+      ? raw
+          .trim()
+          .replace(/\s+/g, " ")
+          .replace(/\u00AD/g, "")
+      : ""
+  if (!s) return { valid: false, message: "Navn må ikke være tomt." }
+  if (s.length < 2) return { valid: false, message: "Navn skal være mindst 2 tegn." }
+  if (s.length > 60) return { valid: false, message: "Navn må højst være 60 tegn." }
+
+  if (!/^\p{L}/u.test(s) || !/\p{L}$/u.test(s)) {
+    return { valid: false, message: "Navn skal starte og slutte med et bogstav." }
+  }
+
+  if (!/^[\p{L}\s'.-]+$/u.test(s)) {
+    return {
+      valid: false,
+      message: "Brug kun bogstaver, mellemrum, bindestreg og apostrof (f.eks. Anne-Marie).",
+    }
+  }
+
+  const letterCount = (s.match(/\p{L}/gu) || []).length
+  if (letterCount < 2) {
+    return { valid: false, message: "Navn skal indeholde mindst to bogstaver." }
+  }
+
+  const compact = s.replace(/\s/g, "")
+  if (/(.)\1{3,}/u.test(compact)) {
+    return { valid: false, message: "For mange gentagne tegn — brug dit rigtige navn." }
+  }
+
+  const parts = s.split(" ").filter(Boolean)
+  for (const part of parts) {
+    const lettersOnly = part.replace(/[^\p{L}]/gu, "")
+    if (lettersOnly.length >= 9) {
+      const vowels = lettersOnly.match(VOWEL_RE) || []
+      const ratio = vowels.length / lettersOnly.length
+      if (ratio < 0.22) {
+        return {
+          valid: false,
+          message:
+            "Det ligner ikke et navn (for få vokaler). Skriv dit for- og efternavn som andre kan genkende.",
+        }
+      }
+    }
+    if (lettersOnly.length >= 4 && lettersOnly.length < 9) {
+      const vowels = lettersOnly.match(VOWEL_RE) || []
+      if (vowels.length === 0) {
+        return { valid: false, message: "Hvert navnedel skal indeholde mindst én vokal." }
+      }
+    }
+  }
+
+  return { valid: true }
+}
