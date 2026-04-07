@@ -1,8 +1,161 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Check, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import type { AmericanoMatchRow, AmericanoParticipant, AmericanoPoints, AmericanoTournament } from './types'
+import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
 
 const font = "'Inter', sans-serif"
+
+const c = {
+  line: '#E8ECF1',
+  muted: '#94A3B8',
+  text: '#0F172A',
+  softBg: '#F8FAFC',
+  avatarBg: '#E2E8F0',
+  avatarText: '#64748B',
+  accent: '#2563EB',
+} as const
+
+function initialsFromName(name: string): string {
+  const p = name.trim().split(/\s+/).filter(Boolean)
+  if (p.length >= 2) return (p[0][0] + p[1][0]).toUpperCase()
+  if (p.length === 1 && p[0].length >= 2) return p[0].slice(0, 2).toUpperCase()
+  return (p[0]?.[0] || '?').toUpperCase()
+}
+
+function DualAvatar({ a, b }: { a: string; b: string }) {
+  const ia = initialsFromName(a)
+  const ib = initialsFromName(b)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, width: 44 }}>
+      <div
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: '50%',
+          background: c.avatarBg,
+          color: c.avatarText,
+          fontSize: 11,
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '2px solid #fff',
+          zIndex: 2,
+          fontFamily: font,
+        }}
+      >
+        {ia}
+      </div>
+      <div
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: '50%',
+          background: c.avatarBg,
+          color: c.avatarText,
+          fontSize: 11,
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginLeft: -14,
+          border: '2px solid #fff',
+          zIndex: 1,
+          fontFamily: font,
+        }}
+      >
+        {ib}
+      </div>
+    </div>
+  )
+}
+
+function TeamBlock({
+  name1,
+  name2,
+  pid1,
+  pid2,
+  score,
+  won,
+  showCheckForUser,
+  userIdByPartId,
+  currentUserId,
+}: {
+  name1: string
+  name2: string
+  pid1: string
+  pid2: string
+  score: number | null
+  won: boolean
+  showCheckForUser: boolean
+  userIdByPartId: Map<string, string>
+  currentUserId: string
+}) {
+  const scoreStr = score != null && !Number.isNaN(score) ? String(score) : '—'
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '12px 0',
+        minHeight: 56,
+      }}
+    >
+      <DualAvatar a={name1} b={name2} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 14,
+            fontWeight: 600,
+            color: won ? c.text : c.muted,
+            lineHeight: 1.35,
+          }}
+        >
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name1}</span>
+          {showCheckForUser && String(userIdByPartId.get(pid1)) === String(currentUserId) && (
+            <Check size={16} strokeWidth={2.5} color={c.accent} aria-hidden />
+          )}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 14,
+            fontWeight: 600,
+            color: won ? c.text : c.muted,
+            lineHeight: 1.35,
+            marginTop: 2,
+          }}
+        >
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name2}</span>
+          {showCheckForUser && String(userIdByPartId.get(pid2)) === String(currentUserId) && (
+            <Check size={16} strokeWidth={2.5} color={c.accent} aria-hidden />
+          )}
+        </div>
+      </div>
+      <div
+        style={{
+          fontSize: 26,
+          fontWeight: 800,
+          letterSpacing: '-0.03em',
+          color: won ? c.text : c.muted,
+          fontVariantNumeric: 'tabular-nums',
+          flexShrink: 0,
+          minWidth: 36,
+          textAlign: 'right',
+          fontFamily: font,
+        }}
+      >
+        {scoreStr}
+      </div>
+    </div>
+  )
+}
 
 type Props = {
   tournament: AmericanoTournament
@@ -197,161 +350,218 @@ export function AmericanoResultsPanel({
 
   const leaderboard = buildLeaderboard(participants, matches, scores)
 
+  const userIdByPartId = useMemo(() => {
+    const m = new Map<string, string>()
+    participants.forEach((p) => m.set(p.id, p.user_id))
+    return m
+  }, [participants])
+
+  const matchesDisplay = useMemo(() => {
+    return [...matches].sort((a, b) => {
+      if (b.round_number !== a.round_number) return b.round_number - a.round_number
+      return b.court_index - a.court_index
+    })
+  }, [matches])
+
   return (
-    <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #E2E8F0' }}>
-      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: '#0B1120' }}>
+    <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.line}` }}>
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: c.text, fontFamily: font }}>
         Resultater (ingen ELO)
       </div>
-      <p style={{ fontSize: 11, color: '#64748B', margin: '0 0 12px', lineHeight: 1.5 }}>
-        <strong>Format {P} point:</strong> Det er det I spiller til på banen (fx først til {P}). Her skriver I den{' '}
-        <strong>faktiske slutstilling</strong> — fx <strong>10–6</strong>: hvert vundet rally giver ét point til holdet. De to tal I indtaster,{' '}
-        lægges til hver spillers <strong>turneringssum</strong> (vinderholdets spillere får vinderholdets point, taberholdets får deres).
-        Efter <strong>Gem</strong> er kampen låst — kun du som opretter kan trykke <strong>Ret resultat</strong> for at ændre den.
+      <p style={{ fontSize: 11, color: c.muted, margin: '0 0 14px', lineHeight: 1.55, fontFamily: font }}>
+        <strong style={{ color: '#475569' }}>Format {P} point:</strong> Indtast den faktiske slutstilling (fx 10–6). Summen vises ovenfor. Efter{' '}
+        <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette.
       </p>
       <div
         style={{
-          background: '#F1F5F9',
-          borderRadius: 8,
-          padding: '10px 12px',
-          marginBottom: 14,
-          fontSize: 11,
-          color: '#334155',
+          background: c.softBg,
+          borderRadius: 10,
+          padding: '14px 16px',
+          marginBottom: 8,
+          border: `1px solid ${c.line}`,
+          fontFamily: font,
         }}
       >
-        <div style={{ fontWeight: 700, marginBottom: 8, color: '#0B1120' }}>Stilling (sum af jeres kampoint)</div>
-        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
+        <div style={{ fontWeight: 700, marginBottom: 10, color: c.text, fontSize: 12 }}>Stilling (sum af kampoint)</div>
+        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.65, fontSize: 13, color: '#334155' }}>
           {leaderboard.map((row) => (
             <li key={row.id}>
-              {row.name} — <strong>{row.points}</strong> point
+              <span style={{ color: c.text }}>{row.name}</span>{' '}
+              <span style={{ color: c.muted, fontWeight: 500 }}>—</span>{' '}
+              <strong style={{ color: c.text }}>{row.points}</strong> point
             </li>
           ))}
         </ol>
-        {leaderboard.length === 0 && <div>Ingen spillere endnu.</div>}
+        {leaderboard.length === 0 && <div style={{ fontSize: 12, color: c.muted }}>Ingen spillere endnu.</div>}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {matches.map((m) => {
+
+      <div style={{ fontFamily: font }}>
+        {matchesDisplay.map((m, displayIdx) => {
           const s = scores[m.id] || { a: '', b: '' }
           const locked = isMatchResultLocked(m) && !unlockedIds.has(m.id)
           const n1 = nameByPartId(m.team_a_p1)
           const n2 = nameByPartId(m.team_a_p2)
           const n3 = nameByPartId(m.team_b_p1)
           const n4 = nameByPartId(m.team_b_p2)
+          const a = parseInt(s.a, 10)
+          const b = parseInt(s.b, 10)
+          const hasValid = isValidAmericanoScore(a, b)
+          const aWins = hasValid && a > b
+          const bWins = hasValid && b > a
+          const matchNum = matchesDisplay.length - displayIdx
+          const showScores = hasValid
+
           return (
-            <div
-              key={m.id}
-              style={{
-                background: '#F8FAFC',
-                borderRadius: 8,
-                padding: 10,
-                fontSize: 11,
-              }}
-            >
-              <div style={{ fontWeight: 600, marginBottom: 6, color: '#3E4C63' }}>
-                Runde {m.round_number} · Bane {m.court_index + 1}
-              </div>
-              <div style={{ marginBottom: 8, lineHeight: 1.4 }}>
-                <span style={{ color: '#1D4ED8' }}>
-                  {n1} + {n2}
-                </span>
-                <span style={{ margin: '0 6px', color: '#8494A7' }}>vs</span>
-                <span style={{ color: '#2563EB' }}>
-                  {n3} + {n4}
-                </span>
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                <input
-                  type="number"
-                  min={0}
-                  readOnly={locked}
-                  value={s.a}
-                  onChange={(e) =>
-                    setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value, b: prev[m.id]?.b ?? '' } }))
-                  }
-                  placeholder="Hold A"
-                  style={{
-                    width: 72,
-                    padding: 6,
-                    borderRadius: 6,
-                    border: '1px solid #D5DDE8',
-                    fontSize: 13,
-                    background: locked ? '#F1F5F9' : '#fff',
-                  }}
-                />
-                <span style={{ fontWeight: 700 }}>—</span>
-                <input
-                  type="number"
-                  min={0}
-                  readOnly={locked}
-                  value={s.b}
-                  onChange={(e) =>
-                    setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: e.target.value } }))
-                  }
-                  placeholder="Hold B"
-                  style={{
-                    width: 72,
-                    padding: 6,
-                    borderRadius: 6,
-                    border: '1px solid #D5DDE8',
-                    fontSize: 13,
-                    background: locked ? '#F1F5F9' : '#fff',
-                  }}
-                />
-                {locked ? (
-                  <>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: '#64748B',
-                        padding: '4px 8px',
-                        background: '#E2E8F0',
-                        borderRadius: 6,
-                      }}
-                    >
-                      Låst
-                    </span>
-                    {isCreator && (
+            <div key={m.id} style={{ borderBottom: `1px solid ${c.line}` }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  paddingTop: 16,
+                  paddingBottom: 4,
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: c.text, lineHeight: 1.3 }}>
+                    {displayIdx === 0 ? `Seneste kamp — #${matchNum}` : `#${matchNum}`}
+                  </div>
+                  <div style={{ fontSize: 12, color: c.muted, marginTop: 4 }}>
+                    Runde {m.round_number}
+                    {isCreator ? ' · Registreret af dig' : ''}
+                  </div>
+                </div>
+                {isCreator && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                    {locked ? (
                       <button
                         type="button"
                         disabled={saving}
+                        title="Ret resultat"
+                        aria-label="Ret resultat"
                         onClick={() => setUnlockedIds((prev) => new Set(prev).add(m.id))}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '50%',
+                          border: `2px solid ${c.accent}`,
+                          background: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: saving ? 'wait' : 'pointer',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Pencil size={18} color={c.accent} strokeWidth={2} />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => saveRow(m)}
                         style={{
                           fontFamily: font,
                           fontSize: 12,
                           fontWeight: 600,
-                          padding: '6px 12px',
-                          borderRadius: 6,
-                          border: '1px solid #D97706',
-                          background: '#fff',
-                          color: '#B45309',
+                          padding: '8px 14px',
+                          borderRadius: 8,
+                          border: 'none',
+                          background: c.accent,
+                          color: '#fff',
                           cursor: saving ? 'wait' : 'pointer',
                         }}
                       >
-                        Ret resultat
+                        Gem
                       </button>
                     )}
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => saveRow(m)}
-                    style={{
-                      fontFamily: font,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      padding: '6px 12px',
-                      borderRadius: 6,
-                      border: 'none',
-                      background: '#1D4ED8',
-                      color: '#fff',
-                      cursor: saving ? 'wait' : 'pointer',
-                    }}
-                  >
-                    Gem
-                  </button>
+                  </div>
                 )}
               </div>
+
+              {!locked && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: 10,
+                    paddingBottom: 12,
+                    paddingTop: 4,
+                  }}
+                >
+                  <input
+                    type="number"
+                    min={0}
+                    value={s.a}
+                    onChange={(e) =>
+                      setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value, b: prev[m.id]?.b ?? '' } }))
+                    }
+                    placeholder="Hold A"
+                    style={{
+                      width: 72,
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: `1px solid ${c.line}`,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      fontFamily: font,
+                    }}
+                  />
+                  <span style={{ fontWeight: 700, color: c.muted }}>—</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={s.b}
+                    onChange={(e) =>
+                      setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: e.target.value } }))
+                    }
+                    placeholder="Hold B"
+                    style={{
+                      width: 72,
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: `1px solid ${c.line}`,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      fontFamily: font,
+                    }}
+                  />
+                </div>
+              )}
+
+              {locked && showScores && (
+                <div style={{ paddingBottom: 8 }}>
+                  <TeamBlock
+                    name1={n1}
+                    name2={n2}
+                    pid1={m.team_a_p1}
+                    pid2={m.team_a_p2}
+                    score={a}
+                    won={aWins}
+                    showCheckForUser
+                    userIdByPartId={userIdByPartId}
+                    currentUserId={currentUserId}
+                  />
+                  <div style={{ height: 1, background: c.line, marginLeft: 56 }} />
+                  <TeamBlock
+                    name1={n3}
+                    name2={n4}
+                    pid1={m.team_b_p1}
+                    pid2={m.team_b_p2}
+                    score={b}
+                    won={bWins}
+                    showCheckForUser
+                    userIdByPartId={userIdByPartId}
+                    currentUserId={currentUserId}
+                  />
+                </div>
+              )}
+
+              {locked && !showScores && (
+                <div style={{ fontSize: 12, color: c.muted, paddingBottom: 16 }}>Ingen resultat endnu.</div>
+              )}
             </div>
           )
         })}
