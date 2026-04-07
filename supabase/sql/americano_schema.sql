@@ -64,17 +64,54 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.americano_tournaments TO authenti
 GRANT SELECT, INSERT, DELETE ON public.americano_participants TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.americano_matches TO authenticated;
 
+-- Hjælpere til RLS uden rekursion mellem tournaments ↔ participants
+CREATE OR REPLACE FUNCTION public.americano_internal_tournament_status(p_tid uuid)
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+SET row_security = off
+AS $$
+  SELECT t.status FROM public.americano_tournaments t WHERE t.id = p_tid LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION public.americano_internal_tournament_creator(p_tid uuid)
+RETURNS uuid
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+SET row_security = off
+AS $$
+  SELECT t.creator_id FROM public.americano_tournaments t WHERE t.id = p_tid LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION public.americano_is_participant(p_tid uuid, p_uid uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+SET row_security = off
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.americano_participants p
+    WHERE p.tournament_id = p_tid AND p.user_id = p_uid
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.americano_internal_tournament_status(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.americano_internal_tournament_creator(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.americano_is_participant(uuid, uuid) FROM PUBLIC;
+
 -- Synlighed: åbne turneringer for alle loggede; playing/completed kun opretter + deltagere
 DROP POLICY IF EXISTS americano_tournaments_select ON public.americano_tournaments;
 CREATE POLICY americano_tournaments_select ON public.americano_tournaments
   FOR SELECT TO authenticated USING (
     status = 'registration'
     OR creator_id = (select auth.uid())
-    OR EXISTS (
-      SELECT 1 FROM public.americano_participants p
-      WHERE p.tournament_id = americano_tournaments.id
-        AND p.user_id = (select auth.uid())
-    )
+    OR public.americano_is_participant(id, (select auth.uid()))
   );
 
 DROP POLICY IF EXISTS americano_tournaments_insert ON public.americano_tournaments;
@@ -89,24 +126,14 @@ DROP POLICY IF EXISTS americano_tournaments_delete ON public.americano_tournamen
 CREATE POLICY americano_tournaments_delete ON public.americano_tournaments
   FOR DELETE TO authenticated USING ((select auth.uid()) = creator_id);
 
--- Deltagere: alle kan læse under tilmelding; ellers kun opretter, egne rækker og medspillere
+-- Deltagere: åbne turneringer = alle rækker; ellers opretter + deltagere i samme turnering
 DROP POLICY IF EXISTS americano_participants_select ON public.americano_participants;
 CREATE POLICY americano_participants_select ON public.americano_participants
   FOR SELECT TO authenticated USING (
     user_id = (select auth.uid())
-    OR EXISTS (
-      SELECT 1 FROM public.americano_tournaments t
-      WHERE t.id = americano_participants.tournament_id
-        AND (
-          t.status = 'registration'
-          OR t.creator_id = (select auth.uid())
-        )
-    )
-    OR EXISTS (
-      SELECT 1 FROM public.americano_participants p2
-      WHERE p2.tournament_id = americano_participants.tournament_id
-        AND p2.user_id = (select auth.uid())
-    )
+    OR public.americano_internal_tournament_status(tournament_id) = 'registration'
+    OR public.americano_internal_tournament_creator(tournament_id) = (select auth.uid())
+    OR public.americano_is_participant(tournament_id, (select auth.uid()))
   );
 
 DROP POLICY IF EXISTS americano_participants_insert ON public.americano_participants;
@@ -121,16 +148,8 @@ CREATE POLICY americano_participants_delete ON public.americano_participants
 DROP POLICY IF EXISTS americano_matches_select ON public.americano_matches;
 CREATE POLICY americano_matches_select ON public.americano_matches
   FOR SELECT TO authenticated USING (
-    EXISTS (
-      SELECT 1 FROM public.americano_tournaments t
-      WHERE t.id = americano_matches.tournament_id
-        AND t.creator_id = (select auth.uid())
-    )
-    OR EXISTS (
-      SELECT 1 FROM public.americano_participants p
-      WHERE p.tournament_id = americano_matches.tournament_id
-        AND p.user_id = (select auth.uid())
-    )
+    public.americano_internal_tournament_creator(tournament_id) = (select auth.uid())
+    OR public.americano_is_participant(tournament_id, (select auth.uid()))
   );
 
 DROP POLICY IF EXISTS americano_matches_insert_creator ON public.americano_matches;

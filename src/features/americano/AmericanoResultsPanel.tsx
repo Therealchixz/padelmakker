@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Check, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
+import { americanoOutcomeColors, americanoOutcomeForUserInMatch } from './americanoOutcomeColors'
 
 const font = "'Inter', sans-serif"
 
@@ -447,9 +448,26 @@ export function AmericanoResultsPanel({
           const outcomeB: TeamOutcome = !hasDisplayScores ? 'tie' : isTie ? 'tie' : bWins ? 'win' : 'loss'
           const matchNum = displayIdx + 1
           const isLastInPlan = displayIdx === matchesDisplay.length - 1
+          const effectiveM =
+            resolved != null
+              ? { ...m, team_a_score: resolved.a, team_b_score: resolved.b }
+              : m
+          const viewerOutcome = americanoOutcomeForUserInMatch(effectiveM, userIdByPartId, currentUserId, P)
+          const palKey =
+            viewerOutcome === 'win' ? 'win' : viewerOutcome === 'loss' ? 'loss' : viewerOutcome === 'tie' ? 'tie' : 'neutral'
+          const matchPal = americanoOutcomeColors[palKey]
 
           return (
-            <div key={m.id} style={{ borderBottom: `1px solid ${c.line}` }}>
+            <div
+              key={m.id}
+              style={{
+                marginBottom: 10,
+                padding: '12px 12px 4px',
+                borderRadius: 10,
+                background: matchPal.bg,
+                border: `1px solid ${matchPal.border}`,
+              }}
+            >
               <div
                 style={{
                   display: 'flex',
