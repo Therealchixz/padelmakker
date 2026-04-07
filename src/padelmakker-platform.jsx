@@ -1840,17 +1840,24 @@ function KampeTab({ user, showToast, tabActive = true }) {
   });
 
   /**
-   * Samme visning som andre spillere på kortet: først `Profile.filter()`-kortet (eloByUserId),
-   * så elo_history → frisk profil → context. Skal ligge **efter** useState(eloByUserId) (TDZ).
+   * Samme rækkefølge som ProfilTab: elo_history først (sand nuværende rating), derefter frisk
+   * profiles-række, derefter bulk-liste (kan være bagud ift. DB), til sidst context.
+   * Ellers vises 1000 fra Profile.filter() selvom profilen viser 1020 fra historik.
    */
   const myUidStr = String(user.id);
   const myElo = useMemo(() => {
-    const fromList = eloByUserId[myUidStr];
-    if (fromList != null && Number.isFinite(Number(fromList))) return Math.round(Number(fromList));
     const fromHist = statsFromEloHistoryRows(kampeRatedRows)?.elo;
     if (fromHist != null) return fromHist;
-    return Math.round(Number(kampeProfileFresh?.elo_rating ?? user.elo_rating) || 1000);
-  }, [eloByUserId, myUidStr, kampeRatedRows, kampeProfileFresh?.elo_rating, user.elo_rating]);
+    if (kampeProfileFresh != null) {
+      const raw = kampeProfileFresh.elo_rating;
+      if (raw != null && raw !== "" && Number.isFinite(Number(raw))) {
+        return Math.round(Number(raw));
+      }
+    }
+    const fromList = eloByUserId[myUidStr];
+    if (fromList != null && Number.isFinite(Number(fromList))) return Math.round(Number(fromList));
+    return Math.round(Number(user.elo_rating) || 1000);
+  }, [kampeRatedRows, kampeProfileFresh, myUidStr, eloByUserId, user.elo_rating]);
 
   useEffect(() => { loadData(); }, []);
 
