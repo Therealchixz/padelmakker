@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
-import { normalizeProfileRow, normalizeStringArrayField } from "./lib/profileUtils";
+import { normalizeProfileRow, normalizeStringArrayField, validateDisplayName } from "./lib/profileUtils";
 
 /** Sikker liste til .map() selv hvis profil kommer uden normalisering */
 function availabilityTags(profileLike) {
@@ -473,7 +473,13 @@ function OnboardingPage({ onComplete }) {
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
   const canNext = () => {
-    if (step === 0) return form.name.trim() && form.email.trim() && form.password.trim() && form.birth_year.length === 4;
+    if (step === 0)
+      return (
+        validateDisplayName(form.name).valid &&
+        form.email.trim() &&
+        form.password.trim() &&
+        form.birth_year.length === 4
+      );
     if (step === 1) return form.level && form.style;
     if (step === 2) return form.area && form.availability.length > 0;
     return true;
@@ -482,6 +488,11 @@ function OnboardingPage({ onComplete }) {
   const finish = async () => {
     setSubmitting(true); setErr("");
     try {
+      const nameCheck = validateDisplayName(form.name);
+      if (!nameCheck.valid) {
+        setErr(nameCheck.message);
+        return;
+      }
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
       await signUp(form.email.trim(), form.password, {
         full_name: sanitizeText(form.name), level: levelNum,
@@ -506,7 +517,10 @@ function OnboardingPage({ onComplete }) {
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Velkommen! 👋</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Lad os oprette din profil.</p>
       <label style={labelStyle}>Dit navn</label>
-      <input value={form.name}     onChange={e => set("name", e.target.value)}     placeholder="F.eks. Mikkel P."  style={{ ...inputStyle, marginBottom: "14px" }} />
+      <input value={form.name}     onChange={e => set("name", e.target.value)}     placeholder="F.eks. Mikkel P."  style={{ ...inputStyle, marginBottom: "6px" }} />
+      <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
+        Brug dit rigtige for- og efternavn (kun bogstaver og almindelige tegn).
+      </p>
       <label style={labelStyle}>Email</label>
       <input value={form.email}    onChange={e => set("email", e.target.value)}    placeholder="din@email.dk"      type="email"    style={{ ...inputStyle, marginBottom: "14px" }} />
       <label style={labelStyle}>Adgangskode</label>
@@ -2275,7 +2289,11 @@ function ProfilTab({ user, showToast, setTab }) {
   });
 
   const handleSave = async () => {
-    if (!form.full_name.trim()) { showToast("Navn må ikke være tomt"); return; }
+    const nameCheck = validateDisplayName(form.full_name);
+    if (!nameCheck.valid) {
+      showToast(nameCheck.message);
+      return;
+    }
     setSaving(true);
     try {
       await updateProfile({
@@ -2452,7 +2470,10 @@ function ProfilTab({ user, showToast, setTab }) {
 
         {/* Name */}
         <label style={labelStyle}>Navn</label>
-        <input value={form.full_name} onChange={e => set("full_name", e.target.value)} placeholder="Dit navn" style={{ ...inputStyle, marginBottom: "14px" }} />
+        <input value={form.full_name} onChange={e => set("full_name", e.target.value)} placeholder="F.eks. Mikkel Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
+        <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
+          Brug dit rigtige navn som andre spillere kan genkende.
+        </p>
 
         {/* Birth year */}
         <label style={labelStyle}>Fødselsår</label>
