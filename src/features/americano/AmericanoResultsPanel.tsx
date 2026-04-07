@@ -408,8 +408,17 @@ export function AmericanoResultsPanel({
         Resultater (ingen ELO)
       </div>
       <p style={{ fontSize: 11, color: c.muted, margin: '0 0 14px', lineHeight: 1.55, fontFamily: font }}>
-        <strong style={{ color: '#475569' }}>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
-        <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Uafgjort tæller ikke som V/T på profilen.
+        {isCreator ? (
+          <>
+            <strong style={{ color: '#475569' }}>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
+            <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Uafgjort tæller ikke som V/T på profilen.
+          </>
+        ) : (
+          <>
+            <strong style={{ color: '#475569' }}>Format {P} point:</strong> Her ser du stilling og alle kampe. Kun{' '}
+            <strong>opretteren</strong> kan indtaste og rette resultater.
+          </>
+        )}
       </p>
       <div
         style={{
@@ -579,7 +588,7 @@ export function AmericanoResultsPanel({
                 />
               </div>
 
-              {!locked && (
+              {isCreator && !locked && (
                 <div
                   style={{
                     display: 'flex',
@@ -662,25 +671,27 @@ export function AmericanoResultsPanel({
           )
         })}
       </div>
-      <button
-        type="button"
-        disabled={saving}
-        onClick={completeTournament}
-        style={{
-          marginTop: 14,
-          fontFamily: font,
-          fontSize: 12,
-          fontWeight: 600,
-          padding: '8px 14px',
-          borderRadius: 8,
-          border: '1px solid #D5DDE8',
-          background: '#fff',
-          color: '#3E4C63',
-          cursor: saving ? 'wait' : 'pointer',
-        }}
-      >
-        Afslut turnering (alle resultater indtastet)
-      </button>
+      {isCreator && (
+        <button
+          type="button"
+          disabled={saving}
+          onClick={completeTournament}
+          style={{
+            marginTop: 14,
+            fontFamily: font,
+            fontSize: 12,
+            fontWeight: 600,
+            padding: '8px 14px',
+            borderRadius: 8,
+            border: '1px solid #D5DDE8',
+            background: '#fff',
+            color: '#3E4C63',
+            cursor: saving ? 'wait' : 'pointer',
+          }}
+        >
+          Afslut turnering (alle resultater indtastet)
+        </button>
+      )}
     </div>
   )
 }
