@@ -165,10 +165,13 @@ export function CreateAmericanoTournamentForm({
         >
           {POINT_OPTIONS.map((p) => (
             <option key={p} value={p}>
-              {p} point (vinder ved først til {p})
+              {p} point (spil til {p} på banen)
             </option>
           ))}
         </select>
+        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
+          Efter hver kamp indtastes den faktiske slutstilling (fx 10–6 ved format 16). Tallet her er hvad I spiller til på banen — ikke et krav om at vinderen har præcis det antal i resultatfeltet.
+        </p>
       </div>
 
       <div style={{ marginTop: 14 }}>

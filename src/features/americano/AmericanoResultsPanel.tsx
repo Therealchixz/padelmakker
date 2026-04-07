@@ -11,12 +11,49 @@ type Props = {
   onProfileStatsRefresh?: () => void
 }
 
-function isValidAmericanoScore(a: number, b: number, target: AmericanoPoints): boolean {
+/** Faktiske kampoint (hvert vundet rally = 1 til holdet). Ikke krav om at vinderen rammer målet P — det er spillets format på banen (fx først til 16), slutstilling kan være 10–6. */
+function isValidAmericanoScore(a: number, b: number): boolean {
   if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) return false
-  if (a === b) return false
-  const hi = Math.max(a, b)
-  const lo = Math.min(a, b)
-  return hi === target && lo < target
+  return a !== b
+}
+
+function resolvedMatchScores(
+  m: AmericanoMatchRow,
+  sc: Record<string, { a: string; b: string }>
+): { a: number; b: number } | null {
+  const row = sc[m.id]
+  if (row && row.a !== '' && row.b !== '') {
+    const a = parseInt(row.a, 10)
+    const b = parseInt(row.b, 10)
+    if (isValidAmericanoScore(a, b)) return { a, b }
+  }
+  if (m.team_a_score != null && m.team_b_score != null) {
+    const a = m.team_a_score
+    const b = m.team_b_score
+    if (isValidAmericanoScore(a, b)) return { a, b }
+  }
+  return null
+}
+
+function buildLeaderboard(
+  participants: AmericanoParticipant[],
+  matches: AmericanoMatchRow[],
+  scores: Record<string, { a: string; b: string }>
+): { id: string; name: string; points: number }[] {
+  const totals = new Map<string, number>()
+  participants.forEach((p) => totals.set(p.id, 0))
+  for (const m of matches) {
+    const r = resolvedMatchScores(m, scores)
+    if (!r) continue
+    const add = (pid: string, pts: number) => totals.set(pid, (totals.get(pid) ?? 0) + pts)
+    add(m.team_a_p1, r.a)
+    add(m.team_a_p2, r.a)
+    add(m.team_b_p1, r.b)
+    add(m.team_b_p2, r.b)
+  }
+  return participants
+    .map((p) => ({ id: p.id, name: p.display_name, points: totals.get(p.id) ?? 0 }))
+    .sort((x, y) => y.points - x.points)
 }
 
 export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfileStatsRefresh }: Props) {
@@ -77,8 +114,8 @@ export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfil
       showToast('Udfyld begge point.')
       return
     }
-    if (!isValidAmericanoScore(a, b, P)) {
-      showToast(`Ugyldigt: vinderhold skal have præcis ${P} point, taber færre (ikke uafgjort).`)
+    if (!isValidAmericanoScore(a, b)) {
+      showToast('Ugyldigt: to hele tal ≥ 0, og ikke uafgjort.')
       return
     }
     setSaving(true)
@@ -106,7 +143,7 @@ export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfil
       if (!s) return true
       const a = parseInt(s.a, 10)
       const b = parseInt(s.b, 10)
-      return !isValidAmericanoScore(a, b, P)
+      return !isValidAmericanoScore(a, b)
     })
     if (incomplete) {
       showToast('Alle kampe skal have gyldige resultater før afslutning.')
@@ -134,10 +171,37 @@ export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfil
     return <div style={{ fontSize: 12, color: '#8494A7', marginTop: 12 }}>Henter kampe…</div>
   }
 
+  const leaderboard = buildLeaderboard(participants, matches, scores)
+
   return (
     <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #E2E8F0' }}>
-      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: '#0B1120' }}>
-        Resultater (første til {P} point vinder — ingen ELO)
+      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: '#0B1120' }}>
+        Resultater (ingen ELO)
+      </div>
+      <p style={{ fontSize: 11, color: '#64748B', margin: '0 0 12px', lineHeight: 1.5 }}>
+        <strong>Format {P} point:</strong> Det er det I spiller til på banen (fx først til {P}). Her skriver I den{' '}
+        <strong>faktiske slutstilling</strong> — fx <strong>10–6</strong>: hvert vundet rally giver ét point til holdet. De to tal I indtaster,{' '}
+        lægges til hver spillers <strong>turneringssum</strong> (vinderholdets spillere får vinderholdets point, taberholdets får deres).
+      </p>
+      <div
+        style={{
+          background: '#F1F5F9',
+          borderRadius: 8,
+          padding: '10px 12px',
+          marginBottom: 14,
+          fontSize: 11,
+          color: '#334155',
+        }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: 8, color: '#0B1120' }}>Stilling (sum af jeres kampoint)</div>
+        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
+          {leaderboard.map((row) => (
+            <li key={row.id}>
+              {row.name} — <strong>{row.points}</strong> point
+            </li>
+          ))}
+        </ol>
+        {leaderboard.length === 0 && <div>Ingen spillere endnu.</div>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {matches.map((m) => {
@@ -172,7 +236,6 @@ export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfil
                 <input
                   type="number"
                   min={0}
-                  max={P}
                   value={s.a}
                   onChange={(e) =>
                     setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value, b: prev[m.id]?.b ?? '' } }))
@@ -184,7 +247,6 @@ export function AmericanoResultsPanel({ tournament, onSaved, showToast, onProfil
                 <input
                   type="number"
                   min={0}
-                  max={P}
                   value={s.b}
                   onChange={(e) =>
                     setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: e.target.value } }))
