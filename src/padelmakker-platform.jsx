@@ -667,30 +667,46 @@ async function createNotification(userId, type, title, body, matchId = null) {
   }
 }
 
-function NotificationBell({ userId }) {
+function NotificationBell() {
+  const { user: authUser } = useAuth();
+  const userId = authUser?.id;
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
-  const [loading, setLoading] = useState(false);
   const panelRef = useRef(null);
 
   const unreadCount = notifs.filter(n => !n.read).length;
 
   const load = useCallback(async () => {
+    if (!userId) {
+      setNotifs([]);
+      return;
+    }
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("notifications")
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(20);
+      if (error) {
+        console.warn("notifications load:", error.message || error);
+        setNotifs([]);
+        return;
+      }
       setNotifs(data || []);
-    } catch {}
+    } catch (e) {
+      console.warn("notifications load:", e);
+      setNotifs([]);
+    }
   }, [userId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   /* Realtime på notifications kræver at tabellen findes og Realtime er slået til — ellers kan nogle browsere crashe med hvid skærm */
   useEffect(() => {
+    if (!userId) return undefined;
     const channel = supabase
       .channel("notifs-" + userId)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: "user_id=eq." + userId }, () => load())
@@ -825,7 +841,7 @@ function DashboardPage({ user, onLogout, showToast }) {
         <div className="pm-dash-brand" style={{ ...heading("clamp(16px,4vw,18px)"), color: theme.accent }}>🎾 PadelMakker</div>
         <div className="pm-dash-user">
           <span className="pm-dash-name">{displayName}</span>
-          <NotificationBell userId={user.id} />
+          <NotificationBell />
           <button onClick={onLogout} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px", flexShrink: 0 }}>
             <LogOut size={13} /> Log ud
           </button>
@@ -1725,23 +1741,17 @@ function KampeTab({ user, showToast }) {
         await supabase.from("matches").update({ current_players: mp.length }).eq("id", matchId);
       }
 
-      // Notify match creator (hent creator_id fra DB hvis lokalt state mangler det)
-      let creatorId = matches.find((m) => m.id === matchId)?.creator_id;
-      if (creatorId == null) {
-        const { data: row } = await supabase.from("matches").select("creator_id").eq("id", matchId).maybeSingle();
-        creatorId = row?.creator_id;
-      }
-      if (creatorId != null && String(creatorId) !== String(user.id)) {
-        const nErr = await createNotification(
-          creatorId,
-          "match_join",
-          "Ny spiller tilmeldt!",
-          `${myDisplayName} har tilmeldt sig Hold ${teamNum} i din kamp.`,
-          matchId
-        );
+      /* Underret opretter via RPC (læser creator_id server-side — RLS kan skjule creator for B) */
+      {
+        const { error: nErr } = await supabase.rpc("notify_match_creator_on_join", {
+          p_match_id: matchId,
+          p_title: "Ny spiller tilmeldt!",
+          p_body: `${myDisplayName} har tilmeldt sig Hold ${teamNum} i din kamp.`,
+        });
         if (nErr) {
+          console.warn("notify_match_creator_on_join:", nErr.message || nErr);
           showToast(
-            "Tilmelding gemt, men notifikation til opretter fejlede. Kør SQL: create_notification_rpc.sql (inkl. ALTER FUNCTION … row_security = off) i Supabase."
+            "Tilmelding gemt, men notifikation fejlede. Kør opdateret create_notification_rpc.sql (notify_match_creator_on_join) i Supabase."
           );
         }
       }
