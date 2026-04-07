@@ -18,7 +18,15 @@ import {
 
 const LEVELS      = ["1-2 (Helt ny)", "3-4 (Begynder)", "5-6 (Øvet)", "7-8 (Avanceret)", "9-10 (Elite)"];
 const PLAY_STYLES = ["Offensiv", "Defensiv", "Alround", "Ved ikke endnu"];
-const AREAS       = ["København", "Frederiksberg", "Amager", "Herlev", "Taastrup", "Østerbro", "Nørrebro", "Vesterbro", "Aarhus", "Odense"];
+/** Danmarks fem regioner (administrativ inddeling) */
+const REGIONS = [
+  "Region Hovedstaden",
+  "Region Midtjylland",
+  "Region Nordjylland",
+  "Region Sjælland",
+  "Region Syddanmark",
+];
+const DEFAULT_REGION = REGIONS[0];
 const AVAILABILITY = ["Morgener", "Formiddage", "Eftermiddage", "Aftener", "Weekender", "Flexibel"];
 
 /* ─── Design tokens (mirrors variables.css) ─── */
@@ -265,7 +273,7 @@ function LandingPage() {
   }, []);
 
   const steps = [
-    { step: "01", icon: <UserPlus  size={24} color="#fff" />, title: "Opret profil", desc: "Angiv dit niveau, spillestil og område — det tager under et minut." },
+    { step: "01", icon: <UserPlus  size={24} color="#fff" />, title: "Opret profil", desc: "Angiv dit niveau, spillestil og region — det tager under et minut." },
     { step: "02", icon: <Users     size={24} color="#fff" />, title: "Find makker",  desc: "Se spillere nær dig på dit niveau og invitér dem til en kamp." },
     { step: "03", icon: <MapPin    size={24} color="#fff" />, title: "Book bane",    desc: "Find ledige baner med priser og tider — book direkte i appen." },
     { step: "04", icon: <TrendingUp size={24} color="#fff" />, title: "Rank op",     desc: "Spil kampe, optjen ELO-point og klatr op ad ranglisten." },
@@ -588,10 +596,12 @@ function OnboardingPage({ onComplete }) {
 
     <div key={2}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Hvor og hvornår?</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Så vi kan finde makkere nær dig.</p>
-      <label style={labelStyle}>Område</label>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg den region du primært spiller i — så kan andre finde dig.</p>
+      <label style={labelStyle}>Region</label>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
-        {AREAS.map(a => <button key={a} onClick={() => set("area", a)} style={{ ...btn(form.area === a), padding: "8px 14px", fontSize: "13px" }}>{a}</button>)}
+        {REGIONS.map((r) => (
+          <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "8px 14px", fontSize: "13px" }}>{r}</button>
+        ))}
       </div>
       <label style={labelStyle}>Hvornår kan du spille?</label>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -1120,8 +1130,10 @@ function MakkereTab({ user, showToast }) {
           <option value="close">±150 ELO om dig ({myElo})</option>
         </select>
         <select value={filterArea} onChange={e => setFilterArea(e.target.value)} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
-          <option value="all">Alle områder</option>
-          {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+          <option value="all">Alle regioner</option>
+          {REGIONS.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
         </select>
       </div>
 
@@ -1430,7 +1442,7 @@ function PlayerProfileModal({ player, onClose }) {
             <span style={{ fontWeight: 600 }}>{player.play_style || "Ikke angivet"}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-            <span style={{ color: theme.textLight }}>Område</span>
+            <span style={{ color: theme.textLight }}>Region</span>
             <span style={{ fontWeight: 600 }}>{player.area || "Ikke angivet"}</span>
           </div>
           {age && (
@@ -2126,7 +2138,7 @@ function profileFormState(p) {
     first_name,
     last_name,
     full_name: p.full_name || p.name || "",
-    area: p.area || "København",
+    area: p.area || DEFAULT_REGION,
     play_style: p.play_style || "Ved ikke endnu",
     bio: p.bio || "",
     avatar: p.avatar || "🎾",
@@ -2537,10 +2549,10 @@ function ProfilTab({ user, showToast, setTab }) {
         <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={{ ...inputStyle, marginBottom: "14px" }} />
 
         {/* Area */}
-        <label style={labelStyle}>Område</label>
+        <label style={labelStyle}>Region</label>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
-          {AREAS.map(a => (
-            <button key={a} onClick={() => set("area", a)} style={{ ...btn(form.area === a), padding: "6px 12px", fontSize: "12px" }}>{a}</button>
+          {REGIONS.map((r) => (
+            <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "6px 12px", fontSize: "12px" }}>{r}</button>
           ))}
         </div>
 
