@@ -2235,7 +2235,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
       </div>
 
       {kampeFormat === "americano" && (
-        <AmericanoTab user={user} showToast={showToast} />
+        <AmericanoTab profile={user} showToast={showToast} />
       )}
 
       {kampeFormat === "padel" && (
