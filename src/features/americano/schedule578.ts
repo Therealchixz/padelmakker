@@ -53,25 +53,38 @@ function pushRound(
   })
 }
 
+type Passes = 1 | 2
+
+function appendRounds(
+  out: AmericanoMatchInsert[],
+  tournamentId: string,
+  rounds: readonly { teamA: [number, number]; teamB: [number, number] }[],
+  participantIds: string[],
+  roundOffset: number
+) {
+  rounds.forEach((r, i) => pushRound(out, tournamentId, roundOffset + i + 1, r.teamA, r.teamB, participantIds))
+}
+
 export function buildAmericano578MatchRows(
   tournamentId: string,
-  participantIds: string[]
+  participantIds: string[],
+  passes: Passes = 1
 ): AmericanoMatchInsert[] {
   const n = participantIds.length
   const out: AmericanoMatchInsert[] = []
-  if (n === 5) {
-    ROUNDS_5.forEach((r, i) => pushRound(out, tournamentId, i + 1, r.teamA, r.teamB, participantIds))
-    return out
+  const p: Passes = passes === 2 ? 2 : 1
+
+  let rounds: readonly { teamA: [number, number]; teamB: [number, number] }[]
+  if (n === 5) rounds = ROUNDS_5
+  else if (n === 6) rounds = ROUNDS_6
+  else if (n === 7) rounds = ROUNDS_7
+  else throw new Error(`Forventet 5, 6 eller 7 tilmeldte, fik ${n}`)
+
+  const len = rounds.length
+  for (let pass = 0; pass < p; pass++) {
+    appendRounds(out, tournamentId, rounds, participantIds, pass * len)
   }
-  if (n === 6) {
-    ROUNDS_6.forEach((r, i) => pushRound(out, tournamentId, i + 1, r.teamA, r.teamB, participantIds))
-    return out
-  }
-  if (n === 7) {
-    ROUNDS_7.forEach((r, i) => pushRound(out, tournamentId, i + 1, r.teamA, r.teamB, participantIds))
-    return out
-  }
-  throw new Error(`Forventet 5, 6 eller 7 tilmeldte, fik ${n}`)
+  return out
 }
 
 /** Start når antal tilmeldte matcher valgt turneringsstørrelse (5, 6 eller 7). */

@@ -5,6 +5,7 @@ export type {
   AmericanoPlayerSlots,
   AmericanoPoints,
   AmericanoStatus,
+  AmericanoOpponentPasses,
 } from './types'
 export { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
 export { AmericanoResultsPanel } from './AmericanoResultsPanel'

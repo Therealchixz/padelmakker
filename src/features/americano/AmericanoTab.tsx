@@ -51,6 +51,7 @@ export function AmericanoTab({ profile, showToast }: Props) {
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [americanoView, setAmericanoView] = useState<'open' | 'playing' | 'completed'>('open')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -113,7 +114,8 @@ export function AmericanoTab({ profile, showToast }: Props) {
       const n = list.length
       let matchRows
       if (canStartAmericano5767(n, slots)) {
-        matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id))
+        const passes = Number(t.opponent_passes) === 2 ? 2 : 1
+        matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id), passes)
       } else if (slots === 8 && n === 8) {
         // Gamle turneringer oprettet med 8 pladser (før skift til 5–7)
         matchRows = buildAmericano8MatchRows(t.id, list.map((p) => p.id))
@@ -210,6 +212,29 @@ export function AmericanoTab({ profile, showToast }: Props) {
     )
   }
 
+  const openAmericanos = rows.filter((t) => t.status === 'registration')
+  const playingAmericanos = rows.filter((t) => t.status === 'playing')
+  const completedAmericanos = rows.filter((t) => t.status === 'completed')
+  const visibleRows =
+    americanoView === 'open'
+      ? openAmericanos
+      : americanoView === 'playing'
+        ? playingAmericanos
+        : completedAmericanos
+
+  const subTabBtn = (active: boolean) =>
+    ({
+      fontFamily: font,
+      fontSize: 12,
+      fontWeight: 600,
+      padding: '7px 14px',
+      borderRadius: 8,
+      border: active ? 'none' : '1px solid #D5DDE8',
+      background: active ? '#1D4ED8' : '#fff',
+      color: active ? '#fff' : '#3E4C63',
+      cursor: 'pointer',
+    }) as const
+
   return (
     <div style={{ fontFamily: font }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
@@ -257,13 +282,31 @@ export function AmericanoTab({ profile, showToast }: Props) {
         <strong>faktiske stilling</strong> (fx 10–6) — hvert rally tæller ét point til holdet, og hver spiller får sine holdpoint med i turneringssummen.
       </p>
 
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+        {[
+          { id: 'open' as const, label: `Åbne (${openAmericanos.length})` },
+          { id: 'playing' as const, label: `I gang (${playingAmericanos.length})` },
+          { id: 'completed' as const, label: `Afsluttede (${completedAmericanos.length})` },
+        ].map((tab) => (
+          <button key={tab.id} type="button" onClick={() => setAmericanoView(tab.id)} style={subTabBtn(americanoView === tab.id)}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {rows.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 20px', color: '#8494A7', fontSize: 14 }}>
           Ingen Americano-turneringer endnu.
         </div>
+      ) : visibleRows.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#8494A7', fontSize: 14 }}>
+          {americanoView === 'open' && 'Ingen åbne Americano-turneringer.'}
+          {americanoView === 'playing' && 'Ingen Americano i gang.'}
+          {americanoView === 'completed' && 'Ingen afsluttede Americano endnu.'}
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {rows.map((t) => {
+          {visibleRows.map((t) => {
             const isCreator = String(t.creator_id) === String(profileId)
             const joined = joinedIds.has(t.id)
             return (
@@ -279,7 +322,8 @@ export function AmericanoTab({ profile, showToast }: Props) {
             >
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t.name}</div>
               <div style={{ fontSize: 12, color: '#3E4C63' }}>
-                {t.tournament_date} · {t.time_slot} · {t.player_slots} spillere · {t.points_per_match} point ·{' '}
+                {t.tournament_date} · {t.time_slot} · {t.player_slots} spillere · {t.points_per_match} point
+                {Number(t.opponent_passes) === 2 ? ' · lang (2× runder)' : ''} ·{' '}
                 <span style={{ textTransform: 'capitalize' }}>{t.status}</span>
               </div>
               {t.description && (
