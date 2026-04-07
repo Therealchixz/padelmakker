@@ -1073,13 +1073,59 @@ function filterRatedEloHistoryRows(rows) {
   return (rows || []).filter((h) => h.old_rating != null && h.match_id != null);
 }
 
+/** Stabil kronologi: samme dato → match_id → id (undgår at "seneste" række bliver forkert). */
+function eloHistoryTimeMs(h) {
+  const t = h?.date != null ? new Date(h.date).getTime() : NaN;
+  return Number.isFinite(t) ? t : 0;
+}
+
+function compareEloHistoryChronological(a, b) {
+  const ta = eloHistoryTimeMs(a);
+  const tb = eloHistoryTimeMs(b);
+  if (ta !== tb) return ta - tb;
+  const ma = String(a?.match_id ?? "");
+  const mb = String(b?.match_id ?? "");
+  if (ma !== mb) return ma < mb ? -1 : ma > mb ? 1 : 0;
+  const ia = String(a?.id ?? "");
+  const ib = String(b?.id ?? "");
+  return ia < ib ? -1 : ia > ib ? 1 : 0;
+}
+
+function sortEloHistoryChronological(rows) {
+  return [...(rows || [])].sort(compareEloHistoryChronological);
+}
+
+/**
+ * Nuværende ELO efter hele sekvensen (tåler manglende new_rating på sidste række hvis change findes).
+ */
+function currentEloFromSortedHistory(sorted) {
+  if (!sorted.length) return 1000;
+  let r = Math.round(Number(sorted[0].old_rating) || 1000);
+  for (let i = 0; i < sorted.length; i++) {
+    const row = sorted[i];
+    const nr = row.new_rating;
+    if (nr != null && nr !== "" && Number.isFinite(Number(nr))) {
+      r = Math.round(Number(nr));
+      continue;
+    }
+    const ch = row.change;
+    if (ch != null && ch !== "" && Number.isFinite(Number(ch))) {
+      r = Math.round(r + Number(ch));
+    }
+  }
+  return r;
+}
+
 /** Seneste ELO + antal kampe/sejre ud fra elo_history (kilde til graf). null hvis ingen rækker. */
 function statsFromEloHistoryRows(rows) {
   const list = filterRatedEloHistoryRows(rows);
   if (!list.length) return null;
-  const sorted = [...list].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const sorted = sortEloHistoryChronological(list);
   const last = sorted[sorted.length - 1];
-  const elo = Math.round(Number(last.new_rating ?? last.old_rating) || 1000);
+  const fromLast = last.new_rating != null && last.new_rating !== "" && Number.isFinite(Number(last.new_rating))
+    ? Math.round(Number(last.new_rating))
+    : null;
+  const elo = fromLast != null ? fromLast : currentEloFromSortedHistory(sorted);
   const games = sorted.length;
   let wins = 0;
   for (const h of sorted) {
@@ -1108,7 +1154,12 @@ function useProfileEloBundle(userId, syncKey) {
     try {
       const [pr, hist] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-        supabase.from("elo_history").select("*").eq("user_id", userId).order("date", { ascending: true }),
+        supabase
+          .from("elo_history")
+          .select("*")
+          .eq("user_id", userId)
+          .order("date", { ascending: true })
+          .order("match_id", { ascending: true }),
       ]);
       setProfileFresh(normalizeProfileRow(pr.data || null));
       setRatedRows(filterRatedEloHistoryRows(hist.data || []));
@@ -1162,7 +1213,7 @@ function allTimeStatsMapFromEloHistory(eloHistory) {
 /** Kræver rækker med `date` og `result` ("win" / andet). Sorterer kronologisk internt. */
 function winStreaksFromEloHistory(raw) {
   if (!raw?.length) return { currentStreak: 0, bestStreak: 0 };
-  const sorted = [...raw].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const sorted = sortEloHistoryChronological(raw);
   let bestStreak = 0;
   for (let start = 0; start < sorted.length; start++) {
     let s = 0;
@@ -2398,7 +2449,7 @@ function EloGraph({ data }) {
 
   const W = 320, H = 140, PX = 32, PY = 20;
   const hasGraph = data && data.length >= 2;
-  const sorted = hasGraph ? [...data].sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+  const sorted = hasGraph ? sortEloHistoryChronological(data) : [];
   const values = sorted.map(d => d.new_rating ?? d.old_rating ?? 1000);
   const minV = hasGraph ? Math.min(...values) - 20 : 1000;
   const maxV = hasGraph ? Math.max(...values) + 20 : 1000;
@@ -2871,7 +2922,12 @@ function RankingTab({ user }) {
     try {
       const [profileData, historyData] = await Promise.all([
         Profile.filter(),
-        supabase.from("elo_history").select("*").order("date", { ascending: false }).limit(10000),
+        supabase
+          .from("elo_history")
+          .select("*")
+          .order("date", { ascending: false })
+          .order("match_id", { ascending: false })
+          .limit(10000),
       ]);
       setPlayers(profileData || []);
       setEloHistory(historyData.data || []);
