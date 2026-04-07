@@ -3,21 +3,35 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
-import { normalizeProfileRow, normalizeStringArrayField, validateFirstLastName } from "./lib/profileUtils";
+import { normalizeStringArrayField, validateFirstLastName } from "./lib/profileUtils";
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from "./lib/kampeSessionPrefs";
 import { AmericanoTab } from "./features/americano/AmericanoTab";
 import { americanoOutcomeColors } from "./features/americano/americanoOutcomeColors";
-
-/** Sikker liste til .map() selv hvis profil kommer uden normalisering */
-function availabilityTags(profileLike) {
-  return normalizeStringArrayField(profileLike?.availability);
-}
+import { font, theme, btn, inputStyle, tag, labelStyle, heading } from "./lib/platformTheme";
+import {
+  filterRatedEloHistoryRows,
+  statsFromEloHistoryRows,
+  fetchEloByUserIdFromHistory,
+  useProfileEloBundle,
+  allTimeStatsMapFromEloHistory,
+  winStreaksFromEloHistory,
+  formatLocalDateYMD,
+  eloHistoryRowDateKey,
+} from "./lib/eloHistoryUtils";
+import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs } from "./lib/matchDisplayUtils";
+import { calculateAndApplyElo } from "./lib/applyEloMatch";
+import { EloGraph } from "./components/EloGraph";
 import {
   Home, Users, MapPin, Swords, Trophy,
   UserPlus, TrendingUp, MessageCircle, Search,
   LogOut, Plus, Star, Clock, Building2, Sun, ArrowRight, Trash2, UserMinus,
   Settings, KeyRound, Save, X, Bell, CheckCheck,
 } from "lucide-react";
+
+/** Sikker liste til .map() selv hvis profil kommer uden normalisering */
+function availabilityTags(profileLike) {
+  return normalizeStringArrayField(profileLike?.availability);
+}
 
 const LEVELS      = ["1-2 (Helt ny)", "3-4 (Begynder)", "5-6 (Øvet)", "7-8 (Avanceret)", "9-10 (Elite)"];
 const PLAY_STYLES = ["Offensiv", "Defensiv", "Alround", "Ved ikke endnu"];
@@ -31,93 +45,6 @@ const REGIONS = [
 ];
 const DEFAULT_REGION = REGIONS[0];
 const AVAILABILITY = ["Morgener", "Formiddage", "Eftermiddage", "Aftener", "Weekender", "Flexibel"];
-
-/* ─── Design tokens (mirrors variables.css) ─── */
-const font = "'Inter', sans-serif";
-const theme = {
-  bg:          "#F0F4F8",
-  surface:     "#FFFFFF",
-  text:        "#0B1120",
-  textMid:     "#3E4C63",
-  textLight:   "#8494A7",
-  accent:      "#1D4ED8",
-  accentHover: "#1E40AF",
-  accentBg:    "#DBEAFE",
-  warm:        "#D97706",
-  warmBg:      "#FEF3C7",
-  blue:        "#2563EB",
-  blueBg:      "#EFF6FF",
-  red:         "#DC2626",
-  redBg:       "#FEF2F2",
-  border:      "#D5DDE8",
-  shadow:      "0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)",
-  shadowLg:    "0 8px 32px rgba(0,0,0,0.12)",
-  radius:      "12px",
-};
-
-/* ─── Shared style helpers ─── */
-const btn = (primary) => ({
-  fontFamily: font,
-  fontSize: "14px",
-  fontWeight: 600,
-  padding: "10px 20px",
-  borderRadius: "8px",
-  border: primary ? "none" : "1px solid " + theme.border,
-  background: primary ? theme.accent : theme.surface,
-  color: primary ? "#fff" : theme.text,
-  cursor: "pointer",
-  transition: "opacity 0.15s, box-shadow 0.15s",
-  letterSpacing: "-0.01em",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-});
-
-const inputStyle = {
-  fontFamily: font,
-  fontSize: "14px",
-  padding: "10px 14px",
-  borderRadius: "8px",
-  border: "1px solid " + theme.border,
-  background: theme.surface,
-  color: theme.text,
-  width: "100%",
-  boxSizing: "border-box",
-  outline: "none",
-  transition: "border-color 0.15s",
-};
-
-const tag = (bg, color) => ({
-  fontSize: "10px",
-  fontWeight: 700,
-  padding: "2px 7px",
-  borderRadius: "4px",
-  background: bg,
-  color: color,
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "3px",
-  letterSpacing: "0.05em",
-  textTransform: "uppercase",
-  whiteSpace: "nowrap",
-});
-
-const labelStyle = {
-  fontSize: "12px",
-  fontWeight: 600,
-  display: "block",
-  marginBottom: "5px",
-  color: theme.textMid,
-  letterSpacing: "0.01em",
-};
-
-const heading = (size = "24px") => ({
-  fontFamily: font,
-  fontSize: size,
-  fontWeight: 800,
-  letterSpacing: "-0.03em",
-  color: theme.text,
-});
 
 /* ─── Scroll reveal hook ─── */
 function useScrollReveal() {
@@ -554,7 +481,7 @@ function OnboardingPage({ onComplete }) {
       });
       if (onComplete) onComplete();
       /* Altid til login: undgå at blive på /opret eller auto-dashboard når der opstår en session */
-      try { await signOut(); } catch (_) { /* fortsæt til login alligevel */ }
+      try { await signOut(); } catch { /* fortsæt til login alligevel */ }
       navigate("/login", { replace: true });
     } catch (e) {
       setErr(e.message || "Kunne ikke oprette profil.");
@@ -716,10 +643,10 @@ function NotificationBell() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: "user_id=eq." + userId }, () => load())
       .subscribe((status) => {
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          try { supabase.removeChannel(channel); } catch (_) { /* ignore */ }
+          try { supabase.removeChannel(channel); } catch { /* ignore */ }
         }
       });
-    return () => { try { supabase.removeChannel(channel); } catch (_) { /* ignore */ } };
+    return () => { try { supabase.removeChannel(channel); } catch { /* ignore */ } };
   }, [userId, load]);
 
   useEffect(() => {
@@ -768,13 +695,13 @@ function NotificationBell() {
     try {
       await supabase.from("notifications").update({ read: true }).eq("id", n.id).eq("user_id", userId);
       setNotifs((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
-    } catch (_) { /* ignore */ }
+    } catch { /* ignore */ }
     setOpen(false);
     /* ?focus= så KampeTab reagerer også hvis man allerede er på Kampe-fanen */
     navigate("/dashboard/kampe?focus=" + encodeURIComponent(String(n.match_id)));
   };
 
-  const timeAgo = (dateStr) => {
+  const timeAgo = useCallback((dateStr) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return "nu";
@@ -782,7 +709,7 @@ function NotificationBell() {
     const hours = Math.floor(mins / 60);
     if (hours < 24) return hours + "t";
     return Math.floor(hours / 24) + "d";
-  };
+  }, []);
 
   const typeIcon = (type) => {
     switch (type) {
@@ -1063,258 +990,6 @@ function HomeTab({ user, setTab }) {
 /* ═══════════════════════════════════════════════════
    MAKKERE TAB
 ═══════════════════════════════════════════════════ */
-function eloOf(p) {
-  const v = Number(p?.elo_rating);
-  return Number.isFinite(v) ? Math.round(v) : 1000;
-}
-
-/** Samme filter som ELO-graf / streak (kun rigtige kampe med rating). */
-function filterRatedEloHistoryRows(rows) {
-  return (rows || []).filter((h) => h.old_rating != null && h.match_id != null);
-}
-
-/** Stabil kronologi: samme dato → match_id → id (undgår at "seneste" række bliver forkert). */
-function eloHistoryTimeMs(h) {
-  const t = h?.date != null ? new Date(h.date).getTime() : NaN;
-  return Number.isFinite(t) ? t : 0;
-}
-
-function compareEloHistoryChronological(a, b) {
-  const ta = eloHistoryTimeMs(a);
-  const tb = eloHistoryTimeMs(b);
-  if (ta !== tb) return ta - tb;
-  const ma = String(a?.match_id ?? "");
-  const mb = String(b?.match_id ?? "");
-  if (ma !== mb) return ma < mb ? -1 : ma > mb ? 1 : 0;
-  const ia = String(a?.id ?? "");
-  const ib = String(b?.id ?? "");
-  return ia < ib ? -1 : ia > ib ? 1 : 0;
-}
-
-function sortEloHistoryChronological(rows) {
-  return [...(rows || [])].sort(compareEloHistoryChronological);
-}
-
-/**
- * Nuværende ELO = rating før første kamp i listen + sum af alle `change`.
- * Matcher uge/måned-ranking (som summerer `change`) og ignorerer `new_rating`,
- * som i nogle DB-rækker kan være ét skridt bagud eller forkert.
- */
-function currentEloFromSortedHistory(sorted) {
-  if (!sorted.length) return 1000;
-  const base = Math.round(Number(sorted[0].old_rating) || 1000);
-  let sumCh = 0;
-  for (const row of sorted) {
-    const ch = row.change;
-    if (ch != null && ch !== "" && Number.isFinite(Number(ch))) {
-      sumCh += Number(ch);
-    } else if (
-      row.old_rating != null &&
-      row.new_rating != null &&
-      Number.isFinite(Number(row.old_rating)) &&
-      Number.isFinite(Number(row.new_rating))
-    ) {
-      sumCh += Math.round(Number(row.new_rating) - Number(row.old_rating));
-    }
-  }
-  const r = Math.round(base + sumCh);
-  return Math.max(100, r);
-}
-
-/** Seneste ELO + antal kampe/sejre ud fra elo_history (kilde til graf). null hvis ingen rækker. */
-function statsFromEloHistoryRows(rows) {
-  const list = filterRatedEloHistoryRows(rows);
-  if (!list.length) return null;
-  const sorted = sortEloHistoryChronological(list);
-  const elo = currentEloFromSortedHistory(sorted);
-  const games = sorted.length;
-  let wins = 0;
-  for (const h of sorted) {
-    if (h.result === "win") wins++;
-  }
-  return { elo, games, wins };
-}
-
-/**
- * ELO pr. bruger ud fra elo_history (samme som profil/ranking). Virker selv når RLS kun tillader
- * at læse egne profiles — historikken er typisk synlig for alle authenticated (til ranking).
- */
-async function fetchEloByUserIdFromHistory(userIds) {
-  const ids = [...new Set((userIds || []).map((x) => String(x)).filter(Boolean))];
-  const out = {};
-  if (ids.length === 0) return out;
-  const chunkSize = 100;
-  for (let i = 0; i < ids.length; i += chunkSize) {
-    const chunk = ids.slice(i, i + chunkSize);
-    const { data, error } = await supabase.from("elo_history").select("*").in("user_id", chunk);
-    if (error) {
-      console.warn("elo_history batch for Kampe:", error.message);
-      continue;
-    }
-    const byUser = {};
-    for (const h of data || []) {
-      const u = String(h.user_id);
-      if (!byUser[u]) byUser[u] = [];
-      byUser[u].push(h);
-    }
-    for (const uid of chunk) {
-      const st = statsFromEloHistoryRows(byUser[String(uid)] || []);
-      if (st != null) out[String(uid)] = st.elo;
-    }
-  }
-  return out;
-}
-
-/**
- * Frisk profiles-række + rated elo_history i ét trin. Ved syncKey (opdateret profil i context)
- * vises loading igen så vi ikke flasher forældede tal. Ved fokus/genvisning opdateres stille.
- */
-function useProfileEloBundle(userId, syncKey) {
-  const [loading, setLoading] = useState(true);
-  const [profileFresh, setProfileFresh] = useState(null);
-  const [ratedRows, setRatedRows] = useState([]);
-
-  const fetchBundle = useCallback(async (showLoading) => {
-    if (!userId) {
-      setProfileFresh(null);
-      setRatedRows([]);
-      setLoading(false);
-      return;
-    }
-    if (showLoading) setLoading(true);
-    try {
-      const [pr, hist] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-        supabase
-          .from("elo_history")
-          .select("*")
-          .eq("user_id", userId)
-          .order("date", { ascending: true })
-          .order("match_id", { ascending: true }),
-      ]);
-      setProfileFresh(normalizeProfileRow(pr.data || null));
-      setRatedRows(filterRatedEloHistoryRows(hist.data || []));
-    } catch {
-      setProfileFresh(null);
-      setRatedRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    fetchBundle(true);
-  }, [userId, syncKey, fetchBundle]);
-
-  useEffect(() => {
-    const onVis = () => {
-      if (document.visibilityState === "visible" && userId) fetchBundle(false);
-    };
-    const onFocus = () => { if (userId) fetchBundle(false); };
-    document.addEventListener("visibilitychange", onVis);
-    window.addEventListener("focus", onFocus);
-    return () => {
-      document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("focus", onFocus);
-    };
-  }, [userId, fetchBundle]);
-
-  return {
-    bundleLoading: loading,
-    profileFresh,
-    ratedRows,
-    reloadProfileEloBundle: () => fetchBundle(true),
-  };
-}
-
-/** Per bruger: seneste ELO + kampe/sejre fra elo_history (til ranking all-time). */
-function allTimeStatsMapFromEloHistory(eloHistory) {
-  const byUser = {};
-  for (const h of eloHistory || []) {
-    if (h.old_rating == null || h.match_id == null) continue;
-    const uid = h.user_id;
-    if (uid == null) continue;
-    const key = String(uid);
-    if (!byUser[key]) byUser[key] = [];
-    byUser[key].push(h);
-  }
-  const out = {};
-  for (const key of Object.keys(byUser)) {
-    const s = statsFromEloHistoryRows(byUser[key]);
-    if (s) out[key] = s;
-  }
-  return out;
-}
-
-/** Kræver rækker med `date` og `result` ("win" / andet). Sorterer kronologisk internt. */
-function winStreaksFromEloHistory(raw) {
-  if (!raw?.length) return { currentStreak: 0, bestStreak: 0 };
-  const sorted = sortEloHistoryChronological(raw);
-  let bestStreak = 0;
-  for (let start = 0; start < sorted.length; start++) {
-    let s = 0;
-    for (let j = start; j < sorted.length; j++) {
-      if (sorted[j].result === "win") {
-        s++;
-        bestStreak = Math.max(bestStreak, s);
-      } else break;
-    }
-  }
-  let currentStreak = 0;
-  for (let i = sorted.length - 1; i >= 0; i--) {
-    if (sorted[i].result === "win") {
-      currentStreak++;
-      bestStreak = Math.max(bestStreak, currentStreak);
-    } else {
-      if (i === sorted.length - 1) currentStreak = 0;
-      break;
-    }
-  }
-  return { currentStreak, bestStreak };
-}
-
-function fmtClock(t) {
-  if (t == null || t === "") return "";
-  return String(t).slice(0, 5);
-}
-
-/** Viser "20:00–22:00" når time_end findes, ellers kun starttid. */
-function matchTimeLabel(m) {
-  const a = fmtClock(m.time);
-  const b = m.time_end ? fmtClock(m.time_end) : "";
-  if (a && b) return `${a}–${b}`;
-  return a || "—";
-}
-
-function timeToMinutes(hhmm) {
-  const s = fmtClock(hhmm);
-  const [h, min] = s.split(":").map((x) => parseInt(x, 10));
-  if (!Number.isFinite(h) || !Number.isFinite(min)) return NaN;
-  return h * 60 + min;
-}
-
-/** Nyeste afsluttede kamp først: resultat-tidsstempel, ellers kamp dato+tid. */
-function matchCompletedSortMs(m, resultsByMatchId) {
-  const mr = resultsByMatchId[m.id];
-  const ts = mr?.updated_at || mr?.created_at || mr?.confirmed_at;
-  if (ts) {
-    const n = new Date(ts).getTime();
-    if (Number.isFinite(n)) return n;
-  }
-  const d = m.date || "1970-01-01";
-  const t = fmtClock(m.time) || "00:00";
-  const n = new Date(`${d}T${t}:00`).getTime();
-  return Number.isFinite(n) ? n : 0;
-}
-
-/** Nyere kampe: level_range er ren ELO-tal som string. Ældre: "4-6" osv. */
-function matchSkillLabel(m) {
-  const lr = m?.level_range;
-  if (lr != null && /^\d+$/.test(String(lr).trim())) return `ELO ${lr}`;
-  if (m?.level_range) return `Niveau ${m.level_range}`;
-  return "ELO —";
-}
-
 function MakkereTab({ user, showToast }) {
   const [search, setSearch]           = useState("");
   const [filterElo, setFilterElo]     = useState("all");
@@ -1496,60 +1171,6 @@ function BanerTab({ user, showToast }) {
    KAMPE TAB
 ═══════════════════════════════════════════════════ */
 /* ═══════════════════════════════════════════════════
-   ELO CALCULATION
-═══════════════════════════════════════════════════ */
-async function calculateAndApplyElo(matchId, showToast) {
-  try {
-    // Hent match_result ID
-    const { data: mr, error: mrErr } = await supabase
-      .from("match_results")
-      .select("id")
-      .eq("match_id", matchId)
-      .eq("confirmed", true)
-      .single();
-
-    if (mrErr || !mr) {
-      console.error("ELO: Kunne ikke finde bekræftet resultat:", mrErr);
-      if (showToast) showToast("ELO fejl: Resultat ikke fundet.");
-      return;
-    }
-
-    // Kald den sikre database-funktion
-    const { data, error } = await supabase.rpc("apply_elo_for_match", {
-      p_match_result_id: mr.id,
-    });
-
-    if (error) {
-      console.error("ELO rpc error:", error);
-      if (showToast) showToast("ELO fejl: " + error.message);
-      return;
-    }
-
-    if (data?.error) {
-      console.error("ELO function error:", data.error);
-      if (showToast) showToast("ELO fejl: " + data.error);
-      return;
-    }
-
-    if (data?.success) {
-      const t1c = data.team1_change;
-      const sign = t1c > 0 ? "+" : "";
-      const n = Number(data.players_updated) || 0;
-      if (showToast) {
-        if (n === 0) {
-          showToast("ELO blev ikke opdateret for nogen spillere. Tjek at alle fire spillere var med på kampen da resultatet blev gemt.");
-        } else {
-          showToast(`ELO opdateret for ${n} spillere! Hold 1: ${sign}${t1c}, Hold 2: ${t1c > 0 ? "" : "+"}${-t1c} 🏆`);
-        }
-      }
-    }
-  } catch (e) {
-    console.error("ELO exception:", e);
-    if (showToast) showToast("ELO fejl: " + (e.message || "Ukendt fejl"));
-  }
-}
-
-/* ═══════════════════════════════════════════════════
    TEAM SELECTION MODAL
 ═══════════════════════════════════════════════════ */
 /* ═══════════════════════════════════════════════════
@@ -1599,7 +1220,7 @@ function PlayerProfileModal({ player, onClose }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [player?.id]);
+  }, [player]);
 
   if (!player) return null;
   const pRef = profileRow || player;
@@ -1692,7 +1313,7 @@ function PlayerProfileModal({ player, onClose }) {
 
         {player.bio && (
           <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", padding: "12px", background: "#F8FAFC", borderRadius: "8px", fontStyle: "italic" }}>
-            "{player.bio}"
+            &ldquo;{player.bio}&rdquo;
           </p>
         )}
 
@@ -1891,43 +1512,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
     return Math.round(Number(user.elo_rating) || 1000);
   }, [kampeRatedRows, kampeProfileFresh, myUidStr, eloByUserId, user.elo_rating]);
 
-  useEffect(() => { loadData(); }, []);
-
-  useEffect(() => {
-    mergeKampeSessionPrefs(user.id, { format: kampeFormat, view: viewTab });
-  }, [user.id, kampeFormat, viewTab]);
-
-  const persistAmericanoSubTab = useCallback(
-    (v) => mergeKampeSessionPrefs(user.id, { americanoView: v }),
-    [user.id]
-  );
-
-  /* Notifikation: ?focus=<matchId> — vælg underfane, scroll til kort, fjern query */
-  useEffect(() => {
-    if (!tabActive || loadingMatches) return;
-    const params = new URLSearchParams(location.search);
-    const mid = params.get("focus");
-    if (!mid) return;
-    if (!matches.length) return;
-    const m = matches.find((x) => String(x.id) === String(mid));
-    if (!m) {
-      navigate("/dashboard/kampe", { replace: true });
-      return;
-    }
-    const st = (m.status ?? "open").toString().toLowerCase();
-    const mp = matchPlayers[m.id] || [];
-    const imIn = mp.some((p) => p.user_id === user.id);
-    if (st === "in_progress" && imIn) setViewTab("active");
-    else if (st === "completed" && imIn) setViewTab("completed");
-    else setViewTab("open");
-    navigate("/dashboard/kampe", { replace: true });
-    const t = window.setTimeout(() => {
-      document.getElementById("pm-match-" + String(mid))?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 200);
-    return () => window.clearTimeout(t);
-  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [cd, md, profiles] = await Promise.all([Court.filter(), Match.filter(), Profile.filter()]);
       setCourts(cd || []);
@@ -1966,7 +1551,6 @@ function KampeTab({ user, showToast, tabActive = true }) {
       setProfilesById(pById);
       setMatchPlayers(mm);
 
-      // Load match results
       const { data: mrd } = await supabase.from("match_results").select("*");
       const mrMap = {};
       (mrd || []).forEach((mr) => { mrMap[mr.match_id] = mr; });
@@ -1976,7 +1560,43 @@ function KampeTab({ user, showToast, tabActive = true }) {
       setLoadingMatches(false);
       void reloadKampeEloBundle();
     }
-  };
+  }, [user.id, reloadKampeEloBundle]);
+
+  useEffect(() => { void loadData(); }, [loadData]);
+
+  useEffect(() => {
+    mergeKampeSessionPrefs(user.id, { format: kampeFormat, view: viewTab });
+  }, [user.id, kampeFormat, viewTab]);
+
+  const persistAmericanoSubTab = useCallback(
+    (v) => mergeKampeSessionPrefs(user.id, { americanoView: v }),
+    [user.id]
+  );
+
+  /* Notifikation: ?focus=<matchId> — vælg underfane, scroll til kort, fjern query */
+  useEffect(() => {
+    if (!tabActive || loadingMatches) return;
+    const params = new URLSearchParams(location.search);
+    const mid = params.get("focus");
+    if (!mid) return;
+    if (!matches.length) return;
+    const m = matches.find((x) => String(x.id) === String(mid));
+    if (!m) {
+      navigate("/dashboard/kampe", { replace: true });
+      return;
+    }
+    const st = (m.status ?? "open").toString().toLowerCase();
+    const mp = matchPlayers[m.id] || [];
+    const imIn = mp.some((p) => p.user_id === user.id);
+    if (st === "in_progress" && imIn) setViewTab("active");
+    else if (st === "completed" && imIn) setViewTab("completed");
+    else setViewTab("open");
+    navigate("/dashboard/kampe", { replace: true });
+    const t = window.setTimeout(() => {
+      document.getElementById("pm-match-" + String(mid))?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 200);
+    return () => window.clearTimeout(t);
+  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
 
   const createMatch = async () => {
     const startM = timeToMinutes(newMatch.time);
@@ -2203,7 +1823,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
     .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults))
     .slice(0, 20);
 
-  const renderMatchCard = (m, mode) => {
+  const renderMatchCard = (m) => {
     const mp = matchPlayers[m.id] || [];
     const mr = matchResults[m.id];
     const left = (m.max_players || 4) - mp.length;
@@ -2213,8 +1833,6 @@ function KampeTab({ user, showToast, tabActive = true }) {
     const status = getStatus(m);
     const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
     const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
-    const t1Names = t1.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "—";
-    const t2Names = t2.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "—";
     const isFull = t1.length >= 2 && t2.length >= 2;
     const isPlayerInMatch = mp.some(p => p.user_id === user.id);
 
@@ -2523,228 +2141,6 @@ function profileFormState(p) {
   };
 }
 
-function formatEloHistoryDate(dateStr) {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return String(dateStr);
-  return d.toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-}
-
-/** Kalenderdato YYYY-MM-DD i **lokal** tid (ikke UTC via toISOString — bruges til uge/måned ranking). */
-function formatLocalDateYMD(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-/** elo_history.date (date eller timestamptz) → YYYY-MM-DD til sammenligning med cutoff. */
-function eloHistoryRowDateKey(h) {
-  if (h?.date == null || h.date === "") return null;
-  const s = String(h.date).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  const t = new Date(s);
-  if (Number.isNaN(t.getTime())) return s.length >= 10 ? s.slice(0, 10) : null;
-  return formatLocalDateYMD(t);
-}
-
-function EloGraph({ data }) {
-  const svgRef = useRef(null);
-  const [hoverIdx, setHoverIdx] = useState(null);
-
-  const W = 320, H = 140, PX = 32, PY = 20;
-  const hasGraph = data && data.length >= 2;
-  const sorted = hasGraph ? sortEloHistoryChronological(data) : [];
-  const values = (() => {
-    if (!sorted.length) return [];
-    let r = Math.round(Number(sorted[0].old_rating) || 1000);
-    return sorted.map((d) => {
-      const ch = d.change;
-      if (ch != null && ch !== "" && Number.isFinite(Number(ch))) {
-        r = Math.round(r + Number(ch));
-      } else if (
-        d.old_rating != null &&
-        d.new_rating != null &&
-        Number.isFinite(Number(d.old_rating)) &&
-        Number.isFinite(Number(d.new_rating))
-      ) {
-        r = Math.round(Number(d.new_rating));
-      }
-      return r;
-    });
-  })();
-  const minV = hasGraph ? Math.min(...values) - 20 : 1000;
-  const maxV = hasGraph ? Math.max(...values) + 20 : 1000;
-  const rangeV = maxV - minV || 1;
-
-  const points = hasGraph
-    ? sorted.map((d, i) => {
-        const x = PX + (i / (sorted.length - 1)) * (W - PX * 2);
-        const y = PY + (1 - (values[i] - minV) / rangeV) * (H - PY * 2);
-        return { x, y, val: values[i], date: d.date };
-      })
-    : [];
-
-  /** Map screen X to SVG user space (viewBox coords). Default "meet" scaling centers the graph, so rect-width ≠ viewBox width — getScreenCTM fixes that. */
-  const clientXToSvgX = (clientX) => {
-    const el = svgRef.current;
-    if (!el) return 0;
-    const pt = el.createSVGPoint();
-    pt.x = clientX;
-    pt.y = 0;
-    const ctm = el.getScreenCTM();
-    if (ctm) {
-      const inv = ctm.inverse();
-      return pt.matrixTransform(inv).x;
-    }
-    const rect = el.getBoundingClientRect();
-    if (rect.width <= 0) return 0;
-    return ((clientX - rect.left) / rect.width) * W;
-  };
-
-  const pickNearestIndex = (clientX) => {
-    if (points.length === 0) return 0;
-    let svgX = clientXToSvgX(clientX);
-    const xMin = points[0].x;
-    const xMax = points[points.length - 1].x;
-    svgX = Math.max(xMin, Math.min(xMax, svgX));
-    let best = 0;
-    let bestDist = Infinity;
-    points.forEach((p, i) => {
-      const dist = Math.abs(p.x - svgX);
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = i;
-      }
-    });
-    return best;
-  };
-
-  const onSvgPointerMove = (e) => {
-    setHoverIdx(pickNearestIndex(e.clientX));
-  };
-
-  const onSvgPointerLeave = () => {
-    setHoverIdx(null);
-  };
-
-  const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-  const areaPath = hasGraph && points.length > 0
-    ? line + ` L${points[points.length - 1].x},${H - PY} L${points[0].x},${H - PY} Z`
-    : "";
-
-  const gridLines = 3;
-  const gridVals = Array.from({ length: gridLines }, (_, i) => Math.round(minV + (rangeV * (i / (gridLines - 1)))));
-
-  const hi = hoverIdx != null && points[hoverIdx] ? points[hoverIdx] : null;
-  const last = points[points.length - 1];
-
-  if (!hasGraph) {
-    return (
-      <div style={{ textAlign: "center", padding: "24px", color: theme.textLight, fontSize: "13px" }}>
-        Spil mindst 2 kampe for at se din ELO-graf.
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ position: "relative", paddingBottom: "44px" }}>
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${W} ${H}`}
-        style={{ width: "100%", height: "auto", maxHeight: "180px", display: "block", cursor: "crosshair" }}
-        onMouseMove={onSvgPointerMove}
-        onMouseLeave={onSvgPointerLeave}
-        onTouchStart={(e) => {
-          if (e.touches[0]) setHoverIdx(pickNearestIndex(e.touches[0].clientX));
-        }}
-        onTouchMove={(e) => {
-          if (e.touches[0]) setHoverIdx(pickNearestIndex(e.touches[0].clientX));
-        }}
-        onTouchEnd={onSvgPointerLeave}
-      >
-        {gridVals.map((v, i) => {
-          const y = PY + (1 - (v - minV) / rangeV) * (H - PY * 2);
-          return (
-            <g key={i}>
-              <line x1={PX} y1={y} x2={W - PX} y2={y} stroke={theme.border} strokeWidth="0.5" strokeDasharray="3,3" />
-              <text x={PX - 4} y={y + 3} textAnchor="end" fontSize="8" fill={theme.textLight} fontFamily={font}>{v}</text>
-            </g>
-          );
-        })}
-        <defs>
-          <linearGradient id="eloGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={theme.accent} stopOpacity="0.25" />
-            <stop offset="100%" stopColor={theme.accent} stopOpacity="0.02" />
-          </linearGradient>
-        </defs>
-        <path d={areaPath} fill="url(#eloGrad)" />
-        <path d={line} fill="none" stroke={theme.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {hi && (
-          <line
-            x1={hi.x}
-            y1={PY}
-            x2={hi.x}
-            y2={H - PY}
-            stroke={theme.accent}
-            strokeWidth="1"
-            strokeOpacity={0.35}
-            pointerEvents="none"
-          />
-        )}
-        {points.map((p, i) => {
-          const active = hoverIdx === i;
-          const isLast = i === points.length - 1;
-          const r = active ? 5 : isLast ? 4 : 2.5;
-          return (
-            <circle
-              key={i}
-              cx={p.x}
-              cy={p.y}
-              r={r}
-              fill={theme.accent}
-              stroke="#fff"
-              strokeWidth={active ? 2 : 1.5}
-            />
-          );
-        })}
-        {!hi && points.length > 0 && (
-          <text x={last.x} y={last.y - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill={theme.accent} fontFamily={font}>
-            {Math.round(last.val)}
-          </text>
-        )}
-      </svg>
-      {hi && (
-        <div
-          style={{
-            position: "absolute",
-            left: `${(hi.x / W) * 100}%`,
-            bottom: "4px",
-            transform: "translateX(-50%)",
-            pointerEvents: "none",
-            zIndex: 2,
-            background: theme.surface,
-            border: "1px solid " + theme.border,
-            borderRadius: "8px",
-            padding: "6px 10px",
-            boxShadow: theme.shadow,
-            fontFamily: font,
-            textAlign: "center",
-            minWidth: "120px",
-          }}
-        >
-          <div style={{ fontSize: "15px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.02em" }}>
-            ELO {Math.round(hi.val)}
-          </div>
-          <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "2px", lineHeight: 1.3 }}>
-            {formatEloHistoryDate(hi.date)}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, refreshProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
@@ -2826,7 +2222,7 @@ function ProfilTab({ user, showToast, setTab }) {
             </div>
           </div>
 
-          {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>"{user.bio}"</p>}
+          {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading ? (
@@ -3037,7 +2433,11 @@ function RankingTab({ user }) {
   const myId = user?.id != null ? String(user.id) : "";
 
   useEffect(() => {
-    try { localStorage.setItem("pm-rank-period", period); } catch {}
+    try {
+      localStorage.setItem("pm-rank-period", period);
+    } catch {
+      /* private mode / storage disabled */
+    }
   }, [period]);
 
   const loadRankingData = useCallback(async () => {

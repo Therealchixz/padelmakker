@@ -22,7 +22,10 @@ npm run build
 
 ### Linting & type-checking
 
-No ESLint or Prettier is configured. TypeScript is present (`tsconfig.json`) with `checkJs: false` and `noEmit: true`, so `npx tsc --noEmit` can be used for type-checking `.ts`/`.tsx` files only.
+- **ESLint** (flat config: `eslint.config.js`): `npm run lint` — includes `eslint-plugin-react` and `eslint-plugin-react-hooks`. JavaScript and TypeScript under the repo are linted; `dist/` and `node_modules/` are ignored.
+- **TypeScript**: `tsconfig.json` has `checkJs: false` and `noEmit: true`; use `npm run typecheck` (`tsc --noEmit`) for `.ts`/`.tsx` only.
+
+Prettier is not configured.
 
 ### Testing
 
@@ -38,7 +41,7 @@ Without these, the app loads the UI with placeholder Supabase credentials and da
 
 ### Key directories
 
-- `src/padelmakker-platform.jsx` — Main application component (large single-file component)
+- `src/padelmakker-platform.jsx` — Main application shell and dashboard tabs (still large; helpers split into `src/lib/` and `src/components/EloGraph.jsx`)
 - `src/lib/supabase.js` — Supabase client setup
 - `src/lib/AuthContext.jsx` — Authentication context provider
 - `src/api/base44Client.js` — CRUD entity helpers for Supabase tables
