@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Dynamisk K i apply_elo_for_match
--- - Hvis mindst én deltager har games_played < 20 (før denne kamp): K = 40
+-- - Hvis mindst én deltager har games_played < 15 (før denne kamp): K = 40
 -- - Ellers: K = 24
 -- (games_played opdateres først EFTER ELO i din nuværende funktion, så tallet
 --  er stadig "antal færdige kampe før denne".)
@@ -54,7 +54,7 @@ BEGIN
   JOIN profiles p ON p.id = mp.user_id
   WHERE mp.match_id = v_mr.match_id;
 
-  v_k := CASE WHEN v_min_games < 20 THEN 40 ELSE 24 END;
+  v_k := CASE WHEN v_min_games < 15 THEN 40 ELSE 24 END;
 
   SELECT COALESCE(AVG(p.elo_rating), 1000) INTO v_t1_avg
   FROM match_players mp
