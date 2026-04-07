@@ -39,18 +39,20 @@ END $$;
 -- Hvis du får fejl fordi funktionen ligger i et andet schema, ret nspname ovenfor.
 
 
--- ─── 2) court_slots: INSERT må ikke være WITH CHECK (true) for alle roller ───
--- Erstatter med: kun loggede brugere (authenticated). Tilpas hvis kun admins må oprette slots
--- (fx med en is_admin() eller membership-tabel).
+-- ─── 2) court_slots: fjern INSERT der er WITH CHECK (true) / effektivt altid sand ───
+-- PadelMakker-appen henter kun slots (CourtSlot.filter); den indsætter ikke rækker som bruger.
+-- Derfor: slet den åbne INSERT-policy. authenticated + anon har så INGEN INSERT via RLS.
+-- Vedligehold slots via Supabase SQL Editor eller service_role (bypasser RLS) — ikke fra anon key i browser.
+--
+-- Hvis I senere skal lade bestemte brugere oprette slots, tilføj kolonne (fx created_by uuid)
+-- og brug: WITH CHECK (created_by = (SELECT auth.uid())).
 
 DROP POLICY IF EXISTS "Slots insertable" ON public.court_slots;
 
-CREATE POLICY "Slots insertable"
-  ON public.court_slots
-  FOR INSERT
-  TO authenticated
-  WITH CHECK ((SELECT auth.uid()) IS NOT NULL);
-
--- Hvis I kun vil tillade service role / bestemte brugere, skift til fx:
+-- Valgfrit: eksplicit afvis alle INSERT for authenticated (tydeligere end "ingen policy").
+-- Fjern kommentarer hvis du vil have denne eksplicitte politik:
+-- CREATE POLICY "court_slots_no_client_insert"
+--   ON public.court_slots
+--   FOR INSERT
 --   TO authenticated
---   WITH CHECK ( (SELECT auth.jwt() ->> 'role') = 'authenticated' AND ... );
+--   WITH CHECK (false);
