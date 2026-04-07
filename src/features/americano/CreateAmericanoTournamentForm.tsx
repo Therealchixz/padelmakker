@@ -187,7 +187,7 @@ export function CreateAmericanoTournamentForm({
           ))}
         </select>
         <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
-          Efter hver kamp indtastes den faktiske slutstilling (fx 10–6 ved format 16). Tallet her er hvad I spiller til på banen — ikke et krav om at vinderen har præcis det antal i resultatfeltet.
+          Efter hver kamp skal de to hold tilsammen give formatet (fx 10+6 eller 8+8 ved 16). Du kan skrive kun ét hold — app’en udfylder resten.
         </p>
       </div>
 

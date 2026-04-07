@@ -2053,8 +2053,6 @@ function KampeTab({ user, showToast, tabActive = true }) {
     .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults))
     .slice(0, 20);
 
-  if (loadingMatches) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>;
-
   const renderMatchCard = (m, mode) => {
     const mp = matchPlayers[m.id] || [];
     const mr = matchResults[m.id];
@@ -2210,7 +2208,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
     <div>
       <div className="pm-kampe-head" style={{ marginBottom: "16px" }}>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Kampe</h2>
-        {kampeFormat === "padel" && (
+        {kampeFormat === "padel" && !loadingMatches && (
           <button onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
             {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
           </button>
@@ -2234,6 +2232,10 @@ function KampeTab({ user, showToast, tabActive = true }) {
         </button>
       </div>
 
+      {loadingMatches ? (
+        <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>
+      ) : (
+      <>
       {kampeFormat === "americano" && (
         <AmericanoTab profile={user} showToast={showToast} />
       )}
@@ -2323,6 +2325,8 @@ function KampeTab({ user, showToast, tabActive = true }) {
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
       </>
       )}
+      </>
+      )}
     </div>
   );
 }
@@ -2362,24 +2366,21 @@ function EloGraph({ data }) {
   const svgRef = useRef(null);
   const [hoverIdx, setHoverIdx] = useState(null);
 
-  if (!data || data.length < 2) return (
-    <div style={{ textAlign: "center", padding: "24px", color: theme.textLight, fontSize: "13px" }}>
-      Spil mindst 2 kampe for at se din ELO-graf.
-    </div>
-  );
-
   const W = 320, H = 140, PX = 32, PY = 20;
-  const sorted = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const hasGraph = data && data.length >= 2;
+  const sorted = hasGraph ? [...data].sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
   const values = sorted.map(d => d.new_rating ?? d.old_rating ?? 1000);
-  const minV = Math.min(...values) - 20;
-  const maxV = Math.max(...values) + 20;
+  const minV = hasGraph ? Math.min(...values) - 20 : 1000;
+  const maxV = hasGraph ? Math.max(...values) + 20 : 1000;
   const rangeV = maxV - minV || 1;
 
-  const points = sorted.map((d, i) => {
-    const x = PX + (i / (sorted.length - 1)) * (W - PX * 2);
-    const y = PY + (1 - (values[i] - minV) / rangeV) * (H - PY * 2);
-    return { x, y, val: values[i], date: d.date };
-  });
+  const points = hasGraph
+    ? sorted.map((d, i) => {
+        const x = PX + (i / (sorted.length - 1)) * (W - PX * 2);
+        const y = PY + (1 - (values[i] - minV) / rangeV) * (H - PY * 2);
+        return { x, y, val: values[i], date: d.date };
+      })
+    : [];
 
   /** Map screen X to SVG user space (viewBox coords). Default "meet" scaling centers the graph, so rect-width ≠ viewBox width — getScreenCTM fixes that. */
   const clientXToSvgX = (clientX) => {
@@ -2425,13 +2426,23 @@ function EloGraph({ data }) {
   };
 
   const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-  const areaPath = line + ` L${points[points.length - 1].x},${H - PY} L${points[0].x},${H - PY} Z`;
+  const areaPath = hasGraph && points.length > 0
+    ? line + ` L${points[points.length - 1].x},${H - PY} L${points[0].x},${H - PY} Z`
+    : "";
 
   const gridLines = 3;
   const gridVals = Array.from({ length: gridLines }, (_, i) => Math.round(minV + (rangeV * (i / (gridLines - 1)))));
 
-  const hi = hoverIdx != null ? points[hoverIdx] : null;
+  const hi = hoverIdx != null && points[hoverIdx] ? points[hoverIdx] : null;
   const last = points[points.length - 1];
+
+  if (!hasGraph) {
+    return (
+      <div style={{ textAlign: "center", padding: "24px", color: theme.textLight, fontSize: "13px" }}>
+        Spil mindst 2 kampe for at se din ELO-graf.
+      </div>
+    );
+  }
 
   return (
     <div style={{ position: "relative", paddingBottom: "44px" }}>
@@ -2588,8 +2599,9 @@ function ProfilTab({ user, showToast, setTab }) {
 
   const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
 
-  if (!editing) {
-    return (
+  return (
+    <div>
+      {!editing ? (
       <div>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>
 
@@ -2732,11 +2744,7 @@ function ProfilTab({ user, showToast, setTab }) {
           </button>
         </div>
       </div>
-    );
-  }
-
-  // EDIT MODE
-  return (
+      ) : (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Rediger profil</h2>
@@ -2799,6 +2807,8 @@ function ProfilTab({ user, showToast, setTab }) {
           {saving ? "Gemmer..." : <><Save size={14} /> Gem ændringer</>}
         </button>
       </div>
+    </div>
+      )}
     </div>
   );
 }

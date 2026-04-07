@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Check, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
@@ -70,13 +70,15 @@ function DualAvatar({ a, b }: { a: string; b: string }) {
   )
 }
 
+type TeamOutcome = 'win' | 'loss' | 'tie'
+
 function TeamBlock({
   name1,
   name2,
   pid1,
   pid2,
   score,
-  won,
+  outcome,
   showCheckForUser,
   userIdByPartId,
   currentUserId,
@@ -86,12 +88,16 @@ function TeamBlock({
   pid1: string
   pid2: string
   score: number | null
-  won: boolean
+  outcome: TeamOutcome
   showCheckForUser: boolean
   userIdByPartId: Map<string, string>
   currentUserId: string
 }) {
   const scoreStr = score != null && !Number.isNaN(score) ? String(score) : '—'
+  const nameColor = outcome === 'loss' ? c.muted : c.text
+  const scoreColor = outcome === 'loss' ? c.muted : c.text
+  const scoreSize = outcome === 'tie' ? 24 : 26
+  const scoreWeight = outcome === 'loss' ? 700 : 800
   return (
     <div
       style={{
@@ -111,7 +117,7 @@ function TeamBlock({
             gap: 6,
             fontSize: 14,
             fontWeight: 600,
-            color: won ? c.text : c.muted,
+            color: nameColor,
             lineHeight: 1.35,
           }}
         >
@@ -127,7 +133,7 @@ function TeamBlock({
             gap: 6,
             fontSize: 14,
             fontWeight: 600,
-            color: won ? c.text : c.muted,
+            color: nameColor,
             lineHeight: 1.35,
             marginTop: 2,
           }}
@@ -140,10 +146,10 @@ function TeamBlock({
       </div>
       <div
         style={{
-          fontSize: 26,
-          fontWeight: 800,
+          fontSize: scoreSize,
+          fontWeight: scoreWeight,
           letterSpacing: '-0.03em',
-          color: won ? c.text : c.muted,
+          color: scoreColor,
           fontVariantNumeric: 'tabular-nums',
           flexShrink: 0,
           minWidth: 36,
@@ -173,26 +179,27 @@ function isMatchResultLocked(m: AmericanoMatchRow): boolean {
   return true
 }
 
-/** Faktiske kampoint (hvert vundet rally = 1 til holdet). Ikke krav om at vinderen rammer målet P — det er spillets format på banen (fx først til 16), slutstilling kan være 10–6. */
-function isValidAmericanoScore(a: number, b: number): boolean {
+/** Point på de to hold skal summere til formatet P (16/24/32). Uafgjort (fx 8–8 ved 16) er tilladt. */
+function isValidAmericanoScore(a: number, b: number, P: number): boolean {
   if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) return false
-  return a !== b
+  return a + b === P
 }
 
 function resolvedMatchScores(
   m: AmericanoMatchRow,
-  sc: Record<string, { a: string; b: string }>
+  sc: Record<string, { a: string; b: string }>,
+  P: number
 ): { a: number; b: number } | null {
   const row = sc[m.id]
   if (row && row.a !== '' && row.b !== '') {
     const a = parseInt(row.a, 10)
     const b = parseInt(row.b, 10)
-    if (isValidAmericanoScore(a, b)) return { a, b }
+    if (isValidAmericanoScore(a, b, P)) return { a, b }
   }
   if (m.team_a_score != null && m.team_b_score != null) {
     const a = m.team_a_score
     const b = m.team_b_score
-    if (isValidAmericanoScore(a, b)) return { a, b }
+    if (isValidAmericanoScore(a, b, P)) return { a, b }
   }
   return null
 }
@@ -200,12 +207,13 @@ function resolvedMatchScores(
 function buildLeaderboard(
   participants: AmericanoParticipant[],
   matches: AmericanoMatchRow[],
-  scores: Record<string, { a: string; b: string }>
+  scores: Record<string, { a: string; b: string }>,
+  P: number
 ): { id: string; name: string; points: number }[] {
   const totals = new Map<string, number>()
   participants.forEach((p) => totals.set(p.id, 0))
   for (const m of matches) {
-    const r = resolvedMatchScores(m, scores)
+    const r = resolvedMatchScores(m, scores, P)
     if (!r) continue
     const add = (pid: string, pts: number) => totals.set(pid, (totals.get(pid) ?? 0) + pts)
     add(m.team_a_p1, r.a)
@@ -216,6 +224,18 @@ function buildLeaderboard(
   return participants
     .map((p) => ({ id: p.id, name: p.display_name, points: totals.get(p.id) ?? 0 }))
     .sort((x, y) => y.points - x.points)
+}
+
+/** Udfylder det andet hold med P − n (fx 10 → 6, 8 → 8 ved format 16). */
+function complementFromOneSide(raw: string, P: number, showToast: (msg: string) => void): number | null {
+  const t = raw.trim()
+  if (t === '') return null
+  const n = parseInt(t, 10)
+  if (!Number.isInteger(n) || n < 0 || n > P) {
+    showToast(`Hold A/B: indtast et helt tal mellem 0 og ${P}.`)
+    return null
+  }
+  return P - n
 }
 
 export function AmericanoResultsPanel({
@@ -233,7 +253,9 @@ export function AmericanoResultsPanel({
   /** Midlertidigt ulåst af opretter — nulstilles ved genindlæsning */
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(() => new Set())
 
-  const P = tournament.points_per_match
+  const ppm = Number(tournament.points_per_match)
+  const P: 16 | 24 | 32 =
+    ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
   const isCreator = String(tournament.creator_id) === String(currentUserId)
 
   const nameByPartId = useCallback(
@@ -280,14 +302,27 @@ export function AmericanoResultsPanel({
   const saveRow = async (m: AmericanoMatchRow) => {
     const s = scores[m.id]
     if (!s) return
-    const a = parseInt(s.a, 10)
-    const b = parseInt(s.b, 10)
-    if (s.a === '' || s.b === '') {
-      showToast('Udfyld begge point.')
+    let aStr = s.a.trim()
+    let bStr = s.b.trim()
+    if (aStr !== '' && bStr === '') {
+      const o = complementFromOneSide(aStr, P, showToast)
+      if (o == null) return
+      bStr = String(o)
+      setScores((prev) => ({ ...prev, [m.id]: { a: aStr, b: bStr } }))
+    } else if (bStr !== '' && aStr === '') {
+      const o = complementFromOneSide(bStr, P, showToast)
+      if (o == null) return
+      aStr = String(o)
+      setScores((prev) => ({ ...prev, [m.id]: { a: aStr, b: bStr } }))
+    }
+    if (aStr === '' || bStr === '') {
+      showToast(`Indtast mindst ét hold — det andet sættes til resten op til ${P}.`)
       return
     }
-    if (!isValidAmericanoScore(a, b)) {
-      showToast('Ugyldigt: to hele tal ≥ 0, og ikke uafgjort.')
+    const a = parseInt(aStr, 10)
+    const b = parseInt(bStr, 10)
+    if (!isValidAmericanoScore(a, b, P)) {
+      showToast(`Summen skal være præcis ${P} point (format). Uafgjort er ok (fx 8–8 ved 16).`)
       return
     }
     setSaving(true)
@@ -318,9 +353,12 @@ export function AmericanoResultsPanel({
     const incomplete = matches.some((m) => {
       const s = scores[m.id]
       if (!s) return true
-      const a = parseInt(s.a, 10)
-      const b = parseInt(s.b, 10)
-      return !isValidAmericanoScore(a, b)
+      let aStr = s.a.trim()
+      let bStr = s.b.trim()
+      if (aStr === '' || bStr === '') return true
+      const a = parseInt(aStr, 10)
+      const b = parseInt(bStr, 10)
+      return !isValidAmericanoScore(a, b, P)
     })
     if (incomplete) {
       showToast('Alle kampe skal have gyldige resultater før afslutning.')
@@ -344,24 +382,19 @@ export function AmericanoResultsPanel({
     }
   }
 
+  const userIdByPartId = new Map<string, string>()
+  participants.forEach((p) => userIdByPartId.set(p.id, p.user_id))
+
+  const matchesDisplay = [...matches].sort((a, b) => {
+    if (b.round_number !== a.round_number) return b.round_number - a.round_number
+    return b.court_index - a.court_index
+  })
+
+  const leaderboard = buildLeaderboard(participants, matches, scores, P)
+
   if (loading) {
     return <div style={{ fontSize: 12, color: '#8494A7', marginTop: 12 }}>Henter kampe…</div>
   }
-
-  const leaderboard = buildLeaderboard(participants, matches, scores)
-
-  const userIdByPartId = useMemo(() => {
-    const m = new Map<string, string>()
-    participants.forEach((p) => m.set(p.id, p.user_id))
-    return m
-  }, [participants])
-
-  const matchesDisplay = useMemo(() => {
-    return [...matches].sort((a, b) => {
-      if (b.round_number !== a.round_number) return b.round_number - a.round_number
-      return b.court_index - a.court_index
-    })
-  }, [matches])
 
   return (
     <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.line}` }}>
@@ -369,8 +402,8 @@ export function AmericanoResultsPanel({
         Resultater (ingen ELO)
       </div>
       <p style={{ fontSize: 11, color: c.muted, margin: '0 0 14px', lineHeight: 1.55, fontFamily: font }}>
-        <strong style={{ color: '#475569' }}>Format {P} point:</strong> Indtast den faktiske slutstilling (fx 10–6). Summen vises ovenfor. Efter{' '}
-        <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette.
+        <strong style={{ color: '#475569' }}>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
+        <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Uafgjort tæller ikke som V/T på profilen.
       </p>
       <div
         style={{
@@ -405,9 +438,12 @@ export function AmericanoResultsPanel({
           const n4 = nameByPartId(m.team_b_p2)
           const a = parseInt(s.a, 10)
           const b = parseInt(s.b, 10)
-          const hasValid = isValidAmericanoScore(a, b)
+          const hasValid = isValidAmericanoScore(a, b, P)
+          const isTie = hasValid && a === b
           const aWins = hasValid && a > b
           const bWins = hasValid && b > a
+          const outcomeA: TeamOutcome = !hasValid ? 'loss' : isTie ? 'tie' : aWins ? 'win' : 'loss'
+          const outcomeB: TeamOutcome = !hasValid ? 'loss' : isTie ? 'tie' : bWins ? 'win' : 'loss'
           const matchNum = matchesDisplay.length - displayIdx
           const showScores = hasValid
 
@@ -494,11 +530,25 @@ export function AmericanoResultsPanel({
                   <input
                     type="number"
                     min={0}
+                    max={P}
                     value={s.a}
                     onChange={(e) =>
                       setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value, b: prev[m.id]?.b ?? '' } }))
                     }
+                    onBlur={() => {
+                      const row = scores[m.id]
+                      if (!row || row.a.trim() === '') return
+                      if (row.b.trim() !== '') return
+                      const o = complementFromOneSide(row.a, P, showToast)
+                      if (o != null) {
+                        setScores((prev) => ({
+                          ...prev,
+                          [m.id]: { ...prev[m.id], a: prev[m.id]?.a?.trim() ?? row.a.trim(), b: String(o) },
+                        }))
+                      }
+                    }}
                     placeholder="Hold A"
+                    aria-label="Hold A point"
                     style={{
                       width: 72,
                       padding: '8px 10px',
@@ -513,11 +563,25 @@ export function AmericanoResultsPanel({
                   <input
                     type="number"
                     min={0}
+                    max={P}
                     value={s.b}
                     onChange={(e) =>
                       setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: e.target.value } }))
                     }
+                    onBlur={() => {
+                      const row = scores[m.id]
+                      if (!row || row.b.trim() === '') return
+                      if (row.a.trim() !== '') return
+                      const o = complementFromOneSide(row.b, P, showToast)
+                      if (o != null) {
+                        setScores((prev) => ({
+                          ...prev,
+                          [m.id]: { a: String(o), b: prev[m.id]?.b?.trim() ?? row.b.trim() },
+                        }))
+                      }
+                    }}
                     placeholder="Hold B"
+                    aria-label="Hold B point"
                     style={{
                       width: 72,
                       padding: '8px 10px',
@@ -528,18 +592,33 @@ export function AmericanoResultsPanel({
                       fontFamily: font,
                     }}
                   />
+                  <span style={{ fontSize: 11, color: c.muted, flexBasis: '100%' }}>Sum = {P} (auto)</span>
                 </div>
               )}
 
               {locked && showScores && (
                 <div style={{ paddingBottom: 8 }}>
+                  {isTie && (
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#64748B',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        marginBottom: 4,
+                      }}
+                    >
+                      Uafgjort
+                    </div>
+                  )}
                   <TeamBlock
                     name1={n1}
                     name2={n2}
                     pid1={m.team_a_p1}
                     pid2={m.team_a_p2}
                     score={a}
-                    won={aWins}
+                    outcome={outcomeA}
                     showCheckForUser
                     userIdByPartId={userIdByPartId}
                     currentUserId={currentUserId}
@@ -551,7 +630,7 @@ export function AmericanoResultsPanel({
                     pid1={m.team_b_p1}
                     pid2={m.team_b_p2}
                     score={b}
-                    won={bWins}
+                    outcome={outcomeB}
                     showCheckForUser
                     userIdByPartId={userIdByPartId}
                     currentUserId={currentUserId}
