@@ -4,6 +4,7 @@ import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
 import { normalizeProfileRow, normalizeStringArrayField, validateFirstLastName } from "./lib/profileUtils";
+import { AmericanoTab } from "./features/americano/AmericanoTab";
 
 /** Sikker liste til .map() selv hvis profil kommer uden normalisering */
 function availabilityTags(profileLike) {
@@ -1760,6 +1761,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [profilesById, setProfilesById] = useState({});
   const [viewTab, setViewTab]         = useState("open"); // "open" | "active" | "completed"
+  const [kampeFormat, setKampeFormat] = useState("padel"); // "padel" | "americano"
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
@@ -2206,13 +2208,38 @@ function KampeTab({ user, showToast, tabActive = true }) {
 
   return (
     <div>
-      <div className="pm-kampe-head" style={{ marginBottom: "20px" }}>
+      <div className="pm-kampe-head" style={{ marginBottom: "16px" }}>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Kampe</h2>
-        <button onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
-          {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
+        {kampeFormat === "padel" && (
+          <button onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
+            {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={() => { setKampeFormat("padel"); setShowCreate(false); }}
+          style={{ ...btn(kampeFormat === "padel"), padding: "8px 16px", fontSize: "13px" }}
+        >
+          Almindelig padel (2v2)
+        </button>
+        <button
+          type="button"
+          onClick={() => { setKampeFormat("americano"); setShowCreate(false); }}
+          style={{ ...btn(kampeFormat === "americano"), padding: "8px 16px", fontSize: "13px" }}
+        >
+          Americano
         </button>
       </div>
 
+      {kampeFormat === "americano" && (
+        <AmericanoTab user={user} showToast={showToast} />
+      )}
+
+      {kampeFormat === "padel" && (
+      <>
       {/* View tabs */}
       <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
         {[
@@ -2276,7 +2303,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
       )}
 
       {/* Result input modal */}
-      {resultMatch && (() => {
+      {resultMatch && kampeFormat === "padel" && (() => {
         const mp = matchPlayers[resultMatch] || [];
         const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
         const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
@@ -2294,6 +2321,8 @@ function KampeTab({ user, showToast, tabActive = true }) {
 
       {/* Player profile modal */}
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
+      </>
+      )}
     </div>
   );
 }
