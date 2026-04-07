@@ -16,12 +16,19 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   type text NOT NULL DEFAULT 'info',
   title text NOT NULL,
   body text,
-  match_id uuid REFERENCES public.matches (id) ON DELETE SET NULL,
+  /* uuid uden FK hvis public.matches mangler — tilføj FK manuelt hvis ønsket */
+  match_id uuid,
   read boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+-- PostgREST: loggede brugere skal kunne SELECT/UPDATE egne rækker (RLS begrænser; INSERT sker via RPC som ejer)
+GRANT SELECT, UPDATE ON public.notifications TO authenticated;
+
+-- Valgfrit — live-opdatering af klokken (Database → Replication i Dashboard kan samme ting):
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 
 -- Læs egne (behold hvis I allerede har policies — undgå dubletter)
 DROP POLICY IF EXISTS "notifications_select_own" ON public.notifications;
