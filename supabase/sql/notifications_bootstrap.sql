@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
-GRANT SELECT, UPDATE ON public.notifications TO authenticated;
+GRANT SELECT, UPDATE, DELETE ON public.notifications TO authenticated;
 
 DROP POLICY IF EXISTS "notifications_select_own" ON public.notifications;
 CREATE POLICY "notifications_select_own"
@@ -29,5 +29,10 @@ CREATE POLICY "notifications_update_own"
   ON public.notifications FOR UPDATE TO authenticated
   USING ((select auth.uid()) = user_id)
   WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "notifications_delete_own" ON public.notifications;
+CREATE POLICY "notifications_delete_own"
+  ON public.notifications FOR DELETE TO authenticated
+  USING ((select auth.uid()) = user_id);
 
 -- Valgfrit (live klok): ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
