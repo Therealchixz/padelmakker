@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
 import { Court } from '../../api/base44Client'
@@ -63,6 +64,8 @@ export function AmericanoTab({ profile, showToast }: Props) {
   const [participantsByTournament, setParticipantsByTournament] = useState<
     Record<string, ParticipantListRow[]>
   >({})
+  /** Under "I gang": deltagerlisten er sammenklappet som standard for at spare plads */
+  const [playingParticipantsOpen, setPlayingParticipantsOpen] = useState<Set<string>>(() => new Set())
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -380,41 +383,98 @@ export function AmericanoTab({ profile, showToast }: Props) {
               {(() => {
                 const parts = participantsByTournament[t.id] || []
                 const maxSlots = t.player_slots
+                const playingCollapsed = t.status === 'playing'
+                const listOpen = !playingCollapsed || playingParticipantsOpen.has(t.id)
+                const togglePlayingParticipants = () => {
+                  setPlayingParticipantsOpen((prev) => {
+                    const next = new Set(prev)
+                    if (next.has(t.id)) next.delete(t.id)
+                    else next.add(t.id)
+                    return next
+                  })
+                }
                 return (
                   <div
                     style={{
                       marginTop: 12,
-                      padding: '10px 12px',
+                      padding: playingCollapsed && !listOpen ? '8px 12px' : '10px 12px',
                       background: '#F8FAFC',
                       borderRadius: 8,
                       border: '1px solid #E2E8F0',
                     }}
                   >
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#0B1120', marginBottom: 8 }}>
-                      Deltagere ({parts.length}/{maxSlots})
-                    </div>
-                    {parts.length === 0 ? (
-                      <div style={{ fontSize: 12, color: '#8494A7' }}>Ingen tilmeldt endnu — vær den første.</div>
-                    ) : (
-                      <ul
+                    {playingCollapsed ? (
+                      <button
+                        type="button"
+                        onClick={togglePlayingParticipants}
+                        aria-expanded={listOpen}
+                        aria-label={listOpen ? 'Skjul deltagerliste' : 'Vis deltagerliste'}
                         style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 10,
+                          width: '100%',
                           margin: 0,
-                          paddingLeft: 18,
-                          fontSize: 12,
-                          color: '#3E4C63',
-                          lineHeight: 1.65,
+                          padding: 0,
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          fontFamily: font,
+                          textAlign: 'left',
                         }}
                       >
-                        {parts.map((p) => (
-                          <li key={p.id}>
-                            {p.display_name}
-                            {String(p.user_id) === String(profileId) ? (
-                              <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
-                            ) : null}
-                          </li>
-                        ))}
-                      </ul>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#0B1120' }}>
+                          Deltagere ({parts.length}/{maxSlots})
+                        </span>
+                        <ChevronDown
+                          size={18}
+                          color="#64748B"
+                          strokeWidth={2}
+                          style={{
+                            flexShrink: 0,
+                            transform: listOpen ? 'rotate(180deg)' : 'none',
+                            transition: 'transform 0.2s ease',
+                          }}
+                          aria-hidden
+                        />
+                      </button>
+                    ) : (
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0B1120', marginBottom: 8 }}>
+                        Deltagere ({parts.length}/{maxSlots})
+                      </div>
                     )}
+                    {listOpen &&
+                      (parts.length === 0 ? (
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: '#8494A7',
+                            marginTop: playingCollapsed ? 10 : 0,
+                          }}
+                        >
+                          Ingen tilmeldt endnu — vær den første.
+                        </div>
+                      ) : (
+                        <ul
+                          style={{
+                            margin: playingCollapsed ? '10px 0 0' : 0,
+                            paddingLeft: 18,
+                            fontSize: 12,
+                            color: '#3E4C63',
+                            lineHeight: 1.65,
+                          }}
+                        >
+                          {parts.map((p) => (
+                            <li key={p.id}>
+                              {p.display_name}
+                              {String(p.user_id) === String(profileId) ? (
+                                <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      ))}
                   </div>
                 )
               })()}
