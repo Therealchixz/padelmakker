@@ -88,3 +88,8 @@ $$;
 
 REVOKE ALL ON FUNCTION public.create_notification_for_user(uuid, text, text, text, uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.create_notification_for_user(uuid, text, text, text, uuid) TO authenticated;
+
+-- VIGTIGT: Uden dette gælder RLS stadig for den LOGGEDE bruger ved INSERT inde i funktionen,
+-- så rækker med user_id = modtageren blokeres. row_security=off for denne funktion = kun efter
+-- vi har tjekket deltagelse i PL/pgSQL ovenfor.
+ALTER FUNCTION public.create_notification_for_user(uuid, text, text, text, uuid) SET row_security = off;

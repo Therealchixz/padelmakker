@@ -646,9 +646,9 @@ function OnboardingPage({ onComplete }) {
 /* ═══════════════════════════════════════════════════
    NOTIFICATIONS
 ═══════════════════════════════════════════════════ */
+/** Returnerer fejl-objekt hvis RPC fejler (så UI kan vise toast). Kræver create_notification_rpc.sql + ALTER FUNCTION SET row_security = off. */
 async function createNotification(userId, type, title, body, matchId = null) {
   try {
-    /* Direkte insert fejler under RLS når user_id ≠ auth.uid(). Brug RPC (create_notification_rpc.sql). */
     const { error } = await supabase.rpc("create_notification_for_user", {
       p_user_id: userId,
       p_type: type,
@@ -656,9 +656,14 @@ async function createNotification(userId, type, title, body, matchId = null) {
       p_body: body,
       p_match_id: matchId,
     });
-    if (error) console.warn("Notification error:", error.message || error);
+    if (error) {
+      console.warn("Notification error:", error.message || error);
+      return error;
+    }
+    return null;
   } catch (e) {
     console.warn("Notification error:", e);
+    return e;
   }
 }
 
@@ -1720,10 +1725,25 @@ function KampeTab({ user, showToast }) {
         await supabase.from("matches").update({ current_players: mp.length }).eq("id", matchId);
       }
 
-      // Notify match creator that someone joined
-      const match = matches.find(m => m.id === matchId);
-      if (match && match.creator_id !== user.id) {
-        createNotification(match.creator_id, "match_join", "Ny spiller tilmeldt!", `${myDisplayName} har tilmeldt sig Hold ${teamNum} i din kamp.`, matchId);
+      // Notify match creator (hent creator_id fra DB hvis lokalt state mangler det)
+      let creatorId = matches.find((m) => m.id === matchId)?.creator_id;
+      if (creatorId == null) {
+        const { data: row } = await supabase.from("matches").select("creator_id").eq("id", matchId).maybeSingle();
+        creatorId = row?.creator_id;
+      }
+      if (creatorId != null && String(creatorId) !== String(user.id)) {
+        const nErr = await createNotification(
+          creatorId,
+          "match_join",
+          "Ny spiller tilmeldt!",
+          `${myDisplayName} har tilmeldt sig Hold ${teamNum} i din kamp.`,
+          matchId
+        );
+        if (nErr) {
+          showToast(
+            "Tilmelding gemt, men notifikation til opretter fejlede. Kør SQL: create_notification_rpc.sql (inkl. ALTER FUNCTION … row_security = off) i Supabase."
+          );
+        }
       }
       // Notify all players if match is now full
       if (t1 >= 2 && t2 >= 2) {
