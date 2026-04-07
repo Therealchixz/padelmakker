@@ -5,7 +5,8 @@
 
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS americano_wins integer NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS americano_losses integer NOT NULL DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS americano_losses integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS americano_draws integer NOT NULL DEFAULT 0;
 
 CREATE OR REPLACE FUNCTION public.recalc_americano_profile_stats(p_user_id uuid)
 RETURNS void
@@ -17,6 +18,7 @@ AS $$
 DECLARE
   w int;
   l int;
+  d int;
 BEGIN
   IF p_user_id IS NULL THEN
     RETURN;
@@ -68,8 +70,28 @@ BEGIN
       )
     );
 
+  SELECT COUNT(*)::int INTO d
+  FROM public.americano_matches m
+  WHERE m.team_a_score IS NOT NULL
+    AND m.team_b_score IS NOT NULL
+    AND m.team_a_score = m.team_b_score
+    AND (
+      EXISTS (
+        SELECT 1 FROM public.americano_participants p
+        WHERE p.user_id = p_user_id AND p.id IN (m.team_a_p1, m.team_a_p2)
+      )
+      OR
+      EXISTS (
+        SELECT 1 FROM public.americano_participants p
+        WHERE p.user_id = p_user_id AND p.id IN (m.team_b_p1, m.team_b_p2)
+      )
+    );
+
   UPDATE public.profiles
-  SET americano_wins = COALESCE(w, 0), americano_losses = COALESCE(l, 0)
+  SET
+    americano_wins = COALESCE(w, 0),
+    americano_losses = COALESCE(l, 0),
+    americano_draws = COALESCE(d, 0)
   WHERE id = p_user_id;
 END;
 $$;
