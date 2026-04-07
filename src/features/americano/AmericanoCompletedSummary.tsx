@@ -223,21 +223,8 @@ export function AmericanoCompletedSummary({ tournament, participants, currentUse
                           color: mpal.text,
                         }}
                       >
-                        <div style={{ fontWeight: 700, color: mpal.text, marginBottom: 4 }}>
-                          #{i + 1} · Runde {m.round_number}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: mpal.text,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.06em',
-                            marginBottom: 8,
-                            opacity: 0.92,
-                          }}
-                        >
-                          {statusLabel}
+                        <div style={{ fontWeight: 700, color: mpal.text, marginBottom: 8, lineHeight: 1.35 }}>
+                          #{i + 1} · Runde {m.round_number} - {statusLabel}
                         </div>
                         <div style={{ lineHeight: 1.5 }}>
                           <span style={{ fontWeight: 600 }}>{n1}</span> &{' '}

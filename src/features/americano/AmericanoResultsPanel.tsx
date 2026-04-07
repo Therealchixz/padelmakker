@@ -490,21 +490,19 @@ export function AmericanoResultsPanel({
                     #{matchNum}
                     {isLastInPlan ? ' · Sidste i plan' : ''}
                   </div>
-                  <div style={{ fontSize: 12, color: c.muted, marginTop: 4 }}>
-                    Runde {m.round_number}
-                    {isCreator ? ' · Registreret af dig' : ''}
-                  </div>
                   <div
                     style={{
-                      fontSize: 11,
-                      fontWeight: 700,
+                      fontSize: 13,
+                      fontWeight: 600,
                       color: matchPal.text,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      marginTop: 8,
+                      marginTop: 6,
+                      lineHeight: 1.35,
                     }}
                   >
-                    {statusLabel}
+                    Runde {m.round_number} - {statusLabel}
+                    {isCreator ? (
+                      <span style={{ fontWeight: 500, color: c.muted }}> · Registreret af dig</span>
+                    ) : null}
                   </div>
                 </div>
                 {isCreator && (
