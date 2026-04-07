@@ -669,6 +669,7 @@ async function createNotification(userId, type, title, body, matchId = null) {
 
 function NotificationBell() {
   const { user: authUser } = useAuth();
+  const navigate = useNavigate();
   const userId = authUser?.id;
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
@@ -757,6 +758,17 @@ function NotificationBell() {
       return;
     }
     setNotifs([]);
+  };
+
+  const openNotificationMatch = async (n) => {
+    if (!n?.match_id || !userId) return;
+    try {
+      await supabase.from("notifications").update({ read: true }).eq("id", n.id).eq("user_id", userId);
+      setNotifs((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+    } catch (_) { /* ignore */ }
+    setOpen(false);
+    /* ?focus= så KampeTab reagerer også hvis man allerede er på Kampe-fanen */
+    navigate("/dashboard/kampe?focus=" + encodeURIComponent(String(n.match_id)));
   };
 
   const timeAgo = (dateStr) => {
@@ -854,20 +866,38 @@ function NotificationBell() {
                 <Bell size={24} color={theme.textLight} style={{ marginBottom: "8px" }} />
                 <div>Ingen notifikationer endnu</div>
               </div>
-            ) : notifs.map(n => (
-              <div key={n.id} style={{ padding: "10px 12px 10px 14px", borderBottom: "1px solid " + theme.border + "80", background: n.read ? "transparent" : theme.accentBg + "40", transition: "background 0.2s" }}>
+            ) : notifs.map(n => {
+              const hasMatch = Boolean(n.match_id);
+              return (
+              <div
+                key={n.id}
+                role={hasMatch ? "button" : undefined}
+                tabIndex={hasMatch ? 0 : undefined}
+                onClick={hasMatch ? () => openNotificationMatch(n) : undefined}
+                onKeyDown={hasMatch ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openNotificationMatch(n); } } : undefined}
+                style={{
+                  padding: "10px 12px 10px 14px",
+                  borderBottom: "1px solid " + theme.border + "80",
+                  background: n.read ? "transparent" : theme.accentBg + "40",
+                  transition: "background 0.2s",
+                  cursor: hasMatch ? "pointer" : "default",
+                }}
+              >
                 <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
                   <span style={{ fontSize: "18px", flexShrink: 0, marginTop: "1px" }}>{typeIcon(n.type)}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: "13px", fontWeight: n.read ? 500 : 700, color: theme.text, marginBottom: "2px" }}>{n.title}</div>
                     <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.4 }}>{n.body}</div>
+                    {hasMatch && (
+                      <div style={{ fontSize: "10px", color: theme.accent, marginTop: "6px", fontWeight: 600 }}>Tryk for at gå til kampen →</div>
+                    )}
                     <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{timeAgo(n.created_at)}</div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", flexShrink: 0 }}>
                     {!n.read && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: theme.accent }} />}
                     <button
                       type="button"
-                      onClick={() => deleteOne(n.id)}
+                      onClick={(e) => { e.stopPropagation(); deleteOne(n.id); }}
                       title="Slet"
                       aria-label="Slet notifikation"
                       style={{ ...iconBtn, padding: "4px", color: theme.textLight }}
@@ -877,7 +907,7 @@ function NotificationBell() {
                   </div>
                 </div>
               </div>
-            ))}
+            );})}
           </div>
         </div>
       )}
@@ -942,7 +972,7 @@ function DashboardPage({ user, onLogout, showToast }) {
         {tab === "hjem"    && <HomeTab    user={user} setTab={setTab} />}
         {tab === "makkere" && <MakkereTab user={user} showToast={showToast} />}
         {tab === "baner"   && <BanerTab   user={user} showToast={showToast} />}
-        {tab === "kampe"   && <KampeTab   user={user} showToast={showToast} />}
+        {tab === "kampe"   && <KampeTab   user={user} showToast={showToast} tabActive />}
         {tab === "ranking" && <RankingTab user={user} />}
         {tab === "profil"  && <ProfilTab  user={user} showToast={showToast} setTab={setTab} />}
       </div>
@@ -1710,7 +1740,9 @@ function matchPlayerTeam(p) {
   return Number(p?.team);
 }
 
-function KampeTab({ user, showToast }) {
+function KampeTab({ user, showToast, tabActive = true }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user: authUser, refreshProfile } = useAuth();
   const myDisplayName                 = resolveDisplayName(user, authUser);
   const myElo                         = eloOf(user);
@@ -1737,6 +1769,31 @@ function KampeTab({ user, showToast }) {
   });
 
   useEffect(() => { loadData(); }, []);
+
+  /* Notifikation: ?focus=<matchId> — vælg underfane, scroll til kort, fjern query */
+  useEffect(() => {
+    if (!tabActive || loadingMatches) return;
+    const params = new URLSearchParams(location.search);
+    const mid = params.get("focus");
+    if (!mid) return;
+    if (!matches.length) return;
+    const m = matches.find((x) => String(x.id) === String(mid));
+    if (!m) {
+      navigate("/dashboard/kampe", { replace: true });
+      return;
+    }
+    const st = (m.status ?? "open").toString().toLowerCase();
+    const mp = matchPlayers[m.id] || [];
+    const imIn = mp.some((p) => p.user_id === user.id);
+    if (st === "in_progress" && imIn) setViewTab("active");
+    else if (st === "completed" && imIn) setViewTab("completed");
+    else setViewTab("open");
+    navigate("/dashboard/kampe", { replace: true });
+    const t = window.setTimeout(() => {
+      document.getElementById("pm-match-" + String(mid))?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 200);
+    return () => window.clearTimeout(t);
+  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
 
   const loadData = async () => {
     try {
@@ -2019,7 +2076,7 @@ function KampeTab({ user, showToast }) {
     }[status] || { text: status, bg: "#F1F5F9", color: theme.textLight };
 
     return (
-      <div key={m.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+      <div id={"pm-match-" + m.id} key={m.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, scrollMarginTop: "88px" }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
           <div>
