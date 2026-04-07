@@ -1800,7 +1800,10 @@ function KampeTab({ user, showToast, tabActive = true }) {
   const location = useLocation();
   const { user: authUser, refreshProfile } = useAuth();
   const myDisplayName                 = resolveDisplayName(user, authUser);
-  const myElo                         = eloOf(user);
+  const eloSyncKeyKampe = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
+  const { ratedRows: kampeRatedRows } = useProfileEloBundle(user.id, eloSyncKeyKampe);
+  const myEloFromHistory = useMemo(() => statsFromEloHistoryRows(kampeRatedRows)?.elo ?? null, [kampeRatedRows]);
+  const myElo                         = myEloFromHistory != null ? myEloFromHistory : eloOf(user);
   const [showCreate, setShowCreate]   = useState(false);
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
@@ -2163,7 +2166,12 @@ function KampeTab({ user, showToast, tabActive = true }) {
 
         {/* Teams display */}
         {(() => {
-          const playerElo = (p) => eloByUserId[String(p.user_id)] || 1000;
+          const myUid = String(user.id);
+          const playerElo = (p) => {
+            const uid = String(p.user_id);
+            if (uid === myUid && myEloFromHistory != null) return myEloFromHistory;
+            return eloByUserId[uid] ?? 1000;
+          };
           const avgElo = (team) => team.length > 0 ? Math.round(team.reduce((s, p) => s + playerElo(p), 0) / team.length) : null;
           const t1Avg = avgElo(t1);
           const t2Avg = avgElo(t2);
