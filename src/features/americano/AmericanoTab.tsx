@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
 import { Court } from '../../api/base44Client'
 import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
+import { AmericanoCompletedSummary } from './AmericanoCompletedSummary'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
 import { buildAmericano8MatchRows } from './schedule8'
@@ -875,9 +876,11 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
                 />
               )}
               {t.status === 'completed' && (
-                <div style={{ fontSize: 12, color: '#8494A7', marginTop: 10 }}>
-                  Afsluttet — Americano V/T er opdateret på deltagernes profiler (påvirker ikke ELO).
-                </div>
+                <AmericanoCompletedSummary
+                  tournament={t}
+                  participants={participantsByTournament[t.id] || []}
+                  currentUserId={profileId}
+                />
               )}
             </div>
           );})}
