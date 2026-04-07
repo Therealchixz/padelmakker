@@ -1808,12 +1808,18 @@ function KampeTab({ user, showToast, tabActive = true }) {
   const eloSyncKeyKampe = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { profileFresh: kampeProfileFresh, ratedRows: kampeRatedRows, reloadProfileEloBundle: reloadKampeEloBundle } =
     useProfileEloBundle(user.id, eloSyncKeyKampe);
-  /** Samme prioritering som ProfilTab: elo_history → frisk profiles-række → context (undgår 1000 på "Opret kamp" når DB allerede har 1020). */
+  /**
+   * Samme visning som andre spillere på kortet: først `Profile.filter()`-kortet (eloByUserId),
+   * så elo_history → frisk profil → context. Undgår at Mike viser 1000 mens Hans viser 980.
+   */
+  const myUidStr = String(user.id);
   const myElo = useMemo(() => {
+    const fromList = eloByUserId[myUidStr];
+    if (fromList != null && Number.isFinite(Number(fromList))) return Math.round(Number(fromList));
     const fromHist = statsFromEloHistoryRows(kampeRatedRows)?.elo;
     if (fromHist != null) return fromHist;
     return Math.round(Number(kampeProfileFresh?.elo_rating ?? user.elo_rating) || 1000);
-  }, [kampeRatedRows, kampeProfileFresh?.elo_rating, user.elo_rating]);
+  }, [eloByUserId, myUidStr, kampeRatedRows, kampeProfileFresh?.elo_rating, user.elo_rating]);
   const [showCreate, setShowCreate]   = useState(false);
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
@@ -1910,7 +1916,10 @@ function KampeTab({ user, showToast, tabActive = true }) {
       (mrd || []).forEach((mr) => { mrMap[mr.match_id] = mr; });
       setMatchResults(mrMap);
     } catch (e) { console.error(e); }
-    finally { setLoadingMatches(false); }
+    finally {
+      setLoadingMatches(false);
+      void reloadKampeEloBundle();
+    }
   };
 
   const createMatch = async () => {
