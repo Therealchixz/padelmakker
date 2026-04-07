@@ -2599,8 +2599,9 @@ function ProfilTab({ user, showToast, setTab }) {
 
   const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
 
-  if (!editing) {
-    return (
+  return (
+    <div>
+      {!editing ? (
       <div>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>
 
@@ -2743,11 +2744,7 @@ function ProfilTab({ user, showToast, setTab }) {
           </button>
         </div>
       </div>
-    );
-  }
-
-  // EDIT MODE
-  return (
+      ) : (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Rediger profil</h2>
@@ -2810,6 +2807,8 @@ function ProfilTab({ user, showToast, setTab }) {
           {saving ? "Gemmer..." : <><Save size={14} /> Gem ændringer</>}
         </button>
       </div>
+    </div>
+      )}
     </div>
   );
 }

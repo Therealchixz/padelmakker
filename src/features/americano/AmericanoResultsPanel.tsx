@@ -253,7 +253,9 @@ export function AmericanoResultsPanel({
   /** Midlertidigt ulåst af opretter — nulstilles ved genindlæsning */
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(() => new Set())
 
-  const P = tournament.points_per_match
+  const ppm = Number(tournament.points_per_match)
+  const P: 16 | 24 | 32 =
+    ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
   const isCreator = String(tournament.creator_id) === String(currentUserId)
 
   const nameByPartId = useCallback(
