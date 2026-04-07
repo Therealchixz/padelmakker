@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { Check, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
-import { americanoOutcomeColors, americanoOutcomeForUserInMatch } from './americanoOutcomeColors'
+import {
+  americanoOutcomeColors,
+  americanoOutcomeForUserInMatch,
+  americanoViewerStatusLabel,
+  userIsOnCourtInAmericanoMatch,
+} from './americanoOutcomeColors'
 
 const font = "'Inter', sans-serif"
 
@@ -453,6 +458,8 @@ export function AmericanoResultsPanel({
               ? { ...m, team_a_score: resolved.a, team_b_score: resolved.b }
               : m
           const viewerOutcome = americanoOutcomeForUserInMatch(effectiveM, userIdByPartId, currentUserId, P)
+          const onCourt = userIsOnCourtInAmericanoMatch(m, userIdByPartId, currentUserId)
+          const statusLabel = americanoViewerStatusLabel(viewerOutcome, onCourt)
           const palKey =
             viewerOutcome === 'win' ? 'win' : viewerOutcome === 'loss' ? 'loss' : viewerOutcome === 'tie' ? 'tie' : 'neutral'
           const matchPal = americanoOutcomeColors[palKey]
@@ -486,6 +493,18 @@ export function AmericanoResultsPanel({
                   <div style={{ fontSize: 12, color: c.muted, marginTop: 4 }}>
                     Runde {m.round_number}
                     {isCreator ? ' · Registreret af dig' : ''}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: matchPal.text,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      marginTop: 8,
+                    }}
+                  >
+                    {statusLabel}
                   </div>
                 </div>
                 {isCreator && (
@@ -537,20 +556,6 @@ export function AmericanoResultsPanel({
               </div>
 
               <div style={{ paddingBottom: locked ? 8 : 4 }}>
-                {hasDisplayScores && isTie && (
-                  <div
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: '#64748B',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      marginBottom: 4,
-                    }}
-                  >
-                    Uafgjort
-                  </div>
-                )}
                 <TeamBlock
                   name1={n1}
                   name2={n2}

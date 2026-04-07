@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoMatchRow, AmericanoTournament } from './types'
-import { americanoOutcomeColors, americanoOutcomeForUserInMatch } from './americanoOutcomeColors'
+import {
+  americanoOutcomeColors,
+  americanoOutcomeForUserInMatch,
+  americanoViewerStatusLabel,
+  userIsOnCourtInAmericanoMatch,
+} from './americanoOutcomeColors'
 
 const font = "'Inter', sans-serif"
 
@@ -194,12 +199,15 @@ export function AmericanoCompletedSummary({ tournament, participants, currentUse
                     const b = m.team_b_score
                     const ok =
                       a != null && b != null && isValidScore(a, b, P)
-                    const tie = ok && a === b
                     const n1 = nameBy(m.team_a_p1)
                     const n2 = nameBy(m.team_a_p2)
                     const n3 = nameBy(m.team_b_p1)
                     const n4 = nameBy(m.team_b_p2)
-                    const vOut = americanoOutcomeForUserInMatch(m, userIdByPartId, currentUserId, P)
+                    const onCourt = userIsOnCourtInAmericanoMatch(m, userIdByPartId, currentUserId)
+                    const vOut = ok
+                      ? americanoOutcomeForUserInMatch(m, userIdByPartId, currentUserId, P)
+                      : 'neutral'
+                    const statusLabel = americanoViewerStatusLabel(vOut, onCourt)
                     const palKey =
                       vOut === 'win' ? 'win' : vOut === 'loss' ? 'loss' : vOut === 'tie' ? 'tie' : 'neutral'
                     const mpal = americanoOutcomeColors[palKey]
@@ -215,11 +223,21 @@ export function AmericanoCompletedSummary({ tournament, participants, currentUse
                           color: mpal.text,
                         }}
                       >
-                        <div style={{ fontWeight: 700, color: mpal.text, marginBottom: 6 }}>
+                        <div style={{ fontWeight: 700, color: mpal.text, marginBottom: 4 }}>
                           #{i + 1} · Runde {m.round_number}
-                          {tie ? (
-                            <span style={{ fontWeight: 600, opacity: 0.85, marginLeft: 8 }}>· Uafgjort</span>
-                          ) : null}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: mpal.text,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                            marginBottom: 8,
+                            opacity: 0.92,
+                          }}
+                        >
+                          {statusLabel}
                         </div>
                         <div style={{ lineHeight: 1.5 }}>
                           <span style={{ fontWeight: 600 }}>{n1}</span> &{' '}
