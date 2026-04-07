@@ -17,6 +17,18 @@
 --   - courts, court_slots (baner)
 -- =============================================================================
 
+-- Hvis profiles.elo_rating ikke nulstilles (fx Mike/Kevin forbliver 2000), har du typisk
+-- en trigger (fx protect_elo_fields / sync). Brug da denne variant med triggers slået fra:
+--
+-- BEGIN;
+-- SET LOCAL session_replication_role = 'replica';
+-- DELETE FROM public.elo_history;
+-- DELETE FROM public.match_results;
+-- DELETE FROM public.match_players;
+-- DELETE FROM public.matches;
+-- UPDATE public.profiles SET elo_rating = 1000, games_played = 0, games_won = 0;
+-- COMMIT;
+
 BEGIN;
 
 -- Rækkefølge pga. fremmednøgler (tilpas hvis dit skema afviger)

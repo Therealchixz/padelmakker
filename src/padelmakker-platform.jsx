@@ -2452,6 +2452,24 @@ function formatEloHistoryDate(dateStr) {
   return d.toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
 
+/** Kalenderdato YYYY-MM-DD i **lokal** tid (ikke UTC via toISOString — bruges til uge/måned ranking). */
+function formatLocalDateYMD(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** elo_history.date (date eller timestamptz) → YYYY-MM-DD til sammenligning med cutoff. */
+function eloHistoryRowDateKey(h) {
+  if (h?.date == null || h.date === "") return null;
+  const s = String(h.date).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const t = new Date(s);
+  if (Number.isNaN(t.getTime())) return s.length >= 10 ? s.slice(0, 10) : null;
+  return formatLocalDateYMD(t);
+}
+
 function EloGraph({ data }) {
   const svgRef = useRef(null);
   const [hoverIdx, setHoverIdx] = useState(null);
@@ -3015,19 +3033,19 @@ function RankingTab({ user }) {
     }
 
     const cutoff = period === "week" ? getMonday() : getMonthStart();
-    const cutoffStr = cutoff.toISOString().split("T")[0];
+    const cutoffStr = formatLocalDateYMD(cutoff);
 
-    // Sum ELO changes per player within the period
+    // Sum ELO changes per player within the period (lokal dato vs. cutoff — undgår UTC-forskydning)
     const periodStats = {};
     eloHistory.forEach(h => {
       if (h.old_rating == null || h.match_id == null) return;
-      if (h.date >= cutoffStr) {
-        const uid = String(h.user_id);
-        if (!periodStats[uid]) periodStats[uid] = { change: 0, games: 0, wins: 0 };
-        periodStats[uid].change += (h.change || 0);
-        periodStats[uid].games += 1;
-        if (h.result === "win") periodStats[uid].wins += 1;
-      }
+      const rowDay = eloHistoryRowDateKey(h);
+      if (rowDay == null || rowDay < cutoffStr) return;
+      const uid = String(h.user_id);
+      if (!periodStats[uid]) periodStats[uid] = { change: 0, games: 0, wins: 0 };
+      periodStats[uid].change += Number(h.change) || 0;
+      periodStats[uid].games += 1;
+      if (h.result === "win") periodStats[uid].wins += 1;
     });
 
     return [...players]
