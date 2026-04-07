@@ -75,8 +75,6 @@ body {
   background: linear-gradient(135deg, #1E3A5F 0%, #1D4ED8 50%, #3B82F6 100%);
   position: relative;
   overflow: hidden;
-  /* Blød overgang ned i hvid stats-sektion (matcher theme.surface) */
-  --pm-hero-fade-extra: 0px;
 }
 
 .pm-hero-gradient::before {
@@ -89,19 +87,29 @@ body {
   pointer-events: none;
 }
 
-.pm-hero-gradient::after {
+/* Kun under CTA — fade mod hvid stats-sektion (matcher theme.surface) */
+.pm-hero-fade-tail {
+  --pm-hero-fade-extra: 0px;
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: calc(clamp(72px, 14vw, 120px) + var(--pm-hero-fade-extra, 0px));
+  pointer-events: none;
+}
+
+.pm-hero-fade-tail::after {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
+  top: 0;
   bottom: 0;
-  z-index: 1;
-  height: calc(min(32vw, 200px) + var(--pm-hero-fade-extra, 0px));
-  pointer-events: none;
   background: linear-gradient(
     to bottom,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.35) 45%,
+    rgba(255, 255, 255, 0.2) 40%,
+    rgba(255, 255, 255, 0.75) 78%,
     #ffffff 100%
   );
 }

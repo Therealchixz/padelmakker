@@ -251,7 +251,7 @@ function LandingPage() {
   useEffect(() => {
     const el = heroRef.current;
     if (!el) return;
-    const maxExtra = 120;
+    const maxExtra = 100;
     const fadeStart = 24;
     const fadeRange = 200;
     const onScroll = () => {
@@ -292,29 +292,49 @@ function LandingPage() {
 
       {/* Hero */}
       <section
-        ref={heroRef}
         className="pm-hero-gradient"
-        style={{ paddingTop: "clamp(100px,18vw,140px)", paddingBottom: "clamp(60px,14vw,100px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", textAlign: "center", position: "relative" }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          paddingTop: "clamp(100px,18vw,140px)",
+          paddingLeft: 0,
+          paddingRight: 0,
+          paddingBottom: 0,
+          textAlign: "center",
+          position: "relative",
+        }}
       >
-        <div style={{ maxWidth: "800px", margin: "0 auto", position: "relative", zIndex: 2 }}>
-          <div className="pm-reveal" style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: "12px", fontWeight: 600, padding: "6px 16px", borderRadius: "20px", marginBottom: "28px", border: "1px solid rgba(255,255,255,0.25)", letterSpacing: "0.03em", backdropFilter: "blur(4px)" }}>
-            🇩🇰 Danmarks padel-platform
-          </div>
-          <h1 className="pm-reveal pm-delay-1" style={{ fontFamily: font, fontSize: "clamp(40px,8vw,76px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#fff", marginBottom: "24px" }}>
-            Find makker.<br />Book bane.<br /><span style={{ color: "#93C5FD" }}>Spil padel.</span>
-          </h1>
-          <p className="pm-reveal pm-delay-2" style={{ fontSize: "clamp(16px,3.8vw,19px)", color: "rgba(255,255,255,0.80)", maxWidth: "480px", margin: "0 auto clamp(36px,7vw,48px)", lineHeight: 1.65 }}>
-            Stop med at søge i Facebook-grupper. PadelMakker matcher dig med spillere på dit niveau — gratis.
-          </p>
-          <div className="pm-reveal pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={() => navigate("/opret")} style={{ fontFamily: font, fontSize: "16px", fontWeight: 700, padding: "14px 32px", borderRadius: "10px", border: "none", background: "#fff", color: theme.accent, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", letterSpacing: "-0.01em", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
-              Opret gratis profil <ArrowRight size={17} />
-            </button>
-            <button onClick={() => navigate("/login")} style={{ fontFamily: font, fontSize: "16px", fontWeight: 600, padding: "14px 28px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.1)", color: "#fff", cursor: "pointer", backdropFilter: "blur(4px)", letterSpacing: "-0.01em" }}>
-              Log ind
-            </button>
+        <div
+          style={{
+            flex: "1 1 auto",
+            paddingLeft: "clamp(16px,4vw,24px)",
+            paddingRight: "clamp(16px,4vw,24px)",
+            paddingBottom: "clamp(28px,6vw,44px)",
+            position: "relative",
+            zIndex: 2,
+          }}
+        >
+          <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+            <div className="pm-reveal" style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: "12px", fontWeight: 600, padding: "6px 16px", borderRadius: "20px", marginBottom: "28px", border: "1px solid rgba(255,255,255,0.25)", letterSpacing: "0.03em", backdropFilter: "blur(4px)" }}>
+              🇩🇰 Danmarks padel-platform
+            </div>
+            <h1 className="pm-reveal pm-delay-1" style={{ fontFamily: font, fontSize: "clamp(40px,8vw,76px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#fff", marginBottom: "24px" }}>
+              Find makker.<br />Book bane.<br /><span style={{ color: "#93C5FD" }}>Spil padel.</span>
+            </h1>
+            <p className="pm-reveal pm-delay-2" style={{ fontSize: "clamp(16px,3.8vw,19px)", color: "rgba(255,255,255,0.80)", maxWidth: "480px", margin: "0 auto clamp(36px,7vw,48px)", lineHeight: 1.65 }}>
+              Stop med at søge i Facebook-grupper. PadelMakker matcher dig med spillere på dit niveau — gratis.
+            </p>
+            <div className="pm-reveal pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={() => navigate("/opret")} style={{ fontFamily: font, fontSize: "16px", fontWeight: 700, padding: "14px 32px", borderRadius: "10px", border: "none", background: "#fff", color: theme.accent, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", letterSpacing: "-0.01em", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
+                Opret gratis profil <ArrowRight size={17} />
+              </button>
+              <button onClick={() => navigate("/login")} style={{ fontFamily: font, fontSize: "16px", fontWeight: 600, padding: "14px 28px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.1)", color: "#fff", cursor: "pointer", backdropFilter: "blur(4px)", letterSpacing: "-0.01em" }}>
+                Log ind
+              </button>
+            </div>
           </div>
         </div>
+        <div ref={heroRef} className="pm-hero-fade-tail" aria-hidden />
       </section>
 
       {/* Stats banner */}
