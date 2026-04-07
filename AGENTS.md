@@ -41,7 +41,11 @@ Without these, the app loads the UI with placeholder Supabase credentials and da
 
 ### Key directories
 
-- `src/padelmakker-platform.jsx` — Main application shell and dashboard tabs (still large; helpers split into `src/lib/` and `src/components/EloGraph.jsx`)
+- `src/padelmakker-platform.jsx` — App shell: auth loading, toast, routes
+- `src/pages/` — Forside (`LandingPage`), login, onboarding, reset password
+- `src/dashboard/` — Dashboard layout + faner (`HomeTab`, `KampeTab`, `ProfilTab`, …) og delte modaler
+- `src/lib/` — Supabase, tema, ELO-hjælpere, notifikations-RPC, m.m.
+- `src/components/EloGraph.jsx` — ELO-graf på profil
 - `src/lib/supabase.js` — Supabase client setup
 - `src/lib/AuthContext.jsx` — Authentication context provider
 - `src/api/base44Client.js` — CRUD entity helpers for Supabase tables
