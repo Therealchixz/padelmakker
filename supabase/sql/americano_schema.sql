@@ -64,10 +64,18 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.americano_tournaments TO authenti
 GRANT SELECT, INSERT, DELETE ON public.americano_participants TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.americano_matches TO authenticated;
 
--- Alle loggede må se turneringer
+-- Synlighed: åbne turneringer for alle loggede; playing/completed kun opretter + deltagere
 DROP POLICY IF EXISTS americano_tournaments_select ON public.americano_tournaments;
 CREATE POLICY americano_tournaments_select ON public.americano_tournaments
-  FOR SELECT TO authenticated USING (true);
+  FOR SELECT TO authenticated USING (
+    status = 'registration'
+    OR creator_id = (select auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM public.americano_participants p
+      WHERE p.tournament_id = americano_tournaments.id
+        AND p.user_id = (select auth.uid())
+    )
+  );
 
 DROP POLICY IF EXISTS americano_tournaments_insert ON public.americano_tournaments;
 CREATE POLICY americano_tournaments_insert ON public.americano_tournaments
@@ -81,10 +89,25 @@ DROP POLICY IF EXISTS americano_tournaments_delete ON public.americano_tournamen
 CREATE POLICY americano_tournaments_delete ON public.americano_tournaments
   FOR DELETE TO authenticated USING ((select auth.uid()) = creator_id);
 
--- Deltagere: alle kan læse; bruger kan melde sig til / afmelde sig selv
+-- Deltagere: alle kan læse under tilmelding; ellers kun opretter, egne rækker og medspillere
 DROP POLICY IF EXISTS americano_participants_select ON public.americano_participants;
 CREATE POLICY americano_participants_select ON public.americano_participants
-  FOR SELECT TO authenticated USING (true);
+  FOR SELECT TO authenticated USING (
+    user_id = (select auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM public.americano_tournaments t
+      WHERE t.id = americano_participants.tournament_id
+        AND (
+          t.status = 'registration'
+          OR t.creator_id = (select auth.uid())
+        )
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.americano_participants p2
+      WHERE p2.tournament_id = americano_participants.tournament_id
+        AND p2.user_id = (select auth.uid())
+    )
+  );
 
 DROP POLICY IF EXISTS americano_participants_insert ON public.americano_participants;
 CREATE POLICY americano_participants_insert ON public.americano_participants
@@ -94,10 +117,21 @@ DROP POLICY IF EXISTS americano_participants_delete ON public.americano_particip
 CREATE POLICY americano_participants_delete ON public.americano_participants
   FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
 
--- Kampe: alle kan læse; kun opretter opdaterer (resultater) — enkelt i v1
+-- Kampe: kun opretter og deltagere kan læse (ikke hele verden)
 DROP POLICY IF EXISTS americano_matches_select ON public.americano_matches;
 CREATE POLICY americano_matches_select ON public.americano_matches
-  FOR SELECT TO authenticated USING (true);
+  FOR SELECT TO authenticated USING (
+    EXISTS (
+      SELECT 1 FROM public.americano_tournaments t
+      WHERE t.id = americano_matches.tournament_id
+        AND t.creator_id = (select auth.uid())
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.americano_participants p
+      WHERE p.tournament_id = americano_matches.tournament_id
+        AND p.user_id = (select auth.uid())
+    )
+  );
 
 DROP POLICY IF EXISTS americano_matches_insert_creator ON public.americano_matches;
 CREATE POLICY americano_matches_insert_creator ON public.americano_matches
