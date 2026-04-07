@@ -1,0 +1,90 @@
+-- =============================================================================
+-- Notifikationer: RPC så spillere kan underrette hinanden (RLS blokerer direkte insert)
+-- =============================================================================
+-- Problem: Appen kalder insert på public.notifications med user_id = modtageren.
+-- Som almindelig bruger må man typisk kun INSERT med user_id = auth.uid().
+-- Derfor fejler "underret opretter når nogen tilmelder sig" stille (console.warn).
+--
+-- Kør i Supabase → SQL Editor.
+--
+-- Hvis tabellen mangler, kør først (tilpas hvis I allerede har notifications):
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  type text NOT NULL DEFAULT 'info',
+  title text NOT NULL,
+  body text,
+  match_id uuid REFERENCES public.matches (id) ON DELETE SET NULL,
+  read boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+-- Læs egne (behold hvis I allerede har policies — undgå dubletter)
+DROP POLICY IF EXISTS "notifications_select_own" ON public.notifications;
+CREATE POLICY "notifications_select_own"
+  ON public.notifications FOR SELECT TO authenticated
+  USING ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "notifications_update_own" ON public.notifications;
+CREATE POLICY "notifications_update_own"
+  ON public.notifications FOR UPDATE TO authenticated
+  USING ((select auth.uid()) = user_id)
+  WITH CHECK ((select auth.uid()) = user_id);
+
+-- INSERT kun via RPC (SECURITY DEFINER) — ingen åben insert-policy nødvendig
+
+-- =============================================================================
+-- RPC
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION public.create_notification_for_user(
+  p_user_id uuid,
+  p_type text,
+  p_title text,
+  p_body text,
+  p_match_id uuid DEFAULT NULL
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF (SELECT auth.uid()) IS NULL THEN
+    RAISE EXCEPTION 'Ikke logget ind';
+  END IF;
+
+  -- Underret sig selv
+  IF p_user_id = (SELECT auth.uid()) THEN
+    INSERT INTO public.notifications (user_id, type, title, body, match_id, read)
+    VALUES (p_user_id, p_type, p_title, p_body, p_match_id, false);
+    RETURN;
+  END IF;
+
+  -- Underret andre kun i kamp-kontekst du er del af
+  IF p_match_id IS NULL THEN
+    RAISE EXCEPTION 'Manglende match_id for notifikation til anden bruger';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.match_players mp
+    WHERE mp.match_id = p_match_id AND mp.user_id = (SELECT auth.uid())
+  ) OR EXISTS (
+    SELECT 1 FROM public.matches m
+    WHERE m.id = p_match_id AND m.creator_id = (SELECT auth.uid())
+  ) THEN
+    INSERT INTO public.notifications (user_id, type, title, body, match_id, read)
+    VALUES (p_user_id, p_type, p_title, p_body, p_match_id, false);
+    RETURN;
+  END IF;
+
+  RAISE EXCEPTION 'Ingen adgang til at sende denne notifikation';
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.create_notification_for_user(uuid, text, text, text, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_notification_for_user(uuid, text, text, text, uuid) TO authenticated;
