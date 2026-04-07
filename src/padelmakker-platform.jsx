@@ -1136,6 +1136,36 @@ function statsFromEloHistoryRows(rows) {
 }
 
 /**
+ * ELO pr. bruger ud fra elo_history (samme som profil/ranking). Virker selv når RLS kun tillader
+ * at læse egne profiles — historikken er typisk synlig for alle authenticated (til ranking).
+ */
+async function fetchEloByUserIdFromHistory(userIds) {
+  const ids = [...new Set((userIds || []).map((x) => String(x)).filter(Boolean))];
+  const out = {};
+  if (ids.length === 0) return out;
+  const chunkSize = 100;
+  for (let i = 0; i < ids.length; i += chunkSize) {
+    const chunk = ids.slice(i, i + chunkSize);
+    const { data, error } = await supabase.from("elo_history").select("*").in("user_id", chunk);
+    if (error) {
+      console.warn("elo_history batch for Kampe:", error.message);
+      continue;
+    }
+    const byUser = {};
+    for (const h of data || []) {
+      const u = String(h.user_id);
+      if (!byUser[u]) byUser[u] = [];
+      byUser[u].push(h);
+    }
+    for (const uid of chunk) {
+      const st = statsFromEloHistoryRows(byUser[String(uid)] || []);
+      if (st != null) out[String(uid)] = st.elo;
+    }
+  }
+  return out;
+}
+
+/**
  * Frisk profiles-række + rated elo_history i ét trin. Ved syncKey (opdateret profil i context)
  * vises loading igen så vi ikke flasher forældede tal. Ved fokus/genvisning opdateres stille.
  */
@@ -1816,6 +1846,8 @@ function KampeTab({ user, showToast, tabActive = true }) {
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [creating, setCreating]       = useState(false);
   const [busyId, setBusyId]           = useState(null);
+  /** ELO fra elo_history pr. user_id — samme som profil; virker på tværs af profiler når RLS skjuler andres profiles.elo_rating */
+  const [eloFromHistoryByUserId, setEloFromHistoryByUserId] = useState({});
   const [eloByUserId, setEloByUserId] = useState({});
   const [teamSelectMatch, setTeamSelectMatch] = useState(null);
   const [resultMatch, setResultMatch] = useState(null);
@@ -1919,33 +1951,16 @@ function KampeTab({ user, showToast, tabActive = true }) {
         mm[mp.match_id].push(mp);
       });
 
-      /** Frisk elo_rating fra DB for alle på banen — Profile.filter() kan være forældet (forkert modstander-ELO). */
-      const onCourtIds = new Set();
+      /** ELO fra elo_history for alle på banen (+ dig) — undgår RLS hvor kun egen profiles-række returneres ved .in("id"). */
+      const idsForHist = new Set();
       for (const arr of Object.values(mm)) {
         for (const row of arr || []) {
-          if (row?.user_id) onCourtIds.add(String(row.user_id));
+          if (row?.user_id) idsForHist.add(String(row.user_id));
         }
       }
-      const idList = [...onCourtIds];
-      const chunkSize = 120;
-      for (let i = 0; i < idList.length; i += chunkSize) {
-        const chunk = idList.slice(i, i + chunkSize);
-        const { data: freshEloRows, error: feErr } = await supabase
-          .from("profiles")
-          .select("id, elo_rating")
-          .in("id", chunk);
-        if (feErr) {
-          console.warn("profiles elo refresh:", feErr.message);
-          continue;
-        }
-        for (const row of freshEloRows || []) {
-          const pid = String(row.id);
-          eloMap[pid] = eloOf(row);
-          if (pById[pid]) {
-            pById[pid] = { ...pById[pid], elo_rating: row.elo_rating };
-          }
-        }
-      }
+      idsForHist.add(String(user.id));
+      const histEloMap = await fetchEloByUserIdFromHistory([...idsForHist]);
+      setEloFromHistoryByUserId(histEloMap);
 
       setEloByUserId(eloMap);
       setProfilesById(pById);
@@ -2230,6 +2245,8 @@ function KampeTab({ user, showToast, tabActive = true }) {
           const myUid = String(user.id);
           const playerElo = (p) => {
             const uid = String(p.user_id);
+            const fromHist = eloFromHistoryByUserId[uid];
+            if (fromHist != null) return fromHist;
             if (uid === myUid) return myElo;
             return eloByUserId[uid] ?? 1000;
           };
