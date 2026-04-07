@@ -380,12 +380,6 @@ export function AmericanoResultsPanel({
     }
   }
 
-  if (loading) {
-    return <div style={{ fontSize: 12, color: '#8494A7', marginTop: 12 }}>Henter kampe…</div>
-  }
-
-  const leaderboard = buildLeaderboard(participants, matches, scores, P)
-
   const userIdByPartId = useMemo(() => {
     const m = new Map<string, string>()
     participants.forEach((p) => m.set(p.id, p.user_id))
@@ -398,6 +392,12 @@ export function AmericanoResultsPanel({
       return b.court_index - a.court_index
     })
   }, [matches])
+
+  const leaderboard = buildLeaderboard(participants, matches, scores, P)
+
+  if (loading) {
+    return <div style={{ fontSize: 12, color: '#8494A7', marginTop: 12 }}>Henter kampe…</div>
+  }
 
   return (
     <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.line}` }}>
