@@ -4,6 +4,7 @@ import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
 import { normalizeProfileRow, normalizeStringArrayField, validateFirstLastName } from "./lib/profileUtils";
+import { AmericanoTab } from "./features/americano/AmericanoTab";
 
 /** Sikker liste til .map() selv hvis profil kommer uden normalisering */
 function availabilityTags(profileLike) {
@@ -1760,6 +1761,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [profilesById, setProfilesById] = useState({});
   const [viewTab, setViewTab]         = useState("open"); // "open" | "active" | "completed"
+  const [kampeFormat, setKampeFormat] = useState("padel"); // "padel" | "americano"
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
@@ -2206,13 +2208,38 @@ function KampeTab({ user, showToast, tabActive = true }) {
 
   return (
     <div>
-      <div className="pm-kampe-head" style={{ marginBottom: "20px" }}>
+      <div className="pm-kampe-head" style={{ marginBottom: "16px" }}>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Kampe</h2>
-        <button onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
-          {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
+        {kampeFormat === "padel" && (
+          <button onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
+            {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={() => { setKampeFormat("padel"); setShowCreate(false); }}
+          style={{ ...btn(kampeFormat === "padel"), padding: "8px 16px", fontSize: "13px" }}
+        >
+          Almindelig padel (2v2)
+        </button>
+        <button
+          type="button"
+          onClick={() => { setKampeFormat("americano"); setShowCreate(false); }}
+          style={{ ...btn(kampeFormat === "americano"), padding: "8px 16px", fontSize: "13px" }}
+        >
+          Americano
         </button>
       </div>
 
+      {kampeFormat === "americano" && (
+        <AmericanoTab user={user} showToast={showToast} />
+      )}
+
+      {kampeFormat === "padel" && (
+      <>
       {/* View tabs */}
       <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
         {[
@@ -2276,7 +2303,7 @@ function KampeTab({ user, showToast, tabActive = true }) {
       )}
 
       {/* Result input modal */}
-      {resultMatch && (() => {
+      {resultMatch && kampeFormat === "padel" && (() => {
         const mp = matchPlayers[resultMatch] || [];
         const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
         const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
@@ -2294,6 +2321,8 @@ function KampeTab({ user, showToast, tabActive = true }) {
 
       {/* Player profile modal */}
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
+      </>
+      )}
     </div>
   );
 }
@@ -2588,7 +2617,8 @@ function ProfilTab({ user, showToast, setTab }) {
           {statsLoading ? (
             <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px", marginBottom: "20px" }}>Indlæser statistik…</div>
           ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
+          <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "12px" }}>
             {[
               { label: "ELO", value: elo, color: theme.accent },
               { label: "Kampe", value: games, color: theme.blue },
@@ -2601,6 +2631,20 @@ function ProfilTab({ user, showToast, setTab }) {
               </div>
             ))}
           </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px", marginBottom: "20px" }}>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: "#FFFBEB", borderRadius: "8px", border: "1px solid " + theme.warm + "33" }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: theme.warm }}>{Number(user.americano_wins) || 0}</div>
+              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano sejre</div>
+            </div>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: "#F8FAFC", borderRadius: "8px", border: "1px solid " + theme.border }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: theme.textMid }}>{Number(user.americano_losses) || 0}</div>
+              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano tab</div>
+            </div>
+          </div>
+          <p style={{ fontSize: "10px", color: theme.textLight, marginTop: "-12px", marginBottom: "16px", lineHeight: 1.4 }}>
+            Americano tæller ikke i ELO — kun i felterne ovenfor (opdateres når turneringsresultater gemmes).
+          </p>
+          </>
           )}
 
           {/* Availability */}
