@@ -87,19 +87,4 @@ export const Profile = createEntity('profiles', { normalizeRow: normalizeProfile
 export const Court = createEntity('courts')
 export const CourtSlot = createEntity('court_slots')
 export const Match = createEntity('matches')
-export const MatchResult = createEntity('match_results')
-export const EloHistory = createEntity('elo_history')
-export const Message = createEntity('messages')
 export const Booking = createEntity('bookings')
-
-// Also export a convenience object for dynamic access by table name
-export const db = {
-  profiles: Profile,
-  courts: Court,
-  court_slots: CourtSlot,
-  matches: Match,
-  match_results: MatchResult,
-  elo_history: EloHistory,
-  messages: Message,
-  bookings: Booking,
-}
