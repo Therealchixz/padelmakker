@@ -4,6 +4,7 @@ import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
 import { normalizeProfileRow, normalizeStringArrayField, validateFirstLastName } from "./lib/profileUtils";
+import { readKampeSessionPrefs, mergeKampeSessionPrefs } from "./lib/kampeSessionPrefs";
 import { AmericanoTab } from "./features/americano/AmericanoTab";
 
 /** Sikker liste til .map() selv hvis profil kommer uden normalisering */
@@ -1760,8 +1761,16 @@ function KampeTab({ user, showToast, tabActive = true }) {
   const [resultMatch, setResultMatch] = useState(null);
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [profilesById, setProfilesById] = useState({});
-  const [viewTab, setViewTab]         = useState("open"); // "open" | "active" | "completed"
-  const [kampeFormat, setKampeFormat] = useState("padel"); // "padel" | "americano"
+  const [viewTab, setViewTab]         = useState(() => {
+    const s = readKampeSessionPrefs(user.id);
+    if (s?.view === "open" || s?.view === "active" || s?.view === "completed") return s.view;
+    return "open";
+  }); // "open" | "active" | "completed"
+  const [kampeFormat, setKampeFormat] = useState(() => {
+    const s = readKampeSessionPrefs(user.id);
+    if (s?.format === "padel" || s?.format === "americano") return s.format;
+    return "padel";
+  }); // "padel" | "americano"
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
@@ -1771,6 +1780,15 @@ function KampeTab({ user, showToast, tabActive = true }) {
   });
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    mergeKampeSessionPrefs(user.id, { format: kampeFormat, view: viewTab });
+  }, [user.id, kampeFormat, viewTab]);
+
+  const persistAmericanoSubTab = useCallback(
+    (v) => mergeKampeSessionPrefs(user.id, { americanoView: v }),
+    [user.id]
+  );
 
   /* Notifikation: ?focus=<matchId> — vælg underfane, scroll til kort, fjern query */
   useEffect(() => {
@@ -2237,7 +2255,18 @@ function KampeTab({ user, showToast, tabActive = true }) {
       ) : (
       <>
       {kampeFormat === "americano" && (
-        <AmericanoTab profile={user} showToast={showToast} />
+        <AmericanoTab
+          profile={user}
+          showToast={showToast}
+          initialSubTab={(() => {
+            const s = readKampeSessionPrefs(user.id);
+            if (s?.americanoView === "open" || s?.americanoView === "playing" || s?.americanoView === "completed") {
+              return s.americanoView;
+            }
+            return undefined;
+          })()}
+          onAmericanoSubTabChange={persistAmericanoSubTab}
+        />
       )}
 
       {kampeFormat === "padel" && (
@@ -2643,10 +2672,14 @@ function ProfilTab({ user, showToast, setTab }) {
               </div>
             ))}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px", marginBottom: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "20px" }}>
             <div style={{ textAlign: "center", padding: "10px 4px", background: "#FFFBEB", borderRadius: "8px", border: "1px solid " + theme.warm + "33" }}>
               <div style={{ fontSize: "16px", fontWeight: 800, color: theme.warm }}>{Number(user.americano_wins) || 0}</div>
               <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano sejre</div>
+            </div>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: "#F1F5F9", borderRadius: "8px", border: "1px solid " + theme.border }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: theme.textMid }}>{Number(user.americano_draws) || 0}</div>
+              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano uafgjort</div>
             </div>
             <div style={{ textAlign: "center", padding: "10px 4px", background: "#F8FAFC", borderRadius: "8px", border: "1px solid " + theme.border }}>
               <div style={{ fontSize: "16px", fontWeight: 800, color: theme.textMid }}>{Number(user.americano_losses) || 0}</div>
@@ -2654,7 +2687,7 @@ function ProfilTab({ user, showToast, setTab }) {
             </div>
           </div>
           <p style={{ fontSize: "10px", color: theme.textLight, marginTop: "-12px", marginBottom: "16px", lineHeight: 1.4 }}>
-            Americano tæller ikke i ELO — kun i felterne ovenfor (opdateres når turneringsresultater gemmes).
+            Americano tæller ikke i ELO — sejr/tab/uafgjort opdateres når turneringsresultater gemmes (uafgjort = uafgjort kamp på banen, fx 8–8 ved 16).
           </p>
           </>
           )}

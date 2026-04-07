@@ -18,9 +18,14 @@ type ProfileLike = {
   email?: string | null
 }
 
+type AmericanoSubTab = 'open' | 'playing' | 'completed'
+
 type Props = {
   profile?: ProfileLike | null
   showToast: (msg: string) => void
+  /** Gendan underfane efter tab/fokus/genindlæsning i samme session */
+  initialSubTab?: AmericanoSubTab
+  onAmericanoSubTabChange?: (tab: AmericanoSubTab) => void
 }
 
 type ParticipantListRow = {
@@ -42,7 +47,7 @@ function resolveName(p: ProfileLike | null | undefined, authEmail?: string | nul
   return 'Spiller'
 }
 
-export function AmericanoTab({ profile, showToast }: Props) {
+export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSubTabChange }: Props) {
   const { user: authUser, refreshProfileQuiet } = useAuth()
   const authEmail =
     authUser && typeof authUser === 'object' && 'email' in authUser
@@ -60,7 +65,7 @@ export function AmericanoTab({ profile, showToast }: Props) {
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [americanoView, setAmericanoView] = useState<'open' | 'playing' | 'completed'>('open')
+  const [americanoView, setAmericanoView] = useState<AmericanoSubTab>(() => initialSubTab ?? 'open')
   const [participantsByTournament, setParticipantsByTournament] = useState<
     Record<string, ParticipantListRow[]>
   >({})
@@ -146,6 +151,12 @@ export function AmericanoTab({ profile, showToast }: Props) {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    if (initialSubTab === 'open' || initialSubTab === 'playing' || initialSubTab === 'completed') {
+      setAmericanoView(initialSubTab)
+    }
+  }, [initialSubTab])
 
   const startTournament = async (t: AmericanoTournament) => {
     if (String(t.creator_id) !== String(profileId)) {
@@ -339,7 +350,15 @@ export function AmericanoTab({ profile, showToast }: Props) {
           { id: 'playing' as const, label: `I gang (${playingAmericanos.length})` },
           { id: 'completed' as const, label: `Afsluttede (${completedAmericanos.length})` },
         ].map((tab) => (
-          <button key={tab.id} type="button" onClick={() => setAmericanoView(tab.id)} style={subTabBtn(americanoView === tab.id)}>
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => {
+              setAmericanoView(tab.id)
+              onAmericanoSubTabChange?.(tab.id)
+            }}
+            style={subTabBtn(americanoView === tab.id)}
+          >
             {tab.label}
           </button>
         ))}
