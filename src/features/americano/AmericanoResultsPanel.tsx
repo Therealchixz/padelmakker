@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Check, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
@@ -380,18 +380,13 @@ export function AmericanoResultsPanel({
     }
   }
 
-  const userIdByPartId = useMemo(() => {
-    const m = new Map<string, string>()
-    participants.forEach((p) => m.set(p.id, p.user_id))
-    return m
-  }, [participants])
+  const userIdByPartId = new Map<string, string>()
+  participants.forEach((p) => userIdByPartId.set(p.id, p.user_id))
 
-  const matchesDisplay = useMemo(() => {
-    return [...matches].sort((a, b) => {
-      if (b.round_number !== a.round_number) return b.round_number - a.round_number
-      return b.court_index - a.court_index
-    })
-  }, [matches])
+  const matchesDisplay = [...matches].sort((a, b) => {
+    if (b.round_number !== a.round_number) return b.round_number - a.round_number
+    return b.court_index - a.court_index
+  })
 
   const leaderboard = buildLeaderboard(participants, matches, scores, P)
 
