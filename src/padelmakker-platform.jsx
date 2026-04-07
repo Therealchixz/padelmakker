@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
-import { normalizeProfileRow, normalizeStringArrayField, validateDisplayName } from "./lib/profileUtils";
+import { normalizeProfileRow, normalizeStringArrayField, validateFirstLastName } from "./lib/profileUtils";
 
 /** Sikker liste til .map() selv hvis profil kommer uden normalisering */
 function availabilityTags(profileLike) {
@@ -467,7 +467,7 @@ function OnboardingPage({ onComplete }) {
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ name: "", email: "", password: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
   const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
 
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -475,7 +475,7 @@ function OnboardingPage({ onComplete }) {
   const canNext = () => {
     if (step === 0)
       return (
-        validateDisplayName(form.name).valid &&
+        validateFirstLastName(form.first_name, form.last_name).valid &&
         form.email.trim() &&
         form.password.trim() &&
         form.birth_year.length === 4
@@ -488,14 +488,15 @@ function OnboardingPage({ onComplete }) {
   const finish = async () => {
     setSubmitting(true); setErr("");
     try {
-      const nameCheck = validateDisplayName(form.name);
+      const nameCheck = validateFirstLastName(form.first_name, form.last_name);
       if (!nameCheck.valid) {
         setErr(nameCheck.message);
         return;
       }
+      const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
       await signUp(form.email.trim(), form.password, {
-        full_name: sanitizeText(form.name), level: levelNum,
+        full_name: sanitizeText(displayName), level: levelNum,
         play_style: form.style, area: form.area, availability: form.availability,
         bio: sanitizeText(form.bio), avatar: form.avatar, birth_year: parseInt(form.birth_year) || null,
       });
@@ -516,10 +517,12 @@ function OnboardingPage({ onComplete }) {
     <div key={0}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Velkommen! 👋</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Lad os oprette din profil.</p>
-      <label style={labelStyle}>Dit navn</label>
-      <input value={form.name}     onChange={e => set("name", e.target.value)}     placeholder="F.eks. Mikkel P."  style={{ ...inputStyle, marginBottom: "6px" }} />
+      <label style={labelStyle}>Fornavn</label>
+      <input value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
+      <label style={labelStyle}>Efternavn</label>
+      <input value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
       <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
-        Brug dit rigtige for- og efternavn (kun bogstaver og almindelige tegn).
+        Begge felter skal udfyldes. Dobbeltnavne med bindestreg er ok (f.eks. Anne-Marie). Samme krav som under profil — ingen tastatur-gibberish.
       </p>
       <label style={labelStyle}>Email</label>
       <input value={form.email}    onChange={e => set("email", e.target.value)}    placeholder="din@email.dk"      type="email"    style={{ ...inputStyle, marginBottom: "14px" }} />
@@ -2069,8 +2072,18 @@ function KampeTab({ user, showToast }) {
 /* ═══════════════════════════════════════════════════
    PROFIL TAB
 ═══════════════════════════════════════════════════ */
+function splitDisplayNameToFirstLast(full) {
+  const t = String(full || "").trim();
+  const i = t.indexOf(" ");
+  if (i === -1) return { first_name: t, last_name: "" };
+  return { first_name: t.slice(0, i).trim(), last_name: t.slice(i + 1).trim() };
+}
+
 function profileFormState(p) {
+  const { first_name, last_name } = splitDisplayNameToFirstLast(p.full_name || p.name || "");
   return {
+    first_name,
+    last_name,
     full_name: p.full_name || p.name || "",
     area: p.area || "København",
     play_style: p.play_style || "Ved ikke endnu",
@@ -2289,16 +2302,17 @@ function ProfilTab({ user, showToast, setTab }) {
   });
 
   const handleSave = async () => {
-    const nameCheck = validateDisplayName(form.full_name);
+    const nameCheck = validateFirstLastName(form.first_name, form.last_name);
     if (!nameCheck.valid) {
       showToast(nameCheck.message);
       return;
     }
+    const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
     setSaving(true);
     try {
       await updateProfile({
-        full_name: sanitizeText(form.full_name.trim()),
-        name: sanitizeText(form.full_name.trim()),
+        full_name: sanitizeText(displayName),
+        name: sanitizeText(displayName),
         area: form.area,
         play_style: form.play_style,
         bio: sanitizeText(form.bio.trim()),
@@ -2469,10 +2483,12 @@ function ProfilTab({ user, showToast, setTab }) {
         </div>
 
         {/* Name */}
-        <label style={labelStyle}>Navn</label>
-        <input value={form.full_name} onChange={e => set("full_name", e.target.value)} placeholder="F.eks. Mikkel Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
+        <label style={labelStyle}>Fornavn</label>
+        <input value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
+        <label style={labelStyle}>Efternavn</label>
+        <input value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
         <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
-          Brug dit rigtige navn som andre spillere kan genkende.
+          Begge skal udfyldes. Dobbeltnavne: brug bindestreg i ét felt (Anne-Marie). Samme validering som ved oprettelse.
         </p>
 
         {/* Birth year */}
