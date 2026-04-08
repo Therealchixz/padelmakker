@@ -554,22 +554,29 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       <div className="pm-kampe-head" style={{ marginBottom: "12px" }}>
         <div
           style={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "1fr auto",
             alignItems: "center",
-            justifyContent: "space-between",
             gap: "12px",
-            flexWrap: "wrap",
             minHeight: "44px",
           }}
         >
-          <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), margin: 0, lineHeight: 1.2 }}>Kampe</h2>
+          <h2
+            style={{
+              ...heading("clamp(20px,4.5vw,24px)"),
+              margin: 0,
+              lineHeight: 1.2,
+              minWidth: 0,
+            }}
+          >
+            Kampe
+          </h2>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "flex-end",
               minHeight: "40px",
-              marginLeft: "auto",
             }}
           >
             {!loadingMatches && kampeFormat === "padel" && (
