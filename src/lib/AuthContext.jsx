@@ -188,11 +188,15 @@ export function AuthProvider({ children }) {
     init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, s) => {
+      (event, s) => {
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) loadProfile(s.user)
-        else {
+        if (s?.user) {
+          // TOKEN_REFRESHED sker ofte når fanen bliver aktiv igen — uden quiet bliver
+          // profileLoading true og hele appen erstattes af spinner (blink).
+          const quietRefresh = event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED'
+          loadProfile(s.user, { quiet: quietRefresh })
+        } else {
           profileReqId.current += 1
           setProfile(null)
           setProfileLoading(false)
