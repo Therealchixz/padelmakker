@@ -227,17 +227,18 @@ export function useProfileEloBundle(userId, syncKey) {
   }, [userId, syncKey, fetchBundle]);
 
   useEffect(() => {
+    let lastVisFetch = 0;
+    const throttleMs = 120000;
     const onVis = () => {
-      if (document.visibilityState === 'visible' && userId) fetchBundle(false);
-    };
-    const onFocus = () => {
-      if (userId) fetchBundle(false);
+      if (document.visibilityState !== 'visible' || !userId) return;
+      const now = Date.now();
+      if (now - lastVisFetch < throttleMs) return;
+      lastVisFetch = now;
+      fetchBundle(false);
     };
     document.addEventListener('visibilitychange', onVis);
-    window.addEventListener('focus', onFocus);
     return () => {
       document.removeEventListener('visibilitychange', onVis);
-      window.removeEventListener('focus', onFocus);
     };
   }, [userId, fetchBundle]);
 
