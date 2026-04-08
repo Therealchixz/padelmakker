@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Court, CourtSlot, Booking } from '../api/base44Client';
 import { font, theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
-import { MapPin, Building2, Sun, Star, Clock } from 'lucide-react';
+import { externalBookingUrlForCourt } from '../lib/externalCourtBooking';
+import { MapPin, Building2, Sun, Star, Clock, ExternalLink } from 'lucide-react';
 
 export function BanerTab({ user, showToast }) {
   const [filterType, setFilterType] = useState("all");
@@ -49,6 +50,7 @@ export function BanerTab({ user, showToast }) {
         {filtered.map(c => {
           const cs    = slots[c.id] || [];
           const times = [...new Set(cs.map(s => s.time))].sort().slice(0, 8);
+          const externalBook = externalBookingUrlForCourt(c);
           return (
             <div key={c.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
@@ -65,7 +67,33 @@ export function BanerTab({ user, showToast }) {
                 <span style={{ fontWeight: 600, color: theme.text }}>{c.price_per_hour} kr/t</span>
                 <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={12} /> {cs.length} ledige tider</span>
               </div>
-              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              {externalBook && (
+                <div style={{ marginBottom: "14px" }}>
+                  <a
+                    href={externalBook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      ...btn(true),
+                      width: "100%",
+                      justifyContent: "center",
+                      textDecoration: "none",
+                      boxSizing: "border-box",
+                      fontSize: "13px",
+                    }}
+                  >
+                    <ExternalLink size={15} />
+                    Se ledige tider og book
+                  </a>
+                  <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "8px", lineHeight: 1.45, marginBottom: 0 }}>
+                    Åbner klubbens booking (Halbooking) i et nyt vindue — betaling og bekræftelse sker der.
+                  </p>
+                </div>
+              )}
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                {times.length > 0 && (
+                  <span style={{ fontSize: "11px", fontWeight: 600, color: theme.textLight, width: "100%", marginBottom: "2px" }}>Book i PadelMakker (demo)</span>
+                )}
                 {times.length > 0 ? times.map(t => (
                   <button key={t} onClick={async () => {
                     try {
