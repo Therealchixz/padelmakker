@@ -29,6 +29,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const { profileFresh: kampeProfileFresh, ratedRows: kampeRatedRows, reloadProfileEloBundle: reloadKampeEloBundle } =
     useProfileEloBundle(user.id, eloSyncKeyKampe);
   const [showCreate, setShowCreate]   = useState(false);
+  const [showAmericanoCreate, setShowAmericanoCreate] = useState(false);
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
   const [matchPlayers, setMatchPlayers] = useState({});
@@ -550,26 +551,41 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   return (
     <div>
-      <div className="pm-kampe-head" style={{ marginBottom: "16px" }}>
-        <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Kampe</h2>
-        {kampeFormat === "padel" && !loadingMatches && (
-          <button onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
-            {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
-          </button>
-        )}
+      <div className="pm-kampe-head" style={{ marginBottom: "12px", minHeight: "44px" }}>
+        <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), lineHeight: 1.2 }}>Kampe</h2>
+        <div className="pm-kampe-head-actions" style={{ minHeight: "40px" }}>
+          {!loadingMatches && kampeFormat === "padel" && (
+            <button type="button" onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
+              {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
+            </button>
+          )}
+          {!loadingMatches && kampeFormat === "americano" && (
+            <button type="button" onClick={() => setShowAmericanoCreate(!showAmericanoCreate)} style={btn(true)}>
+              {showAmericanoCreate ? "Annullér" : <><Plus size={15} /> Opret turnering</>}
+            </button>
+          )}
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
         <button
           type="button"
-          onClick={() => { setKampeFormat("padel"); setShowCreate(false); }}
+          onClick={() => {
+            setKampeFormat("padel");
+            setShowCreate(false);
+            setShowAmericanoCreate(false);
+          }}
           style={{ ...btn(kampeFormat === "padel"), padding: "8px 16px", fontSize: "13px" }}
         >
           Almindelig padel (2v2)
         </button>
         <button
           type="button"
-          onClick={() => { setKampeFormat("americano"); setShowCreate(false); }}
+          onClick={() => {
+            setKampeFormat("americano");
+            setShowCreate(false);
+            setShowAmericanoCreate(false);
+          }}
           style={{ ...btn(kampeFormat === "americano"), padding: "8px 16px", fontSize: "13px" }}
         >
           Americano
@@ -584,6 +600,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         <AmericanoTab
           profile={user}
           showToast={showToast}
+          embedInKampe
+          createOpen={showAmericanoCreate}
+          onCreateOpenChange={setShowAmericanoCreate}
           initialSubTab={(() => {
             const s = readKampeSessionPrefs(user.id);
             if (s?.americanoView === "open" || s?.americanoView === "playing" || s?.americanoView === "completed") {
@@ -597,14 +616,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {kampeFormat === "padel" && (
       <>
-      {/* View tabs */}
-      <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
+      <div style={{ display: "flex", gap: "6px", marginBottom: "16px", flexWrap: "wrap" }}>
         {[
           { id: "open", label: `Åbne (${openMatches.length})` },
           { id: "active", label: `I gang (${activeMatches.length})` },
           { id: "completed", label: `Afsluttede (${completedMatches.length})` },
-        ].map(t => (
-          <button key={t.id} onClick={() => setViewTab(t.id)} style={{ ...btn(viewTab === t.id), padding: "7px 14px", fontSize: "12px" }}>{t.label}</button>
+        ].map((t) => (
+          <button key={t.id} type="button" onClick={() => setViewTab(t.id)} style={{ ...btn(viewTab === t.id), padding: "7px 14px", fontSize: "12px" }}>
+            {t.label}
+          </button>
         ))}
       </div>
 
@@ -639,15 +659,35 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         </div>
       )}
 
-      {/* Match list */}
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {viewTab === "open" && openMatches.map(m => renderMatchCard(m, "open"))}
-        {viewTab === "active" && activeMatches.map(m => renderMatchCard(m, "active"))}
-        {viewTab === "completed" && completedMatches.map(m => renderMatchCard(m, "completed"))}
+        {viewTab === "open" && openMatches.map((m) => renderMatchCard(m, "open"))}
+        {viewTab === "active" && activeMatches.map((m) => renderMatchCard(m, "active"))}
+        {viewTab === "completed" && completedMatches.map((m) => renderMatchCard(m, "completed"))}
 
-        {viewTab === "open" && openMatches.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>⚔️</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen åbne kampe</div><div style={{ fontSize: "13px", lineHeight: 1.5, marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med!</div><button onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}><Plus size={14} /> Opret kamp</button></div>}
-        {viewTab === "active" && activeMatches.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>🎾</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen aktive kampe</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Tilmeld dig en åben kamp for at komme i gang.</div></div>}
-        {viewTab === "completed" && completedMatches.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>📊</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen afsluttede kampe endnu</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Spil din første kamp og se dit resultat her.</div></div>}
+        {viewTab === "open" && openMatches.length === 0 && (
+          <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}>
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>⚔️</div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen åbne kampe</div>
+            <div style={{ fontSize: "13px", lineHeight: 1.5, marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med!</div>
+            <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}>
+              <Plus size={14} /> Opret kamp
+            </button>
+          </div>
+        )}
+        {viewTab === "active" && activeMatches.length === 0 && (
+          <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}>
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>🎾</div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen aktive kampe</div>
+            <div style={{ fontSize: "13px", lineHeight: 1.5 }}>Tilmeld dig en åben kamp for at komme i gang.</div>
+          </div>
+        )}
+        {viewTab === "completed" && completedMatches.length === 0 && (
+          <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}>
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>📊</div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen afsluttede kampe endnu</div>
+            <div style={{ fontSize: "13px", lineHeight: 1.5 }}>Spil din første kamp og se dit resultat her.</div>
+          </div>
+        )}
       </div>
 
       {/* Team selection modal */}

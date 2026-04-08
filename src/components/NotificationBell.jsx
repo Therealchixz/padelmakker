@@ -5,6 +5,37 @@ import { supabase } from '../lib/supabase';
 import { font, theme } from '../lib/platformTheme';
 import { Bell, CheckCheck, Trash2 } from 'lucide-react';
 
+const DISMISSED_MAX = 400;
+
+/** Lokalt afviste id'er — så de ikke kommer tilbage ved refresh hvis DELETE fejler stille (0 rækker / RLS). */
+function dismissedStorageKey(userId) {
+  return `pm_notif_dismissed_${userId}`;
+}
+
+function loadDismissedIds(userId) {
+  if (!userId) return new Set();
+  try {
+    const raw = localStorage.getItem(dismissedStorageKey(userId));
+    const arr = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(arr) ? arr.filter((x) => typeof x === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function addDismissedIds(userId, ids) {
+  if (!userId || !ids.length) return;
+  const s = loadDismissedIds(userId);
+  for (const id of ids) s.add(id);
+  const arr = [...s];
+  const trimmed = arr.length > DISMISSED_MAX ? arr.slice(-DISMISSED_MAX) : arr;
+  try {
+    localStorage.setItem(dismissedStorageKey(userId), JSON.stringify(trimmed));
+  } catch {
+    /* ignore quota */
+  }
+}
+
 export function NotificationBell() {
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
@@ -32,7 +63,8 @@ export function NotificationBell() {
         setNotifs([]);
         return;
       }
-      setNotifs(data || []);
+      const dismissed = loadDismissedIds(userId);
+      setNotifs((data || []).filter((n) => !dismissed.has(n.id)));
     } catch (e) {
       console.warn("notifications load:", e);
       setNotifs([]);
@@ -79,23 +111,45 @@ export function NotificationBell() {
 
   const deleteOne = async (id) => {
     if (!userId) return;
-    const { error } = await supabase.from("notifications").delete().eq("id", id).eq("user_id", userId);
+    addDismissedIds(userId, [id]);
+    setNotifs((prev) => prev.filter((n) => n.id !== id));
+
+    const { data, error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId)
+      .select("id");
+
     if (error) {
       console.warn("notifications delete:", error.message || error);
       return;
     }
-    setNotifs((prev) => prev.filter((n) => n.id !== id));
+    if (!data?.length) {
+      console.warn("notifications delete: ingen række slettet (tjek RLS / kør notifications_add_delete_policy.sql)");
+    }
   };
 
   const clearAll = async () => {
     if (!userId || !notifs.length) return;
     const ids = notifs.map((n) => n.id);
-    const { error } = await supabase.from("notifications").delete().in("id", ids).eq("user_id", userId);
+    addDismissedIds(userId, ids);
+    setNotifs([]);
+
+    const { data, error } = await supabase
+      .from("notifications")
+      .delete()
+      .in("id", ids)
+      .eq("user_id", userId)
+      .select("id");
+
     if (error) {
       console.warn("notifications clear:", error.message || error);
       return;
     }
-    setNotifs([]);
+    if (!data?.length) {
+      console.warn("notifications clear: ingen rækker slettet (tjek RLS / kør notifications_add_delete_policy.sql)");
+    }
   };
 
   const openNotificationMatch = async (n) => {

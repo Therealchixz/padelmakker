@@ -2,6 +2,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  /* Reserver plads til vertikal scrollbar — undgå 10–15px hop når indhold bliver længere (fx Afsluttede) */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -351,17 +353,26 @@ button,
   }
 }
 
-/* Kampe */
+/* Kampe — titel venstre, Opret kamp/turnering højre (fuld bredde af .pm-dash-main) */
 .pm-kampe-head {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pm-kampe-head h2 {
   margin: 0;
+  min-width: 0;
+}
+
+.pm-kampe-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .pm-form-2col {

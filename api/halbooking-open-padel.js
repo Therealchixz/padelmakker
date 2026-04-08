@@ -5,6 +5,7 @@
  */
 
 import { collectInputFields } from './lib/halbookingFetch.js';
+import { readHalbookingHtml } from './lib/halbookingEncoding.js';
 import { getAllowlistedVenue } from './lib/halbookingVenuesAllowlist.js';
 
 const UA = 'PadelMakkerOpenPadel/1.0 (+https://www.padelmakker.dk)';
@@ -69,7 +70,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    const html0 = await firstRes.text();
+    const html0 = await readHalbookingHtml(firstRes);
     const formMatch = html0.match(/<form[^>]*id="multiform"[^>]*>([\s\S]*?)<\/form>/i);
     if (!formMatch) {
       sendHtml(

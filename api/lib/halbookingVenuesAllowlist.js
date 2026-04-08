@@ -1,6 +1,6 @@
 /**
  * Kun disse venue-id må bruges mod Halbooking (sikkerhed).
- * Tilføj flere Nordjylland-/DK-baner her + samme id i src/lib/halbookingVenues.js
+ * Tilføj flere Nordjylland-/DK-baner her + samme halbooking-id i src/lib/banerVenues.js
  */
 
 export const HALBOOKING_VENUE_ALLOWLIST = {
