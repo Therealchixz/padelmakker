@@ -1,6 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses } from './types'
+import {
+  getMatchVenueOptions,
+  courtIdFromVenueSelection,
+} from '../../lib/matchVenueOptions'
 
 type CourtOption = { id: string; name: string }
 
@@ -28,7 +32,17 @@ export function CreateAmericanoTournamentForm({
   const [name, setName] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [timeSlot, setTimeSlot] = useState('18:00')
-  const [courtId, setCourtId] = useState(() => courts[0]?.id ?? AMERICANO_COURT_NONE)
+  const venueOptions = useMemo(() => getMatchVenueOptions(courts), [courts])
+  const selectOptions = useMemo(
+    () => [
+      ...venueOptions,
+      { id: AMERICANO_COURT_NONE, label: 'Ikke valgt / anden bane', courtId: null as string | null },
+    ],
+    [venueOptions]
+  )
+  const [courtId, setCourtId] = useState(
+    () => getMatchVenueOptions([])[0]?.id ?? AMERICANO_COURT_NONE
+  )
   const [playerSlots, setPlayerSlots] = useState<AmericanoPlayerSlots>(5)
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
   const [opponentPasses, setOpponentPasses] = useState<AmericanoOpponentPasses>(1)
@@ -38,13 +52,11 @@ export function CreateAmericanoTournamentForm({
 
   useEffect(() => {
     setCourtId((prev) => {
-      if (courts.length === 0) return AMERICANO_COURT_NONE
-      const ids = new Set(courts.map((c) => c.id))
-      if (!prev || prev === AMERICANO_COURT_NONE) return prev
-      if (!ids.has(prev)) return courts[0].id
-      return prev
+      const ids = new Set(selectOptions.map((o) => o.id))
+      if (ids.has(prev)) return prev
+      return selectOptions[0]?.id ?? AMERICANO_COURT_NONE
     })
-  }, [courts])
+  }, [selectOptions])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,7 +75,7 @@ export function CreateAmericanoTournamentForm({
           name: n,
           tournament_date: date,
           time_slot: timeSlot,
-          court_id: courtId && courtId !== AMERICANO_COURT_NONE ? courtId : null,
+          court_id: courtIdFromVenueSelection(courtId, selectOptions),
           player_slots: playerSlots,
           points_per_match: pointsPerMatch,
           opponent_passes: opponentPasses,
@@ -137,17 +149,14 @@ export function CreateAmericanoTournamentForm({
       <div style={{ marginTop: 14 }}>
         <label style={labelSmall}>Bane</label>
         <select value={courtId} onChange={(e) => setCourtId(e.target.value)} style={inputStyle}>
-          <option value={AMERICANO_COURT_NONE}>Ikke valgt / anden bane</option>
-          {courts.length === 0 ? null : (
-            courts.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))
-          )}
+          {selectOptions.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
         </select>
         <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6, lineHeight: 1.45 }}>
-          Listen følger baner i databasen. Er der kun én (fx Skansen), kan du vælge &quot;Ikke valgt&quot; og skrive sted i beskrivelsen — eller tilføj flere baner under <strong>Baner</strong> i Supabase.
+          Samme steder som under fanen Baner. Matcher automatisk til baner i databasen når navnet stemmer overens.
         </p>
       </div>
 

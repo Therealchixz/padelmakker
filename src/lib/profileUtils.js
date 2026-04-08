@@ -163,42 +163,33 @@ export function normalizeProfileRow(p) {
 const VOWEL_RE = /[aeiouyæøåäöü]/gi
 
 /**
- * Én navnedel (fornavn eller efternavn): ingen mellemrum — brug to felter eller bindestreg (Hansen-Nielsen).
- * Samme gibberish-heuristik som fuldt navn.
- * @param {string} raw
- * @param {string} fieldLabel — f.eks. "Fornavn" / "Efternavn"
+ * Ét navneled (ét ord — mellemnavne håndteres som flere ord i validateMultiPartNameField).
  * @returns {{ valid: true } | { valid: false, message: string }}
  */
-export function validateSingleNameField(raw, fieldLabel) {
+export function validateNameWord(raw, fieldLabel) {
   const label = fieldLabel || "Navn"
   const s =
     typeof raw === "string"
       ? raw.trim().replace(/\u00AD/g, "")
       : ""
   if (!s) return { valid: false, message: `${label} må ikke være tomt.` }
-  if (/\s/.test(s)) {
-    return {
-      valid: false,
-      message: `${label} må ikke indeholde mellemrum — brug feltet til ${label.toLowerCase()} og evt. bindestreg (f.eks. Anne-Marie).`,
-    }
-  }
-  if (s.length < 2) return { valid: false, message: `${label} skal være mindst 2 tegn.` }
-  if (s.length > 40) return { valid: false, message: `${label} må højst være 40 tegn.` }
+  if (s.length < 2) return { valid: false, message: `${label} skal være mindst 2 tegn pr. del.` }
+  if (s.length > 40) return { valid: false, message: `${label}: hver del må højst være 40 tegn.` }
 
   if (!/^\p{L}/u.test(s) || !/\p{L}$/u.test(s)) {
-    return { valid: false, message: `${label} skal starte og slutte med et bogstav.` }
+    return { valid: false, message: `${label}: hver del skal starte og slutte med et bogstav.` }
   }
 
   if (!/^[\p{L}'.-]+$/u.test(s)) {
     return {
       valid: false,
-      message: `${label}: brug kun bogstaver, bindestreg og apostrof.`,
+      message: `${label}: brug kun bogstaver, bindestreg og apostrof (pr. del).`,
     }
   }
 
   const letterCount = (s.match(/\p{L}/gu) || []).length
   if (letterCount < 2) {
-    return { valid: false, message: `${label} skal indeholde mindst to bogstaver.` }
+    return { valid: false, message: `${label}: hver del skal indeholde mindst to bogstaver.` }
   }
 
   if (/(.)\1{3,}/u.test(s)) {
@@ -219,21 +210,78 @@ export function validateSingleNameField(raw, fieldLabel) {
   if (lettersOnly.length >= 4 && lettersOnly.length < 9) {
     const vowels = lettersOnly.match(VOWEL_RE) || []
     if (vowels.length === 0) {
-      return { valid: false, message: `${label} skal indeholde mindst én vokal.` }
+      return { valid: false, message: `${label} skal indeholde mindst én vokal pr. del.` }
     }
   }
 
   return { valid: true }
 }
 
+const MAX_NAME_WORDS = 4
+
 /**
- * Fornavn + efternavn (begge påkrævet), samme heuristik som enkeltfelter.
+ * Fornavn eller efternavn med mellemnavne: flere ord adskilt af mellemrum (fx "Mathias Dam Røn").
+ * @returns {{ valid: true } | { valid: false, message: string }}
+ */
+export function validateMultiPartNameField(raw, fieldLabel) {
+  const label = fieldLabel || "Navn"
+  const full =
+    typeof raw === "string"
+      ? raw.trim().replace(/\u00AD/g, "").replace(/\s+/g, " ")
+      : ""
+  if (!full) return { valid: false, message: `${label} må ikke være tomt.` }
+  const parts = full.split(" ").filter(Boolean)
+  if (parts.length > MAX_NAME_WORDS) {
+    return {
+      valid: false,
+      message: `${label}: højst ${MAX_NAME_WORDS} navnedele adskilt af mellemrum (inkl. mellemnavne).`,
+    }
+  }
+  for (let i = 0; i < parts.length; i++) {
+    const w = validateNameWord(parts[i], label)
+    if (!w.valid) return w
+  }
+  const lettersJoined = full.replace(/[^\p{L}]/gu, "")
+  if (lettersJoined.length >= 12) {
+    const vowels = lettersJoined.match(VOWEL_RE) || []
+    const ratio = vowels.length / lettersJoined.length
+    if (ratio < 0.2) {
+      return {
+        valid: false,
+        message: `${label} ligner ikke et rigtigt navn (for få vokaler i alt).`,
+      }
+    }
+  }
+  return { valid: true }
+}
+
+/**
+ * Én navnedel uden mellemrum (bagudkompatibilitet / enkelt felter).
+ * @deprecated Brug validateMultiPartNameField for fornavn/efternavn med mellemnavne.
+ */
+export function validateSingleNameField(raw, fieldLabel) {
+  const label = fieldLabel || "Navn"
+  const s =
+    typeof raw === "string"
+      ? raw.trim().replace(/\u00AD/g, "")
+      : ""
+  if (/\s/.test(s)) {
+    return {
+      valid: false,
+      message: `${label}: brug mellemrum mellem fornavn og mellemnavne (eller ét ord pr. felt).`,
+    }
+  }
+  return validateNameWord(s, label)
+}
+
+/**
+ * Fornavn + efternavn (mellemnavne tilladt i hvert felt).
  * @returns {{ valid: true } | { valid: false, message: string }}
  */
 export function validateFirstLastName(firstRaw, lastRaw) {
-  const f = validateSingleNameField(firstRaw, "Fornavn")
+  const f = validateMultiPartNameField(firstRaw, "Fornavn")
   if (!f.valid) return f
-  const l = validateSingleNameField(lastRaw, "Efternavn")
+  const l = validateMultiPartNameField(lastRaw, "Efternavn")
   if (!l.valid) return l
   return { valid: true }
 }

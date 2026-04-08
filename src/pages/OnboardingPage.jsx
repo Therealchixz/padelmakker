@@ -18,6 +18,12 @@ export function OnboardingPage({ onComplete }) {
 
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
+  const passwordMismatch =
+    form.password_confirm.length > 0 &&
+    form.password !== form.password_confirm;
+  const passwordTooShort =
+    form.password_confirm.length > 0 && form.password.length > 0 && form.password.length < 8;
+
   const canNext = () => {
     if (step === 0)
       return (
@@ -84,14 +90,37 @@ export function OnboardingPage({ onComplete }) {
       <label style={labelStyle}>Efternavn</label>
       <input value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
       <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
-        Begge felter skal udfyldes. Dobbeltnavne med bindestreg er ok (f.eks. Anne-Marie).
+        Fornavn og efternavn — du må gerne skrive mellemnavne med mellemrum i hvert felt (fx &quot;Mathias Dam Røn&quot;). Bindestreg er også ok (Anne-Marie).
       </p>
       <label style={labelStyle}>Email</label>
       <input value={form.email}    onChange={e => set("email", e.target.value)}    placeholder="din@email.dk"      type="email"    style={{ ...inputStyle, marginBottom: "14px" }} />
       <label style={labelStyle}>Adgangskode</label>
       <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "10px" }} />
       <label style={labelStyle}>Bekræft adgangskode</label>
-      <input value={form.password_confirm} onChange={e => set("password_confirm", e.target.value)} placeholder="Gentag adgangskode" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "14px" }} />
+      <input
+        value={form.password_confirm}
+        onChange={e => set("password_confirm", e.target.value)}
+        placeholder="Gentag adgangskode"
+        type="password"
+        autoComplete="new-password"
+        style={{
+          ...inputStyle,
+          marginBottom: passwordMismatch || passwordTooShort ? "6px" : "14px",
+          border:
+            "1px solid " +
+            (passwordMismatch ? theme.red : passwordTooShort ? theme.warm : theme.border),
+        }}
+      />
+      {passwordMismatch && (
+        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
+          Adgangskoderne matcher ikke — tjek begge felter.
+        </p>
+      )}
+      {!passwordMismatch && passwordTooShort && (
+        <p style={{ color: theme.warm, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
+          Adgangskoden skal være mindst 8 tegn.
+        </p>
+      )}
       <label style={labelStyle}>Fødselsår</label>
       <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={inputStyle} />
     </div>,

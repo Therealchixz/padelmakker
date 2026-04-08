@@ -15,6 +15,11 @@ import { Clock, MapPin, Plus, UserMinus, Trash2 } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
+import {
+  getMatchVenueOptions,
+  courtIdFromVenueSelection,
+  courtNameFromVenueSelection,
+} from '../lib/matchVenueOptions';
 
 function matchPlayerTeam(p) {
   return Number(p?.team);
@@ -68,6 +73,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
    * Ellers vises 1000 fra Profile.filter() selvom profilen viser 1020 fra historik.
    */
   const myUidStr = String(user.id);
+  const venueOptions = useMemo(() => getMatchVenueOptions(courts), [courts]);
+
   const myElo = useMemo(() => {
     const fromHist = statsFromEloHistoryRows(kampeRatedRows)?.elo;
     if (fromHist != null) return fromHist;
@@ -97,7 +104,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const allMatches = md || [];
       setMatches(allMatches);
 
-      if (cd?.length > 0) setNewMatch((m) => (m.court_id ? m : { ...m, court_id: cd[0].id }));
+      const vOpts = getMatchVenueOptions(cd || []);
+      if (vOpts.length > 0) {
+        setNewMatch((m) => {
+          if (m.court_id && vOpts.some((o) => o.id === m.court_id)) return m;
+          return { ...m, court_id: vOpts[0].id };
+        });
+      }
 
       const { data: mpd } = await supabase.from("match_players").select("*");
       const mm = {};
@@ -179,9 +192,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const timeEnd = endH + ":" + endMin;
     setCreating(true);
     try {
-      const court = courts.find(c => c.id === newMatch.court_id);
+      const cid = courtIdFromVenueSelection(newMatch.court_id, venueOptions);
+      const cname = courtNameFromVenueSelection(newMatch.court_id, venueOptions);
       const row = {
-        creator_id: user.id, court_id: newMatch.court_id, court_name: court?.name || "",
+        creator_id: user.id, court_id: cid, court_name: cname || '',
         date: newMatch.date, time: fmtClock(newMatch.time), time_end: timeEnd,
         level_range: String(myElo), status: "open", max_players: 4, current_players: 1,
         description: sanitizeText(newMatch.description.trim()) || null,
@@ -636,8 +650,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           <div className="pm-form-2col">
             <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Bane</label>
               <select value={newMatch.court_id} onChange={e => setNewMatch(m => ({ ...m, court_id: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
-                {courts.length === 0 ? <option value="">Ingen baner</option> : courts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select></div>
+                {venueOptions.length === 0 ? (
+                  <option value="">Indlæser…</option>
+                ) : (
+                  venueOptions.map((o) => (
+                    <option key={o.id} value={o.id}>{o.label}</option>
+                  ))
+                )}
+              </select>
+              <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
+                Samme steder som under fanen Baner. Virtuel bane gemmer kun navnet (tilføj banen i databasen for at koble uuid).
+              </p>
+            </div>
             <div><label style={labelStyle}>Dato</label>
               <input type="date" value={newMatch.date} onChange={e => setNewMatch(m => ({ ...m, date: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
             <div><label style={labelStyle}>Starttid</label>
@@ -653,7 +677,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
           <label style={{ ...labelStyle, marginTop: "12px" }}>Beskrivelse (valgfrit)</label>
           <textarea value={newMatch.description} onChange={e => setNewMatch(m => ({ ...m, description: e.target.value }))} placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'" style={{ ...inputStyle, fontSize: "13px", height: "60px", resize: "vertical" }} />
-          <button onClick={createMatch} disabled={creating || !newMatch.court_id} style={{ ...btn(true), marginTop: "16px", width: "100%", justifyContent: "center", opacity: creating ? 0.55 : 1 }}>
+          <button onClick={createMatch} disabled={creating || !newMatch.court_id || venueOptions.length === 0} style={{ ...btn(true), marginTop: "16px", width: "100%", justifyContent: "center", opacity: creating ? 0.55 : 1 }}>
             {creating ? "Opretter..." : "Opret kamp"}
           </button>
         </div>
