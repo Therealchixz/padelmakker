@@ -238,7 +238,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         <label style={labelStyle}>Efternavn</label>
         <input value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
         <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
-          Begge skal udfyldes. Dobbeltnavne: brug bindestreg i ét felt (Anne-Marie). Samme validering som ved oprettelse.
+          Mellemnavne med mellemrum er ok i hvert felt. Bindestreg også (Anne-Marie). Samme regler som ved oprettelse.
         </p>
 
         {/* Birth year */}
