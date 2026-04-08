@@ -67,23 +67,46 @@ function attrTitle(attrs) {
   return m ? m[1] : '';
 }
 
+/** Halbooking lægger ofte forklaringen i `data-tekst` (titlen kan være tom). */
+function attrDataTekst(attrs) {
+  let m = attrs.match(/\bdata-tekst='([^']*)'/i);
+  if (m) return m[1];
+  m = attrs.match(/\bdata-tekst="([^"]*)"/i);
+  return m ? m[1] : '';
+}
+
+function cellHintText(attrs) {
+  const title = (attrTitle(attrs) || '').trim();
+  const dt = (attrDataTekst(attrs) || '').trim();
+  return title || dt || '';
+}
+
 /**
- * `btn_ledig` + titel om regler → `blocked_rule` (vises tydeligt i appen, ikke som generisk grå).
+ * Padel Lounge m.fl.: `bane_ledig_streg` = "ser ledig ud" men med modal-tekst om regler (ikke `btn_ledig`).
+ * `btn_ledig` + titel/data om regler → `blocked_rule`.
  */
 function statusFromSlotAttrs(attrs) {
   const a = attrs.toLowerCase();
-  const titleRaw = attrTitle(attrs);
-  const t = titleRaw.toLowerCase();
+  const hintRaw = cellHintText(attrs);
+  const t = hintRaw.toLowerCase();
 
   if (a.includes('bane_redbg')) return { status: 'booked', ruleHint: null };
   if (a.includes('bane_rest')) return { status: 'unavailable', ruleHint: null };
+
+  if (a.includes('bane_ledig_streg')) {
+    return {
+      status: 'blocked_rule',
+      ruleHint: hintRaw || 'Kan ikke bookes (klubbens regel)',
+    };
+  }
+
   if (a.includes('btn_ledig')) {
     if (t.includes('booket')) return { status: 'booked', ruleHint: null };
     if (t.includes('passeret')) return { status: 'unavailable', ruleHint: null };
     if (t.includes('kan ikke book') || t.includes('ikke book')) {
       return {
         status: 'blocked_rule',
-        ruleHint: titleRaw.trim() || 'Kan ikke bookes (klubbens regel)',
+        ruleHint: hintRaw || 'Kan ikke bookes (klubbens regel)',
       };
     }
     return { status: 'free', ruleHint: null };
