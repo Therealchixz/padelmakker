@@ -3,7 +3,7 @@ import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
 import { REGIONS, AVAILABILITY, PLAY_STYLES } from '../lib/platformConstants';
-import { normalizeStringArrayField, validateFirstLastName } from '../lib/profileUtils';
+import { normalizeStringArrayField, validateFirstLastName, canonicalRegionForForm } from '../lib/profileUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
@@ -11,7 +11,7 @@ import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-re
 import { profileFormState } from './profileTabHelpers';
 
 export function ProfilTab({ user, showToast, setTab }) {
-  const { updateProfile, refreshProfile, user: authUser } = useAuth();
+  const { updateProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -44,19 +44,20 @@ export function ProfilTab({ user, showToast, setTab }) {
       return;
     }
     const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
+    const region = canonicalRegionForForm(form.area) || form.area;
+    const availability = normalizeStringArrayField(form.availability);
     setSaving(true);
     try {
       await updateProfile({
         full_name: sanitizeText(displayName),
         name: sanitizeText(displayName),
-        area: form.area,
+        area: region,
         play_style: form.play_style,
         bio: sanitizeText(form.bio.trim()),
         avatar: form.avatar,
-        availability: form.availability,
-        birth_year: form.birth_year ? parseInt(form.birth_year) : null,
+        availability,
+        birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
       });
-      refreshProfile();
       setEditing(false);
       showToast("Profil opdateret! ✅");
     } catch (e) {

@@ -1,3 +1,24 @@
+import { REGIONS } from "./platformConstants"
+
+/**
+ * Map DB-værdi til den kanoniske regionsstreng fra REGIONS (knapper bruger fuldt navn).
+ * Fx "Nordjylland" / "nordjylland" → "Region Nordjylland"
+ */
+export function canonicalRegionForForm(stored) {
+  const raw = String(stored ?? "").trim()
+  if (!raw) return ""
+  const lower = raw.toLowerCase()
+  const exact = REGIONS.find((r) => r.toLowerCase() === lower)
+  if (exact) return exact
+  for (const r of REGIONS) {
+    const tail = r.replace(/^Region\s+/i, "").toLowerCase()
+    if (lower === tail || lower.endsWith(tail) || tail.includes(lower) || lower.includes(tail)) {
+      return r
+    }
+  }
+  return raw
+}
+
 /**
  * Supabase/Postgres kan returnere text[] som:
  * - JSON array ["a","b"]
@@ -68,14 +89,15 @@ export function normalizeStringArrayField(value) {
 
 export function normalizeProfileRow(p) {
   if (p == null || typeof p !== "object") return p
-  const region =
+  const rawRegion =
     p.area != null && String(p.area).trim() !== ""
       ? p.area
       : p.region != null && String(p.region).trim() !== ""
         ? p.region
         : p.city != null && String(p.city).trim() !== ""
           ? p.city
-          : p.area
+          : ""
+  const region = rawRegion ? canonicalRegionForForm(rawRegion) : rawRegion
   return { ...p, area: region, availability: normalizeStringArrayField(p.availability) }
 }
 

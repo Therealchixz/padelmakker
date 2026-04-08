@@ -1,4 +1,4 @@
-import { normalizeStringArrayField } from '../lib/profileUtils';
+import { normalizeStringArrayField, canonicalRegionForForm } from '../lib/profileUtils';
 import { DEFAULT_REGION } from '../lib/platformConstants';
 
 export function splitDisplayNameToFirstLast(full) {
@@ -14,7 +14,7 @@ export function profileFormState(p) {
     first_name,
     last_name,
     full_name: p.full_name || p.name || "",
-    area: p.area || DEFAULT_REGION,
+    area: canonicalRegionForForm(p.area || p.region || p.city || '') || DEFAULT_REGION,
     play_style: p.play_style || "Ved ikke endnu",
     bio: p.bio || "",
     avatar: p.avatar || "🎾",
