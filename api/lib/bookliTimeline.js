@@ -40,6 +40,27 @@ function isMeetingRoom(name) {
 }
 
 /**
+ * PadelPadel Aalborg: D1–D9 = double, SS* = single, Center Court = showpiece.
+ * @returns {{ label: string } | null} null = ingen ekstra tag
+ */
+function padelpadelCourtKindLabel(name, shortName) {
+  const raw = String(shortName || name || '').trim();
+  const upper = raw.toUpperCase();
+  const full = `${name || ''} ${shortName || ''}`.toUpperCase();
+
+  if (/^SS\d*$/i.test(raw) || /\bSS\d+\b/i.test(full)) {
+    return { label: 'Singlebane' };
+  }
+  if (/^D\d+$/i.test(raw) || /^D\d+\s*$/i.test(String(name || '').trim())) {
+    return { label: 'Doublebane' };
+  }
+  if (/CENTER\s*COURT|\bCC\d+/i.test(full)) {
+    return { label: 'Center court' };
+  }
+  return null;
+}
+
+/**
  * @param {string} dateYmd YYYY-MM-DD i locationTZ
  * @param {{ locationId: string, resourceCategoryId: string, timezone: string }} cfg
  */
@@ -144,10 +165,15 @@ export async function fetchBookliTimelineForDate(dateYmd, cfg) {
       t = slotEnd;
     }
 
+    const kind = padelpadelCourtKindLabel(r.name, r.shortName);
+    const nameStr = String(r.name || r.shortName || 'Bane').trim();
+    const headerName = kind ? `${nameStr} — ${kind.label}` : nameStr;
+
     return {
       id: r.id,
       name: r.name,
       shortName: r.shortName,
+      headerName,
       slots,
       available: slots.filter((s) => s.status === 'free').map((s) => s.time),
     };

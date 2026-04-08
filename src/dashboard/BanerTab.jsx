@@ -12,7 +12,7 @@ import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn } from 'l
 
 /**
  * @typedef {{ time: string, status: string, ruleHint?: string }} SlotRow
- * @typedef {{ name: string, slots: SlotRow[], available: string[], id?: string, shortName?: string }} CourtRow
+ * @typedef {{ name: string, slots: SlotRow[], available: string[], id?: string, shortName?: string, headerName?: string }} CourtRow
  */
 
 /** @typedef {{ courts: CourtRow[], dateLabel: string, fetchedAt: string, openBookingPath?: string, date?: string }} VenueLoadState */
@@ -396,7 +396,7 @@ export function BanerTab() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {loaded.courts.map((c) => (
                           <div
-                            key={c.id || c.name}
+                            key={c.id || c.headerName || c.name}
                             style={{
                               background: theme.bg,
                               borderRadius: '8px',
@@ -404,7 +404,9 @@ export function BanerTab() {
                               border: '1px solid ' + theme.border,
                             }}
                           >
-                            <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>{c.name}</div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>
+                              {c.headerName || c.name}
+                            </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                               {c.slots.map((s) => renderSlot(s, v, c))}
                             </div>
