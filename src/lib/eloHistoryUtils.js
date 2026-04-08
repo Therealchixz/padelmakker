@@ -152,6 +152,37 @@ export async function fetchEloByUserIdFromHistory(userIds) {
 }
 
 /**
+ * ELO + kampe + sejre pr. bruger fra elo_history (samme som PlayerProfileModal / ranking).
+ * Bruges på Find makker så listen ikke viser forældede profiles.elo_rating / games_played.
+ */
+export async function fetchEloStatsBatchByUserIds(userIds) {
+  const ids = [...new Set((userIds || []).map((x) => String(x)).filter(Boolean))];
+  /** @type {Record<string, { elo: number; games: number; wins: number }>} */
+  const out = {};
+  if (ids.length === 0) return out;
+  const chunkSize = 100;
+  for (let i = 0; i < ids.length; i += chunkSize) {
+    const chunk = ids.slice(i, i + chunkSize);
+    const { data, error } = await supabase.from('elo_history').select('*').in('user_id', chunk);
+    if (error) {
+      console.warn('elo_history batch (makkere):', error.message);
+      continue;
+    }
+    const byUser = {};
+    for (const h of data || []) {
+      const u = String(h.user_id);
+      if (!byUser[u]) byUser[u] = [];
+      byUser[u].push(h);
+    }
+    for (const uid of chunk) {
+      const st = statsFromEloHistoryRows(byUser[String(uid)] || []);
+      if (st != null) out[String(uid)] = { elo: st.elo, games: st.games, wins: st.wins };
+    }
+  }
+  return out;
+}
+
+/**
  * Frisk profiles-række + rated elo_history i ét trin. Ved syncKey (opdateret profil i context)
  * vises loading igen så vi ikke flasher forældede tal. Ved fokus/genvisning opdateres stille.
  */

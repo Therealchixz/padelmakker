@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
 import { Court } from '../../api/base44Client'
@@ -533,6 +533,31 @@ export function AmericanoTab({
     }
   }
 
+  /** Kun under tilmelding — som almindelig kamp (opretter). CASCADE sletter deltagere + kampe. */
+  const deleteTournament = async (t: AmericanoTournament) => {
+    if (String(t.creator_id) !== String(profileId)) {
+      showToast('Kun opretteren kan slette turneringen.')
+      return
+    }
+    if (t.status !== 'registration') {
+      showToast('Du kan kun slette turneringer der endnu ikke er startet.')
+      return
+    }
+    if (!window.confirm('Slette denne Americano-turnering? Alle tilmeldinger fjernes.')) return
+    setBusyId(t.id)
+    try {
+      const { error } = await supabase.from('americano_tournaments').delete().eq('id', t.id)
+      if (error) throw error
+      showToast('Turnering slettet.')
+      await load()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      showToast('Kunne ikke slette: ' + msg)
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: 40, color: '#8494A7', fontSize: 14, fontFamily: font }}>
@@ -966,25 +991,48 @@ export function AmericanoTab({
                 )}
               </div>
               {isCreator && t.status === 'registration' && (
-                <button
-                  type="button"
-                  disabled={busyId === t.id}
-                  onClick={() => startTournament(t)}
-                  style={{
-                    marginTop: 12,
-                    fontFamily: font,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    padding: '8px 14px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: '#D97706',
-                    color: '#fff',
-                    cursor: busyId === t.id ? 'wait' : 'pointer',
-                  }}
-                >
-                  {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
-                </button>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12, alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    disabled={busyId === t.id}
+                    onClick={() => startTournament(t)}
+                    style={{
+                      fontFamily: font,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: '#D97706',
+                      color: '#fff',
+                      cursor: busyId === t.id ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyId === t.id}
+                    onClick={() => deleteTournament(t)}
+                    style={{
+                      fontFamily: font,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      border: '1px solid #FCA5A5',
+                      background: '#fff',
+                      color: '#B91C1C',
+                      cursor: busyId === t.id ? 'wait' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Trash2 size={14} aria-hidden />
+                    Slet turnering
+                  </button>
+                </div>
               )}
               {joined && t.status === 'playing' && (
                 <AmericanoResultsPanel

@@ -24,7 +24,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   /* Profil i React kan være forældet efter ændringer udefra (fx SQL-reset). Hent forfra på relevante faner uden fuld loading-skærm. */
   useEffect(() => {
-    if (["hjem", "profil", "ranking", "kampe"].includes(tab)) refreshProfileQuiet();
+    if (["hjem", "profil", "ranking", "kampe", "makkere"].includes(tab)) refreshProfileQuiet();
   }, [tab, refreshProfileQuiet]);
 
   const tabs = [

@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
 import { REGIONS } from '../lib/platformConstants';
 import { eloOf } from '../lib/matchDisplayUtils';
+import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin } from 'lucide-react';
 import { PlayerProfileModal } from './PlayerProfileModal';
 
@@ -11,24 +12,49 @@ export function MakkereTab({ user, showToast }) {
   const [filterElo, setFilterElo]     = useState("all");
   const [filterArea, setFilterArea]   = useState("all");
   const [players, setPlayers]         = useState([]);
+  /** elo_history-afledt stats pr. bruger (matcher profil-modal) */
+  const [statsById, setStatsById]     = useState({});
   const [loading, setLoading]         = useState(true);
   const [viewPlayer, setViewPlayer]   = useState(null);
 
   const myElo = eloOf(user);
 
-  useEffect(() => {
-    (async () => {
-      try { const data = await Profile.filter(); setPlayers(data.filter(p => p.id !== user.id)); }
-      catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    })();
+  const loadPlayers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await Profile.filter();
+      const list = (data || []).filter((p) => p.id !== user.id);
+      setPlayers(list);
+      const ids = list.map((p) => p.id);
+      const batch = await fetchEloStatsBatchByUserIds(ids);
+      setStatsById(batch);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }, [user.id]);
+
+  useEffect(() => {
+    loadPlayers();
+  }, [loadPlayers]);
+
+  const displayElo = (p) => {
+    const s = statsById[String(p.id)];
+    if (s != null) return s.elo;
+    return eloOf(p);
+  };
+  const displayGames = (p) => {
+    const s = statsById[String(p.id)];
+    if (s != null) return s.games;
+    return p.games_played || 0;
+  };
 
   const filtered = players.filter(p => {
     const n = p.full_name || p.name || "";
     if (search && !n.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterArea !== "all" && p.area !== filterArea) return false;
-    if (filterElo === "close" && Math.abs(eloOf(p) - myElo) > 150) return false;
+    if (filterElo === "close" && Math.abs(displayElo(p) - myElo) > 150) return false;
     return true;
   });
 
@@ -72,10 +98,10 @@ export function MakkereTab({ user, showToast }) {
                   <span style={{ fontSize: "12px", color: theme.textLight, display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {p.area || "?"}</span>
                 </div>
                 <div style={{ display: "flex", gap: "5px", marginTop: "7px", flexWrap: "wrap" }}>
-                  <span style={tag(theme.accentBg, theme.accent)}>ELO {eloOf(p)}</span>
+                  <span style={tag(theme.accentBg, theme.accent)}>ELO {displayElo(p)}</span>
                   {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
                   <span style={tag(theme.blueBg, theme.blue)}>{p.play_style || "?"}</span>
-                  <span style={tag(theme.warmBg, theme.warm)}>{p.games_played || 0} kampe</span>
+                  <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>
                 </div>
                 {p.bio && <p style={{ fontSize: "12px", color: theme.textMid, marginTop: "8px", lineHeight: 1.5 }}>{p.bio}</p>}
               </div>
