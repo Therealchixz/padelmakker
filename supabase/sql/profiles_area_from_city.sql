@@ -41,6 +41,14 @@ BEGIN
   END IF;
 END $$;
 
--- 3) Valgfrit: fjern forældede city hvis den stadig findes ved siden af area
--- (kommentér ind hvis du vil droppe kolonnen efter tjek)
--- ALTER TABLE public.profiles DROP COLUMN IF EXISTS city;
+-- 3) Fjern city helt — region ligger kun i `area`
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'city'
+  ) THEN
+    ALTER TABLE public.profiles DROP COLUMN city;
+    RAISE NOTICE 'Slettede kolonnen profiles.city (kun area/region bruges nu)';
+  END IF;
+END $$;
