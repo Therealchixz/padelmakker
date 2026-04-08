@@ -24,14 +24,70 @@ export function parseDateLabel(html) {
   return m ? m[1].trim() : null;
 }
 
+/**
+ * Tidsakse: Halbooking bruger typisk venstre kolonne (`lefthead`) med
+ * `<div title='HH:MM' class='... banetid-...'>`. Padel Lounge bruger **div**,
+ * ikke samme mønster som NTSC (kun `title='tid'` før `class` med banetid).
+ */
 export function parseTimes(html) {
+  const owlIdx = html.indexOf("id='owl-kalender'");
+  const beforeOwl = owlIdx >= 0 ? html.slice(0, owlIdx) : html;
+  const leftMark = "pull-left lefthead";
+  const leftIdx = beforeOwl.lastIndexOf(leftMark);
   const times = [];
-  const re = /<div[^>]*title='(\d{2}:\d{2})'[^>]*class='[^']*banetid[^']*'/gi;
-  let m;
-  while ((m = re.exec(html))) {
-    times.push(m[1]);
+
+  if (leftIdx >= 0) {
+    const leftBlock = beforeOwl.slice(leftIdx);
+    const divRe = /<div[^>]+>/gi;
+    let dm;
+    while ((dm = divRe.exec(leftBlock))) {
+      const tag = dm[0];
+      if (!/banetid/i.test(tag)) continue;
+      const tm = tag.match(/\btitle=['"](\d{2}:\d{2})['"]/i);
+      if (tm) times.push(tm[1]);
+    }
   }
+
+  if (times.length === 0) {
+    const re = /<div[^>]*title='(\d{2}:\d{2})'[^>]*class='[^']*banetid[^']*'/gi;
+    let m;
+    while ((m = re.exec(html))) {
+      times.push(m[1]);
+    }
+  }
+
   return times;
+}
+
+/** Titel på celle (fx "Ledig, men kan ikke bookes …") */
+function attrTitle(attrs) {
+  let m = attrs.match(/\btitle="([^"]*)"/i);
+  if (m) return m[1];
+  m = attrs.match(/\btitle='([^']*)'/i);
+  return m ? m[1] : '';
+}
+
+/**
+ * `btn_ledig` bruges også når feltet **ikke** kan bookes (regler). Tæl kun som ledig
+ * når titlen ikke siger booket / ikke bookes / passeret.
+ */
+function statusFromSlotAttrs(attrs) {
+  const a = attrs.toLowerCase();
+  if (a.includes('bane_redbg')) return 'booked';
+  if (a.includes('bane_rest')) return 'unavailable';
+  if (a.includes('btn_ledig')) {
+    const t = attrTitle(attrs).toLowerCase();
+    if (
+      t.includes('booket') ||
+      t.includes('passeret') ||
+      t.includes('ikke book') ||
+      t.includes('kan ikke book')
+    ) {
+      return 'unavailable';
+    }
+    return 'free';
+  }
+  return 'other';
 }
 
 export function parseCourts(html) {
@@ -50,31 +106,70 @@ export function parseCourts(html) {
     const nameMatch = chunk.match(/baneheadtxt[^>]*>([^<]+)</);
     const courtName = nameMatch ? nameMatch[1].trim() : `Bane ${i}`;
 
-    const slotRe = /<span[^>]*class='([^']*banefelt[^']*size12[^']*)'[^>]*>/gi;
-    const statuses = [];
+    const slotRe = /<span([^>]*\bbanefelt[^>]*\bsize12[^>]*)>/gi;
+    const spanAttrs = [];
     let sm;
     while ((sm = slotRe.exec(chunk))) {
-      const cls = sm[1];
-      if (cls.includes('btn_ledig')) statuses.push('free');
-      else if (cls.includes('bane_redbg')) statuses.push('booked');
-      else if (cls.includes('bane_rest')) statuses.push('unavailable');
-      else statuses.push('other');
+      spanAttrs.push(sm[1]);
     }
 
-    courts.push({ name: courtName, statuses });
+    courts.push({ name: courtName, spanAttrs });
   }
 
   return { courts, error: null };
 }
 
+function median(nums) {
+  if (nums.length === 0) return 52;
+  const s = [...nums].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
+}
+
+/** Én rækkes højde (fx 40 px Padel Lounge, 52 px NTSC) ud fra spans i en kolonne */
+function guessRowHeightPx(spanAttrs) {
+  const heights = [];
+  for (const a of spanAttrs) {
+    const hm = a.match(/style=['"][^'"]*height:\s*(\d+)px/i);
+    if (hm) heights.push(parseInt(hm[1], 10));
+  }
+  const singles = heights.filter((h) => h >= 30 && h <= 90);
+  return singles.length ? median(singles) : 52;
+}
+
+/**
+ * Ekspanderer merged cells (height = N * rowHeight) til én status pr. tidsrække,
+ * og aligner med venstre kolonne (forreste tomme rækker = "unavailable").
+ */
+function expandAndAlignStatuses(spanAttrs, nTimes) {
+  const rowH = guessRowHeightPx(spanAttrs);
+  const expanded = [];
+  for (const a of spanAttrs) {
+    const hm = a.match(/style=['"][^'"]*height:\s*(\d+)px/i);
+    const h = hm ? parseInt(hm[1], 10) : rowH;
+    const rows = Math.max(1, Math.round(h / rowH));
+    const st = statusFromSlotAttrs(a);
+    for (let r = 0; r < rows; r++) expanded.push(st);
+  }
+  const pad = nTimes - expanded.length;
+  if (pad > 0) {
+    return [...Array(pad).fill('unavailable'), ...expanded];
+  }
+  if (expanded.length > nTimes) {
+    return expanded.slice(-nTimes);
+  }
+  return expanded;
+}
+
 function mergeSlots(times, courts) {
   const n = times.length;
   return courts.map((c) => {
+    const rowStatuses = expandAndAlignStatuses(c.spanAttrs, n);
     const slots = [];
-    for (let i = 0; i < Math.min(n, c.statuses.length); i++) {
+    for (let i = 0; i < n; i++) {
       slots.push({
         time: times[i],
-        status: c.statuses[i],
+        status: rowStatuses[i] || 'other',
       });
     }
     return {
