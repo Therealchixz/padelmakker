@@ -1,6 +1,10 @@
+function pad2(n) {
+  return String(n).padStart(2, '0')
+}
+
 /**
- * Vis dato i europæisk/dansk stil (dag først). `dateVal` er typisk YYYY-MM-DD fra DB;
- * håndterer også ISO-strenge med tid (fx fra Postgres timestamp) uden forkert TZ-forskydning.
+ * Kalenderdato i EU-stil: **dd.mm.yyyy** (altid med punktum — tydeligt forskellig fra ISO YYYY-MM-DD).
+ * Understøtter YYYY-MM-DD fra DB og ISO med tid; undgår locale-forskelle i browseren.
  */
 export function formatMatchDateDa(dateVal) {
   if (dateVal == null || dateVal === '') return '—'
@@ -10,34 +14,39 @@ export function formatMatchDateDa(dateVal) {
     s = `${isoDateTime[1]}-${isoDateTime[2]}-${isoDateTime[3]}`
   }
   const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
-  let d
+  let y
+  let mo
+  let day
   if (ymd) {
-    const y = parseInt(ymd[1], 10)
-    const mo = parseInt(ymd[2], 10) - 1
-    const day = parseInt(ymd[3], 10)
-    d = new Date(y, mo, day)
-    if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== day) {
+    y = parseInt(ymd[1], 10)
+    mo = parseInt(ymd[2], 10)
+    day = parseInt(ymd[3], 10)
+    const d = new Date(y, mo - 1, day)
+    if (d.getFullYear() !== y || d.getMonth() !== mo - 1 || d.getDate() !== day) {
       return s
     }
   } else {
     const dmy = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(s)
     if (dmy) {
-      const day = parseInt(dmy[1], 10)
-      const mo = parseInt(dmy[2], 10) - 1
-      const y = parseInt(dmy[3], 10)
-      d = new Date(y, mo, day)
-      if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== day) {
+      day = parseInt(dmy[1], 10)
+      mo = parseInt(dmy[2], 10)
+      y = parseInt(dmy[3], 10)
+      const d = new Date(y, mo - 1, day)
+      if (d.getFullYear() !== y || d.getMonth() !== mo - 1 || d.getDate() !== day) {
         return s
       }
     } else {
-      d = new Date(s)
+      const d = new Date(s)
       if (Number.isNaN(d.getTime())) return s
+      y = d.getFullYear()
+      mo = d.getMonth() + 1
+      day = d.getDate()
     }
   }
-  return d.toLocaleDateString('da-DK', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  return `${pad2(day)}.${pad2(mo)}.${y}`
 }
 
-/** Tid fra DB (fx 18:00 eller 18:00:00) → dansk 24-timers visning (fx 18.00). */
+/** Tid **tt.mm** (24h, punktum) — tydeligt forskellig fra DB-formatet 18:00. */
 export function formatTimeSlotDa(timeVal) {
   if (timeVal == null || timeVal === '') return '—'
   const s = String(timeVal).trim()
@@ -45,8 +54,7 @@ export function formatTimeSlotDa(timeVal) {
   if (!m) return s
   const h = Math.min(23, Math.max(0, parseInt(m[1], 10)))
   const min = Math.min(59, Math.max(0, parseInt(m[2], 10)))
-  const d = new Date(2000, 0, 1, h, min, 0)
-  return d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit', hour12: false })
+  return `${pad2(h)}.${pad2(min)}`
 }
 
 /** ELO fra profil-række (fallback når historik ikke er hentet). */

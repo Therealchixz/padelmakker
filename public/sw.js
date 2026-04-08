@@ -3,7 +3,7 @@
  * Tidligere versioner kunne kalde respondWith(undefined) ved netværksfejl +
  * tom cache → intermittent hvid skærm på mobil.
  */
-const VERSION = 'padelmakker-sw-v3-clear';
+const VERSION = 'padelmakker-sw-v4-eu-datetime';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
