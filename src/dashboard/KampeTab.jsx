@@ -29,6 +29,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const { profileFresh: kampeProfileFresh, ratedRows: kampeRatedRows, reloadProfileEloBundle: reloadKampeEloBundle } =
     useProfileEloBundle(user.id, eloSyncKeyKampe);
   const [showCreate, setShowCreate]   = useState(false);
+  const [showAmericanoCreate, setShowAmericanoCreate] = useState(false);
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
   const [matchPlayers, setMatchPlayers] = useState({});
@@ -550,26 +551,60 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   return (
     <div>
-      <div className="pm-kampe-head" style={{ marginBottom: "16px" }}>
-        <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Kampe</h2>
-        {kampeFormat === "padel" && !loadingMatches && (
-          <button onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
-            {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
-          </button>
-        )}
+      <div className="pm-kampe-head" style={{ marginBottom: "12px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            flexWrap: "wrap",
+            minHeight: "44px",
+          }}
+        >
+          <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), margin: 0, lineHeight: 1.2 }}>Kampe</h2>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              minHeight: "40px",
+              marginLeft: "auto",
+            }}
+          >
+            {!loadingMatches && kampeFormat === "padel" && (
+              <button type="button" onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
+                {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
+              </button>
+            )}
+            {!loadingMatches && kampeFormat === "americano" && (
+              <button type="button" onClick={() => setShowAmericanoCreate(!showAmericanoCreate)} style={btn(true)}>
+                {showAmericanoCreate ? "Annullér" : <><Plus size={15} /> Opret turnering</>}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
         <button
           type="button"
-          onClick={() => { setKampeFormat("padel"); setShowCreate(false); }}
+          onClick={() => {
+            setKampeFormat("padel");
+            setShowCreate(false);
+            setShowAmericanoCreate(false);
+          }}
           style={{ ...btn(kampeFormat === "padel"), padding: "8px 16px", fontSize: "13px" }}
         >
           Almindelig padel (2v2)
         </button>
         <button
           type="button"
-          onClick={() => { setKampeFormat("americano"); setShowCreate(false); }}
+          onClick={() => {
+            setKampeFormat("americano");
+            setShowCreate(false);
+            setShowAmericanoCreate(false);
+          }}
           style={{ ...btn(kampeFormat === "americano"), padding: "8px 16px", fontSize: "13px" }}
         >
           Americano
@@ -584,6 +619,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         <AmericanoTab
           profile={user}
           showToast={showToast}
+          embedInKampe
+          createOpen={showAmericanoCreate}
+          onCreateOpenChange={setShowAmericanoCreate}
           initialSubTab={(() => {
             const s = readKampeSessionPrefs(user.id);
             if (s?.americanoView === "open" || s?.americanoView === "playing" || s?.americanoView === "completed") {

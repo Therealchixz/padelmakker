@@ -28,6 +28,11 @@ type Props = {
   /** Gendan underfane efter tab/fokus/genindlæsning i samme session */
   initialSubTab?: AmericanoSubTab
   onAmericanoSubTabChange?: (tab: AmericanoSubTab) => void
+  /** Indlejret under Kampe — skjul egen top-række; "Opret turnering" styres udefra */
+  embedInKampe?: boolean
+  /** Styret opret-formular (sammen med onCreateOpenChange) */
+  createOpen?: boolean
+  onCreateOpenChange?: (open: boolean) => void
 }
 
 type ParticipantListRow = {
@@ -247,7 +252,15 @@ function resolveName(p: ProfileLike | null | undefined, authEmail?: string | nul
   return 'Spiller'
 }
 
-export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSubTabChange }: Props) {
+export function AmericanoTab({
+  profile,
+  showToast,
+  initialSubTab,
+  onAmericanoSubTabChange,
+  embedInKampe,
+  createOpen: createOpenProp,
+  onCreateOpenChange,
+}: Props) {
   const { user: authUser, refreshProfileQuiet } = useAuth()
   const authEmail =
     authUser && typeof authUser === 'object' && 'email' in authUser
@@ -263,7 +276,13 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
   const [rows, setRows] = useState<AmericanoTournament[]>([])
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
-  const [showCreate, setShowCreate] = useState(false)
+  const [createOpenInternal, setCreateOpenInternal] = useState(false)
+  const createControlled = typeof createOpenProp === 'boolean'
+  const showCreate = createControlled ? createOpenProp : createOpenInternal
+  const setShowCreate = (open: boolean) => {
+    onCreateOpenChange?.(open)
+    if (!createControlled) setCreateOpenInternal(open)
+  }
   const [busyId, setBusyId] = useState<string | null>(null)
   const [americanoView, setAmericanoView] = useState<AmericanoSubTab>(() => initialSubTab ?? 'open')
   const [participantsByTournament, setParticipantsByTournament] = useState<
@@ -543,28 +562,39 @@ export function AmericanoTab({ profile, showToast, initialSubTab, onAmericanoSub
 
   return (
     <div style={{ fontFamily: font }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-        <h2 style={{ fontSize: 'clamp(20px, 4.5vw, 24px)', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-          Americano
-        </h2>
-        <button
-          type="button"
-          onClick={() => setShowCreate((s) => !s)}
+      {!embedInKampe && (
+        <div
           style={{
-            fontFamily: font,
-            fontSize: 14,
-            fontWeight: 600,
-            padding: '10px 18px',
-            borderRadius: 10,
-            border: 'none',
-            background: '#1D4ED8',
-            color: '#fff',
-            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 12,
+            marginBottom: 20,
           }}
         >
-          {showCreate ? 'Annullér' : '+ Opret turnering'}
-        </button>
-      </div>
+          <h2 style={{ fontSize: 'clamp(20px, 4.5vw, 24px)', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+            Americano
+          </h2>
+          <button
+            type="button"
+            onClick={() => setShowCreate(!showCreate)}
+            style={{
+              fontFamily: font,
+              fontSize: 14,
+              fontWeight: 600,
+              padding: '10px 18px',
+              borderRadius: 10,
+              border: 'none',
+              background: '#1D4ED8',
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            {showCreate ? 'Annullér' : '+ Opret turnering'}
+          </button>
+        </div>
+      )}
 
       {showCreate && (
         <div style={{ marginBottom: 24 }}>
