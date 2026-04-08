@@ -46,10 +46,18 @@ type Props = {
   tournament: AmericanoTournament
   participants: PartMin[]
   currentUserId: string
+  /** Kun én afsluttet turnering åben ad gangen (styres af AmericanoTab) */
+  summaryOpen: boolean
+  onSummaryToggle: () => void
 }
 
-export function AmericanoCompletedSummary({ tournament, participants, currentUserId }: Props) {
-  const [open, setOpen] = useState(false)
+export function AmericanoCompletedSummary({
+  tournament,
+  participants,
+  currentUserId,
+  summaryOpen: open,
+  onSummaryToggle,
+}: Props) {
   const [matches, setMatches] = useState<AmericanoMatchRow[] | undefined>(undefined)
   const [loading, setLoading] = useState(false)
   const [fetchErr, setFetchErr] = useState<string | null>(null)
@@ -109,7 +117,7 @@ export function AmericanoCompletedSummary({ tournament, participants, currentUse
     >
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={onSummaryToggle}
         aria-expanded={open}
         style={{
           display: 'flex',

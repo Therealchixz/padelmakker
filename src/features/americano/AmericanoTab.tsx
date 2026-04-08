@@ -285,6 +285,8 @@ export function AmericanoTab({
   }
   const [busyId, setBusyId] = useState<string | null>(null)
   const [americanoView, setAmericanoView] = useState<AmericanoSubTab>(() => initialSubTab ?? 'open')
+  /** Afsluttede: kun én "Resultater og stilling" åben ad gangen (som Baner-accordion) */
+  const [openCompletedSummaryId, setOpenCompletedSummaryId] = useState<string | null>(null)
   const [participantsByTournament, setParticipantsByTournament] = useState<
     Record<string, ParticipantListRow[]>
   >({})
@@ -380,6 +382,15 @@ export function AmericanoTab({
       setAmericanoView(initialSubTab)
     }
   }, [initialSubTab])
+
+  useEffect(() => {
+    if (americanoView !== 'completed') setOpenCompletedSummaryId(null)
+  }, [americanoView])
+
+  useEffect(() => {
+    if (!openCompletedSummaryId) return
+    if (!rows.some((t) => t.id === openCompletedSummaryId)) setOpenCompletedSummaryId(null)
+  }, [rows, openCompletedSummaryId])
 
   useEffect(() => {
     const uidSet = new Set<string>()
@@ -987,6 +998,10 @@ export function AmericanoTab({
                   tournament={t}
                   participants={participantsByTournament[t.id] || []}
                   currentUserId={profileId}
+                  summaryOpen={openCompletedSummaryId === t.id}
+                  onSummaryToggle={() =>
+                    setOpenCompletedSummaryId((cur) => (cur === t.id ? null : t.id))
+                  }
                 />
               )}
             </div>
