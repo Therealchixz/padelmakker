@@ -10,6 +10,7 @@ import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578
 import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { americanoOutcomeColors } from './americanoOutcomeColors'
+import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 
 const font = "'Inter', sans-serif"
 
@@ -677,7 +678,8 @@ export function AmericanoTab({
             >
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t.name}</div>
               <div style={{ fontSize: 12, color: '#3E4C63' }}>
-                {t.tournament_date} · {t.time_slot} · {t.player_slots} spillere · {t.points_per_match} point
+                {formatMatchDateDa(t.tournament_date)} · {formatTimeSlotDa(t.time_slot)} · {t.player_slots}{' '}
+                spillere · {t.points_per_match} point
                 {Number(t.opponent_passes) === 2 ? ' · lang (2× runder)' : ''} ·{' '}
                 <span style={{ textTransform: 'capitalize' }}>{t.status}</span>
               </div>

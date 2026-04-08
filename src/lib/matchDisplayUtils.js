@@ -1,3 +1,34 @@
+/** Vis kampdato som dansk kalender (fx 6. apr. 2026). `dateVal` er typisk YYYY-MM-DD fra DB. */
+export function formatMatchDateDa(dateVal) {
+  if (dateVal == null || dateVal === '') return '—'
+  const s = String(dateVal).trim()
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  let d
+  if (m) {
+    const y = parseInt(m[1], 10)
+    const mo = parseInt(m[2], 10) - 1
+    const day = parseInt(m[3], 10)
+    d = new Date(y, mo, day)
+    if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== day) return s
+  } else {
+    d = new Date(s)
+    if (Number.isNaN(d.getTime())) return s
+  }
+  return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+/** Tid fra DB (fx 18:00 eller 18:00:00) → dansk 24-timers visning (fx 18.00). */
+export function formatTimeSlotDa(timeVal) {
+  if (timeVal == null || timeVal === '') return '—'
+  const s = String(timeVal).trim()
+  const m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s)
+  if (!m) return s
+  const h = Math.min(23, Math.max(0, parseInt(m[1], 10)))
+  const min = Math.min(59, Math.max(0, parseInt(m[2], 10)))
+  const d = new Date(2000, 0, 1, h, min, 0)
+  return d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
 /** ELO fra profil-række (fallback når historik ikke er hentet). */
 export function eloOf(p) {
   const v = Number(p?.elo_rating);

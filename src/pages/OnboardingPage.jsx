@@ -13,7 +13,7 @@ export function OnboardingPage({ onComplete }) {
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
   const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
 
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -23,7 +23,8 @@ export function OnboardingPage({ onComplete }) {
       return (
         validateFirstLastName(form.first_name, form.last_name).valid &&
         form.email.trim() &&
-        form.password.trim() &&
+        form.password.length >= 8 &&
+        form.password === form.password_confirm &&
         form.birth_year.length === 4
       );
     if (step === 1) return form.level && form.style;
@@ -39,12 +40,27 @@ export function OnboardingPage({ onComplete }) {
         setErr(nameCheck.message);
         return;
       }
+      if (form.password.length < 8) {
+        setErr("Adgangskoden skal være mindst 8 tegn.");
+        return;
+      }
+      if (form.password !== form.password_confirm) {
+        setErr("Adgangskoderne er ikke ens — tjek begge felter.");
+        return;
+      }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
       await signUp(form.email.trim(), form.password, {
-        full_name: sanitizeText(displayName), level: levelNum,
-        play_style: form.style, area: form.area, availability: form.availability,
-        bio: sanitizeText(form.bio), avatar: form.avatar, birth_year: parseInt(form.birth_year) || null,
+        full_name: sanitizeText(displayName),
+        level: levelNum,
+        play_style: form.style,
+        area: form.area,
+        availability: form.availability,
+        bio: sanitizeText(form.bio),
+        avatar: form.avatar,
+        birth_year: parseInt(form.birth_year, 10) || null,
+        /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
+        onboarding_completed: true,
       });
       if (onComplete) onComplete();
       /* Altid til login: undgå at blive på /opret eller auto-dashboard når der opstår en session */
@@ -73,7 +89,9 @@ export function OnboardingPage({ onComplete }) {
       <label style={labelStyle}>Email</label>
       <input value={form.email}    onChange={e => set("email", e.target.value)}    placeholder="din@email.dk"      type="email"    style={{ ...inputStyle, marginBottom: "14px" }} />
       <label style={labelStyle}>Adgangskode</label>
-      <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn"     type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+      <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "10px" }} />
+      <label style={labelStyle}>Bekræft adgangskode</label>
+      <input value={form.password_confirm} onChange={e => set("password_confirm", e.target.value)} placeholder="Gentag adgangskode" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "14px" }} />
       <label style={labelStyle}>Fødselsår</label>
       <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={inputStyle} />
     </div>,
