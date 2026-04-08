@@ -551,45 +551,19 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   return (
     <div>
-      <div className="pm-kampe-head" style={{ marginBottom: "12px" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr auto",
-            alignItems: "center",
-            gap: "12px",
-            minHeight: "44px",
-          }}
-        >
-          <h2
-            style={{
-              ...heading("clamp(20px,4.5vw,24px)"),
-              margin: 0,
-              lineHeight: 1.2,
-              minWidth: 0,
-            }}
-          >
-            Kampe
-          </h2>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              minHeight: "40px",
-            }}
-          >
-            {!loadingMatches && kampeFormat === "padel" && (
-              <button type="button" onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
-                {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
-              </button>
-            )}
-            {!loadingMatches && kampeFormat === "americano" && (
-              <button type="button" onClick={() => setShowAmericanoCreate(!showAmericanoCreate)} style={btn(true)}>
-                {showAmericanoCreate ? "Annullér" : <><Plus size={15} /> Opret turnering</>}
-              </button>
-            )}
-          </div>
+      <div className="pm-kampe-head" style={{ marginBottom: "12px", minHeight: "44px" }}>
+        <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), lineHeight: 1.2 }}>Kampe</h2>
+        <div className="pm-kampe-head-actions" style={{ minHeight: "40px" }}>
+          {!loadingMatches && kampeFormat === "padel" && (
+            <button type="button" onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
+              {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
+            </button>
+          )}
+          {!loadingMatches && kampeFormat === "americano" && (
+            <button type="button" onClick={() => setShowAmericanoCreate(!showAmericanoCreate)} style={btn(true)}>
+              {showAmericanoCreate ? "Annullér" : <><Plus size={15} /> Opret turnering</>}
+            </button>
+          )}
         </div>
       </div>
 
