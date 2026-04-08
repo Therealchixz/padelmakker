@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { theme, btn, inputStyle, heading, tag } from '../lib/platformTheme';
-import { SKANSEN_PADEL_HALBOOKING_URL, skansenBookingHintUrl } from '../lib/skansenHalbooking';
+import { SKANSEN_PADEL_HALBOOKING_ENTRY, skansenBookingHintUrl } from '../lib/skansenHalbooking';
 import { MapPin, Building2, ExternalLink, RefreshCw, Clock } from 'lucide-react';
 
 /** I dev proxes Vite til produktion så `/api/...` virker uden `vercel dev`. */
@@ -55,7 +55,7 @@ export function BanerTab() {
       </h2>
       <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '16px' }}>
         Tiderne hentes løbende fra klubbens Halbooking. For at booke skal du logge ind på deres site — klik på
-        en grøn tid for at åbne booking med bane og tid som hjælp, eller brug knappen nedenfor for hele kalenderen.
+        en grøn tid for at åbne Halbooking med <strong>Padel</strong> allerede valgt (samme som i deres dropdown).
       </p>
 
       <div
@@ -68,7 +68,7 @@ export function BanerTab() {
         }}
       >
         <a
-          href={SKANSEN_PADEL_HALBOOKING_URL}
+          href={SKANSEN_PADEL_HALBOOKING_ENTRY}
           target="_blank"
           rel="noopener noreferrer"
           style={{

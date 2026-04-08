@@ -172,8 +172,8 @@ export default async function handler(req, res) {
       dateLabel,
       fetchedAt: new Date().toISOString(),
       bookingBaseUrl: PROC_BANER,
-      /** GET med område — fuld booking sker på Halbooking efter login. */
-      bookingUrl: `${PROC_BANER}?soeg_omraede=${PADEL_OMRAEDE}`,
+      /** Relativ sti på PadelMakker: auto-POST til Halbooking med Padel valgt. */
+      bookingUrl: '/api/halbooking-open-padel',
       courts: courtsOut,
     });
   } catch (e) {
