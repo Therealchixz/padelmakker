@@ -449,6 +449,10 @@ export function AmericanoTab({
       const list = (parts || []) as Pick<AmericanoParticipant, 'id' | 'joined_at'>[]
       const slots = Number(t.player_slots)
       const n = list.length
+      if (n !== slots) {
+        showToast(`Turneringen skal være fyldt før start: ${slots} tilmeldte kræves (nu: ${n}).`)
+        return
+      }
       let matchRows
       if (canStartAmericano5767(n, slots)) {
         const passes = Number(t.opponent_passes) === 2 ? 2 : 1
@@ -690,6 +694,9 @@ export function AmericanoTab({
           {visibleRows.map((t) => {
             const isCreator = String(t.creator_id) === String(profileId)
             const joined = joinedIds.has(t.id)
+            const partCount = (participantsByTournament[t.id] || []).length
+            const slotsConfigured = Number(t.player_slots)
+            const tournamentFull = partCount === slotsConfigured
             return (
             <div
               key={t.id}
@@ -991,10 +998,21 @@ export function AmericanoTab({
                 )}
               </div>
               {isCreator && t.status === 'registration' && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12, alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                  {!tournamentFull && (
+                    <div style={{ fontSize: 12, color: '#B45309', fontWeight: 600 }}>
+                      Vent med at starte: {partCount}/{slotsConfigured} tilmeldt — alle {slotsConfigured} skal være med.
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                   <button
                     type="button"
-                    disabled={busyId === t.id}
+                    disabled={busyId === t.id || !tournamentFull}
+                    title={
+                      tournamentFull
+                        ? 'Generér runder og start turneringen'
+                        : `Kræver ${slotsConfigured} tilmeldte (nu ${partCount})`
+                    }
                     onClick={() => startTournament(t)}
                     style={{
                       fontFamily: font,
@@ -1003,9 +1021,9 @@ export function AmericanoTab({
                       padding: '8px 14px',
                       borderRadius: 8,
                       border: 'none',
-                      background: '#D97706',
-                      color: '#fff',
-                      cursor: busyId === t.id ? 'wait' : 'pointer',
+                      background: tournamentFull ? '#D97706' : '#E5E7EB',
+                      color: tournamentFull ? '#fff' : '#9CA3AF',
+                      cursor: busyId === t.id ? 'wait' : tournamentFull ? 'pointer' : 'not-allowed',
                     }}
                   >
                     {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
@@ -1032,6 +1050,7 @@ export function AmericanoTab({
                     <Trash2 size={14} aria-hidden />
                     Slet turnering
                   </button>
+                  </div>
                 </div>
               )}
               {joined && t.status === 'playing' && (

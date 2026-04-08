@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses } from './types'
 
@@ -15,6 +15,9 @@ type Props = {
 const PLAYER_OPTIONS: AmericanoPlayerSlots[] = [5, 6, 7]
 const POINT_OPTIONS: AmericanoPoints[] = [16, 24, 32]
 
+/** Særlig select-værdi når ingen bane i DB — turnering kan stadig oprettes */
+export const AMERICANO_COURT_NONE = '__none'
+
 export function CreateAmericanoTournamentForm({
   userId,
   displayName,
@@ -25,7 +28,7 @@ export function CreateAmericanoTournamentForm({
   const [name, setName] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [timeSlot, setTimeSlot] = useState('18:00')
-  const [courtId, setCourtId] = useState(courts[0]?.id ?? '')
+  const [courtId, setCourtId] = useState(() => courts[0]?.id ?? AMERICANO_COURT_NONE)
   const [playerSlots, setPlayerSlots] = useState<AmericanoPlayerSlots>(5)
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
   const [opponentPasses, setOpponentPasses] = useState<AmericanoOpponentPasses>(1)
@@ -33,16 +36,22 @@ export function CreateAmericanoTournamentForm({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    setCourtId((prev) => {
+      if (courts.length === 0) return AMERICANO_COURT_NONE
+      const ids = new Set(courts.map((c) => c.id))
+      if (!prev || prev === AMERICANO_COURT_NONE) return prev
+      if (!ids.has(prev)) return courts[0].id
+      return prev
+    })
+  }, [courts])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     const n = name.trim()
     if (!n) {
       setError('Angiv et turneringsnavn.')
-      return
-    }
-    if (!courtId && courts.length > 0) {
-      setError('Vælg en bane.')
       return
     }
     setSubmitting(true)
@@ -54,7 +63,7 @@ export function CreateAmericanoTournamentForm({
           name: n,
           tournament_date: date,
           time_slot: timeSlot,
-          court_id: courtId || null,
+          court_id: courtId && courtId !== AMERICANO_COURT_NONE ? courtId : null,
           player_slots: playerSlots,
           points_per_match: pointsPerMatch,
           opponent_passes: opponentPasses,
@@ -128,9 +137,8 @@ export function CreateAmericanoTournamentForm({
       <div style={{ marginTop: 14 }}>
         <label style={labelSmall}>Bane</label>
         <select value={courtId} onChange={(e) => setCourtId(e.target.value)} style={inputStyle}>
-          {courts.length === 0 ? (
-            <option value="">Ingen baner i systemet</option>
-          ) : (
+          <option value={AMERICANO_COURT_NONE}>Ikke valgt / anden bane</option>
+          {courts.length === 0 ? null : (
             courts.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -138,6 +146,9 @@ export function CreateAmericanoTournamentForm({
             ))
           )}
         </select>
+        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6, lineHeight: 1.45 }}>
+          Listen følger baner i databasen. Er der kun én (fx Skansen), kan du vælge &quot;Ikke valgt&quot; og skrive sted i beskrivelsen — eller tilføj flere baner under <strong>Baner</strong> i Supabase.
+        </p>
       </div>
 
       <div style={{ marginTop: 14 }}>
@@ -209,7 +220,7 @@ export function CreateAmericanoTournamentForm({
       <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
         <button
           type="submit"
-          disabled={submitting || courts.length === 0}
+          disabled={submitting}
           style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: 14,
@@ -220,7 +231,7 @@ export function CreateAmericanoTournamentForm({
             background: '#1D4ED8',
             color: '#fff',
             cursor: submitting ? 'wait' : 'pointer',
-            opacity: courts.length === 0 ? 0.5 : 1,
+            opacity: 1,
           }}
         >
           {submitting ? 'Opretter…' : 'Opret turnering'}

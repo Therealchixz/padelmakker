@@ -61,15 +61,18 @@ export function RankingTab({ user }) {
   }, [loadRankingData, eloSyncKey]);
 
   useEffect(() => {
+    let lastVisFetch = 0;
+    const throttleMs = 120000;
     const onVis = () => {
-      if (document.visibilityState === "visible") loadRankingData();
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastVisFetch < throttleMs) return;
+      lastVisFetch = now;
+      loadRankingData();
     };
-    const onFocus = () => { loadRankingData(); };
     document.addEventListener("visibilitychange", onVis);
-    window.addEventListener("focus", onFocus);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("focus", onFocus);
     };
   }, [loadRankingData]);
 
