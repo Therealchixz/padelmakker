@@ -2,6 +2,8 @@
  * Henter padel-kalender fra en Halbooking proc_baner.asp via POST omr_soeg.
  */
 
+import { readHalbookingHtml } from './halbookingEncoding.js';
+
 const UA = 'PadelMakkerHalbooking/1.0 (+https://www.padelmakker.dk)';
 
 export function collectInputFields(formInner) {
@@ -228,7 +230,7 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede) {
           .join('; ')
       : '';
 
-  const html0 = await firstRes.text();
+  const html0 = await readHalbookingHtml(firstRes);
   const formMatch = html0.match(/<form[^>]*id="multiform"[^>]*>([\s\S]*?)<\/form>/i);
   if (!formMatch) {
     return { error: 'Kunne ikke finde booking-formular' };
@@ -257,7 +259,7 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede) {
     return { error: `Halbooking POST fejl: ${secondRes.status}` };
   }
 
-  const html = await secondRes.text();
+  const html = await readHalbookingHtml(secondRes);
   if (!html.includes("id='owl-kalender'")) {
     return { error: 'Uventet svar fra Halbooking (ingen kalender)' };
   }
