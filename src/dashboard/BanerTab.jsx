@@ -5,15 +5,17 @@ import {
   halbookingSlotsUrl,
   halbookingOpenUrl,
   halbookingOpenVenueUrl,
+  bookliSlotsUrl,
+  copenhagenDateYmd,
 } from '../lib/banerVenues';
 import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn } from 'lucide-react';
 
 /**
- * @typedef {{ time: string, status: string, ruleHint?: string }} HalSlot
- * @typedef {{ name: string, slots: HalSlot[], available: string[] }} HalCourt
+ * @typedef {{ time: string, status: string, ruleHint?: string }} SlotRow
+ * @typedef {{ name: string, slots: SlotRow[], available: string[], id?: string, shortName?: string }} CourtRow
  */
 
-/** @typedef {{ courts: HalCourt[], dateLabel: string, fetchedAt: string, openBookingPath: string }} VenueLoadState */
+/** @typedef {{ courts: CourtRow[], dateLabel: string, fetchedAt: string, openBookingPath?: string, date?: string }} VenueLoadState */
 
 export function BanerTab() {
   const detailRefs = useRef(/** @type {Record<string, HTMLDetailsElement | null>} */ ({}));
@@ -24,8 +26,10 @@ export function BanerTab() {
   const [loadingVenue, setLoadingVenue] = useState({});
   /** @type {[Record<string, string | null>, function]} */
   const [errorVenue, setErrorVenue] = useState({});
+  /** Bookli: valgt dato pr. venue (YYYY-MM-DD) */
+  const [bookliDateByVenue, setBookliDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
 
-  const loadVenue = useCallback(async (venueId) => {
+  const loadHalbookingVenue = useCallback(async (venueId) => {
     setLoadingVenue((m) => ({ ...m, [venueId]: true }));
     setErrorVenue((m) => ({ ...m, [venueId]: null }));
     try {
@@ -53,6 +57,34 @@ export function BanerTab() {
     }
   }, []);
 
+  const loadBookliVenue = useCallback(async (venueId, dateYmd) => {
+    setLoadingVenue((m) => ({ ...m, [venueId]: true }));
+    setErrorVenue((m) => ({ ...m, [venueId]: null }));
+    try {
+      const r = await fetch(bookliSlotsUrl(venueId, dateYmd), { credentials: 'omit' });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || `Fejl ${r.status}`);
+      }
+      const data = await r.json();
+      setByVenue((m) => ({
+        ...m,
+        [venueId]: {
+          courts: data.courts || [],
+          dateLabel: data.dateLabel || '',
+          fetchedAt: data.fetchedAt || '',
+          date: data.date || dateYmd,
+        },
+      }));
+    } catch (e) {
+      console.error(e);
+      setErrorVenue((m) => ({ ...m, [venueId]: e.message || 'Kunne ikke hente tider' }));
+      setByVenue((m) => ({ ...m, [venueId]: null }));
+    } finally {
+      setLoadingVenue((m) => ({ ...m, [venueId]: false }));
+    }
+  }, []);
+
   /** Accordion: kun ét `<details>` åbent ad gangen. */
   const onDetailsToggle = (v, e) => {
     const el = e.currentTarget;
@@ -63,18 +95,131 @@ export function BanerTab() {
     });
 
     if (v.kind === 'halbooking') {
-      loadVenue(v.id);
+      loadHalbookingVenue(v.id);
+    } else if (v.kind === 'bookli') {
+      const today = copenhagenDateYmd();
+      const d = bookliDateByVenue[v.id] || today;
+      if (!bookliDateByVenue[v.id]) {
+        setBookliDateByVenue((m) => ({ ...m, [v.id]: today }));
+      }
+      loadBookliVenue(v.id, d);
     }
+  };
+
+  /**
+   * @param {SlotRow} s
+   * @param {import('../lib/banerVenues').BanerVenue} v
+   * @param {CourtRow} c
+   */
+  const renderSlot = (s, v, c) => {
+    if (s.status === 'free' && v.kind === 'bookli') {
+      return (
+        <a
+          key={s.time}
+          href={v.bookingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Åbner Bookli — log ind og vælg bane og tid"
+          style={{
+            background: 'rgba(34, 197, 94, 0.15)',
+            color: '#15803d',
+            border: '1px solid rgba(34, 197, 94, 0.45)',
+            padding: '6px 11px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          {s.time} · Ledig
+        </a>
+      );
+    }
+    if (s.status === 'free') {
+      return (
+        <a
+          key={s.time}
+          href={halbookingOpenUrl(v.id, c.name, s.time)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Book på Halbooking"
+          style={{
+            background: 'rgba(34, 197, 94, 0.15)',
+            color: '#15803d',
+            border: '1px solid rgba(34, 197, 94, 0.45)',
+            padding: '6px 11px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          {s.time} · Ledig
+        </a>
+      );
+    }
+    if (s.status === 'booked') {
+      return (
+        <span
+          key={s.time}
+          style={{
+            background: 'rgba(239, 68, 68, 0.12)',
+            color: '#b91c1c',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            padding: '6px 11px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 600,
+          }}
+        >
+          {s.time} · Optaget
+        </span>
+      );
+    }
+    if (s.status === 'blocked_rule') {
+      return (
+        <span
+          key={s.time}
+          title={s.ruleHint || 'Kan ikke bookes (klubbens regel)'}
+          style={{
+            background: 'rgba(245, 158, 11, 0.18)',
+            color: '#b45309',
+            border: '1px solid rgba(245, 158, 11, 0.5)',
+            padding: '6px 11px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 600,
+            cursor: 'help',
+          }}
+        >
+          {s.time} · Ikke bookbar
+        </span>
+      );
+    }
+    return (
+      <span
+        key={s.time}
+        style={{
+          background: theme.border + '55',
+          color: theme.textLight,
+          border: '1px solid ' + theme.border,
+          padding: '6px 11px',
+          borderRadius: '6px',
+          fontSize: '12px',
+        }}
+      >
+        {s.time}
+      </span>
+    );
   };
 
   return (
     <div>
-      <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '12px' }}>
-        Ledige padelbaner
-      </h2>
+      <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '12px' }}>Ledige padelbaner</h2>
       <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '20px' }}>
-        Åbn ét sted ad gangen. <strong>Halbooking</strong>: grøn = bookbar, gul = klubbens regel (tooltip).{' '}
-        <strong>Bookli</strong> (PadelPadel): book efter login — vi viser ikke enkelt-tidsknapper.
+        Åbn ét sted ad gangen. <strong>Halbooking</strong>: grøn = direkte til booking, gul = regel (tooltip).{' '}
+        <strong>PadelPadel (Bookli)</strong>: oversigt hentes som på padelpadel.dk — grøn åbner Bookli til login og booking
+        (mødelokaler vises ikke).
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -84,6 +229,7 @@ export function BanerTab() {
           const err = errorVenue[v.id];
           const openHref =
             v.kind === 'halbooking' ? loaded?.openBookingPath || halbookingOpenVenueUrl(v.id) : v.bookingUrl;
+          const bookliDate = bookliDateByVenue[v.id] || copenhagenDateYmd();
 
           return (
             <details
@@ -142,19 +288,47 @@ export function BanerTab() {
               </summary>
 
               <div style={{ padding: '0 16px 16px', borderTop: '1px solid ' + theme.border }}>
-                {v.kind === 'external' ? (
+                {v.kind === 'bookli' ? (
                   <>
-                    <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.55, marginTop: '12px' }}>
-                      {v.bookingNote}
+                    <p style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.5, marginTop: '12px' }}>
+                      Data hentes via Booklis offentlige kalender (samme som nederst på padelpadel.dk). 30 min. pr. felt —
+                      book efter login.
                     </p>
                     <div
                       style={{
                         display: 'flex',
                         flexWrap: 'wrap',
-                        gap: '8px',
-                        marginTop: '14px',
+                        gap: '10px',
+                        alignItems: 'center',
+                        marginTop: '12px',
+                        marginBottom: '10px',
                       }}
                     >
+                      <label style={{ fontSize: '12px', color: theme.textMid, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Dato
+                        <input
+                          type="date"
+                          value={bookliDate}
+                          onChange={(e) => setBookliDateByVenue((m) => ({ ...m, [v.id]: e.target.value }))}
+                          style={{ ...inputStyle, width: 'auto', padding: '8px 10px', fontSize: '13px' }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => loadBookliVenue(v.id, bookliDate)}
+                        disabled={loading}
+                        style={{
+                          ...btn(false),
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '13px',
+                          opacity: loading ? 0.65 : 1,
+                        }}
+                      >
+                        <RefreshCw size={15} className={loading ? 'pm-baner-refresh-spin' : undefined} />
+                        Hent tider
+                      </button>
                       <a
                         href={v.bookingUrl}
                         target="_blank"
@@ -169,7 +343,7 @@ export function BanerTab() {
                         }}
                       >
                         <LogIn size={16} />
-                        Log ind og book (Bookli)
+                        Book (Bookli)
                       </a>
                       <a
                         href={v.infoUrl}
@@ -185,9 +359,59 @@ export function BanerTab() {
                         }}
                       >
                         <ExternalLink size={16} />
-                        Om centret (PadelPadel)
+                        Om centret
                       </a>
                     </div>
+                    {loaded?.dateLabel && (
+                      <p style={{ fontSize: '12px', color: theme.textLight, marginBottom: '8px' }}>
+                        <Clock size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                        {loaded.dateLabel}
+                      </p>
+                    )}
+                    {loaded?.fetchedAt && (
+                      <p style={{ fontSize: '11px', color: theme.textLight, marginBottom: '12px' }}>
+                        Senest hentet: {new Date(loaded.fetchedAt).toLocaleString('da-DK')}
+                      </p>
+                    )}
+                    {loading && !loaded?.courts?.length && (
+                      <div style={{ textAlign: 'center', padding: '20px', color: theme.textLight, fontSize: '13px' }}>
+                        Henter tider…
+                      </div>
+                    )}
+                    {err && (
+                      <div
+                        style={{
+                          ...inputStyle,
+                          borderColor: theme.warm,
+                          background: theme.warmBg,
+                          padding: '12px',
+                          fontSize: '13px',
+                          marginBottom: '8px',
+                        }}
+                      >
+                        {err}
+                      </div>
+                    )}
+                    {loaded && loaded.courts.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {loaded.courts.map((c) => (
+                          <div
+                            key={c.id || c.name}
+                            style={{
+                              background: theme.bg,
+                              borderRadius: '8px',
+                              padding: '12px',
+                              border: '1px solid ' + theme.border,
+                            }}
+                          >
+                            <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>{c.name}</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                              {c.slots.map((s) => renderSlot(s, v, c))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>
@@ -219,7 +443,7 @@ export function BanerTab() {
                       </a>
                       <button
                         type="button"
-                        onClick={() => loadVenue(v.id)}
+                        onClick={() => loadHalbookingVenue(v.id)}
                         disabled={loading}
                         style={{
                           ...btn(false),
@@ -290,84 +514,7 @@ export function BanerTab() {
                           >
                             <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>{c.name}</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                              {c.slots.map((s) => {
-                                if (s.status === 'free') {
-                                  return (
-                                    <a
-                                      key={s.time}
-                                      href={halbookingOpenUrl(v.id, c.name, s.time)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      title="Book på Halbooking"
-                                      style={{
-                                        background: 'rgba(34, 197, 94, 0.15)',
-                                        color: '#15803d',
-                                        border: '1px solid rgba(34, 197, 94, 0.45)',
-                                        padding: '6px 11px',
-                                        borderRadius: '6px',
-                                        fontSize: '12px',
-                                        fontWeight: 600,
-                                        textDecoration: 'none',
-                                      }}
-                                    >
-                                      {s.time} · Ledig
-                                    </a>
-                                  );
-                                }
-                                if (s.status === 'booked') {
-                                  return (
-                                    <span
-                                      key={s.time}
-                                      style={{
-                                        background: 'rgba(239, 68, 68, 0.12)',
-                                        color: '#b91c1c',
-                                        border: '1px solid rgba(239, 68, 68, 0.35)',
-                                        padding: '6px 11px',
-                                        borderRadius: '6px',
-                                        fontSize: '12px',
-                                        fontWeight: 600,
-                                      }}
-                                    >
-                                      {s.time} · Optaget
-                                    </span>
-                                  );
-                                }
-                                if (s.status === 'blocked_rule') {
-                                  return (
-                                    <span
-                                      key={s.time}
-                                      title={s.ruleHint || 'Kan ikke bookes (klubbens regel)'}
-                                      style={{
-                                        background: 'rgba(245, 158, 11, 0.18)',
-                                        color: '#b45309',
-                                        border: '1px solid rgba(245, 158, 11, 0.5)',
-                                        padding: '6px 11px',
-                                        borderRadius: '6px',
-                                        fontSize: '12px',
-                                        fontWeight: 600,
-                                        cursor: 'help',
-                                      }}
-                                    >
-                                      {s.time} · Ikke bookbar
-                                    </span>
-                                  );
-                                }
-                                return (
-                                  <span
-                                    key={s.time}
-                                    style={{
-                                      background: theme.border + '55',
-                                      color: theme.textLight,
-                                      border: '1px solid ' + theme.border,
-                                      padding: '6px 11px',
-                                      borderRadius: '6px',
-                                      fontSize: '12px',
-                                    }}
-                                  >
-                                    {s.time}
-                                  </span>
-                                );
-                              })}
+                              {c.slots.map((s) => renderSlot(s, v, c))}
                             </div>
                           </div>
                         ))}

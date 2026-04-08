@@ -21,6 +21,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      '/api/bookli-slots': {
+        target: 'https://www.padelmakker.dk',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 })
