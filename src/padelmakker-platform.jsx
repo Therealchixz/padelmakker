@@ -26,7 +26,10 @@ export default function PadelMakker() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading || (user && profileLoading)) {
+  /* Kun fuldskærm under *første* profil-load. Ved tab-tilbage kan profileLoading kort være true
+     under stille opdatering — vis ikke spinner hvis vi allerede har en profil (undgår blink). */
+  const blockWholeAppForProfile = Boolean(user && profileLoading && !profile);
+  if (loading || blockWholeAppForProfile) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100dvh", background: theme.bg, padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" }}>
         <div className="pm-spinner" />
