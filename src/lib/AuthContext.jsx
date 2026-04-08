@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
-import { normalizeProfileRow } from './profileUtils'
+import { normalizeProfileRow, buildOnboardingProfileRowPatch } from './profileUtils'
 
 const AuthContext = createContext(null)
 
@@ -63,6 +63,24 @@ async function fetchOrCreateProfile(userRow) {
   let p = await fetchProfileQuery(userRow.id)
   if (p) {
     p = await syncProfileNameFromAuthIfNeeded(p, userRow)
+    const obPatch = buildOnboardingProfileRowPatch(userRow.user_metadata || {}, p)
+    if (obPatch && userRow.id) {
+      const { data: merged, error: obErr } = await supabase
+        .from('profiles')
+        .update(obPatch)
+        .eq('id', userRow.id)
+        .select()
+        .single()
+      if (!obErr && merged) {
+        p = normalizeProfileRow(merged)
+        const { error: metaErr } = await supabase.auth.updateUser({
+          data: { onboarding_applied_to_profile: true },
+        })
+        if (metaErr) console.warn('auth metadata onboarding flag:', metaErr.message)
+      } else if (obErr) {
+        console.warn('onboarding → profiles merge:', obErr.message)
+      }
+    }
     return p
   }
   const meta = userRow.user_metadata || {}
@@ -253,6 +271,33 @@ export function AuthProvider({ children }) {
     if (error) throw error
     const row = normalizeProfileRow(data)
     setProfile(row)
+    const meta = { ...(user.user_metadata || {}) }
+    let metaChanged = false
+    if ('area' in updates && updates.area != null) {
+      meta.area = updates.area
+      metaChanged = true
+    }
+    if ('birth_year' in updates) {
+      meta.birth_year = updates.birth_year
+      metaChanged = true
+    }
+    if ('availability' in updates && updates.availability != null) {
+      meta.availability = updates.availability
+      metaChanged = true
+    }
+    if ('play_style' in updates && updates.play_style != null) {
+      meta.play_style = updates.play_style
+      metaChanged = true
+    }
+    if ('full_name' in updates && updates.full_name != null) {
+      meta.full_name = updates.full_name
+      metaChanged = true
+    }
+    if (metaChanged) {
+      const { data: authData, error: metaErr } = await supabase.auth.updateUser({ data: meta })
+      if (!metaErr && authData?.user) setUser(authData.user)
+      else if (metaErr) console.warn('sync profile → auth metadata:', metaErr.message)
+    }
     return row
   }
 

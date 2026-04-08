@@ -1,4 +1,4 @@
-import { REGIONS } from "./platformConstants"
+import { REGIONS, DEFAULT_REGION } from "./platformConstants"
 
 /**
  * Map DB-værdi til den kanoniske regionsstreng fra REGIONS (knapper bruger fuldt navn).
@@ -85,6 +85,64 @@ export function normalizeStringArrayField(value) {
     return []
   }
   return []
+}
+
+/**
+ * Én-gangs sync: ny bruger har onboarding-data i auth.user_metadata, men `profiles` kan være
+ * oprettet af en DB-trigger uden de felter. Kør UPDATE med denne patch og sæt derefter
+ * onboarding_applied_to_profile i metadata.
+ *
+ * @param {Record<string, unknown>} meta — user_metadata
+ * @param {Record<string, unknown> | null} [existingProfile] — nuværende profiles-række (hvis nogen)
+ */
+export function buildOnboardingProfileRowPatch(meta, existingProfile = null) {
+  if (meta == null || typeof meta !== "object") return null
+  if (meta.onboarding_completed !== true || meta.onboarding_applied_to_profile === true) return null
+  const displayName = String(meta.full_name || meta.name || "").trim()
+  if (!displayName) return null
+
+  const metaAvail = normalizeStringArrayField(meta.availability)
+  const birthNum = meta.birth_year != null && meta.birth_year !== "" ? Number(meta.birth_year) : null
+  const metaArea =
+    canonicalRegionForForm(meta.area || meta.region || meta.city || "") || DEFAULT_REGION
+
+  if (existingProfile && typeof existingProfile === "object") {
+    const p = existingProfile
+    const profAvail = normalizeStringArrayField(p.availability)
+    const profArea = canonicalRegionForForm(String(p.area || "").trim()) || ""
+    const profBirth = p.birth_year != null && p.birth_year !== "" ? Number(p.birth_year) : null
+    const availMatch =
+      profAvail.length === metaAvail.length &&
+      metaAvail.length > 0 &&
+      metaAvail.every((x, i) => x === profAvail[i])
+    const birthMatch =
+      profBirth != null &&
+      !Number.isNaN(profBirth) &&
+      birthNum != null &&
+      !Number.isNaN(birthNum) &&
+      profBirth === birthNum
+    const areaMatch = profArea === metaArea
+    const nameOk =
+      String(p.full_name || p.name || "")
+        .trim()
+        .toLowerCase() === displayName.toLowerCase()
+    if (nameOk && availMatch && birthMatch && areaMatch) {
+      return null
+    }
+  }
+
+  const levelNum = meta.level != null && meta.level !== "" ? Number(meta.level) : NaN
+  return {
+    full_name: displayName,
+    name: displayName,
+    level: !Number.isNaN(levelNum) ? levelNum : 5,
+    play_style: String(meta.play_style || "Ved ikke endnu").trim() || "Ved ikke endnu",
+    area: metaArea,
+    availability: metaAvail,
+    bio: String(meta.bio || "").trim(),
+    avatar: meta.avatar || "🎾",
+    birth_year: birthNum != null && !Number.isNaN(Number(birthNum)) ? Number(birthNum) : null,
+  }
 }
 
 export function normalizeProfileRow(p) {

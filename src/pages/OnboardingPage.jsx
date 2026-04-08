@@ -42,9 +42,16 @@ export function OnboardingPage({ onComplete }) {
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
       await signUp(form.email.trim(), form.password, {
-        full_name: sanitizeText(displayName), level: levelNum,
-        play_style: form.style, area: form.area, availability: form.availability,
-        bio: sanitizeText(form.bio), avatar: form.avatar, birth_year: parseInt(form.birth_year) || null,
+        full_name: sanitizeText(displayName),
+        level: levelNum,
+        play_style: form.style,
+        area: form.area,
+        availability: form.availability,
+        bio: sanitizeText(form.bio),
+        avatar: form.avatar,
+        birth_year: parseInt(form.birth_year, 10) || null,
+        /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
+        onboarding_completed: true,
       });
       if (onComplete) onComplete();
       /* Altid til login: undgå at blive på /opret eller auto-dashboard når der opstår en session */
