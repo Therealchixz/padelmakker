@@ -17,6 +17,18 @@ export function formatMatchDateDa(dateVal) {
   return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+/** Tid fra DB (fx 18:00 eller 18:00:00) → dansk 24-timers visning (fx 18.00). */
+export function formatTimeSlotDa(timeVal) {
+  if (timeVal == null || timeVal === '') return '—'
+  const s = String(timeVal).trim()
+  const m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s)
+  if (!m) return s
+  const h = Math.min(23, Math.max(0, parseInt(m[1], 10)))
+  const min = Math.min(59, Math.max(0, parseInt(m[2], 10)))
+  const d = new Date(2000, 0, 1, h, min, 0)
+  return d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
 /** ELO fra profil-række (fallback når historik ikke er hentet). */
 export function eloOf(p) {
   const v = Number(p?.elo_rating);
