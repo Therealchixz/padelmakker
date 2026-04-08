@@ -1,114 +1,255 @@
-import { useState, useEffect } from 'react';
-import { Court, CourtSlot, Booking } from '../api/base44Client';
-import { font, theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
-import { externalBookingUrlForCourt } from '../lib/externalCourtBooking';
-import { MapPin, Building2, Sun, Star, Clock, ExternalLink } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { theme, btn, inputStyle, heading, tag } from '../lib/platformTheme';
+import { SKANSEN_PADEL_HALBOOKING_URL, skansenBookingHintUrl } from '../lib/skansenHalbooking';
+import { MapPin, Building2, ExternalLink, RefreshCw, Clock } from 'lucide-react';
 
-export function BanerTab({ user, showToast }) {
-  const [filterType, setFilterType] = useState("all");
-  const [sortBy, setSortBy]         = useState("price");
-  const [courts, setCourts]         = useState([]);
-  const [slots, setSlots]           = useState({});
-  const [loading, setLoading]       = useState(true);
+/** I dev proxes Vite til produktion så `/api/...` virker uden `vercel dev`. */
+const SLOTS_API =
+  (import.meta.env.VITE_SKANSEN_SLOTS_URL && String(import.meta.env.VITE_SKANSEN_SLOTS_URL).trim()) ||
+  '/api/halbooking-skansen-padel';
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [cd, sd] = await Promise.all([Court.filter(), CourtSlot.filter()]);
-        setCourts(cd || []);
-        const today = new Date().toISOString().split("T")[0];
-        const g = {};
-        (sd || []).forEach(s => { if (!s.is_booked && s.date >= today) { if (!g[s.court_id]) g[s.court_id] = []; g[s.court_id].push(s); } });
-        setSlots(g);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    })();
+/**
+ * @typedef {{ time: string, status: string }} HalSlot
+ * @typedef {{ name: string, slots: HalSlot[], available: string[] }} HalCourt
+ */
+
+export function BanerTab() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  /** @type {[HalCourt[] | null, function]} */
+  const [courts, setCourts] = useState(null);
+  const [meta, setMeta] = useState({ dateLabel: '', fetchedAt: '' });
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch(SLOTS_API, { credentials: 'omit' });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || `Fejl ${r.status}`);
+      }
+      const data = await r.json();
+      setCourts(data.courts || []);
+      setMeta({
+        dateLabel: data.dateLabel || '',
+        fetchedAt: data.fetchedAt || '',
+      });
+    } catch (e) {
+      console.error(e);
+      setError(e.message || 'Kunne ikke hente ledige tider');
+      setCourts(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  let filtered = [...courts];
-  if (filterType === "indoor")  filtered = filtered.filter(c =>  c.is_indoor);
-  if (filterType === "outdoor") filtered = filtered.filter(c => !c.is_indoor);
-  if (sortBy === "price")  filtered.sort((a, b) => (a.price_per_hour || 0) - (b.price_per_hour || 0));
-  if (sortBy === "rating") filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-
-  if (loading) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser baner...</div>;
+  useEffect(() => {
+    load();
+  }, [load]);
 
   return (
     <div>
-      <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "16px" }}>Padelbaner</h2>
-      <div className="pm-baner-filters" style={{ marginBottom: "20px" }}>
-        {[["all","Alle"],["indoor","Indoor"],["outdoor","Outdoor"]].map(([v,l]) => (
-          <button key={v} onClick={() => setFilterType(v)} style={{ ...btn(filterType === v), padding: "8px 16px", fontSize: "13px" }}>{l}</button>
-        ))}
-        <select className="pm-baner-sort" value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ ...inputStyle, width: "auto", minWidth: "120px", padding: "8px 12px", fontSize: "13px" }}>
-          <option value="price">Pris ↑</option>
-          <option value="rating">Rating ↓</option>
-        </select>
+      <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '12px' }}>
+        Skansen Padel — ledige tider
+      </h2>
+      <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '16px' }}>
+        Tiderne hentes løbende fra klubbens Halbooking. For at booke skal du logge ind på deres site — klik på
+        en grøn tid for at åbne booking med bane og tid som hjælp, eller brug knappen nedenfor for hele kalenderen.
+      </p>
+
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '10px',
+          alignItems: 'center',
+          marginBottom: '18px',
+        }}
+      >
+        <a
+          href={SKANSEN_PADEL_HALBOOKING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            ...btn(true),
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '13px',
+          }}
+        >
+          <ExternalLink size={16} />
+          Åbn Halbooking (book bane)
+        </a>
+        <button
+          type="button"
+          onClick={() => load()}
+          disabled={loading}
+          style={{
+            ...btn(false),
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '13px',
+            opacity: loading ? 0.65 : 1,
+          }}
+        >
+          <RefreshCw size={15} className={loading ? 'pm-baner-refresh-spin' : undefined} />
+          Opdater tider
+        </button>
+        {meta.dateLabel && (
+          <span style={{ fontSize: '12px', color: theme.textLight, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Clock size={12} />
+            {meta.dateLabel}
+          </span>
+        )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {filtered.map(c => {
-          const cs    = slots[c.id] || [];
-          const times = [...new Set(cs.map(s => s.time))].sort().slice(0, 8);
-          const externalBook = externalBookingUrlForCourt(c);
-          return (
-            <div key={c.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                <div>
-                  <div style={{ fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em", marginBottom: "2px" }}>{c.name}</div>
-                  <div style={{ fontSize: "12px", color: theme.textLight, display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {c.address}</div>
-                </div>
-                <span style={tag(c.is_indoor ? theme.blueBg : theme.warmBg, c.is_indoor ? theme.blue : theme.warm)}>
-                  {c.is_indoor ? <><Building2 size={9} /> Indoor</> : <><Sun size={9} /> Outdoor</>}
-                </span>
-              </div>
-              <div style={{ display: "flex", gap: "16px", marginBottom: "14px", fontSize: "13px", color: theme.textMid, flexWrap: "wrap" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Star size={12} color={theme.warm} fill={theme.warm} /> {c.rating || "—"}</span>
-                <span style={{ fontWeight: 600, color: theme.text }}>{c.price_per_hour} kr/t</span>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={12} /> {cs.length} ledige tider</span>
-              </div>
-              {externalBook && (
-                <div style={{ marginBottom: "14px" }}>
-                  <a
-                    href={externalBook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      ...btn(true),
-                      width: "100%",
-                      justifyContent: "center",
-                      textDecoration: "none",
-                      boxSizing: "border-box",
-                      fontSize: "13px",
-                    }}
-                  >
-                    <ExternalLink size={15} />
-                    Se ledige tider og book
-                  </a>
-                  <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "8px", lineHeight: 1.45, marginBottom: 0 }}>
-                    Åbner klubbens booking (Halbooking) i et nyt vindue — betaling og bekræftelse sker der.
-                  </p>
-                </div>
-              )}
-              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
-                {times.length > 0 && (
-                  <span style={{ fontSize: "11px", fontWeight: 600, color: theme.textLight, width: "100%", marginBottom: "2px" }}>Book i PadelMakker (demo)</span>
-                )}
-                {times.length > 0 ? times.map(t => (
-                  <button key={t} onClick={async () => {
-                    try {
-                      await Booking.create({ court_id: c.id, user_id: user?.id, date: new Date().toISOString().split("T")[0], time_slot: t, price: c.price_per_hour, court_name: c.name, status: "confirmed" });
-                      showToast("Booket kl. " + t + "! ✅");
-                    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
-                  }} style={{ background: theme.accentBg, color: theme.accent, border: "1px solid " + theme.accent + "30", padding: "6px 13px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: font, transition: "all 0.15s", letterSpacing: "-0.01em" }}>
-                    {t}
-                  </button>
-                )) : <span style={{ fontSize: "12px", color: theme.textLight }}>Ingen ledige tider</span>}
+      {meta.fetchedAt && (
+        <p style={{ fontSize: '11px', color: theme.textLight, marginTop: '-10px', marginBottom: '16px' }}>
+          Senest hentet: {new Date(meta.fetchedAt).toLocaleString('da-DK')}
+        </p>
+      )}
+
+      <div
+        style={{
+          background: theme.surface,
+          borderRadius: theme.radius,
+          padding: '16px',
+          boxShadow: theme.shadow,
+          border: '1px solid ' + theme.border,
+          marginBottom: '16px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '4px' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '15px', fontWeight: 700 }}>Skansen Padel</div>
+            <div style={{ fontSize: '12px', color: theme.textLight, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+              <MapPin size={11} /> Lerumbakken 11, 9400 Nørresundby
+            </div>
+          </div>
+          <span style={tag(theme.blueBg, theme.blue)}>
+            <Building2 size={10} />
+            Indoor
+          </span>
+        </div>
+      </div>
+
+      {loading && !courts && (
+        <div style={{ textAlign: 'center', padding: '36px', color: theme.textLight, fontSize: '14px' }}>
+          Henter ledige tider fra Halbooking…
+        </div>
+      )}
+
+      {error && (
+        <div
+          style={{
+            ...inputStyle,
+            borderColor: theme.warm,
+            background: theme.warmBg,
+            color: theme.text,
+            padding: '14px',
+            fontSize: '13px',
+            marginBottom: '16px',
+          }}
+        >
+          {error}
+          <div style={{ marginTop: '10px', fontSize: '12px', color: theme.textMid }}>
+            Du kan stadig booke direkte på Halbooking via knappen ovenfor.
+          </div>
+        </div>
+      )}
+
+      {courts && courts.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {courts.map((c) => (
+            <div
+              key={c.name}
+              style={{
+                background: theme.surface,
+                borderRadius: theme.radius,
+                padding: '16px',
+                boxShadow: theme.shadow,
+                border: '1px solid ' + theme.border,
+              }}
+            >
+              <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '10px' }}>{c.name}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {c.slots.map((s) => {
+                  if (s.status === 'free') {
+                    return (
+                      <a
+                        key={s.time}
+                        href={skansenBookingHintUrl(c.name, s.time)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Book på Halbooking (login på deres site)"
+                        style={{
+                          background: 'rgba(34, 197, 94, 0.15)',
+                          color: '#15803d',
+                          border: '1px solid rgba(34, 197, 94, 0.45)',
+                          padding: '6px 11px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        {s.time} · Ledig
+                      </a>
+                    );
+                  }
+                  if (s.status === 'booked') {
+                    return (
+                      <span
+                        key={s.time}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.12)',
+                          color: '#b91c1c',
+                          border: '1px solid rgba(239, 68, 68, 0.35)',
+                          padding: '6px 11px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {s.time} · Optaget
+                      </span>
+                    );
+                  }
+                  return (
+                    <span
+                      key={s.time}
+                      style={{
+                        background: theme.border + '55',
+                        color: theme.textLight,
+                        border: '1px solid ' + theme.border,
+                        padding: '6px 11px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                      }}
+                    >
+                      {s.time}
+                    </span>
+                  );
+                })}
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes pm-baner-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .pm-baner-refresh-spin {
+          animation: pm-baner-spin 0.8s linear infinite;
+        }
+      `}</style>
     </div>
   );
 }

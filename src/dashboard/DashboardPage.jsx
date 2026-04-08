@@ -65,7 +65,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       <div className="pm-dash-main">
         {tab === "hjem"    && <HomeTab    user={user} setTab={setTab} />}
         {tab === "makkere" && <MakkereTab user={user} showToast={showToast} />}
-        {tab === "baner"   && <BanerTab   user={user} showToast={showToast} />}
+        {tab === "baner"   && <BanerTab />}
         {tab === "kampe"   && <KampeTab   user={user} showToast={showToast} tabActive />}
         {tab === "ranking" && <RankingTab user={user} />}
         {tab === "profil"  && <ProfilTab  user={user} showToast={showToast} setTab={setTab} />}
