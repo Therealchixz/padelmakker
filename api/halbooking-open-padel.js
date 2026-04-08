@@ -3,7 +3,10 @@
  * GET-query i URL virker ikke — Halbooking kræver POST som deres dropdown.
  * Denne side returnerer HTML der auto-POST'er til proc_baner.asp.
  *
- * GET /api/halbooking-open-padel?pm_bane=Bane%201&pm_tid=18:00  (pm_* valgfrit, ignoreres af Halbooking)
+ * GET /api/halbooking-open-padel?pm_bane=Bane%201&pm_tid=18:00  (pm_* valgfrit)
+ *
+ * Bruger kun Node http.ServerResponse (statusCode + setHeader + end) — ikke Express .type()/.send(),
+ * som Vercel ikke understøtter og giver FUNCTION_INVOCATION_FAILED.
  */
 
 const PROC_BANER = 'https://ntsc.halbooking.dk/newlook/proc_baner.asp';
@@ -32,11 +35,32 @@ function escAttr(s) {
     .replace(/</g, '&lt;');
 }
 
+function readQuery(req) {
+  const raw = req.url || '';
+  const q = raw.includes('?') ? raw.slice(raw.indexOf('?') + 1) : '';
+  return new URLSearchParams(q);
+}
+
+function sendHtml(res, status, html) {
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.end(html);
+}
+
+function sendText(res, status, text, extraHeaders = {}) {
+  res.statusCode = status;
+  for (const [k, v] of Object.entries(extraHeaders)) {
+    res.setHeader(k, v);
+  }
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.end(text);
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   if (req.method !== 'GET') {
-    res.status(405).setHeader('Allow', 'GET').send('Method not allowed');
+    sendText(res, 405, 'Method not allowed', { Allow: 'GET' });
     return;
   }
 
@@ -45,14 +69,22 @@ export default async function handler(req, res) {
       headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
     });
     if (!firstRes.ok) {
-      res.status(502).type('html').send(`<!DOCTYPE html><html><body><p>Halbooking fejl (${firstRes.status}). <a href="${PROC_BANER}">Prøv direkte</a></p></body></html>`);
+      sendHtml(
+        res,
+        502,
+        `<!DOCTYPE html><html><body><p>Halbooking fejl (${firstRes.status}). <a href="${PROC_BANER}">Prøv direkte</a></p></body></html>`
+      );
       return;
     }
 
     const html0 = await firstRes.text();
     const formMatch = html0.match(/<form[^>]*id="multiform"[^>]*>([\s\S]*?)<\/form>/i);
     if (!formMatch) {
-      res.status(502).type('html').send(`<!DOCTYPE html><html><body><p>Kunne ikke læse booking-formular. <a href="${PROC_BANER}">Åbn Halbooking</a></p></body></html>`);
+      sendHtml(
+        res,
+        502,
+        `<!DOCTYPE html><html><body><p>Kunne ikke læse booking-formular. <a href="${PROC_BANER}">Åbn Halbooking</a></p></body></html>`
+      );
       return;
     }
 
@@ -64,8 +96,9 @@ export default async function handler(req, res) {
     params.set('mf_para3', '');
     params.set('mf_para4', '');
 
-    const pmBane = req.query?.pm_bane;
-    const pmTid = req.query?.pm_tid;
+    const qs = readQuery(req);
+    const pmBane = qs.get('pm_bane');
+    const pmTid = qs.get('pm_tid');
     if (pmBane != null && String(pmBane).trim() !== '') {
       params.set('pm_bane', String(pmBane).slice(0, 120));
     }
@@ -95,9 +128,13 @@ export default async function handler(req, res) {
 </body>
 </html>`;
 
-    res.status(200).type('html').send(body);
+    sendHtml(res, 200, body);
   } catch (e) {
     console.error('halbooking-open-padel', e);
-    res.status(500).type('html').send(`<!DOCTYPE html><html><body><p>Fejl: ${escAttr(e.message || 'ukendt')}</p></body></html>`);
+    sendHtml(
+      res,
+      500,
+      `<!DOCTYPE html><html><body><p>Fejl: ${escAttr(e.message || 'ukendt')}</p></body></html>`
+    );
   }
 }
