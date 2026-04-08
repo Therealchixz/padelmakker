@@ -71,6 +71,25 @@ body {
 .pm-delay-2 { transition-delay: 0.2s; }
 .pm-delay-3 { transition-delay: 0.3s; }
 .pm-delay-4 { transition-delay: 0.4s; }
+.pm-delay-5 { transition-delay: 0.5s; }
+.pm-delay-6 { transition-delay: 0.6s; }
+
+/* Landing: Funktioner — 3 kort pr. række på desktop, færre på tablet/mobil */
+.pm-landing-features-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .pm-landing-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 960px) {
+  .pm-landing-features-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 /* ─── Landing page hero gradient ─── */
 .pm-hero-gradient {

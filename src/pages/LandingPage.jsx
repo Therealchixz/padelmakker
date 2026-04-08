@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, ArrowRight } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight } from 'lucide-react';
 
 export function LandingPage() {
   const revealRef = useScrollReveal();
@@ -35,8 +35,10 @@ export function LandingPage() {
   const features = [
     { icon: <Trophy size={22} color={theme.accent} />, title: "ELO-ranking", desc: "Avanceret ranking-system der matcher dig med jævnbyrdige spillere." },
     { icon: <Swords size={22} color={theme.accent} />, title: "Holdkampe", desc: "Opret 2v2 kampe, vælg hold og registrér resultater med tiebreak-validering." },
-    { icon: <MessageCircle size={22} color={theme.accent} />, title: "Fællesskab", desc: "Bliv en del af Danmarks voksende padel-community med hundredvis af aktive spillere." },
     { icon: <Medal size={22} color={theme.accent} />, title: "Americano", desc: "Opret turneringer med automatisk rundeplan, fair rotation og stilling — et format for sig, uden at det påvirker din ELO." },
+    { icon: <MapPinned size={22} color={theme.accent} />, title: "Ledige baner", desc: "Se live ledige tider hos udvalgte centre og hop direkte videre til booking, når du har fundet et tidspunkt." },
+    { icon: <MessageCircle size={22} color={theme.accent} />, title: "Fællesskab", desc: "Bliv en del af Danmarks voksende padel-community med hundredvis af aktive spillere." },
+    { icon: <LineChart size={22} color={theme.accent} />, title: "Profil & udvikling", desc: "Følg din ELO over tid, se streaks og kamphistorik — så du kan se, hvordan dit niveau udvikler sig." },
   ];
 
   return (
@@ -138,9 +140,9 @@ export function LandingPage() {
             <p style={{ fontSize: "12px", fontWeight: 700, color: theme.accent, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "10px" }}>Funktioner</p>
             <h2 style={{ ...heading("clamp(26px,5.5vw,36px)"), letterSpacing: "-0.03em" }}>Alt hvad du behøver</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,280px),1fr))", gap: "16px" }}>
+          <div className="pm-landing-features-grid">
             {features.map((f, i) => (
-              <div key={i} className={"pm-feature-card pm-reveal pm-delay-" + (i+1)} style={{ background: theme.surface, borderRadius: "14px", padding: "32px 24px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+              <div key={f.title} className={"pm-feature-card pm-reveal pm-delay-" + (i + 1)} style={{ background: theme.surface, borderRadius: "14px", padding: "32px 24px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
                 <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: theme.accentBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px" }}>
                   {f.icon}
                 </div>
