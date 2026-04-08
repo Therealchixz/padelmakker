@@ -3,6 +3,9 @@
 -- =============================================================================
 -- Kør i Supabase → SQL Editor.
 --
+-- 0) Hvis SELECT id, name, address FROM public.courts ikke viser nogen Skansen-række:
+--    kør først courts_seed_skansen.sql (opretter banen + Halbooking-felter).
+--
 -- 1) Fejlen "invalid input syntax for type uuid" opstår hvis du bruger
 --    teksten DIN-COURT-UUID-HER — det skal være et rigtigt UUID fra din tabel.
 --    Find det med:
