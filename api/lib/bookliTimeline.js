@@ -45,7 +45,6 @@ function isMeetingRoom(name) {
  */
 function padelpadelCourtKindLabel(name, shortName) {
   const raw = String(shortName || name || '').trim();
-  const upper = raw.toUpperCase();
   const full = `${name || ''} ${shortName || ''}`.toUpperCase();
 
   if (/^SS\d*$/i.test(raw) || /\bSS\d+\b/i.test(full)) {
