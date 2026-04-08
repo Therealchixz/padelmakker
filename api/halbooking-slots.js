@@ -1,5 +1,6 @@
 /**
- * Bagudkompatibilitet: GET /api/halbooking-skansen-padel → samme som venue=skansen_ntsc
+ * GET /api/halbooking-slots?venue=skansen_ntsc
+ * Generisk ledige tider for allowlisted Halbooking-venues.
  */
 
 import { fetchHalbookingPadelSchedule } from './lib/halbookingFetch.js';
@@ -14,11 +15,17 @@ export default async function handler(req, res) {
     return;
   }
 
-  const venue = getAllowlistedVenue('skansen_ntsc');
+  const rawUrl = req.url || '';
+  const q = rawUrl.includes('?') ? rawUrl.slice(rawUrl.indexOf('?') + 1) : '';
+  const params = new URLSearchParams(q);
+  const venueId = params.get('venue') || '';
+
+  const venue = getAllowlistedVenue(venueId);
   if (!venue) {
-    res.status(500).json({ error: 'Venue skansen_ntsc mangler i allowlist' });
+    res.status(400).json({ error: 'Ukendt eller manglende venue' });
     return;
   }
+
   try {
     const result = await fetchHalbookingPadelSchedule(venue.procBaner, venue.omraede);
     if (result.error) {
@@ -27,18 +34,15 @@ export default async function handler(req, res) {
     }
 
     res.status(200).json({
-      venueId: 'skansen_ntsc',
-      source: 'ntsc_halbooking',
-      area: 'padel_skansen',
+      venueId,
       dateLabel: result.dateLabel,
       fetchedAt: new Date().toISOString(),
       bookingBaseUrl: result.procBaner,
-      bookingUrl: '/api/halbooking-open-padel?venue=skansen_ntsc',
-      openBookingPath: '/api/halbooking-open-padel?venue=skansen_ntsc',
+      openBookingPath: `/api/halbooking-open-padel?venue=${encodeURIComponent(venueId)}`,
       courts: result.courts,
     });
   } catch (e) {
-    console.error('halbooking-skansen-padel', e);
+    console.error('halbooking-slots', venueId, e);
     res.status(500).json({ error: e.message || 'Ukendt fejl' });
   }
 }

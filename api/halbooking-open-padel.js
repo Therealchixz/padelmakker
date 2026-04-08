@@ -1,32 +1,13 @@
 /**
- * Åbner NTSC Halbooking direkte på **Padel** (område 5).
- * GET-query i URL virker ikke — Halbooking kræver POST som deres dropdown.
- * Denne side returnerer HTML der auto-POST'er til proc_baner.asp.
+ * Auto-POST til Halbooking med valgt område (POST som dropdown).
  *
- * GET /api/halbooking-open-padel?pm_bane=Bane%201&pm_tid=18:00  (pm_* valgfrit)
- *
- * Bruger kun Node http.ServerResponse (statusCode + setHeader + end) — ikke Express .type()/.send(),
- * som Vercel ikke understøtter og giver FUNCTION_INVOCATION_FAILED.
+ * GET /api/halbooking-open-padel?venue=skansen_ntsc&pm_bane=...&pm_tid=...
  */
 
-const PROC_BANER = 'https://ntsc.halbooking.dk/newlook/proc_baner.asp';
-const PADEL_OMRAEDE = '5';
-const UA = 'PadelMakkerOpenPadel/1.0 (+https://www.padelmakker.dk)';
+import { collectInputFields } from './lib/halbookingFetch.js';
+import { getAllowlistedVenue } from './lib/halbookingVenuesAllowlist.js';
 
-function collectInputFields(formInner) {
-  const params = new URLSearchParams();
-  const re = /<input[^>]*>/gi;
-  let m;
-  while ((m = re.exec(formInner))) {
-    const tag = m[0];
-    const nameMatch = tag.match(/\bname="([^"]+)"/i);
-    if (!nameMatch) continue;
-    const name = nameMatch[1];
-    const valueMatch = tag.match(/\bvalue="([^"]*)"/i);
-    params.set(name, valueMatch ? valueMatch[1] : '');
-  }
-  return params;
-}
+const UA = 'PadelMakkerOpenPadel/1.0 (+https://www.padelmakker.dk)';
 
 function escAttr(s) {
   return String(s)
@@ -64,6 +45,17 @@ export default async function handler(req, res) {
     return;
   }
 
+  const qs = readQuery(req);
+  const venueId = qs.get('venue') || 'skansen_ntsc';
+  const cfg = getAllowlistedVenue(venueId);
+  if (!cfg) {
+    sendHtml(res, 400, `<!DOCTYPE html><html><body><p>Ukendt venue.</p></body></html>`);
+    return;
+  }
+
+  const PROC_BANER = cfg.procBaner;
+  const OMRAEDE = cfg.omraede;
+
   try {
     const firstRes = await fetch(PROC_BANER, {
       headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
@@ -89,14 +81,13 @@ export default async function handler(req, res) {
     }
 
     const params = collectInputFields(formMatch[1]);
-    params.set('soeg_omraede', PADEL_OMRAEDE);
+    params.set('soeg_omraede', OMRAEDE);
     params.set('mf_funktion', 'omr_soeg');
     params.set('mf_para1', '');
     params.set('mf_para2', '');
     params.set('mf_para3', '');
     params.set('mf_para4', '');
 
-    const qs = readQuery(req);
     const pmBane = qs.get('pm_bane');
     const pmTid = qs.get('pm_tid');
     if (pmBane != null && String(pmBane).trim() !== '') {
@@ -116,10 +107,10 @@ export default async function handler(req, res) {
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Viderestiller til padel-booking…</title>
+  <title>Viderestiller til booking…</title>
 </head>
 <body style="font-family:system-ui,sans-serif;padding:1.5rem;max-width:32rem;">
-  <p>Åbner Halbooking med <strong>Padel</strong> valgt…</p>
+  <p>Åbner Halbooking…</p>
   <p style="color:#666;font-size:14px;">Hvis intet sker, <button type="submit" form="pm-hb-padel" style="font:inherit;cursor:pointer;color:#1d4ed8;text-decoration:underline;background:none;border:none;padding:0;">klik her</button>.</p>
   <form id="pm-hb-padel" method="post" action="${PROC_BANER}" accept-charset="iso-8859-1">
     ${hidden}

@@ -16,6 +16,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      '/api/halbooking-slots': {
+        target: 'https://www.padelmakker.dk',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 })
