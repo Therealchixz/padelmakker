@@ -373,6 +373,33 @@ button,
   flex-shrink: 0;
 }
 
+/* 2v2: underfaner — samme bredde pr. knap, ingen hop når tællere ændrer sig */
+.pm-kampe-view-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  min-height: 40px;
+  align-items: stretch;
+}
+
+.pm-kampe-view-tabs > button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2v2: kamp-liste i fast højde — indhold scroller, ydre layout hopper ikke ved skift åben/afsluttet */
+.pm-kampe-list-scroll {
+  min-height: min(320px, calc(100dvh - 260px));
+  max-height: calc(100dvh - 220px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .pm-form-2col {
   display: grid;
   grid-template-columns: 1fr 1fr;

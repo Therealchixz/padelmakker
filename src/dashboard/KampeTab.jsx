@@ -616,14 +616,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {kampeFormat === "padel" && (
       <>
-      {/* View tabs */}
-      <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
+      {/* View tabs — .pm-kampe-view-tabs: lige brede knapper, tabular tal */}
+      <div className="pm-kampe-view-tabs">
         {[
           { id: "open", label: `Åbne (${openMatches.length})` },
           { id: "active", label: `I gang (${activeMatches.length})` },
           { id: "completed", label: `Afsluttede (${completedMatches.length})` },
-        ].map(t => (
-          <button key={t.id} onClick={() => setViewTab(t.id)} style={{ ...btn(viewTab === t.id), padding: "7px 14px", fontSize: "12px" }}>{t.label}</button>
+        ].map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setViewTab(t.id)}
+            style={{ ...btn(viewTab === t.id), padding: "7px 10px", fontSize: "12px" }}
+          >
+            {t.label}
+          </button>
         ))}
       </div>
 
@@ -658,15 +665,36 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         </div>
       )}
 
-      {/* Match list */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {viewTab === "open" && openMatches.map(m => renderMatchCard(m, "open"))}
-        {viewTab === "active" && activeMatches.map(m => renderMatchCard(m, "active"))}
-        {viewTab === "completed" && completedMatches.map(m => renderMatchCard(m, "completed"))}
+      {/* Match list — scroll inde i fast højde så ydre layout ikke hopper ved skift åben/afsluttet */}
+      <div className="pm-kampe-list-scroll">
+        {viewTab === "open" && openMatches.map((m) => renderMatchCard(m, "open"))}
+        {viewTab === "active" && activeMatches.map((m) => renderMatchCard(m, "active"))}
+        {viewTab === "completed" && completedMatches.map((m) => renderMatchCard(m, "completed"))}
 
-        {viewTab === "open" && openMatches.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>⚔️</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen åbne kampe</div><div style={{ fontSize: "13px", lineHeight: 1.5, marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med!</div><button onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}><Plus size={14} /> Opret kamp</button></div>}
-        {viewTab === "active" && activeMatches.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>🎾</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen aktive kampe</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Tilmeld dig en åben kamp for at komme i gang.</div></div>}
-        {viewTab === "completed" && completedMatches.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>📊</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen afsluttede kampe endnu</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Spil din første kamp og se dit resultat her.</div></div>}
+        {viewTab === "open" && openMatches.length === 0 && (
+          <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight, flex: "1", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "200px" }}>
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>⚔️</div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen åbne kampe</div>
+            <div style={{ fontSize: "13px", lineHeight: 1.5, marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med!</div>
+            <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px", alignSelf: "center" }}>
+              <Plus size={14} /> Opret kamp
+            </button>
+          </div>
+        )}
+        {viewTab === "active" && activeMatches.length === 0 && (
+          <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight, flex: "1", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "200px" }}>
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>🎾</div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen aktive kampe</div>
+            <div style={{ fontSize: "13px", lineHeight: 1.5 }}>Tilmeld dig en åben kamp for at komme i gang.</div>
+          </div>
+        )}
+        {viewTab === "completed" && completedMatches.length === 0 && (
+          <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight, flex: "1", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "200px" }}>
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>📊</div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen afsluttede kampe endnu</div>
+            <div style={{ fontSize: "13px", lineHeight: 1.5 }}>Spil din første kamp og se dit resultat her.</div>
+          </div>
+        )}
       </div>
 
       {/* Team selection modal */}
