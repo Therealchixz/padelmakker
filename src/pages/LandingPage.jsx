@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, ArrowRight } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, ArrowRight } from 'lucide-react';
 
 export function LandingPage() {
   const revealRef = useScrollReveal();
@@ -36,6 +36,7 @@ export function LandingPage() {
     { icon: <Trophy size={22} color={theme.accent} />, title: "ELO-ranking", desc: "Avanceret ranking-system der matcher dig med jævnbyrdige spillere." },
     { icon: <Swords size={22} color={theme.accent} />, title: "Holdkampe", desc: "Opret 2v2 kampe, vælg hold og registrér resultater med tiebreak-validering." },
     { icon: <MessageCircle size={22} color={theme.accent} />, title: "Fællesskab", desc: "Bliv en del af Danmarks voksende padel-community med hundredvis af aktive spillere." },
+    { icon: <Medal size={22} color={theme.accent} />, title: "Americano", desc: "Opret turneringer med automatisk rundeplan, fair rotation og stilling — et format for sig, uden at det påvirker din ELO." },
   ];
 
   return (
