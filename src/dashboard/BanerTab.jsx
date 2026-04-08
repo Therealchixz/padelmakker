@@ -9,7 +9,7 @@ import {
 import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock } from 'lucide-react';
 
 /**
- * @typedef {{ time: string, status: string }} HalSlot
+ * @typedef {{ time: string, status: string, ruleHint?: string }} HalSlot
  * @typedef {{ name: string, slots: HalSlot[], available: string[] }} HalCourt
  */
 
@@ -63,8 +63,9 @@ export function BanerTab() {
         Ledige padelbaner (Halbooking)
       </h2>
       <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '20px' }}>
-        Åbn et sted nedenfor for at hente tider. Klik på en <strong>grøn tid</strong> for at åbne klubbens booking
-        med det rigtige område valgt — du logger ind og færdiggør booking hos dem.
+        Åbn et sted nedenfor for at hente tider. <strong>Grøn</strong> = kan bookes på Halbooking.{' '}
+        <strong>Gul</strong> = ser ledig ud, men klubbens regler tillader ikke booking (hold musen over for tekst fra
+        Halbooking).
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -266,6 +267,26 @@ export function BanerTab() {
                                   }}
                                 >
                                   {s.time} · Optaget
+                                </span>
+                              );
+                            }
+                            if (s.status === 'blocked_rule') {
+                              return (
+                                <span
+                                  key={s.time}
+                                  title={s.ruleHint || 'Kan ikke bookes (klubbens regel)'}
+                                  style={{
+                                    background: 'rgba(245, 158, 11, 0.18)',
+                                    color: '#b45309',
+                                    border: '1px solid rgba(245, 158, 11, 0.5)',
+                                    padding: '6px 11px',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    cursor: 'help',
+                                  }}
+                                >
+                                  {s.time} · Ikke bookbar
                                 </span>
                               );
                             }

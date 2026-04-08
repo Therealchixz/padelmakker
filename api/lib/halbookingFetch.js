@@ -68,26 +68,27 @@ function attrTitle(attrs) {
 }
 
 /**
- * `btn_ledig` bruges også når feltet **ikke** kan bookes (regler). Tæl kun som ledig
- * når titlen ikke siger booket / ikke bookes / passeret.
+ * `btn_ledig` + titel om regler → `blocked_rule` (vises tydeligt i appen, ikke som generisk grå).
  */
 function statusFromSlotAttrs(attrs) {
   const a = attrs.toLowerCase();
-  if (a.includes('bane_redbg')) return 'booked';
-  if (a.includes('bane_rest')) return 'unavailable';
+  const titleRaw = attrTitle(attrs);
+  const t = titleRaw.toLowerCase();
+
+  if (a.includes('bane_redbg')) return { status: 'booked', ruleHint: null };
+  if (a.includes('bane_rest')) return { status: 'unavailable', ruleHint: null };
   if (a.includes('btn_ledig')) {
-    const t = attrTitle(attrs).toLowerCase();
-    if (
-      t.includes('booket') ||
-      t.includes('passeret') ||
-      t.includes('ikke book') ||
-      t.includes('kan ikke book')
-    ) {
-      return 'unavailable';
+    if (t.includes('booket')) return { status: 'booked', ruleHint: null };
+    if (t.includes('passeret')) return { status: 'unavailable', ruleHint: null };
+    if (t.includes('kan ikke book') || t.includes('ikke book')) {
+      return {
+        status: 'blocked_rule',
+        ruleHint: titleRaw.trim() || 'Kan ikke bookes (klubbens regel)',
+      };
     }
-    return 'free';
+    return { status: 'free', ruleHint: null };
   }
-  return 'other';
+  return { status: 'other', ruleHint: null };
 }
 
 export function parseCourts(html) {
@@ -148,12 +149,13 @@ function expandAndAlignStatuses(spanAttrs, nTimes) {
     const hm = a.match(/style=['"][^'"]*height:\s*(\d+)px/i);
     const h = hm ? parseInt(hm[1], 10) : rowH;
     const rows = Math.max(1, Math.round(h / rowH));
-    const st = statusFromSlotAttrs(a);
-    for (let r = 0; r < rows; r++) expanded.push(st);
+    const cell = statusFromSlotAttrs(a);
+    for (let r = 0; r < rows; r++) expanded.push({ ...cell });
   }
   const pad = nTimes - expanded.length;
   if (pad > 0) {
-    return [...Array(pad).fill('unavailable'), ...expanded];
+    const padding = Array.from({ length: pad }, () => ({ status: 'unavailable', ruleHint: null }));
+    return [...padding, ...expanded];
   }
   if (expanded.length > nTimes) {
     return expanded.slice(-nTimes);
@@ -164,12 +166,14 @@ function expandAndAlignStatuses(spanAttrs, nTimes) {
 function mergeSlots(times, courts) {
   const n = times.length;
   return courts.map((c) => {
-    const rowStatuses = expandAndAlignStatuses(c.spanAttrs, n);
+    const rowCells = expandAndAlignStatuses(c.spanAttrs, n);
     const slots = [];
     for (let i = 0; i < n; i++) {
+      const cell = rowCells[i] || { status: 'other', ruleHint: null };
       slots.push({
         time: times[i],
-        status: rowStatuses[i] || 'other',
+        status: cell.status,
+        ...(cell.ruleHint ? { ruleHint: cell.ruleHint } : {}),
       });
     }
     return {
