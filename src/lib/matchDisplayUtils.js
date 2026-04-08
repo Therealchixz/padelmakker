@@ -1,3 +1,22 @@
+/** Vis kampdato som dansk kalender (fx 6. apr. 2026). `dateVal` er typisk YYYY-MM-DD fra DB. */
+export function formatMatchDateDa(dateVal) {
+  if (dateVal == null || dateVal === '') return '—'
+  const s = String(dateVal).trim()
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  let d
+  if (m) {
+    const y = parseInt(m[1], 10)
+    const mo = parseInt(m[2], 10) - 1
+    const day = parseInt(m[3], 10)
+    d = new Date(y, mo, day)
+    if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== day) return s
+  } else {
+    d = new Date(s)
+    if (Number.isNaN(d.getTime())) return s
+  }
+  return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
 /** ELO fra profil-række (fallback når historik ikke er hentet). */
 export function eloOf(p) {
   const v = Number(p?.elo_rating);

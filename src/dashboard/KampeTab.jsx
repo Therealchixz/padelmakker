@@ -8,7 +8,7 @@ import { AmericanoTab } from '../features/americano/AmericanoTab';
 import { theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
-import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs } from '../lib/matchDisplayUtils';
+import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
 import { Clock, MapPin, Plus, UserMinus, Trash2 } from 'lucide-react';
@@ -420,7 +420,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           <div>
             <div style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
               <Clock size={15} color={theme.accent} />
-              <span>{m.date} · {matchTimeLabel(m)}</span>
+              <span>{formatMatchDateDa(m.date)} · {matchTimeLabel(m)}</span>
             </div>
             <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
             {m.description && <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "4px", fontStyle: "italic", lineHeight: 1.4 }}>💬 {m.description}</div>}
