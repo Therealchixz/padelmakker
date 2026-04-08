@@ -67,6 +67,8 @@ async function fetchOrCreateProfile(userRow) {
   }
   const meta = userRow.user_metadata || {}
   const email = userRow.email || ''
+  const regionFromMeta =
+    meta.region || meta.area || meta.city || 'Region Hovedstaden'
   const { data: row, error } = await supabase.from('profiles').upsert(
     {
       id: userRow.id,
@@ -75,7 +77,7 @@ async function fetchOrCreateProfile(userRow) {
       full_name: meta.full_name || meta.name || (email ? email.split('@')[0] : null) || 'Spiller',
       level: meta.level || 5,
       play_style: meta.play_style || 'Ved ikke endnu',
-      area: meta.area || 'Region Hovedstaden',
+      area: regionFromMeta,
       availability: meta.availability || [],
       bio: meta.bio || '',
       avatar: meta.avatar || '🎾',
@@ -200,6 +202,8 @@ export function AuthProvider({ children }) {
         (metadata.name && String(metadata.name).trim()) ||
         email.trim().split('@')[0] ||
         'Spiller'
+      const region =
+        metadata.region || metadata.area || metadata.city || 'Region Hovedstaden'
       await supabase.from('profiles').upsert({
         id: data.user.id,
         email: email,
@@ -207,10 +211,11 @@ export function AuthProvider({ children }) {
         full_name: displayName,
         level: metadata.level || 5,
         play_style: metadata.play_style || 'Ved ikke endnu',
-        area: metadata.area || 'Region Hovedstaden',
+        area: region,
         availability: metadata.availability || [],
         bio: metadata.bio || '',
         avatar: metadata.avatar || '🎾',
+        birth_year: metadata.birth_year ?? null,
       })
       if (data.session) {
         setSession(data.session)

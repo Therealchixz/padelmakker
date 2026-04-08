@@ -68,7 +68,15 @@ export function normalizeStringArrayField(value) {
 
 export function normalizeProfileRow(p) {
   if (p == null || typeof p !== "object") return p
-  return { ...p, availability: normalizeStringArrayField(p.availability) }
+  const region =
+    p.area != null && String(p.area).trim() !== ""
+      ? p.area
+      : p.region != null && String(p.region).trim() !== ""
+        ? p.region
+        : p.city != null && String(p.city).trim() !== ""
+          ? p.city
+          : p.area
+  return { ...p, area: region, availability: normalizeStringArrayField(p.availability) }
 }
 
 /** Danske + almindelige europæiske vokaler til navne-tjek */
