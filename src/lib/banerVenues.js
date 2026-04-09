@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon';
+
 /**
  * Alle steder under fanen Baner.
  * Halbooking: id skal matche api/lib/halbookingVenuesAllowlist.js
@@ -57,9 +59,15 @@ const BOOKLI_SLOTS_BASE =
 
 /**
  * @param {string} venueId
+ * @param {string} [dateYmd] - YYYY-MM-DD (Europe/Copenhagen)
  */
-export function halbookingSlotsUrl(venueId) {
-  return `${SLOTS_BASE}?venue=${encodeURIComponent(venueId)}`;
+export function halbookingSlotsUrl(venueId, dateYmd) {
+  const q = new URLSearchParams();
+  q.set('venue', venueId);
+  if (dateYmd && /^\d{4}-\d{2}-\d{2}$/.test(String(dateYmd).trim())) {
+    q.set('date', String(dateYmd).trim());
+  }
+  return `${SLOTS_BASE}?${q.toString()}`;
 }
 
 /**
@@ -76,6 +84,13 @@ export function bookliSlotsUrl(venueId, dateYmd) {
 /** I dag som YYYY-MM-DD i Europe/Copenhagen (til date-input default). */
 export function copenhagenDateYmd() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Copenhagen' });
+}
+
+/** Flyt en kalenderdag i Europe/Copenhagen (til Halbooking-dato). */
+export function copenhagenAddDaysYmd(ymd, deltaDays) {
+  const d = DateTime.fromISO(String(ymd || '').trim(), { zone: 'Europe/Copenhagen' });
+  if (!d.isValid) return copenhagenDateYmd();
+  return d.plus({ days: deltaDays }).toFormat('yyyy-MM-dd');
 }
 
 /**

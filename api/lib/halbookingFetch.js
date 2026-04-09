@@ -255,42 +255,47 @@ function mergeSlots(times, courts) {
   });
 }
 
+/** @param {string | undefined} prev */
+function mergeHalbookingCookies(prev, setCookieHeader) {
+  if (!setCookieHeader || typeof setCookieHeader !== 'string') return prev || '';
+  const chunk = setCookieHeader
+    .split(/,(?=[^;]+=)/)
+    .map((p) => p.split(';')[0].trim())
+    .join('; ');
+  if (!prev) return chunk;
+  return [prev, chunk].filter(Boolean).join('; ');
+}
+
 /**
- * @param {string} procBanerUrl fuld URL til .../newlook/proc_baner.asp
- * @param {string} soegOmrAede Halbooking område-id (string)
+ * @param {string} ymd
+ * @returns {Date | null}
  */
-export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede) {
-  const firstRes = await fetch(procBanerUrl, {
-    headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
-  });
-  if (!firstRes.ok) {
-    return { error: `Halbooking fejl: ${firstRes.status}` };
-  }
+function utcDateFromYmd(ymd) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || '').trim());
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  return new Date(Date.UTC(y, mo - 1, d));
+}
 
-  const setCookie = firstRes.headers.get('set-cookie');
-  const cookie =
-    setCookie && typeof setCookie === 'string'
-      ? setCookie
-          .split(/,(?=[^;]+=)/)
-          .map((p) => p.split(';')[0].trim())
-          .join('; ')
-      : '';
-
-  const html0 = await readHalbookingHtml(firstRes);
-  const formMatch = html0.match(/<form[^>]*id="multiform"[^>]*>([\s\S]*?)<\/form>/i);
+/**
+ * POST kalender med mf_funktion (fx dagfrem, dagback) — samme session-cookie som omr_soeg-svaret.
+ */
+async function postHalbookingCalendarNav(procBanerUrl, cookie, html, mfFunktion) {
+  const formMatch = html.match(/<form[^>]*id="multiform"[^>]*>([\s\S]*?)<\/form>/i);
   if (!formMatch) {
-    return { error: 'Kunne ikke finde booking-formular' };
+    return { error: 'Kunne ikke finde booking-formular (nav)' };
   }
-
   const params = collectInputFields(formMatch[1]);
-  params.set('soeg_omraede', String(soegOmrAede));
-  params.set('mf_funktion', 'omr_soeg');
+  params.set('mf_funktion', String(mfFunktion));
   params.set('mf_para1', '');
   params.set('mf_para2', '');
   params.set('mf_para3', '');
   params.set('mf_para4', '');
 
-  const secondRes = await fetch(procBanerUrl, {
+  const res = await fetch(procBanerUrl, {
     method: 'POST',
     headers: {
       'User-Agent': UA,
@@ -301,26 +306,115 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede) {
     body: params.toString(),
   });
 
-  if (!secondRes.ok) {
-    return { error: `Halbooking POST fejl: ${secondRes.status}` };
+  if (!res.ok) {
+    return { error: `Halbooking nav fejl: ${res.status}` };
   }
 
-  const html = await readHalbookingHtml(secondRes);
+  const nextCookie = mergeHalbookingCookies(cookie, res.headers.get('set-cookie'));
+  const nextHtml = await readHalbookingHtml(res);
+  return { html: nextHtml, cookie: nextCookie };
+}
+
+function parseCalendarHtml(html) {
   if (!html.includes("id='owl-kalender'")) {
     return { error: 'Uventet svar fra Halbooking (ingen kalender)' };
   }
-
   const dateLabel = parseDateLabel(html);
   const times = parseTimes(html);
   const { courts, error: parseErr } = parseCourts(html);
   if (parseErr || courts.length === 0) {
     return { error: parseErr || 'Ingen baner i kalender' };
   }
-
   const courtsOut = mergeSlots(times, courts);
+  return { dateLabel, courts: courtsOut };
+}
+
+/**
+ * @param {string} procBanerUrl
+ * @param {string} soegOmrAede
+ * @param {{ targetDateYmd?: string }} [options] — valgfri YYYY-MM-DD; navigerer med Halbookings dag/uge-knapper (dagback, dagfrem, …)
+ */
+export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, options = {}) {
+  const targetDateYmd =
+    typeof options.targetDateYmd === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(options.targetDateYmd.trim())
+      ? options.targetDateYmd.trim()
+      : null;
+
+  const firstRes = await fetch(procBanerUrl, {
+    headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
+  });
+  if (!firstRes.ok) {
+    return { error: `Halbooking fejl: ${firstRes.status}` };
+  }
+
+  let cookie = mergeHalbookingCookies('', firstRes.headers.get('set-cookie'));
+
+  const html0 = await readHalbookingHtml(firstRes);
+  const formMatch0 = html0.match(/<form[^>]*id="multiform"[^>]*>([\s\S]*?)<\/form>/i);
+  if (!formMatch0) {
+    return { error: 'Kunne ikke finde booking-formular' };
+  }
+
+  const params0 = collectInputFields(formMatch0[1]);
+  params0.set('soeg_omraede', String(soegOmrAede));
+  params0.set('mf_funktion', 'omr_soeg');
+  params0.set('mf_para1', '');
+  params0.set('mf_para2', '');
+  params0.set('mf_para3', '');
+  params0.set('mf_para4', '');
+
+  const secondRes = await fetch(procBanerUrl, {
+    method: 'POST',
+    headers: {
+      'User-Agent': UA,
+      Accept: 'text/html,*/*',
+      'Content-Type': 'application/x-www-form-urlencoded',
+      ...(cookie ? { Cookie: cookie } : {}),
+    },
+    body: params0.toString(),
+  });
+
+  if (!secondRes.ok) {
+    return { error: `Halbooking POST fejl: ${secondRes.status}` };
+  }
+
+  cookie = mergeHalbookingCookies(cookie, secondRes.headers.get('set-cookie'));
+  let html = await readHalbookingHtml(secondRes);
+
+  const targetUtc = targetDateYmd ? utcDateFromYmd(targetDateYmd) : null;
+  const maxSteps = 400;
+
+  if (targetUtc) {
+    for (let step = 0; step < maxSteps; step++) {
+      const curYmd = parseScheduleDateYmd(parseDateLabel(html) || '');
+      if (curYmd === targetDateYmd) break;
+
+      const curUtc = curYmd ? utcDateFromYmd(curYmd) : null;
+      if (!curUtc) {
+        return { error: 'Kunne ikke aflæse dato fra Halbooking' };
+      }
+
+      const diffDays = Math.round((targetUtc.getTime() - curUtc.getTime()) / 86400000);
+      let nav = null;
+      if (diffDays <= -7) nav = 'ugeback';
+      else if (diffDays < 0) nav = 'dagback';
+      else if (diffDays >= 7) nav = 'ugefrem';
+      else if (diffDays > 0) nav = 'dagfrem';
+      else break;
+
+      const navRes = await postHalbookingCalendarNav(procBanerUrl, cookie, html, nav);
+      if (navRes.error) return { error: navRes.error };
+      html = navRes.html;
+      cookie = navRes.cookie;
+    }
+  }
+
+  const parsed = parseCalendarHtml(html);
+  if (parsed.error) return { error: parsed.error };
+
   return {
-    dateLabel,
-    courts: courtsOut,
+    dateLabel: parsed.dateLabel,
+    courts: parsed.courts,
     procBanerUrl,
     soegOmrAede: String(soegOmrAede),
   };

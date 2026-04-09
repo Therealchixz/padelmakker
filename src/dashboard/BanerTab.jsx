@@ -7,6 +7,7 @@ import {
   halbookingOpenVenueUrl,
   bookliSlotsUrl,
   copenhagenDateYmd,
+  copenhagenAddDaysYmd,
 } from '../lib/banerVenues';
 import { filterPastSlotsIfToday } from '../lib/banerPastSlots';
 import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn } from 'lucide-react';
@@ -29,12 +30,14 @@ export function BanerTab() {
   const [errorVenue, setErrorVenue] = useState({});
   /** Bookli: valgt dato pr. venue (YYYY-MM-DD) */
   const [bookliDateByVenue, setBookliDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
+  /** Halbooking: valgt dato pr. venue (YYYY-MM-DD) */
+  const [halbookingDateByVenue, setHalbookingDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
 
-  const loadHalbookingVenue = useCallback(async (venueId) => {
+  const loadHalbookingVenue = useCallback(async (venueId, dateYmd) => {
     setLoadingVenue((m) => ({ ...m, [venueId]: true }));
     setErrorVenue((m) => ({ ...m, [venueId]: null }));
     try {
-      const r = await fetch(halbookingSlotsUrl(venueId), { credentials: 'omit' });
+      const r = await fetch(halbookingSlotsUrl(venueId, dateYmd), { credentials: 'omit' });
       if (!r.ok) {
         const j = await r.json().catch(() => ({}));
         throw new Error(j.error || `Fejl ${r.status}`);
@@ -43,6 +46,10 @@ export function BanerTab() {
       const today = copenhagenDateYmd();
       const courtsRaw = data.courts || [];
       const courts = filterPastSlotsIfToday(courtsRaw, data.scheduleDate || null, today);
+      const sched = data.scheduleDate || dateYmd || null;
+      if (sched) {
+        setHalbookingDateByVenue((m) => ({ ...m, [venueId]: sched }));
+      }
       setByVenue((m) => ({
         ...m,
         [venueId]: {
@@ -105,7 +112,12 @@ export function BanerTab() {
     });
 
     if (v.kind === 'halbooking') {
-      loadHalbookingVenue(v.id);
+      const today = copenhagenDateYmd();
+      const d = halbookingDateByVenue[v.id] || today;
+      if (!halbookingDateByVenue[v.id]) {
+        setHalbookingDateByVenue((m) => ({ ...m, [v.id]: today }));
+      }
+      loadHalbookingVenue(v.id, d);
     } else if (v.kind === 'bookli') {
       const today = copenhagenDateYmd();
       const d = bookliDateByVenue[v.id] || today;
@@ -240,6 +252,8 @@ export function BanerTab() {
           const openHref =
             v.kind === 'halbooking' ? loaded?.openBookingPath || halbookingOpenVenueUrl(v.id) : v.bookingUrl;
           const bookliDate = bookliDateByVenue[v.id] || copenhagenDateYmd();
+          const halbookingDate = halbookingDateByVenue[v.id] || copenhagenDateYmd();
+          const todayYmd = copenhagenDateYmd();
 
           return (
             <details
@@ -432,13 +446,123 @@ export function BanerTab() {
                   </>
                 ) : (
                   <>
+                    {loaded?.dateLabel && (
+                      <p
+                        style={{
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          color: theme.text,
+                          marginTop: '12px',
+                          marginBottom: '8px',
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {v.title} — {loaded.dateLabel}
+                      </p>
+                    )}
                     <div
                       style={{
                         display: 'flex',
                         flexWrap: 'wrap',
                         gap: '8px',
                         alignItems: 'center',
-                        marginTop: '12px',
+                        marginBottom: '12px',
+                      }}
+                      className="pm-baner-date-nav"
+                    >
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(halbookingDate, -7);
+                          setHalbookingDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadHalbookingVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én uge tilbage"
+                      >
+                        ≪ 1 uge
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(halbookingDate, -1);
+                          setHalbookingDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadHalbookingVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én dag tilbage"
+                      >
+                        ‹ 1 dag
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          setHalbookingDateByVenue((m) => ({ ...m, [v.id]: todayYmd }));
+                          loadHalbookingVenue(v.id, todayYmd);
+                        }}
+                        style={{ ...btn(halbookingDate === todayYmd), fontSize: '12px', padding: '8px 12px', opacity: loading ? 0.65 : 1 }}
+                      >
+                        I dag
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(halbookingDate, 1);
+                          setHalbookingDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadHalbookingVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én dag frem"
+                      >
+                        1 dag ›
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(halbookingDate, 7);
+                          setHalbookingDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadHalbookingVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én uge frem"
+                      >
+                        1 uge ≫
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '10px',
+                        alignItems: 'center',
+                        marginBottom: '10px',
+                      }}
+                    >
+                      <label style={{ fontSize: '12px', color: theme.textMid, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Dato
+                        <input
+                          type="date"
+                          value={halbookingDate}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setHalbookingDateByVenue((m) => ({ ...m, [v.id]: val }));
+                            loadHalbookingVenue(v.id, val);
+                          }}
+                          style={{ ...inputStyle, width: 'auto', padding: '8px 10px', fontSize: '13px' }}
+                        />
+                      </label>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        alignItems: 'center',
                         marginBottom: '10px',
                       }}
                     >
@@ -460,7 +584,7 @@ export function BanerTab() {
                       </a>
                       <button
                         type="button"
-                        onClick={() => loadHalbookingVenue(v.id)}
+                        onClick={() => loadHalbookingVenue(v.id, halbookingDate)}
                         disabled={loading}
                         style={{
                           ...btn(false),
@@ -474,20 +598,6 @@ export function BanerTab() {
                         <RefreshCw size={15} className={loading ? 'pm-baner-refresh-spin' : undefined} />
                         Opdater tider
                       </button>
-                      {loaded?.dateLabel && (
-                        <span
-                          style={{
-                            fontSize: '12px',
-                            color: theme.textLight,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                          }}
-                        >
-                          <Clock size={12} />
-                          {loaded.dateLabel}
-                        </span>
-                      )}
                     </div>
 
                     {loaded?.fetchedAt && (

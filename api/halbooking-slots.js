@@ -1,6 +1,7 @@
 /**
- * GET /api/halbooking-slots?venue=skansen_ntsc
+ * GET /api/halbooking-slots?venue=skansen_ntsc&date=YYYY-MM-DD
  * Generisk ledige tider for allowlisted Halbooking-venues.
+ * Valgfri date: samme navigation som Halbookings kalender (dag/uge frem/tilbage).
  */
 
 import { fetchHalbookingPadelSchedule, parseScheduleDateYmd } from './lib/halbookingFetch.js';
@@ -19,6 +20,9 @@ export default async function handler(req, res) {
   const q = rawUrl.includes('?') ? rawUrl.slice(rawUrl.indexOf('?') + 1) : '';
   const params = new URLSearchParams(q);
   const venueId = params.get('venue') || '';
+  const dateParam = params.get('date');
+  const dateYmd =
+    dateParam && /^\d{4}-\d{2}-\d{2}$/.test(String(dateParam).trim()) ? String(dateParam).trim() : null;
 
   const venue = getAllowlistedVenue(venueId);
   if (!venue) {
@@ -27,7 +31,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const result = await fetchHalbookingPadelSchedule(venue.procBaner, venue.omraede);
+    const result = await fetchHalbookingPadelSchedule(venue.procBaner, venue.omraede, {
+      ...(dateYmd ? { targetDateYmd: dateYmd } : {}),
+    });
     if (result.error) {
       res.status(502).json({ error: result.error });
       return;
