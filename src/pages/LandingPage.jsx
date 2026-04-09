@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
 import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight } from 'lucide-react';
+import { PublicLegalFooter } from '../components/PublicLegalFooter';
 
 export function LandingPage() {
   const revealRef = useScrollReveal();
@@ -42,11 +43,13 @@ export function LandingPage() {
   ];
 
   return (
-    <div className="pm-landing" ref={revealRef}>
+    <div className="pm-landing" ref={revealRef} style={{ paddingBottom: 'max(96px, env(safe-area-inset-bottom))' }}>
       {/* Nav */}
       <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid " + theme.border }}>
         <div className="pm-landing-nav" style={{ padding: "clamp(12px, 2.5vw, 16px) clamp(16px, 4vw, 24px)", maxWidth: "1100px", margin: "0 auto" }}>
-          <div style={{ ...heading("clamp(17px,4.5vw,20px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px" }}>🎾 PadelMakker</div>
+          <button type="button" onClick={() => navigate("/")} style={{ ...heading("clamp(17px,4.5vw,20px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }} aria-label="PadelMakker forsiden">
+            🎾 PadelMakker
+          </button>
           <div className="pm-landing-nav-actions">
             <button onClick={() => navigate("/login")} style={{ ...btn(false), borderColor: "transparent", background: "transparent" }}>Log ind</button>
             <button onClick={() => navigate("/opret")} style={{ ...btn(true), borderRadius: "8px" }}>Kom i gang</button>
@@ -104,7 +107,7 @@ export function LandingPage() {
       {/* Stats banner */}
       <section style={{ background: theme.surface, padding: "clamp(32px,6vw,48px) clamp(16px,4vw,24px)", borderBottom: "1px solid " + theme.border }}>
         <div style={{ maxWidth: "900px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,140px),1fr))", gap: "20px", textAlign: "center" }}>
-          {[{ n: "200+", l: "Aktive spillere" }, { n: "3", l: "Baner i Nordjylland" }, { n: "50+", l: "Kampe ugentligt" }, { n: "4.7", l: "Gennemsnitlig rating" }].map((s, i) => (
+          {[{ n: "200+", l: "Aktive spillere" }, { n: "4", l: "Centre med baner-overblik" }, { n: "50+", l: "Kampe ugentligt" }, { n: "4.7", l: "Gennemsnitlig rating" }].map((s, i) => (
             <div key={i} className={"pm-reveal pm-delay-" + (i+1)}>
               <div className="pm-stat-number" style={{ fontFamily: font, fontSize: "clamp(32px,7vw,44px)", fontWeight: 800, color: theme.accent, letterSpacing: "-0.04em" }}>{s.n}</div>
               <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "4px", fontWeight: 500 }}>{s.l}</div>
@@ -171,9 +174,29 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="pm-landing-footer" style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(24px,6vw,36px) clamp(16px,4vw,24px)", fontSize: "13px", color: theme.textLight }}>
-        <span style={{ fontWeight: 500 }}>© 2026 PadelMakker</span>
-        <span>kontakt@padelmakker.dk</span>
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 clamp(16px,4vw,24px) clamp(32px,6vw,48px)" }}>
+        <div className="pm-reveal" style={{ background: theme.surface, borderRadius: "14px", border: "1px solid " + theme.border, boxShadow: theme.shadow, padding: "clamp(20px,4vw,28px)" }}>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: theme.accent, letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 10px" }}>Centre på platformen</p>
+          <h2 style={{ ...heading("clamp(20px,4vw,24px)"), margin: "0 0 14px", letterSpacing: "-0.02em" }}>Baner-overblik i appen</h2>
+          <p style={{ fontSize: "14px", color: theme.textMid, lineHeight: 1.6, margin: "0 0 16px" }}>
+            Se ledige tider og spring videre til booking hos: Skansen Padel, Padel Lounge Aalborg, Match Padel og PadelPadel Aalborg (AL Bank Arena).
+          </p>
+          <Link to="/om" style={{ fontSize: "14px", fontWeight: 600, color: theme.accent, textDecoration: "none" }}>
+            Læs mere om PadelMakker →
+          </Link>
+        </div>
+      </section>
+
+      <footer className="pm-landing-footer" style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(24px,6vw,36px) clamp(16px,4vw,24px)", fontSize: "13px", color: theme.textLight, flexDirection: "column", alignItems: "stretch", gap: "20px" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "16px", width: "100%" }}>
+          <span style={{ fontWeight: 500 }}>© 2026 PadelMakker</span>
+          <a href="mailto:kontakt@padelmakker.dk" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+            kontakt@padelmakker.dk
+          </a>
+        </div>
+        <div style={{ width: "100%", borderTop: "1px solid " + theme.border, paddingTop: "20px" }}>
+          <PublicLegalFooter />
+        </div>
       </footer>
     </div>
   );

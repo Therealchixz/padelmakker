@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
-import { theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
+import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
+import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
@@ -189,20 +190,23 @@ export function OnboardingPage({ onComplete }) {
   ];
 
   return (
-    <div className="pm-auth-wide">
-      <div style={{ display: "flex", gap: "6px", marginBottom: "32px" }}>
-        {[0,1,2,3].map(i => (
-          <div key={i} style={{ flex: 1, height: "3px", borderRadius: "3px", background: i <= step ? theme.accent : theme.border, transition: "background 0.3s" }} />
-        ))}
-      </div>
-      {steps[step]}
-      {err && <p style={{ color: theme.red, fontSize: "13px", marginTop: "12px" }}>{err}</p>}
-      <div className="pm-onboarding-actions">
-        <button onClick={step > 0 ? () => setStep(s => s - 1) : () => navigate("/")} style={btn(false)}>← Tilbage</button>
-        {step < 3
-          ? <button onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.4 }}>Næste <ArrowRight size={15} /></button>
-          : <button onClick={finish} disabled={submitting} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
-        }
+    <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
+      <div className="pm-auth-wide">
+        <div style={{ display: "flex", gap: "6px", marginBottom: "32px" }}>
+          {[0,1,2,3].map(i => (
+            <div key={i} style={{ flex: 1, height: "3px", borderRadius: "3px", background: i <= step ? theme.accent : theme.border, transition: "background 0.3s" }} />
+          ))}
+        </div>
+        {steps[step]}
+        {err && <p style={{ color: theme.red, fontSize: "13px", marginTop: "12px" }}>{err}</p>}
+        <div className="pm-onboarding-actions">
+          <button onClick={step > 0 ? () => setStep(s => s - 1) : () => navigate("/")} style={btn(false)}>← Tilbage</button>
+          {step < 3
+            ? <button onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.4 }}>Næste <ArrowRight size={15} /></button>
+            : <button onClick={finish} disabled={submitting} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
+          }
+        </div>
+        <PublicLegalFooter />
       </div>
     </div>
   );

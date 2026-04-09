@@ -7,7 +7,13 @@ import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { PrivacyPage } from "./pages/PrivacyPage";
+import { TermsPage } from "./pages/TermsPage";
+import { CookiesPage } from "./pages/CookiesPage";
+import { OmPage } from "./pages/OmPage";
+import { FaqPage } from "./pages/FaqPage";
 import { DashboardPage } from "./dashboard/DashboardPage";
+import { CookieNoticeBar } from "./components/CookieNoticeBar";
 
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
@@ -43,6 +49,7 @@ export default function PadelMakker() {
           </div>
         )}
         <ResetPasswordPage onDone={() => { setResetMode(false); navigate("/dashboard"); showToast("Adgangskode opdateret! ✅"); }} />
+        <CookieNoticeBar />
       </div>
     );
   }
@@ -58,10 +65,16 @@ export default function PadelMakker() {
         <Route path="/" element={user && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
         <Route path="/login" element={user && profile ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
         <Route path="/opret" element={user && profile ? <Navigate to="/dashboard" replace /> : <OnboardingPage onComplete={() => showToast("Tjek din email — bekræft kontoen, og log derefter ind.")} />} />
+        <Route path="/privatlivspolitik" element={<PrivacyPage />} />
+        <Route path="/handelsbetingelser" element={<TermsPage />} />
+        <Route path="/cookies" element={<CookiesPage />} />
+        <Route path="/om" element={<OmPage />} />
+        <Route path="/faq" element={<FaqPage />} />
         <Route path="/dashboard" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
         <Route path="/dashboard/:tab" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <CookieNoticeBar />
     </div>
   );
 }
