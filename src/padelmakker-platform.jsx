@@ -3,6 +3,9 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-
 import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
+import { isValidSignupEmail } from "./lib/validationHelpers";
+import { uploadProfileAvatar } from "./lib/avatarUpload";
+import { ProfileAvatar } from "./components/ProfileAvatar";
 import {
   Home, Users, MapPin, Swords, Trophy,
   UserPlus, TrendingUp, MessageCircle, Search,
@@ -454,19 +457,64 @@ function LoginPage() {
 /* ═══════════════════════════════════════════════════
    ONBOARDING
 ═══════════════════════════════════════════════════ */
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_TYPES = /^image\/(jpeg|png|webp|gif)$/i;
+
 function OnboardingPage({ onComplete }) {
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ name: "", email: "", password: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
+  const [form, setForm]           = useState({ name: "", email: "", password: "", password_confirm: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
+  const fileInputRef = useRef(null);
   const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
 
-  const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    };
+  }, [avatarPreviewUrl]);
+
+  const revokePreview = () => {
+    setAvatarPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
+  const clearUploadedAvatar = () => {
+    setAvatarFile(null);
+    revokePreview();
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const pickEmojiAvatar = (emoji) => {
+    clearUploadedAvatar();
+    set("avatar", emoji);
+  };
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
+  const passwordMismatch =
+    form.password_confirm.length > 0 &&
+    form.password !== form.password_confirm;
+  const passwordTooShort =
+    form.password_confirm.length > 0 && form.password.length > 0 && form.password.length < 8;
+  const emailTouchedInvalid =
+    form.email.trim().length > 0 && !isValidSignupEmail(form.email);
+
   const canNext = () => {
-    if (step === 0) return form.name.trim() && form.email.trim() && form.password.trim() && form.birth_year.length === 4;
+    if (step === 0)
+      return (
+        form.name.trim().length >= 2 &&
+        isValidSignupEmail(form.email) &&
+        form.password.length >= 8 &&
+        form.password === form.password_confirm &&
+        form.birth_year.length === 4
+      );
     if (step === 1) return form.level && form.style;
     if (step === 2) return form.area && form.availability.length > 0;
     return true;
@@ -475,15 +523,37 @@ function OnboardingPage({ onComplete }) {
   const finish = async () => {
     setSubmitting(true); setErr("");
     try {
+      if (form.password.length < 8) {
+        setErr("Adgangskoden skal være mindst 8 tegn.");
+        return;
+      }
+      if (form.password !== form.password_confirm) {
+        setErr("Adgangskoderne er ikke ens — tjek begge felter.");
+        return;
+      }
+      if (!isValidSignupEmail(form.email)) {
+        setErr("Indtast en gyldig e-mail (fx navn@domæne.dk).");
+        return;
+      }
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
-      await signUp(form.email.trim(), form.password, {
+      const data = await signUp(form.email.trim(), form.password, {
         full_name: sanitizeText(form.name), level: levelNum,
         play_style: form.style, area: form.area, availability: form.availability,
-        bio: sanitizeText(form.bio), avatar: form.avatar, birth_year: parseInt(form.birth_year) || null,
+        bio: sanitizeText(form.bio), avatar: form.avatar, birth_year: parseInt(form.birth_year, 10) || null,
       });
+      const userId = data?.user?.id;
+      if (userId && avatarFile) {
+        try {
+          const url = await uploadProfileAvatar(userId, avatarFile);
+          await supabase.from("profiles").update({ avatar: url }).eq("id", userId);
+        } catch (upErr) {
+          console.warn("avatar upload:", upErr?.message || upErr);
+        }
+      }
       if (onComplete) onComplete();
     } catch (e) {
       setErr(e.message || "Kunne ikke oprette profil.");
+    } finally {
       setSubmitting(false);
     }
   };
@@ -497,9 +567,50 @@ function OnboardingPage({ onComplete }) {
       <label style={labelStyle}>Dit navn</label>
       <input value={form.name}     onChange={e => set("name", e.target.value)}     placeholder="F.eks. Mikkel P."  style={{ ...inputStyle, marginBottom: "14px" }} />
       <label style={labelStyle}>Email</label>
-      <input value={form.email}    onChange={e => set("email", e.target.value)}    placeholder="din@email.dk"      type="email"    style={{ ...inputStyle, marginBottom: "14px" }} />
+      <input
+        value={form.email}
+        onChange={e => set("email", e.target.value)}
+        placeholder="din@email.dk"
+        type="email"
+        autoComplete="email"
+        style={{
+          ...inputStyle,
+          marginBottom: emailTouchedInvalid ? "6px" : "14px",
+          border: "1px solid " + (emailTouchedInvalid ? theme.red : theme.border),
+        }}
+      />
+      {emailTouchedInvalid && (
+        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
+          Brug en gyldig e-mail med @ og domæne (fx navn@mail.dk).
+        </p>
+      )}
       <label style={labelStyle}>Adgangskode</label>
-      <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn"     type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+      <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "10px" }} />
+      <label style={labelStyle}>Bekræft adgangskode</label>
+      <input
+        value={form.password_confirm}
+        onChange={e => set("password_confirm", e.target.value)}
+        placeholder="Gentag adgangskode"
+        type="password"
+        autoComplete="new-password"
+        style={{
+          ...inputStyle,
+          marginBottom: passwordMismatch || passwordTooShort ? "6px" : "14px",
+          border:
+            "1px solid " +
+            (passwordMismatch ? theme.red : passwordTooShort ? theme.warm : theme.border),
+        }}
+      />
+      {passwordMismatch && (
+        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
+          Adgangskoderne matcher ikke — tjek begge felter.
+        </p>
+      )}
+      {!passwordMismatch && passwordTooShort && (
+        <p style={{ color: theme.warm, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
+          Adgangskoden skal være mindst 8 tegn.
+        </p>
+      )}
       <label style={labelStyle}>Fødselsår</label>
       <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={inputStyle} />
     </div>,
@@ -532,11 +643,75 @@ function OnboardingPage({ onComplete }) {
 
     <div key={3}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Næsten færdig!</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg avatar og skriv lidt om dig.</p>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg avatar eller upload et billede — og skriv lidt om dig.</p>
       <label style={labelStyle}>Avatar</label>
+      <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "12px", flexWrap: "wrap" }}>
+        <ProfileAvatar
+          value={avatarPreviewUrl || form.avatar}
+          size={56}
+          style={{
+            border: "2px solid " + theme.accent,
+            background: theme.surface,
+          }}
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              setErr("");
+              if (f.size > AVATAR_MAX_BYTES) {
+                setErr("Billedet må højst være 2 MB.");
+                e.target.value = "";
+                return;
+              }
+              if (!AVATAR_TYPES.test(f.type || "")) {
+                setErr("Brug JPEG, PNG, WebP eller GIF.");
+                e.target.value = "";
+                return;
+              }
+              revokePreview();
+              setAvatarFile(f);
+              setAvatarPreviewUrl(URL.createObjectURL(f));
+            }}
+          />
+          <button type="button" onClick={() => fileInputRef.current?.click()} style={{ ...btn(false), padding: "8px 14px", fontSize: "13px" }}>
+            Upload billede
+          </button>
+          {avatarFile && (
+            <button type="button" onClick={() => pickEmojiAvatar(form.avatar || "🎾")} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
+              Fjern billede
+            </button>
+          )}
+        </div>
+      </div>
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
         {avatars.map(a => (
-          <button key={a} onClick={() => set("avatar", a)} style={{ width: "48px", height: "48px", borderRadius: "50%", fontSize: "22px", border: form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border, background: form.avatar === a ? theme.accentBg : theme.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>{a}</button>
+          <button
+            key={a}
+            type="button"
+            onClick={() => pickEmojiAvatar(a)}
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              fontSize: "22px",
+              border:
+                !avatarFile && form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border,
+              background: !avatarFile && form.avatar === a ? theme.accentBg : theme.surface,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.15s",
+            }}
+          >
+            {a}
+          </button>
         ))}
       </div>
       <label style={labelStyle}>Kort bio</label>

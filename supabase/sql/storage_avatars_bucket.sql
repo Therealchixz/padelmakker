@@ -1,0 +1,33 @@
+-- =============================================================================
+-- Profilbilleder: bucket `avatars` (én gang i Supabase → Storage)
+-- =============================================================================
+-- 1) Dashboard → Storage → New bucket → name: avatars → Public bucket: ON
+-- 2) Policies (SQL Editor) — tilpas hvis I bruger andet navn:
+--
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true)
+-- ON CONFLICT (id) DO NOTHING;
+--
+-- CREATE POLICY "Avatar billeder læses af alle"
+--   ON storage.objects FOR SELECT TO public USING (bucket_id = 'avatars');
+--
+-- CREATE POLICY "Brugere uploader egen avatar"
+--   ON storage.objects FOR INSERT TO authenticated
+--   WITH CHECK (
+--     bucket_id = 'avatars'
+--     AND (storage.foldername(name))[1] = (select auth.uid()::text)
+--   );
+--
+-- CREATE POLICY "Brugere opdaterer egen avatar"
+--   ON storage.objects FOR UPDATE TO authenticated
+--   USING (
+--     bucket_id = 'avatars'
+--     AND (storage.foldername(name))[1] = (select auth.uid()::text)
+--   );
+--
+-- CREATE POLICY "Brugere sletter egen avatar"
+--   ON storage.objects FOR DELETE TO authenticated
+--   USING (
+--     bucket_id = 'avatars'
+--     AND (storage.foldername(name))[1] = (select auth.uid()::text)
+--   );
+-- =============================================================================

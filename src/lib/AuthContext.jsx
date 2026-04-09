@@ -129,6 +129,7 @@ export function AuthProvider({ children }) {
         availability: metadata.availability || [],
         bio: metadata.bio || '',
         avatar: metadata.avatar || '🎾',
+        birth_year: metadata.birth_year ?? null,
       })
       if (data.session) {
         setSession(data.session)
