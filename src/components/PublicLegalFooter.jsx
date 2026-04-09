@@ -58,6 +58,18 @@ export function PublicLegalFooter() {
       <Link to="/events" style={linkStyle}>
         Events
       </Link>
+      <span aria-hidden style={{ color: theme.border }}>
+        ·
+      </span>
+      <Link to="/hjaelp" style={linkStyle}>
+        Hjælp
+      </Link>
+      <span aria-hidden style={{ color: theme.border }}>
+        ·
+      </span>
+      <Link to="/app" style={linkStyle}>
+        Installér app
+      </Link>
     </footer>
   );
 }

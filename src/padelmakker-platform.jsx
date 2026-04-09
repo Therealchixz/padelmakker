@@ -15,6 +15,8 @@ import { FaqPage } from "./pages/FaqPage";
 import { PublicEventsPage } from "./pages/PublicEventsPage";
 import { DashboardPage } from "./dashboard/DashboardPage";
 import { CookieNoticeBar } from "./components/CookieNoticeBar";
+import { HelpContactPage } from "./pages/HelpContactPage";
+import { InstallAppPage } from "./pages/InstallAppPage";
 
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
@@ -72,6 +74,8 @@ export default function PadelMakker() {
         <Route path="/om" element={<OmPage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/events" element={<PublicEventsPage />} />
+        <Route path="/hjaelp" element={<HelpContactPage />} />
+        <Route path="/app" element={<InstallAppPage />} />
         <Route path="/dashboard" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
         <Route path="/dashboard/:tab" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />

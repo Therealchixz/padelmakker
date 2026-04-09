@@ -2,8 +2,9 @@ import { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone } from 'lucide-react';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
+import { LandingTourVideo } from '../components/LandingTourVideo';
 
 export function LandingPage() {
   const revealRef = useScrollReveal();
@@ -65,6 +66,36 @@ export function LandingPage() {
             >
               <CalendarDays size={16} aria-hidden />
               Events
+            </Link>
+            <Link
+              to="/hjaelp"
+              style={{
+                ...btn(false),
+                borderColor: "transparent",
+                background: "transparent",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <LifeBuoy size={16} aria-hidden />
+              Hjælp
+            </Link>
+            <Link
+              to="/app"
+              style={{
+                ...btn(false),
+                borderColor: "transparent",
+                background: "transparent",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <Smartphone size={16} aria-hidden />
+              App
             </Link>
             <button onClick={() => navigate("/login")} style={{ ...btn(false), borderColor: "transparent", background: "transparent" }}>Log ind</button>
             <button onClick={() => navigate("/opret")} style={{ ...btn(true), borderRadius: "8px" }}>Kom i gang</button>
@@ -130,6 +161,8 @@ export function LandingPage() {
           ))}
         </div>
       </section>
+
+      <LandingTourVideo />
 
       {/* How it works */}
       <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(56px,12vw,88px) clamp(16px,4vw,24px)" }}>
@@ -205,9 +238,17 @@ export function LandingPage() {
       <footer className="pm-landing-footer" style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(24px,6vw,36px) clamp(16px,4vw,24px)", fontSize: "13px", color: theme.textLight, flexDirection: "column", alignItems: "stretch", gap: "20px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "16px", width: "100%" }}>
           <span style={{ fontWeight: 500 }}>© 2026 PadelMakker</span>
-          <a href="mailto:kontakt@padelmakker.dk" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
-            kontakt@padelmakker.dk
-          </a>
+          <span style={{ display: "flex", flexWrap: "wrap", gap: "12px 20px", justifyContent: "center" }}>
+            <a href="mailto:kontakt@padelmakker.dk" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+              kontakt@padelmakker.dk
+            </a>
+            <Link to="/hjaelp" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+              Hjælp og kontakt
+            </Link>
+            <Link to="/app" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+              Installér app
+            </Link>
+          </span>
         </div>
         <div style={{ width: "100%", borderTop: "1px solid " + theme.border, paddingTop: "20px" }}>
           <PublicLegalFooter />
