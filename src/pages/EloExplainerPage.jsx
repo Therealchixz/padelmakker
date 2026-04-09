@@ -22,16 +22,18 @@ export function EloExplainerPage() {
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Forventet resultat</h2>
       <p style={{ color: theme.textMid }}>
         Jo højere modstandernes hold er rated sammenlignet med jeres, jo mere “forventer” systemet, at I taber. Vinder I alligevel,
-        stiger I mere. Taber I til et svagere hold ifølge ratingen, falder I mere. Ved **lige stærke hold** er forventningen tæt på
-        fifty-fifty — så giver sejr og nederlag omtrent **samme størrelse** ændring (før margin, se nedenfor).
+        stiger I mere. Taber I til et svagere hold ifølge ratingen, falder I mere. Ved lige stærke hold er forventningen tæt på
+        fifty-fifty — så giver sejr og nederlag omtrent samme størrelse ændring (før margin, se nedenfor).
       </p>
 
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>K-faktor (hvor meget må én kamp flytte dig?)</h2>
       <p style={{ color: theme.textMid }}>
-        Vi bruger en dynamisk K: hvis <strong style={{ color: theme.text }}>mindst én</strong> af de fire spillere har under{' '}
-        <strong style={{ color: theme.text }}>15</strong> registrerede kampe <strong style={{ color: theme.text }}>før</strong> denne
-        kamp, er <strong style={{ color: theme.text }}>K = 40</strong> (ratingen må bevæge sig lidt hurtigere, mens man er ny). Ellers
-        er <strong style={{ color: theme.text }}>K = 24</strong>.
+        K beregnes <strong style={{ color: theme.text }}>pr. hold</strong> — ikke ud fra alle fire spillere på banen. For hvert hold
+        kigger vi på den af makkerne, der har <strong style={{ color: theme.text }}>færrest</strong> registrerede kampe{' '}
+        <strong style={{ color: theme.text }}>før</strong> denne kamp: under <strong style={{ color: theme.text }}>10</strong> kampe
+        giver det hold <strong style={{ color: theme.text }}>K = 40</strong>, ellers <strong style={{ color: theme.text }}>K = 24</strong>.
+        Selve kampens effektive K er <strong style={{ color: theme.text }}>gennemsnittet</strong> af de to holds K (fx 40 + 24 → 32).
+        Dermed kan en modstanders “ny” makker ikke alene gøre hele kampen mere volatil for jer.
       </p>
 
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Sejrsmargin (partier på tværs af sæt)</h2>
