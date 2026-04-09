@@ -7,12 +7,14 @@ import './responsive.css'
 import { AuthProvider } from './lib/AuthContext'
 import { ErrorBoundary } from './ErrorBoundary'
 import { DocumentHead } from './components/DocumentHead'
+import { ScrollToTop } from './components/ScrollToTop'
 import PadelMakker from './padelmakker-platform'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
+        <ScrollToTop />
         <DocumentHead />
         <AuthProvider>
           <PadelMakker />
