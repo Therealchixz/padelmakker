@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { LegalPageLayout } from '../components/LegalPageLayout';
 import { theme } from '../lib/platformTheme';
 
@@ -32,6 +33,11 @@ export function FaqPage() {
         <p style={{ margin: 0 }}>
           Når du registrerer afsluttede kampe i appen, opdateres din rating ud fra resultatet og modstandernes niveau. Americano
           tæller ikke på ELO — det er et separat format med egen statistik.
+        </p>
+        <p style={{ margin: '12px 0 0' }}>
+          <Link to="/elo" style={{ color: theme.accent, fontWeight: 600 }}>
+            Læs mere om ELO-systemet (forventet udfald, K-faktor, sejrsmargin)
+          </Link>
         </p>
       </Q>
 
