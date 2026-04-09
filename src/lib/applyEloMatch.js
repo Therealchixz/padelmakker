@@ -44,8 +44,14 @@ export async function calculateAndApplyElo(matchId, showToast) {
             'ELO blev ikke opdateret for nogen spillere. Tjek at alle fire spillere var med på kampen da resultatet blev gemt.'
           );
         } else {
+          const mm = data.margin_multiplier;
+          const mg = data.games_margin;
+          const marginHint =
+            mm != null && mg != null && Number(mm) !== 1
+              ? ` (sejrsmargin ${mg} partier → ×${Number(mm).toFixed(2)})`
+              : '';
           showToast(
-            `ELO opdateret for ${n} spillere! Hold 1: ${sign}${t1c}, Hold 2: ${t1c > 0 ? '' : '+'}${-t1c} 🏆`
+            `ELO opdateret for ${n} spillere! Hold 1: ${sign}${t1c}, Hold 2: ${t1c > 0 ? '' : '+'}${-t1c}${marginHint} 🏆`
           );
         }
       }
