@@ -55,6 +55,12 @@ export function PublicLegalFooter() {
       <span aria-hidden style={{ color: theme.border }}>
         ·
       </span>
+      <Link to="/elo" style={linkStyle}>
+        ELO
+      </Link>
+      <span aria-hidden style={{ color: theme.border }}>
+        ·
+      </span>
       <Link to="/events" style={linkStyle}>
         Events
       </Link>
