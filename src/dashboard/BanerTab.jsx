@@ -8,6 +8,7 @@ import {
   bookliSlotsUrl,
   copenhagenDateYmd,
 } from '../lib/banerVenues';
+import { filterPastSlotsIfToday } from '../lib/banerPastSlots';
 import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn } from 'lucide-react';
 
 /**
@@ -39,11 +40,15 @@ export function BanerTab() {
         throw new Error(j.error || `Fejl ${r.status}`);
       }
       const data = await r.json();
+      const today = copenhagenDateYmd();
+      const courtsRaw = data.courts || [];
+      const courts = filterPastSlotsIfToday(courtsRaw, data.scheduleDate || null, today);
       setByVenue((m) => ({
         ...m,
         [venueId]: {
-          courts: data.courts || [],
+          courts,
           dateLabel: data.dateLabel || '',
+          scheduleDate: data.scheduleDate || null,
           fetchedAt: data.fetchedAt || '',
           openBookingPath: data.openBookingPath || halbookingOpenVenueUrl(venueId),
         },
@@ -478,6 +483,11 @@ export function BanerTab() {
                     {loaded?.fetchedAt && (
                       <p style={{ fontSize: '11px', color: theme.textLight, marginBottom: '12px' }}>
                         Senest hentet: {new Date(loaded.fetchedAt).toLocaleString('da-DK')}
+                      </p>
+                    )}
+                    {loaded?.scheduleDate && loaded.scheduleDate === copenhagenDateYmd() && (
+                      <p style={{ fontSize: '11px', color: theme.textLight, marginBottom: '10px', fontStyle: 'italic' }}>
+                        Tider der allerede er passeret i dag vises ikke — mindre rod i listen.
                       </p>
                     )}
 

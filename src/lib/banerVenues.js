@@ -27,6 +27,14 @@ export const BANER_VENUES = [
     region: 'Nordjylland',
   },
   {
+    kind: 'halbooking',
+    id: 'match_padel_halbooking',
+    title: 'Match Padel',
+    address: 'Via Halbooking — se matchpadel.dk',
+    indoor: true,
+    region: 'Danmark',
+  },
+  {
     kind: 'bookli',
     id: 'padelpadel_aalborg',
     title: 'PadelPadel Aalborg (AL Bank Arena)',

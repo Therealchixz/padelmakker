@@ -3,7 +3,7 @@
  * Generisk ledige tider for allowlisted Halbooking-venues.
  */
 
-import { fetchHalbookingPadelSchedule } from './lib/halbookingFetch.js';
+import { fetchHalbookingPadelSchedule, parseScheduleDateYmd } from './lib/halbookingFetch.js';
 import { getAllowlistedVenue } from './lib/halbookingVenuesAllowlist.js';
 
 export default async function handler(req, res) {
@@ -36,6 +36,7 @@ export default async function handler(req, res) {
     res.status(200).json({
       venueId,
       dateLabel: result.dateLabel,
+      scheduleDate: parseScheduleDateYmd(result.dateLabel || ''),
       fetchedAt: new Date().toISOString(),
       bookingBaseUrl: result.procBaner,
       openBookingPath: `/api/halbooking-open-padel?venue=${encodeURIComponent(venueId)}`,
