@@ -1,11 +1,49 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
-import { DEFAULT_PROFILE_REGION } from './regions'
+import { normalizeProfileRow, buildOnboardingProfileRowPatch } from './profileUtils'
+import { DEFAULT_REGION } from './platformConstants'
 
 const AuthContext = createContext(null)
 
 const SESSION_TIMEOUT_MS = 12000
 const PROFILE_TIMEOUT_MS = 12000
+
+/** Trigger/default-rækker sætter ofte "Ny spiller" før app-metadata når email skal bekræftes først. */
+function isGenericProfileName(s) {
+  if (s == null || String(s).trim() === '') return true
+  const t = String(s).trim().toLowerCase()
+  return t === 'ny spiller' || t === 'ny' || t === 'spiller'
+}
+
+function safeNameFromAuthUser(userRow) {
+  const meta = userRow?.user_metadata || {}
+  let s = String(meta.full_name || meta.name || '').trim()
+  if (!s || isGenericProfileName(s)) {
+    const em = userRow?.email
+    s = em ? String(em).split('@')[0].trim() : ''
+  }
+  if (!s) return null
+  return s.replace(/</g, '').replace(/>/g, '').slice(0, 120)
+}
+
+async function syncProfileNameFromAuthIfNeeded(p, userRow) {
+  if (!p?.id || !userRow) return p
+  const dbName = String(p.full_name || p.name || '').trim()
+  if (dbName && !isGenericProfileName(dbName)) return p
+  const newName = safeNameFromAuthUser(userRow)
+  if (!newName) return p
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ full_name: newName, name: newName })
+    .eq('id', p.id)
+    .select()
+    .single()
+  if (error) {
+    console.warn('profiles name sync:', error.message)
+    return p
+  }
+  return normalizeProfileRow(data)
+}
 
 function fetchProfileQuery(userId) {
   return supabase
@@ -15,61 +53,62 @@ function fetchProfileQuery(userId) {
     .maybeSingle()
     .then(({ data, error }) => {
       if (error) console.warn('profiles:', error.message)
-      return data || null
+      return normalizeProfileRow(data || null)
     })
     .catch(() => null)
 }
 
-function isGenericProfileName(s) {
-  if (s == null || String(s).trim() === '') return true
-  const t = String(s).trim().toLowerCase()
-  return t === 'ny spiller' || t === 'ny' || t === 'spiller'
-}
-
-/** Når DB-trigger har oprettet minimal profil før app-upsert, hent data fra auth user_metadata */
-function buildProfilePatchFromSignupMetadata(meta) {
-  if (meta == null || typeof meta !== 'object') return null
-  const displayName = String(meta.full_name || meta.name || '').trim()
-  if (displayName.length < 2) return null
-  const levelNum =
-    typeof meta.level === 'number' && Number.isFinite(meta.level)
-      ? meta.level
-      : parseFloat(String(meta.level ?? '').match(/\d+/)?.[0] || '5')
-  const by = meta.birth_year
-  const birthYear =
-    by != null && by !== ''
-      ? parseInt(String(by), 10)
-      : null
-  return {
-    full_name: displayName,
-    name: displayName,
-    level: Number.isFinite(levelNum) ? levelNum : 5,
-    play_style: String(meta.play_style || 'Ved ikke endnu').trim() || 'Ved ikke endnu',
-    area: String(meta.area || DEFAULT_PROFILE_REGION).trim() || DEFAULT_PROFILE_REGION,
-    availability: Array.isArray(meta.availability) ? meta.availability : [],
-    bio: String(meta.bio || '').trim(),
-    avatar: meta.avatar || '🎾',
-    birth_year: birthYear != null && !Number.isNaN(birthYear) ? birthYear : null,
+/** Eksisterende profil eller minimal upsert (auth uden profiles-række → ellers hvid dashboard). */
+async function fetchOrCreateProfile(userRow) {
+  if (!userRow?.id) return null
+  let p = await fetchProfileQuery(userRow.id)
+  if (p) {
+    p = await syncProfileNameFromAuthIfNeeded(p, userRow)
+    const obPatch = buildOnboardingProfileRowPatch(userRow.user_metadata || {}, p)
+    if (obPatch && userRow.id) {
+      const { data: merged, error: obErr } = await supabase
+        .from('profiles')
+        .update(obPatch)
+        .eq('id', userRow.id)
+        .select()
+        .single()
+      if (!obErr && merged) {
+        p = normalizeProfileRow(merged)
+        const { error: metaErr } = await supabase.auth.updateUser({
+          data: { onboarding_applied_to_profile: true },
+        })
+        if (metaErr) console.warn('auth metadata onboarding flag:', metaErr.message)
+      } else if (obErr) {
+        console.warn('onboarding → profiles merge:', obErr.message)
+      }
+    }
+    return p
   }
-}
-
-async function syncProfileFromAuthMetadata(authUser, profileRow) {
-  if (!authUser?.id || !profileRow) return profileRow
-  const dbName = String(profileRow.full_name || profileRow.name || '').trim()
-  if (!isGenericProfileName(dbName)) return profileRow
-  const patch = buildProfilePatchFromSignupMetadata(authUser.user_metadata || {})
-  if (!patch) return profileRow
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(patch)
-    .eq('id', authUser.id)
-    .select()
-    .single()
+  const meta = userRow.user_metadata || {}
+  const email = userRow.email || ''
+  const regionFromMeta =
+    meta.region || meta.area || meta.city || DEFAULT_REGION
+  const { data: row, error } = await supabase.from('profiles').upsert(
+    {
+      id: userRow.id,
+      email: email || '',
+      name: meta.full_name || meta.name || (email ? email.split('@')[0] : null) || 'Spiller',
+      full_name: meta.full_name || meta.name || (email ? email.split('@')[0] : null) || 'Spiller',
+      level: meta.level || 5,
+      play_style: meta.play_style || 'Ved ikke endnu',
+      area: regionFromMeta,
+      availability: meta.availability || [],
+      bio: meta.bio || '',
+      avatar: meta.avatar || '🎾',
+      birth_year: meta.birth_year ?? null,
+    },
+    { onConflict: 'id' }
+  ).select().single()
   if (error) {
-    console.warn('profiles sync from user_metadata:', error.message)
-    return profileRow
+    console.warn('profiles upsert:', error.message)
+    return null
   }
-  return data || profileRow
+  return normalizeProfileRow(row || null)
 }
 
 function withTimeout(promise, ms) {
@@ -89,34 +128,26 @@ export function AuthProvider({ children }) {
   const [profileLoading, setProfileLoading] = useState(false)
   const profileReqId = useRef(0)
 
-  const loadProfile = useCallback((authUser) => {
-    const userId = authUser?.id
-    if (!userId) {
+  const loadProfile = useCallback((userRow, opts = {}) => {
+    const quiet = opts.quiet === true
+    const id = ++profileReqId.current
+    if (!userRow?.id) {
       setProfile(null)
-      setProfileLoading(false)
+      if (!quiet) setProfileLoading(false)
       return
     }
-    const id = ++profileReqId.current
-    setProfileLoading(true)
+    if (!quiet) setProfileLoading(true)
     Promise.race([
-      fetchProfileQuery(userId),
+      fetchOrCreateProfile(userRow),
       new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
     ])
-      .then(async (p) => {
+      .then((p) => {
         if (profileReqId.current !== id) return
-        let next = p
-        if (p && authUser) {
-          try {
-            next = await syncProfileFromAuthMetadata(authUser, p)
-          } catch (e) {
-            console.warn('profile metadata sync:', e?.message || e)
-          }
-        }
-        setProfile(next)
+        setProfile(p)
       })
       .finally(() => {
         if (profileReqId.current !== id) return
-        setProfileLoading(false)
+        if (!quiet) setProfileLoading(false)
       })
   }, [])
 
@@ -158,11 +189,15 @@ export function AuthProvider({ children }) {
     init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, s) => {
+      (event, s) => {
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) loadProfile(s.user)
-        else {
+        if (s?.user) {
+          // TOKEN_REFRESHED sker ofte når fanen bliver aktiv igen — uden quiet bliver
+          // profileLoading true og hele appen erstattes af spinner (blink).
+          const quietRefresh = event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED'
+          loadProfile(s.user, { quiet: quietRefresh })
+        } else {
           profileReqId.current += 1
           setProfile(null)
           setProfileLoading(false)
@@ -185,37 +220,31 @@ export function AuthProvider({ children }) {
     })
     if (error) throw error
     if (data.user) {
-      const row = {
+      const displayName =
+        (metadata.full_name && String(metadata.full_name).trim()) ||
+        (metadata.name && String(metadata.name).trim()) ||
+        email.trim().split('@')[0] ||
+        'Spiller'
+      const region =
+        metadata.region || metadata.area || metadata.city || DEFAULT_REGION
+      const { error: upErr } = await supabase.from('profiles').upsert({
         id: data.user.id,
         email: email,
-        name: metadata.full_name || 'Ny spiller',
-        full_name: metadata.full_name || 'Ny spiller',
+        name: displayName,
+        full_name: displayName,
         level: metadata.level || 5,
         play_style: metadata.play_style || 'Ved ikke endnu',
-        area: metadata.area || DEFAULT_PROFILE_REGION,
+        area: region,
         availability: metadata.availability || [],
         bio: metadata.bio || '',
         avatar: metadata.avatar || '🎾',
         birth_year: metadata.birth_year ?? null,
-      }
-      const { error: upErr } = await supabase.from('profiles').upsert(row)
+      })
       if (upErr) console.warn('profiles upsert:', upErr.message)
       if (data.session) {
         setSession(data.session)
         setUser(data.user)
-        let p = await Promise.race([
-          fetchProfileQuery(data.user.id),
-          new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
-        ])
-        if (p) {
-          try {
-            p = await syncProfileFromAuthMetadata(data.user, p)
-          } catch (e) {
-            console.warn('profile metadata sync:', e?.message || e)
-          }
-        }
-        setProfile(p)
-        setProfileLoading(false)
+        loadProfile(data.user)
       }
     }
     return data
@@ -228,19 +257,7 @@ export function AuthProvider({ children }) {
     if (data.user) {
       setSession(data.session)
       setUser(data.user)
-      let p = await Promise.race([
-        fetchProfileQuery(data.user.id),
-        new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
-      ])
-      if (p) {
-        try {
-          p = await syncProfileFromAuthMetadata(data.user, p)
-        } catch (e) {
-          console.warn('profile metadata sync:', e?.message || e)
-        }
-      }
-      setProfile(p)
-      setProfileLoading(false)
+      loadProfile(data.user)
     }
     return data
   }
@@ -258,13 +275,46 @@ export function AuthProvider({ children }) {
     if (!user) throw new Error('Not authenticated')
     const { data, error } = await supabase.from('profiles').update(updates).eq('id', user.id).select().single()
     if (error) throw error
-    setProfile(data)
-    return data
+    const row = normalizeProfileRow(data)
+    setProfile(row)
+    const meta = { ...(user.user_metadata || {}) }
+    let metaChanged = false
+    if ('area' in updates && updates.area != null) {
+      meta.area = updates.area
+      metaChanged = true
+    }
+    if ('birth_year' in updates) {
+      meta.birth_year = updates.birth_year
+      metaChanged = true
+    }
+    if ('availability' in updates && updates.availability != null) {
+      meta.availability = updates.availability
+      metaChanged = true
+    }
+    if ('play_style' in updates && updates.play_style != null) {
+      meta.play_style = updates.play_style
+      metaChanged = true
+    }
+    if ('full_name' in updates && updates.full_name != null) {
+      meta.full_name = updates.full_name
+      metaChanged = true
+    }
+    if (metaChanged) {
+      const { data: authData, error: metaErr } = await supabase.auth.updateUser({ data: meta })
+      if (!metaErr && authData?.user) setUser(authData.user)
+      else if (metaErr) console.warn('sync profile → auth metadata:', metaErr.message)
+    }
+    return row
   }
 
-  const refreshProfile = () => {
+  const refreshProfile = useCallback(() => {
     if (user) loadProfile(user)
-  }
+  }, [user, loadProfile])
+
+  /** Genindlæs profiles-rækken uden fuldskærms-loading (fx efter DB-reset eller tab-skift). */
+  const refreshProfileQuiet = useCallback(() => {
+    if (user) loadProfile(user, { quiet: true })
+  }, [user, loadProfile])
 
   return (
     <AuthContext.Provider
@@ -279,6 +329,7 @@ export function AuthProvider({ children }) {
         signOut,
         updateProfile,
         refreshProfile,
+        refreshProfileQuiet,
       }}
     >
       {children}

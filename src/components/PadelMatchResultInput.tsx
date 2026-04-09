@@ -203,7 +203,7 @@ function isSetPartiallyFilled(f: SetForm): boolean {
 ═══════════════════════════════════════════════════════════════════════════ */
 
 const RULES_SUMMARY =
-  "Sæt vindes ved 6 games med mindst 2 games forspring (6-0 … 6-4), eller 7-5. Ved 6-6 spilles tiebreak (mindst 7 point, vind med 2). Kampen er bedst af 3 sæt — først til 2 sæt vinder.";
+  "Sæt vindes ved 6 games med mindst 2 games forspring (6-0 … 6-4), eller 7-5. Ved 6-6 spilles tiebreak (mindst 7 point, vind med 2). Du kan enten registrere ét afsluttet sæt (fx 6-2) som hele kampen, eller spille bedst af 3 — først til 2 sæt vinder.";
 
 export default function PadelMatchResultInput({
   initialData = null,
@@ -265,10 +265,25 @@ export default function PadelMatchResultInput({
     return w1 === w2;
   }, [forms, padelSets]);
 
+  /** Kun sæt 1 udfyldt og gyldigt — kampen kan gemmes som ét sæt (fx 6-2). */
+  const matchCompleteWithOneSet = useMemo(() => {
+    if (!isSetEmpty(forms[1]) || !isSetEmpty(forms[2])) return false;
+    if (isSetEmpty(forms[0])) return false;
+    const s0 = padelSets[0];
+    const s0n = {
+      ...s0,
+      gamesTeam1: s0.gamesTeam1 < 0 ? 0 : s0.gamesTeam1,
+      gamesTeam2: s0.gamesTeam2 < 0 ? 0 : s0.gamesTeam2,
+    };
+    if (validatePadelSet(s0n) !== null) return false;
+    return getSetWinner(s0n) !== null;
+  }, [forms, padelSets]);
+
   const setErrors = useMemo(() => {
     return padelSets.map((raw, i) => {
       const f = forms[i as 0 | 1 | 2];
       if (matchDecidedAfterTwo && i === 2) return null;
+      if (matchCompleteWithOneSet && (i === 1 || i === 2)) return null;
       if (isSetEmpty(f)) {
         if (i === 0) return "Sæt 1 skal udfyldes.";
         if (i === 1) {
@@ -279,6 +294,7 @@ export default function PadelMatchResultInput({
         }
         if (i === 2) {
           if (matchDecidedAfterTwo) return null;
+          if (isSetEmpty(forms[1]) && isSetPartiallyFilled(f)) return "Udfyld sæt 2 før sæt 3.";
           const w1 = getSetWinner(padelSets[0]);
           const w2 = getSetWinner(padelSets[1]);
           if (!w1 || !w2) return "Udfyld sæt 1 og 2 først.";
@@ -297,12 +313,12 @@ export default function PadelMatchResultInput({
       }
       return validatePadelSet(s);
     });
-  }, [forms, padelSets, matchDecidedAfterTwo]);
+  }, [forms, padelSets, matchDecidedAfterTwo, matchCompleteWithOneSet]);
 
   const setsWon = useMemo(() => {
     let t1 = 0;
     let t2 = 0;
-    const limit = matchDecidedAfterTwo ? 2 : 3;
+    const limit = matchCompleteWithOneSet ? 1 : matchDecidedAfterTwo ? 2 : 3;
     for (let i = 0; i < limit; i++) {
       if (setErrors[i] || isSetEmpty(forms[i as 0 | 1 | 2])) continue;
       const w = getSetWinner(padelSets[i]);
@@ -310,7 +326,7 @@ export default function PadelMatchResultInput({
       if (w === "team2") t2++;
     }
     return { t1, t2 };
-  }, [padelSets, setErrors, forms, matchDecidedAfterTwo]);
+  }, [padelSets, setErrors, forms, matchDecidedAfterTwo, matchCompleteWithOneSet]);
 
   const team1Trim = team1.trim();
   const team2Trim = team2.trim();
@@ -318,23 +334,26 @@ export default function PadelMatchResultInput({
 
   const formValid = useMemo(() => {
     if (!namesOk) return false;
+    if (matchCompleteWithOneSet) {
+      return !setErrors[0] && !isSetEmpty(forms[0]);
+    }
     for (let i = 0; i < 3; i++) {
       if (matchDecidedAfterTwo && i === 2) continue;
       if (setErrors[i]) return false;
       if (isSetEmpty(forms[i as 0 | 1 | 2])) return false;
     }
-    /* Kamp færdig: mindst ét hold har 2 sæt (2-0, 2-1 eller omvendt) */
+    /* Kamp færdig: 2 sæt til samme hold, eller ét gyldigt sæt (håndteres af matchCompleteWithOneSet) */
     if (setsWon.t1 < 2 && setsWon.t2 < 2) return false;
     return true;
-  }, [namesOk, setErrors, forms, matchDecidedAfterTwo, setsWon]);
+  }, [namesOk, setErrors, forms, matchDecidedAfterTwo, setsWon, matchCompleteWithOneSet]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formValid) return;
 
     const normalized: PadelSet[] = [];
-    for (let i = 0; i < 3; i++) {
-      if (matchDecidedAfterTwo && i === 2) break;
+    const maxSet = matchCompleteWithOneSet ? 1 : matchDecidedAfterTwo ? 2 : 3;
+    for (let i = 0; i < maxSet; i++) {
       normalized.push(normalizeSetForResult(padelSets[i]));
     }
 
@@ -496,7 +515,9 @@ export default function PadelMatchResultInput({
         <p className="mt-1 text-sm text-slate-600">
           {setsWon.t1 >= 2 || setsWon.t2 >= 2
             ? `Vinder: ${setsWon.t1 > setsWon.t2 ? team1Trim || "Hold 1" : team2Trim || "Hold 2"}`
-            : "Kampen afgøres ved først til 2 sæt"}
+            : matchCompleteWithOneSet
+              ? `Vinder (ét sæt): ${setsWon.t1 > setsWon.t2 ? team1Trim || "Hold 1" : team2Trim || "Hold 2"}`
+              : "Ét gyldigt sæt kan gemmes som hele kampen, eller først til 2 sæt"}
         </p>
       </div>
 

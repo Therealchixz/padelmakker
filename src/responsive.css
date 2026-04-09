@@ -2,6 +2,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  /* Reserver plads til vertikal scrollbar — undgå 10–15px hop når indhold bliver længere (fx Afsluttede) */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -69,6 +71,25 @@ body {
 .pm-delay-2 { transition-delay: 0.2s; }
 .pm-delay-3 { transition-delay: 0.3s; }
 .pm-delay-4 { transition-delay: 0.4s; }
+.pm-delay-5 { transition-delay: 0.5s; }
+.pm-delay-6 { transition-delay: 0.6s; }
+
+/* Landing: Funktioner — 3 kort pr. række på desktop, færre på tablet/mobil */
+.pm-landing-features-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .pm-landing-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 960px) {
+  .pm-landing-features-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 /* ─── Landing page hero gradient ─── */
 .pm-hero-gradient {
@@ -81,9 +102,37 @@ body {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: 0;
   background: radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
               radial-gradient(circle at 80% 20%, rgba(30, 64, 175, 0.4) 0%, transparent 50%);
   pointer-events: none;
+}
+
+/* Kun under CTA — fade mod hvid stats-sektion (matcher theme.surface) */
+.pm-hero-fade-tail {
+  --pm-hero-fade-extra: 0px;
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: calc(clamp(72px, 14vw, 120px) + var(--pm-hero-fade-extra, 0px));
+  pointer-events: none;
+}
+
+.pm-hero-fade-tail::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 40%,
+    rgba(255, 255, 255, 0.75) 78%,
+    #ffffff 100%
+  );
 }
 
 /* ─── Feature card hover ─── */
@@ -187,6 +236,32 @@ button,
   gap: 10px;
   flex-wrap: wrap;
   min-width: 0;
+}
+
+/* Klokke + log ud holdes sammen; undgår at klokken hopper væk fra knappen på mobil */
+.pm-dash-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Panel: på smal skærm som bund-sheet så den ikke klippes af header/viewport */
+@media (max-width: 480px) {
+  .pm-notification-panel {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-top: 0 !important;
+    margin-bottom: env(safe-area-inset-bottom, 0) !important;
+    max-height: min(52dvh, 340px) !important;
+    border-radius: 16px 16px 0 0 !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12) !important;
+  }
 }
 
 .pm-dash-user .pm-dash-name {
@@ -297,17 +372,26 @@ button,
   }
 }
 
-/* Kampe */
+/* Kampe — titel venstre, Opret kamp/turnering højre (fuld bredde af .pm-dash-main) */
 .pm-kampe-head {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pm-kampe-head h2 {
   margin: 0;
+  min-width: 0;
+}
+
+.pm-kampe-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .pm-form-2col {
