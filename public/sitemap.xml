@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.padelmakker.dk/</loc><changefreq>weekly</changefreq><priority>1</priority></url>
+  <url><loc>https://www.padelmakker.dk/login</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.padelmakker.dk/opret</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.padelmakker.dk/events</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.padelmakker.dk/om</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.padelmakker.dk/faq</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.padelmakker.dk/hjaelp</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.padelmakker.dk/app</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.padelmakker.dk/privatlivspolitik</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://www.padelmakker.dk/handelsbetingelser</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://www.padelmakker.dk/cookies</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+</urlset>
