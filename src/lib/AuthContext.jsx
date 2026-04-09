@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { normalizeProfileRow, buildOnboardingProfileRowPatch } from './profileUtils'
+import { DEFAULT_REGION } from './platformConstants'
 
 const AuthContext = createContext(null)
 
@@ -86,7 +87,7 @@ async function fetchOrCreateProfile(userRow) {
   const meta = userRow.user_metadata || {}
   const email = userRow.email || ''
   const regionFromMeta =
-    meta.region || meta.area || meta.city || 'Region Hovedstaden'
+    meta.region || meta.area || meta.city || DEFAULT_REGION
   const { data: row, error } = await supabase.from('profiles').upsert(
     {
       id: userRow.id,
@@ -225,8 +226,8 @@ export function AuthProvider({ children }) {
         email.trim().split('@')[0] ||
         'Spiller'
       const region =
-        metadata.region || metadata.area || metadata.city || 'Region Hovedstaden'
-      await supabase.from('profiles').upsert({
+        metadata.region || metadata.area || metadata.city || DEFAULT_REGION
+      const { error: upErr } = await supabase.from('profiles').upsert({
         id: data.user.id,
         email: email,
         name: displayName,
@@ -239,6 +240,7 @@ export function AuthProvider({ children }) {
         avatar: metadata.avatar || '🎾',
         birth_year: metadata.birth_year ?? null,
       })
+      if (upErr) console.warn('profiles upsert:', upErr.message)
       if (data.session) {
         setSession(data.session)
         setUser(data.user)

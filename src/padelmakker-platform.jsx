@@ -26,7 +26,7 @@ export default function PadelMakker() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading || (user && profileLoading)) {
+  if (loading || (user && profileLoading && !profile)) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100dvh", background: theme.bg, padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" }}>
         <div className="pm-spinner" />

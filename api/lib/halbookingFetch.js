@@ -26,20 +26,46 @@ export function parseDateLabel(html) {
   return m ? m[1].trim() : null;
 }
 
+const DA_MONTHS = {
+  januar: 1,
+  februar: 2,
+  marts: 3,
+  april: 4,
+  maj: 5,
+  juni: 6,
+  juli: 7,
+  august: 8,
+  september: 9,
+  oktober: 10,
+  november: 11,
+  december: 12,
+}
+
 /**
- * Udtræk YYYY-MM-DD fra dateLabel (fx "mandag d. 8.4.2026" eller ISO-dato i teksten).
+ * Udtræk YYYY-MM-DD fra dateLabel.
+ * Halbooking viser fx "Torsdag 9. april 2026" eller "mandag d. 8.4.2026".
  * Bruges til at skjule tider før "nu" på dagens dato.
  */
 export function parseScheduleDateYmd(dateLabel) {
   if (!dateLabel || typeof dateLabel !== 'string') return null
-  const iso = dateLabel.match(/\b(\d{4})-(\d{2})-(\d{2})\b/)
+  const t = dateLabel.trim()
+  const iso = t.match(/\b(\d{4})-(\d{2})-(\d{2})\b/)
   if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`
-  const dm = dateLabel.match(/\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b/)
+  const dm = t.match(/\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b/)
   if (dm) {
     const d = parseInt(dm[1], 10)
     const mo = parseInt(dm[2], 10)
     const y = parseInt(dm[3], 10)
     if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31 && y >= 2000 && y <= 2100) {
+      return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    }
+  }
+  const da = t.match(/\b(\d{1,2})\.?\s+(januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)\s+(\d{4})\b/i)
+  if (da) {
+    const d = parseInt(da[1], 10)
+    const mo = DA_MONTHS[da[2].toLowerCase()]
+    const y = parseInt(da[3], 10)
+    if (mo && d >= 1 && d <= 31 && y >= 2000 && y <= 2100) {
       return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     }
   }

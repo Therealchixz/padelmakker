@@ -5,6 +5,7 @@ import { theme, btn, inputStyle, labelStyle, heading } from '../lib/platformThem
 import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
+import { isValidSignupEmail } from '../lib/validationHelpers';
 import { ArrowRight } from 'lucide-react';
 
 export function OnboardingPage({ onComplete }) {
@@ -24,11 +25,14 @@ export function OnboardingPage({ onComplete }) {
   const passwordTooShort =
     form.password_confirm.length > 0 && form.password.length > 0 && form.password.length < 8;
 
+  const emailTouchedInvalid =
+    form.email.trim().length > 0 && !isValidSignupEmail(form.email);
+
   const canNext = () => {
     if (step === 0)
       return (
         validateFirstLastName(form.first_name, form.last_name).valid &&
-        form.email.trim() &&
+        isValidSignupEmail(form.email) &&
         form.password.length >= 8 &&
         form.password === form.password_confirm &&
         form.birth_year.length === 4
@@ -52,6 +56,10 @@ export function OnboardingPage({ onComplete }) {
       }
       if (form.password !== form.password_confirm) {
         setErr("Adgangskoderne er ikke ens — tjek begge felter.");
+        return;
+      }
+      if (!isValidSignupEmail(form.email)) {
+        setErr("Indtast en gyldig e-mail (fx navn@domæne.dk).");
         return;
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
@@ -88,12 +96,25 @@ export function OnboardingPage({ onComplete }) {
       <label style={labelStyle}>Fornavn</label>
       <input value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
       <label style={labelStyle}>Efternavn</label>
-      <input value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
-      <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
-        Fornavn og efternavn — du må gerne skrive mellemnavne med mellemrum i hvert felt (fx &quot;Mathias Dam Røn&quot;). Bindestreg er også ok (Anne-Marie).
-      </p>
+      <input value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "14px" }} />
       <label style={labelStyle}>Email</label>
-      <input value={form.email}    onChange={e => set("email", e.target.value)}    placeholder="din@email.dk"      type="email"    style={{ ...inputStyle, marginBottom: "14px" }} />
+      <input
+        value={form.email}
+        onChange={e => set("email", e.target.value)}
+        placeholder="din@email.dk"
+        type="email"
+        autoComplete="email"
+        style={{
+          ...inputStyle,
+          marginBottom: emailTouchedInvalid ? "6px" : "14px",
+          border: "1px solid " + (emailTouchedInvalid ? theme.red : theme.border),
+        }}
+      />
+      {emailTouchedInvalid && (
+        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
+          Brug en gyldig e-mail med @ og domæne (fx navn@mail.dk).
+        </p>
+      )}
       <label style={labelStyle}>Adgangskode</label>
       <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "10px" }} />
       <label style={labelStyle}>Bekræft adgangskode</label>
