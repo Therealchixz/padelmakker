@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays } from 'lucide-react';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 
 export function LandingPage() {
@@ -51,6 +51,21 @@ export function LandingPage() {
             🎾 PadelMakker
           </button>
           <div className="pm-landing-nav-actions">
+            <Link
+              to="/events"
+              style={{
+                ...btn(false),
+                borderColor: "transparent",
+                background: "transparent",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <CalendarDays size={16} aria-hidden />
+              Events
+            </Link>
             <button onClick={() => navigate("/login")} style={{ ...btn(false), borderColor: "transparent", background: "transparent" }}>Log ind</button>
             <button onClick={() => navigate("/opret")} style={{ ...btn(true), borderRadius: "8px" }}>Kom i gang</button>
           </div>

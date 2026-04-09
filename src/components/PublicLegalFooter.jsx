@@ -52,6 +52,12 @@ export function PublicLegalFooter() {
       <Link to="/faq" style={linkStyle}>
         FAQ
       </Link>
+      <span aria-hidden style={{ color: theme.border }}>
+        ·
+      </span>
+      <Link to="/events" style={linkStyle}>
+        Events
+      </Link>
     </footer>
   );
 }
