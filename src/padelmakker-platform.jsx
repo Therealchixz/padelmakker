@@ -12,6 +12,7 @@ import { TermsPage } from "./pages/TermsPage";
 import { CookiesPage } from "./pages/CookiesPage";
 import { OmPage } from "./pages/OmPage";
 import { FaqPage } from "./pages/FaqPage";
+import { EloExplainerPage } from "./pages/EloExplainerPage";
 import { PublicEventsPage } from "./pages/PublicEventsPage";
 import { DashboardPage } from "./dashboard/DashboardPage";
 import { CookieNoticeBar } from "./components/CookieNoticeBar";
@@ -73,6 +74,7 @@ export default function PadelMakker() {
         <Route path="/cookies" element={<CookiesPage />} />
         <Route path="/om" element={<OmPage />} />
         <Route path="/faq" element={<FaqPage />} />
+        <Route path="/elo" element={<EloExplainerPage />} />
         <Route path="/events" element={<PublicEventsPage />} />
         <Route path="/hjaelp" element={<HelpContactPage />} />
         <Route path="/app" element={<InstallAppPage />} />

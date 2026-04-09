@@ -6,6 +6,7 @@
   <url><loc>https://www.padelmakker.dk/events</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.padelmakker.dk/om</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://www.padelmakker.dk/faq</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.padelmakker.dk/elo</loc><changefreq>monthly</changefreq><priority>0.65</priority></url>
   <url><loc>https://www.padelmakker.dk/hjaelp</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.padelmakker.dk/app</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.padelmakker.dk/privatlivspolitik</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>

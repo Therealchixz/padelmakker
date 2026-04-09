@@ -31,6 +31,11 @@ const ROUTE_META = {
     title: 'Ofte stillede spørgsmål | PadelMakker',
     description: 'FAQ om PadelMakker: pris, ELO, booking af baner, regioner og konto.',
   },
+  '/elo': {
+    title: 'Sådan virker ELO | PadelMakker',
+    description:
+      'Forklaring af ELO på PadelMakker: bekræftede 2v2-kampe, forventet udfald, K-faktor, sejrsmargin og Americano.',
+  },
   '/privatlivspolitik': {
     title: 'Privatlivspolitik | PadelMakker',
     description: 'Sådan behandler PadelMakker personoplysninger.',

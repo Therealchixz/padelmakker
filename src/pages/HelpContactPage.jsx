@@ -30,6 +30,12 @@ export function HelpContactPage() {
           — pris, ELO, baner, regioner, konto.
         </li>
         <li style={{ marginBottom: '10px' }}>
+          <Link to="/elo" style={{ color: theme.accent, fontWeight: 600 }}>
+            Sådan virker ELO
+          </Link>{' '}
+          — detaljeret forklaring af rating-systemet.
+        </li>
+        <li style={{ marginBottom: '10px' }}>
           <Link to="/app" style={{ color: theme.accent, fontWeight: 600 }}>
             Installér appen på telefonen
           </Link>{' '}
