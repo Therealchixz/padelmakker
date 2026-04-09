@@ -4,10 +4,7 @@ import { useAuth } from "./lib/AuthContext";
 import { Profile, Court, CourtSlot, Match, Booking } from "./api/base44Client";
 import { supabase } from "./lib/supabase";
 import { isValidSignupEmail } from "./lib/validationHelpers";
-import { uploadProfileAvatar } from "./lib/avatarUpload";
-import { ProfileAvatar } from "./components/ProfileAvatar";
 import { REGIONS } from "./lib/regions";
-import { savePendingOnboardingAvatar, clearPendingOnboardingAvatar } from "./lib/pendingOnboardingAvatar";
 import {
   Home, Users, MapPin, Swords, Trophy,
   UserPlus, TrendingUp, MessageCircle, Search,
@@ -458,9 +455,6 @@ function LoginPage() {
 /* ═══════════════════════════════════════════════════
    ONBOARDING
 ═══════════════════════════════════════════════════ */
-const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
-const AVATAR_TYPES = /^image\/(jpeg|png|webp|gif)$/i;
-
 function OnboardingPage({ onComplete }) {
   const { signUp } = useAuth();
   const navigate = useNavigate();
@@ -468,36 +462,9 @@ function OnboardingPage({ onComplete }) {
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
   const [form, setForm]           = useState({ name: "", email: "", password: "", password_confirm: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
-  const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
-  const fileInputRef = useRef(null);
   const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  useEffect(() => {
-    return () => {
-      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-    };
-  }, [avatarPreviewUrl]);
-
-  const revokePreview = () => {
-    setAvatarPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
-  };
-
-  const clearUploadedAvatar = () => {
-    setAvatarFile(null);
-    revokePreview();
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const pickEmojiAvatar = (emoji) => {
-    clearUploadedAvatar();
-    set("avatar", emoji);
-  };
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
   const passwordMismatch =
     form.password_confirm.length > 0 &&
@@ -537,35 +504,11 @@ function OnboardingPage({ onComplete }) {
         return;
       }
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
-      const data = await signUp(form.email.trim(), form.password, {
+      await signUp(form.email.trim(), form.password, {
         full_name: sanitizeText(form.name), level: levelNum,
         play_style: form.style, area: form.area, availability: form.availability,
         bio: sanitizeText(form.bio), avatar: form.avatar, birth_year: parseInt(form.birth_year, 10) || null,
       });
-      const userId = data?.user?.id;
-      const hasSession = Boolean(data?.session);
-      if (userId && avatarFile) {
-        if (hasSession) {
-          try {
-            const url = await uploadProfileAvatar(userId, avatarFile);
-            await supabase.from("profiles").update({ avatar: url }).eq("id", userId);
-            clearPendingOnboardingAvatar();
-          } catch (upErr) {
-            console.warn("avatar upload:", upErr?.message || upErr);
-          }
-        } else {
-          const pending = await savePendingOnboardingAvatar(userId, form.email.trim(), avatarFile);
-          if (!pending.ok) {
-            if (pending.reason === "too_large" || pending.reason === "quota") {
-              setErr(
-                "Profilbilledet kunne ikke gemmes til senere upload (for stort til browser-lager). Log ind efter e-mailbekræftelse og upload billedet under Profil — eller vælg et mindre billede (under ca. 1,5 MB)."
-              );
-              return;
-            }
-            console.warn("pending avatar:", pending.reason);
-          }
-        }
-      }
       if (onComplete) onComplete();
     } catch (e) {
       setErr(e.message || "Kunne ikke oprette profil.");
@@ -661,66 +604,21 @@ function OnboardingPage({ onComplete }) {
 
     <div key={3}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Næsten færdig!</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg avatar eller upload et billede — og skriv lidt om dig.</p>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg avatar og skriv lidt om dig.</p>
       <label style={labelStyle}>Avatar</label>
-      <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "12px", flexWrap: "wrap" }}>
-        <ProfileAvatar
-          value={avatarPreviewUrl || form.avatar}
-          size={56}
-          style={{
-            border: "2px solid " + theme.accent,
-            background: theme.surface,
-          }}
-        />
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            style={{ display: "none" }}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              setErr("");
-              if (f.size > AVATAR_MAX_BYTES) {
-                setErr("Billedet må højst være 2 MB. Hvis du skal bekræfte e-mail før login, så brug helst under ca. 1,5 MB, så billedet kan gemmes til upload bagefter.");
-                e.target.value = "";
-                return;
-              }
-              if (!AVATAR_TYPES.test(f.type || "")) {
-                setErr("Brug JPEG, PNG, WebP eller GIF.");
-                e.target.value = "";
-                return;
-              }
-              revokePreview();
-              setAvatarFile(f);
-              setAvatarPreviewUrl(URL.createObjectURL(f));
-            }}
-          />
-          <button type="button" onClick={() => fileInputRef.current?.click()} style={{ ...btn(false), padding: "8px 14px", fontSize: "13px" }}>
-            Upload billede (max 2 MB)
-          </button>
-          {avatarFile && (
-            <button type="button" onClick={() => pickEmojiAvatar(form.avatar || "🎾")} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
-              Fjern billede
-            </button>
-          )}
-        </div>
-      </div>
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
         {avatars.map(a => (
           <button
             key={a}
             type="button"
-            onClick={() => pickEmojiAvatar(a)}
+            onClick={() => set("avatar", a)}
             style={{
               width: "48px",
               height: "48px",
               borderRadius: "50%",
               fontSize: "22px",
-              border:
-                !avatarFile && form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border,
-              background: !avatarFile && form.avatar === a ? theme.accentBg : theme.surface,
+              border: form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border,
+              background: form.avatar === a ? theme.accentBg : theme.surface,
               cursor: "pointer",
               display: "flex",
               alignItems: "center",

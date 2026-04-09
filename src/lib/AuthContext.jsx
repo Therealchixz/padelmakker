@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { DEFAULT_PROFILE_REGION } from './regions'
-import { tryFinishPendingOnboardingAvatar } from './pendingOnboardingAvatar'
 
 const AuthContext = createContext(null)
 
@@ -21,6 +20,58 @@ function fetchProfileQuery(userId) {
     .catch(() => null)
 }
 
+function isGenericProfileName(s) {
+  if (s == null || String(s).trim() === '') return true
+  const t = String(s).trim().toLowerCase()
+  return t === 'ny spiller' || t === 'ny' || t === 'spiller'
+}
+
+/** Når DB-trigger har oprettet minimal profil før app-upsert, hent data fra auth user_metadata */
+function buildProfilePatchFromSignupMetadata(meta) {
+  if (meta == null || typeof meta !== 'object') return null
+  const displayName = String(meta.full_name || meta.name || '').trim()
+  if (displayName.length < 2) return null
+  const levelNum =
+    typeof meta.level === 'number' && Number.isFinite(meta.level)
+      ? meta.level
+      : parseFloat(String(meta.level ?? '').match(/\d+/)?.[0] || '5')
+  const by = meta.birth_year
+  const birthYear =
+    by != null && by !== ''
+      ? parseInt(String(by), 10)
+      : null
+  return {
+    full_name: displayName,
+    name: displayName,
+    level: Number.isFinite(levelNum) ? levelNum : 5,
+    play_style: String(meta.play_style || 'Ved ikke endnu').trim() || 'Ved ikke endnu',
+    area: String(meta.area || DEFAULT_PROFILE_REGION).trim() || DEFAULT_PROFILE_REGION,
+    availability: Array.isArray(meta.availability) ? meta.availability : [],
+    bio: String(meta.bio || '').trim(),
+    avatar: meta.avatar || '🎾',
+    birth_year: birthYear != null && !Number.isNaN(birthYear) ? birthYear : null,
+  }
+}
+
+async function syncProfileFromAuthMetadata(authUser, profileRow) {
+  if (!authUser?.id || !profileRow) return profileRow
+  const dbName = String(profileRow.full_name || profileRow.name || '').trim()
+  if (!isGenericProfileName(dbName)) return profileRow
+  const patch = buildProfilePatchFromSignupMetadata(authUser.user_metadata || {})
+  if (!patch) return profileRow
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(patch)
+    .eq('id', authUser.id)
+    .select()
+    .single()
+  if (error) {
+    console.warn('profiles sync from user_metadata:', error.message)
+    return profileRow
+  }
+  return data || profileRow
+}
+
 function withTimeout(promise, ms) {
   return Promise.race([
     promise,
@@ -38,16 +89,30 @@ export function AuthProvider({ children }) {
   const [profileLoading, setProfileLoading] = useState(false)
   const profileReqId = useRef(0)
 
-  const loadProfile = useCallback((userId) => {
+  const loadProfile = useCallback((authUser) => {
+    const userId = authUser?.id
+    if (!userId) {
+      setProfile(null)
+      setProfileLoading(false)
+      return
+    }
     const id = ++profileReqId.current
     setProfileLoading(true)
     Promise.race([
       fetchProfileQuery(userId),
       new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
     ])
-      .then((p) => {
+      .then(async (p) => {
         if (profileReqId.current !== id) return
-        setProfile(p)
+        let next = p
+        if (p && authUser) {
+          try {
+            next = await syncProfileFromAuthMetadata(authUser, p)
+          } catch (e) {
+            console.warn('profile metadata sync:', e?.message || e)
+          }
+        }
+        setProfile(next)
       })
       .finally(() => {
         if (profileReqId.current !== id) return
@@ -76,7 +141,7 @@ export function AuthProvider({ children }) {
         const s = result?.data?.session ?? null
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) loadProfile(s.user.id)
+        if (s?.user) loadProfile(s.user)
         else setProfile(null)
       } catch (e) {
         if (!cancelled) {
@@ -96,7 +161,7 @@ export function AuthProvider({ children }) {
       (_event, s) => {
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) loadProfile(s.user.id)
+        if (s?.user) loadProfile(s.user)
         else {
           profileReqId.current += 1
           setProfile(null)
@@ -120,7 +185,7 @@ export function AuthProvider({ children }) {
     })
     if (error) throw error
     if (data.user) {
-      await supabase.from('profiles').upsert({
+      const row = {
         id: data.user.id,
         email: email,
         name: metadata.full_name || 'Ny spiller',
@@ -132,14 +197,23 @@ export function AuthProvider({ children }) {
         bio: metadata.bio || '',
         avatar: metadata.avatar || '🎾',
         birth_year: metadata.birth_year ?? null,
-      })
+      }
+      const { error: upErr } = await supabase.from('profiles').upsert(row)
+      if (upErr) console.warn('profiles upsert:', upErr.message)
       if (data.session) {
         setSession(data.session)
         setUser(data.user)
-        const p = await Promise.race([
+        let p = await Promise.race([
           fetchProfileQuery(data.user.id),
           new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
         ])
+        if (p) {
+          try {
+            p = await syncProfileFromAuthMetadata(data.user, p)
+          } catch (e) {
+            console.warn('profile metadata sync:', e?.message || e)
+          }
+        }
         setProfile(p)
         setProfileLoading(false)
       }
@@ -158,18 +232,12 @@ export function AuthProvider({ children }) {
         fetchProfileQuery(data.user.id),
         new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
       ])
-      try {
-        const pending = await tryFinishPendingOnboardingAvatar(data.user)
-        if (pending.uploaded) {
-          p = await Promise.race([
-            fetchProfileQuery(data.user.id),
-            new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
-          ])
-        } else if (pending.error) {
-          console.warn('pending avatar upload:', pending.error)
+      if (p) {
+        try {
+          p = await syncProfileFromAuthMetadata(data.user, p)
+        } catch (e) {
+          console.warn('profile metadata sync:', e?.message || e)
         }
-      } catch (e) {
-        console.warn('pending avatar upload:', e?.message || e)
       }
       setProfile(p)
       setProfileLoading(false)
@@ -195,7 +263,7 @@ export function AuthProvider({ children }) {
   }
 
   const refreshProfile = () => {
-    if (user) loadProfile(user.id)
+    if (user) loadProfile(user)
   }
 
   return (
