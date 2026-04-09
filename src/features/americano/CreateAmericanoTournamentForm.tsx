@@ -51,7 +51,7 @@ export function CreateAmericanoTournamentForm({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setCourtId((prev) => {
+    setCourtId((prev: string) => {
       const ids = new Set(selectOptions.map((o) => o.id))
       if (ids.has(prev)) return prev
       return selectOptions[0]?.id ?? AMERICANO_COURT_NONE
