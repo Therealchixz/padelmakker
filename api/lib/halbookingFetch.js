@@ -27,6 +27,26 @@ export function parseDateLabel(html) {
 }
 
 /**
+ * Udtræk YYYY-MM-DD fra dateLabel (fx "mandag d. 8.4.2026" eller ISO-dato i teksten).
+ * Bruges til at skjule tider før "nu" på dagens dato.
+ */
+export function parseScheduleDateYmd(dateLabel) {
+  if (!dateLabel || typeof dateLabel !== 'string') return null
+  const iso = dateLabel.match(/\b(\d{4})-(\d{2})-(\d{2})\b/)
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`
+  const dm = dateLabel.match(/\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b/)
+  if (dm) {
+    const d = parseInt(dm[1], 10)
+    const mo = parseInt(dm[2], 10)
+    const y = parseInt(dm[3], 10)
+    if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31 && y >= 2000 && y <= 2100) {
+      return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    }
+  }
+  return null
+}
+
+/**
  * Tidsakse: Halbooking bruger typisk venstre kolonne (`lefthead`) med
  * `<div title='HH:MM' class='... banetid-...'>`. Padel Lounge bruger **div**,
  * ikke samme mønster som NTSC (kun `title='tid'` før `class` med banetid).

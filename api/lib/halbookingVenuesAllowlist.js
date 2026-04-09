@@ -13,6 +13,11 @@ export const HALBOOKING_VENUE_ALLOWLIST = {
     procBaner: 'https://padellounge.halbooking.dk/newlook/proc_baner.asp',
     omraede: '3',
   },
+  /** Match Padel — justér omraede i Supabase hvis padel ligger under andet id i Halbooking */
+  match_padel_halbooking: {
+    procBaner: 'https://matchpadel.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '5',
+  },
 };
 
 export function getAllowlistedVenue(venueId) {

@@ -21,7 +21,10 @@ export function getMatchVenueOptions(courtsFromDb = []) {
     const match = (courtsFromDb || []).find((c) => {
       const n = norm(c.name)
       if (!n) return false
-      return n === t || n.includes(t) || t.includes(n)
+      if (n === t || n.includes(t) || t.includes(n)) return true
+      if (v.id === 'match_padel_halbooking' && (n.includes('match') || n.includes('padel')))
+        return n.includes('match') && n.includes('padel')
+      return false
     })
     if (match) {
       return { id: match.id, label: v.title, courtId: match.id }
