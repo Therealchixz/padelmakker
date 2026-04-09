@@ -28,12 +28,39 @@ export function EloExplainerPage() {
 
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>K-faktor (hvor meget må én kamp flytte dig?)</h2>
       <p style={{ color: theme.textMid }}>
-        K beregnes <strong style={{ color: theme.text }}>pr. hold</strong> — ikke ud fra alle fire spillere på banen. For hvert hold
-        kigger vi på den af makkerne, der har <strong style={{ color: theme.text }}>færrest</strong> registrerede kampe{' '}
-        <strong style={{ color: theme.text }}>før</strong> denne kamp: under <strong style={{ color: theme.text }}>10</strong> kampe
-        giver det hold <strong style={{ color: theme.text }}>K = 40</strong>, ellers <strong style={{ color: theme.text }}>K = 24</strong>.
-        Selve kampens effektive K er <strong style={{ color: theme.text }}>gennemsnittet</strong> af de to holds K (fx 40 + 24 → 32).
-        Dermed kan en modstanders “ny” makker ikke alene gøre hele kampen mere volatil for jer.
+        K styrer, <strong style={{ color: theme.text }}>hvor store</strong> tallene bliver, når I vinder eller taber — før sejrsmargin
+        ganges på. Den er ikke den samme for alle kampe: den afhænger af <strong style={{ color: theme.text }}>jeres hold</strong> og{' '}
+        <strong style={{ color: theme.text }}>modstanderholdet</strong> hver for sig.
+      </p>
+      <p style={{ color: theme.textMid }}>
+        <strong style={{ color: theme.text }}>Trin 1 — pr. hold:</strong> Vi finder den af jer to makkere, der har{' '}
+        <strong style={{ color: theme.text }}>færrest</strong> allerede spillede, ratede kampe <strong style={{ color: theme.text }}>før</strong> denne kamp (tallet på profilen “kampe”). Har den person under{' '}
+        <strong style={{ color: theme.text }}>10</strong> kampe, får <strong style={{ color: theme.text }}>det hold</strong> en
+        “høj” K-værdi på <strong style={{ color: theme.text }}>40</strong>. Ellers får holdet <strong style={{ color: theme.text }}>24</strong>.
+        Det samme gøres for modstanderholdet — helt uafhængigt af jer.
+      </p>
+      <p style={{ color: theme.textMid }}>
+        <strong style={{ color: theme.text }}>Trin 2 — hele kampen:</strong> Den K, der bruges i formlen, er{' '}
+        <strong style={{ color: theme.text }}>gennemsnittet</strong> af de to holds K-værdier (afrundet til heltal i systembeskeder).
+      </p>
+      <ul style={{ margin: '12px 0 0', paddingLeft: '1.25rem', color: theme.textMid, lineHeight: 1.65 }}>
+        <li style={{ marginBottom: '6px' }}>
+          Begge hold “nye” (færrest kampe på hvert hold er under 10): 40 og 40 →{' '}
+          <strong style={{ color: theme.text }}>effektiv K ≈ 40</strong>.
+        </li>
+        <li style={{ marginBottom: '6px' }}>
+          Begge hold erfarne (min. kampe ≥ 10 på begge hold): 24 og 24 → <strong style={{ color: theme.text }}>effektiv K = 24</strong>.
+        </li>
+        <li style={{ marginBottom: '6px' }}>
+          Ét hold nyt, ét erfarent: 40 og 24 → <strong style={{ color: theme.text }}>effektiv K = 32</strong> — begge hold påvirkes
+          ens, men ikke så ekstremt som hvis hele banen var “ny”.
+        </li>
+      </ul>
+      <p style={{ color: theme.textMid, marginTop: '14px' }}>
+        <strong style={{ color: theme.text }}>Hvorfor?</strong> Tidligere kunne én meget ny spiller på <em>enten</em> side løfte K for
+        alle fire. Nu bestemmer <strong style={{ color: theme.text }}>dit eget holds mindst erfarne</strong> makker jeres holds bidrag,
+        og modstandernes bidrag lægges sammen som gennemsnit — det gør det sværere at misbruge ved at “smide en ny ind” kun for at pumpe
+        sving for modstandere.
       </p>
 
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Sejrsmargin (partier på tværs af sæt)</h2>
