@@ -72,13 +72,18 @@ export function BanerTab() {
         throw new Error(j.error || `Fejl ${r.status}`);
       }
       const data = await r.json();
+      const today = copenhagenDateYmd();
+      const scheduleDate = data.date || dateYmd;
+      const courtsRaw = data.courts || [];
+      const courts = filterPastSlotsIfToday(courtsRaw, scheduleDate, today);
       setByVenue((m) => ({
         ...m,
         [venueId]: {
-          courts: data.courts || [],
+          courts,
           dateLabel: data.dateLabel || '',
+          scheduleDate,
           fetchedAt: data.fetchedAt || '',
-          date: data.date || dateYmd,
+          date: scheduleDate,
         },
       }));
     } catch (e) {
@@ -376,6 +381,11 @@ export function BanerTab() {
                     {loaded?.fetchedAt && (
                       <p style={{ fontSize: '11px', color: theme.textLight, marginBottom: '12px' }}>
                         Senest hentet: {new Date(loaded.fetchedAt).toLocaleString('da-DK')}
+                      </p>
+                    )}
+                    {loaded?.scheduleDate && loaded.scheduleDate === copenhagenDateYmd() && (
+                      <p style={{ fontSize: '11px', color: theme.textLight, marginBottom: '10px', fontStyle: 'italic' }}>
+                        Tider før nu på valgt dag vises ikke (PadelPadel/Bookli) — mindre rod i listen.
                       </p>
                     )}
                     {loading && !loaded?.courts?.length && (
