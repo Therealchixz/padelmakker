@@ -1,9 +1,14 @@
 -- =============================================================================
--- Dynamisk K i apply_elo_for_match
--- - Hvis mindst én deltager har games_played < 15 (før denne kamp): K = 40
--- - Ellers: K = 24
--- (games_played opdateres først EFTER ELO i din nuværende funktion, så tallet
---  er stadig "antal færdige kampe før denne".)
+-- apply_elo_for_match: dynamisk K + sejrsmargin (spilforskel på tværs af sæt)
+--
+-- K: mindst én spiller med games_played < 15 → K=40, ellers K=24 (før denne kamp).
+--
+-- Margin: |hold1 partier − hold2 partier| summeret over sæt 1–3 (NULL = 0).
+-- Multiplikator på ELO-ændring (vinder får mere, taber mister mere ved stort clear):
+--   margin ≤ 4  → 1.00  (fx 6-4 6-4 → 12-8, diff 4)
+--   margin ≤ 9  → 1.12
+--   margin ≤ 14 → 1.24
+--   margin > 14 → 1.35  (fx 6-0 6-0 → 12-0, diff 12 → stadig 1.24; 6-0 6-0 6-0 → diff 18 → 1.35)
 --
 -- Kør hele filen i Supabase SQL Editor (erstatter public.apply_elo_for_match).
 -- =============================================================================
@@ -30,6 +35,11 @@ DECLARE
   v_new_elo REAL;
   v_won BOOLEAN;
   v_updated_count INTEGER := 0;
+  v_t1_games INTEGER;
+  v_t2_games INTEGER;
+  v_margin INTEGER;
+  v_margin_mult REAL;
+  v_base_change REAL;
 BEGIN
   SELECT * INTO v_mr FROM match_results WHERE id = p_match_result_id;
   IF NOT FOUND THEN
@@ -47,7 +57,6 @@ BEGIN
     RETURN jsonb_build_object('error', 'ELO already calculated for this match');
   END IF;
 
-  -- Mindste antal tidligere ratede kampe blandt de 4 (NULL tæller som 0)
   SELECT COALESCE(MIN(COALESCE(p.games_played, 0)), 0)
   INTO v_min_games
   FROM match_players mp
@@ -70,9 +79,28 @@ BEGIN
   v_t1_won := (v_mr.match_winner = 'team1');
 
   IF v_t1_won THEN
-    v_t1_change := round(v_k * (1.0 - v_t1_expected));
+    v_base_change := v_k * (1.0 - v_t1_expected);
   ELSE
-    v_t1_change := round(v_k * (0.0 - v_t1_expected));
+    v_base_change := v_k * (0.0 - v_t1_expected);
+  END IF;
+
+  -- Partier vundet pr. hold (alle tre sæt; NULL tæller som 0)
+  v_t1_games :=
+    COALESCE(v_mr.set1_team1, 0) + COALESCE(v_mr.set2_team1, 0) + COALESCE(v_mr.set3_team1, 0);
+  v_t2_games :=
+    COALESCE(v_mr.set1_team2, 0) + COALESCE(v_mr.set2_team2, 0) + COALESCE(v_mr.set3_team2, 0);
+  v_margin := abs(v_t1_games - v_t2_games);
+
+  v_margin_mult := CASE
+    WHEN v_margin <= 4 THEN 1.0
+    WHEN v_margin <= 9 THEN 1.12
+    WHEN v_margin <= 14 THEN 1.24
+    ELSE 1.35
+  END;
+
+  v_t1_change := round(v_base_change * v_margin_mult);
+  IF v_t1_change = 0 AND v_base_change <> 0.0 THEN
+    v_t1_change := CASE WHEN v_base_change > 0 THEN 1 ELSE -1 END;
   END IF;
   v_t2_change := -v_t1_change;
 
@@ -131,7 +159,11 @@ BEGIN
     'min_games_before_match', v_min_games,
     'team1_change', v_t1_change,
     'team2_change', v_t2_change,
-    'winner', v_mr.match_winner
+    'winner', v_mr.match_winner,
+    'games_margin', v_margin,
+    'margin_multiplier', v_margin_mult,
+    'games_team1', v_t1_games,
+    'games_team2', v_t2_games
   );
 END;
 $function$;
