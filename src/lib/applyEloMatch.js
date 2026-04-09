@@ -1,5 +1,10 @@
 import { supabase } from './supabase';
 
+function formatTeamChanges(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return '—';
+  return arr.map((c) => (Number(c) > 0 ? `+${c}` : String(c))).join(', ');
+}
+
 /**
  * Efter bekræftet resultat: kald DB-RPC der opdaterer elo_history + profiler.
  */
@@ -35,18 +40,27 @@ export async function calculateAndApplyElo(matchId, showToast) {
     }
 
     if (data?.success) {
-      const t1c = data.team1_change;
-      const sign = t1c > 0 ? '+' : '';
       const n = Number(data.players_updated) || 0;
+      const t1 = data.team1_player_changes;
+      const t2 = data.team2_player_changes;
+      const marginHint =
+        data.margin_multiplier != null &&
+        data.games_margin != null &&
+        Number(data.margin_multiplier) !== 1
+          ? ` · margin ${data.games_margin} partier (×${Number(data.margin_multiplier).toFixed(2)})`
+          : '';
+
       if (showToast) {
         if (n === 0) {
           showToast(
             'ELO blev ikke opdateret for nogen spillere. Tjek at alle fire spillere var med på kampen da resultatet blev gemt.'
           );
-        } else {
+        } else if (Array.isArray(t1) && Array.isArray(t2)) {
           showToast(
-            `ELO opdateret for ${n} spillere! Hold 1: ${sign}${t1c}, Hold 2: ${t1c > 0 ? '' : '+'}${-t1c} 🏆`
+            `ELO opdateret (${n} spillere)! Hold 1: ${formatTeamChanges(t1)} · Hold 2: ${formatTeamChanges(t2)}${marginHint} 🏆`
           );
+        } else {
+          showToast(`ELO opdateret for ${n} spillere!${marginHint} 🏆`);
         }
       }
     }

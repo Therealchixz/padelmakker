@@ -13,17 +13,30 @@ export function EloExplainerPage() {
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Hvornår opdateres min rating?</h2>
       <p style={{ color: theme.textMid }}>
         Når en kamp er <strong style={{ color: theme.text }}>afsluttet</strong> og{' '}
-        <strong style={{ color: theme.text }}>begge hold har bekræftet resultatet</strong>, beregner systemet én ELO-ændring for hele
-        kampen. Alle fire spillere på holdene får <strong style={{ color: theme.text }}>samme</strong> point-tilvækst eller -tab som
-        deres makker på holdet (vi bruger <strong style={{ color: theme.text }}>gennemsnitlig rating</strong> pr. hold til forventet
-        udfald).
+        <strong style={{ color: theme.text }}>begge hold har bekræftet resultatet</strong>, opdateres <strong style={{ color: theme.text }}>hver spillers</strong> ELO
+        for sig. Du og din makker kan derfor få <strong style={{ color: theme.text }}>forskellige</strong> point i samme kamp — se nedenfor.
       </p>
 
-      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Forventet resultat</h2>
+      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Individuel forventning (dit niveau mod deres hold)</h2>
       <p style={{ color: theme.textMid }}>
-        Jo højere modstandernes hold er rated sammenlignet med jeres, jo mere “forventer” systemet, at I taber. Vinder I alligevel,
-        stiger I mere. Taber I til et svagere hold ifølge ratingen, falder I mere. Ved lige stærke hold er forventningen tæt på
-        fifty-fifty — så giver sejr og nederlag omtrent samme størrelse ændring (før margin, se nedenfor).
+        Vi bruger <strong style={{ color: theme.text }}>modstanderholdets gennemsnitlige rating</strong> (de to modstandere tilsammen) som
+        reference for <strong style={{ color: theme.text }}>dig</strong>. Din forventede score beregnes ud fra <strong style={{ color: theme.text }}>din</strong> rating
+        mod det snit — ikke ud fra hele dit holds snit alene. Makkeren får sin egen forventning på samme måde.
+      </p>
+      <p style={{ color: theme.textMid }}>
+        <strong style={{ color: theme.text }}>Konsekvens:</strong> Er du fx højere rated end din makker, regner systemet typisk med, at du
+        har bedre chancer mod modstandernes snit end makkeren. Ved sejr kan makkeren derfor få et <strong style={{ color: theme.text }}>større</strong> plus end dig; ved
+        nederlag kan du tabe <strong style={{ color: theme.text }}>mere</strong> end makkeren — fordi du “burde” bidrage mere til udfaldet.
+      </p>
+      <p style={{ color: theme.textMid }}>
+        Det gør ratingen mere retvisende, når folk <strong style={{ color: theme.text }}>skifter makker</strong>, og det mindsker effekten af meget skæve par på
+        banen (ét højt og ét lavt niveau).
+      </p>
+
+      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Selve point-ændringen</h2>
+      <p style={{ color: theme.textMid }}>
+        For hver spiller: <strong style={{ color: theme.text }}>ændring ≈ K × (resultat − forventet score) × sejrsmargin-faktor</strong>, hvor resultat er 1 ved sejr og 0 ved
+        tab. K og margin er beskrevet nedenfor — de er <strong style={{ color: theme.text }}>fælles ramme</strong> for kampen, men forventningen <strong style={{ color: theme.text }}>E</strong> er individuel.
       </p>
 
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>K-faktor (hvor meget må én kamp flytte dig?)</h2>

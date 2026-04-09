@@ -374,9 +374,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       await reloadKampeEloBundle();
       // Notify all players about ELO update
       mp.forEach(p => {
-        createNotification(p.user_id, "result_confirmed", "Resultat bekræftet! 🏆", `Kampen er afsluttet (${mr.score_display || "—"}). ELO er opdateret.`, matchId);
+        createNotification(p.user_id, "result_confirmed", "Resultat bekræftet! 🏆", `Kampen er afsluttet (${mr.score_display || "—"}). Personlig ELO er opdateret.`, matchId);
       });
-      showToast("Resultat bekræftet! ELO opdateret 🏆");
+      showToast("Resultat bekræftet! Personlig ELO opdateret 🏆");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }

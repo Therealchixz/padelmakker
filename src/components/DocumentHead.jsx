@@ -34,7 +34,7 @@ const ROUTE_META = {
   '/elo': {
     title: 'Sådan virker ELO | PadelMakker',
     description:
-      'Forklaring af ELO på PadelMakker: bekræftede 2v2-kampe, K pr. hold (10 kampe), gennemsnit mellem hold, sejrsmargin og Americano.',
+      'Forklaring af ELO på PadelMakker: individuel forventning mod modstanderholdets snit, K pr. hold, sejrsmargin, Americano.',
   },
   '/privatlivspolitik': {
     title: 'Privatlivspolitik | PadelMakker',

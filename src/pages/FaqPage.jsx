@@ -31,12 +31,11 @@ export function FaqPage() {
 
       <Q title="Hvordan virker ELO?">
         <p style={{ margin: 0 }}>
-          Når du registrerer afsluttede kampe i appen, opdateres din rating ud fra resultatet og modstandernes niveau. Americano
-          tæller ikke på ELO — det er et separat format med egen statistik.
+          Når en kamp er bekræftet, opdateres <strong style={{ color: theme.text }}>din personlige</strong> rating ud fra <strong style={{ color: theme.text }}>dit niveau mod modstanderholdets snit</strong> — du og din makker kan få forskellige point i samme kamp. Americano tæller ikke på ELO.
         </p>
         <p style={{ margin: '12px 0 0' }}>
           <Link to="/elo" style={{ color: theme.accent, fontWeight: 600 }}>
-            Læs mere om ELO-systemet (forventet udfald, K-faktor, sejrsmargin)
+            Læs mere om ELO (individuel forventning, K-faktor, sejrsmargin)
           </Link>
         </p>
       </Q>
