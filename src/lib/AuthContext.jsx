@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
+import { DEFAULT_PROFILE_REGION } from './regions'
+import { tryFinishPendingOnboardingAvatar } from './pendingOnboardingAvatar'
 
 const AuthContext = createContext(null)
 
@@ -125,7 +127,7 @@ export function AuthProvider({ children }) {
         full_name: metadata.full_name || 'Ny spiller',
         level: metadata.level || 5,
         play_style: metadata.play_style || 'Ved ikke endnu',
-        area: metadata.area || 'København',
+        area: metadata.area || DEFAULT_PROFILE_REGION,
         availability: metadata.availability || [],
         bio: metadata.bio || '',
         avatar: metadata.avatar || '🎾',
@@ -152,10 +154,23 @@ export function AuthProvider({ children }) {
     if (data.user) {
       setSession(data.session)
       setUser(data.user)
-      const p = await Promise.race([
+      let p = await Promise.race([
         fetchProfileQuery(data.user.id),
         new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
       ])
+      try {
+        const pending = await tryFinishPendingOnboardingAvatar(data.user)
+        if (pending.uploaded) {
+          p = await Promise.race([
+            fetchProfileQuery(data.user.id),
+            new Promise((r) => setTimeout(() => r(null), PROFILE_TIMEOUT_MS)),
+          ])
+        } else if (pending.error) {
+          console.warn('pending avatar upload:', pending.error)
+        }
+      } catch (e) {
+        console.warn('pending avatar upload:', e?.message || e)
+      }
       setProfile(p)
       setProfileLoading(false)
     }

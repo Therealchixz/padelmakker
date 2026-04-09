@@ -6,6 +6,8 @@ import { supabase } from "./lib/supabase";
 import { isValidSignupEmail } from "./lib/validationHelpers";
 import { uploadProfileAvatar } from "./lib/avatarUpload";
 import { ProfileAvatar } from "./components/ProfileAvatar";
+import { REGIONS } from "./lib/regions";
+import { savePendingOnboardingAvatar, clearPendingOnboardingAvatar } from "./lib/pendingOnboardingAvatar";
 import {
   Home, Users, MapPin, Swords, Trophy,
   UserPlus, TrendingUp, MessageCircle, Search,
@@ -15,7 +17,6 @@ import {
 
 const LEVELS      = ["1-2 (Helt ny)", "3-4 (Begynder)", "5-6 (Øvet)", "7-8 (Avanceret)", "9-10 (Elite)"];
 const PLAY_STYLES = ["Offensiv", "Defensiv", "Alround", "Ved ikke endnu"];
-const AREAS       = ["København", "Frederiksberg", "Amager", "Herlev", "Taastrup", "Østerbro", "Nørrebro", "Vesterbro", "Aarhus", "Odense"];
 const AVAILABILITY = ["Morgener", "Formiddage", "Eftermiddage", "Aftener", "Weekender", "Flexibel"];
 
 /* ─── Design tokens (mirrors variables.css) ─── */
@@ -542,12 +543,27 @@ function OnboardingPage({ onComplete }) {
         bio: sanitizeText(form.bio), avatar: form.avatar, birth_year: parseInt(form.birth_year, 10) || null,
       });
       const userId = data?.user?.id;
+      const hasSession = Boolean(data?.session);
       if (userId && avatarFile) {
-        try {
-          const url = await uploadProfileAvatar(userId, avatarFile);
-          await supabase.from("profiles").update({ avatar: url }).eq("id", userId);
-        } catch (upErr) {
-          console.warn("avatar upload:", upErr?.message || upErr);
+        if (hasSession) {
+          try {
+            const url = await uploadProfileAvatar(userId, avatarFile);
+            await supabase.from("profiles").update({ avatar: url }).eq("id", userId);
+            clearPendingOnboardingAvatar();
+          } catch (upErr) {
+            console.warn("avatar upload:", upErr?.message || upErr);
+          }
+        } else {
+          const pending = await savePendingOnboardingAvatar(userId, form.email.trim(), avatarFile);
+          if (!pending.ok) {
+            if (pending.reason === "too_large" || pending.reason === "quota") {
+              setErr(
+                "Profilbilledet kunne ikke gemmes til senere upload (for stort til browser-lager). Log ind efter e-mailbekræftelse og upload billedet under Profil — eller vælg et mindre billede (under ca. 1,5 MB)."
+              );
+              return;
+            }
+            console.warn("pending avatar:", pending.reason);
+          }
         }
       }
       if (onComplete) onComplete();
@@ -630,10 +646,12 @@ function OnboardingPage({ onComplete }) {
 
     <div key={2}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Hvor og hvornår?</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Så vi kan finde makkere nær dig.</p>
-      <label style={labelStyle}>Område</label>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg den region du primært spiller i — så kan andre finde dig.</p>
+      <label style={labelStyle}>Region</label>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
-        {AREAS.map(a => <button key={a} onClick={() => set("area", a)} style={{ ...btn(form.area === a), padding: "8px 14px", fontSize: "13px" }}>{a}</button>)}
+        {REGIONS.map((r) => (
+          <button key={r} type="button" onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "8px 14px", fontSize: "13px" }}>{r}</button>
+        ))}
       </div>
       <label style={labelStyle}>Hvornår kan du spille?</label>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -665,7 +683,7 @@ function OnboardingPage({ onComplete }) {
               if (!f) return;
               setErr("");
               if (f.size > AVATAR_MAX_BYTES) {
-                setErr("Billedet må højst være 2 MB.");
+                setErr("Billedet må højst være 2 MB. Hvis du skal bekræfte e-mail før login, så brug helst under ca. 1,5 MB, så billedet kan gemmes til upload bagefter.");
                 e.target.value = "";
                 return;
               }
@@ -680,7 +698,7 @@ function OnboardingPage({ onComplete }) {
             }}
           />
           <button type="button" onClick={() => fileInputRef.current?.click()} style={{ ...btn(false), padding: "8px 14px", fontSize: "13px" }}>
-            Upload billede
+            Upload billede (max 2 MB)
           </button>
           {avatarFile && (
             <button type="button" onClick={() => pickEmojiAvatar(form.avatar || "🎾")} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
@@ -1103,8 +1121,8 @@ function MakkereTab({ user, showToast }) {
           <option value="close">±150 ELO om dig ({myElo})</option>
         </select>
         <select value={filterArea} onChange={e => setFilterArea(e.target.value)} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
-          <option value="all">Alle områder</option>
-          {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+          <option value="all">Alle regioner</option>
+          {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
       </div>
 
@@ -2457,11 +2475,11 @@ function ProfilTab({ user, showToast, setTab }) {
         <label style={labelStyle}>Fødselsår</label>
         <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={{ ...inputStyle, marginBottom: "14px" }} />
 
-        {/* Area */}
-        <label style={labelStyle}>Område</label>
+        {/* Region */}
+        <label style={labelStyle}>Region</label>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
-          {AREAS.map(a => (
-            <button key={a} onClick={() => set("area", a)} style={{ ...btn(form.area === a), padding: "6px 12px", fontSize: "12px" }}>{a}</button>
+          {REGIONS.map((r) => (
+            <button key={r} type="button" onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "6px 12px", fontSize: "12px" }}>{r}</button>
           ))}
         </div>
 
