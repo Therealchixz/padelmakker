@@ -1,13 +1,8 @@
 import { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
-import { font, btn } from '../lib/platformTheme';
+import { font, theme, btn, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-
-const pageBg = '#0B0F14';
-const cardBg = '#151B24';
-const insetBg = '#0E131A';
-const textMuted = '#94A3B8';
 
 export function SignupEmailSentPage() {
   const navigate = useNavigate();
@@ -35,144 +30,117 @@ export function SignupEmailSentPage() {
       className="pm-root"
       style={{
         fontFamily: font,
-        background: pageBg,
+        background: theme.bg,
         minHeight: '100dvh',
-        color: '#F8FAFC',
-        padding: 'max(24px, env(safe-area-inset-top)) 20px max(96px, env(safe-area-inset-bottom))',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+        color: theme.text,
+        paddingBottom: 'max(96px, env(safe-area-inset-bottom))',
       }}
     >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '420px',
-          background: cardBg,
-          borderRadius: '16px',
-          padding: '36px 28px 32px',
-          boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
-          border: '1px solid rgba(148, 163, 184, 0.12)',
-          textAlign: 'center',
-        }}
-      >
-        <div
-          style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
-            background: '#22C55E',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px',
-            boxShadow: '0 8px 24px rgba(34, 197, 94, 0.35)',
-          }}
-          aria-hidden
+      <div className="pm-auth-narrow">
+        <button
+          type="button"
+          onClick={() => navigate('/opret', { replace: true })}
+          style={{ ...btn(false), marginBottom: '40px', padding: '8px 14px', fontSize: '13px' }}
         >
-          <Check size={30} strokeWidth={2.5} color="#fff" />
-        </div>
-
-        <h1
-          style={{
-            fontSize: '26px',
-            fontWeight: 700,
-            letterSpacing: '-0.02em',
-            margin: '0 0 12px',
-            lineHeight: 1.2,
-            color: '#F8FAFC',
-          }}
-        >
-          Tjek din e-mail
-        </h1>
-
-        <p
-          style={{
-            fontSize: '15px',
-            lineHeight: 1.55,
-            color: textMuted,
-            margin: '0 0 24px',
-          }}
-        >
-          Vi har sendt et bekræftelseslink til{' '}
-          <strong style={{ color: '#F8FAFC', fontWeight: 600 }}>{email}</strong>
-        </p>
+          ← Tilbage til oprettelse
+        </button>
 
         <div
           style={{
-            background: insetBg,
-            borderRadius: '12px',
-            padding: '18px 18px 16px',
-            textAlign: 'left',
-            border: '1px solid rgba(148, 163, 184, 0.1)',
-            marginBottom: '16px',
+            background: theme.surface,
+            borderRadius: theme.radius,
+            padding: '28px 22px 26px',
+            boxShadow: theme.shadowLg,
+            border: `1px solid ${theme.border}`,
+            textAlign: 'center',
           }}
         >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: '#22C55E',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+              boxShadow: '0 8px 20px rgba(34, 197, 94, 0.28)',
+            }}
+            aria-hidden
+          >
+            <Check size={30} strokeWidth={2.5} color="#fff" />
+          </div>
+
+          <h1 style={{ ...heading('26px'), marginBottom: '10px' }}>Tjek din e-mail</h1>
+
           <p
             style={{
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#E2E8F0',
-              margin: '0 0 12px',
+              fontSize: '15px',
+              lineHeight: 1.55,
+              color: theme.textMid,
+              margin: '0 0 22px',
             }}
           >
-            For at fuldføre din oprettelse:
+            Vi har sendt et bekræftelseslink til{' '}
+            <strong style={{ color: theme.text, fontWeight: 600 }}>{email}</strong>
           </p>
-          <ol
+
+          <div
             style={{
-              margin: 0,
-              paddingLeft: '20px',
-              color: textMuted,
-              fontSize: '14px',
-              lineHeight: 1.65,
+              background: theme.accentBg,
+              borderRadius: theme.radius,
+              padding: '16px 16px 14px',
+              textAlign: 'left',
+              border: `1px solid ${theme.border}`,
+              marginBottom: '14px',
             }}
           >
-            {steps.map((line) => (
-              <li key={line} style={{ marginBottom: '6px' }}>
-                {line}
-              </li>
-            ))}
-          </ol>
+            <p
+              style={{
+                fontSize: '13px',
+                fontWeight: 600,
+                color: theme.text,
+                margin: '0 0 10px',
+              }}
+            >
+              For at fuldføre din oprettelse:
+            </p>
+            <ol
+              style={{
+                margin: 0,
+                paddingLeft: '20px',
+                color: theme.textMid,
+                fontSize: '14px',
+                lineHeight: 1.65,
+              }}
+            >
+              {steps.map((line) => (
+                <li key={line} style={{ marginBottom: '6px' }}>
+                  {line}
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <p style={{ fontSize: '13px', color: theme.textMid, margin: '0 0 12px', lineHeight: 1.5 }}>
+            Bekræftelseslinket udløber om 24 timer.
+          </p>
+
+          <p style={{ fontSize: '13px', color: theme.textMid, margin: '0 0 22px', lineHeight: 1.5 }}>
+            Modtog du ikke e-mailen? Tjek din spam-mappe.
+          </p>
+
+          <Link
+            to="/login"
+            replace
+            style={{ ...btn(true), width: '100%', justifyContent: 'center', textDecoration: 'none', display: 'flex' }}
+          >
+            Gå til login
+          </Link>
         </div>
 
-        <p style={{ fontSize: '13px', color: textMuted, margin: '0 0 20px', lineHeight: 1.5 }}>
-          Bekræftelseslinket udløber om 24 timer.
-        </p>
-
-        <p style={{ fontSize: '13px', color: textMuted, margin: '0 0 24px', lineHeight: 1.5 }}>
-          Modtog du ikke e-mailen? Tjek din spam-mappe.
-        </p>
-
-        <Link
-          to="/login"
-          replace
-          style={{
-            ...btn(false),
-            width: '100%',
-            justifyContent: 'center',
-            marginTop: '8px',
-            padding: '12px 20px',
-            background: 'transparent',
-            color: '#F8FAFC',
-            border: '1px solid rgba(248, 250, 252, 0.22)',
-            boxShadow: 'none',
-            textDecoration: 'none',
-            display: 'flex',
-          }}
-        >
-          Gå til login
-        </Link>
-      </div>
-
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '420px',
-          marginTop: '28px',
-        }}
-      >
-        <PublicLegalFooter tone="dark" />
+        <PublicLegalFooter />
       </div>
     </div>
   );
