@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { font, theme } from '../lib/platformTheme';
 import { Bell, CheckCheck, Trash2 } from 'lucide-react';
+import { ConfirmDialog } from './ConfirmDialog';
 
 const DISMISSED_MAX = 400;
 
@@ -42,6 +43,7 @@ export function NotificationBell() {
   const userId = authUser?.id;
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
+  const [confirmClear, setConfirmClear] = useState(false);
   const panelRef = useRef(null);
 
   const unreadCount = notifs.filter(n => !n.read).length;
@@ -200,6 +202,17 @@ export function NotificationBell() {
   };
 
   return (
+    <>
+    {confirmClear && (
+      <ConfirmDialog
+        message="Vil du slette alle notifikationer?"
+        confirmLabel="Ja, ryd alle"
+        cancelLabel="Fortryd"
+        danger
+        onConfirm={() => { setConfirmClear(false); clearAll(); }}
+        onCancel={() => setConfirmClear(false)}
+      />
+    )}
     <div ref={panelRef} className="pm-notification-bell-root" style={{ position: "relative", flexShrink: 0 }}>
       <button
         type="button"
@@ -245,7 +258,7 @@ export function NotificationBell() {
                 </button>
               )}
               {notifs.length > 0 && (
-                <button type="button" onClick={() => { if (window.confirm("Ryd alle notifikationer?")) clearAll(); }} style={{ background: "none", border: "none", color: theme.textMid, fontSize: "11px", fontWeight: 600, cursor: "pointer", fontFamily: font, padding: "4px 6px" }}>
+                <button type="button" onClick={() => setConfirmClear(true)} style={{ background: "none", border: "none", color: theme.textMid, fontSize: "11px", fontWeight: 600, cursor: "pointer", fontFamily: font, padding: "4px 6px" }}>
                   Ryd alle
                 </button>
               )}
@@ -304,5 +317,6 @@ export function NotificationBell() {
         </div>
       )}
     </div>
+    </>
   );
 }

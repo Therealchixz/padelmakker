@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, heading } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
+import { supabase } from '../lib/supabase';
 import { Users, MapPin, Swords, Trophy } from 'lucide-react';
 
 export function HomeTab({ user, setTab }) {
@@ -16,6 +17,17 @@ export function HomeTab({ user, setTab }) {
   const games = histStats?.games ?? (profileFresh?.games_played || 0);
   const wins = histStats?.wins ?? (profileFresh?.games_won || 0);
   const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
+
+  const [feed, setFeed] = useState([]);
+  useEffect(() => {
+    supabase
+      .from('elo_history')
+      .select('user_id, result, change, date, profiles(full_name, name, avatar)')
+      .not('change', 'is', null)
+      .order('date', { ascending: false })
+      .limit(8)
+      .then(({ data }) => setFeed(data || []));
+  }, []);
 
   const actions = [
     { icon: <Users   size={20} color={theme.accent} />, title: "Find en makker", desc: "Se ledige spillere",  tab: "makkere" },
@@ -61,6 +73,34 @@ export function HomeTab({ user, setTab }) {
         </div>
       </div>
         </>
+      )}
+
+      {/* Aktivitetsfeed */}
+      {feed.length > 0 && (
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
+            Seneste aktivitet
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {feed.map((row, i) => {
+              const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
+              const avatar = row.profiles?.avatar || "🎾";
+              const won = row.result === "win";
+              const change = Number(row.change) || 0;
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.surface, borderRadius: "8px", padding: "9px 12px", border: "1px solid " + theme.border }}>
+                  <span style={{ fontSize: "18px", flexShrink: 0 }}>{avatar}</span>
+                  <span style={{ fontSize: "13px", color: theme.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <strong>{name}</strong> {won ? "vandt" : "tabte"}
+                  </span>
+                  <span style={{ fontSize: "12px", fontWeight: 700, flexShrink: 0, color: change >= 0 ? theme.accent : theme.red }}>
+                    {change >= 0 ? "+" : ""}{change} ELO
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Quick actions */}

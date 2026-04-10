@@ -6,6 +6,7 @@
 import { getBookliVenue } from './lib/bookliAllowlist.js';
 import { fetchBookliTimelineForDate } from './lib/bookliTimeline.js';
 import { DateTime } from 'luxon';
+import { checkRateLimit, getClientIp } from './lib/rateLimit.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
@@ -13,6 +14,11 @@ export default async function handler(req, res) {
 
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  if (!checkRateLimit(getClientIp(req), 30, 60_000)) {
+    res.status(429).json({ error: 'For mange forespørgsler. Prøv igen om et øjeblik.' });
     return;
   }
 
