@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { normalizeProfileRow, buildOnboardingProfileRowPatch } from './profileUtils'
+import { applyPendingAvatar } from './avatarUpload'
 import { DEFAULT_REGION } from './platformConstants'
 
 const AuthContext = createContext(null)
@@ -58,6 +59,27 @@ function fetchProfileQuery(userId) {
     .catch(() => null)
 }
 
+async function applyPendingAvatarToProfile(userRow, currentProfile) {
+  if (!userRow?.id) return currentProfile
+  const url = await applyPendingAvatar(userRow.id, userRow.email)
+  if (!url) return currentProfile
+  const { data: updated, error } = await supabase
+    .from('profiles')
+    .update({ avatar: url })
+    .eq('id', userRow.id)
+    .select()
+    .single()
+  if (error) {
+    console.warn('pending avatar → profiles:', error.message)
+    return currentProfile
+  }
+  const row = normalizeProfileRow(updated)
+  /* Sæt ikke onboarding_applied_to_profile her — ellers springes onboarding-merge over. */
+  const { error: metaErr } = await supabase.auth.updateUser({ data: { avatar: url } })
+  if (metaErr) console.warn('pending avatar → auth metadata:', metaErr.message)
+  return row
+}
+
 /** Eksisterende profil eller minimal upsert (auth uden profiles-række → ellers hvid dashboard). */
 async function fetchOrCreateProfile(userRow) {
   if (!userRow?.id) return null
@@ -82,6 +104,7 @@ async function fetchOrCreateProfile(userRow) {
         console.warn('onboarding → profiles merge:', obErr.message)
       }
     }
+    p = await applyPendingAvatarToProfile(userRow, p)
     return p
   }
   const meta = userRow.user_metadata || {}
@@ -108,7 +131,9 @@ async function fetchOrCreateProfile(userRow) {
     console.warn('profiles upsert:', error.message)
     return null
   }
-  return normalizeProfileRow(row || null)
+  let out = normalizeProfileRow(row || null)
+  out = await applyPendingAvatarToProfile(userRow, out)
+  return out
 }
 
 function withTimeout(promise, ms) {
@@ -297,6 +322,10 @@ export function AuthProvider({ children }) {
     }
     if ('full_name' in updates && updates.full_name != null) {
       meta.full_name = updates.full_name
+      metaChanged = true
+    }
+    if ('avatar' in updates && updates.avatar != null) {
+      meta.avatar = updates.avatar
       metaChanged = true
     }
     if (metaChanged) {
