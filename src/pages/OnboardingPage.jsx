@@ -85,7 +85,10 @@ export function OnboardingPage({ onComplete }) {
       if (avatarFile && signData?.user?.id) {
         try {
           const url = await uploadAvatar(signData.user.id, avatarFile);
+          /* Opdater profiles-rækken med URL'en */
           await supabase.from('profiles').update({ avatar: url }).eq('id', signData.user.id);
+          /* Opdater også auth-metadata så buildOnboardingProfileRowPatch ikke overskriver med emoji */
+          await supabase.auth.updateUser({ data: { avatar: url } });
         } catch (uploadErr) {
           console.warn('Avatar upload ved oprettelse fejlede:', uploadErr.message);
         }

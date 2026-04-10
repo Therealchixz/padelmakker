@@ -140,7 +140,9 @@ export function buildOnboardingProfileRowPatch(meta, existingProfile = null) {
     area: metaArea,
     availability: metaAvail,
     bio: String(meta.bio || "").trim(),
-    avatar: meta.avatar || "🎾",
+    avatar: (existingProfile?.avatar && String(existingProfile.avatar).startsWith('http'))
+      ? existingProfile.avatar
+      : (meta.avatar || "🎾"),
     birth_year: birthNum != null && !Number.isNaN(Number(birthNum)) ? Number(birthNum) : null,
   }
 }
