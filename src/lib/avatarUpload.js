@@ -56,6 +56,32 @@ export function isAvatarUrl(avatar) {
   return typeof avatar === 'string' && /^https?:\/\//i.test(String(avatar).trim());
 }
 
+/**
+ * Konverterer data-URL (fx fra FileReader) til Blob uden fetch().
+ * fetch(data:...) blokeres af CSP connect-src på produktion (Vercel).
+ */
+function blobFromDataUrl(dataUrl, fallbackMime = 'image/jpeg') {
+  if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
+  const comma = dataUrl.indexOf(',');
+  if (comma === -1) return null;
+  const header = dataUrl.slice(5, comma);
+  const payload = dataUrl.slice(comma + 1);
+  const mime = (header.split(';')[0] || '').trim() || fallbackMime;
+  const isBase64 = header.split(';').some((p) => p.toLowerCase() === 'base64');
+  if (isBase64) {
+    const binStr = atob(payload.replace(/\s/g, ''));
+    const len = binStr.length;
+    const arr = new Uint8Array(len);
+    for (let i = 0; i < len; i++) arr[i] = binStr.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+  try {
+    return new Blob([decodeURIComponent(payload)], { type: mime });
+  } catch {
+    return null;
+  }
+}
+
 export async function uploadAvatar(userId, file) {
   if (!ALLOWED_TYPES.includes(file.type)) {
     throw new Error('Kun JPG, PNG og WebP billeder er tilladt.');
@@ -189,9 +215,12 @@ export async function applyPendingAvatar(userId, userEmail) {
       pendingStorageRemove();
       return null;
     }
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    const file = new File([blob], name || 'avatar.jpg', { type: type || 'image/jpeg' });
+    const blob = blobFromDataUrl(dataUrl, type || 'image/jpeg');
+    if (!blob) {
+      console.warn('applyPendingAvatar: kunne ikke læse data-URL (ikke base64?)');
+      return null;
+    }
+    const file = new File([blob], name || 'avatar.jpg', { type: blob.type || type || 'image/jpeg' });
     const url = await uploadAvatar(userId, file);
     pendingStorageRemove();
     return url;
