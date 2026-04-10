@@ -10,7 +10,8 @@ import {
   eloHistoryRowDateKey,
 } from '../lib/eloHistoryUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
-import { ProfileAvatar } from '../components/ProfileAvatar';
+
+import { isAvatarUrl } from '../lib/avatarUpload';
 
 export function RankingTab({ user }) {
   const [players, setPlayers] = useState([]);
@@ -235,15 +236,13 @@ export function RankingTab({ user }) {
                 <div style={{ width: "28px", flexShrink: 0, textAlign: "center", fontSize: i < 3 ? "18px" : "13px", fontWeight: 700, color: i < 3 ? "inherit" : theme.textLight }}>
                   {i < 3 ? medals[i] : i + 1}
                 </div>
-                <ProfileAvatar
-                  avatar={p.avatar}
-                  size={38}
-                  fontSize={17}
-                  style={{
-                    background: "#F1F5F9",
-                    border: "1px solid " + theme.border,
-                  }}
-                />
+
+                <div style={{ width: "38px", height: "38px", flexShrink: 0, borderRadius: "50%", background: "#F1F5F9", border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", overflow: "hidden" }}>
+                  {isAvatarUrl(p.avatar)
+                    ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : (p.avatar || "🎾")}
+                </div>
+
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: "14px", fontWeight: me ? 700 : 600, letterSpacing: "-0.01em", wordBreak: "break-word" }}>
                     {p.full_name || p.name}{me ? " (dig)" : ""}

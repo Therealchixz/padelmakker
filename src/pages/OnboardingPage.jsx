@@ -1,20 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
-import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
-import {
-  uploadAvatar,
-  savePendingAvatar,
-  tagPendingAvatarEmail,
-  tagPendingAvatarUserId,
-  clearPendingAvatar,
-} from '../lib/avatarUpload';
+
+import { savePendingAvatar } from '../lib/avatarUpload';
+
 import { AvatarPicker } from '../components/AvatarPicker';
 import { ArrowRight } from 'lucide-react';
 
@@ -93,20 +88,11 @@ export function OnboardingPage({ onComplete }) {
         /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
         onboarding_completed: true,
       });
-      if (avatarFile && signData?.user?.id) {
-        tagPendingAvatarUserId(signData.user.id);
-      }
-      /* Aktiv session efter signUp: upload færdig før signOut — ellers kan pending slettes uden at filen nåede i storage */
-      if (avatarFile && signData?.user?.id && signData?.session) {
-        try {
-          const url = await uploadAvatar(signData.user.id, avatarFile);
-          const { error: upErr } = await supabase.from('profiles').update({ avatar: url }).eq('id', signData.user.id);
-          if (upErr) console.warn('profiles avatar efter signUp:', upErr.message);
-          await supabase.auth.updateUser({ data: { avatar: url } });
-          clearPendingAvatar();
-        } catch (uploadErr) {
-          console.warn('Avatar upload ved oprettelse fejlede:', uploadErr.message);
-        }
+
+      /* Gem profilbillede til sessionStorage — uploades automatisk ved næste login */
+      if (avatarFile) {
+        await savePendingAvatar(avatarFile);
+
       }
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       if (onComplete) onComplete();

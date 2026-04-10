@@ -9,7 +9,7 @@ import { americanoOutcomeColors } from '../features/americano/americanoOutcomeCo
 import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
-import { uploadAvatar } from '../lib/avatarUpload';
+import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
 
@@ -32,6 +32,24 @@ export function ProfilTab({ user, showToast, setTab }) {
   useEffect(() => {
     if (!editing) setForm(profileFormState(user));
   }, [user, editing]);
+
+  /* Automatisk upload af billede valgt under oprettelse — gemmes i sessionStorage */
+  useEffect(() => {
+    if (!user?.id || !hasPendingAvatar()) return;
+    let cancelled = false;
+    (async () => {
+      const url = await applyPendingAvatar(user.id);
+      if (cancelled || !url) return;
+      try {
+        await updateProfile({ avatar: url });
+        showToast('Profilbillede gemt! 📸');
+      } catch (e) {
+        console.warn('Auto-avatar apply fejlede:', e.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const [pendingAvatarFile, setPendingAvatarFile]   = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);

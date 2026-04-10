@@ -28,6 +28,21 @@ function matchPlayerTeam(p) {
   return Number(p?.team);
 }
 
+function nearestHalfHour() {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  if (m < 15) return `${String(h).padStart(2, '0')}:00`;
+  if (m < 45) return `${String(h).padStart(2, '0')}:30`;
+  return `${String((h + 1) % 24).padStart(2, '0')}:00`;
+}
+
+const TIME_OPTIONS = [];
+for (let h = 6; h <= 23; h++) {
+  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`);
+  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`);
+}
+
 /** Undgår gigantiske .in() — Supabase/PostgREST har URL-grænser. */
 async function fetchRowsInChunks(table, column, ids, select = '*') {
   if (!ids.length) return [];
@@ -66,6 +81,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [resultMatch, setResultMatch] = useState(null);
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [profilesById, setProfilesById] = useState({});
+  const [completedLimit, setCompletedLimit] = useState(5);
   const [viewTab, setViewTab]         = useState(() => {
     const s = readKampeSessionPrefs(user.id);
     if (s?.view === "open" || s?.view === "active" || s?.view === "completed") return s.view;
@@ -79,7 +95,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
-    time: "20:00",
+    time: nearestHalfHour(),
     duration: "120",
     description: "",
   });
@@ -105,6 +121,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     if (fromList != null && Number.isFinite(Number(fromList))) return Math.round(Number(fromList));
     return Math.round(Number(user.elo_rating) || 1000);
   }, [kampeRatedRows, kampeProfileFresh, myUidStr, eloByUserId, user.elo_rating]);
+
+  /** ELO-ændring pr. match for den loggede bruger — til visning på afsluttede kampkort */
+  const eloChangeByMatchId = useMemo(() => {
+    const map = {};
+    for (const row of kampeRatedRows) {
+      if (row.match_id) map[String(row.match_id)] = Number(row.change);
+    }
+    return map;
+  }, [kampeRatedRows]);
 
   const loadData = useCallback(async () => {
     try {
@@ -478,8 +503,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const activeMatches = matches.filter(m => getStatus(m) === "in_progress" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id));
   const completedMatches = matches
     .filter(m => getStatus(m) === "completed" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id))
-    .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults))
-    .slice(0, 20);
+    .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults));
 
   const renderMatchCard = (m) => {
     const mp = matchPlayers[m.id] || [];
@@ -594,6 +618,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <div style={{ fontSize: "12px", color: textColor, marginTop: "5px", fontWeight: 600 }}>
                 {!mr.confirmed ? "⏳ Venter på bekræftelse" : iWon ? "🏆 Du vandt!" : iLost ? "😞 Du tabte" : `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt`}
               </div>
+              {mr.confirmed && eloChangeByMatchId[String(m.id)] != null && (
+                <div style={{ fontSize: "14px", fontWeight: 800, color: eloChangeByMatchId[String(m.id)] >= 0 ? theme.accent : theme.red, marginTop: "6px", letterSpacing: "-0.01em" }}>
+                  {eloChangeByMatchId[String(m.id)] >= 0 ? "+" : ""}{eloChangeByMatchId[String(m.id)]} ELO
+                </div>
+              )}
             </div>
           );
         })()}
@@ -741,7 +770,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             <div><label style={labelStyle}>Dato</label>
               <input type="date" value={newMatch.date} onChange={e => setNewMatch(m => ({ ...m, date: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
             <div><label style={labelStyle}>Starttid</label>
-              <input type="time" value={newMatch.time} onChange={e => setNewMatch(m => ({ ...m, time: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
+              <select value={newMatch.time} onChange={e => setNewMatch(m => ({ ...m, time: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
+                {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select></div>
             <div><label style={labelStyle}>Varighed</label>
               <select value={newMatch.duration} onChange={e => setNewMatch(m => ({ ...m, duration: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
                 <option value="60">1 time</option>
@@ -762,7 +793,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {viewTab === "open" && openMatches.map((m) => renderMatchCard(m, "open"))}
         {viewTab === "active" && activeMatches.map((m) => renderMatchCard(m, "active"))}
-        {viewTab === "completed" && completedMatches.map((m) => renderMatchCard(m, "completed"))}
+        {viewTab === "completed" && completedMatches.slice(0, completedLimit).map((m) => renderMatchCard(m, "completed"))}
+        {viewTab === "completed" && completedMatches.length > completedLimit && (
+          <button
+            onClick={() => setCompletedLimit(n => n + 5)}
+            style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.textMid }}
+          >
+            Indlæs flere ({completedMatches.length - completedLimit} tilbage)
+          </button>
+        )}
 
         {viewTab === "open" && openMatches.length === 0 && (
           <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}>

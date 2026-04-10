@@ -11,9 +11,34 @@ import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { americanoOutcomeColors } from './americanoOutcomeColors'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
-import { ProfileAvatar } from '../../components/ProfileAvatar'
+
+import { isAvatarUrl } from '../../lib/avatarUpload'
 
 const font = "'Inter', sans-serif"
+
+/** Renderer emoji eller profilbillede-URL korrekt i en cirkel */
+function AvatarInCircle({ av, size = 36, fontSize = 18, bg = '#E2E8F0' }: { av: string; size?: number; fontSize?: number; bg?: string }) {
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: bg,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize,
+        flexShrink: 0,
+        overflow: 'hidden',
+      }}
+    >
+      {isAvatarUrl(av)
+        ? <img src={av} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : av}
+    </div>
+  )
+}
 
 type ProfileLike = {
   id: string
@@ -171,15 +196,9 @@ function AmericanoParticipantStatsModal({
         }}
       >
         <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 18 }}>
-          <ProfileAvatar
-            avatar={row?.avatar}
-            size={52}
-            fontSize={26}
-            style={{
-              background: '#DBEAFE',
-              border: '2px solid #93C5FD',
-            }}
-          />
+
+          <AvatarInCircle av={row?.avatar || '🎾'} size={52} fontSize={26} bg="#DBEAFE" />
+
           <div style={{ minWidth: 0 }}>
             <div
               id="americano-stats-title"
@@ -821,12 +840,9 @@ export function AmericanoTab({
                                   fontFamily: font,
                                 }}
                               >
-                                <ProfileAvatar
-                                  avatar={av}
-                                  size={36}
-                                  fontSize={18}
-                                  style={{ background: '#E2E8F0' }}
-                                />
+
+                                <AvatarInCircle av={av} />
+
                                 <span
                                   style={{
                                     fontSize: 13,
@@ -881,12 +897,9 @@ export function AmericanoTab({
                                   fontFamily: font,
                                 }}
                               >
-                                <ProfileAvatar
-                                  avatar={av}
-                                  size={36}
-                                  fontSize={18}
-                                  style={{ background: '#E2E8F0' }}
-                                />
+
+                                <AvatarInCircle av={av} />
+
                                 <span
                                   style={{
                                     fontSize: 13,
