@@ -14,7 +14,8 @@ function escAttr(s) {
   return String(s)
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;');
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function readQuery(req) {
@@ -92,10 +93,16 @@ export default async function handler(req, res) {
     const pmBane = qs.get('pm_bane');
     const pmTid = qs.get('pm_tid');
     if (pmBane != null && String(pmBane).trim() !== '') {
-      params.set('pm_bane', String(pmBane).slice(0, 120));
+      const bane = String(pmBane).slice(0, 120);
+      if (/^[\p{L}\p{N}\s\-.,()]+$/u.test(bane)) {
+        params.set('pm_bane', bane);
+      }
     }
     if (pmTid != null && String(pmTid).trim() !== '') {
-      params.set('pm_tid', String(pmTid).slice(0, 20));
+      const tid = String(pmTid).slice(0, 20);
+      if (/^\d{2}:\d{2}$/.test(tid)) {
+        params.set('pm_tid', tid);
+      }
     }
 
     let hidden = '';
@@ -123,10 +130,13 @@ export default async function handler(req, res) {
     sendHtml(res, 200, body);
   } catch (e) {
     console.error('halbooking-open-padel', e);
+    const errMsg = process.env.NODE_ENV === 'production'
+      ? 'Intern fejl – prøv igen senere'
+      : escAttr(e.message || 'ukendt');
     sendHtml(
       res,
       500,
-      `<!DOCTYPE html><html><body><p>Fejl: ${escAttr(e.message || 'ukendt')}</p></body></html>`
+      `<!DOCTYPE html><html><body><p>Fejl: ${errMsg}</p></body></html>`
     );
   }
 }
