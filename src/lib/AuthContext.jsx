@@ -60,7 +60,7 @@ function fetchProfileQuery(userId) {
 }
 
 async function applyPendingAvatarToProfile(userRow, currentProfile) {
-  if (!userRow?.id) return currentProfile
+  if (!userRow?.id || !currentProfile) return currentProfile
   const url = await applyPendingAvatar(userRow.id, userRow.email)
   if (!url) return currentProfile
   const { data: updated, error } = await supabase
@@ -80,8 +80,10 @@ async function applyPendingAvatarToProfile(userRow, currentProfile) {
   return row
 }
 
-/** Eksisterende profil eller minimal upsert (auth uden profiles-række → ellers hvid dashboard). */
-async function fetchOrCreateProfile(userRow) {
+/**
+ * Hent/merge profil uden pending storage-upload — så Promise.race-timeout ikke afbryder upload.
+ */
+async function fetchOrCreateProfileCore(userRow) {
   if (!userRow?.id) return null
   let p = await fetchProfileQuery(userRow.id)
   if (p) {
@@ -104,7 +106,6 @@ async function fetchOrCreateProfile(userRow) {
         console.warn('onboarding → profiles merge:', obErr.message)
       }
     }
-    p = await applyPendingAvatarToProfile(userRow, p)
     return p
   }
   const meta = userRow.user_metadata || {}
@@ -131,9 +132,7 @@ async function fetchOrCreateProfile(userRow) {
     console.warn('profiles upsert:', error.message)
     return null
   }
-  let out = normalizeProfileRow(row || null)
-  out = await applyPendingAvatarToProfile(userRow, out)
-  return out
+  return normalizeProfileRow(row || null)
 }
 
 function withTimeout(promise, ms) {
@@ -163,12 +162,24 @@ export function AuthProvider({ children }) {
     }
     if (!quiet) setProfileLoading(true)
     Promise.race([
-      fetchOrCreateProfile(userRow),
+      fetchOrCreateProfileCore(userRow),
       new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
     ])
       .then((p) => {
         if (profileReqId.current !== id) return
         setProfile(p)
+        /* Storage-upload fra pending avatar kan tage >12s — må ikke ligge i race med PROFILE_TIMEOUT */
+        if (p && userRow?.id) {
+          void applyPendingAvatarToProfile(userRow, p).then((withAvatar) => {
+            if (profileReqId.current !== id) return
+            if (
+              withAvatar &&
+              String(withAvatar.avatar || '') !== String(p.avatar || '')
+            ) {
+              setProfile(withAvatar)
+            }
+          })
+        }
       })
       .finally(() => {
         if (profileReqId.current !== id) return
