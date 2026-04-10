@@ -56,6 +56,32 @@ export function isAvatarUrl(avatar) {
   return typeof avatar === 'string' && /^https?:\/\//i.test(String(avatar).trim());
 }
 
+/**
+ * Konverterer data-URL (fx fra FileReader) til Blob uden fetch().
+ * fetch(data:...) blokeres af CSP connect-src på produktion (Vercel).
+ */
+function blobFromDataUrl(dataUrl, fallbackMime = 'image/jpeg') {
+  if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
+  const comma = dataUrl.indexOf(',');
+  if (comma === -1) return null;
+  const header = dataUrl.slice(5, comma);
+  const payload = dataUrl.slice(comma + 1);
+  const mime = (header.split(';')[0] || '').trim() || fallbackMime;
+  const isBase64 = header.split(';').some((p) => p.toLowerCase() === 'base64');
+  if (isBase64) {
+    const binStr = atob(payload.replace(/\s/g, ''));
+    const len = binStr.length;
+    const arr = new Uint8Array(len);
+    for (let i = 0; i < len; i++) arr[i] = binStr.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+  try {
+    return new Blob([decodeURIComponent(payload)], { type: mime });
+  } catch {
+    return null;
+  }
+}
+
 export async function uploadAvatar(userId, file) {
   if (!ALLOWED_TYPES.includes(file.type)) {
     throw new Error('Kun JPG, PNG og WebP billeder er tilladt.');
@@ -81,13 +107,26 @@ export function clearPendingAvatar() {
   pendingStorageRemove();
 }
 
-/** Kald med seneste e-mail før signUp, så pending kun anvendes for den konto. */
+/** Kald med seneste e-mail før signUp (bagudkompatibilitet hvis user_id ikke er sat endnu). */
 export function tagPendingAvatarEmail(email) {
   try {
     const raw = pendingStorageGet();
     if (!raw) return;
     const o = JSON.parse(raw);
     o.email = String(email || '').trim().toLowerCase();
+    pendingStorageSet(JSON.stringify(o));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Kald efter signUp med ny brugers id — så første login matcher på id (e-mail kan være tom i JWT). */
+export function tagPendingAvatarUserId(userId) {
+  try {
+    const raw = pendingStorageGet();
+    if (!raw || !userId) return;
+    const o = JSON.parse(raw);
+    o.userId = String(userId);
     pendingStorageSet(JSON.stringify(o));
   } catch {
     /* ignore */
@@ -130,8 +169,9 @@ export function hasPendingAvatar() {
 }
 
 /**
- * @param {string} userEmail — skal matche den e-mail der blev brugt ved oprettelse.
- * @returns {Promise<string|null>}
+ * Matcher pending på `userId` (foretrukket) eller på e-mail. Fjerner pending kun efter vellykket upload
+ * til storage — ved forkert bruger eller fejl beholdes data så næste forsøg kan lykkes.
+ * @returns {Promise<string|null>} public URL eller null
  */
 export async function applyPendingAvatar(userId, userEmail) {
   if (!userId) return null;
@@ -142,28 +182,50 @@ export async function applyPendingAvatar(userId, userEmail) {
     return null;
   }
   if (!raw) return null;
+
+  let parsed;
   try {
-    const parsed = JSON.parse(raw);
-    const savedAt = Number(parsed.savedAt);
-    if (Number.isFinite(savedAt) && Date.now() - savedAt > PENDING_MAX_AGE_MS) {
-      pendingStorageRemove();
-      return null;
-    }
-    const expected = parsed.email != null ? String(parsed.email).trim().toLowerCase() : '';
-    const actual = userEmail != null ? String(userEmail).trim().toLowerCase() : '';
-    if (!expected || !actual || expected !== actual) {
-      pendingStorageRemove();
-      return null;
-    }
+    parsed = JSON.parse(raw);
+  } catch {
     pendingStorageRemove();
+    return null;
+  }
+
+  const savedAt = Number(parsed.savedAt);
+  if (Number.isFinite(savedAt) && Date.now() - savedAt > PENDING_MAX_AGE_MS) {
+    pendingStorageRemove();
+    return null;
+  }
+
+  const uid = String(userId);
+  const pendingUid = parsed.userId != null ? String(parsed.userId) : '';
+  const emExpected = parsed.email != null ? String(parsed.email).trim().toLowerCase() : '';
+  const emActual = userEmail != null ? String(userEmail).trim().toLowerCase() : '';
+
+  const idMatch = Boolean(pendingUid && pendingUid === uid);
+  const emailMatch = Boolean(emExpected && emActual && emExpected === emActual);
+
+  if (!idMatch && !emailMatch) {
+    return null;
+  }
+
+  try {
     const { dataUrl, type, name } = parsed;
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    const file = new File([blob], name || 'avatar.jpg', { type: type || 'image/jpeg' });
-    return await uploadAvatar(userId, file);
-  } catch (e) {
-    console.warn('applyPendingAvatar fejlede:', e?.message || e);
+    if (!dataUrl || typeof dataUrl !== 'string') {
+      pendingStorageRemove();
+      return null;
+    }
+    const blob = blobFromDataUrl(dataUrl, type || 'image/jpeg');
+    if (!blob) {
+      console.warn('applyPendingAvatar: kunne ikke læse data-URL (ikke base64?)');
+      return null;
+    }
+    const file = new File([blob], name || 'avatar.jpg', { type: blob.type || type || 'image/jpeg' });
+    const url = await uploadAvatar(userId, file);
     pendingStorageRemove();
+    return url;
+  } catch (e) {
+    console.warn('applyPendingAvatar fejlede (pending beholdes til næste login):', e?.message || e);
     return null;
   }
 }
