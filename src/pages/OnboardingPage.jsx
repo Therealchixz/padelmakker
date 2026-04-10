@@ -13,7 +13,7 @@ import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { ArrowRight } from 'lucide-react';
 
-export function OnboardingPage({ onComplete }) {
+export function OnboardingPage() {
   const { signUp, signOut } = useAuth();
   const navigate = useNavigate();
   const [step, setStep]           = useState(0);
@@ -90,7 +90,6 @@ export function OnboardingPage({ onComplete }) {
       });
 
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-      if (onComplete) onComplete();
       /* Altid til login: undgå at blive på /opret eller auto-dashboard når der opstår en session */
       try { await signOut(); } catch { /* fortsæt til login alligevel */ }
       navigate('/opret/bekraeft-email', { replace: true, state: { email: form.email.trim() } });
