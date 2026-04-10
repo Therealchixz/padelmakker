@@ -9,6 +9,33 @@ import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 
+function favoritesKeyForUser(userId) {
+  return userId != null && String(userId).trim() !== ''
+    ? `pm_favorites_${String(userId)}`
+    : null;
+}
+
+/** Favoritter pr. indlogget konto — ikke delt på tværs af profiler i samme browser. */
+function readFavoritesSet(userId) {
+  const key = favoritesKeyForUser(userId);
+  if (!key) return new Set();
+  try {
+    return new Set(JSON.parse(localStorage.getItem(key) || '[]'));
+  } catch {
+    return new Set();
+  }
+}
+
+function writeFavoritesSet(userId, set) {
+  const key = favoritesKeyForUser(userId);
+  if (!key) return;
+  try {
+    localStorage.setItem(key, JSON.stringify([...set]));
+  } catch {
+    /* quota */
+  }
+}
+
 export function MakkereTab({ user, showToast }) {
   const [search, setSearch]           = useState("");
   const [filterElo, setFilterElo]     = useState("all");
@@ -20,19 +47,21 @@ export function MakkereTab({ user, showToast }) {
   const [loading, setLoading]         = useState(true);
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [inviteTarget, setInviteTarget] = useState(null);
-  const [favorites, setFavorites]     = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('pm_favorites') || '[]')); }
-    catch { return new Set(); }
-  });
+  const [favorites, setFavorites]     = useState(() => readFavoritesSet(user?.id));
 
   const myElo = eloOf(user);
+
+  useEffect(() => {
+    setFavorites(readFavoritesSet(user.id));
+    setFilterFav(false);
+  }, [user.id]);
 
   const toggleFavorite = (playerId) => {
     setFavorites(prev => {
       const next = new Set(prev);
       if (next.has(String(playerId))) next.delete(String(playerId));
       else next.add(String(playerId));
-      try { localStorage.setItem('pm_favorites', JSON.stringify([...next])); } catch { /* quota */ }
+      writeFavoritesSet(user.id, next);
       return next;
     });
   };
