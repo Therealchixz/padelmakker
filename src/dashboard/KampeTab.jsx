@@ -28,6 +28,32 @@ function matchPlayerTeam(p) {
   return Number(p?.team);
 }
 
+/** Kort navn til scoreboard-række (fornavn / første ord) */
+function scoreboardShortName(full) {
+  const t = String(full || "?").trim();
+  if (!t) return "?";
+  const first = t.split(/\s+/)[0];
+  return first.length > 14 ? first.slice(0, 13) + "…" : first;
+}
+
+/** Én sæt-celle: games + valgfri tiebreak i parentes */
+function setCellDisplay(mr, setNum, team) {
+  const gKey = `set${setNum}_team${team}`;
+  const tbKey = `set${setNum}_tb${team}`;
+  const g = mr[gKey];
+  const tb = mr[tbKey];
+  if (g == null && g !== 0) return "—";
+  let s = String(g);
+  if (tb != null && tb !== "" && Number.isFinite(Number(tb))) {
+    s += ` (${Number(tb)})`;
+  }
+  return s;
+}
+
+const scoreboardMuted = "#64748B";
+const scoreboardBand = "#E8ECF1";
+const scoreboardRowBorder = "#E2E8F0";
+
 function nearestHalfHour() {
   const now = new Date();
   const h = now.getHours();
@@ -609,6 +635,133 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const myTeam = t1.some(p => p.user_id === user.id) ? "team1" : t2.some(p => p.user_id === user.id) ? "team2" : null;
           const iWon = mr.confirmed && myTeam === mr.match_winner;
           const iLost = mr.confirmed && myTeam && myTeam !== mr.match_winner;
+          const eloDelta = eloChangeByMatchId[String(m.id)];
+          const setColStyle = {
+            width: "36px",
+            textAlign: "center",
+            fontSize: "13px",
+            fontWeight: 700,
+            color: theme.text,
+            flexShrink: 0,
+          };
+          const teamRow = (teamPlayers, teamNum) => {
+            const n1 = scoreboardShortName(teamPlayers[0]?.user_name);
+            const n2 = scoreboardShortName(teamPlayers[1]?.user_name);
+            return (
+              <div
+                key={teamNum}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  minHeight: "44px",
+                  padding: "8px 10px",
+                  borderTop: teamNum === 2 ? `1px solid ${scoreboardRowBorder}` : "none",
+                  gap: "8px",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0, lineHeight: 1.25 }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text }}>{n1}</div>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text }}>{n2}</div>
+                </div>
+                <div style={setColStyle}>{setCellDisplay(mr, 1, teamNum)}</div>
+                <div style={setColStyle}>{setCellDisplay(mr, 2, teamNum)}</div>
+                <div style={setColStyle}>{setCellDisplay(mr, 3, teamNum)}</div>
+              </div>
+            );
+          };
+
+          if (status === "completed") {
+            return (
+              <div
+                style={{
+                  marginBottom: "12px",
+                  borderRadius: "8px",
+                  border: `1px solid ${scoreboardRowBorder}`,
+                  overflow: "hidden",
+                  background: "#fff",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "6px 10px",
+                    background: scoreboardBand,
+                    fontSize: "9px",
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    color: scoreboardMuted,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  <span>Resultat</span>
+                  <span style={{ textAlign: "right", lineHeight: 1.2 }}>
+                    2v2 padel
+                    <br />
+                    {mr.score_display || "—"}
+                  </span>
+                </div>
+                <div style={{ padding: "0" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "4px 10px 2px",
+                      gap: "8px",
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      color: scoreboardMuted,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }} />
+                    <div style={{ ...setColStyle, width: "36px" }}>Sæt 1</div>
+                    <div style={{ ...setColStyle, width: "36px" }}>Sæt 2</div>
+                    <div style={{ ...setColStyle, width: "36px" }}>Sæt 3</div>
+                  </div>
+                  {teamRow(t1, 1)}
+                  {teamRow(t2, 2)}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                    padding: "8px 10px",
+                    background: scoreboardBand,
+                    borderTop: `1px solid ${scoreboardRowBorder}`,
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    color: scoreboardMuted,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  <span>Afsluttet</span>
+                  <div style={{ textAlign: "right", flex: 1, minWidth: "140px" }}>
+                    {!mr.confirmed ? (
+                      <span style={{ color: theme.warm }}>⏳ Venter på bekræftelse</span>
+                    ) : (
+                      <span style={{ color: iWon ? theme.accent : iLost ? theme.red : theme.textMid }}>
+                        {iWon ? "🏆 Du vandt" : iLost ? "Du tabte" : `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt`}
+                        {eloDelta != null && Number.isFinite(Number(eloDelta)) && (
+                          <span style={{ marginLeft: "10px", fontWeight: 800, color: eloDelta >= 0 ? theme.accent : theme.red }}>
+                            {eloDelta >= 0 ? "+" : ""}
+                            {eloDelta} ELO
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
           const bgColor = !mr.confirmed ? theme.warmBg : iWon ? theme.accentBg : iLost ? theme.redBg : "#F1F5F9";
           const borderColor = !mr.confirmed ? theme.warm : iWon ? theme.accent : iLost ? theme.red : theme.border;
           const textColor = !mr.confirmed ? theme.warm : iWon ? theme.accent : iLost ? theme.red : theme.textMid;
@@ -618,9 +771,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <div style={{ fontSize: "12px", color: textColor, marginTop: "5px", fontWeight: 600 }}>
                 {!mr.confirmed ? "⏳ Venter på bekræftelse" : iWon ? "🏆 Du vandt!" : iLost ? "😞 Du tabte" : `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt`}
               </div>
-              {mr.confirmed && eloChangeByMatchId[String(m.id)] != null && (
-                <div style={{ fontSize: "14px", fontWeight: 800, color: eloChangeByMatchId[String(m.id)] >= 0 ? theme.accent : theme.red, marginTop: "6px", letterSpacing: "-0.01em" }}>
-                  {eloChangeByMatchId[String(m.id)] >= 0 ? "+" : ""}{eloChangeByMatchId[String(m.id)]} ELO
+              {mr.confirmed && eloDelta != null && Number.isFinite(Number(eloDelta)) && (
+                <div style={{ fontSize: "14px", fontWeight: 800, color: eloDelta >= 0 ? theme.accent : theme.red, marginTop: "6px", letterSpacing: "-0.01em" }}>
+                  {eloDelta >= 0 ? "+" : ""}{eloDelta} ELO
                 </div>
               )}
             </div>
