@@ -18,7 +18,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose })
         .from('matches')
         .select('*')
         .eq('creator_id', currentUser.id)
-        .eq('status', 'open')
+        .in('status', ['open', 'full'])
         .order('date', { ascending: true })
         .limit(20);
       setMatches(data || []);
