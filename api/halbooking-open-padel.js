@@ -123,7 +123,7 @@ export default async function handler(req, res) {
   <form id="pm-hb-padel" method="post" action="${PROC_BANER}" accept-charset="iso-8859-1">
     ${hidden}
   </form>
-  <script>document.getElementById("pm-hb-padel").submit();</script>
+  <script src="/hb-submit.js"></script>
 </body>
 </html>`;
 
