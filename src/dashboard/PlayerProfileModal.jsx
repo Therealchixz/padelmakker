@@ -5,6 +5,7 @@ import { availabilityTags } from '../lib/platformUtils';
 import { filterRatedEloHistoryRows, statsFromEloHistoryRows, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { MapPin } from 'lucide-react';
+import { AvatarCircle } from '../components/AvatarCircle';
 
 export function PlayerProfileModal({ player, onClose }) {
   const [dataLoading, setDataLoading] = useState(true);
@@ -66,9 +67,12 @@ export function PlayerProfileModal({ player, onClose }) {
       <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "14px", padding: "28px", maxWidth: "380px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
         {/* Header */}
         <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "20px" }}>
-          <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: theme.accentBg, border: "2px solid " + theme.accent + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", flexShrink: 0 }}>
-            {player.avatar || "🎾"}
-          </div>
+          <AvatarCircle
+            avatar={player.avatar}
+            size={64}
+            emojiSize="32px"
+            style={{ background: theme.accentBg, border: "2px solid " + theme.accent + "40" }}
+          />
           <div>
             <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{player.full_name || player.name || "Spiller"}</div>
             <div style={{ display: "flex", gap: "5px", marginTop: "6px", flexWrap: "wrap" }}>
