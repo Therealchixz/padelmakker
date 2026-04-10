@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
-import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
-import { uploadAvatar } from '../lib/avatarUpload';
+import { savePendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { ArrowRight } from 'lucide-react';
 
@@ -81,17 +80,9 @@ export function OnboardingPage({ onComplete }) {
         /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
         onboarding_completed: true,
       });
-      /* Upload profilbillede hvis brugeren har valgt et — ikke kritisk, fejler lydløst */
-      if (avatarFile && signData?.user?.id) {
-        try {
-          const url = await uploadAvatar(signData.user.id, avatarFile);
-          /* Opdater profiles-rækken med URL'en */
-          await supabase.from('profiles').update({ avatar: url }).eq('id', signData.user.id);
-          /* Opdater også auth-metadata så buildOnboardingProfileRowPatch ikke overskriver med emoji */
-          await supabase.auth.updateUser({ data: { avatar: url } });
-        } catch (uploadErr) {
-          console.warn('Avatar upload ved oprettelse fejlede:', uploadErr.message);
-        }
+      /* Gem profilbillede til sessionStorage — uploades automatisk ved næste login */
+      if (avatarFile) {
+        await savePendingAvatar(avatarFile);
       }
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       if (onComplete) onComplete();
