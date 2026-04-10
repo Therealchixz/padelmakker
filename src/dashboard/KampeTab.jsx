@@ -106,6 +106,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return Math.round(Number(user.elo_rating) || 1000);
   }, [kampeRatedRows, kampeProfileFresh, myUidStr, eloByUserId, user.elo_rating]);
 
+  /** ELO-ændring pr. match for den loggede bruger — til visning på afsluttede kampkort */
+  const eloChangeByMatchId = useMemo(() => {
+    const map = {};
+    for (const row of kampeRatedRows) {
+      if (row.match_id) map[String(row.match_id)] = Number(row.change);
+    }
+    return map;
+  }, [kampeRatedRows]);
+
   const loadData = useCallback(async () => {
     try {
       const uid = user.id;
@@ -594,6 +603,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <div style={{ fontSize: "12px", color: textColor, marginTop: "5px", fontWeight: 600 }}>
                 {!mr.confirmed ? "⏳ Venter på bekræftelse" : iWon ? "🏆 Du vandt!" : iLost ? "😞 Du tabte" : `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt`}
               </div>
+              {mr.confirmed && eloChangeByMatchId[String(m.id)] != null && (
+                <div style={{ fontSize: "14px", fontWeight: 800, color: eloChangeByMatchId[String(m.id)] >= 0 ? theme.accent : theme.red, marginTop: "6px", letterSpacing: "-0.01em" }}>
+                  {eloChangeByMatchId[String(m.id)] >= 0 ? "+" : ""}{eloChangeByMatchId[String(m.id)]} ELO
+                </div>
+              )}
             </div>
           );
         })()}
