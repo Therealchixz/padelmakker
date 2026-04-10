@@ -23,10 +23,9 @@ export function HomeTab({ user, setTab }) {
   const fetchFeed = useCallback(() => {
     supabase
       .from('elo_history')
-      .select('user_id, result, change, date, match_id, profiles(full_name, name, avatar)')
+      .select('user_id, result, change, date, created_at, profiles(full_name, name, avatar)')
       .not('change', 'is', null)
-      .order('date', { ascending: false })
-      .order('match_id', { ascending: false })
+      .order('created_at', { ascending: false, nullsFirst: false })
       .limit(10)
       .then(({ data }) => setFeed(data || []));
   }, []);
