@@ -94,12 +94,13 @@ export function OnboardingPage({ onComplete }) {
     <div key={0}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Velkommen! 👋</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Lad os oprette din profil.</p>
-      <label style={labelStyle}>Fornavn</label>
-      <input value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
-      <label style={labelStyle}>Efternavn</label>
-      <input value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "14px" }} />
-      <label style={labelStyle}>Email</label>
+      <label htmlFor="onb-first-name" style={labelStyle}>Fornavn</label>
+      <input id="onb-first-name" autoComplete="given-name" value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
+      <label htmlFor="onb-last-name" style={labelStyle}>Efternavn</label>
+      <input id="onb-last-name" autoComplete="family-name" value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "14px" }} />
+      <label htmlFor="onb-email" style={labelStyle}>Email</label>
       <input
+        id="onb-email"
         value={form.email}
         onChange={e => set("email", e.target.value)}
         placeholder="din@email.dk"
@@ -116,10 +117,11 @@ export function OnboardingPage({ onComplete }) {
           Brug en gyldig e-mail med @ og domæne (fx navn@mail.dk).
         </p>
       )}
-      <label style={labelStyle}>Adgangskode</label>
-      <input value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "10px" }} />
-      <label style={labelStyle}>Bekræft adgangskode</label>
+      <label htmlFor="onb-password" style={labelStyle}>Adgangskode</label>
+      <input id="onb-password" value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "10px" }} />
+      <label htmlFor="onb-password-confirm" style={labelStyle}>Bekræft adgangskode</label>
       <input
+        id="onb-password-confirm"
         value={form.password_confirm}
         onChange={e => set("password_confirm", e.target.value)}
         placeholder="Gentag adgangskode"
@@ -143,18 +145,18 @@ export function OnboardingPage({ onComplete }) {
           Adgangskoden skal være mindst 8 tegn.
         </p>
       )}
-      <label style={labelStyle}>Fødselsår</label>
-      <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={inputStyle} />
+      <label htmlFor="onb-birth-year" style={labelStyle}>Fødselsår</label>
+      <input id="onb-birth-year" value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={inputStyle} />
     </div>,
 
     <div key={1}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Dit padel-niveau</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vær ærlig — vi matcher dig bedre!</p>
-      <label style={labelStyle}>Niveau</label>
+      <div style={labelStyle}>Niveau</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
         {LEVELS.map(l => <button key={l} onClick={() => set("level", l)} style={selBtn(form.level === l)}>{l}</button>)}
       </div>
-      <label style={labelStyle}>Spillestil</label>
+      <div style={labelStyle}>Spillestil</div>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         {PLAY_STYLES.map(s => <button key={s} onClick={() => set("style", s)} style={{ ...selBtn(form.style === s) }}>{s}</button>)}
       </div>
@@ -163,13 +165,13 @@ export function OnboardingPage({ onComplete }) {
     <div key={2}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Hvor og hvornår?</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg den region du primært spiller i — så kan andre finde dig.</p>
-      <label style={labelStyle}>Region</label>
+      <div style={labelStyle}>Region</div>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
         {REGIONS.map((r) => (
           <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "8px 14px", fontSize: "13px" }}>{r}</button>
         ))}
       </div>
-      <label style={labelStyle}>Hvornår kan du spille?</label>
+      <div style={labelStyle}>Hvornår kan du spille?</div>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         {AVAILABILITY.map(a => <button key={a} onClick={() => toggleAvail(a)} style={{ ...btn(form.availability.includes(a)), padding: "8px 14px", fontSize: "13px" }}>{a}</button>)}
       </div>
@@ -178,14 +180,14 @@ export function OnboardingPage({ onComplete }) {
     <div key={3}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Næsten færdig!</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg avatar og skriv lidt om dig.</p>
-      <label style={labelStyle}>Avatar</label>
+      <div style={labelStyle}>Avatar</div>
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
         {avatars.map(a => (
           <button key={a} onClick={() => set("avatar", a)} style={{ width: "48px", height: "48px", borderRadius: "50%", fontSize: "22px", border: form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border, background: form.avatar === a ? theme.accentBg : theme.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>{a}</button>
         ))}
       </div>
-      <label style={labelStyle}>Kort bio</label>
-      <textarea value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="F.eks. 'Ny til padel, søger makkere...'" style={{ ...inputStyle, height: "80px", resize: "vertical" }} />
+      <label htmlFor="onb-bio" style={labelStyle}>Kort bio</label>
+      <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="F.eks. 'Ny til padel, søger makkere...'" style={{ ...inputStyle, height: "80px", resize: "vertical" }} />
     </div>,
   ];
 

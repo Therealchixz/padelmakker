@@ -28,10 +28,10 @@ export function ResetPasswordPage({ onDone }) {
       <div className="pm-auth-narrow">
         <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Ny adgangskode</h1>
         <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Vælg din nye adgangskode.</p>
-        <label style={labelStyle}>Ny adgangskode</label>
-        <input value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="Mindst 8 tegn" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
-        <label style={labelStyle}>Gentag adgangskode</label>
-        <input value={confirm} onChange={e => { setConfirm(e.target.value); setErr(""); }} placeholder="Gentag adgangskode" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+        <label htmlFor="reset-password" style={labelStyle}>Ny adgangskode</label>
+        <input id="reset-password" autoComplete="new-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="Mindst 8 tegn" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+        <label htmlFor="reset-confirm" style={labelStyle}>Gentag adgangskode</label>
+        <input id="reset-confirm" autoComplete="new-password" value={confirm} onChange={e => { setConfirm(e.target.value); setErr(""); }} placeholder="Gentag adgangskode" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
         {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
         <button onClick={handleReset} disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
           {submitting ? "Opdaterer..." : <><KeyRound size={14} /> Gem ny adgangskode</>}
