@@ -7,7 +7,9 @@ import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS } from '../lib/platformConst
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
+
 import { savePendingAvatar } from '../lib/avatarUpload';
+
 import { AvatarPicker } from '../components/AvatarPicker';
 import { ArrowRight } from 'lucide-react';
 
@@ -68,6 +70,11 @@ export function OnboardingPage({ onComplete }) {
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
+      /* Vent til data URL er skrevet (ellers mangler e-mail-tag → applyPendingAvatar ved login fejler) */
+      if (avatarFile) {
+        await savePendingAvatar(avatarFile);
+      }
+      tagPendingAvatarEmail(form.email.trim());
       const signData = await signUp(form.email.trim(), form.password, {
         full_name: sanitizeText(displayName),
         level: levelNum,
@@ -75,14 +82,17 @@ export function OnboardingPage({ onComplete }) {
         area: form.area,
         availability: form.availability,
         bio: sanitizeText(form.bio),
-        avatar: form.avatar,
+        /* Emoji i metadata under oprettelse; foto uploades efter login (pending) eller straks hvis session */
+        avatar: avatarFile ? "🎾" : form.avatar,
         birth_year: parseInt(form.birth_year, 10) || null,
         /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
         onboarding_completed: true,
       });
+
       /* Gem profilbillede til sessionStorage — uploades automatisk ved næste login */
       if (avatarFile) {
         await savePendingAvatar(avatarFile);
+
       }
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       if (onComplete) onComplete();
@@ -193,10 +203,11 @@ export function OnboardingPage({ onComplete }) {
         <AvatarPicker
           value={form.avatar}
           previewUrl={avatarPreviewUrl}
-          onFileSelect={(file) => {
+          onFileSelect={async (file) => {
             if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
             setAvatarPreviewUrl(URL.createObjectURL(file));
             setAvatarFile(file);
+            await savePendingAvatar(file);
           }}
           onEmojiSelect={(emoji) => {
             set("avatar", emoji);
@@ -206,6 +217,9 @@ export function OnboardingPage({ onComplete }) {
           }}
         />
       </div>
+      <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "16px" }}>
+        Billedet gemmes lokalt indtil du er logget ind (også hvis du åbner bekræftelses-link i en ny fane). Upload sker automatisk ved første login.
+      </p>
       <label htmlFor="onb-bio" style={labelStyle}>Kort bio</label>
       <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="F.eks. 'Ny til padel, søger makkere...'" style={{ ...inputStyle, height: "80px", resize: "vertical" }} />
     </div>,

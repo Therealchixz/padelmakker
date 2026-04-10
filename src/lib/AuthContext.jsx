@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { normalizeProfileRow, buildOnboardingProfileRowPatch } from './profileUtils'
+import { applyPendingAvatar } from './avatarUpload'
 import { DEFAULT_REGION } from './platformConstants'
 
 const AuthContext = createContext(null)
@@ -58,8 +59,31 @@ function fetchProfileQuery(userId) {
     .catch(() => null)
 }
 
-/** Eksisterende profil eller minimal upsert (auth uden profiles-række → ellers hvid dashboard). */
-async function fetchOrCreateProfile(userRow) {
+async function applyPendingAvatarToProfile(userRow, currentProfile) {
+  if (!userRow?.id) return currentProfile
+  const url = await applyPendingAvatar(userRow.id, userRow.email)
+  if (!url) return currentProfile
+  const { data: updated, error } = await supabase
+    .from('profiles')
+    .update({ avatar: url })
+    .eq('id', userRow.id)
+    .select()
+    .single()
+  if (error) {
+    console.warn('pending avatar → profiles:', error.message)
+    return currentProfile
+  }
+  const row = normalizeProfileRow(updated)
+  /* Sæt ikke onboarding_applied_to_profile her — ellers springes onboarding-merge over. */
+  const { error: metaErr } = await supabase.auth.updateUser({ data: { avatar: url } })
+  if (metaErr) console.warn('pending avatar → auth metadata:', metaErr.message)
+  return row
+}
+
+/**
+ * Hent/merge profil uden pending storage-upload — så Promise.race-timeout ikke afbryder upload.
+ */
+async function fetchOrCreateProfileCore(userRow) {
   if (!userRow?.id) return null
   let p = await fetchProfileQuery(userRow.id)
   if (p) {
@@ -127,10 +151,13 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
   const profileReqId = useRef(0)
+  /** Til pending-avatar merge: undgå at sætte profil efter logout når core-load timeout gav prev=null */
+  const activeUserIdRef = useRef('')
 
   const loadProfile = useCallback((userRow, opts = {}) => {
     const quiet = opts.quiet === true
     const id = ++profileReqId.current
+    const uid = userRow?.id != null ? String(userRow.id) : ''
     if (!userRow?.id) {
       setProfile(null)
       if (!quiet) setProfileLoading(false)
@@ -138,12 +165,32 @@ export function AuthProvider({ children }) {
     }
     if (!quiet) setProfileLoading(true)
     Promise.race([
-      fetchOrCreateProfile(userRow),
+      fetchOrCreateProfileCore(userRow),
       new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
     ])
       .then((p) => {
         if (profileReqId.current !== id) return
         setProfile(p)
+        /**
+         * Pending storage-upload kan tage lang tid. TOKEN_REFRESHED udløser ofte et nyt loadProfile
+         * med et nyt profileReqId — må ikke afvise setProfile når upload først færdiggøres bagefter
+         * (så ville pending være slettet men UI stadig vise emoji).
+         * Merge med funktionel setProfile + bruger-id-tjek i stedet for profileReqId.
+         */
+        void applyPendingAvatarToProfile(userRow, p).then((withAvatar) => {
+          if (!withAvatar || !uid) return
+          setProfile((prev) => {
+            if (String(withAvatar.id) !== uid) return prev
+            if (prev != null && String(prev.id) !== uid) return prev
+            /* Core-load timeout → prev null; kun sæt hvis samme bruger stadig er aktiv */
+            if (prev == null) {
+              if (activeUserIdRef.current !== uid) return prev
+              return withAvatar
+            }
+            if (String(withAvatar.avatar || '') === String(prev.avatar || '')) return prev
+            return withAvatar
+          })
+        })
       })
       .finally(() => {
         if (profileReqId.current !== id) return
@@ -210,6 +257,10 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe()
     }
   }, [loadProfile])
+
+  useEffect(() => {
+    activeUserIdRef.current = user?.id != null ? String(user.id) : ''
+  }, [user?.id])
 
   const signUp = async (email, password, metadata = {}) => {
     if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')
@@ -297,6 +348,10 @@ export function AuthProvider({ children }) {
     }
     if ('full_name' in updates && updates.full_name != null) {
       meta.full_name = updates.full_name
+      metaChanged = true
+    }
+    if ('avatar' in updates && updates.avatar != null) {
+      meta.avatar = updates.avatar
       metaChanged = true
     }
     if (metaChanged) {

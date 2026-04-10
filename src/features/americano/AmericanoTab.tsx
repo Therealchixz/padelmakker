@@ -11,6 +11,7 @@ import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { americanoOutcomeColors } from './americanoOutcomeColors'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
+
 import { isAvatarUrl } from '../../lib/avatarUpload'
 
 const font = "'Inter', sans-serif"
@@ -195,7 +196,9 @@ function AmericanoParticipantStatsModal({
         }}
       >
         <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 18 }}>
+
           <AvatarInCircle av={row?.avatar || '🎾'} size={52} fontSize={26} bg="#DBEAFE" />
+
           <div style={{ minWidth: 0 }}>
             <div
               id="americano-stats-title"
@@ -837,7 +840,9 @@ export function AmericanoTab({
                                   fontFamily: font,
                                 }}
                               >
+
                                 <AvatarInCircle av={av} />
+
                                 <span
                                   style={{
                                     fontSize: 13,
@@ -892,7 +897,9 @@ export function AmericanoTab({
                                   fontFamily: font,
                                 }}
                               >
+
                                 <AvatarInCircle av={av} />
+
                                 <span
                                   style={{
                                     fontSize: 13,

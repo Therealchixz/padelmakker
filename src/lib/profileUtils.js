@@ -132,7 +132,11 @@ export function buildOnboardingProfileRowPatch(meta, existingProfile = null) {
   }
 
   const levelNum = meta.level != null && meta.level !== "" ? Number(meta.level) : NaN
-  return {
+  const existingAvatar =
+    existingProfile && typeof existingProfile.avatar === "string" ? existingProfile.avatar.trim() : ""
+  const keepPhotoAvatar =
+    existingAvatar.startsWith("http://") || existingAvatar.startsWith("https://")
+  const patch = {
     full_name: displayName,
     name: displayName,
     level: !Number.isNaN(levelNum) ? levelNum : 5,
@@ -140,11 +144,14 @@ export function buildOnboardingProfileRowPatch(meta, existingProfile = null) {
     area: metaArea,
     availability: metaAvail,
     bio: String(meta.bio || "").trim(),
-    avatar: (existingProfile?.avatar && String(existingProfile.avatar).startsWith('http'))
-      ? existingProfile.avatar
-      : (meta.avatar || "🎾"),
     birth_year: birthNum != null && !Number.isNaN(Number(birthNum)) ? Number(birthNum) : null,
   }
+  if (keepPhotoAvatar) {
+    patch.avatar = existingAvatar
+  } else {
+    patch.avatar = meta.avatar || "🎾"
+  }
+  return patch
 }
 
 export function normalizeProfileRow(p) {
