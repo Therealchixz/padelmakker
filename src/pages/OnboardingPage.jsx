@@ -8,7 +8,13 @@ import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS } from '../lib/platformConst
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
-import { uploadAvatar, savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
+import {
+  uploadAvatar,
+  savePendingAvatar,
+  tagPendingAvatarEmail,
+  tagPendingAvatarUserId,
+  clearPendingAvatar,
+} from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { ArrowRight } from 'lucide-react';
 
@@ -87,12 +93,16 @@ export function OnboardingPage({ onComplete }) {
         /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
         onboarding_completed: true,
       });
+      if (avatarFile && signData?.user?.id) {
+        tagPendingAvatarUserId(signData.user.id);
+      }
       /* Hvis der er aktiv session lige efter signUp: upload nu (ellers overtager applyPendingAvatar ved login) */
       if (avatarFile && signData?.user?.id && signData?.session) {
         try {
           const url = await uploadAvatar(signData.user.id, avatarFile);
           await supabase.from('profiles').update({ avatar: url }).eq('id', signData.user.id);
           await supabase.auth.updateUser({ data: { avatar: url } });
+          clearPendingAvatar();
         } catch (uploadErr) {
           console.warn('Avatar upload ved oprettelse fejlede:', uploadErr.message);
         }
