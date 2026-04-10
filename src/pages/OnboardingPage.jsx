@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
+import { uploadAvatar } from '../lib/avatarUpload';
+import { AvatarPicker } from '../components/AvatarPicker';
 import { ArrowRight } from 'lucide-react';
 
 export function OnboardingPage({ onComplete }) {
@@ -16,7 +19,8 @@ export function OnboardingPage({ onComplete }) {
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
   const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
-  const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
+  const [avatarFile, setAvatarFile]         = useState(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
@@ -65,7 +69,7 @@ export function OnboardingPage({ onComplete }) {
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
-      await signUp(form.email.trim(), form.password, {
+      const signData = await signUp(form.email.trim(), form.password, {
         full_name: sanitizeText(displayName),
         level: levelNum,
         play_style: form.style,
@@ -77,6 +81,16 @@ export function OnboardingPage({ onComplete }) {
         /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
         onboarding_completed: true,
       });
+      /* Upload profilbillede hvis brugeren har valgt et — ikke kritisk, fejler lydløst */
+      if (avatarFile && signData?.user?.id) {
+        try {
+          const url = await uploadAvatar(signData.user.id, avatarFile);
+          await supabase.from('profiles').update({ avatar: url }).eq('id', signData.user.id);
+        } catch (uploadErr) {
+          console.warn('Avatar upload ved oprettelse fejlede:', uploadErr.message);
+        }
+      }
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       if (onComplete) onComplete();
       /* Altid til login: undgå at blive på /opret eller auto-dashboard når der opstår en session */
       try { await signOut(); } catch { /* fortsæt til login alligevel */ }
@@ -179,12 +193,24 @@ export function OnboardingPage({ onComplete }) {
 
     <div key={3}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Næsten færdig!</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg avatar og skriv lidt om dig.</p>
-      <div style={labelStyle}>Avatar</div>
-      <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
-        {avatars.map(a => (
-          <button key={a} onClick={() => set("avatar", a)} style={{ width: "48px", height: "48px", borderRadius: "50%", fontSize: "22px", border: form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border, background: form.avatar === a ? theme.accentBg : theme.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>{a}</button>
-        ))}
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg profilbillede og skriv lidt om dig.</p>
+      <div style={labelStyle}>Profilbillede</div>
+      <div style={{ marginBottom: "20px" }}>
+        <AvatarPicker
+          value={form.avatar}
+          previewUrl={avatarPreviewUrl}
+          onFileSelect={(file) => {
+            if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+            setAvatarPreviewUrl(URL.createObjectURL(file));
+            setAvatarFile(file);
+          }}
+          onEmojiSelect={(emoji) => {
+            set("avatar", emoji);
+            setAvatarFile(null);
+            if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+            setAvatarPreviewUrl(null);
+          }}
+        />
       </div>
       <label htmlFor="onb-bio" style={labelStyle}>Kort bio</label>
       <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="F.eks. 'Ny til padel, søger makkere...'" style={{ ...inputStyle, height: "80px", resize: "vertical" }} />

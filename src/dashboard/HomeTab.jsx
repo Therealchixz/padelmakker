@@ -5,6 +5,7 @@ import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
 import { Users, MapPin, Swords, Trophy } from 'lucide-react';
+import { isAvatarUrl } from '../lib/avatarUpload';
 
 export function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
@@ -89,7 +90,10 @@ export function HomeTab({ user, setTab }) {
               const change = Number(row.change) || 0;
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.surface, borderRadius: "8px", padding: "9px 12px", border: "1px solid " + theme.border }}>
-                  <span style={{ fontSize: "18px", flexShrink: 0 }}>{avatar}</span>
+                  {isAvatarUrl(avatar)
+                    ? <img src={avatar} alt="" style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                    : <span style={{ fontSize: "18px", flexShrink: 0 }}>{avatar}</span>
+                  }
                   <span style={{ fontSize: "13px", color: theme.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     <strong>{name}</strong> {won ? "vandt" : "tabte"}
                   </span>

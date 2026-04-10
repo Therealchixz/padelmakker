@@ -7,6 +7,7 @@ import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin } from 'lucide-react';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
+import { AvatarCircle } from '../components/AvatarCircle';
 
 export function MakkereTab({ user, showToast }) {
   const [search, setSearch]           = useState("");
@@ -114,9 +115,12 @@ export function MakkereTab({ user, showToast }) {
           return (
           <div key={p.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "clamp(14px,3vw,18px)", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
             <div onClick={() => setViewPlayer(p)} style={{ display: "flex", gap: "14px", alignItems: "flex-start", cursor: "pointer" }}>
-              <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#F1F5F9", border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>
-                {p.avatar || "🎾"}
-              </div>
+              <AvatarCircle
+                avatar={p.avatar}
+                size={48}
+                emojiSize="22px"
+                style={{ background: "#F1F5F9", border: "1px solid " + theme.border }}
+              />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
                   <span style={{ fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em" }}>{p.full_name || p.name}</span>
