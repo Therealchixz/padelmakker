@@ -19,6 +19,11 @@ const ROUTE_META = {
     title: 'Opret profil | PadelMakker',
     description: 'Opret gratis padel-profil — niveau, region, makkersøgning og baner.',
   },
+  '/opret/bekraeft-email': {
+    title: 'Tjek din e-mail | PadelMakker',
+    description:
+      'Bekræft din e-mail for at færdiggøre oprettelsen af din PadelMakker-profil. Linket i mailen udløber efter 24 timer.',
+  },
   '/events': {
     title: 'Kommende events og Americano | PadelMakker',
     description: 'Se kommende Americano-turneringer på PadelMakker. Log ind for at tilmelde dig.',

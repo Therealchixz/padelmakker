@@ -8,12 +8,12 @@ import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
 
-import { savePendingAvatar } from '../lib/avatarUpload';
+import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
 
 import { AvatarPicker } from '../components/AvatarPicker';
 import { ArrowRight } from 'lucide-react';
 
-export function OnboardingPage({ onComplete }) {
+export function OnboardingPage() {
   const { signUp, signOut } = useAuth();
   const navigate = useNavigate();
   const [step, setStep]           = useState(0);
@@ -75,7 +75,7 @@ export function OnboardingPage({ onComplete }) {
         await savePendingAvatar(avatarFile);
       }
       tagPendingAvatarEmail(form.email.trim());
-      const signData = await signUp(form.email.trim(), form.password, {
+      await signUp(form.email.trim(), form.password, {
         full_name: sanitizeText(displayName),
         level: levelNum,
         play_style: form.style,
@@ -89,16 +89,10 @@ export function OnboardingPage({ onComplete }) {
         onboarding_completed: true,
       });
 
-      /* Gem profilbillede til sessionStorage — uploades automatisk ved næste login */
-      if (avatarFile) {
-        await savePendingAvatar(avatarFile);
-
-      }
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-      if (onComplete) onComplete();
       /* Altid til login: undgå at blive på /opret eller auto-dashboard når der opstår en session */
       try { await signOut(); } catch { /* fortsæt til login alligevel */ }
-      navigate("/login", { replace: true });
+      navigate('/opret/bekraeft-email', { replace: true, state: { email: form.email.trim() } });
     } catch (e) {
       setErr(e.message || "Kunne ikke oprette profil.");
     } finally {
