@@ -69,6 +69,10 @@ export function OnboardingPage({ onComplete }) {
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
+      /* Vent til data URL er skrevet (ellers mangler e-mail-tag → applyPendingAvatar ved login fejler) */
+      if (avatarFile) {
+        await savePendingAvatar(avatarFile);
+      }
       tagPendingAvatarEmail(form.email.trim());
       const signData = await signUp(form.email.trim(), form.password, {
         full_name: sanitizeText(displayName),
@@ -217,7 +221,7 @@ export function OnboardingPage({ onComplete }) {
         />
       </div>
       <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "16px" }}>
-        Har du ikke bekræftet e-mail endnu, uploades billedet først sikkert, når du logger ind første gang.
+        Billedet gemmes lokalt indtil du er logget ind (også hvis du åbner bekræftelses-link i en ny fane). Upload sker automatisk ved første login.
       </p>
       <label htmlFor="onb-bio" style={labelStyle}>Kort bio</label>
       <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="F.eks. 'Ny til padel, søger makkere...'" style={{ ...inputStyle, height: "80px", resize: "vertical" }} />

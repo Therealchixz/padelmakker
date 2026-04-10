@@ -3,6 +3,54 @@ import { supabase } from './supabase';
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 const PENDING_KEY = 'pm_pending_avatar_v1';
+/** Max alder for pending (undgår gammel junk + localStorage-kvote) */
+const PENDING_MAX_AGE_MS = 48 * 60 * 60 * 1000;
+
+function pendingStorageGet() {
+  try {
+    return localStorage.getItem(PENDING_KEY);
+  } catch {
+    try {
+      return sessionStorage.getItem(PENDING_KEY);
+    } catch {
+      return null;
+    }
+  }
+}
+
+function pendingStorageSet(jsonStr) {
+  try {
+    localStorage.setItem(PENDING_KEY, jsonStr);
+    try {
+      sessionStorage.removeItem(PENDING_KEY);
+    } catch {
+      /* ignore */
+    }
+    return;
+  } catch (e) {
+    if (e?.name === 'QuotaExceededError') {
+      console.warn('Pending avatar: localStorage fuld, bruger sessionStorage (kun samme fane).');
+    }
+  }
+  try {
+    sessionStorage.setItem(PENDING_KEY, jsonStr);
+  } catch (e2) {
+    console.warn('Pending avatar opbevaring fejlede:', e2?.message || e2);
+  }
+}
+
+function pendingStorageRemove() {
+  try {
+    localStorage.removeItem(PENDING_KEY);
+  } catch {
+    /* ignore */
+  }
+  try {
+    sessionStorage.removeItem(PENDING_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 export function isAvatarUrl(avatar) {
   return typeof avatar === 'string' && /^https?:\/\//i.test(String(avatar).trim());
@@ -30,21 +78,17 @@ export async function uploadAvatar(userId, file) {
 }
 
 export function clearPendingAvatar() {
-  try {
-    sessionStorage.removeItem(PENDING_KEY);
-  } catch {
-    /* ignore */
-  }
+  pendingStorageRemove();
 }
 
 /** Kald med seneste e-mail før signUp, så pending kun anvendes for den konto. */
 export function tagPendingAvatarEmail(email) {
   try {
-    const raw = sessionStorage.getItem(PENDING_KEY);
+    const raw = pendingStorageGet();
     if (!raw) return;
     const o = JSON.parse(raw);
     o.email = String(email || '').trim().toLowerCase();
-    sessionStorage.setItem(PENDING_KEY, JSON.stringify(o));
+    pendingStorageSet(JSON.stringify(o));
   } catch {
     /* ignore */
   }
@@ -59,12 +103,12 @@ export async function savePendingAvatar(file) {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        sessionStorage.setItem(
-          PENDING_KEY,
+        pendingStorageSet(
           JSON.stringify({
             dataUrl: reader.result,
             type: file.type,
             name: file.name,
+            savedAt: Date.now(),
           })
         );
       } catch (e) {
@@ -79,7 +123,7 @@ export async function savePendingAvatar(file) {
 
 export function hasPendingAvatar() {
   try {
-    return Boolean(sessionStorage.getItem(PENDING_KEY));
+    return Boolean(pendingStorageGet());
   } catch {
     return false;
   }
@@ -93,20 +137,25 @@ export async function applyPendingAvatar(userId, userEmail) {
   if (!userId) return null;
   let raw;
   try {
-    raw = sessionStorage.getItem(PENDING_KEY);
+    raw = pendingStorageGet();
   } catch {
     return null;
   }
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw);
+    const savedAt = Number(parsed.savedAt);
+    if (Number.isFinite(savedAt) && Date.now() - savedAt > PENDING_MAX_AGE_MS) {
+      pendingStorageRemove();
+      return null;
+    }
     const expected = parsed.email != null ? String(parsed.email).trim().toLowerCase() : '';
     const actual = userEmail != null ? String(userEmail).trim().toLowerCase() : '';
     if (!expected || !actual || expected !== actual) {
-      sessionStorage.removeItem(PENDING_KEY);
+      pendingStorageRemove();
       return null;
     }
-    sessionStorage.removeItem(PENDING_KEY);
+    pendingStorageRemove();
     const { dataUrl, type, name } = parsed;
     const response = await fetch(dataUrl);
     const blob = await response.blob();
@@ -114,11 +163,7 @@ export async function applyPendingAvatar(userId, userEmail) {
     return await uploadAvatar(userId, file);
   } catch (e) {
     console.warn('applyPendingAvatar fejlede:', e?.message || e);
-    try {
-      sessionStorage.removeItem(PENDING_KEY);
-    } catch {
-      /* ignore */
-    }
+    pendingStorageRemove();
     return null;
   }
 }
