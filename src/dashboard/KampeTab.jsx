@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
-import { Profile, Court, Match } from '../api/base44Client';
+import { Profile, Court } from '../api/base44Client';
 import { supabase } from '../lib/supabase';
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { AmericanoTab } from '../features/americano/AmericanoTab';
@@ -23,6 +23,20 @@ import {
 
 function matchPlayerTeam(p) {
   return Number(p?.team);
+}
+
+/** Undgår gigantiske .in() — Supabase/PostgREST har URL-grænser. */
+async function fetchRowsInChunks(table, column, ids, select = '*') {
+  if (!ids.length) return [];
+  const rows = [];
+  const chunkSize = 100;
+  for (let i = 0; i < ids.length; i += chunkSize) {
+    const slice = ids.slice(i, i + chunkSize);
+    const { data, error } = await supabase.from(table).select(select).in(column, slice);
+    if (error) throw error;
+    rows.push(...(data || []));
+  }
+  return rows;
 }
 
 export function KampeTab({ user, showToast, tabActive = true }) {
@@ -91,7 +105,23 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   const loadData = useCallback(async () => {
     try {
-      const [cd, md, profiles] = await Promise.all([Court.filter(), Match.filter(), Profile.filter()]);
+      const uid = user.id;
+      const [cd, profiles, openPoolRes, createdRes, myMpRes] = await Promise.all([
+        Court.filter(),
+        Profile.filter(),
+        supabase
+          .from("matches")
+          .select("*")
+          .in("status", ["open", "full", "in_progress"])
+          .order("date", { ascending: true })
+          .limit(400),
+        supabase.from("matches").select("*").eq("creator_id", uid),
+        supabase.from("match_players").select("match_id").eq("user_id", uid).limit(2000),
+      ]);
+      if (openPoolRes.error) throw openPoolRes.error;
+      if (createdRes.error) throw createdRes.error;
+      if (myMpRes.error) throw myMpRes.error;
+
       setCourts(cd || []);
       const eloMap = {};
       const pById = {};
@@ -101,7 +131,36 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         pById[id] = pr;
       });
 
-      const allMatches = md || [];
+      const idSet = new Set();
+      (openPoolRes.data || []).forEach((m) => idSet.add(m.id));
+      (createdRes.data || []).forEach((m) => idSet.add(m.id));
+      (myMpRes.data || []).forEach((r) => idSet.add(r.match_id));
+
+      const { data: recentCompleted, error: rcErr } = await supabase
+        .from("matches")
+        .select("id")
+        .eq("status", "completed")
+        .order("date", { ascending: false })
+        .limit(300);
+      if (rcErr) throw rcErr;
+      const rcIds = (recentCompleted || []).map((r) => r.id);
+      if (rcIds.length > 0) {
+        for (let i = 0; i < rcIds.length; i += 100) {
+          const slice = rcIds.slice(i, i + 100);
+          const { data: links, error: lErr } = await supabase
+            .from("match_players")
+            .select("match_id")
+            .eq("user_id", uid)
+            .in("match_id", slice);
+          if (lErr) throw lErr;
+          (links || []).forEach((r) => idSet.add(r.match_id));
+        }
+      }
+
+      const allMatchIds = [...idSet];
+
+      const allMatches =
+        allMatchIds.length > 0 ? await fetchRowsInChunks("matches", "id", allMatchIds) : [];
       setMatches(allMatches);
 
       const vOpts = getMatchVenueOptions(cd || []);
@@ -112,7 +171,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         });
       }
 
-      const { data: mpd } = await supabase.from("match_players").select("*");
+      const mpd =
+        allMatchIds.length > 0 ? await fetchRowsInChunks("match_players", "match_id", allMatchIds) : [];
       const mm = {};
       (mpd || []).forEach((mp) => {
         if (!mm[mp.match_id]) mm[mp.match_id] = [];
@@ -134,9 +194,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       setProfilesById(pById);
       setMatchPlayers(mm);
 
-      const { data: mrd } = await supabase.from("match_results").select("*");
+      const mrd =
+        allMatchIds.length > 0 ? await fetchRowsInChunks("match_results", "match_id", allMatchIds) : [];
       const mrMap = {};
-      (mrd || []).forEach((mr) => { mrMap[mr.match_id] = mr; });
+      (mrd || []).forEach((mr) => {
+        const mid = mr.match_id;
+        const prev = mrMap[mid];
+        if (!prev) {
+          mrMap[mid] = mr;
+          return;
+        }
+        const ta = prev.created_at != null ? new Date(prev.created_at).getTime() : 0;
+        const tb = mr.created_at != null ? new Date(mr.created_at).getTime() : 0;
+        if (tb >= ta) mrMap[mid] = mr;
+      });
       setMatchResults(mrMap);
     } catch (e) { console.error(e); }
     finally {
@@ -400,7 +471,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const bJ = (matchPlayers[b.id] || []).some(p => p.user_id === user.id) ? 1 : 0;
     return bJ - aJ;
   });
-  const openMatches = sortJoinedFirst(matches.filter(m => { const s = getStatus(m); if (s !== "open" && s !== "active" && s !== "full") return false; return (matchPlayers[m.id] || []).length > 0; }));
+  const openMatches = sortJoinedFirst(matches.filter(m => { const s = getStatus(m); if (s !== "open" && s !== "full") return false; return (matchPlayers[m.id] || []).length > 0; }));
   const activeMatches = matches.filter(m => getStatus(m) === "in_progress" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id));
   const completedMatches = matches
     .filter(m => getStatus(m) === "completed" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id))

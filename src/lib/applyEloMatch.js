@@ -15,7 +15,9 @@ export async function calculateAndApplyElo(matchId, showToast) {
       .select('id')
       .eq('match_id', matchId)
       .eq('confirmed', true)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (mrErr || !mr) {
       console.error('ELO: Kunne ikke finde bekræftet resultat:', mrErr);
