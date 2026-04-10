@@ -19,6 +19,7 @@ import { CookieNoticeBar } from "./components/CookieNoticeBar";
 import { HelpContactPage } from "./pages/HelpContactPage";
 import { InstallAppPage } from "./pages/InstallAppPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { SignupEmailSentPage } from "./pages/SignupEmailSentPage";
 
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
@@ -70,6 +71,7 @@ export default function PadelMakker() {
         <Route path="/" element={user && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
         <Route path="/login" element={user && profile ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
         <Route path="/opret" element={user && profile ? <Navigate to="/dashboard" replace /> : <OnboardingPage onComplete={() => showToast("Tjek din email — bekræft kontoen, og log derefter ind.")} />} />
+        <Route path="/opret/bekraeft-email" element={user && profile ? <Navigate to="/dashboard" replace /> : <SignupEmailSentPage />} />
         <Route path="/privatlivspolitik" element={<PrivacyPage />} />
         <Route path="/handelsbetingelser" element={<TermsPage />} />
         <Route path="/cookies" element={<CookiesPage />} />

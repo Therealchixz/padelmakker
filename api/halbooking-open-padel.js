@@ -136,7 +136,7 @@ export default async function handler(req, res) {
     sendHtml(res, 200, body);
   } catch (e) {
     console.error('halbooking-open-padel', e);
-    const errMsg = process.env.NODE_ENV === 'production'
+    const errMsg = globalThis.process?.env?.NODE_ENV === 'production'
       ? 'Intern fejl – prøv igen senere'
       : escAttr(e.message || 'ukendt');
     sendHtml(

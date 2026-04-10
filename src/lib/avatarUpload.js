@@ -68,22 +68,51 @@ export async function savePendingAvatar(file) {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-
-        sessionStorage.setItem(PENDING_KEY, JSON.stringify({
-          dataUrl: reader.result,
-          type: file.type,
-          name: file.name,
-        }));
+        let email = '';
+        try {
+          const prev = sessionStorage.getItem(PENDING_KEY);
+          if (prev) {
+            const o = JSON.parse(prev);
+            if (typeof o.email === 'string') email = o.email;
+          }
+        } catch {
+          /* ignore */
+        }
+        sessionStorage.setItem(
+          PENDING_KEY,
+          JSON.stringify({
+            dataUrl: reader.result,
+            type: file.type,
+            name: file.name,
+            ...(email ? { email } : {}),
+          })
+        );
       } catch (e) {
         // sessionStorage fuld — spring over uden fejl
         console.warn('Pending avatar opbevaring fejlede:', e.message);
-
       }
       resolve();
     };
     reader.onerror = () => resolve();
     reader.readAsDataURL(file);
   });
+}
+
+/** Knytter pending-avatar til e-mail så vi ikke uploader til forkert bruger efter login. */
+export function tagPendingAvatarEmail(email) {
+  const normalized = String(email || '')
+    .trim()
+    .toLowerCase();
+  if (!normalized) return;
+  try {
+    const raw = sessionStorage.getItem(PENDING_KEY);
+    if (!raw) return;
+    const o = JSON.parse(raw);
+    o.email = normalized;
+    sessionStorage.setItem(PENDING_KEY, JSON.stringify(o));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function hasPendingAvatar() {
@@ -101,20 +130,39 @@ export function hasPendingAvatar() {
  * Uploader en gemt pending-avatar til storage og returnerer URL'en.
  * Rydder sessionStorage uanset om det lykkes.
  */
-export async function applyPendingAvatar(userId) {
+export async function applyPendingAvatar(userId, userEmail) {
   try {
     const raw = sessionStorage.getItem(PENDING_KEY);
     if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const pendingEmail =
+      typeof parsed.email === 'string' ? parsed.email.trim().toLowerCase() : '';
+    const authEmail =
+      typeof userEmail === 'string' ? userEmail.trim().toLowerCase() : '';
+    if (pendingEmail && authEmail && pendingEmail !== authEmail) {
+      return null;
+    }
+    const { dataUrl, type, name } = parsed;
+    const blob = blobFromDataUrl(dataUrl, type || 'image/jpeg');
+    if (!blob) {
+      console.warn('applyPendingAvatar: kunne ikke læse billeddata');
+      try {
+        sessionStorage.removeItem(PENDING_KEY);
+      } catch {
+        /* ignore */
+      }
+      return null;
+    }
     sessionStorage.removeItem(PENDING_KEY);
-    const { dataUrl, type, name } = JSON.parse(raw);
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    const file = new File([blob], name || 'avatar.jpg', { type: type || 'image/jpeg' });
+    const file = new File([blob], name || 'avatar.jpg', { type: type || blob.type || 'image/jpeg' });
     return await uploadAvatar(userId, file);
   } catch (e) {
     console.warn('applyPendingAvatar fejlede:', e.message);
-    sessionStorage.removeItem(PENDING_KEY);
-
+    try {
+      sessionStorage.removeItem(PENDING_KEY);
+    } catch {
+      /* ignore */
+    }
     return null;
   }
 }
