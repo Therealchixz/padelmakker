@@ -66,6 +66,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [resultMatch, setResultMatch] = useState(null);
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [profilesById, setProfilesById] = useState({});
+  const [completedLimit, setCompletedLimit] = useState(5);
   const [viewTab, setViewTab]         = useState(() => {
     const s = readKampeSessionPrefs(user.id);
     if (s?.view === "open" || s?.view === "active" || s?.view === "completed") return s.view;
@@ -487,8 +488,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const activeMatches = matches.filter(m => getStatus(m) === "in_progress" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id));
   const completedMatches = matches
     .filter(m => getStatus(m) === "completed" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id))
-    .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults))
-    .slice(0, 20);
+    .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults));
 
   const renderMatchCard = (m) => {
     const mp = matchPlayers[m.id] || [];
@@ -776,7 +776,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {viewTab === "open" && openMatches.map((m) => renderMatchCard(m, "open"))}
         {viewTab === "active" && activeMatches.map((m) => renderMatchCard(m, "active"))}
-        {viewTab === "completed" && completedMatches.map((m) => renderMatchCard(m, "completed"))}
+        {viewTab === "completed" && completedMatches.slice(0, completedLimit).map((m) => renderMatchCard(m, "completed"))}
+        {viewTab === "completed" && completedMatches.length > completedLimit && (
+          <button
+            onClick={() => setCompletedLimit(n => n + 5)}
+            style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.textMid }}
+          >
+            Indlæs flere ({completedMatches.length - completedLimit} tilbage)
+          </button>
+        )}
 
         {viewTab === "open" && openMatches.length === 0 && (
           <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}>

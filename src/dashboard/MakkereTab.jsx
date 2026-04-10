@@ -18,6 +18,7 @@ export function MakkereTab({ user, showToast }) {
   /** elo_history-afledt stats pr. bruger (matcher profil-modal) */
   const [statsById, setStatsById]     = useState({});
   const [loading, setLoading]         = useState(true);
+  const [page, setPage]               = useState(0);
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [inviteTarget, setInviteTarget] = useState(null);
   const [favorites, setFavorites]     = useState(() => {
@@ -77,6 +78,13 @@ export function MakkereTab({ user, showToast }) {
     return true;
   });
 
+  const PAGE_SIZE = 20;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const paginated = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
+  const handleFilterChange = (fn) => { fn(); setPage(0); };
+
   if (loading) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser spillere...</div>;
 
   return (
@@ -86,22 +94,22 @@ export function MakkereTab({ user, showToast }) {
       {/* Search */}
       <div style={{ position: "relative", marginBottom: "10px" }}>
         <Search size={15} color={theme.textLight} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Søg efter navn..." style={{ ...inputStyle, paddingLeft: "36px" }} />
+        <input value={search} onChange={e => handleFilterChange(() => setSearch(e.target.value))} placeholder="Søg efter navn..." style={{ ...inputStyle, paddingLeft: "36px" }} />
       </div>
 
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
-        <select value={filterElo} onChange={e => setFilterElo(e.target.value)} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
+        <select value={filterElo} onChange={e => handleFilterChange(() => setFilterElo(e.target.value))} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
           <option value="all">Alle ELO</option>
           <option value="close">±150 ELO om dig ({myElo})</option>
         </select>
-        <select value={filterArea} onChange={e => setFilterArea(e.target.value)} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
+        <select value={filterArea} onChange={e => handleFilterChange(() => setFilterArea(e.target.value))} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
           <option value="all">Alle regioner</option>
           {REGIONS.map((r) => (
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
         <button
-          onClick={() => setFilterFav(f => !f)}
+          onClick={() => handleFilterChange(() => setFilterFav(f => !f))}
           style={{ ...btn(filterFav), padding: "8px 12px", fontSize: "13px" }}
           title="Vis kun favoritter"
         >
@@ -109,8 +117,14 @@ export function MakkereTab({ user, showToast }) {
         </button>
       </div>
 
+      {totalPages > 1 && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", fontSize: "13px", color: theme.textMid }}>
+          <span>{filtered.length} spillere · side {safePage + 1} af {totalPages}</span>
+        </div>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {filtered.map(p => {
+        {paginated.map(p => {
           const age = p.birth_year ? new Date().getFullYear() - p.birth_year : null;
           return (
           <div key={p.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "clamp(14px,3vw,18px)", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
@@ -155,6 +169,28 @@ export function MakkereTab({ user, showToast }) {
         })}
         {filtered.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>🔍</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen spillere fundet</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Prøv at ændre filtre eller søg med et andet navn.</div></div>}
       </div>
+
+      {totalPages > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px", marginTop: "16px" }}>
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+            style={{ ...btn(false), padding: "8px 18px", fontSize: "13px", opacity: safePage === 0 ? 0.35 : 1 }}
+          >
+            ← Forrige
+          </button>
+          <span style={{ fontSize: "13px", color: theme.textMid, fontWeight: 600 }}>
+            {safePage + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={safePage === totalPages - 1}
+            style={{ ...btn(false), padding: "8px 18px", fontSize: "13px", opacity: safePage === totalPages - 1 ? 0.35 : 1 }}
+          >
+            Næste →
+          </button>
+        </div>
+      )}
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
       {inviteTarget && (
         <InviteToMatchModal
