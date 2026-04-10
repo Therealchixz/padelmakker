@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, heading } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
@@ -20,15 +20,34 @@ export function HomeTab({ user, setTab }) {
   const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
 
   const [feed, setFeed] = useState([]);
-  useEffect(() => {
+  const fetchFeed = useCallback(() => {
     supabase
       .from('elo_history')
-      .select('user_id, result, change, date, profiles(full_name, name, avatar)')
+      .select('user_id, result, change, date, match_id, profiles(full_name, name, avatar)')
       .not('change', 'is', null)
       .order('date', { ascending: false })
-      .limit(8)
+      .order('match_id', { ascending: false })
+      .limit(10)
       .then(({ data }) => setFeed(data || []));
   }, []);
+
+  useEffect(() => {
+    fetchFeed();
+  }, [fetchFeed]);
+
+  /* Genindlæs feed når appen kommer i forgrunden igen */
+  useEffect(() => {
+    let lastFetch = 0;
+    const onVis = () => {
+      if (document.visibilityState !== 'visible') return;
+      const now = Date.now();
+      if (now - lastFetch < 30000) return; // maks. ét kald pr. 30 sek.
+      lastFetch = now;
+      fetchFeed();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [fetchFeed]);
 
   const actions = [
     { icon: <Users   size={20} color={theme.accent} />, title: "Find en makker", desc: "Se ledige spillere",  tab: "makkere" },
