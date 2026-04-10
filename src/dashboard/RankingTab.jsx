@@ -136,7 +136,11 @@ export function RankingTab({ user }) {
       .sort((a, b) => b.score - a.score);
   };
 
-  const sorted = buildRanking();
+  const sorted = useMemo(
+    () => buildRanking(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [period, players, eloHistory, allTimeFromHistory, myId, myBundleLoading, myAllTimeElo, myAllTimeGames, myAllTimeWins]
+  );
   const userRank = sorted.findIndex(p => String(p.id) === myId) + 1;
   const userEntry = sorted.find(p => String(p.id) === myId);
   const displayScore = period === "all"

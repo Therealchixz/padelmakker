@@ -50,7 +50,13 @@ export function parseScheduleDateYmd(dateLabel) {
   if (!dateLabel || typeof dateLabel !== 'string') return null
   const t = dateLabel.trim()
   const iso = t.match(/\b(\d{4})-(\d{2})-(\d{2})\b/)
-  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`
+  if (iso) {
+    const mo = parseInt(iso[2], 10)
+    const d = parseInt(iso[3], 10)
+    if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+      return `${iso[1]}-${iso[2]}-${iso[3]}`
+    }
+  }
   const dm = t.match(/\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b/)
   if (dm) {
     const d = parseInt(dm[1], 10)
