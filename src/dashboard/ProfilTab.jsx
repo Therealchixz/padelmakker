@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
@@ -7,14 +7,14 @@ import { normalizeStringArrayField, validateFirstLastName, canonicalRegionForFor
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
-import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X, Upload } from 'lucide-react';
+import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
-import { ProfileAvatar } from '../components/ProfileAvatar';
-import { uploadAvatar, isAvatarUrl } from '../lib/avatarUpload';
+import { uploadAvatar } from '../lib/avatarUpload';
+import { AvatarPicker } from '../components/AvatarPicker';
+import { AvatarCircle } from '../components/AvatarCircle';
 
 export function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, user: authUser } = useAuth();
-  const fileInputRef = useRef(null);
   const displayName = resolveDisplayName(user, authUser);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -33,27 +33,14 @@ export function ProfilTab({ user, showToast, setTab }) {
     if (!editing) setForm(profileFormState(user));
   }, [user, editing]);
 
-  const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
+  const [pendingAvatarFile, setPendingAvatarFile]   = useState(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
+  const [avatarUploading, setAvatarUploading]       = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => {
     const cur = normalizeStringArrayField(f.availability);
     return { ...f, availability: cur.includes(a) ? cur.filter((x) => x !== a) : [...cur, a] };
   });
-
-  const handleAvatarFile = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !authUser?.id) return;
-    try {
-      const url = await uploadAvatar(authUser.id, file);
-      await updateProfile({ avatar: url });
-      setForm((f) => ({ ...f, avatar: url }));
-      showToast("Profilbillede opdateret! ✅");
-    } catch (err) {
-      console.error(err);
-      showToast(err?.message || "Kunne ikke uploade billede.");
-    }
-  };
 
   const handleSave = async () => {
     const nameCheck = validateFirstLastName(form.first_name, form.last_name);
@@ -65,6 +52,19 @@ export function ProfilTab({ user, showToast, setTab }) {
     const region = canonicalRegionForForm(form.area) || form.area;
     const availability = normalizeStringArrayField(form.availability);
     setSaving(true);
+    let avatarValue = form.avatar;
+    if (pendingAvatarFile) {
+      setAvatarUploading(true);
+      try {
+        avatarValue = await uploadAvatar(user.id, pendingAvatarFile);
+      } catch (e) {
+        showToast('Billedet kunne ikke uploades: ' + e.message);
+        setSaving(false);
+        setAvatarUploading(false);
+        return;
+      }
+      setAvatarUploading(false);
+    }
     try {
       await updateProfile({
         full_name: sanitizeText(displayName),
@@ -72,10 +72,13 @@ export function ProfilTab({ user, showToast, setTab }) {
         area: region,
         play_style: form.play_style,
         bio: sanitizeText(form.bio.trim()),
-        avatar: form.avatar,
+        avatar: avatarValue,
         availability,
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
       });
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+      setPendingAvatarFile(null);
+      setAvatarPreviewUrl(null);
       setEditing(false);
       showToast("Profil opdateret! ✅");
     } catch (e) {
@@ -95,14 +98,11 @@ export function ProfilTab({ user, showToast, setTab }) {
         {/* Profile card */}
         <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
           <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "20px" }}>
-            <ProfileAvatar
+            <AvatarCircle
               avatar={user.avatar}
               size={64}
-              fontSize={32}
-              style={{
-                background: theme.accentBg,
-                border: "2px solid " + theme.accent + "40",
-              }}
+              emojiSize="32px"
+              style={{ background: theme.accentBg, border: "2px solid " + theme.accent + "40" }}
             />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{displayName}</div>
@@ -242,7 +242,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)") }}>Rediger profil</h2>
-        <button onClick={() => { setForm(profileFormState(user)); setEditing(false); }} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
+        <button onClick={() => { setForm(profileFormState(user)); setPendingAvatarFile(null); if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl); setAvatarPreviewUrl(null); setEditing(false); }} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
           <X size={14} /> Annullér
         </button>
       </div>
@@ -250,33 +250,23 @@ export function ProfilTab({ user, showToast, setTab }) {
       <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
         {/* Avatar */}
         <div style={labelStyle}>Profilbillede</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px", flexWrap: "wrap" }}>
-          <ProfileAvatar
-            avatar={form.avatar}
-            size={64}
-            fontSize={32}
-            style={{
-              background: theme.accentBg,
-              border: "2px solid " + theme.accent + "40",
+        <div style={{ marginBottom: "20px" }}>
+          <AvatarPicker
+            value={form.avatar}
+            previewUrl={avatarPreviewUrl}
+            uploading={avatarUploading}
+            onFileSelect={(file) => {
+              if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+              setAvatarPreviewUrl(URL.createObjectURL(file));
+              setPendingAvatarFile(file);
+            }}
+            onEmojiSelect={(emoji) => {
+              set("avatar", emoji);
+              setPendingAvatarFile(null);
+              if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+              setAvatarPreviewUrl(null);
             }}
           />
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarFile} style={{ display: "none" }} />
-            <button type="button" onClick={() => fileInputRef.current?.click()} style={{ ...btn(true), display: "inline-flex", alignItems: "center", gap: "8px", width: "fit-content" }}>
-              <Upload size={16} /> Upload billede
-            </button>
-            {isAvatarUrl(form.avatar) && (
-              <button type="button" onClick={() => set("avatar", "🎾")} style={{ ...btn(false), fontSize: "12px", padding: "6px 12px", width: "fit-content" }}>
-                Brug emoji i stedet
-              </button>
-            )}
-          </div>
-        </div>
-        <div style={labelStyle}>Emoji</div>
-        <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
-          {avatars.map(a => (
-            <button key={a} type="button" onClick={() => set("avatar", a)} style={{ width: "48px", height: "48px", borderRadius: "50%", fontSize: "22px", border: form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border, background: form.avatar === a ? theme.accentBg : theme.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{a}</button>
-          ))}
         </div>
 
         {/* Name */}

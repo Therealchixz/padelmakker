@@ -17,12 +17,12 @@ import { Clock, MapPin, Plus, UserMinus, Trash2 } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
+import { AvatarCircle } from '../components/AvatarCircle';
 import {
   getMatchVenueOptions,
   courtIdFromVenueSelection,
   courtNameFromVenueSelection,
 } from '../lib/matchVenueOptions';
-import { ProfileAvatar } from '../components/ProfileAvatar';
 
 function matchPlayerTeam(p) {
   return Number(p?.team);
@@ -539,7 +539,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
                   {t1.map(p => (
                     <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", minWidth: "42px" }}>
-                      <ProfileAvatar avatar={p.user_emoji} size={34} fontSize={15} style={{ background: theme.accentBg, border: "1.5px solid " + theme.accent + "40" }} />
+                      <AvatarCircle avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: "1.5px solid " + theme.accent + "40" }} />
                       <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
                       <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700 }}>{playerElo(p)}</span>
                     </div>
@@ -564,7 +564,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
                   {t2.map(p => (
                     <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", minWidth: "42px" }}>
-                      <ProfileAvatar avatar={p.user_emoji} size={34} fontSize={15} style={{ background: theme.blueBg, border: "1.5px solid " + theme.blue + "40" }} />
+                      <AvatarCircle avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.blueBg, border: "1.5px solid " + theme.blue + "40" }} />
                       <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
                       <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700 }}>{playerElo(p)}</span>
                     </div>

@@ -5,7 +5,7 @@ const MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 const PENDING_KEY = 'pm_pending_avatar_v1';
 
 export function isAvatarUrl(avatar) {
-  return typeof avatar === 'string' && /^https?:\/\//i.test(avatar.trim());
+  return typeof avatar === 'string' && /^https?:\/\//i.test(String(avatar).trim());
 }
 
 export async function uploadAvatar(userId, file) {
@@ -29,9 +29,6 @@ export async function uploadAvatar(userId, file) {
   return data.publicUrl;
 }
 
-/**
- * Fjerner pending avatar (fx ved emoji-valg under oprettelse eller ved log ud).
- */
 export function clearPendingAvatar() {
   try {
     sessionStorage.removeItem(PENDING_KEY);
@@ -55,7 +52,6 @@ export function tagPendingAvatarEmail(email) {
 
 /**
  * Gemmer avatarfil i sessionStorage som data URL — uploades efter login med den rigtige bruger.
- * Undgår at Supabase-storage bruger en gammel session under signUp.
  */
 export async function savePendingAvatar(file) {
   if (!file) return;
@@ -90,9 +86,8 @@ export function hasPendingAvatar() {
 }
 
 /**
- * Uploader pending avatar til storage for den autentificerede bruger. Rydder nøglen bagefter.
- * @param {string} userEmail — skal matche den e-mail der blev brugt ved oprettelse (undgår forkert bruger på delt computer).
- * @returns {Promise<string|null>} public URL eller null
+ * @param {string} userEmail — skal matche den e-mail der blev brugt ved oprettelse.
+ * @returns {Promise<string|null>}
  */
 export async function applyPendingAvatar(userId, userEmail) {
   if (!userId) return null;
@@ -107,7 +102,6 @@ export async function applyPendingAvatar(userId, userEmail) {
     const parsed = JSON.parse(raw);
     const expected = parsed.email != null ? String(parsed.email).trim().toLowerCase() : '';
     const actual = userEmail != null ? String(userEmail).trim().toLowerCase() : '';
-    /* Uden e-mail-tag (gammel data): upload ikke — kan ellers ramme forkert bruger på delt PC */
     if (!expected || !actual || expected !== actual) {
       sessionStorage.removeItem(PENDING_KEY);
       return null;
