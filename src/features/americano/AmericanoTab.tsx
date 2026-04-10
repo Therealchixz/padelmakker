@@ -11,6 +11,7 @@ import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { americanoOutcomeColors } from './americanoOutcomeColors'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
+import { ProfileAvatar } from '../../components/ProfileAvatar'
 
 const font = "'Inter', sans-serif"
 
@@ -170,22 +171,15 @@ function AmericanoParticipantStatsModal({
         }}
       >
         <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 18 }}>
-          <div
+          <ProfileAvatar
+            avatar={row?.avatar}
+            size={52}
+            fontSize={26}
             style={{
-              width: 52,
-              height: 52,
-              borderRadius: '50%',
               background: '#DBEAFE',
               border: '2px solid #93C5FD',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 26,
-              flexShrink: 0,
             }}
-          >
-            {row?.avatar || '🎾'}
-          </div>
+          />
           <div style={{ minWidth: 0 }}>
             <div
               id="americano-stats-title"
@@ -827,21 +821,12 @@ export function AmericanoTab({
                                   fontFamily: font,
                                 }}
                               >
-                                <div
-                                  style={{
-                                    width: 36,
-                                    height: 36,
-                                    borderRadius: '50%',
-                                    background: '#E2E8F0',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: 18,
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  {av}
-                                </div>
+                                <ProfileAvatar
+                                  avatar={av}
+                                  size={36}
+                                  fontSize={18}
+                                  style={{ background: '#E2E8F0' }}
+                                />
                                 <span
                                   style={{
                                     fontSize: 13,
@@ -896,21 +881,12 @@ export function AmericanoTab({
                                   fontFamily: font,
                                 }}
                               >
-                                <div
-                                  style={{
-                                    width: 36,
-                                    height: 36,
-                                    borderRadius: '50%',
-                                    background: '#E2E8F0',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: 18,
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  {av}
-                                </div>
+                                <ProfileAvatar
+                                  avatar={av}
+                                  size={36}
+                                  fontSize={18}
+                                  style={{ background: '#E2E8F0' }}
+                                />
                                 <span
                                   style={{
                                     fontSize: 13,

@@ -22,6 +22,7 @@ import {
   courtIdFromVenueSelection,
   courtNameFromVenueSelection,
 } from '../lib/matchVenueOptions';
+import { ProfileAvatar } from '../components/ProfileAvatar';
 
 function matchPlayerTeam(p) {
   return Number(p?.team);
@@ -538,7 +539,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
                   {t1.map(p => (
                     <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", minWidth: "42px" }}>
-                      <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: theme.accentBg, border: "1.5px solid " + theme.accent + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>{p.user_emoji || "🎾"}</div>
+                      <ProfileAvatar avatar={p.user_emoji} size={34} fontSize={15} style={{ background: theme.accentBg, border: "1.5px solid " + theme.accent + "40" }} />
                       <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
                       <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700 }}>{playerElo(p)}</span>
                     </div>
@@ -563,7 +564,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
                   {t2.map(p => (
                     <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", minWidth: "42px" }}>
-                      <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: theme.blueBg, border: "1.5px solid " + theme.blue + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px" }}>{p.user_emoji || "🎾"}</div>
+                      <ProfileAvatar avatar={p.user_emoji} size={34} fontSize={15} style={{ background: theme.blueBg, border: "1.5px solid " + theme.blue + "40" }} />
                       <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
                       <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700 }}>{playerElo(p)}</span>
                     </div>

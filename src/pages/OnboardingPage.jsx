@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
@@ -7,7 +7,12 @@ import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS } from '../lib/platformConst
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Upload } from 'lucide-react';
+import {
+  savePendingAvatar,
+  tagPendingAvatarEmail,
+  clearPendingAvatar,
+} from '../lib/avatarUpload';
 
 export function OnboardingPage({ onComplete }) {
   const { signUp, signOut } = useAuth();
@@ -16,9 +21,44 @@ export function OnboardingPage({ onComplete }) {
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
   const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
+  /** Foto gemmes først efter login (sessionStorage) — undgår upload som forkert bruger under signUp */
+  const [pendingPhotoFile, setPendingPhotoFile] = useState(null);
+  const [pendingPhotoPreview, setPendingPhotoPreview] = useState(null);
+  const pendingPhotoRevokeRef = useRef(null);
   const avatars = ["🎾", "👨", "👩", "🧔", "👩‍🦰", "👨‍🦱", "👩‍🦱", "🧑"];
 
+  useEffect(() => {
+    return () => {
+      if (pendingPhotoRevokeRef.current) {
+        URL.revokeObjectURL(pendingPhotoRevokeRef.current);
+        pendingPhotoRevokeRef.current = null;
+      }
+    };
+  }, []);
+
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const clearPendingPhoto = () => {
+    setPendingPhotoFile(null);
+    if (pendingPhotoRevokeRef.current) {
+      URL.revokeObjectURL(pendingPhotoRevokeRef.current);
+      pendingPhotoRevokeRef.current = null;
+    }
+    setPendingPhotoPreview(null);
+    clearPendingAvatar();
+  };
+
+  const onPickProfilePhoto = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    clearPendingPhoto();
+    setPendingPhotoFile(file);
+    const url = URL.createObjectURL(file);
+    pendingPhotoRevokeRef.current = url;
+    setPendingPhotoPreview(url);
+    await savePendingAvatar(file);
+  };
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
   const passwordMismatch =
     form.password_confirm.length > 0 &&
@@ -65,6 +105,7 @@ export function OnboardingPage({ onComplete }) {
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
+      tagPendingAvatarEmail(form.email.trim());
       await signUp(form.email.trim(), form.password, {
         full_name: sanitizeText(displayName),
         level: levelNum,
@@ -72,7 +113,8 @@ export function OnboardingPage({ onComplete }) {
         area: form.area,
         availability: form.availability,
         bio: sanitizeText(form.bio),
-        avatar: form.avatar,
+        /* Foto uploades efter første login — undgår forkert bruger-session under oprettelse */
+        avatar: pendingPhotoFile ? "🎾" : form.avatar,
         birth_year: parseInt(form.birth_year, 10) || null,
         /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
         onboarding_completed: true,
@@ -179,11 +221,56 @@ export function OnboardingPage({ onComplete }) {
 
     <div key={3}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Næsten færdig!</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg avatar og skriv lidt om dig.</p>
-      <div style={labelStyle}>Avatar</div>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg avatar eller upload et billede — og skriv lidt om dig.</p>
+      <div style={labelStyle}>Profilbillede</div>
+      <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px", flexWrap: "wrap" }}>
+        {pendingPhotoPreview ? (
+          <img src={pendingPhotoPreview} alt="" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", border: "2px solid " + theme.accent }} />
+        ) : (
+          <div style={{ width: 72, height: 72, borderRadius: "50%", border: "2px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", background: theme.surface }}>{form.avatar}</div>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <label style={{ ...btn(true), cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", width: "fit-content" }}>
+            <Upload size={16} />
+            Vælg billede (max 2 MB)
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onPickProfilePhoto} style={{ display: "none" }} />
+          </label>
+          {pendingPhotoFile && (
+            <button type="button" onClick={clearPendingPhoto} style={{ ...btn(false), fontSize: "12px", padding: "6px 12px", width: "fit-content" }}>
+              Fjern billede — brug emoji
+            </button>
+          )}
+        </div>
+      </div>
+      <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "16px" }}>
+        Billedet uploades sikkert, når du har bekræftet e-mail og logger ind første gang.
+      </p>
+      <div style={labelStyle}>Eller emoji</div>
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
         {avatars.map(a => (
-          <button key={a} onClick={() => set("avatar", a)} style={{ width: "48px", height: "48px", borderRadius: "50%", fontSize: "22px", border: form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border, background: form.avatar === a ? theme.accentBg : theme.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>{a}</button>
+          <button
+            key={a}
+            type="button"
+            onClick={() => {
+              clearPendingPhoto();
+              set("avatar", a);
+            }}
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              fontSize: "22px",
+              border: !pendingPhotoFile && form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border,
+              background: !pendingPhotoFile && form.avatar === a ? theme.accentBg : theme.surface,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.15s",
+            }}
+          >
+            {a}
+          </button>
         ))}
       </div>
       <label htmlFor="onb-bio" style={labelStyle}>Kort bio</label>
