@@ -225,7 +225,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
       <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
         {/* Avatar */}
-        <label style={labelStyle}>Avatar</label>
+        <div style={labelStyle}>Avatar</div>
         <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
           {avatars.map(a => (
             <button key={a} onClick={() => set("avatar", a)} style={{ width: "48px", height: "48px", borderRadius: "50%", fontSize: "22px", border: form.avatar === a ? "2px solid " + theme.accent : "1px solid " + theme.border, background: form.avatar === a ? theme.accentBg : theme.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{a}</button>
@@ -233,20 +233,20 @@ export function ProfilTab({ user, showToast, setTab }) {
         </div>
 
         {/* Name */}
-        <label style={labelStyle}>Fornavn</label>
-        <input value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
-        <label style={labelStyle}>Efternavn</label>
-        <input value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
+        <label htmlFor="profil-first-name" style={labelStyle}>Fornavn</label>
+        <input id="profil-first-name" autoComplete="given-name" value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
+        <label htmlFor="profil-last-name" style={labelStyle}>Efternavn</label>
+        <input id="profil-last-name" autoComplete="family-name" value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
         <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
           Mellemnavne med mellemrum er ok i hvert felt. Bindestreg også (Anne-Marie). Samme regler som ved oprettelse.
         </p>
 
         {/* Birth year */}
-        <label style={labelStyle}>Fødselsår</label>
-        <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={{ ...inputStyle, marginBottom: "14px" }} />
+        <label htmlFor="profil-birth-year" style={labelStyle}>Fødselsår</label>
+        <input id="profil-birth-year" value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={{ ...inputStyle, marginBottom: "14px" }} />
 
         {/* Area */}
-        <label style={labelStyle}>Region</label>
+        <div style={labelStyle}>Region</div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
           {REGIONS.map((r) => (
             <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "6px 12px", fontSize: "12px" }}>{r}</button>
@@ -254,7 +254,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         </div>
 
         {/* Play style */}
-        <label style={labelStyle}>Spillestil</label>
+        <div style={labelStyle}>Spillestil</div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
           {PLAY_STYLES.map(s => (
             <button key={s} onClick={() => set("play_style", s)} style={{ ...btn(form.play_style === s), padding: "6px 12px", fontSize: "12px" }}>{s}</button>
@@ -262,7 +262,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         </div>
 
         {/* Availability */}
-        <label style={labelStyle}>Hvornår kan du spille?</label>
+        <div style={labelStyle}>Hvornår kan du spille?</div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
           {AVAILABILITY.map(a => (
             <button key={a} onClick={() => toggleAvail(a)} style={{ ...btn(form.availability.includes(a)), padding: "6px 12px", fontSize: "12px" }}>{a}</button>
@@ -270,8 +270,8 @@ export function ProfilTab({ user, showToast, setTab }) {
         </div>
 
         {/* Bio */}
-        <label style={labelStyle}>Bio</label>
-        <textarea value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl lidt om dig som spiller..." style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "20px" }} />
+        <label htmlFor="profil-bio" style={labelStyle}>Bio</label>
+        <textarea id="profil-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl lidt om dig som spiller..." style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "20px" }} />
 
         <button onClick={handleSave} disabled={saving} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Gemmer..." : <><Save size={14} /> Gem ændringer</>}

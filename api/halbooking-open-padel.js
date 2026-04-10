@@ -7,6 +7,7 @@
 import { collectInputFields } from './lib/halbookingFetch.js';
 import { readHalbookingHtml } from './lib/halbookingEncoding.js';
 import { getAllowlistedVenue } from './lib/halbookingVenuesAllowlist.js';
+import { checkRateLimit, getClientIp } from './lib/rateLimit.js';
 
 const UA = 'PadelMakkerOpenPadel/1.0 (+https://www.padelmakker.dk)';
 
@@ -44,6 +45,11 @@ export default async function handler(req, res) {
 
   if (req.method !== 'GET') {
     sendText(res, 405, 'Method not allowed', { Allow: 'GET' });
+    return;
+  }
+
+  if (!checkRateLimit(getClientIp(req), 20, 60_000)) {
+    sendHtml(res, 429, `<!DOCTYPE html><html><body><p>For mange forespørgsler. Prøv igen om et øjeblik.</p></body></html>`);
     return;
   }
 
@@ -123,7 +129,7 @@ export default async function handler(req, res) {
   <form id="pm-hb-padel" method="post" action="${PROC_BANER}" accept-charset="iso-8859-1">
     ${hidden}
   </form>
-  <script>document.getElementById("pm-hb-padel").submit();</script>
+  <script src="/hb-submit.js"></script>
 </body>
 </html>`;
 

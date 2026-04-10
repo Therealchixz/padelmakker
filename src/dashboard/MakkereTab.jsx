@@ -6,18 +6,35 @@ import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin } from 'lucide-react';
 import { PlayerProfileModal } from './PlayerProfileModal';
+import { InviteToMatchModal } from './InviteToMatchModal';
 
 export function MakkereTab({ user, showToast }) {
   const [search, setSearch]           = useState("");
   const [filterElo, setFilterElo]     = useState("all");
   const [filterArea, setFilterArea]   = useState("all");
+  const [filterFav, setFilterFav]     = useState(false);
   const [players, setPlayers]         = useState([]);
   /** elo_history-afledt stats pr. bruger (matcher profil-modal) */
   const [statsById, setStatsById]     = useState({});
   const [loading, setLoading]         = useState(true);
   const [viewPlayer, setViewPlayer]   = useState(null);
+  const [inviteTarget, setInviteTarget] = useState(null);
+  const [favorites, setFavorites]     = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('pm_favorites') || '[]')); }
+    catch { return new Set(); }
+  });
 
   const myElo = eloOf(user);
+
+  const toggleFavorite = (playerId) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(String(playerId))) next.delete(String(playerId));
+      else next.add(String(playerId));
+      try { localStorage.setItem('pm_favorites', JSON.stringify([...next])); } catch { /* quota */ }
+      return next;
+    });
+  };
 
   const loadPlayers = useCallback(async () => {
     setLoading(true);
@@ -55,6 +72,7 @@ export function MakkereTab({ user, showToast }) {
     if (search && !n.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterArea !== "all" && p.area !== filterArea) return false;
     if (filterElo === "close" && Math.abs(displayElo(p) - myElo) > 150) return false;
+    if (filterFav && !favorites.has(String(p.id))) return false;
     return true;
   });
 
@@ -81,6 +99,13 @@ export function MakkereTab({ user, showToast }) {
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
+        <button
+          onClick={() => setFilterFav(f => !f)}
+          style={{ ...btn(filterFav), padding: "8px 12px", fontSize: "13px" }}
+          title="Vis kun favoritter"
+        >
+          {filterFav ? "★ Favoritter" : "☆ Favoritter"}
+        </button>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -107,10 +132,17 @@ export function MakkereTab({ user, showToast }) {
               </div>
             </div>
             <div className="pm-makker-card-actions">
+              <button
+                onClick={() => toggleFavorite(p.id)}
+                title={favorites.has(String(p.id)) ? "Fjern fra favoritter" : "Tilføj til favoritter"}
+                style={{ ...btn(false), padding: "7px 10px", fontSize: "14px" }}
+              >
+                {favorites.has(String(p.id)) ? "★" : "☆"}
+              </button>
               <button onClick={() => setViewPlayer(p)} style={{ ...btn(false), padding: "7px 14px", fontSize: "12px" }}>
                 👤 Se profil
               </button>
-              <button onClick={() => showToast("Invitation sendt! 🎾")} style={{ ...btn(true), padding: "7px 14px", fontSize: "12px" }}>
+              <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: "7px 14px", fontSize: "12px" }}>
                 Invitér
               </button>
             </div>
@@ -120,6 +152,14 @@ export function MakkereTab({ user, showToast }) {
         {filtered.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>🔍</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen spillere fundet</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Prøv at ændre filtre eller søg med et andet navn.</div></div>}
       </div>
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
+      {inviteTarget && (
+        <InviteToMatchModal
+          invitee={inviteTarget}
+          currentUser={user}
+          showToast={showToast}
+          onClose={() => setInviteTarget(null)}
+        />
+      )}
     </div>
   );
 }

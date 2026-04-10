@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { Profile, Court } from '../api/base44Client';
 import { supabase } from '../lib/supabase';
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
-import { AmericanoTab } from '../features/americano/AmericanoTab';
+const AmericanoTab = lazy(() =>
+  import('../features/americano/AmericanoTab').then(m => ({ default: m.AmericanoTab }))
+);
 import { theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
@@ -682,6 +684,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       ) : (
       <>
       {kampeFormat === "americano" && (
+        <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser Americano…</div>}>
         <AmericanoTab
           profile={user}
           showToast={showToast}
@@ -697,6 +700,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           })()}
           onAmericanoSubTabChange={persistAmericanoSubTab}
         />
+        </Suspense>
       )}
 
       {kampeFormat === "padel" && (

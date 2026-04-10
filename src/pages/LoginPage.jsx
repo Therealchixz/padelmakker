@@ -55,8 +55,8 @@ export function LoginPage() {
           ) : (
             <>
               <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Indtast din email, så sender vi et link til at nulstille din adgangskode.</p>
-              <label style={labelStyle}>Email</label>
-              <input value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
+              <label htmlFor="forgot-email" style={labelStyle}>Email</label>
+              <input id="forgot-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
               {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
               <button onClick={handleForgotPassword} disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
                 {submitting ? "Sender..." : "Send nulstillingslink"}
@@ -75,10 +75,10 @@ export function LoginPage() {
         <button onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
         <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Velkommen tilbage</h1>
         <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Log ind med din email og adgangskode.</p>
-        <label style={labelStyle}>Email</label>
-        <input value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
-        <label style={labelStyle}>Adgangskode</label>
-        <input value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+        <label htmlFor="login-email" style={labelStyle}>Email</label>
+        <input id="login-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
+        <label htmlFor="login-password" style={labelStyle}>Adgangskode</label>
+        <input id="login-password" autoComplete="current-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
         {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
         <button onClick={handleLogin} disabled={submitting} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
           {submitting ? "Logger ind..." : "Log ind"}

@@ -6,6 +6,7 @@
 
 import { fetchHalbookingPadelSchedule, parseScheduleDateYmd } from './lib/halbookingFetch.js';
 import { getAllowlistedVenue } from './lib/halbookingVenuesAllowlist.js';
+import { checkRateLimit, getClientIp } from './lib/rateLimit.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
@@ -13,6 +14,11 @@ export default async function handler(req, res) {
 
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  if (!checkRateLimit(getClientIp(req), 30, 60_000)) {
+    res.status(429).json({ error: 'For mange forespørgsler. Prøv igen om et øjeblik.' });
     return;
   }
 
