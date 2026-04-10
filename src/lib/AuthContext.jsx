@@ -60,7 +60,7 @@ function fetchProfileQuery(userId) {
 }
 
 async function applyPendingAvatarToProfile(userRow, currentProfile) {
-  if (!userRow?.id || !currentProfile) return currentProfile
+  if (!userRow?.id) return currentProfile
   const url = await applyPendingAvatar(userRow.id, userRow.email)
   if (!url) return currentProfile
   const { data: updated, error } = await supabase
@@ -151,10 +151,13 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
   const profileReqId = useRef(0)
+  /** Til pending-avatar merge: undgå at sætte profil efter logout når core-load timeout gav prev=null */
+  const activeUserIdRef = useRef('')
 
   const loadProfile = useCallback((userRow, opts = {}) => {
     const quiet = opts.quiet === true
     const id = ++profileReqId.current
+    const uid = userRow?.id != null ? String(userRow.id) : ''
     if (!userRow?.id) {
       setProfile(null)
       if (!quiet) setProfileLoading(false)
@@ -168,18 +171,26 @@ export function AuthProvider({ children }) {
       .then((p) => {
         if (profileReqId.current !== id) return
         setProfile(p)
-        /* Storage-upload fra pending avatar kan tage >12s — må ikke ligge i race med PROFILE_TIMEOUT */
-        if (p && userRow?.id) {
-          void applyPendingAvatarToProfile(userRow, p).then((withAvatar) => {
-            if (profileReqId.current !== id) return
-            if (
-              withAvatar &&
-              String(withAvatar.avatar || '') !== String(p.avatar || '')
-            ) {
-              setProfile(withAvatar)
+        /**
+         * Pending storage-upload kan tage lang tid. TOKEN_REFRESHED udløser ofte et nyt loadProfile
+         * med et nyt profileReqId — må ikke afvise setProfile når upload først færdiggøres bagefter
+         * (så ville pending være slettet men UI stadig vise emoji).
+         * Merge med funktionel setProfile + bruger-id-tjek i stedet for profileReqId.
+         */
+        void applyPendingAvatarToProfile(userRow, p).then((withAvatar) => {
+          if (!withAvatar || !uid) return
+          setProfile((prev) => {
+            if (String(withAvatar.id) !== uid) return prev
+            if (prev != null && String(prev.id) !== uid) return prev
+            /* Core-load timeout → prev null; kun sæt hvis samme bruger stadig er aktiv */
+            if (prev == null) {
+              if (activeUserIdRef.current !== uid) return prev
+              return withAvatar
             }
+            if (String(withAvatar.avatar || '') === String(prev.avatar || '')) return prev
+            return withAvatar
           })
-        }
+        })
       })
       .finally(() => {
         if (profileReqId.current !== id) return
@@ -246,6 +257,10 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe()
     }
   }, [loadProfile])
+
+  useEffect(() => {
+    activeUserIdRef.current = user?.id != null ? String(user.id) : ''
+  }, [user?.id])
 
   const signUp = async (email, password, metadata = {}) => {
     if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')

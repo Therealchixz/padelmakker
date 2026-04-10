@@ -96,11 +96,12 @@ export function OnboardingPage({ onComplete }) {
       if (avatarFile && signData?.user?.id) {
         tagPendingAvatarUserId(signData.user.id);
       }
-      /* Hvis der er aktiv session lige efter signUp: upload nu (ellers overtager applyPendingAvatar ved login) */
+      /* Aktiv session efter signUp: upload færdig før signOut — ellers kan pending slettes uden at filen nåede i storage */
       if (avatarFile && signData?.user?.id && signData?.session) {
         try {
           const url = await uploadAvatar(signData.user.id, avatarFile);
-          await supabase.from('profiles').update({ avatar: url }).eq('id', signData.user.id);
+          const { error: upErr } = await supabase.from('profiles').update({ avatar: url }).eq('id', signData.user.id);
+          if (upErr) console.warn('profiles avatar efter signUp:', upErr.message);
           await supabase.auth.updateUser({ data: { avatar: url } });
           clearPendingAvatar();
         } catch (uploadErr) {
