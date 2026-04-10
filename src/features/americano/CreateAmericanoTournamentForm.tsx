@@ -1,4 +1,19 @@
 import { useState, useEffect, useMemo } from 'react'
+
+function nearestHalfHour(): string {
+  const now = new Date()
+  const h = now.getHours()
+  const m = now.getMinutes()
+  if (m < 15) return `${String(h).padStart(2, '0')}:00`
+  if (m < 45) return `${String(h).padStart(2, '0')}:30`
+  return `${String((h + 1) % 24).padStart(2, '0')}:00`
+}
+
+const TIME_OPTIONS: string[] = []
+for (let h = 6; h <= 23; h++) {
+  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`)
+  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
+}
 import { supabase } from '../../lib/supabase'
 import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses } from './types'
 import {
@@ -31,7 +46,7 @@ export function CreateAmericanoTournamentForm({
 }: Props) {
   const [name, setName] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
-  const [timeSlot, setTimeSlot] = useState('18:00')
+  const [timeSlot, setTimeSlot] = useState(() => nearestHalfHour())
   const venueOptions = useMemo(() => getMatchVenueOptions(courts), [courts])
   const selectOptions = useMemo(
     () => [
@@ -142,7 +157,9 @@ export function CreateAmericanoTournamentForm({
         </div>
         <div>
           <label style={labelSmall}>Tid</label>
-          <input type="time" value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} style={inputStyle} />
+          <select value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} style={inputStyle}>
+            {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
         </div>
       </div>
 

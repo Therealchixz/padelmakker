@@ -28,6 +28,21 @@ function matchPlayerTeam(p) {
   return Number(p?.team);
 }
 
+function nearestHalfHour() {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  if (m < 15) return `${String(h).padStart(2, '0')}:00`;
+  if (m < 45) return `${String(h).padStart(2, '0')}:30`;
+  return `${String((h + 1) % 24).padStart(2, '0')}:00`;
+}
+
+const TIME_OPTIONS = [];
+for (let h = 6; h <= 23; h++) {
+  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`);
+  TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`);
+}
+
 /** Undgår gigantiske .in() — Supabase/PostgREST har URL-grænser. */
 async function fetchRowsInChunks(table, column, ids, select = '*') {
   if (!ids.length) return [];
@@ -80,7 +95,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
-    time: "20:00",
+    time: nearestHalfHour(),
     duration: "120",
     description: "",
   });
@@ -755,7 +770,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             <div><label style={labelStyle}>Dato</label>
               <input type="date" value={newMatch.date} onChange={e => setNewMatch(m => ({ ...m, date: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
             <div><label style={labelStyle}>Starttid</label>
-              <input type="time" value={newMatch.time} onChange={e => setNewMatch(m => ({ ...m, time: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
+              <select value={newMatch.time} onChange={e => setNewMatch(m => ({ ...m, time: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
+                {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select></div>
             <div><label style={labelStyle}>Varighed</label>
               <select value={newMatch.duration} onChange={e => setNewMatch(m => ({ ...m, duration: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
                 <option value="60">1 time</option>
