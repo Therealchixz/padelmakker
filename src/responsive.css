@@ -492,14 +492,9 @@ button,
 }
 
 @media (max-width: 540px) {
-  /* Skjul sekundære nav-links (Events/Hjælp/App) så navbaren kun er 2 rækker */
-  .pm-landing-nav-secondary {
-    display: none !important;
-  }
-
-  /* Mobil: navbar er 2 rækker (logo + Log ind/Kom i gang) ≈ 160-175px med safe-area.
+  /* Mobil: navbar er 3 rækker (logo + Events/Hjælp/App + Log ind/Kom i gang) ≈ 215-230px med safe-area.
      Hero-padding skal clearse den + have lidt luft. */
   .pm-landing-hero {
-    padding-top: calc(180px + max(env(safe-area-inset-top), 12px));
+    padding-top: calc(230px + max(env(safe-area-inset-top), 12px));
   }
 }

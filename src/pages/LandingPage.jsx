@@ -54,7 +54,6 @@ export function LandingPage() {
           <div className="pm-landing-nav-actions">
             <Link
               to="/events"
-              className="pm-landing-nav-secondary"
               style={{
                 ...btn(false),
                 borderColor: "transparent",
@@ -70,7 +69,6 @@ export function LandingPage() {
             </Link>
             <Link
               to="/hjaelp"
-              className="pm-landing-nav-secondary"
               style={{
                 ...btn(false),
                 borderColor: "transparent",
@@ -86,7 +84,6 @@ export function LandingPage() {
             </Link>
             <Link
               to="/app"
-              className="pm-landing-nav-secondary"
               style={{
                 ...btn(false),
                 borderColor: "transparent",
