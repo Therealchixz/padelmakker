@@ -73,7 +73,7 @@ export const BANER_VENUES = [
     region: 'Nordjylland',
     bookingUrl: 'https://www.matchi.se/facilities/padel99',
     note:
-      'Matchi har ikke integreret kalender i PadelMakker. Tryk Åbn booking for at se ledige tider på matchi.se (ofte efter login).',
+      'Kalenderen ligger på matchi.se — scroll på siden for at se ledige tider (PadelMakker henter dem ikke ind). Tryk Åbn booking.',
   },
   {
     kind: 'link',
@@ -85,7 +85,7 @@ export const BANER_VENUES = [
     bookingUrl:
       'https://www.aarstennisklub.dk/Activity/BookingView/Activity2518183623424373632',
     note:
-      'Klubbens eget bookingsystem (Memberlink) — ingen tidsliste her. Tryk Åbn booking for at se ledige tider på deres site.',
+      'På klubbens booking-side vises ledige tider nederst på siden — scroll ned efter du har åbnet linket. PadelMakker viser dem ikke inline.',
   },
   {
     kind: 'link',
@@ -97,7 +97,7 @@ export const BANER_VENUES = [
     bookingUrl:
       'https://gugtennisogpadel.memberlink.dk/Activity/BookingView/Activity2520021377950888076',
     note:
-      'Memberlink — ingen tidsliste i PadelMakker. Tryk Åbn booking for at booke på klubbens site.',
+      'Ledige tider vises på booking-siden nederst — scroll ned på siden. Tryk Åbn booking (PadelMakker henter ikke kalenderen ind).',
   },
   {
     kind: 'link',
@@ -108,7 +108,7 @@ export const BANER_VENUES = [
     region: 'Nordjylland',
     bookingUrl: 'https://www.matchi.se/facilities/SkagenPadelcenter%20',
     note:
-      'Matchi — ingen integreret kalender her. Tryk Åbn booking for at se tider på matchi.se.',
+      'Ledige tider ses på matchi.se på facilitetssiden — scroll på siden. Tryk Åbn booking.',
   },
 ];
 

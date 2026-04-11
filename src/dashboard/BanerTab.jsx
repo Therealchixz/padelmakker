@@ -242,7 +242,7 @@ export function BanerTab() {
       <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '20px' }}>
         Åbn ét sted ad gangen. <strong>Halbooking</strong>: grøn = direkte til booking, gul = regel (tooltip).{' '}
         <strong>PadelPadel (Bookli)</strong>: oversigt hentes som på padelpadel.dk — grøn åbner Bookli til login og booking
-        (mødelokaler vises ikke). <strong>Eksterne links</strong>: åbner centrets egen booking — ledige tider vises dér.
+        (mødelokaler vises ikke). <strong>Eksterne links</strong>: åbner centrets booking — der kan du se ledige tider (fx nederst på siden eller på Matchi-facilitetssiden); de hentes ikke ind i PadelMakker.
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -321,7 +321,7 @@ export function BanerTab() {
                   <>
                     <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.55, marginTop: '12px' }}>
                       {v.note ||
-                        'Dette sted har ikke integreret tidsvisning i PadelMakker. Brug centrets booking for at se ledige tider.'}
+                        'Åbn booking-linket: ledige tider vises på centrets side (PadelMakker henter dem ikke ind i listen her).'}
                     </p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '14px' }}>
                       <a
