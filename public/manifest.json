@@ -4,8 +4,8 @@
   "description": "Find makker. Book bane. Spil padel.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F6F8FA",
-  "theme_color": "#166534",
+  "background_color": "#ffffff",
+  "theme_color": "#1D4ED8",
   "orientation": "portrait",
   "lang": "da",
   "icons": [
