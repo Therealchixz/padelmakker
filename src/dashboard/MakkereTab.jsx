@@ -166,7 +166,7 @@ export function MakkereTab({ user, showToast }) {
               />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em" }}>{p.full_name || p.name}</span>
+                  <span style={{ fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em", wordBreak: "break-word" }}>{p.full_name || p.name}</span>
                   <span style={{ fontSize: "12px", color: theme.textLight, display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {p.area || "?"}</span>
                 </div>
                 <div style={{ display: "flex", gap: "5px", marginTop: "7px", flexWrap: "wrap" }}>

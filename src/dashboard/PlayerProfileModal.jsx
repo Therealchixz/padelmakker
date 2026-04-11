@@ -64,7 +64,7 @@ export function PlayerProfileModal({ player, onClose }) {
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "14px", padding: "28px", maxWidth: "380px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "14px", padding: "clamp(18px,5vw,28px)", maxWidth: "380px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90dvh", overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
         {/* Header */}
         <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "20px" }}>
           <AvatarCircle
@@ -73,8 +73,8 @@ export function PlayerProfileModal({ player, onClose }) {
             emojiSize="32px"
             style={{ background: theme.accentBg, border: "2px solid " + theme.accent + "40" }}
           />
-          <div>
-            <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{player.full_name || player.name || "Spiller"}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em", wordBreak: "break-word" }}>{player.full_name || player.name || "Spiller"}</div>
             <div style={{ display: "flex", gap: "5px", marginTop: "6px", flexWrap: "wrap" }}>
               {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
               {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}

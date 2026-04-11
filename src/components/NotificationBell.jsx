@@ -305,7 +305,7 @@ export function NotificationBell() {
                       onClick={(e) => { e.stopPropagation(); deleteOne(n.id); }}
                       title="Slet"
                       aria-label="Slet notifikation"
-                      style={{ ...iconBtn, padding: "4px", color: theme.textLight }}
+                      style={{ ...iconBtn, padding: "8px", color: theme.textLight }}
                     >
                       <Trash2 size={16} />
                     </button>
