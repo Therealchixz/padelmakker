@@ -91,8 +91,27 @@ body {
   }
 }
 
-/* ─── Landing page hero ─── */
-/* Baggrundsbillede og overlay håndteres i JSX for at undgå zoom ved scroll */
+/* ─── Landing page hero: foto-baggrund med mørkt overlay ─── */
+.pm-hero-gradient {
+  background-image: url('/hero-bg.jpg');
+  background-size: cover;
+  background-position: center top;
+  position: relative;
+  overflow: hidden;
+}
+
+.pm-hero-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(10, 20, 50, 0.82) 0%,
+    rgba(29, 78, 216, 0.60) 100%
+  );
+  pointer-events: none;
+}
 
 /* Kun under CTA — fade mod hvid stats-sektion (matcher theme.surface) */
 .pm-hero-fade-tail {

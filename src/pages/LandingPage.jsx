@@ -139,7 +139,7 @@ export function LandingPage() {
 
       {/* Hero */}
       <section
-        className="pm-landing-hero"
+        className="pm-hero-gradient pm-landing-hero"
         style={{
           display: "flex",
           flexDirection: "column",
@@ -148,17 +148,8 @@ export function LandingPage() {
           paddingBottom: 0,
           textAlign: "center",
           position: "relative",
-          overflow: "hidden",
         }}
       >
-        {/* Baggrundsbillede — fast 100vh, zoomer ikke ved scroll */}
-        <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: "100vh", zIndex: 0, overflow: "hidden" }}>
-          <img src="/hero-bg.jpg" alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }} />
-          {/* Mørkt blåt overlay for læselighed */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(10,20,50,0.82) 0%, rgba(29,78,216,0.60) 100%)" }} />
-          {/* Fade til hvid i bunden */}
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "220px", background: "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.6) 60%, #ffffff 100%)" }} />
-        </div>
         <div
           style={{
             flex: "1 1 auto",
