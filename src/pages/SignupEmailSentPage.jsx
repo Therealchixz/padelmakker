@@ -38,20 +38,20 @@ export function SignupEmailSentPage() {
         background: pageBg,
         minHeight: '100dvh',
         color: '#F8FAFC',
-        padding: 'max(24px, env(safe-area-inset-top)) 20px max(96px, env(safe-area-inset-bottom))',
+        padding: 'max(60px, env(safe-area-inset-top)) 20px max(96px, env(safe-area-inset-bottom))',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
       }}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: '420px',
+          maxWidth: '560px',
           background: cardBg,
           borderRadius: '16px',
-          padding: '36px 28px 32px',
+          padding: '40px 36px 36px',
           boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
           border: '1px solid rgba(148, 163, 184, 0.12)',
           textAlign: 'center',
@@ -168,7 +168,7 @@ export function SignupEmailSentPage() {
       <div
         style={{
           width: '100%',
-          maxWidth: '420px',
+          maxWidth: '560px',
           marginTop: '28px',
         }}
       >
