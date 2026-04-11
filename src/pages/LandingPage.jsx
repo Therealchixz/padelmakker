@@ -128,7 +128,12 @@ export function LandingPage() {
         >
           <div style={{ maxWidth: "800px", margin: "0 auto" }}>
             <div className="pm-reveal" style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: "12px", fontWeight: 600, padding: "6px 16px", borderRadius: "20px", marginBottom: "28px", border: "1px solid rgba(255,255,255,0.25)", letterSpacing: "0.03em", backdropFilter: "blur(4px)" }}>
-              🇩🇰 Danmarks padel-platform
+              <svg width="18" height="13" viewBox="0 0 18 13" xmlns="http://www.w3.org/2000/svg" aria-hidden style={{ borderRadius: "2px", flexShrink: 0 }}>
+                <rect width="18" height="13" fill="#C60C30"/>
+                <rect x="7" y="0" width="3" height="13" fill="white"/>
+                <rect x="0" y="5" width="18" height="3" fill="white"/>
+              </svg>
+              Danmarks padel-platform
             </div>
             <h1 className="pm-reveal pm-delay-1" style={{ fontFamily: font, fontSize: "clamp(40px,8vw,76px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#fff", marginBottom: "24px" }}>
               Find makker.<br />Book bane.<br /><span style={{ color: "#93C5FD" }}>Spil padel.</span>
