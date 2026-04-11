@@ -51,7 +51,7 @@ export function LandingPage() {
         <div className="pm-landing-nav" style={{ paddingTop: "max(clamp(12px,2.5vw,16px), env(safe-area-inset-top))", paddingBottom: "clamp(12px,2.5vw,16px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", maxWidth: "1100px", margin: "0 auto" }}>
           <div className="pm-landing-nav-brand">
             <button type="button" onClick={() => navigate("/")} style={{ ...heading("clamp(17px,4.5vw,20px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }} aria-label="PadelMakker forsiden">
-              🎾 PadelMakker
+              <img src="/logo-source.png" alt="" aria-hidden style={{ height: "28px", width: "auto", objectFit: "contain" }} /> PadelMakker
             </button>
             <button
               type="button"
