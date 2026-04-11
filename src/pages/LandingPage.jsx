@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X } from 'lucide-react';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { LandingTourVideo } from '../components/LandingTourVideo';
 
@@ -10,6 +10,7 @@ export function LandingPage() {
   const revealRef = useScrollReveal();
   const heroRef = useRef(null);
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const el = heroRef.current;
@@ -48,12 +49,24 @@ export function LandingPage() {
       {/* Nav */}
       <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid " + theme.border }}>
         <div className="pm-landing-nav" style={{ paddingTop: "max(clamp(12px,2.5vw,16px), env(safe-area-inset-top))", paddingBottom: "clamp(12px,2.5vw,16px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", maxWidth: "1100px", margin: "0 auto" }}>
-          <button type="button" onClick={() => navigate("/")} style={{ ...heading("clamp(17px,4.5vw,20px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }} aria-label="PadelMakker forsiden">
-            🎾 PadelMakker
-          </button>
+          <div className="pm-landing-nav-brand">
+            <button type="button" onClick={() => navigate("/")} style={{ ...heading("clamp(17px,4.5vw,20px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }} aria-label="PadelMakker forsiden">
+              🎾 PadelMakker
+            </button>
+            <button
+              type="button"
+              className="pm-landing-hamburger"
+              onClick={() => setMenuOpen(o => !o)}
+              aria-label={menuOpen ? "Luk menu" : "Åbn menu"}
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
           <div className="pm-landing-nav-actions">
             <Link
               to="/events"
+              className="pm-landing-nav-secondary"
               style={{
                 ...btn(false),
                 borderColor: "transparent",
@@ -69,6 +82,7 @@ export function LandingPage() {
             </Link>
             <Link
               to="/hjaelp"
+              className="pm-landing-nav-secondary"
               style={{
                 ...btn(false),
                 borderColor: "transparent",
@@ -84,6 +98,7 @@ export function LandingPage() {
             </Link>
             <Link
               to="/app"
+              className="pm-landing-nav-secondary"
               style={{
                 ...btn(false),
                 borderColor: "transparent",
@@ -102,6 +117,25 @@ export function LandingPage() {
           </div>
         </div>
       </nav>
+
+      {/* Mobilmenu dropdown */}
+      {menuOpen && (
+        <>
+          {/* Backdrop — klik udenfor lukker menuen */}
+          <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 47 }} aria-hidden />
+          <div className="pm-landing-mobile-menu">
+            <Link to="/events" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 12px", color: theme.text, fontWeight: 600, fontSize: "15px", textDecoration: "none", borderRadius: "8px" }}>
+              <CalendarDays size={18} color={theme.accent} /> Events
+            </Link>
+            <Link to="/hjaelp" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 12px", color: theme.text, fontWeight: 600, fontSize: "15px", textDecoration: "none", borderRadius: "8px" }}>
+              <LifeBuoy size={18} color={theme.accent} /> Hjælp
+            </Link>
+            <Link to="/app" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 12px", color: theme.text, fontWeight: 600, fontSize: "15px", textDecoration: "none", borderRadius: "8px" }}>
+              <Smartphone size={18} color={theme.accent} /> App
+            </Link>
+          </div>
+        </>
+      )}
 
       {/* Hero */}
       <section

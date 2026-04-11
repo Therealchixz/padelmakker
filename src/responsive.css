@@ -485,16 +485,75 @@ button,
   }
 }
 
+/* ─── Landing nav: brand-wrapper (logo + hamburger) ─── */
+.pm-landing-nav-brand {
+  display: flex;
+  align-items: center;
+}
+
+/* Hamburger: skjult på desktop */
+.pm-landing-hamburger {
+  display: none;
+}
+
+/* Mobile dropdown-menu: skjult på desktop */
+.pm-landing-mobile-menu {
+  display: none;
+}
+
 /* Landing: hero-sektionens top-padding skal clearse den faste navbar */
 .pm-landing-hero {
-  /* Desktop: navbar er 1 række (~68px). Clamp giver 100-140px + evt. safe-area */
+  /* Desktop: navbar er 1 række (~68px). */
   padding-top: calc(clamp(100px, 18vw, 140px) + max(env(safe-area-inset-top), clamp(12px, 2.5vw, 16px)));
 }
 
 @media (max-width: 540px) {
-  /* Mobil: navbar er 3 rækker (logo + Events/Hjælp/App + Log ind/Kom i gang) ≈ 215-230px med safe-area.
-     Hero-padding skal clearse den + have lidt luft. */
+  /* Brand-rækken: logo til venstre, hamburger til højre */
+  .pm-landing-nav-brand {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  /* Skjul secondary links i selve navbar */
+  .pm-landing-nav-secondary {
+    display: none !important;
+  }
+
+  /* Vis hamburger-knappen */
+  .pm-landing-hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    color: #374151;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mobile dropdown: fast placeret lige under navbaren (2 rækker: logo + Log ind/Kom i gang) */
+  .pm-landing-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 48;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+    padding: 6px 8px 10px;
+    /* top = nav inner-top-pad + brand-row + gap + cta-row + inner-bottom-pad */
+    top: calc(max(12px, env(safe-area-inset-top)) + 104px);
+  }
+
+  /* Mobil: navbar er 2 rækker (logo+hamburger + Log ind/Kom i gang) ≈ 160px med safe-area */
   .pm-landing-hero {
-    padding-top: calc(230px + max(env(safe-area-inset-top), 12px));
+    padding-top: calc(180px + max(env(safe-area-inset-top), 12px));
   }
 }
