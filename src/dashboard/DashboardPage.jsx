@@ -41,7 +41,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(10px,2.5vw,14px) clamp(12px,3vw,20px)", paddingTop: "max(clamp(10px,2.5vw,14px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <div className="pm-dash-brand" style={{ ...heading("clamp(16px,4vw,18px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px" }}>
-          <img src="/logo-source.png" alt="" aria-hidden style={{ height: "40px", width: "auto", objectFit: "contain" }} /> PadelMakker
+          <img src="/logo-nav.png" alt="" aria-hidden style={{ height: "40px", width: "auto", objectFit: "contain" }} /> PadelMakker
         </div>
         <div className="pm-dash-user">
           <span className="pm-dash-name">{displayName}</span>
