@@ -126,6 +126,7 @@ export function BanerTab() {
       }
       loadBookliVenue(v.id, d);
     }
+    /* kind === 'link': ingen auto-hent */
   };
 
   /**
@@ -241,7 +242,7 @@ export function BanerTab() {
       <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '20px' }}>
         Åbn ét sted ad gangen. <strong>Halbooking</strong>: grøn = direkte til booking, gul = regel (tooltip).{' '}
         <strong>PadelPadel (Bookli)</strong>: oversigt hentes som på padelpadel.dk — grøn åbner Bookli til login og booking
-        (mødelokaler vises ikke).
+        (mødelokaler vises ikke). <strong>Eksterne links</strong>: åbner centrets egen booking — ledige tider vises dér.
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -250,7 +251,11 @@ export function BanerTab() {
           const loading = !!loadingVenue[v.id];
           const err = errorVenue[v.id];
           const openHref =
-            v.kind === 'halbooking' ? loaded?.openBookingPath || halbookingOpenVenueUrl(v.id) : v.bookingUrl;
+            v.kind === 'halbooking'
+              ? loaded?.openBookingPath || halbookingOpenVenueUrl(v.id)
+              : v.kind === 'bookli' || v.kind === 'link'
+                ? v.bookingUrl
+                : halbookingOpenVenueUrl(v.id);
           const bookliDate = bookliDateByVenue[v.id] || copenhagenDateYmd();
           const halbookingDate = halbookingDateByVenue[v.id] || copenhagenDateYmd();
           const todayYmd = copenhagenDateYmd();
@@ -312,7 +317,32 @@ export function BanerTab() {
               </summary>
 
               <div style={{ padding: '0 16px 16px', borderTop: '1px solid ' + theme.border }}>
-                {v.kind === 'bookli' ? (
+                {v.kind === 'link' ? (
+                  <>
+                    <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.55, marginTop: '12px' }}>
+                      {v.note ||
+                        'Dette sted har ikke integreret tidsvisning i PadelMakker. Brug centrets booking for at se ledige tider.'}
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '14px' }}>
+                      <a
+                        href={v.bookingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          ...btn(true),
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '13px',
+                        }}
+                      >
+                        <ExternalLink size={16} />
+                        Åbn booking
+                      </a>
+                    </div>
+                  </>
+                ) : v.kind === 'bookli' ? (
                   <>
                     <p style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.5, marginTop: '12px' }}>
                       Data hentes via Booklis offentlige kalender (samme som nederst på padelpadel.dk). 30 min. pr. felt —

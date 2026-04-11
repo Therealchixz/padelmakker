@@ -8,7 +8,8 @@ import { DateTime } from 'luxon';
 
 /** @typedef {{ kind: 'halbooking', id: string, title: string, address: string, indoor: boolean, region: string }} HalbookingVenue */
 /** @typedef {{ kind: 'bookli', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, infoUrl: string }} BookliVenue */
-/** @typedef {HalbookingVenue | BookliVenue} BanerVenue */
+/** @typedef {{ kind: 'link', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, note?: string }} LinkVenue */
+/** @typedef {HalbookingVenue | BookliVenue | LinkVenue} BanerVenue */
 
 /** @type {BanerVenue[]} */
 export const BANER_VENUES = [
@@ -46,6 +47,64 @@ export const BANER_VENUES = [
     /** Opret booking (kræver login) — samme flow som på padelpadel.dk */
     bookingUrl: 'https://bookli.app/u/booking/create',
     infoUrl: 'https://padelpadel.dk/vores-centre/aalborg/',
+  },
+  {
+    kind: 'halbooking',
+    id: 'himmerland_halbooking',
+    title: 'HimmerLand padel (Halbooking)',
+    address: 'HimmerLand, Gatten (se himmerland.dk)',
+    indoor: true,
+    region: 'Nordjylland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'sportshallen_frederikshavn_halbooking',
+    title: 'Sportshallen Frederikshavn — padel (Halbooking)',
+    address: 'Via Halbooking — Frederikshavn',
+    indoor: true,
+    region: 'Nordjylland',
+  },
+  {
+    kind: 'link',
+    id: 'matchi_padel99',
+    title: 'Padel99 (Matchi)',
+    address: 'Se booking på Matchi',
+    indoor: true,
+    region: 'Nordjylland',
+    bookingUrl: 'https://www.matchi.se/facilities/padel99',
+    note: 'Ledige tider vises på Matchi efter login. Åbn linket for at booke.',
+  },
+  {
+    kind: 'link',
+    id: 'aarstennisklub_booking',
+    title: 'Aars Tennis & Padel',
+    address: 'Aars — se aarstennisklub.dk',
+    indoor: false,
+    region: 'Nordjylland',
+    bookingUrl:
+      'https://www.aarstennisklub.dk/Activity/BookingView/Activity2518183623424373632',
+    note: 'Booking kører på klubbens site (Memberlink).',
+  },
+  {
+    kind: 'link',
+    id: 'gug_tennis_padel_booking',
+    title: 'Gug Tennis & Padel',
+    address: 'Gug, Aalborg — se gugtennisogpadel.dk',
+    indoor: true,
+    region: 'Nordjylland',
+    bookingUrl:
+      'https://gugtennisogpadel.memberlink.dk/Activity/BookingView/Activity2520021377950888076',
+    note: 'Booking på Memberlink.',
+  },
+  {
+    kind: 'link',
+    id: 'matchi_skagen_padelcenter',
+    title: 'Skagen Padelcenter (Matchi)',
+    address: 'Skagen — se Matchi',
+    indoor: false,
+    region: 'Nordjylland',
+    bookingUrl: 'https://www.matchi.se/facilities/SkagenPadelcenter%20',
+    note: 'Ledige tider på Matchi.',
   },
 ];
 
