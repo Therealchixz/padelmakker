@@ -46,14 +46,15 @@ export function LandingPage() {
   return (
     <div className="pm-landing" ref={revealRef} style={{ paddingBottom: 'max(96px, env(safe-area-inset-bottom))' }}>
       {/* Nav */}
-      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid " + theme.border, paddingTop: "env(safe-area-inset-top)" }}>
-        <div className="pm-landing-nav" style={{ padding: "clamp(12px, 2.5vw, 16px) clamp(16px, 4vw, 24px)", maxWidth: "1100px", margin: "0 auto" }}>
+      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid " + theme.border }}>
+        <div className="pm-landing-nav" style={{ paddingTop: "max(clamp(12px,2.5vw,16px), env(safe-area-inset-top))", paddingBottom: "clamp(12px,2.5vw,16px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", maxWidth: "1100px", margin: "0 auto" }}>
           <button type="button" onClick={() => navigate("/")} style={{ ...heading("clamp(17px,4.5vw,20px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }} aria-label="PadelMakker forsiden">
             🎾 PadelMakker
           </button>
           <div className="pm-landing-nav-actions">
             <Link
               to="/events"
+              className="pm-landing-nav-secondary"
               style={{
                 ...btn(false),
                 borderColor: "transparent",
@@ -69,6 +70,7 @@ export function LandingPage() {
             </Link>
             <Link
               to="/hjaelp"
+              className="pm-landing-nav-secondary"
               style={{
                 ...btn(false),
                 borderColor: "transparent",
@@ -84,6 +86,7 @@ export function LandingPage() {
             </Link>
             <Link
               to="/app"
+              className="pm-landing-nav-secondary"
               style={{
                 ...btn(false),
                 borderColor: "transparent",
@@ -105,11 +108,10 @@ export function LandingPage() {
 
       {/* Hero */}
       <section
-        className="pm-hero-gradient"
+        className="pm-hero-gradient pm-landing-hero"
         style={{
           display: "flex",
           flexDirection: "column",
-          paddingTop: "calc(clamp(100px,18vw,140px) + env(safe-area-inset-top))",
           paddingLeft: 0,
           paddingRight: 0,
           paddingBottom: 0,
