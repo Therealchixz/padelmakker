@@ -1,12 +1,13 @@
 /**
  * Én serverless-funktion for alle /api/<slug>-kald (Vercel Hobby-grænse).
+ * Hjælpekode ligger i ../padelmakker-server/ — ikke under api/, ellers tæller Vercel hver .js som egen funktion.
  */
 
-import { handleHalbookingSlots } from './lib/routes/halbookingSlots.js';
-import { handleHalbookingSkansenLegacy } from './lib/routes/halbookingSkansenLegacy.js';
-import { handleHalbookingOpenPadel } from './lib/routes/halbookingOpenPadel.js';
-import { handleBookliSlots } from './lib/routes/bookliSlots.js';
-import { handleMatchiSlots } from './lib/routes/matchiSlots.js';
+import { handleHalbookingSlots } from '../padelmakker-server/routes/halbookingSlots.js';
+import { handleHalbookingSkansenLegacy } from '../padelmakker-server/routes/halbookingSkansenLegacy.js';
+import { handleHalbookingOpenPadel } from '../padelmakker-server/routes/halbookingOpenPadel.js';
+import { handleBookliSlots } from '../padelmakker-server/routes/bookliSlots.js';
+import { handleMatchiSlots } from '../padelmakker-server/routes/matchiSlots.js';
 
 export default async function handler(req, res) {
   const slug = typeof req.query?.slug === 'string' ? req.query.slug : '';

@@ -2,9 +2,9 @@ import { DateTime } from 'luxon';
 
 /**
  * Alle steder under fanen Baner.
- * Halbooking: id skal matche api/lib/halbookingVenuesAllowlist.js
- * Bookli: id skal matche api/lib/bookliAllowlist.js
- * Matchi: id skal matche api/lib/matchiAllowlist.js
+ * Halbooking: id skal matche padelmakker-server/halbookingVenuesAllowlist.js
+ * Bookli: id skal matche padelmakker-server/bookliAllowlist.js
+ * Matchi: id skal matche padelmakker-server/matchiAllowlist.js
  */
 
 /** @typedef {{ kind: 'halbooking', id: string, title: string, address: string, indoor: boolean, region: string }} HalbookingVenue */
