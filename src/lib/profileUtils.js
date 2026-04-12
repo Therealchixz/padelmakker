@@ -1,5 +1,19 @@
 import { REGIONS, DEFAULT_REGION } from "./platformConstants"
 
+/** Beregn præcis alder ud fra fødselsår, evt. måned og dag */
+export function calcAge(birth_year, birth_month, birth_day) {
+  if (!birth_year) return null;
+  const today = new Date();
+  let age = today.getFullYear() - Number(birth_year);
+  if (birth_month && birth_day) {
+    const hadBirthday =
+      (today.getMonth() + 1) > Number(birth_month) ||
+      ((today.getMonth() + 1) === Number(birth_month) && today.getDate() >= Number(birth_day));
+    if (!hadBirthday) age--;
+  }
+  return age;
+}
+
 /**
  * Map DB-værdi til den kanoniske regionsstreng fra REGIONS (knapper bruger fuldt navn).
  * Fx "Nordjylland" / "nordjylland" → "Region Nordjylland"
@@ -145,6 +159,8 @@ export function buildOnboardingProfileRowPatch(meta, existingProfile = null) {
     availability: metaAvail,
     bio: String(meta.bio || "").trim(),
     birth_year: birthNum != null && !Number.isNaN(Number(birthNum)) ? Number(birthNum) : null,
+    birth_month: meta.birth_month != null ? Number(meta.birth_month) : null,
+    birth_day: meta.birth_day != null ? Number(meta.birth_day) : null,
   }
   if (keepPhotoAvatar) {
     patch.avatar = existingAvatar

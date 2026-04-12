@@ -6,6 +6,9 @@ import {
   halbookingOpenUrl,
   halbookingOpenVenueUrl,
   bookliSlotsUrl,
+  matchiSlotsUrl,
+  matchiFacilityDeepUrl,
+  memberlinkBookingUrlWithDate,
   copenhagenDateYmd,
   copenhagenAddDaysYmd,
 } from '../lib/banerVenues';
@@ -32,6 +35,10 @@ export function BanerTab() {
   const [bookliDateByVenue, setBookliDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
   /** Halbooking: valgt dato pr. venue (YYYY-MM-DD) */
   const [halbookingDateByVenue, setHalbookingDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
+  /** Matchi: valgt dato pr. venue */
+  const [matchiDateByVenue, setMatchiDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
+  /** Memberlink (kun link-venues): valgt dato til booking-link */
+  const [linkDateByVenue, setLinkDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
 
   const loadHalbookingVenue = useCallback(async (venueId, dateYmd) => {
     setLoadingVenue((m) => ({ ...m, [venueId]: true }));
@@ -102,6 +109,39 @@ export function BanerTab() {
     }
   }, []);
 
+  const loadMatchiVenue = useCallback(async (venueId, dateYmd) => {
+    setLoadingVenue((m) => ({ ...m, [venueId]: true }));
+    setErrorVenue((m) => ({ ...m, [venueId]: null }));
+    try {
+      const r = await fetch(matchiSlotsUrl(venueId, dateYmd), { credentials: 'omit' });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || `Fejl ${r.status}`);
+      }
+      const data = await r.json();
+      const today = copenhagenDateYmd();
+      const scheduleDate = data.scheduleDate || data.date || dateYmd;
+      const courtsRaw = data.courts || [];
+      const courts = filterPastSlotsIfToday(courtsRaw, scheduleDate, today);
+      setByVenue((m) => ({
+        ...m,
+        [venueId]: {
+          courts,
+          dateLabel: data.dateLabel || '',
+          scheduleDate,
+          fetchedAt: data.fetchedAt || '',
+          date: scheduleDate,
+        },
+      }));
+    } catch (e) {
+      console.error(e);
+      setErrorVenue((m) => ({ ...m, [venueId]: e.message || 'Kunne ikke hente tider' }));
+      setByVenue((m) => ({ ...m, [venueId]: null }));
+    } finally {
+      setLoadingVenue((m) => ({ ...m, [venueId]: false }));
+    }
+  }, []);
+
   /** Accordion: kun ét `<details>` åbent ad gangen. */
   const onDetailsToggle = (v, e) => {
     const el = e.currentTarget;
@@ -125,6 +165,18 @@ export function BanerTab() {
         setBookliDateByVenue((m) => ({ ...m, [v.id]: today }));
       }
       loadBookliVenue(v.id, d);
+    } else if (v.kind === 'matchi') {
+      const today = copenhagenDateYmd();
+      const d = matchiDateByVenue[v.id] || today;
+      if (!matchiDateByVenue[v.id]) {
+        setMatchiDateByVenue((m) => ({ ...m, [v.id]: today }));
+      }
+      loadMatchiVenue(v.id, d);
+    } else if (v.kind === 'link') {
+      const today = copenhagenDateYmd();
+      if (!linkDateByVenue[v.id]) {
+        setLinkDateByVenue((m) => ({ ...m, [v.id]: today }));
+      }
     }
   };
 
@@ -134,6 +186,30 @@ export function BanerTab() {
    * @param {CourtRow} c
    */
   const renderSlot = (s, v, c) => {
+    if (s.status === 'free' && v.kind === 'matchi') {
+      const d = matchiDateByVenue[v.id] || copenhagenDateYmd();
+      return (
+        <a
+          key={s.time}
+          href={matchiFacilityDeepUrl(v, d)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Åbner MATCHi med valgt dato — vælg bane og book der"
+          style={{
+            background: 'rgba(34, 197, 94, 0.15)',
+            color: '#15803d',
+            border: '1px solid rgba(34, 197, 94, 0.45)',
+            padding: '10px 14px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          {s.time} · Ledig
+        </a>
+      );
+    }
     if (s.status === 'free' && v.kind === 'bookli') {
       return (
         <a
@@ -241,7 +317,8 @@ export function BanerTab() {
       <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '20px' }}>
         Åbn ét sted ad gangen. <strong>Halbooking</strong>: grøn = direkte til booking, gul = regel (tooltip).{' '}
         <strong>PadelPadel (Bookli)</strong>: oversigt hentes som på padelpadel.dk — grøn åbner Bookli til login og booking
-        (mødelokaler vises ikke).
+        (mødelokaler vises ikke). <strong>MATCHi (Padel99, Skagen)</strong>: oversigt hentes fra matchi.se — grøn åbner facilitetssiden med valgt dato.
+        <strong>Eksterne links</strong> (Aars, Gug): åbner klubbens booking; tider vises på deres side.
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -250,9 +327,15 @@ export function BanerTab() {
           const loading = !!loadingVenue[v.id];
           const err = errorVenue[v.id];
           const openHref =
-            v.kind === 'halbooking' ? loaded?.openBookingPath || halbookingOpenVenueUrl(v.id) : v.bookingUrl;
+            v.kind === 'halbooking'
+              ? loaded?.openBookingPath || halbookingOpenVenueUrl(v.id)
+              : v.kind === 'bookli' || v.kind === 'link' || v.kind === 'matchi'
+                ? v.bookingUrl
+                : halbookingOpenVenueUrl(v.id);
           const bookliDate = bookliDateByVenue[v.id] || copenhagenDateYmd();
           const halbookingDate = halbookingDateByVenue[v.id] || copenhagenDateYmd();
+          const matchiDate = matchiDateByVenue[v.id] || copenhagenDateYmd();
+          const linkDate = linkDateByVenue[v.id] || copenhagenDateYmd();
           const todayYmd = copenhagenDateYmd();
 
           return (
@@ -312,19 +395,427 @@ export function BanerTab() {
               </summary>
 
               <div style={{ padding: '0 16px 16px', borderTop: '1px solid ' + theme.border }}>
-                {v.kind === 'bookli' ? (
+                {v.kind === 'link' ? (
                   <>
-                    <p style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.5, marginTop: '12px' }}>
-                      Data hentes via Booklis offentlige kalender (samme som nederst på padelpadel.dk). 30 min. pr. felt —
-                      book efter login.
+                    <p
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: theme.text,
+                        marginTop: '12px',
+                        marginBottom: '8px',
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {v.title} — {linkDate}
                     </p>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        alignItems: 'center',
+                        marginBottom: '12px',
+                      }}
+                      className="pm-baner-date-nav"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(linkDate, -7);
+                          setLinkDateByVenue((m) => ({ ...m, [v.id]: next }));
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px' }}
+                        title="Én uge tilbage"
+                      >
+                        ≪ 1 uge
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(linkDate, -1);
+                          setLinkDateByVenue((m) => ({ ...m, [v.id]: next }));
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px' }}
+                        title="Én dag tilbage"
+                      >
+                        ‹ 1 dag
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLinkDateByVenue((m) => ({ ...m, [v.id]: todayYmd }))}
+                        style={{ ...btn(linkDate === todayYmd), fontSize: '12px', padding: '8px 12px' }}
+                      >
+                        I dag
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(linkDate, 1);
+                          setLinkDateByVenue((m) => ({ ...m, [v.id]: next }));
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px' }}
+                        title="Én dag frem"
+                      >
+                        1 dag ›
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(linkDate, 7);
+                          setLinkDateByVenue((m) => ({ ...m, [v.id]: next }));
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px' }}
+                        title="Én uge frem"
+                      >
+                        1 uge ≫
+                      </button>
+                    </div>
                     <div
                       style={{
                         display: 'flex',
                         flexWrap: 'wrap',
                         gap: '10px',
                         alignItems: 'center',
+                        marginBottom: '12px',
+                      }}
+                    >
+                      <label style={{ fontSize: '12px', color: theme.textMid, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Dato
+                        <input
+                          type="date"
+                          value={linkDate}
+                          onChange={(e) => setLinkDateByVenue((m) => ({ ...m, [v.id]: e.target.value }))}
+                          style={{ ...inputStyle, width: 'auto', padding: '8px 10px', fontSize: '13px' }}
+                        />
+                      </label>
+                    </div>
+                    <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.55, marginTop: '0', marginBottom: '12px' }}>
+                      {v.note ||
+                        'Åbn booking-linket: ledige tider vises på centrets side (PadelMakker henter dem ikke ind i listen her).'}
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                      <a
+                        href={memberlinkBookingUrlWithDate(v.bookingUrl, linkDate)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          ...btn(true),
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '13px',
+                        }}
+                      >
+                        <ExternalLink size={16} />
+                        Åbn booking
+                      </a>
+                    </div>
+                  </>
+                ) : v.kind === 'matchi' ? (
+                  <>
+                    <p style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.5, marginTop: '12px' }}>
+                      {v.note ||
+                        'Oversigt hentes fra MATCHi (offentlig kalender). 30 min. pr. felt — grøn åbner MATCHi med valgt dato.'}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: theme.text,
                         marginTop: '12px',
+                        marginBottom: '8px',
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${matchiDate}`}
+                    </p>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        alignItems: 'center',
+                        marginBottom: '12px',
+                      }}
+                      className="pm-baner-date-nav"
+                    >
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(matchiDate, -7);
+                          setMatchiDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadMatchiVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én uge tilbage"
+                      >
+                        ≪ 1 uge
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(matchiDate, -1);
+                          setMatchiDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadMatchiVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én dag tilbage"
+                      >
+                        ‹ 1 dag
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          setMatchiDateByVenue((m) => ({ ...m, [v.id]: todayYmd }));
+                          loadMatchiVenue(v.id, todayYmd);
+                        }}
+                        style={{ ...btn(matchiDate === todayYmd), fontSize: '12px', padding: '8px 12px', opacity: loading ? 0.65 : 1 }}
+                      >
+                        I dag
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(matchiDate, 1);
+                          setMatchiDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadMatchiVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én dag frem"
+                      >
+                        1 dag ›
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(matchiDate, 7);
+                          setMatchiDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadMatchiVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én uge frem"
+                      >
+                        1 uge ≫
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '10px',
+                        alignItems: 'center',
+                        marginBottom: '10px',
+                      }}
+                    >
+                      <label style={{ fontSize: '12px', color: theme.textMid, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Dato
+                        <input
+                          type="date"
+                          value={matchiDate}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setMatchiDateByVenue((m) => ({ ...m, [v.id]: val }));
+                            loadMatchiVenue(v.id, val);
+                          }}
+                          style={{ ...inputStyle, width: 'auto', padding: '8px 10px', fontSize: '13px' }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => loadMatchiVenue(v.id, matchiDate)}
+                        disabled={loading}
+                        style={{
+                          ...btn(false),
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '13px',
+                          opacity: loading ? 0.65 : 1,
+                        }}
+                      >
+                        <RefreshCw size={15} className={loading ? 'pm-baner-refresh-spin' : undefined} />
+                        Opdater tider
+                      </button>
+                      <a
+                        href={matchiFacilityDeepUrl(v, matchiDate)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          ...btn(true),
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '13px',
+                        }}
+                      >
+                        <ExternalLink size={16} />
+                        Åbn MATCHi
+                      </a>
+                    </div>
+                    {loaded?.dateLabel && (
+                      <p style={{ fontSize: '12px', color: theme.textLight, marginBottom: '8px' }}>
+                        <Clock size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                        {loaded.dateLabel}
+                      </p>
+                    )}
+                    {loaded?.fetchedAt && (
+                      <p style={{ fontSize: '11px', color: theme.textLight, marginBottom: '12px' }}>
+                        Senest hentet: {new Date(loaded.fetchedAt).toLocaleString('da-DK')}
+                      </p>
+                    )}
+                    {loaded?.scheduleDate && loaded.scheduleDate === copenhagenDateYmd() && (
+                      <p style={{ fontSize: '11px', color: theme.textLight, marginBottom: '10px', fontStyle: 'italic' }}>
+                        Tider før nu på valgt dag vises ikke — mindre rod i listen.
+                      </p>
+                    )}
+                    {loading && !loaded?.courts?.length && (
+                      <div style={{ textAlign: 'center', padding: '20px', color: theme.textLight, fontSize: '13px' }}>
+                        Henter tider…
+                      </div>
+                    )}
+                    {err && (
+                      <div
+                        style={{
+                          ...inputStyle,
+                          borderColor: theme.warm,
+                          background: theme.warmBg,
+                          padding: '12px',
+                          fontSize: '13px',
+                          marginBottom: '8px',
+                        }}
+                      >
+                        {err}
+                      </div>
+                    )}
+                    {loaded && loaded.courts.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {loaded.courts.map((c) => (
+                          <div
+                            key={c.id || c.headerName || c.name}
+                            style={{
+                              background: theme.bg,
+                              borderRadius: '8px',
+                              padding: '12px',
+                              border: '1px solid ' + theme.border,
+                            }}
+                          >
+                            <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>
+                              {c.headerName || c.name}
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                              {c.slots.map((s) => renderSlot(s, v, c))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : v.kind === 'bookli' ? (
+                  <>
+                    <p style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.5, marginTop: '12px' }}>
+                      Data hentes via Booklis offentlige kalender (samme som nederst på padelpadel.dk). 30 min. pr. felt —
+                      book efter login.
+                    </p>
+                    <p
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: theme.text,
+                        marginTop: '12px',
+                        marginBottom: '8px',
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${bookliDate}`}
+                    </p>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        alignItems: 'center',
+                        marginBottom: '12px',
+                      }}
+                      className="pm-baner-date-nav"
+                    >
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(bookliDate, -7);
+                          setBookliDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadBookliVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én uge tilbage"
+                      >
+                        ≪ 1 uge
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(bookliDate, -1);
+                          setBookliDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadBookliVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én dag tilbage"
+                      >
+                        ‹ 1 dag
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          setBookliDateByVenue((m) => ({ ...m, [v.id]: todayYmd }));
+                          loadBookliVenue(v.id, todayYmd);
+                        }}
+                        style={{ ...btn(bookliDate === todayYmd), fontSize: '12px', padding: '8px 12px', opacity: loading ? 0.65 : 1 }}
+                      >
+                        I dag
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(bookliDate, 1);
+                          setBookliDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadBookliVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én dag frem"
+                      >
+                        1 dag ›
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          const next = copenhagenAddDaysYmd(bookliDate, 7);
+                          setBookliDateByVenue((m) => ({ ...m, [v.id]: next }));
+                          loadBookliVenue(v.id, next);
+                        }}
+                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
+                        title="Én uge frem"
+                      >
+                        1 uge ≫
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '10px',
+                        alignItems: 'center',
                         marginBottom: '10px',
                       }}
                     >
@@ -333,7 +824,11 @@ export function BanerTab() {
                         <input
                           type="date"
                           value={bookliDate}
-                          onChange={(e) => setBookliDateByVenue((m) => ({ ...m, [v.id]: e.target.value }))}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBookliDateByVenue((m) => ({ ...m, [v.id]: val }));
+                            loadBookliVenue(v.id, val);
+                          }}
                           style={{ ...inputStyle, width: 'auto', padding: '8px 10px', fontSize: '13px' }}
                         />
                       </label>
@@ -351,7 +846,7 @@ export function BanerTab() {
                         }}
                       >
                         <RefreshCw size={15} className={loading ? 'pm-baner-refresh-spin' : undefined} />
-                        Hent tider
+                        Opdater tider
                       </button>
                       <a
                         href={v.bookingUrl}

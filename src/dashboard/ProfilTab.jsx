@@ -3,7 +3,7 @@ import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
 import { REGIONS, AVAILABILITY, PLAY_STYLES } from '../lib/platformConstants';
-import { normalizeStringArrayField, validateFirstLastName, canonicalRegionForForm } from '../lib/profileUtils';
+import { normalizeStringArrayField, validateFirstLastName, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
@@ -93,6 +93,8 @@ export function ProfilTab({ user, showToast, setTab }) {
         avatar: avatarValue,
         availability,
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
+        birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
+        birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
       });
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       setPendingAvatarFile(null);
@@ -127,7 +129,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
               <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
                 {!statsLoading && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
-                {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{new Date().getFullYear() - user.birth_year} år</span>}
+                {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
                 <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
                 <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.area || "?"}</span>
               </div>
@@ -296,9 +298,19 @@ export function ProfilTab({ user, showToast, setTab }) {
           Mellemnavne med mellemrum er ok i hvert felt. Bindestreg også (Anne-Marie). Samme regler som ved oprettelse.
         </p>
 
-        {/* Birth year */}
-        <label htmlFor="profil-birth-year" style={labelStyle}>Fødselsår</label>
-        <input id="profil-birth-year" value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={{ ...inputStyle, marginBottom: "14px" }} />
+        {/* Birth date */}
+        <label style={labelStyle}>Fødselsdato</label>
+        <div style={{ display: "grid", gridTemplateColumns: "72px 1fr 90px", gap: "8px", marginBottom: "14px" }}>
+          <select value={form.birth_day || ""} onChange={e => set("birth_day", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
+            <option value="">Dag</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}.</option>)}
+          </select>
+          <select value={form.birth_month || ""} onChange={e => set("birth_month", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
+            <option value="">Måned</option>
+            {["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"].map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+          </select>
+          <input value={form.birth_year || ""} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="År" type="text" inputMode="numeric" style={{ ...inputStyle, paddingLeft: "10px" }} />
+        </div>
 
         {/* Area */}
         <div style={labelStyle}>Region</div>

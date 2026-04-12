@@ -5,6 +5,7 @@ import { availabilityTags } from '../lib/platformUtils';
 import { filterRatedEloHistoryRows, statsFromEloHistoryRows, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { MapPin } from 'lucide-react';
+import { calcAge } from '../lib/profileUtils';
 import { AvatarCircle } from '../components/AvatarCircle';
 
 export function PlayerProfileModal({ player, onClose }) {
@@ -60,7 +61,7 @@ export function PlayerProfileModal({ player, onClose }) {
   const games = dataLoading ? null : (histStatsModal?.games ?? (pRef.games_played || 0));
   const wins = dataLoading ? null : (histStatsModal?.wins ?? (pRef.games_won || 0));
   const winPct = games != null && games > 0 ? Math.round((wins / games) * 100) : 0;
-  const age = player.birth_year ? new Date().getFullYear() - player.birth_year : null;
+  const age = calcAge(player.birth_year, player.birth_month, player.birth_day);
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>

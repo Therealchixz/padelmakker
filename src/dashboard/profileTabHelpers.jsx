@@ -20,5 +20,7 @@ export function profileFormState(p) {
     avatar: p.avatar || "🎾",
     availability: normalizeStringArrayField(p.availability),
     birth_year: p.birth_year ? String(p.birth_year) : "",
+    birth_month: p.birth_month ? String(p.birth_month) : "",
+    birth_day: p.birth_day ? String(p.birth_day) : "",
   };
 }

@@ -19,7 +19,7 @@ export function OnboardingPage() {
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
@@ -41,7 +41,7 @@ export function OnboardingPage() {
         isValidSignupEmail(form.email) &&
         form.password.length >= 8 &&
         form.password === form.password_confirm &&
-        form.birth_year.length === 4
+        form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== ""
       );
     if (step === 1) return form.level && form.style;
     if (step === 2) return form.area && form.availability.length > 0;
@@ -85,6 +85,8 @@ export function OnboardingPage() {
         /* Emoji i metadata under oprettelse; foto uploades efter login (pending) eller straks hvis session */
         avatar: avatarFile ? "🎾" : form.avatar,
         birth_year: parseInt(form.birth_year, 10) || null,
+        birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
+        birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
         /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
         onboarding_completed: true,
       });
@@ -157,8 +159,18 @@ export function OnboardingPage() {
           Adgangskoden skal være mindst 8 tegn.
         </p>
       )}
-      <label htmlFor="onb-birth-year" style={labelStyle}>Fødselsår</label>
-      <input id="onb-birth-year" value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={inputStyle} />
+      <label style={labelStyle}>Fødselsdato</label>
+      <div style={{ display: "grid", gridTemplateColumns: "72px 1fr 90px", gap: "8px", marginBottom: "14px" }}>
+        <select value={form.birth_day} onChange={e => set("birth_day", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
+          <option value="">Dag</option>
+          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}.</option>)}
+        </select>
+        <select value={form.birth_month} onChange={e => set("birth_month", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
+          <option value="">Måned</option>
+          {["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"].map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+        </select>
+        <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="År" type="text" inputMode="numeric" style={{ ...inputStyle, paddingLeft: "10px" }} />
+      </div>
     </div>,
 
     <div key={1}>

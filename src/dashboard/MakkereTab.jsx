@@ -5,6 +5,7 @@ import { REGIONS } from '../lib/platformConstants';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin } from 'lucide-react';
+import { calcAge } from '../lib/profileUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
 import { AvatarCircle } from '../components/AvatarCircle';
@@ -154,7 +155,7 @@ export function MakkereTab({ user, showToast }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {paginated.map(p => {
-          const age = p.birth_year ? new Date().getFullYear() - p.birth_year : null;
+          const age = calcAge(p.birth_year, p.birth_month, p.birth_day);
           return (
           <div key={p.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "clamp(14px,3vw,18px)", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
             <div onClick={() => setViewPlayer(p)} style={{ display: "flex", gap: "14px", alignItems: "flex-start", cursor: "pointer" }}>
