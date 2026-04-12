@@ -164,6 +164,28 @@ export function matchiFacilityDeepUrl(v, dateYmd) {
 }
 
 /**
+ * Memberlink booking-URL med valgt dag (fx Aars/Gug). Ukendte sites ignorerer typisk ekstra query-parametre.
+ * @param {string} bookingUrl
+ * @param {string} dateYmd
+ */
+export function memberlinkBookingUrlWithDate(bookingUrl, dateYmd) {
+  const base = String(bookingUrl || '').trim();
+  if (!base) return '#';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateYmd || '').trim())) return base;
+  const d = String(dateYmd).trim();
+  try {
+    const u = new URL(base);
+    if (u.pathname.includes('/Activity/BookingView/')) {
+      u.searchParams.set('startDate', d);
+      u.searchParams.set('endDate', d);
+    }
+    return u.toString();
+  } catch {
+    return base;
+  }
+}
+
+/**
  * @param {string} venueId
  * @param {string} [dateYmd] - YYYY-MM-DD (Europe/Copenhagen)
  */
