@@ -1,8 +1,8 @@
 export const LEVELS = [
   'Begynder (1.0–1.9)',
   'Let øvet (2.0–2.9)',
-  'Til 3.0',
-  'Til 3.5',
+  'Øvet (3.0)',
+  'Avanceret øvet (3.5)',
   'Meget øvet (4.0–4.9)',
   'Elite (5.0–7.0)',
 ];
@@ -10,8 +10,8 @@ export const LEVELS = [
 export const LEVEL_DESCS = {
   'Begynder (1.0–1.9)':    'Ny til padel — ingen/lidt erfaring fra ketchersport',
   'Let øvet (2.0–2.9)':    'Kan returnere boldene, evt. erfaring fra anden ketchersport',
-  'Til 3.0':               'Spiller jævnligt med god kontrol på grundslagene. Kan holde længere dueller, men laver stadig en del uprovokerede fejl. Har niveau til DPF 25/50-turneringer eller 3. division.',
-  'Til 3.5':               'Spiller ugentligt med færre fejl og god boldkontrol. Dine dueller bliver længere, og du har forståelse for taktik. Har niveau til DPF 50/100-turneringer eller 2./3. division.',
+  'Øvet (3.0)':            'Spiller jævnligt med god kontrol på grundslagene. Kan holde længere dueller, men laver stadig en del uprovokerede fejl. Har niveau til DPF 25/50-turneringer eller 3. division.',
+  'Avanceret øvet (3.5)':  'Spiller ugentligt med færre fejl og god boldkontrol. Dine dueller bliver længere, og du har forståelse for taktik. Har niveau til DPF 50/100-turneringer eller 2./3. division.',
   'Meget øvet (4.0–4.9)':  'Spiller 1. division, DPF200 eller DPF400 turneringer',
   'Elite (5.0–7.0)':       'DPF1000, landsholdsniveau eller professionel spiller',
 };
@@ -22,8 +22,8 @@ export function levelLabel(num) {
   const n = Number(num);
   if (n < 2) return 'Begynder';
   if (n < 3) return 'Let øvet';
-  if (n < 3.25) return 'Øvet 3.0';
-  if (n < 4) return 'Øvet 3.5';
+  if (n < 3.25) return 'Øvet (3.0)';
+  if (n < 4) return 'Avanceret øvet (3.5)';
   if (n < 5) return 'Meget øvet';
   return 'Elite';
 }
