@@ -4,7 +4,7 @@ import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/p
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { REGIONS, AVAILABILITY, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel } from '../lib/platformConstants';
-import { normalizeStringArrayField, validateFirstLastName, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
+import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
@@ -62,12 +62,6 @@ export function ProfilTab({ user, showToast, setTab }) {
   });
 
   const handleSave = async () => {
-    const nameCheck = validateFirstLastName(form.first_name, form.last_name);
-    if (!nameCheck.valid) {
-      showToast(nameCheck.message);
-      return;
-    }
-    const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
     const region = canonicalRegionForForm(form.area) || form.area;
     const availability = normalizeStringArrayField(form.availability);
     setSaving(true);
@@ -86,8 +80,6 @@ export function ProfilTab({ user, showToast, setTab }) {
     }
     try {
       await updateProfile({
-        full_name: sanitizeText(displayName),
-        name: sanitizeText(displayName),
         area: region,
         level: form.level ? parseFloat(form.level.match(/[\d.]+/)?.[0] || "3") : undefined,
         play_style: form.play_style,
@@ -293,15 +285,6 @@ export function ProfilTab({ user, showToast, setTab }) {
             }}
           />
         </div>
-
-        {/* Name */}
-        <label htmlFor="profil-first-name" style={labelStyle}>Fornavn</label>
-        <input id="profil-first-name" autoComplete="given-name" value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
-        <label htmlFor="profil-last-name" style={labelStyle}>Efternavn</label>
-        <input id="profil-last-name" autoComplete="family-name" value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
-        <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
-          Mellemnavne med mellemrum er ok i hvert felt. Bindestreg også (Anne-Marie). Samme regler som ved oprettelse.
-        </p>
 
         {/* Birth date */}
         <label style={labelStyle}>Fødselsdato</label>
