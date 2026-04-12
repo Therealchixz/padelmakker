@@ -1,14 +1,13 @@
 /**
- * GET /api/bookli-slots?venue=padelpadel_aalborg&date=2026-04-08
- * Offentlig Bookli GraphQL (samme data som PadelPadel iframe) — ingen login.
+ * GET …?venue=…&date=… — Bookli GraphQL timeline.
  */
 
-import { getBookliVenue } from './lib/bookliAllowlist.js';
-import { fetchBookliTimelineForDate } from './lib/bookliTimeline.js';
+import { getBookliVenue } from '../bookliAllowlist.js';
+import { fetchBookliTimelineForDate } from '../bookliTimeline.js';
 import { DateTime } from 'luxon';
-import { checkRateLimit, getClientIp } from './lib/rateLimit.js';
+import { checkRateLimit, getClientIp } from '../rateLimit.js';
 
-export default async function handler(req, res) {
+export async function handleBookliSlots(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
   res.setHeader('Access-Control-Allow-Origin', '*');
 

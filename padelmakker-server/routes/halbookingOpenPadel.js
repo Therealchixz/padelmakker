@@ -1,13 +1,11 @@
 /**
- * Auto-POST til Halbooking med valgt område (POST som dropdown).
- *
- * GET /api/halbooking-open-padel?venue=skansen_ntsc&pm_bane=...&pm_tid=...
+ * GET — auto-POST til Halbooking (padel).
  */
 
-import { collectInputFields } from './lib/halbookingFetch.js';
-import { readHalbookingHtml } from './lib/halbookingEncoding.js';
-import { getAllowlistedVenue } from './lib/halbookingVenuesAllowlist.js';
-import { checkRateLimit, getClientIp } from './lib/rateLimit.js';
+import { collectInputFields } from '../halbookingFetch.js';
+import { readHalbookingHtml } from '../halbookingEncoding.js';
+import { getAllowlistedVenue } from '../halbookingVenuesAllowlist.js';
+import { checkRateLimit, getClientIp } from '../rateLimit.js';
 
 const UA = 'PadelMakkerOpenPadel/1.0 (+https://www.padelmakker.dk)';
 
@@ -40,7 +38,7 @@ function sendText(res, status, text, extraHeaders = {}) {
   res.end(text);
 }
 
-export default async function handler(req, res) {
+export async function handleHalbookingOpenPadel(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   if (req.method !== 'GET') {

@@ -1,14 +1,12 @@
 /**
- * GET /api/halbooking-slots?venue=skansen_ntsc&date=YYYY-MM-DD
- * Generisk ledige tider for allowlisted Halbooking-venues.
- * Valgfri date: samme navigation som Halbookings kalender (dag/uge frem/tilbage).
+ * GET …?venue=…&date=… — generisk Halbooking kalender.
  */
 
-import { fetchHalbookingPadelSchedule, parseScheduleDateYmd } from './lib/halbookingFetch.js';
-import { getAllowlistedVenue } from './lib/halbookingVenuesAllowlist.js';
-import { checkRateLimit, getClientIp } from './lib/rateLimit.js';
+import { fetchHalbookingPadelSchedule, parseScheduleDateYmd } from '../halbookingFetch.js';
+import { getAllowlistedVenue } from '../halbookingVenuesAllowlist.js';
+import { checkRateLimit, getClientIp } from '../rateLimit.js';
 
-export default async function handler(req, res) {
+export async function handleHalbookingSlots(req, res) {
   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
   res.setHeader('Access-Control-Allow-Origin', '*');
 

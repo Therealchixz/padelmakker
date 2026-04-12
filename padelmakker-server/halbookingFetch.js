@@ -169,14 +169,19 @@ function statusFromSlotAttrs(attrs) {
 }
 
 export function parseCourts(html) {
-  const owlIdx = html.indexOf("id='owl-kalender'");
+  let owlIdx = html.indexOf("id='owl-kalender'");
+  if (owlIdx < 0) owlIdx = html.indexOf('id="owl-kalender"');
   if (owlIdx < 0) return { courts: [], error: 'owl-kalender mangler' };
 
   const sub = html.slice(owlIdx);
-  const endIdx = sub.indexOf("</div></div><div class='clearfix'");
+  const endSingle = sub.indexOf("</div></div><div class='clearfix'");
+  const endDouble = sub.indexOf('</div></div><div class="clearfix"');
+  const endCandidates = [endSingle, endDouble].filter((n) => n >= 0);
+  const endIdx = endCandidates.length ? Math.min(...endCandidates) : -1;
   const owlHtml = endIdx > 0 ? sub.slice(0, endIdx) : sub;
 
-  const parts = owlHtml.split(/<div class='text-center bane'/);
+  /** Halbooking bruger typisk `class='...'`; nogle installationer bruger dobbelte anførselstegn. */
+  const parts = owlHtml.split(/<div class=['"]text-center bane['"]/);
   const courts = [];
 
   for (let i = 1; i < parts.length; i++) {

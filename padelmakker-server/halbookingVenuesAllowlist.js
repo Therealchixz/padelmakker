@@ -18,6 +18,16 @@ export const HALBOOKING_VENUE_ALLOWLIST = {
     procBaner: 'https://matchpadel.halbooking.dk/newlook/proc_baner.asp',
     omraede: '5',
   },
+  /** HimmerLand — Padel = område 3 i Halbooking-dropdown */
+  himmerland_halbooking: {
+    procBaner: 'https://himmerland.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '3',
+  },
+  /** Sportshallen Frederikshavn — Padel = område 2 (standardvalg på proc_baner) */
+  sportshallen_frederikshavn_halbooking: {
+    procBaner: 'https://sportshallen.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '2',
+  },
 };
 
 export function getAllowlistedVenue(venueId) {
