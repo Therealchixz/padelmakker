@@ -351,109 +351,39 @@ export function BanerTab() {
                   listStyle: 'none',
                   padding: '14px 16px',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px',
+                  alignItems: 'flex-start',
+                  gap: '12px',
                   userSelect: 'none',
                 }}
                 className="pm-baner-summary"
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', width: '100%' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '15px', fontWeight: 700 }}>{v.title}</div>
-                    <div
-                      style={{
-                        fontSize: '12px',
-                        color: theme.textLight,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        marginTop: '4px',
-                      }}
-                    >
-                      <MapPin size={11} /> {v.address}
-                    </div>
-                    <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '4px' }}>{v.region}</div>
-                  </div>
-                  <span style={v.indoor ? tag(theme.blueBg, theme.blue) : tag(theme.warmBg, theme.warm)}>
-                    {v.indoor ? (
-                      <>
-                        <Building2 size={10} /> Indoor
-                      </>
-                    ) : (
-                      <>
-                        <Sun size={10} /> Outdoor
-                      </>
-                    )}
-                  </span>
-                </div>
-                {(v.kind === 'link' || v.kind === 'matchi') && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700 }}>{v.title}</div>
                   <div
-                    role="group"
-                    aria-label="Hurtige booking-handlinger"
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}
+                    style={{
+                      fontSize: '12px',
+                      color: theme.textLight,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      marginTop: '4px',
+                    }}
                   >
-                    {v.kind === 'link' && (
-                      <a
-                        href={v.bookingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                          ...btn(true),
-                          textDecoration: 'none',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '12px',
-                          padding: '8px 14px',
-                        }}
-                      >
-                        <ExternalLink size={14} />
-                        Åbn booking
-                      </a>
-                    )}
-                    {v.kind === 'matchi' && (
-                      <>
-                        <a
-                          href={matchiFacilityDeepUrl(v, matchiDate)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{
-                            ...btn(true),
-                            textDecoration: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '12px',
-                            padding: '8px 14px',
-                          }}
-                        >
-                          <ExternalLink size={14} />
-                          Åbn MATCHi
-                        </a>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const el = detailRefs.current[v.id];
-                            if (el) el.open = true;
-                          }}
-                          style={{
-                            ...btn(false),
-                            fontSize: '12px',
-                            padding: '8px 14px',
-                          }}
-                        >
-                          Vis tider her
-                        </button>
-                      </>
-                    )}
+                    <MapPin size={11} /> {v.address}
                   </div>
-                )}
+                  <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '4px' }}>{v.region}</div>
+                </div>
+                <span style={v.indoor ? tag(theme.blueBg, theme.blue) : tag(theme.warmBg, theme.warm)}>
+                  {v.indoor ? (
+                    <>
+                      <Building2 size={10} /> Indoor
+                    </>
+                  ) : (
+                    <>
+                      <Sun size={10} /> Outdoor
+                    </>
+                  )}
+                </span>
               </summary>
 
               <div style={{ padding: '0 16px 16px', borderTop: '1px solid ' + theme.border }}>
