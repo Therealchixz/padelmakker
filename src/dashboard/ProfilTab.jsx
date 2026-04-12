@@ -286,6 +286,15 @@ export function ProfilTab({ user, showToast, setTab }) {
           />
         </div>
 
+        {/* Name — read-only */}
+        <label style={labelStyle}>Fornavn</label>
+        <input value={form.first_name} readOnly style={{ ...inputStyle, marginBottom: "10px", background: "#F1F5F9", color: theme.textLight, cursor: "not-allowed" }} />
+        <label style={labelStyle}>Efternavn</label>
+        <input value={form.last_name} readOnly style={{ ...inputStyle, marginBottom: "6px", background: "#F1F5F9", color: theme.textLight, cursor: "not-allowed" }} />
+        <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
+          Navn kan ikke ændres efter oprettelse. Kontakt support hvis der er en fejl.
+        </p>
+
         {/* Birth date */}
         <label style={labelStyle}>Fødselsdato</label>
         <div style={{ display: "grid", gridTemplateColumns: "72px 1fr 90px", gap: "8px", marginBottom: "14px" }}>
