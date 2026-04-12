@@ -6,6 +6,7 @@ import { filterRatedEloHistoryRows, statsFromEloHistoryRows, winStreaksFromEloHi
 import { eloOf } from '../lib/matchDisplayUtils';
 import { MapPin } from 'lucide-react';
 import { calcAge } from '../lib/profileUtils';
+import { levelLabel } from '../lib/platformConstants';
 import { AvatarCircle } from '../components/AvatarCircle';
 
 export function PlayerProfileModal({ player, onClose }) {
@@ -122,6 +123,12 @@ export function PlayerProfileModal({ player, onClose }) {
 
         {/* Details */}
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+          {player.level && (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+              <span style={{ color: theme.textLight }}>Niveau</span>
+              <span style={{ fontWeight: 600 }}>{levelLabel(player.level)}</span>
+            </div>
+          )}
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
             <span style={{ color: theme.textLight }}>Spillestil</span>
             <span style={{ fontWeight: 600 }}>{player.play_style || "Ikke angivet"}</span>
