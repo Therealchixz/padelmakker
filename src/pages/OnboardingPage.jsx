@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS, LEVEL_DESCS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
@@ -69,7 +69,7 @@ export function OnboardingPage() {
         return;
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
-      const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
+      const levelNum = parseFloat(form.level.match(/[\d.]+/)?.[0] || "3");
       /* Vent til data URL er skrevet (ellers mangler e-mail-tag → applyPendingAvatar ved login fejler) */
       if (avatarFile) {
         await savePendingAvatar(avatarFile);
@@ -178,7 +178,12 @@ export function OnboardingPage() {
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vær ærlig — vi matcher dig bedre!</p>
       <div style={labelStyle}>Niveau</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
-        {LEVELS.map(l => <button key={l} onClick={() => set("level", l)} style={selBtn(form.level === l)}>{l}</button>)}
+        {LEVELS.map(l => (
+          <button key={l} onClick={() => set("level", l)} style={{ ...selBtn(form.level === l), display: "flex", flexDirection: "column", gap: "3px" }}>
+            <span style={{ fontWeight: 700 }}>{l}</span>
+            <span style={{ fontSize: "12px", fontWeight: 400, opacity: 0.75, lineHeight: 1.4 }}>{LEVEL_DESCS[l]}</span>
+          </button>
+        ))}
       </div>
       <div style={labelStyle}>Spillestil</div>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
