@@ -153,7 +153,7 @@ export function CreateAmericanoTournamentForm({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
         <div>
           <label style={labelSmall}>Dato</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
+          <input type="date" value={date} min={new Date().toISOString().split('T')[0]} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
         </div>
         <div>
           <label style={labelSmall}>Tid</label>
