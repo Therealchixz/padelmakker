@@ -4,12 +4,14 @@ import { DateTime } from 'luxon';
  * Alle steder under fanen Baner.
  * Halbooking: id skal matche api/lib/halbookingVenuesAllowlist.js
  * Bookli: id skal matche api/lib/bookliAllowlist.js
+ * Matchi: id skal matche api/lib/matchiAllowlist.js
  */
 
 /** @typedef {{ kind: 'halbooking', id: string, title: string, address: string, indoor: boolean, region: string }} HalbookingVenue */
 /** @typedef {{ kind: 'bookli', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, infoUrl: string }} BookliVenue */
+/** @typedef {{ kind: 'matchi', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, facilityId: string, sport: string, note?: string }} MatchiVenue */
 /** @typedef {{ kind: 'link', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, note?: string }} LinkVenue */
-/** @typedef {HalbookingVenue | BookliVenue | LinkVenue} BanerVenue */
+/** @typedef {HalbookingVenue | BookliVenue | MatchiVenue | LinkVenue} BanerVenue */
 
 /** @type {BanerVenue[]} */
 export const BANER_VENUES = [
@@ -65,15 +67,17 @@ export const BANER_VENUES = [
     region: 'Nordjylland',
   },
   {
-    kind: 'link',
+    kind: 'matchi',
     id: 'matchi_padel99',
     title: 'Padel99 (Matchi)',
-    address: 'Se booking på Matchi',
+    address: 'Frederikshavn — matchi.se',
     indoor: true,
     region: 'Nordjylland',
+    facilityId: '2840',
+    sport: '5',
     bookingUrl: 'https://www.matchi.se/facilities/padel99',
     note:
-      'Kalenderen ligger på matchi.se — scroll på siden for at se ledige tider (PadelMakker henter dem ikke ind). Tryk Åbn booking.',
+      'Oversigt hentes fra MATCHi (samme data som på facilitetssiden). Baner vises med sponsor-/bane-navne som på MATCHi. Grøn = ledigt interval — klik åbner MATCHi med valgt dato.',
   },
   {
     kind: 'link',
@@ -100,15 +104,17 @@ export const BANER_VENUES = [
       'Ledige tider vises på booking-siden nederst — scroll ned på siden. Tryk Åbn booking (PadelMakker henter ikke kalenderen ind).',
   },
   {
-    kind: 'link',
+    kind: 'matchi',
     id: 'matchi_skagen_padelcenter',
     title: 'Skagen Padelcenter (Matchi)',
-    address: 'Skagen — se Matchi',
+    address: 'Skagen — matchi.se',
     indoor: false,
     region: 'Nordjylland',
+    facilityId: '2430',
+    sport: '5',
     bookingUrl: 'https://www.matchi.se/facilities/SkagenPadelcenter%20',
     note:
-      'Ledige tider ses på matchi.se på facilitetssiden — scroll på siden. Tryk Åbn booking.',
+      'Oversigt fra MATCHi. Grøn = ledigt — klik åbner facilitetssiden med valgt dato.',
   },
 ];
 
@@ -119,6 +125,43 @@ const SLOTS_BASE =
 const BOOKLI_SLOTS_BASE =
   (import.meta.env.VITE_BOOKLI_SLOTS_URL && String(import.meta.env.VITE_BOOKLI_SLOTS_URL).trim()) ||
   '/api/bookli-slots';
+
+const MATCHI_SLOTS_BASE =
+  (import.meta.env.VITE_MATCHI_SLOTS_URL && String(import.meta.env.VITE_MATCHI_SLOTS_URL).trim()) ||
+  '/api/matchi-slots';
+
+/**
+ * @param {string} venueId
+ * @param {string} dateYmd
+ */
+export function matchiSlotsUrl(venueId, dateYmd) {
+  const q = new URLSearchParams();
+  q.set('venue', venueId);
+  q.set('date', dateYmd);
+  return `${MATCHI_SLOTS_BASE}?${q.toString()}`;
+}
+
+/**
+ * Dyb link til MATCHi-facilitet med dato (booking flow på deres site).
+ * @param {{ bookingUrl: string; facilityId: string; sport: string }} v
+ * @param {string} dateYmd
+ */
+export function matchiFacilityDeepUrl(v, dateYmd) {
+  const base = String(v.bookingUrl || '').trim();
+  if (!base) return '#';
+  try {
+    const u = new URL(base);
+    u.searchParams.set('facilityId', v.facilityId);
+    u.searchParams.set('date', dateYmd);
+    u.searchParams.set('sport', v.sport);
+    u.searchParams.set('week', '');
+    u.searchParams.set('year', '');
+    return u.toString();
+  } catch {
+    const sep = base.includes('?') ? '&' : '?';
+    return `${base}${sep}facilityId=${encodeURIComponent(v.facilityId)}&date=${encodeURIComponent(dateYmd)}&sport=${encodeURIComponent(v.sport)}&week=&year=`;
+  }
+}
 
 /**
  * @param {string} venueId
