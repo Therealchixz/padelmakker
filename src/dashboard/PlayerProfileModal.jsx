@@ -126,6 +126,12 @@ export function PlayerProfileModal({ player, onClose }) {
             <span style={{ color: theme.textLight }}>Spillestil</span>
             <span style={{ fontWeight: 600 }}>{player.play_style || "Ikke angivet"}</span>
           </div>
+          {player.court_side && (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+              <span style={{ color: theme.textLight }}>Side på banen</span>
+              <span style={{ fontWeight: 600 }}>{player.court_side}</span>
+            </div>
+          )}
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
             <span style={{ color: theme.textLight }}>Region</span>
             <span style={{ fontWeight: 600 }}>{player.area || "Ikke angivet"}</span>

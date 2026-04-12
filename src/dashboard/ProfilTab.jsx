@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
-import { REGIONS, AVAILABILITY, PLAY_STYLES } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, PLAY_STYLES, COURT_SIDES } from '../lib/platformConstants';
 import { normalizeStringArrayField, validateFirstLastName, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
@@ -89,6 +89,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         name: sanitizeText(displayName),
         area: region,
         play_style: form.play_style,
+        court_side: form.court_side || null,
         bio: sanitizeText(form.bio.trim()),
         avatar: avatarValue,
         availability,
@@ -131,6 +132,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 {!statsLoading && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
                 {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
                 <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
+                {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
                 <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.area || "?"}</span>
               </div>
             </div>
@@ -325,6 +327,14 @@ export function ProfilTab({ user, showToast, setTab }) {
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
           {PLAY_STYLES.map(s => (
             <button key={s} onClick={() => set("play_style", s)} style={{ ...btn(form.play_style === s), padding: "6px 12px", fontSize: "12px" }}>{s}</button>
+          ))}
+        </div>
+
+        {/* Court side */}
+        <div style={labelStyle}>Foretrukken side på banen</div>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+          {COURT_SIDES.map(s => (
+            <button key={s} onClick={() => set("court_side", s)} style={{ ...btn(form.court_side === s), padding: "6px 12px", fontSize: "12px" }}>{s}</button>
           ))}
         </div>
 

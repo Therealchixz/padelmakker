@@ -127,6 +127,7 @@ async function fetchOrCreateProfileCore(userRow) {
       birth_year: meta.birth_year ?? null,
       birth_month: meta.birth_month ?? null,
       birth_day: meta.birth_day ?? null,
+      court_side: meta.court_side ?? null,
     },
     { onConflict: 'id' }
   ).select().single()
@@ -294,6 +295,7 @@ export function AuthProvider({ children }) {
         birth_year: metadata.birth_year ?? null,
         birth_month: metadata.birth_month ?? null,
         birth_day: metadata.birth_day ?? null,
+        court_side: metadata.court_side ?? null,
       })
       if (upErr) console.warn('profiles upsert:', upErr.message)
       if (data.session) {
@@ -336,6 +338,10 @@ export function AuthProvider({ children }) {
     let metaChanged = false
     if ('area' in updates && updates.area != null) {
       meta.area = updates.area
+      metaChanged = true
+    }
+    if ('court_side' in updates) {
+      meta.court_side = updates.court_side
       metaChanged = true
     }
     if ('birth_year' in updates) {

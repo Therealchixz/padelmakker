@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS, LEVEL_DESCS } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
@@ -19,7 +19,7 @@ export function OnboardingPage() {
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
@@ -43,7 +43,7 @@ export function OnboardingPage() {
         form.password === form.password_confirm &&
         form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== ""
       );
-    if (step === 1) return form.level && form.style;
+    if (step === 1) return form.level && form.style && form.court_side;
     if (step === 2) return form.area && form.availability.length > 0;
     return true;
   };
@@ -79,6 +79,7 @@ export function OnboardingPage() {
         full_name: sanitizeText(displayName),
         level: levelNum,
         play_style: form.style,
+        court_side: form.court_side || null,
         area: form.area,
         availability: form.availability,
         bio: sanitizeText(form.bio),
@@ -186,8 +187,12 @@ export function OnboardingPage() {
         ))}
       </div>
       <div style={labelStyle}>Spillestil</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
         {PLAY_STYLES.map(s => <button key={s} onClick={() => set("style", s)} style={{ ...selBtn(form.style === s) }}>{s}</button>)}
+      </div>
+      <div style={labelStyle}>Foretrukken side på banen</div>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        {COURT_SIDES.map(s => <button key={s} onClick={() => set("court_side", s)} style={{ ...selBtn(form.court_side === s) }}>{s}</button>)}
       </div>
     </div>,
 

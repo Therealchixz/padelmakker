@@ -14,6 +14,7 @@ export const LEVEL_DESCS = {
   'Elite (5.0–7.0)':       'DPF1000, landsholdsniveau eller professionel spiller',
 };
 export const PLAY_STYLES = ['Offensiv', 'Defensiv', 'Alround', 'Ved ikke endnu'];
+export const COURT_SIDES = ['Højre side', 'Venstre side', 'Begge sider'];
 
 /** Danmarks fem regioner (administrativ inddeling) */
 export const REGIONS = [

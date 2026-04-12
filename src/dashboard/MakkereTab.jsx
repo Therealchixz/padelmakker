@@ -174,6 +174,7 @@ export function MakkereTab({ user, showToast }) {
                   <span style={tag(theme.accentBg, theme.accent)}>ELO {displayElo(p)}</span>
                   {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
                   <span style={tag(theme.blueBg, theme.blue)}>{p.play_style || "?"}</span>
+                  {p.court_side && <span style={tag(theme.blueBg, theme.blue)}>{p.court_side}</span>}
                   <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>
                 </div>
                 {p.bio && <p style={{ fontSize: "12px", color: theme.textMid, marginTop: "8px", lineHeight: 1.5 }}>{p.bio}</p>}

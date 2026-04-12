@@ -161,6 +161,7 @@ export function buildOnboardingProfileRowPatch(meta, existingProfile = null) {
     birth_year: birthNum != null && !Number.isNaN(Number(birthNum)) ? Number(birthNum) : null,
     birth_month: meta.birth_month != null ? Number(meta.birth_month) : null,
     birth_day: meta.birth_day != null ? Number(meta.birth_day) : null,
+    court_side: meta.court_side || null,
   }
   if (keepPhotoAvatar) {
     patch.avatar = existingAvatar
