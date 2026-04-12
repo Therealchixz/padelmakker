@@ -1,14 +1,13 @@
 /**
- * GET /api/matchi-slots?venue=matchi_padel99&date=2026-04-12
- * Server-side: henter MATCHi /book/schedule HTML og parser til BanerTab-format.
+ * GET …?venue=…&date=… — Bookli GraphQL timeline.
  */
 
-import { getMatchiVenue, matchiScheduleUrl } from './lib/matchiAllowlist.js';
-import { fetchMatchiSchedule } from './lib/matchiSchedule.js';
+import { getBookliVenue } from '../bookliAllowlist.js';
+import { fetchBookliTimelineForDate } from '../bookliTimeline.js';
 import { DateTime } from 'luxon';
-import { checkRateLimit, getClientIp } from './lib/rateLimit.js';
+import { checkRateLimit, getClientIp } from '../rateLimit.js';
 
-export default async function handler(req, res) {
+export async function handleBookliSlots(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
@@ -28,38 +27,33 @@ export default async function handler(req, res) {
   const venueId = params.get('venue') || '';
   const dateParam = params.get('date');
 
-  const cfg = getMatchiVenue(venueId);
+  const cfg = getBookliVenue(venueId);
   if (!cfg) {
-    res.status(400).json({ error: 'Ukendt MATCHi-venue' });
+    res.status(400).json({ error: 'Ukendt Bookli-venue' });
     return;
   }
 
+  const zone = cfg.timezone || 'Europe/Copenhagen';
   const dateYmd =
     dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)
       ? dateParam
-      : DateTime.now().setZone('Europe/Copenhagen').toISODate();
-
-  const scheduleUrl = matchiScheduleUrl(cfg, dateYmd);
+      : DateTime.now().setZone(zone).toISODate();
 
   try {
-    const result = await fetchMatchiSchedule(scheduleUrl);
+    const result = await fetchBookliTimelineForDate(dateYmd, cfg);
     if (result.error) {
       res.status(502).json({ error: result.error });
       return;
     }
 
     res.status(200).json({
-      source: 'matchi_schedule_html',
+      source: 'bookli_graphql',
       venueId,
-      date: dateYmd,
-      scheduleDate: dateYmd,
-      dateLabel: result.dateLabel || dateYmd,
-      courts: result.courts,
-      bookingUrl: cfg.bookingUrl,
+      ...result,
       fetchedAt: new Date().toISOString(),
     });
   } catch (e) {
-    console.error('matchi-slots', venueId, e);
+    console.error('bookli-slots', venueId, e);
     res.status(500).json({ error: e.message || 'Ukendt fejl' });
   }
 }

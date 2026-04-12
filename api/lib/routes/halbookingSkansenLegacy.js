@@ -1,11 +1,11 @@
 /**
- * Bagudkompatibilitet: GET /api/halbooking-skansen-padel → samme som venue=skansen_ntsc
+ * GET — bagudkompatibilitet: samme som venue=skansen_ntsc
  */
 
-import { fetchHalbookingPadelSchedule } from './lib/halbookingFetch.js';
-import { getAllowlistedVenue } from './lib/halbookingVenuesAllowlist.js';
+import { fetchHalbookingPadelSchedule } from '../halbookingFetch.js';
+import { getAllowlistedVenue } from '../halbookingVenuesAllowlist.js';
 
-export default async function handler(req, res) {
+export async function handleHalbookingSkansenLegacy(req, res) {
   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
