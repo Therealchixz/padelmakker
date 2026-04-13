@@ -347,6 +347,12 @@ ALTER TABLE public.americano_tournaments ADD CONSTRAINT americano_tournaments_ti
 ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_birth_year_range;
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_birth_year_range CHECK (birth_year IS NULL OR (birth_year BETWEEN 1920 AND 2015));
 
+-- Ryd forældreløse match_id værdier op inden FK oprettes
+UPDATE public.notifications
+SET match_id = NULL
+WHERE match_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM public.matches m WHERE m.id = notifications.match_id);
+
 ALTER TABLE public.notifications DROP CONSTRAINT IF EXISTS notifications_match_id_fkey;
 ALTER TABLE public.notifications ADD CONSTRAINT notifications_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches (id) ON DELETE SET NULL;
 
