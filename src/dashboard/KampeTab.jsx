@@ -805,8 +805,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 Samme steder som under fanen Baner. Virtuel bane gemmer kun navnet (tilføj banen i databasen for at koble uuid).
               </p>
             </div>
-            <div><label style={labelStyle}>Dato</label>
-              <input type="date" value={newMatch.date} min={new Date().toISOString().split('T')[0]} onChange={e => setNewMatch(m => ({ ...m, date: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
+            <div style={{ minWidth: 0 }}><label style={labelStyle}>Dato</label>
+              <input type="date" value={newMatch.date} min={new Date().toISOString().split('T')[0]} onChange={e => setNewMatch(m => ({ ...m, date: e.target.value }))} style={{ ...inputStyle, fontSize: "13px", appearance: "none", WebkitAppearance: "none" }} /></div>
             <div><label style={labelStyle}>Starttid</label>
               <select value={newMatch.time} onChange={e => setNewMatch(m => ({ ...m, time: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
                 {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}

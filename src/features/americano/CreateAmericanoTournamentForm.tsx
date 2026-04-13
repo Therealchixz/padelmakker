@@ -153,7 +153,7 @@ export function CreateAmericanoTournamentForm({
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 14 }}>
         <div style={{ flex: '1 1 150px', minWidth: 0 }}>
           <label style={labelSmall}>Dato</label>
-          <input type="date" value={date} min={new Date().toISOString().split('T')[0]} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
+          <input type="date" value={date} min={new Date().toISOString().split('T')[0]} onChange={(e) => setDate(e.target.value)} style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} />
         </div>
         <div style={{ flex: '1 1 100px', minWidth: 0 }}>
           <label style={labelSmall}>Tid</label>
@@ -302,4 +302,5 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid #D5DDE8',
   fontSize: 14,
   fontFamily: "'Inter', sans-serif",
+  background: '#fff',
 }
