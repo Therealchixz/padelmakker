@@ -20,14 +20,78 @@ export function HomeTab({ user, setTab }) {
   const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
 
   const [feed, setFeed] = useState([]);
-  const fetchFeed = useCallback(() => {
-    supabase
+  const [americanoFeed, setAmericanoFeed] = useState([]);
+
+  const fetchFeed = useCallback(async () => {
+    // ELO history feed
+    const { data: eloData } = await supabase
       .from('elo_history')
       .select('user_id, result, change, date, created_at, profiles(full_name, name, avatar)')
       .not('change', 'is', null)
       .order('created_at', { ascending: false, nullsFirst: false })
-      .limit(10)
-      .then(({ data }) => setFeed(data || []));
+      .limit(10);
+    setFeed(eloData || []);
+
+    // Americano completed tournaments
+    try {
+      const { data: tournaments } = await supabase
+        .from('americano_tournaments')
+        .select('id, name, tournament_date, updated_at')
+        .eq('status', 'completed')
+        .order('updated_at', { ascending: false })
+        .limit(5);
+      if (!tournaments || tournaments.length === 0) { setAmericanoFeed([]); return; }
+
+      const tIds = tournaments.map(t => t.id);
+      const [{ data: parts }, { data: matches }] = await Promise.all([
+        supabase.from('americano_participants').select('id, tournament_id, user_id, display_name').in('tournament_id', tIds),
+        supabase.from('americano_matches').select('tournament_id, team_a_p1, team_a_p2, team_b_p1, team_b_p2, team_a_score, team_b_score').in('tournament_id', tIds),
+      ]);
+
+      // Fetch avatars for winner user_ids
+      const userIds = [...new Set((parts || []).map(p => p.user_id))];
+      let avatarMap = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, avatar').in('id', userIds);
+        (profiles || []).forEach(p => { avatarMap[String(p.id)] = p.avatar; });
+      }
+
+      const items = tournaments.map(t => {
+        const tParts = (parts || []).filter(p => p.tournament_id === t.id);
+        const tMatches = (matches || []).filter(m => m.tournament_id === t.id);
+        // Build leaderboard
+        const totals = {};
+        tParts.forEach(p => { totals[p.id] = 0; });
+        tMatches.forEach(m => {
+          if (m.team_a_score == null || m.team_b_score == null) return;
+          const add = (pid, pts) => { totals[pid] = (totals[pid] || 0) + pts; };
+          add(m.team_a_p1, m.team_a_score);
+          add(m.team_a_p2, m.team_a_score);
+          add(m.team_b_p1, m.team_b_score);
+          add(m.team_b_p2, m.team_b_score);
+        });
+        // Find winner
+        let bestPart = null;
+        let bestPts = -1;
+        tParts.forEach(p => {
+          const pts = totals[p.id] || 0;
+          if (pts > bestPts) { bestPts = pts; bestPart = p; }
+        });
+        if (!bestPart) return null;
+        return {
+          type: 'americano_winner',
+          name: bestPart.display_name,
+          points: bestPts,
+          tournamentName: t.name,
+          avatar: avatarMap[String(bestPart.user_id)] || '🏆',
+          created_at: t.updated_at || t.tournament_date,
+        };
+      }).filter(Boolean);
+      setAmericanoFeed(items);
+    } catch (e) {
+      console.warn('Americano feed error:', e);
+      setAmericanoFeed([]);
+    }
   }, []);
 
   useEffect(() => {
@@ -95,37 +159,57 @@ export function HomeTab({ user, setTab }) {
       )}
 
       {/* Aktivitetsfeed */}
-      {feed.length > 0 && (
+      {(feed.length > 0 || americanoFeed.length > 0) && (
         <div style={{ marginBottom: "24px" }}>
           <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
             Seneste aktivitet
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            {feed.map((row, i) => {
-              const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
-              const avatar = row.profiles?.avatar || "🎾";
-              const won = row.result === "win";
-              const change = Number(row.change) || 0;
-              return (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.surface, borderRadius: "8px", padding: "9px 12px", border: "1px solid " + theme.border }}>
-                  <AvatarCircle
-                    avatar={avatar}
-                    size={40}
-                    emojiSize="26px"
-                    style={{
-                      background: "#F1F5F9",
-                      border: "1px solid " + theme.border,
-                    }}
-                  />
-                  <span style={{ fontSize: "13px", color: theme.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    <strong>{name}</strong> {won ? "vandt" : "tabte"}
-                  </span>
-                  <span style={{ fontSize: "12px", fontWeight: 700, flexShrink: 0, color: change >= 0 ? theme.accent : theme.red }}>
-                    {change >= 0 ? "+" : ""}{change} ELO
-                  </span>
-                </div>
-              );
-            })}
+            {/* Merge and sort both feeds by date */}
+            {[...feed.map(row => ({ ...row, type: 'elo' })), ...americanoFeed]
+              .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+              .slice(0, 12)
+              .map((row, i) => {
+                if (row.type === 'americano_winner') {
+                  return (
+                    <div key={`am-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #FFFBEB, #FEF3C7)", borderRadius: "8px", padding: "10px 12px", border: "1.5px solid #F59E0B" }}>
+                      <AvatarCircle
+                        avatar={row.avatar}
+                        size={40}
+                        emojiSize="26px"
+                        style={{ background: "#FEF3C7", border: "1.5px solid #F59E0B" }}
+                      />
+                      <span style={{ fontSize: "13px", color: theme.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <strong>{row.name}</strong> vandt turneringen
+                      </span>
+                      <span style={{ fontSize: "12px", fontWeight: 700, flexShrink: 0, color: "#B45309" }}>
+                        🏆 {row.points} pts
+                      </span>
+                    </div>
+                  );
+                }
+                // ELO row
+                const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
+                const avatar = row.profiles?.avatar || "🎾";
+                const won = row.result === "win";
+                const change = Number(row.change) || 0;
+                return (
+                  <div key={`elo-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.surface, borderRadius: "8px", padding: "9px 12px", border: "1px solid " + theme.border }}>
+                    <AvatarCircle
+                      avatar={avatar}
+                      size={40}
+                      emojiSize="26px"
+                      style={{ background: "#F1F5F9", border: "1px solid " + theme.border }}
+                    />
+                    <span style={{ fontSize: "13px", color: theme.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <strong>{name}</strong> {won ? "vandt" : "tabte"}
+                    </span>
+                    <span style={{ fontSize: "12px", fontWeight: 700, flexShrink: 0, color: change >= 0 ? theme.accent : theme.red }}>
+                      {change >= 0 ? "+" : ""}{change} ELO
+                    </span>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
