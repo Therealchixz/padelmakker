@@ -32,6 +32,12 @@ ALTER TABLE public.profiles
 --    når en kamp slettes (i stedet for orphaned UUID).
 --    Kræver at public.matches eksisterer — kommenter ud hvis ikke.
 -- -----------------------------------------------------------------------------
+-- Ryd forældreløse match_id værdier op inden FK oprettes
+UPDATE public.notifications
+SET match_id = NULL
+WHERE match_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM public.matches m WHERE m.id = notifications.match_id);
+
 ALTER TABLE public.notifications
   DROP CONSTRAINT IF EXISTS notifications_match_id_fkey;
 

@@ -121,20 +121,26 @@ BEGIN
 END;
 $$;
 
--- Fjern gammel per-række trigger
+-- Fjern alle gamle triggers (per-række og statement)
 DROP TRIGGER IF EXISTS trg_americano_matches_recalc ON public.americano_matches;
--- Fjern eventuelle gamle statement-triggers hvis scriptet køres igen
 DROP TRIGGER IF EXISTS trg_americano_matches_recalc_ins_upd ON public.americano_matches;
+DROP TRIGGER IF EXISTS trg_americano_matches_recalc_ins ON public.americano_matches;
+DROP TRIGGER IF EXISTS trg_americano_matches_recalc_upd ON public.americano_matches;
 DROP TRIGGER IF EXISTS trg_americano_matches_recalc_del ON public.americano_matches;
 
--- INSERT og UPDATE: brug NEW TABLE som transition-tabel
-CREATE TRIGGER trg_americano_matches_recalc_ins_upd
-  AFTER INSERT OR UPDATE ON public.americano_matches
+-- PostgreSQL kræver separate triggers pr. event når transition tables bruges
+CREATE TRIGGER trg_americano_matches_recalc_ins
+  AFTER INSERT ON public.americano_matches
   REFERENCING NEW TABLE AS changed_rows
   FOR EACH STATEMENT
   EXECUTE FUNCTION public.trg_americano_match_recalc_stats();
 
--- DELETE: brug OLD TABLE som transition-tabel
+CREATE TRIGGER trg_americano_matches_recalc_upd
+  AFTER UPDATE ON public.americano_matches
+  REFERENCING NEW TABLE AS changed_rows
+  FOR EACH STATEMENT
+  EXECUTE FUNCTION public.trg_americano_match_recalc_stats();
+
 CREATE TRIGGER trg_americano_matches_recalc_del
   AFTER DELETE ON public.americano_matches
   REFERENCING OLD TABLE AS changed_rows
