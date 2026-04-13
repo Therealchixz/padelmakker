@@ -161,14 +161,16 @@ function TeamBlock({
       </div>
       <div
         style={{
-          fontSize: scoreSize,
-          fontWeight: scoreWeight,
-          letterSpacing: '-0.03em',
-          color: scoreColor,
+          fontSize: inputElement ? undefined : scoreSize,
+          fontWeight: inputElement ? undefined : scoreWeight,
+          letterSpacing: inputElement ? undefined : '-0.03em',
+          color: inputElement ? undefined : scoreColor,
           fontVariantNumeric: 'tabular-nums',
           flexShrink: 0,
-          minWidth: 36,
-          textAlign: 'right',
+          minWidth: 56,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           fontFamily: font,
         }}
       >
@@ -599,7 +601,10 @@ export function AmericanoResultsPanel({
                       disabled={saving}
                       title="Ret resultat"
                       aria-label="Ret resultat"
-                      onClick={() => setUnlockedIds((prev) => new Set(prev).add(m.id))}
+                      onClick={() => {
+                        setUnlockedIds((prev) => new Set(prev).add(m.id))
+                        setScores((prev) => ({ ...prev, [m.id]: { a: '', b: '' } }))
+                      }}
                       style={{
                         width: 40,
                         height: 40,
