@@ -6,10 +6,11 @@ import { getMatchiVenue, matchiScheduleUrl } from '../matchiAllowlist.js';
 import { fetchMatchiSchedule } from '../matchiSchedule.js';
 import { DateTime } from 'luxon';
 import { checkRateLimit, getClientIp } from '../rateLimit.js';
+import { setJsonCors } from '../cors.js';
 
 export async function handleMatchiSlots(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  setJsonCors(req, res);
 
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
