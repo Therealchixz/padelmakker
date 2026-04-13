@@ -13,7 +13,7 @@ import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHisto
 import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
-import { Clock, MapPin, Plus, UserMinus, Trash2 } from 'lucide-react';
+import { Clock, MapPin, Plus, UserMinus, Trash2, Search } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -92,6 +92,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     if (s?.format === "padel" || s?.format === "americano") return s.format;
     return "padel";
   }); // "padel" | "americano"
+  const [kampeScope, setKampeScope]   = useState(() => {
+    const s = readKampeSessionPrefs(user.id);
+    if (s?.scope === "mine" || s?.scope === "alle") return s.scope;
+    return "mine";
+  }); // "mine" | "alle"
+  const [searchQuery, setSearchQuery] = useState("");
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
@@ -499,10 +505,39 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const bJ = (matchPlayers[b.id] || []).some(p => p.user_id === user.id) ? 1 : 0;
     return bJ - aJ;
   });
-  const openMatches = sortJoinedFirst(matches.filter(m => { const s = getStatus(m); if (s !== "open" && s !== "full") return false; return (matchPlayers[m.id] || []).length > 0; }));
-  const activeMatches = matches.filter(m => getStatus(m) === "in_progress" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id));
+
+  // Search filter helper
+  const matchesSearch = (m) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    const mp = matchPlayers[m.id] || [];
+    const playerNames = mp.map(p => (p.user_name || "").toLowerCase()).join(" ");
+    const courtName = (m.court_name || "").toLowerCase();
+    const desc = (m.description || "").toLowerCase();
+    return playerNames.includes(q) || courtName.includes(q) || desc.includes(q);
+  };
+
+  const isMine = kampeScope === "mine";
+
+  const openMatches = sortJoinedFirst(matches.filter(m => {
+    const s = getStatus(m); if (s !== "open" && s !== "full") return false;
+    if ((matchPlayers[m.id] || []).length === 0) return false;
+    if (!matchesSearch(m)) return false;
+    return true;
+  }));
+  const activeMatches = matches.filter(m => {
+    if (getStatus(m) !== "in_progress") return false;
+    if (isMine && !(matchPlayers[m.id] || []).some(p => p.user_id === user.id)) return false;
+    if (!matchesSearch(m)) return false;
+    return true;
+  });
   const completedMatches = matches
-    .filter(m => getStatus(m) === "completed" && (matchPlayers[m.id] || []).some(p => p.user_id === user.id))
+    .filter(m => {
+      if (getStatus(m) !== "completed") return false;
+      if (isMine && !(matchPlayers[m.id] || []).some(p => p.user_id === user.id)) return false;
+      if (!matchesSearch(m)) return false;
+      return true;
+    })
     .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults));
 
   const renderMatchCard = (m) => {
@@ -735,6 +770,61 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {kampeFormat === "padel" && (
       <>
+      {/* Scope tabs: Mine kampe / Alle kampe */}
+      <div style={{ display: "flex", marginBottom: "12px", borderRadius: "8px", overflow: "hidden", border: "1px solid " + theme.border }}>
+        {[
+          { id: "mine", label: "Mine kampe" },
+          { id: "alle", label: "Alle kampe" },
+        ].map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => {
+              setKampeScope(t.id);
+              mergeKampeSessionPrefs(user.id, { scope: t.id });
+              setSearchQuery("");
+            }}
+            style={{
+              flex: 1,
+              padding: "10px 16px",
+              fontSize: "13px",
+              fontWeight: kampeScope === t.id ? 700 : 500,
+              background: kampeScope === t.id ? theme.accent : theme.surface,
+              color: kampeScope === t.id ? "#fff" : theme.textMid,
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.15s",
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search field for Alle kampe */}
+      {kampeScope === "alle" && (
+        <div style={{ position: "relative", marginBottom: "12px" }}>
+          <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: theme.textLight }} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Søg spiller, bane eller beskrivelse…"
+            style={{
+              width: "100%",
+              padding: "10px 12px 10px 36px",
+              borderRadius: "8px",
+              border: "1px solid " + theme.border,
+              fontSize: "13px",
+              fontFamily: "inherit",
+              background: theme.surface,
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: "6px", marginBottom: "16px", flexWrap: "wrap" }}>
         {[
           { id: "open", label: `Åbne (${openMatches.length})` },
