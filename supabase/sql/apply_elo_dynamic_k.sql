@@ -56,12 +56,20 @@ BEGIN
     RETURN jsonb_build_object('error', 'Match result not confirmed yet');
   END IF;
 
-  SELECT * INTO v_match FROM matches WHERE id = v_mr.match_id;
+  -- Låser rækken under denne transaktion, så vi ikke kan ramme en race-condition
+  -- hvis to spillere bekræfter resultatet på præcis samme tid.
+  SELECT * INTO v_match FROM matches WHERE id = v_mr.match_id FOR UPDATE;
   IF NOT FOUND THEN
     RETURN jsonb_build_object('error', 'Match not found');
   END IF;
   IF v_match.status = 'completed' THEN
     RETURN jsonb_build_object('error', 'ELO already calculated for this match');
+  END IF;
+
+  -- Hvis kampen af en eller anden syg grund er endt uafgjort (draw)
+  -- Tillader vi ikke normal ELO distribution, da der ikke er en vinder.
+  IF v_mr.match_winner <> 'team1' AND v_mr.match_winner <> 'team2' THEN
+    RETURN jsonb_build_object('error', 'Match must have a distinct winner (team1 or team2) for ELO to apply');
   END IF;
 
   SELECT COALESCE(MIN(COALESCE(p.games_played, 0)), 0)
