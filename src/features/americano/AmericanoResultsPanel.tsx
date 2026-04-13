@@ -88,6 +88,8 @@ function TeamBlock({
   showCheckForUser,
   userIdByPartId,
   currentUserId,
+  inputElement,
+  teamLabel,
 }: {
   name1: string
   name2: string
@@ -98,6 +100,8 @@ function TeamBlock({
   showCheckForUser: boolean
   userIdByPartId: Map<string, string>
   currentUserId: string
+  inputElement?: React.ReactNode
+  teamLabel?: string
 }) {
   const scoreStr = score != null && !Number.isNaN(score) ? String(score) : '—'
   const nameColor = outcome === 'loss' ? c.muted : c.text
@@ -116,6 +120,11 @@ function TeamBlock({
     >
       <DualAvatar a={name1} b={name2} />
       <div style={{ flex: 1, minWidth: 0 }}>
+        {teamLabel && (
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: c.muted, marginBottom: 2 }}>
+            {teamLabel}
+          </div>
+        )}
         <div
           style={{
             display: 'flex',
@@ -163,7 +172,7 @@ function TeamBlock({
           fontFamily: font,
         }}
       >
-        {scoreStr}
+        {inputElement || scoreStr}
       </div>
     </div>
   )
@@ -352,6 +361,34 @@ export function AmericanoResultsPanel({
       showToast('Kunne ikke gemme: ' + msg)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleScoreBlur = (m: AmericanoMatchRow, side: 'a' | 'b') => {
+    const row = scores[m.id] || { a: '', b: '' }
+    if (row.a.trim() === '' && row.b.trim() === '') return
+
+    let newA = row.a.trim()
+    let newB = row.b.trim()
+
+    if (side === 'a' && newA !== '' && newB === '') {
+      const o = complementFromOneSide(newA, P, showToast)
+      if (o != null) { newB = String(o) }
+    } else if (side === 'b' && newB !== '' && newA === '') {
+      const o = complementFromOneSide(newB, P, showToast)
+      if (o != null) { newA = String(o) }
+    }
+
+    if (newA !== row.a.trim() || newB !== row.b.trim()) {
+      setScores((prev) => ({ ...prev, [m.id]: { a: newA, b: newB } }))
+    }
+
+    if (newA !== '' && newB !== '') {
+      const valA = parseInt(newA, 10)
+      const valB = parseInt(newB, 10)
+      if (isValidAmericanoScore(valA, valB, P)) {
+        saveRow({ ...m } as AmericanoMatchRow)
+      }
     }
   }
 
@@ -555,50 +592,34 @@ export function AmericanoResultsPanel({
                     ) : null}
                   </div>
                 </div>
-                {isCreator && (
+                {isCreator && locked && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                    {locked ? (
-                      <button
-                        type="button"
-                        disabled={saving}
-                        title="Ret resultat"
-                        aria-label="Ret resultat"
-                        onClick={() => setUnlockedIds((prev) => new Set(prev).add(m.id))}
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: '50%',
-                          border: `2px solid ${c.accent}`,
-                          background: '#fff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: saving ? 'wait' : 'pointer',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Pencil size={18} color={c.accent} strokeWidth={2} />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={saving}
-                        onClick={() => saveRow(m)}
-                        style={{
-                          fontFamily: font,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          padding: '8px 14px',
-                          borderRadius: 8,
-                          border: 'none',
-                          background: c.accent,
-                          color: '#fff',
-                          cursor: saving ? 'wait' : 'pointer',
-                        }}
-                      >
-                        Gem
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      disabled={saving}
+                      title="Ret resultat"
+                      aria-label="Ret resultat"
+                      onClick={() => setUnlockedIds((prev) => new Set(prev).add(m.id))}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        border: `2px solid ${c.accent}`,
+                        background: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: saving ? 'wait' : 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Pencil size={18} color={c.accent} strokeWidth={2} />
+                    </button>
+                  </div>
+                )}
+                {isCreator && !locked && (
+                  <div style={{ fontSize: 10, color: c.muted, fontWeight: 600, fontStyle: 'italic', textAlign: 'right', flexShrink: 0 }}>
+                    Skriv point →<br />auto-gem
                   </div>
                 )}
               </div>
@@ -614,6 +635,37 @@ export function AmericanoResultsPanel({
                   showCheckForUser
                   userIdByPartId={userIdByPartId}
                   currentUserId={currentUserId}
+                  teamLabel={`Hold A · ${n1.split(' ')[0]} & ${n2.split(' ')[0]}`}
+                  inputElement={
+                    isCreator && !locked ? (
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={P}
+                        value={s.a}
+                        onChange={(e) =>
+                          setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value, b: prev[m.id]?.b ?? '' } }))
+                        }
+                        onBlur={() => handleScoreBlur(m, 'a')}
+                        placeholder={String(P)}
+                        aria-label={`Point for ${n1} & ${n2}`}
+                        style={{
+                          width: 56,
+                          padding: '6px 4px',
+                          borderRadius: 8,
+                          border: `2px solid ${c.accent}`,
+                          fontSize: 18,
+                          fontWeight: 800,
+                          textAlign: 'center',
+                          fontFamily: font,
+                          color: c.accent,
+                          background: '#F0F7FF',
+                          outline: 'none',
+                        }}
+                      />
+                    ) : undefined
+                  }
                 />
                 <div style={{ height: 1, background: c.line, marginLeft: 56 }} />
                 <TeamBlock
@@ -626,88 +678,39 @@ export function AmericanoResultsPanel({
                   showCheckForUser
                   userIdByPartId={userIdByPartId}
                   currentUserId={currentUserId}
+                  teamLabel={`Hold B · ${n3.split(' ')[0]} & ${n4.split(' ')[0]}`}
+                  inputElement={
+                    isCreator && !locked ? (
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={P}
+                        value={s.b}
+                        onChange={(e) =>
+                          setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: e.target.value } }))
+                        }
+                        onBlur={() => handleScoreBlur(m, 'b')}
+                        placeholder={String(P)}
+                        aria-label={`Point for ${n3} & ${n4}`}
+                        style={{
+                          width: 56,
+                          padding: '6px 4px',
+                          borderRadius: 8,
+                          border: `2px solid ${c.accent}`,
+                          fontSize: 18,
+                          fontWeight: 800,
+                          textAlign: 'center',
+                          fontFamily: font,
+                          color: c.accent,
+                          background: '#F0F7FF',
+                          outline: 'none',
+                        }}
+                      />
+                    ) : undefined
+                  }
                 />
               </div>
-
-              {isCreator && !locked && (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: 10,
-                    paddingBottom: 12,
-                    paddingTop: 4,
-                  }}
-                >
-                  <input
-                    type="number"
-                    min={0}
-                    max={P}
-                    value={s.a}
-                    onChange={(e) =>
-                      setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value, b: prev[m.id]?.b ?? '' } }))
-                    }
-                    onBlur={() => {
-                      const row = scores[m.id]
-                      if (!row || row.a.trim() === '') return
-                      if (row.b.trim() !== '') return
-                      const o = complementFromOneSide(row.a, P, showToast)
-                      if (o != null) {
-                        setScores((prev) => ({
-                          ...prev,
-                          [m.id]: { ...prev[m.id], a: prev[m.id]?.a?.trim() ?? row.a.trim(), b: String(o) },
-                        }))
-                      }
-                    }}
-                    placeholder="Hold A"
-                    aria-label="Hold A point"
-                    style={{
-                      width: 72,
-                      padding: '8px 10px',
-                      borderRadius: 8,
-                      border: `1px solid ${c.line}`,
-                      fontSize: 15,
-                      fontWeight: 600,
-                      fontFamily: font,
-                    }}
-                  />
-                  <span style={{ fontWeight: 700, color: c.muted }}>—</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={P}
-                    value={s.b}
-                    onChange={(e) =>
-                      setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: e.target.value } }))
-                    }
-                    onBlur={() => {
-                      const row = scores[m.id]
-                      if (!row || row.b.trim() === '') return
-                      if (row.a.trim() !== '') return
-                      const o = complementFromOneSide(row.b, P, showToast)
-                      if (o != null) {
-                        setScores((prev) => ({
-                          ...prev,
-                          [m.id]: { a: String(o), b: prev[m.id]?.b?.trim() ?? row.b.trim() },
-                        }))
-                      }
-                    }}
-                    placeholder="Hold B"
-                    aria-label="Hold B point"
-                    style={{
-                      width: 72,
-                      padding: '8px 10px',
-                      borderRadius: 8,
-                      border: `1px solid ${c.line}`,
-                      fontSize: 15,
-                      fontWeight: 600,
-                      fontFamily: font,
-                    }}
-                  />
-                  <span style={{ fontSize: 11, color: c.muted, flexBasis: '100%' }}>Sum = {P} (auto)</span>
-                </div>
-              )}
             </div>
           )
         })}
