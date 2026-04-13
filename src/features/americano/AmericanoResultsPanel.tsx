@@ -298,9 +298,10 @@ export function AmericanoResultsPanel({
       setMatches(mlist)
       const sc: Record<string, { a: string; b: string }> = {}
       mlist.forEach((m) => {
+        const bothSet = m.team_a_score != null && m.team_b_score != null
         sc[m.id] = {
-          a: m.team_a_score != null ? String(m.team_a_score) : '',
-          b: m.team_b_score != null ? String(m.team_b_score) : '',
+          a: bothSet ? String(m.team_a_score) : '',
+          b: bothSet ? String(m.team_b_score) : '',
         }
       })
       setScores(sc)
