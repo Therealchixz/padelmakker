@@ -323,7 +323,7 @@ export function AmericanoTab({
       }
       const [cd, trRes, myRes] = await Promise.all([
         Court.filter(),
-        supabase.from('americano_tournaments').select('*').order('tournament_date', { ascending: false }).limit(40),
+        supabase.from('americano_tournaments').select('*').order('tournament_date', { ascending: false }).order('created_at', { ascending: false }).limit(40),
         supabase.from('americano_participants').select('tournament_id').eq('user_id', profileId),
       ])
       setCourts(
@@ -373,7 +373,11 @@ export function AmericanoTab({
             grouped[tid].push(row)
           })
           Object.keys(grouped).forEach((tid) => {
-            grouped[tid].sort((a, b) => a.joined_at.localeCompare(b.joined_at))
+            grouped[tid].sort((a, b) => {
+              const c = a.joined_at.localeCompare(b.joined_at)
+              if (c !== 0) return c
+              return String(a.id).localeCompare(String(b.id))
+            })
           })
           setParticipantsByTournament(grouped)
         }
@@ -458,6 +462,7 @@ export function AmericanoTab({
         .select('id, joined_at')
         .eq('tournament_id', t.id)
         .order('joined_at', { ascending: true })
+        .order('id', { ascending: true })
       if (pErr) throw pErr
       const list = (parts || []) as Pick<AmericanoParticipant, 'id' | 'joined_at'>[]
       const slots = Number(t.player_slots)
