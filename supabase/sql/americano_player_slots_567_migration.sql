@@ -6,6 +6,21 @@
 -- - Eksisterende turneringer med 8 bevares, så de stadig kan startes med 8 spillere.
 -- =============================================================================
 
+-- Vis hvor mange turneringer der påvirkes inden den destruktive opdatering
+DO $$
+DECLARE cnt int;
+BEGIN
+  SELECT count(*)::int INTO cnt
+  FROM public.americano_tournaments
+  WHERE player_slots IN (12, 16);
+
+  IF cnt = 0 THEN
+    RAISE NOTICE 'Ingen turneringer med player_slots 12 eller 16 — migration er no-op.';
+  ELSE
+    RAISE NOTICE 'ADVARSEL: % turnering(er) med player_slots 12/16 sættes til 7. Tjek deltagerlister manuelt!', cnt;
+  END IF;
+END $$;
+
 UPDATE public.americano_tournaments
 SET player_slots = 7,
     updated_at = now()

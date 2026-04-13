@@ -11,10 +11,16 @@
 -- Eksempel-policy (tilpas til jeres setup; kan kræve at I dropper gammel policy først):
 -- =============================================================================
 
--- DROP POLICY IF EXISTS elo_history_select_own ON public.elo_history;
+-- Sørg for at RLS er aktiveret på tabellen
+ALTER TABLE public.elo_history ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY elo_history_select_authenticated
---   ON public.elo_history
---   FOR SELECT
---   TO authenticated
---   USING (true);
+-- Fjern evt. gammel "kun egne rækker"-policy der blokerer for andres historik
+DROP POLICY IF EXISTS elo_history_select_own ON public.elo_history;
+
+-- Alle loggede brugere kan læse hele elo_history (kræves til kampkort + ranking)
+DROP POLICY IF EXISTS elo_history_select_authenticated ON public.elo_history;
+CREATE POLICY elo_history_select_authenticated
+  ON public.elo_history
+  FOR SELECT
+  TO authenticated
+  USING (true);
