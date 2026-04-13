@@ -172,16 +172,36 @@ export function HomeTab({ user, setTab }) {
               .map((row, i) => {
                 if (row.type === 'americano_winner') {
                   return (
-                    <div key={`am-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #FFFBEB, #FEF3C7)", borderRadius: "8px", padding: "10px 12px", border: "1.5px solid #F59E0B" }}>
+                    <div
+                      key={`am-${i}`}
+                      onClick={() => setTab("kampe")}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "10px",
+                        background: "linear-gradient(135deg, #FFFBEB, #FEF3C7)",
+                        borderRadius: "8px", padding: "10px 12px",
+                        border: "1.5px solid #F59E0B",
+                        cursor: "pointer",
+                        transition: "box-shadow 0.15s",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(245,158,11,0.25)"}
+                      onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
+                    >
                       <AvatarCircle
                         avatar={row.avatar}
                         size={40}
                         emojiSize="26px"
                         style={{ background: "#FEF3C7", border: "1.5px solid #F59E0B" }}
                       />
-                      <span style={{ fontSize: "13px", color: theme.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        <strong>{row.name}</strong> vandt turneringen
-                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <strong>{row.name}</strong> vandt Americano
+                        </div>
+                        {row.tournamentName && (
+                          <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            "{row.tournamentName}"
+                          </div>
+                        )}
+                      </div>
                       <span style={{ fontSize: "12px", fontWeight: 700, flexShrink: 0, color: "#B45309" }}>
                         🏆 {row.points} pts
                       </span>
