@@ -45,7 +45,7 @@ export function levelStringFromNum(num) {
   }) || '';
 }
 
-export const PLAY_STYLES = ['Offensiv', 'Defensiv', 'Alround', 'Ved ikke endnu'];
+export const PLAY_STYLES = ['Offensiv', 'Defensiv', 'Allround', 'Ved ikke endnu'];
 export const COURT_SIDES = ['Venstre side', 'Højre side', 'Begge sider'];
 
 /** Danmarks fem regioner (administrativ inddeling) */
