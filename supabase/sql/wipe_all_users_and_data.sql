@@ -11,15 +11,20 @@
 
 BEGIN;
 
--- 1) Offentlige tabeller (børn først). Kommentér ud eller slet linjer du ikke har:
+-- 1) Offentlige tabeller (børn først, FK-safe rækkefølge):
 DELETE FROM public.elo_history;
 DELETE FROM public.bookings;
 DELETE FROM public.messages;
--- DELETE FROM public.notifications;  -- tilføj hvis tabellen findes
+DELETE FROM public.notifications;
 
 DELETE FROM public.match_results;
 DELETE FROM public.match_players;
 DELETE FROM public.matches;
+
+-- Americano (CASCADE fra auth.users ville håndtere det, men eksplicit er sikrere)
+DELETE FROM public.americano_matches;
+DELETE FROM public.americano_participants;
+DELETE FROM public.americano_tournaments;
 
 DELETE FROM public.profiles;
 

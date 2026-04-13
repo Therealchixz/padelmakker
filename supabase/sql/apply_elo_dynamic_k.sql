@@ -17,7 +17,8 @@ CREATE OR REPLACE FUNCTION public.apply_elo_for_match(p_match_result_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO 'public'
+SET search_path = public
+SET row_security = off
 AS $function$
 DECLARE
   v_mr match_results%ROWTYPE;

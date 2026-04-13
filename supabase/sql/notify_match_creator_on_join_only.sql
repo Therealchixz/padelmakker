@@ -10,6 +10,7 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
+SET row_security = off
 AS $$
 DECLARE
   v_creator uuid;
@@ -46,5 +47,3 @@ $$;
 
 REVOKE ALL ON FUNCTION public.notify_match_creator_on_join(uuid, text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.notify_match_creator_on_join(uuid, text, text) TO authenticated;
-
-ALTER FUNCTION public.notify_match_creator_on_join(uuid, text, text) SET row_security = off;

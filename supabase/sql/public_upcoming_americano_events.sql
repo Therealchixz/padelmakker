@@ -26,6 +26,7 @@ SECURITY DEFINER
 SET search_path = public
 SET row_security = off
 AS $$
+  -- participant_count via LEFT JOIN + GROUP BY (undgår N+1 correlated subquery)
   SELECT
     t.id,
     t.name,
@@ -35,13 +36,15 @@ AS $$
     t.points_per_match,
     t.status,
     t.description,
-    (SELECT count(*)::bigint FROM public.americano_participants p WHERE p.tournament_id = t.id) AS participant_count,
+    count(p.id)::bigint AS participant_count,
     c.name AS court_name
   FROM public.americano_tournaments t
   LEFT JOIN public.courts c ON c.id = t.court_id
+  LEFT JOIN public.americano_participants p ON p.tournament_id = t.id
   WHERE
     t.tournament_date >= (timezone('Europe/Copenhagen', now()))::date
     AND t.status IN ('registration', 'playing')
+  GROUP BY t.id, c.id
   ORDER BY t.tournament_date ASC, t.time_slot ASC, t.created_at ASC
   LIMIT greatest(1, least(coalesce(p_limit, 24), 100));
 $$;
