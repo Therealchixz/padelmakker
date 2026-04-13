@@ -645,14 +645,14 @@ export function AmericanoResultsPanel({
                   inputElement={
                     isCreator && !locked ? (
                       <input
-                        type="number"
+                        type="text"
                         inputMode="numeric"
-                        min={0}
-                        max={P}
+                        pattern="[0-9]*"
                         value={s.a}
-                        onChange={(e) =>
-                          setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value, b: prev[m.id]?.b ?? '' } }))
-                        }
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9]/g, '')
+                          setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: v, b: prev[m.id]?.b ?? '' } }))
+                        }}
                         onBlur={() => handleScoreBlur(m, 'a')}
                         placeholder="—"
                         aria-label={`Point for ${n1} & ${n2}`}
@@ -688,16 +688,16 @@ export function AmericanoResultsPanel({
                   inputElement={
                     isCreator && !locked ? (
                       <input
-                        type="number"
+                        type="text"
                         inputMode="numeric"
-                        min={0}
-                        max={P}
+                        pattern="[0-9]*"
                         value={s.b}
-                        onChange={(e) =>
-                          setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: e.target.value } }))
-                        }
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9]/g, '')
+                          setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: v } }))
+                        }}
                         onBlur={() => handleScoreBlur(m, 'b')}
-                        placeholder={String(P)}
+                        placeholder="—"
                         aria-label={`Point for ${n3} & ${n4}`}
                         style={{
                           width: 56,
