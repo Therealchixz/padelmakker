@@ -177,19 +177,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         .order("date", { ascending: false })
         .limit(300);
       if (rcErr) throw rcErr;
-      const rcIds = (recentCompleted || []).map((r) => r.id);
-      if (rcIds.length > 0) {
-        for (let i = 0; i < rcIds.length; i += 100) {
-          const slice = rcIds.slice(i, i + 100);
-          const { data: links, error: lErr } = await supabase
-            .from("match_players")
-            .select("match_id")
-            .eq("user_id", uid)
-            .in("match_id", slice);
-          if (lErr) throw lErr;
-          (links || []).forEach((r) => idSet.add(r.match_id));
-        }
-      }
+      (recentCompleted || []).forEach((r) => idSet.add(r.id));
 
       const allMatchIds = [...idSet];
 
