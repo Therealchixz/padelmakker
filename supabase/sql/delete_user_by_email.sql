@@ -18,6 +18,11 @@ DECLARE
   target_email text := lower(trim('din@email.dk'));
   mids uuid[];
 BEGIN
+  -- Guard: forhindrer utilsigtet kørsel med placeholder-emailen
+  IF target_email = 'din@email.dk' THEN
+    RAISE EXCEPTION 'Placeholder-email er ikke rettet. Sæt target_email til den rigtige adresse og kør igen.';
+  END IF;
+
   SELECT id INTO uid FROM auth.users WHERE email = target_email;
 
   IF uid IS NULL THEN
@@ -41,8 +46,7 @@ BEGIN
 
   DELETE FROM public.elo_history WHERE user_id = uid;
 
-  -- Valgfrit — fjern kommentar hvis tabellen findes:
-  -- DELETE FROM public.notifications WHERE user_id = uid;
+  DELETE FROM public.notifications WHERE user_id = uid;
 
   -- Tilpas kolonnenavne hvis jeres skema er anderledes:
   -- DELETE FROM public.messages WHERE sender_id = uid OR recipient_id = uid;

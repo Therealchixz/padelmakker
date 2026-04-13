@@ -180,3 +180,7 @@ CREATE TRIGGER elo_history_sync_profile
   AFTER INSERT OR UPDATE OR DELETE ON public.elo_history
   FOR EACH ROW
   EXECUTE FUNCTION public.trg_elo_history_sync_profile();
+
+REVOKE ALL ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.trg_elo_history_sync_profile() FROM PUBLIC;

@@ -64,6 +64,7 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
+SET row_security = off
 AS $$
 BEGIN
   IF (SELECT auth.uid()) IS NULL THEN
@@ -101,11 +102,6 @@ $$;
 REVOKE ALL ON FUNCTION public.create_notification_for_user(uuid, text, text, text, uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.create_notification_for_user(uuid, text, text, text, uuid) TO authenticated;
 
--- VIGTIGT: Uden dette gælder RLS stadig for den LOGGEDE bruger ved INSERT inde i funktionen,
--- så rækker med user_id = modtageren blokeres. row_security=off for denne funktion = kun efter
--- vi har tjekket deltagelse i PL/pgSQL ovenfor.
-ALTER FUNCTION public.create_notification_for_user(uuid, text, text, text, uuid) SET row_security = off;
-
 -- =============================================================================
 -- Tilmelding: underret opretter uden at klienten skal læse matches.creator_id
 -- (RLS kan skjule creator_id for andre spillere → ingen notifikation sendt)
@@ -120,6 +116,7 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
+SET row_security = off
 AS $$
 DECLARE
   v_creator uuid;
@@ -156,5 +153,3 @@ $$;
 
 REVOKE ALL ON FUNCTION public.notify_match_creator_on_join(uuid, text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.notify_match_creator_on_join(uuid, text, text) TO authenticated;
-
-ALTER FUNCTION public.notify_match_creator_on_join(uuid, text, text) SET row_security = off;
