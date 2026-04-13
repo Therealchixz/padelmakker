@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { Check, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
@@ -396,6 +396,21 @@ export function AmericanoResultsPanel({
     return a.court_index - b.court_index
   })
 
+  const activeRoundNumber = matchesDisplay.reduce((activeRound, m) => {
+    if (activeRound !== null) return activeRound
+    // If not locked, or locked but unlocked in UI temporarily
+    if (!isMatchResultLocked(m) || unlockedIds.has(m.id)) return m.round_number
+    return null
+  }, null as number | null)
+
+  const activeRoundRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!loading && activeRoundRef.current) {
+      activeRoundRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [loading, activeRoundNumber])
+
   const leaderboard = buildLeaderboard(participants, matches, scores, P)
 
   if (loading) {
@@ -472,18 +487,44 @@ export function AmericanoResultsPanel({
           const palKey =
             viewerOutcome === 'win' ? 'win' : viewerOutcome === 'loss' ? 'loss' : viewerOutcome === 'tie' ? 'tie' : 'neutral'
           const matchPal = americanoOutcomeColors[palKey]
+          const isActiveRound = m.round_number === activeRoundNumber
+              const isPastRound = activeRoundNumber !== null && m.round_number < activeRoundNumber
+              const isFirstInActiveRound = isActiveRound && displayIdx === matchesDisplay.findIndex(x => x.round_number === activeRoundNumber)
+              
+              let containerOpacity = isPastRound ? 0.6 : 1
+              if (locked && !isActiveRound) containerOpacity = 0.65 
 
           return (
             <div
               key={m.id}
+              ref={isFirstInActiveRound ? activeRoundRef : null}
               style={{
-                marginBottom: 10,
-                padding: '12px 12px 4px',
+                marginBottom: 14,
+                padding: isActiveRound ? '14px 14px 6px' : '12px 12px 4px',
                 borderRadius: 10,
-                background: matchPal.bg,
-                border: `1px solid ${matchPal.border}`,
+                background: isActiveRound ? '#FFFBEB' : matchPal.bg,
+                border: isActiveRound ? `2px solid #F59E0B` : `1px solid ${matchPal.border}`,
+                boxShadow: isActiveRound ? '0 4px 14px rgba(245, 158, 11, 0.15)' : 'none',
+                opacity: containerOpacity,
+                transition: 'opacity 0.2s',
               }}
             >
+              {isActiveRound && (
+                <div style={{
+                  background: onCourt ? '#10B981' : '#E2E8F0',
+                  color: onCourt ? '#fff' : '#475569',
+                  padding: '6px 12px',
+                  borderRadius: '6px 6px 0 0',
+                  margin: '-14px -14px 10px -14px',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  textAlign: 'center',
+                  letterSpacing: '0.02em',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}>
+                  {onCourt ? '🎾 DU SPILLER NU (Bane ' + (m.court_index+1) + ')' : '☕ DU SIDDER OVER I DENNE RUNDE'}
+                </div>
+              )}
               <div
                 style={{
                   display: 'flex',
