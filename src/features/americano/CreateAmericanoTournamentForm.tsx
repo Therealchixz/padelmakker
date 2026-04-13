@@ -150,12 +150,12 @@ export function CreateAmericanoTournamentForm({
         style={inputStyle}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
-        <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 14 }}>
+        <div style={{ flex: '1 1 150px', minWidth: 0 }}>
           <label style={labelSmall}>Dato</label>
           <input type="date" value={date} min={new Date().toISOString().split('T')[0]} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
         </div>
-        <div>
+        <div style={{ flex: '1 1 100px', minWidth: 0 }}>
           <label style={labelSmall}>Tid</label>
           <select value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} style={inputStyle}>
             {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}

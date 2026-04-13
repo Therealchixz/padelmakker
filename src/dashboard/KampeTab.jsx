@@ -383,6 +383,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     finally { setBusyId(null); }
   };
 
+  const kickPlayer = async (matchId, targetUserId) => {
+    setBusyId(matchId + '-kick-' + targetUserId);
+    try {
+      const { error } = await supabase.from("match_players").delete()
+        .eq("match_id", matchId).eq("user_id", targetUserId);
+      if (error) throw error;
+      const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== targetUserId);
+      await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
+      showToast("Spiller fjernet.");
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
   const startMatch = async (matchId) => {
     setBusyId(matchId);
     try {
@@ -561,13 +575,25 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 {t1Avg !== null && <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, marginBottom: "6px", opacity: 0.7 }}>{t1Avg} ELO</div>}
                 {t1Avg === null && <div style={{ height: "6px" }} />}
                 <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                  {t1.map(p => (
-                    <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", minWidth: "42px" }}>
-                      <AvatarCircle avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: "1.5px solid " + theme.accent + "40" }} />
-                      <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
-                      <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700 }}>{playerElo(p)}</span>
-                    </div>
-                  ))}
+                  {t1.map(p => {
+                    const canKick = isCreator && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
+                    const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
+                    return (
+                      <div key={p.id || p.user_id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
+                        <div onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
+                          <AvatarCircle avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: "1.5px solid " + theme.accent + "40" }} />
+                          <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
+                          <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700 }}>{playerElo(p)}</span>
+                        </div>
+                        {canKick && (
+                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id); }} disabled={kickingBusy}
+                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                   {Array.from({ length: Math.max(0, 2 - t1.length) }).map((_, i) => (
                     <div key={"t1e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
                       <div style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={10} color={theme.textLight} /></div>
@@ -586,13 +612,25 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 {t2Avg !== null && <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, marginBottom: "6px", opacity: 0.7 }}>{t2Avg} ELO</div>}
                 {t2Avg === null && <div style={{ height: "6px" }} />}
                 <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                  {t2.map(p => (
-                    <div key={p.id || p.user_id} onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", minWidth: "42px" }}>
-                      <AvatarCircle avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.blueBg, border: "1.5px solid " + theme.blue + "40" }} />
-                      <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
-                      <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700 }}>{playerElo(p)}</span>
-                    </div>
-                  ))}
+                  {t2.map(p => {
+                    const canKick = isCreator && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
+                    const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
+                    return (
+                      <div key={p.id || p.user_id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
+                        <div onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
+                          <AvatarCircle avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.blueBg, border: "1.5px solid " + theme.blue + "40" }} />
+                          <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
+                          <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700 }}>{playerElo(p)}</span>
+                        </div>
+                        {canKick && (
+                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id); }} disabled={kickingBusy}
+                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                   {Array.from({ length: Math.max(0, 2 - t2.length) }).map((_, i) => (
                     <div key={"t2e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
                       <div style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={10} color={theme.textLight} /></div>

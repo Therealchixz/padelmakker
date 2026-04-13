@@ -550,6 +550,25 @@ export function AmericanoTab({
     }
   }
 
+  const kickParticipant = async (tournamentId: string, participantId: string) => {
+    setBusyId(tournamentId + '-kick-' + participantId)
+    try {
+      const { error } = await supabase
+        .from('americano_participants')
+        .delete()
+        .eq('id', participantId)
+        .eq('tournament_id', tournamentId)
+      if (error) throw error
+      showToast('Spiller fjernet.')
+      await load()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      showToast('Kunne ikke fjerne spiller: ' + msg)
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   /** Kun under tilmelding — som almindelig kamp (opretter). CASCADE sletter deltagere + kampe. */
   const deleteTournament = async (t: AmericanoTournament) => {
     if (String(t.creator_id) !== String(profileId)) {
@@ -876,45 +895,69 @@ export function AmericanoTab({
                             const label =
                               String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name
                             const isMe = String(p.user_id) === String(profileId)
+                            const kickBusy = busyId === t.id + '-kick-' + p.id
                             return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() =>
-                                  setParticipantStatsPick({ userId: p.user_id, name: p.display_name })
-                                }
-                                title="Se Americano-statistik"
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 10,
-                                  padding: '8px 10px',
-                                  borderRadius: 8,
-                                  border: '1px solid #E2E8F0',
-                                  background: '#fff',
-                                  cursor: 'pointer',
-                                  textAlign: 'left',
-                                  fontFamily: font,
-                                }}
-                              >
-
-                                <AvatarInCircle av={av} />
-
-                                <span
+                              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setParticipantStatsPick({ userId: p.user_id, name: p.display_name })
+                                  }
+                                  title="Se Americano-statistik"
                                   style={{
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    color: '#0F172A',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    padding: '8px 10px',
+                                    borderRadius: 8,
+                                    border: '1px solid #E2E8F0',
+                                    background: '#fff',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontFamily: font,
                                     flex: 1,
                                     minWidth: 0,
                                   }}
                                 >
-                                  {label}
-                                  {isMe ? (
-                                    <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
-                                  ) : null}
-                                </span>
-                              </button>
+                                  <AvatarInCircle av={av} />
+                                  <span
+                                    style={{
+                                      fontSize: 13,
+                                      fontWeight: 600,
+                                      color: '#0F172A',
+                                      flex: 1,
+                                      minWidth: 0,
+                                    }}
+                                  >
+                                    {label}
+                                    {isMe ? (
+                                      <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
+                                    ) : null}
+                                  </span>
+                                </button>
+                                {isCreator && !isMe && (
+                                  <button
+                                    type="button"
+                                    onClick={() => kickParticipant(t.id, p.id)}
+                                    disabled={kickBusy}
+                                    title="Fjern spiller"
+                                    style={{
+                                      flexShrink: 0,
+                                      padding: '6px 8px',
+                                      borderRadius: 8,
+                                      border: '1px solid #FCA5A5',
+                                      background: '#FEF2F2',
+                                      color: '#DC2626',
+                                      cursor: kickBusy ? 'wait' : 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      fontFamily: font,
+                                    }}
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                )}
+                              </div>
                             )
                           })}
                         </div>
