@@ -125,6 +125,9 @@ async function fetchOrCreateProfileCore(userRow) {
       bio: meta.bio || '',
       avatar: meta.avatar || '🎾',
       birth_year: meta.birth_year ?? null,
+      birth_month: meta.birth_month ?? null,
+      birth_day: meta.birth_day ?? null,
+      court_side: meta.court_side ?? null,
     },
     { onConflict: 'id' }
   ).select().single()
@@ -290,6 +293,9 @@ export function AuthProvider({ children }) {
         bio: metadata.bio || '',
         avatar: metadata.avatar || '🎾',
         birth_year: metadata.birth_year ?? null,
+        birth_month: metadata.birth_month ?? null,
+        birth_day: metadata.birth_day ?? null,
+        court_side: metadata.court_side ?? null,
       })
       if (upErr) console.warn('profiles upsert:', upErr.message)
       if (data.session) {
@@ -334,8 +340,20 @@ export function AuthProvider({ children }) {
       meta.area = updates.area
       metaChanged = true
     }
+    if ('court_side' in updates) {
+      meta.court_side = updates.court_side
+      metaChanged = true
+    }
     if ('birth_year' in updates) {
       meta.birth_year = updates.birth_year
+      metaChanged = true
+    }
+    if ('birth_month' in updates) {
+      meta.birth_month = updates.birth_month
+      metaChanged = true
+    }
+    if ('birth_day' in updates) {
+      meta.birth_day = updates.birth_day
       metaChanged = true
     }
     if ('availability' in updates && updates.availability != null) {

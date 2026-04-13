@@ -1,5 +1,5 @@
 import { normalizeStringArrayField, canonicalRegionForForm } from '../lib/profileUtils';
-import { DEFAULT_REGION } from '../lib/platformConstants';
+import { DEFAULT_REGION, levelStringFromNum } from '../lib/platformConstants';
 
 export function splitDisplayNameToFirstLast(full) {
   const t = String(full || "").trim();
@@ -15,10 +15,14 @@ export function profileFormState(p) {
     last_name,
     full_name: p.full_name || p.name || "",
     area: canonicalRegionForForm(p.area || p.region || p.city || '') || DEFAULT_REGION,
+    level: levelStringFromNum(p.level) || "",
     play_style: p.play_style || "Ved ikke endnu",
+    court_side: p.court_side || "",
     bio: p.bio || "",
     avatar: p.avatar || "🎾",
     availability: normalizeStringArrayField(p.availability),
     birth_year: p.birth_year ? String(p.birth_year) : "",
+    birth_month: p.birth_month ? String(p.birth_month) : "",
+    birth_day: p.birth_day ? String(p.birth_day) : "",
   };
 }

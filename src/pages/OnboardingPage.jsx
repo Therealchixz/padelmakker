@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
@@ -19,7 +19,7 @@ export function OnboardingPage() {
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
@@ -41,9 +41,9 @@ export function OnboardingPage() {
         isValidSignupEmail(form.email) &&
         form.password.length >= 8 &&
         form.password === form.password_confirm &&
-        form.birth_year.length === 4
+        form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== ""
       );
-    if (step === 1) return form.level && form.style;
+    if (step === 1) return form.level && form.style && form.court_side;
     if (step === 2) return form.area && form.availability.length > 0;
     return true;
   };
@@ -69,7 +69,7 @@ export function OnboardingPage() {
         return;
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
-      const levelNum = parseFloat(form.level.match(/\d+/)?.[0] || "5");
+      const levelNum = parseFloat(form.level.match(/[\d.]+/)?.[0] || "3");
       /* Vent til data URL er skrevet (ellers mangler e-mail-tag → applyPendingAvatar ved login fejler) */
       if (avatarFile) {
         await savePendingAvatar(avatarFile);
@@ -79,12 +79,15 @@ export function OnboardingPage() {
         full_name: sanitizeText(displayName),
         level: levelNum,
         play_style: form.style,
+        court_side: form.court_side || null,
         area: form.area,
         availability: form.availability,
         bio: sanitizeText(form.bio),
         /* Emoji i metadata under oprettelse; foto uploades efter login (pending) eller straks hvis session */
         avatar: avatarFile ? "🎾" : form.avatar,
         birth_year: parseInt(form.birth_year, 10) || null,
+        birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
+        birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
         /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
         onboarding_completed: true,
       });
@@ -157,8 +160,18 @@ export function OnboardingPage() {
           Adgangskoden skal være mindst 8 tegn.
         </p>
       )}
-      <label htmlFor="onb-birth-year" style={labelStyle}>Fødselsår</label>
-      <input id="onb-birth-year" value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={inputStyle} />
+      <label style={labelStyle}>Fødselsdato</label>
+      <div style={{ display: "grid", gridTemplateColumns: "72px 1fr 90px", gap: "8px", marginBottom: "14px" }}>
+        <select value={form.birth_day} onChange={e => set("birth_day", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
+          <option value="">Dag</option>
+          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}.</option>)}
+        </select>
+        <select value={form.birth_month} onChange={e => set("birth_month", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
+          <option value="">Måned</option>
+          {["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"].map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+        </select>
+        <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="År" type="text" inputMode="numeric" style={{ ...inputStyle, paddingLeft: "10px" }} />
+      </div>
     </div>,
 
     <div key={1}>
@@ -166,11 +179,20 @@ export function OnboardingPage() {
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vær ærlig — vi matcher dig bedre!</p>
       <div style={labelStyle}>Niveau</div>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
-        {LEVELS.map(l => <button key={l} onClick={() => set("level", l)} style={selBtn(form.level === l)}>{l}</button>)}
+        {LEVELS.map(l => (
+          <button key={l} onClick={() => set("level", l)} style={{ ...selBtn(form.level === l), display: "flex", flexDirection: "column", gap: "3px" }}>
+            <span style={{ fontWeight: 700 }}>{l}</span>
+            <span style={{ fontSize: "12px", fontWeight: 400, opacity: 0.75, lineHeight: 1.4 }}>{LEVEL_DESCS[l]}</span>
+          </button>
+        ))}
       </div>
       <div style={labelStyle}>Spillestil</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
         {PLAY_STYLES.map(s => <button key={s} onClick={() => set("style", s)} style={{ ...selBtn(form.style === s) }}>{s}</button>)}
+      </div>
+      <div style={labelStyle}>Foretrukken side på banen</div>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        {COURT_SIDES.map(s => <button key={s} onClick={() => set("court_side", s)} style={{ ...selBtn(form.court_side === s) }}>{s}</button>)}
       </div>
     </div>,
 

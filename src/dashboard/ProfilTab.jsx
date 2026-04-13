@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
-import { REGIONS, AVAILABILITY, PLAY_STYLES } from '../lib/platformConstants';
-import { normalizeStringArrayField, validateFirstLastName, canonicalRegionForForm } from '../lib/profileUtils';
+import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
+import { REGIONS, AVAILABILITY, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel } from '../lib/platformConstants';
+import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
@@ -61,12 +62,6 @@ export function ProfilTab({ user, showToast, setTab }) {
   });
 
   const handleSave = async () => {
-    const nameCheck = validateFirstLastName(form.first_name, form.last_name);
-    if (!nameCheck.valid) {
-      showToast(nameCheck.message);
-      return;
-    }
-    const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
     const region = canonicalRegionForForm(form.area) || form.area;
     const availability = normalizeStringArrayField(form.availability);
     setSaving(true);
@@ -85,14 +80,16 @@ export function ProfilTab({ user, showToast, setTab }) {
     }
     try {
       await updateProfile({
-        full_name: sanitizeText(displayName),
-        name: sanitizeText(displayName),
         area: region,
+        level: form.level ? parseFloat(form.level.match(/[\d.]+/)?.[0] || "3") : undefined,
         play_style: form.play_style,
+        court_side: form.court_side || null,
         bio: sanitizeText(form.bio.trim()),
         avatar: avatarValue,
         availability,
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
+        birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
+        birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
       });
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       setPendingAvatarFile(null);
@@ -127,8 +124,10 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
               <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
                 {!statsLoading && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
-                {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{new Date().getFullYear() - user.birth_year} år</span>}
+                {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
+                {user.level && <span style={tag(theme.blueBg, theme.blue)}>{levelLabel(user.level)}</span>}
                 <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
+                {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
                 <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.area || "?"}</span>
               </div>
             </div>
@@ -244,7 +243,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {/* Quick links */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-          <button onClick={() => setTab("kampe")} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+          <button onClick={() => { mergeKampeSessionPrefs(user.id, { view: "completed" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
             <Swords size={18} color={theme.accent} />
             <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine kampe</div>
             <div style={{ fontSize: "11px", color: theme.textLight }}>{games} spillet</div>
@@ -287,18 +286,28 @@ export function ProfilTab({ user, showToast, setTab }) {
           />
         </div>
 
-        {/* Name */}
-        <label htmlFor="profil-first-name" style={labelStyle}>Fornavn</label>
-        <input id="profil-first-name" autoComplete="given-name" value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
-        <label htmlFor="profil-last-name" style={labelStyle}>Efternavn</label>
-        <input id="profil-last-name" autoComplete="family-name" value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "6px" }} />
+        {/* Name — read-only */}
+        <label style={labelStyle}>Fornavn</label>
+        <input value={form.first_name} readOnly style={{ ...inputStyle, marginBottom: "10px", background: "#F1F5F9", color: theme.textLight, cursor: "not-allowed" }} />
+        <label style={labelStyle}>Efternavn</label>
+        <input value={form.last_name} readOnly style={{ ...inputStyle, marginBottom: "6px", background: "#F1F5F9", color: theme.textLight, cursor: "not-allowed" }} />
         <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
-          Mellemnavne med mellemrum er ok i hvert felt. Bindestreg også (Anne-Marie). Samme regler som ved oprettelse.
+          Navn kan ikke ændres efter oprettelse. Kontakt support hvis der er en fejl.
         </p>
 
-        {/* Birth year */}
-        <label htmlFor="profil-birth-year" style={labelStyle}>Fødselsår</label>
-        <input id="profil-birth-year" value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="F.eks. 1995" type="text" inputMode="numeric" style={{ ...inputStyle, marginBottom: "14px" }} />
+        {/* Birth date */}
+        <label style={labelStyle}>Fødselsdato</label>
+        <div style={{ display: "grid", gridTemplateColumns: "72px 1fr 90px", gap: "8px", marginBottom: "14px" }}>
+          <select value={form.birth_day || ""} onChange={e => set("birth_day", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
+            <option value="">Dag</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}.</option>)}
+          </select>
+          <select value={form.birth_month || ""} onChange={e => set("birth_month", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
+            <option value="">Måned</option>
+            {["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"].map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+          </select>
+          <input value={form.birth_year || ""} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="År" type="text" inputMode="numeric" style={{ ...inputStyle, paddingLeft: "10px" }} />
+        </div>
 
         {/* Area */}
         <div style={labelStyle}>Region</div>
@@ -308,11 +317,30 @@ export function ProfilTab({ user, showToast, setTab }) {
           ))}
         </div>
 
+        {/* Niveau */}
+        <div style={labelStyle}>Niveau</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "14px" }}>
+          {LEVELS.map(l => (
+            <button key={l} onClick={() => set("level", l)} style={{ ...btn(form.level === l), textAlign: "left", padding: "8px 14px", display: "flex", flexDirection: "column", gap: "2px" }}>
+              <span style={{ fontWeight: 700, fontSize: "13px" }}>{l}</span>
+              <span style={{ fontSize: "11px", fontWeight: 400, opacity: 0.7 }}>{LEVEL_DESCS[l]}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Play style */}
         <div style={labelStyle}>Spillestil</div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
           {PLAY_STYLES.map(s => (
             <button key={s} onClick={() => set("play_style", s)} style={{ ...btn(form.play_style === s), padding: "6px 12px", fontSize: "12px" }}>{s}</button>
+          ))}
+        </div>
+
+        {/* Court side */}
+        <div style={labelStyle}>Foretrukken side på banen</div>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+          {COURT_SIDES.map(s => (
+            <button key={s} onClick={() => set("court_side", s)} style={{ ...btn(form.court_side === s), padding: "6px 12px", fontSize: "12px" }}>{s}</button>
           ))}
         </div>
 

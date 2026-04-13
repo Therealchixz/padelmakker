@@ -768,7 +768,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               </p>
             </div>
             <div><label style={labelStyle}>Dato</label>
-              <input type="date" value={newMatch.date} onChange={e => setNewMatch(m => ({ ...m, date: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
+              <input type="date" value={newMatch.date} min={new Date().toISOString().split('T')[0]} onChange={e => setNewMatch(m => ({ ...m, date: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }} /></div>
             <div><label style={labelStyle}>Starttid</label>
               <select value={newMatch.time} onChange={e => setNewMatch(m => ({ ...m, time: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
                 {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
