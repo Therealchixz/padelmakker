@@ -26,6 +26,7 @@ export function PublicLegalFooter({ tone = 'light' } = {}) {
     >
       <span style={{ color: muted }}>CVR-nr. 46403193</span>
       <span aria-hidden style={{ color: sep }}>·</span>
+      <Link to="/privatlivspolitik" style={linkStyle}>
         Privatlivspolitik
       </Link>
       <span aria-hidden style={{ color: sep }}>
