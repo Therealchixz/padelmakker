@@ -648,7 +648,7 @@ export function AmericanoResultsPanel({
                           setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: e.target.value, b: prev[m.id]?.b ?? '' } }))
                         }
                         onBlur={() => handleScoreBlur(m, 'a')}
-                        placeholder={String(P)}
+                        placeholder="—"
                         aria-label={`Point for ${n1} & ${n2}`}
                         style={{
                           width: 56,
