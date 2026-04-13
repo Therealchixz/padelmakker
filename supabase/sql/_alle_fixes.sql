@@ -136,10 +136,18 @@ END; $$;
 
 DROP TRIGGER IF EXISTS trg_americano_matches_recalc ON public.americano_matches;
 DROP TRIGGER IF EXISTS trg_americano_matches_recalc_ins_upd ON public.americano_matches;
+DROP TRIGGER IF EXISTS trg_americano_matches_recalc_ins ON public.americano_matches;
+DROP TRIGGER IF EXISTS trg_americano_matches_recalc_upd ON public.americano_matches;
 DROP TRIGGER IF EXISTS trg_americano_matches_recalc_del ON public.americano_matches;
 
-CREATE TRIGGER trg_americano_matches_recalc_ins_upd
-  AFTER INSERT OR UPDATE ON public.americano_matches
+-- PostgreSQL kræver separate triggers pr. event når transition tables bruges
+CREATE TRIGGER trg_americano_matches_recalc_ins
+  AFTER INSERT ON public.americano_matches
+  REFERENCING NEW TABLE AS changed_rows
+  FOR EACH STATEMENT EXECUTE FUNCTION public.trg_americano_match_recalc_stats();
+
+CREATE TRIGGER trg_americano_matches_recalc_upd
+  AFTER UPDATE ON public.americano_matches
   REFERENCING NEW TABLE AS changed_rows
   FOR EACH STATEMENT EXECUTE FUNCTION public.trg_americano_match_recalc_stats();
 
