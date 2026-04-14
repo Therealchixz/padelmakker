@@ -445,8 +445,15 @@ export function HomeTab({ user, setTab }) {
                         </div>
                       )}
                       <div style={{ display: "flex", justifyContent: "center", marginTop: "8px" }}>
-                        <button onClick={() => goToMatchFromFeed(row.match_id)} style={{ ...btn(false), padding: "4px 10px", fontSize: "11px" }}>
-ton>
+
+                        <button
+                          type="button"
+                          onClick={() => goToMatchFromFeed(row.match_id)}
+                          style={{ ...btn(false), padding: "4px 10px", fontSize: "11px" }}
+                        >
+                          Åben kamp
+                        </button>
+
                       </div>
                     </div>
                   );
