@@ -20,7 +20,7 @@ self.addEventListener('activate', (event) => {
 
 /* ── Push notification modtaget fra server ── */
 self.addEventListener('push', (event) => {
-  let data = { title: 'PadelMakker', body: 'Du har en ny notifikation', matchId: null };
+  let data = { title: 'PadelMakker', body: 'Du har en ny notifikation', matchId: null, unreadCount: null };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch { /* brug default */ }
@@ -35,8 +35,21 @@ self.addEventListener('push', (event) => {
         renotify: true,
         data: { matchId: data.matchId },
       }),
-      // Sæt badge på app-ikonet (virker på Android og iOS 16.4+ PWA)
-      self.navigator?.setAppBadge?.().catch?.(() => {}),
+
+      (async () => {
+        // App icon badge (hvis browser/OS understøtter Badging API)
+        try {
+          if (!self.navigator || !('setAppBadge' in self.navigator)) return;
+          if (typeof data.unreadCount === 'number' && data.unreadCount >= 0) {
+            await self.navigator.setAppBadge(data.unreadCount);
+          } else {
+            await self.navigator.setAppBadge();
+          }
+        } catch {
+          /* ignorer badge fejl */
+        }
+      })(),
+
     ])
   );
 });
