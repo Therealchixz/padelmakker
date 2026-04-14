@@ -354,12 +354,19 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   };
 
   const leaveMatch = async (matchId) => {
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+    const status = getStatus(match);
+    if (status === "in_progress" || status === "completed") {
+      showToast("Du kan ikke afmelde dig en kamp, der er i gang eller afsluttet.");
+      return;
+    }
+
     setBusyId(matchId);
     try {
       const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
       if (error) throw error;
       const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== user.id);
-      const match = matches.find(m => m.id === matchId);
       const isCreator = match && String(match.creator_id) === String(user.id);
 
       if (mp.length === 0) {
@@ -378,6 +385,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   };
 
   const startMatch = async (matchId) => {
+    const mp = matchPlayers[matchId] || [];
+    const t1 = mp.filter(p => matchPlayerTeam(p) === 1).length;
+    const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
+
+    if (t1 < 2 || t2 < 2) {
+      showToast("Kampen kan kun startes når der er 2 spillere på hvert hold (2 mod 2).");
+      return;
+    }
+
     setBusyId(matchId);
     try {
       const { error } = await supabase.from("matches").update({
@@ -391,6 +407,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   };
 
   const deleteMatch = async (matchId) => {
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+    const status = getStatus(match);
+    if (status === "in_progress" || status === "completed") {
+      showToast("Du kan ikke slette en kamp, der er i gang eller afsluttet.");
+      return;
+    }
+
     const mp = matchPlayers[matchId] || [];
     const others = mp.filter(p => p.user_id !== user.id);
     const msg = others.length > 0
@@ -658,9 +682,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           {joined && status !== "completed" && (
             <div style={{ textAlign: "center", fontSize: "13px", color: theme.accent, fontWeight: 600 }}>✅ Tilmeldt</div>
           )}
-          {isCreator && (status === "full" || (status === "open" && isFull)) && (
-            <button onClick={() => startMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm }}>
-              🎾 Start kamp
+          {isCreator && (status === "open" || status === "full") && (
+            <button 
+              onClick={() => startMatch(m.id)} 
+              disabled={busy || !isFull} 
+              style={{ 
+                ...btn(isFull), 
+                width: "100%", 
+                justifyContent: "center", 
+                fontSize: "13px", 
+                background: isFull ? theme.warm : theme.border,
+                cursor: isFull ? "pointer" : "not-allowed",
+                opacity: isFull ? 1 : 0.6
+              }}
+            >
+              🎾 {isFull ? "Start kamp" : "Venter på spillere (2 mod 2)"}
             </button>
           )}
           {status === "in_progress" && isPlayerInMatch && !mr && (
