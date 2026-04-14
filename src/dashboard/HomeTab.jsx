@@ -27,11 +27,56 @@ export function HomeTab({ user, setTab }) {
     // ELO history feed
     const { data: eloData } = await supabase
       .from('elo_history')
-      .select('user_id, result, change, date, created_at, profiles(full_name, name, avatar)')
+      .select('user_id, result, change, date, created_at, match_id, profiles(full_name, name, avatar)')
       .not('change', 'is', null)
       .order('created_at', { ascending: false, nullsFirst: false })
-      .limit(10);
-    setFeed(eloData || []);
+      .limit(30); // Increased limit as we will group them
+    
+    // Fetch match details for entries with match_id
+    const matchIds = [...new Set((eloData || []).filter(r => r.match_id).map(r => r.match_id))];
+    let matchMap = {};
+    if (matchIds.length > 0) {
+      const [{ data: mRes }, { data: mDetails }] = await Promise.all([
+        supabase.from('match_results').select('*').in('match_id', matchIds),
+        supabase.from('matches').select('id, court_name, description').in('id', matchIds)
+      ]);
+      (mRes || []).forEach(r => { matchMap[r.match_id] = { ...matchMap[r.match_id], results: r }; });
+      (mDetails || []).forEach(d => { matchMap[d.id] = { ...matchMap[d.id], details: d }; });
+    }
+
+    // Grouping logic
+    const groupedFeed = [];
+    const processedMatchIds = new Set();
+
+    (eloData || []).forEach(row => {
+      if (!row.match_id) {
+        groupedFeed.push({ ...row, type: 'elo' });
+        return;
+      }
+      if (processedMatchIds.has(row.match_id)) return;
+
+      const sameMatch = eloData.filter(r => r.match_id === row.match_id);
+      const mInfo = matchMap[row.match_id];
+      
+      groupedFeed.push({
+        type: 'match_group',
+        match_id: row.match_id,
+        created_at: row.created_at,
+        players: sameMatch.map(r => ({
+          name: r.profiles?.full_name || r.profiles?.name || "En spiller",
+          avatar: r.profiles?.avatar || "🎾",
+          change: Number(r.change),
+          win: r.result === 'win'
+        })),
+        score: mInfo?.results?.score_display || "—",
+        winner: mInfo?.results?.match_winner,
+        court: mInfo?.details?.court_name || "Bane",
+        description: mInfo?.details?.description
+      });
+      processedMatchIds.add(row.match_id);
+    });
+
+    setFeed(groupedFeed);
 
     // Americano completed tournaments
     try {
@@ -176,10 +221,10 @@ export function HomeTab({ user, setTab }) {
             Seneste aktivitet
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            {/* Merge and sort both feeds by date */}
-            {[...feed.map(row => ({ ...row, type: 'elo' })), ...americanoFeed]
+            {/* Merge and sort all feeds by date */}
+            {[...feed, ...americanoFeed]
               .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
-              .slice(0, 12)
+              .slice(0, 15)
               .map((row, i) => {
                 if (row.type === 'americano_winner') {
                   return (
@@ -219,7 +264,55 @@ export function HomeTab({ user, setTab }) {
                     </div>
                   );
                 }
-                // ELO row
+
+                if (row.type === 'match_group') {
+                  const winners = row.players.filter(p => p.win);
+                  const losers = row.players.filter(p => !p.win);
+                  return (
+                    <div key={`match-${i}`} style={{ background: theme.surface, borderRadius: "10px", padding: "16px", border: "1px solid " + theme.border, boxShadow: theme.shadow }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                        <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                            <MapPin size={10} /> {row.court}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: "18px", fontWeight: 800, color: theme.accent, letterSpacing: "0.05em" }}>{row.score}</div>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "space-between" }}>
+                        {/* Winners */}
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                          {winners.map((p, idx) => (
+                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <AvatarCircle avatar={p.avatar} size={30} emojiSize="18px" />
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: "12px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name.split(' ')[0]}</div>
+                                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 800 }}>+{p.change} ELO</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, padding: "0 10px" }}>VS</div>
+
+                        {/* Losers */}
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-end" }}>
+                          {losers.map((p, idx) => (
+                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", flexDirection: "row-reverse" }}>
+                              <AvatarCircle avatar={p.avatar} size={30} emojiSize="18px" />
+                              <div style={{ minWidth: 0, textAlign: "right" }}>
+                                <div style={{ fontSize: "12px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name.split(' ')[0]}</div>
+                                <div style={{ fontSize: "10px", color: theme.red, fontWeight: 800 }}>{p.change} ELO</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Individual ELO row (fallback)
                 const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
                 const avatar = row.profiles?.avatar || "🎾";
                 const won = row.result === "win";
