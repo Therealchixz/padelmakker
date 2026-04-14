@@ -216,25 +216,36 @@ export function NotificationBell() {
   const handleEnablePush = async () => {
     if (!userId || pushLoading) return;
     setPushLoading(true);
-    const result = await subscribeToPush(userId);
-    // Tjek browser-state som sandhed, uafhængigt af DB
-    const subscribed = await isPushSubscribed();
-    setPushSubscribed(subscribed);
-    if (subscribed) {
-      showPushMessage('Push-beskeder aktiveret!');
-    } else if (result === 'denied') {
-      showPushMessage('Tilladelse afvist i browseren');
+    try {
+      const result = await subscribeToPush(userId);
+      const subscribed = await isPushSubscribed();
+      setPushSubscribed(subscribed);
+      if (subscribed) {
+        showPushMessage('Push-beskeder aktiveret!');
+      } else if (result === 'denied') {
+        showPushMessage('Tilladelse afvist — tjek browserindstillinger');
+      } else if (result === 'blocked') {
+        showPushMessage('Din browser blokerer push (tjek Shields/indstillinger)');
+      } else if (result === 'timeout') {
+        showPushMessage('Timeout — prøv igen');
+      } else {
+        showPushMessage('Kunne ikke aktivere — prøv igen');
+      }
+    } finally {
+      setPushLoading(false);
     }
-    setPushLoading(false);
   };
 
   const handleDisablePush = async () => {
     if (pushLoading) return;
     setPushLoading(true);
-    await unsubscribeFromPush();
-    setPushSubscribed(false);
-    showPushMessage('Push-beskeder slået fra');
-    setPushLoading(false);
+    try {
+      await unsubscribeFromPush();
+      setPushSubscribed(false);
+      showPushMessage('Push-beskeder slået fra');
+    } finally {
+      setPushLoading(false);
+    }
   };
 
   const iconBtn = {

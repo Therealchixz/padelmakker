@@ -26,23 +26,41 @@ export function getPushPermission() {
 
 /**
  * Tilmeld denne browser til push-notifikationer.
- * Returnerer 'granted' | 'denied' | 'unsupported' | 'error'.
+ * Returnerer 'granted' | 'denied' | 'blocked' | 'unsupported' | 'error' | 'timeout'.
  * DB-gemning fejler stille — browser-subscription er sandheden.
  */
 export async function subscribeToPush(userId) {
   if (!isPushSupported()) return 'unsupported';
 
+  // 15 sek. timeout — forhindrer at requestPermission hænger i Brave/Firefox
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('timeout')), 15000);
+  });
+
   try {
     const registration = await navigator.serviceWorker.ready;
-    const permission = await Notification.requestPermission();
+
+    const permission = await Promise.race([
+      Notification.requestPermission(),
+      timeoutPromise,
+    ]);
+    clearTimeout(timeoutId);
+
     if (permission !== 'granted') return permission; // 'denied' eller 'default'
 
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-    });
+    // Brave/Firefox kan blokere subscribe() selv efter permission er 'granted'
+    let subscription;
+    try {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    } catch {
+      return 'blocked'; // browser tillader notifikationer men blokerer push
+    }
 
-    // Gem i DB — fejl her blokerer ikke: browseren har subscription'en
+    // Gem i DB — fejl her blokerer ikke
     try {
       const { endpoint, keys } = subscription.toJSON();
       await supabase.from('push_subscriptions').upsert(
@@ -55,6 +73,8 @@ export async function subscribeToPush(userId) {
 
     return 'granted';
   } catch (e) {
+    clearTimeout(timeoutId);
+    if (e.message === 'timeout') return 'timeout';
     console.warn('[push] subscribeToPush fejl:', e);
     return 'error';
   }
