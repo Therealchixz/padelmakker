@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { theme, font } from '../lib/platformTheme';
 import { AvatarCircle } from './AvatarCircle';
 import { X } from 'lucide-react';
+import { statsFromEloHistoryRows } from '../lib/eloHistoryUtils';
 
 const americanoOutcomeColors = {
   win: { bg: '#ECFDF5', border: '#A7F3D0', text: '#059669' },
@@ -20,6 +21,7 @@ interface PlayerStatsModalProps {
 export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsModalProps) {
   const [loading, setLoading] = useState(true);
   const [row, setRow] = useState<any>(null);
+  const [histStats, setHistStats] = useState<any>(null);
   const [fetchErr, setFetchErr] = useState(false);
 
   useEffect(() => {
@@ -28,19 +30,30 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
       setLoading(true);
       setFetchErr(false);
       setRow(null);
+      setHistStats(null);
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('full_name, name, avatar, elo_rating, games_played, games_won, americano_wins, americano_losses, americano_draws, americano_played')
-          .eq('id', userId)
-          .maybeSingle();
+        const [pRes, hRes] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('full_name, name, avatar, elo_rating, games_played, games_won, americano_wins, americano_losses, americano_draws, americano_played')
+            .eq('id', userId)
+            .maybeSingle(),
+          supabase
+            .from('elo_history')
+            .select('*')
+            .eq('user_id', userId)
+        ]);
+
         if (cancelled) return;
-        if (error) throw error;
-        setRow(data);
+        if (pRes.error) throw pRes.error;
+        
+        setRow(pRes.data);
+        if (hRes.data) {
+          setHistStats(statsFromEloHistoryRows(hRes.data));
+        }
       } catch {
         if (!cancelled) {
           setFetchErr(true);
-          setRow(null);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -49,9 +62,10 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
     return () => { cancelled = true; };
   }, [userId]);
 
-  const elo = Math.round(Number(row?.elo_rating) || 1000);
-  const padelGames = Number(row?.games_played) || 0;
-  const padelWins = Number(row?.games_won) || 0;
+  // Priority: history-based stats, fallback to profile columns
+  const elo = histStats?.elo ?? Math.round(Number(row?.elo_rating) || 1000);
+  const padelGames = histStats?.games ?? (Number(row?.games_played) || 0);
+  const padelWins = histStats?.wins ?? (Number(row?.games_won) || 0);
   
   const amW = Number(row?.americano_wins) || 0;
   const amL = Number(row?.americano_losses) || 0;

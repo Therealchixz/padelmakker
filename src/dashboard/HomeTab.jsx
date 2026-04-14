@@ -292,7 +292,7 @@ export function HomeTab({ user, setTab }) {
                         onClick={() => setViewTournament(row)}
                         style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#F59E0B", color: "#92400E" }}
                       >
-                        Se tabel
+                        Se resultat
                       </button>
                     </div>
                   );
