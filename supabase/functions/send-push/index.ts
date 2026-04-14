@@ -85,7 +85,26 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("VAPID_PRIVATE_KEY")!
     );
 
-    const payload = JSON.stringify({ title, body: body || "", matchId: matchId || null });
+    // Hent ulæst antal til app-ikon badge (bedste effort).
+    // Hvis denne query fejler, sender vi stadig push uden unreadCount.
+    let unreadCount: number | null = null;
+    try {
+      const { count } = await adminClient
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", targetUserId)
+        .eq("read", false);
+      if (typeof count === "number") unreadCount = count;
+    } catch (countErr) {
+      console.warn("unread count fejl:", countErr);
+    }
+
+    const payload = JSON.stringify({
+      title,
+      body: body || "",
+      matchId: matchId || null,
+      unreadCount,
+    });
     let sent = 0;
     const expiredEndpoints: string[] = [];
 
