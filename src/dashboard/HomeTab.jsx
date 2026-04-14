@@ -269,9 +269,9 @@ export function HomeTab({ user, setTab }) {
                   const winners = row.players.filter(p => p.win);
                   const losers = row.players.filter(p => !p.win);
                   return (
-                    <div key={`match-${i}`} style={{ background: theme.surface, borderRadius: "14px", padding: "18px", border: "1px solid " + theme.border, boxShadow: "0 4px 15px rgba(0,0,0,0.05)", position: "relative", overflow: "hidden" }}>
+                    <div key={`match-${i}`} style={{ background: theme.surface, borderRadius: "12px", padding: "12px 16px", border: "1px solid " + theme.border, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", position: "relative", overflow: "hidden" }}>
                       {/* Venue Header - Centered */}
-                      <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+                      <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
                         <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: "4px", background: "#F8FAFC", padding: "4px 10px", borderRadius: "20px", border: "1px solid #F1F5F9" }}>
                           <MapPin size={10} /> {row.court}
                         </div>
@@ -279,7 +279,7 @@ export function HomeTab({ user, setTab }) {
 
                       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         {/* Winners (Left) */}
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
                           {winners.map((p, idx) => (
                             <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                               <AvatarCircle avatar={p.avatar} size={36} emojiSize="20px" />
@@ -298,7 +298,7 @@ export function HomeTab({ user, setTab }) {
                         </div>
 
                         {/* Losers (Right) - Mirrored for symmetry but consistent avatar position */}
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px", alignItems: "flex-end" }}>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
                           {losers.map((p, idx) => (
                             <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", flexDirection: "row-reverse" }}>
                               <AvatarCircle avatar={p.avatar} size={36} emojiSize="20px" />
@@ -312,7 +312,7 @@ export function HomeTab({ user, setTab }) {
                       </div>
 
                       {row.description && (
-                        <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px dashed #E2E8F0", fontSize: "11px", color: theme.textMid, fontStyle: "italic", textAlign: "center" }}>
+                        <div style={{ marginTop: "10px", paddingTop: "8px", borderTop: "1px dashed #F1F5F9", fontSize: "11px", color: theme.textMid, fontStyle: "italic", textAlign: "center" }}>
                           "{row.description}"
                         </div>
                       )}
