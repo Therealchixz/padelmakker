@@ -4,6 +4,7 @@ import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platfo
 import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
+import { LEVELS, levelStringFromNum } from '../lib/platformConstants';
 
 export function AdminTab() {
   const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' or 'matches'
@@ -443,14 +444,20 @@ export function AdminTab() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Niveau (1-10)</label>
-                  <input 
-                    type="number" 
-                    step="0.1"
-                    value={editingUser.level} 
-                    onChange={(e) => setEditingUser({ ...editingUser, level: e.target.value })}
+                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Niveau</label>
+                  <select
+                    value={levelStringFromNum(editingUser.level) || ''}
+                    onChange={(e) => {
+                      const levelNum = parseFloat(e.target.value.match(/[\d.]+/)?.[0] || '0');
+                      setEditingUser({ ...editingUser, level: levelNum });
+                    }}
                     style={inputStyle}
-                  />
+                  >
+                    <option value="" disabled>Vælg niveau</option>
+                    {LEVELS.map((levelOption) => (
+                      <option key={levelOption} value={levelOption}>{levelOption}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Foretrukket side</label>
