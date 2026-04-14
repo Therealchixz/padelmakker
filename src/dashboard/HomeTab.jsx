@@ -1,16 +1,19 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { DateTime } from 'luxon';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, heading, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
+import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { Users, MapPin, Swords, Trophy, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PlayerStatsModal } from '../components/PlayerStatsModal';
 
 export function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
+  const navigate = useNavigate();
   const [viewTournament, setViewTournament] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
   const displayName = resolveDisplayName(user, authUser);
@@ -200,6 +203,12 @@ export function HomeTab({ user, setTab }) {
     { icon: <Trophy  size={20} color={theme.accent} />, title: "Se ranking",     desc: "Din placering",      tab: "ranking" },
   ];
 
+  const goToMatchFromFeed = useCallback((matchId) => {
+    if (!matchId) return;
+    mergeKampeSessionPrefs(user.id, { scope: 'alle' });
+    navigate(`/dashboard/kampe?focus=${encodeURIComponent(String(matchId))}`);
+  }, [navigate, user.id]);
+
   return (
     <div>
       <h2 style={{ ...heading("clamp(22px,5vw,26px)"), marginBottom: "4px" }}>Hej {firstName}! 👋</h2>
@@ -285,7 +294,7 @@ export function HomeTab({ user, setTab }) {
                         </div>
                         {row.tournamentName && (
                           <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            "{row.tournamentName}" · {formatTimeAgo(row.created_at)}
+                            &ldquo;{row.tournamentName}&rdquo; · {formatTimeAgo(row.created_at)}
                           </div>
                         )}
                       </div>
@@ -351,9 +360,14 @@ export function HomeTab({ user, setTab }) {
 
                       {row.description && (
                         <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: "1px dashed #F1F5F9", fontSize: "11px", color: theme.textMid, fontStyle: "italic", textAlign: "center" }}>
-                          "{row.description}"
+                          &ldquo;{row.description}&rdquo;
                         </div>
                       )}
+                      <div style={{ display: "flex", justifyContent: "center", marginTop: "8px" }}>
+                        <button onClick={() => goToMatchFromFeed(row.match_id)} style={{ ...btn(false), padding: "4px 10px", fontSize: "11px" }}>
+                          Åben kamp
+                        </button>
+                      </div>
                     </div>
                   );
                 }
