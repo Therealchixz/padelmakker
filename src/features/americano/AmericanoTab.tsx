@@ -601,8 +601,9 @@ export function AmericanoTab({
     )
   }
 
-  const playingAmericanos = rows.filter((t) => t.status === 'playing')
-  const completedAmericanos = rows.filter((t) => t.status === 'completed')
+  // These were unfiltered - removing to avoid confusion
+  // const playingAmericanos = rows.filter((t) => t.status === 'playing')
+  // const completedAmericanos = rows.filter((t) => t.status === 'completed')
 
   // Filtering based on scope and search
   const filteredRows = rows.filter(t => {
@@ -713,8 +714,8 @@ export function AmericanoTab({
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
         {[
           { id: 'open' as const, label: `Åbne (${openAmericanos.length})` },
-          { id: 'playing' as const, label: `I gang (${playingAmericanos.length})` },
-          { id: 'completed' as const, label: `Afsluttede (${completedAmericanos.length})` },
+          { id: 'playing' as const, label: `I gang (${playingAmericanosFiltered.length})` },
+          { id: 'completed' as const, label: `Afsluttede (${completedAmericanosFiltered.length})` },
         ].map((tab) => (
           <button
             key={tab.id}
