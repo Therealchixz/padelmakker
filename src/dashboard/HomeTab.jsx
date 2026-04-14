@@ -5,7 +5,7 @@ import { font, theme, heading, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
-import { Users, MapPin, Swords, Trophy, X, Trophy as TrophyIcon } from 'lucide-react';
+import { Users, MapPin, Swords, Trophy, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PlayerStatsModal } from '../components/PlayerStatsModal';
 
