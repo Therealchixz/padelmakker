@@ -772,28 +772,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>
       ) : (
       <>
-      {kampeFormat === "americano" && (
-        <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser Americano…</div>}>
-        <AmericanoTab
-          profile={user}
-          showToast={showToast}
-          embedInKampe
-          createOpen={showAmericanoCreate}
-          onCreateOpenChange={setShowAmericanoCreate}
-          initialSubTab={(() => {
-            const s = readKampeSessionPrefs(user.id);
-            if (s?.americanoView === "open" || s?.americanoView === "playing" || s?.americanoView === "completed") {
-              return s.americanoView;
-            }
-            return undefined;
-          })()}
-          onAmericanoSubTabChange={persistAmericanoSubTab}
-        />
-        </Suspense>
-      )}
-
-      {kampeFormat === "padel" && (
-      <>
       {/* Scope tabs: Mine kampe / Alle kampe */}
       <div style={{ display: "flex", marginBottom: "12px", borderRadius: "8px", overflow: "hidden", border: "1px solid " + theme.border }}>
         {[
@@ -825,30 +803,52 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         ))}
       </div>
 
-      {/* Search field for Alle kampe */}
-      {kampeScope === "alle" && (
-        <div style={{ position: "relative", marginBottom: "12px" }}>
-          <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: theme.textLight }} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Søg spiller, bane eller beskrivelse…"
-            style={{
-              width: "100%",
-              padding: "10px 12px 10px 36px",
-              borderRadius: "8px",
-              border: "1px solid " + theme.border,
-              fontSize: "13px",
-              fontFamily: "inherit",
-              background: theme.surface,
-              outline: "none",
-              boxSizing: "border-box",
-            }}
-          />
-        </div>
+      {/* Search field - always visible */}
+      <div style={{ position: "relative", marginBottom: "12px" }}>
+        <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: theme.textLight }} />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Søg spiller, bane eller beskrivelse…"
+          style={{
+            width: "100%",
+            padding: "10px 12px 10px 36px",
+            borderRadius: "8px",
+            border: "1px solid " + theme.border,
+            fontSize: "13px",
+            fontFamily: "inherit",
+            background: theme.surface,
+            outline: "none",
+            boxSizing: "border-box",
+          }}
+        />
+      </div>
+
+      {kampeFormat === "americano" && (
+        <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser Americano…</div>}>
+        <AmericanoTab
+          profile={user}
+          showToast={showToast}
+          embedInKampe
+          createOpen={showAmericanoCreate}
+          onCreateOpenChange={setShowAmericanoCreate}
+          scope={kampeScope}
+          searchQuery={searchQuery}
+          initialSubTab={(() => {
+            const s = readKampeSessionPrefs(user.id);
+            if (s?.americanoView === "open" || s?.americanoView === "playing" || s?.americanoView === "completed") {
+              return s.americanoView;
+            }
+            return undefined;
+          })()}
+          onAmericanoSubTabChange={persistAmericanoSubTab}
+        />
+        </Suspense>
       )}
 
+      {kampeFormat === "padel" && (
+      <>
       <div style={{ display: "flex", gap: "6px", marginBottom: "16px", flexWrap: "wrap" }}>
         {[
           { id: "open", label: `Åbne (${openMatches.length})` },

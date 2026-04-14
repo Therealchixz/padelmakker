@@ -60,6 +60,9 @@ type Props = {
   /** Styret opret-formular (sammen med onCreateOpenChange) */
   createOpen?: boolean
   onCreateOpenChange?: (open: boolean) => void
+  /** Filtrering fra overordnet Kampe-fane */
+  scope?: 'mine' | 'alle'
+  searchQuery?: string
 }
 
 type ParticipantListRow = {
@@ -272,8 +275,10 @@ export function AmericanoTab({
   initialSubTab,
   onAmericanoSubTabChange,
   embedInKampe,
-  createOpen: createOpenProp,
+  createOpen,
   onCreateOpenChange,
+  scope = 'mine',
+  searchQuery = '',
 }: Props) {
   const { user: authUser, refreshProfileQuiet } = useAuth()
   const authEmail =
@@ -596,15 +601,43 @@ export function AmericanoTab({
     )
   }
 
-  const openAmericanos = rows.filter((t) => t.status === 'registration')
   const playingAmericanos = rows.filter((t) => t.status === 'playing')
   const completedAmericanos = rows.filter((t) => t.status === 'completed')
+
+  // Filtering based on scope and search
+  const filteredRows = rows.filter(t => {
+    // 1. Scope filter
+    if (scope === 'mine') {
+      if (!joinedIds.has(t.id)) return false
+    }
+
+    // 2. Search filter
+    if (searchQuery && searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      const tName = (t.name || '').toLowerCase()
+      if (tName.includes(q)) return true
+
+      const parts = participantsByTournament[t.id] || []
+      const hasPartMatch = parts.some(p => (p.display_name || '').toLowerCase().includes(q))
+      if (hasPartMatch) return true
+
+      return false
+    }
+
+    return true
+  })
+
+  // Group by status after filtering
+  const openAmericanos = filteredRows.filter((t) => t.status === 'registration')
+  const playingAmericanosFiltered = filteredRows.filter((t) => t.status === 'playing')
+  const completedAmericanosFiltered = filteredRows.filter((t) => t.status === 'completed')
+
   const visibleRows =
     americanoView === 'open'
       ? openAmericanos
       : americanoView === 'playing'
-        ? playingAmericanos
-        : completedAmericanos
+        ? playingAmericanosFiltered
+        : completedAmericanosFiltered
 
   const subTabBtn = (active: boolean) =>
     ({
