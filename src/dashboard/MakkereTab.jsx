@@ -72,7 +72,8 @@ export function MakkereTab({ user, showToast }) {
   const loadPlayers = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await Profile.filter();
+      // Vi henter kun spillere der IKKE er udelukket
+      const data = await Profile.filter({ is_banned: false });
       const list = (data || []).filter((p) => p.id !== user.id);
       setPlayers(list);
       const ids = list.map((p) => p.id);
