@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v5-push';
+const VERSION = 'padelmakker-sw-v6-badge';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -35,6 +35,7 @@ self.addEventListener('push', (event) => {
         renotify: true,
         data: { matchId: data.matchId },
       }),
+
       (async () => {
         // App icon badge (hvis browser/OS understøtter Badging API)
         try {
@@ -48,6 +49,7 @@ self.addEventListener('push', (event) => {
           /* ignorer badge fejl */
         }
       })(),
+
     ])
   );
 });
@@ -61,16 +63,18 @@ self.addEventListener('notificationclick', (event) => {
     : '/dashboard';
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      /* Fokusér eksisterende fane hvis muligt */
-      for (const client of clients) {
-        if (client.url.includes('/dashboard') && 'focus' in client) {
-          client.navigate(url);
-          return client.focus();
+    Promise.all([
+      // Ryd badge når brugeren klikker notifikationen
+      self.navigator?.clearAppBadge?.().catch?.(() => {}),
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+        for (const client of clients) {
+          if (client.url.includes('/dashboard') && 'focus' in client) {
+            client.navigate(url);
+            return client.focus();
+          }
         }
-      }
-      /* Ellers åbn ny fane */
-      if (self.clients.openWindow) return self.clients.openWindow(url);
-    })
+        if (self.clients.openWindow) return self.clients.openWindow(url);
+      }),
+    ])
   );
 });
