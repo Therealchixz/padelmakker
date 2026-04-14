@@ -361,7 +361,9 @@ export function HomeTab({ user, setTab }) {
                         {row.tournamentName && (
                           <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             &ldquo;{row.tournamentName}&rdquo; · {formatTimeAgo(row.created_at)}
+
                             {row.marginToSecond > 0 ? ` · +${row.marginToSecond} til #2` : ''}
+
                           </div>
                         )}
                       </div>
