@@ -735,9 +735,35 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           {mr && !mr.confirmed && (isPlayerInMatch || isAdmin) && (
             <div style={{ display: "flex", gap: "8px" }}>
               {(isAdmin || mr.submitted_by !== user.id) && (
-                <button onClick={() => confirmResult(m.id)} disabled={busy} style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px" }}>✅ Bekræft</button>
+                <button 
+                  onClick={() => confirmResult(m.id)} 
+                  disabled={busy} 
+                  style={{ 
+                    ...btn(true), 
+                    flex: 1, 
+                    justifyContent: "center", 
+                    fontSize: "13px",
+                    background: isAdmin ? theme.warm : theme.accent,
+                    borderColor: isAdmin ? theme.warm : theme.accent
+                  }}
+                >
+                  ✅ Bekræft {isAdmin && "(Admin)"}
+                </button>
               )}
-              <button onClick={() => rejectResult(m.id)} disabled={busy} style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.red }}>❌ {isAdmin ? "Slet" : "Afvis"}</button>
+              <button 
+                onClick={() => rejectResult(m.id)} 
+                disabled={busy} 
+                style={{ 
+                  ...btn(false), 
+                  flex: 1, 
+                  justifyContent: "center", 
+                  fontSize: "13px", 
+                  color: isAdmin ? theme.warm : theme.red,
+                  borderColor: isAdmin ? theme.warm : theme.red + "55"
+                }}
+              >
+                ❌ {isAdmin ? "Slet (Admin)" : "Afvis"}
+              </button>
             </div>
           )}
           {joined && !isCreator && (status === "open" || status === "full") && (
