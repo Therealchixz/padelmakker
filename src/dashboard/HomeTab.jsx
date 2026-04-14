@@ -141,6 +141,7 @@ export function HomeTab({ user, setTab }) {
         })).sort((a, b) => b.points - a.points);
 
         return {
+          type: 'americano_winner',
           userId: bestPart.user_id,
           name: bestPart.display_name,
           points: bestPts,
