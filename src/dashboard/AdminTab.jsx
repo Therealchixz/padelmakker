@@ -33,6 +33,7 @@ export function AdminTab() {
     const { data, error } = await supabase
       .from('matches')
       .select('*, match_results(*), match_players(*, profiles(full_name))')
+      .order('completed_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .limit(50);
     if (!error) setMatches(data || []);
@@ -340,7 +341,7 @@ export function AdminTab() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                   <div>
                     <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "2px" }}>
-                       {formatEloHistoryDate(m.created_at)} • {m.court_name || "Ukendt bane"}
+                       {m.completed_at ? `Spillet: ${formatEloHistoryDate(m.completed_at)}` : `Oprettet: ${formatEloHistoryDate(m.created_at)}`} • {m.court_name || "Ukendt bane"}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "10px", fontWeight: 800, padding: "2px 6px", borderRadius: "4px", background: statusColor + "15", color: statusColor, textTransform: "uppercase" }}>

@@ -71,7 +71,7 @@ BEGIN
   SELECT COUNT(*) INTO v_count_p FROM match_players WHERE match_id = v_mr.match_id;
   IF v_count_p < 4 THEN
     -- Vi afslutter kampen alligevel, da den er indsendt
-    UPDATE matches SET status = 'completed' WHERE id = v_mr.match_id;
+    UPDATE matches SET status = 'completed', completed_at = now() WHERE id = v_mr.match_id;
     RETURN jsonb_build_object(
       'success', true, 
       'players_updated', 0, 
@@ -177,7 +177,7 @@ BEGIN
     END IF;
   END LOOP;
 
-  UPDATE matches SET status = 'completed' WHERE id = v_mr.match_id;
+  UPDATE matches SET status = 'completed', completed_at = now() WHERE id = v_mr.match_id;
 
   RETURN jsonb_build_object(
     'success', true,
