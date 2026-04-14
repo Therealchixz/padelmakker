@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v5-push';
+const VERSION = 'padelmakker-sw-v6-push-badge';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -20,20 +20,35 @@ self.addEventListener('activate', (event) => {
 
 /* ── Push notification modtaget fra server ── */
 self.addEventListener('push', (event) => {
-  let data = { title: 'PadelMakker', body: 'Du har en ny notifikation', matchId: null };
+  let data = { title: 'PadelMakker', body: 'Du har en ny notifikation', matchId: null, unreadCount: null };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch { /* brug default */ }
 
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      tag: data.matchId ? 'match-' + data.matchId : 'pm-notif',
-      renotify: true,
-      data: { matchId: data.matchId },
-    })
+    Promise.all([
+      self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: data.matchId ? 'match-' + data.matchId : 'pm-notif',
+        renotify: true,
+        data: { matchId: data.matchId },
+      }),
+      (async () => {
+        // App icon badge (hvis browser/OS understøtter Badging API)
+        try {
+          if (!self.navigator || !('setAppBadge' in self.navigator)) return;
+          if (typeof data.unreadCount === 'number' && data.unreadCount >= 0) {
+            await self.navigator.setAppBadge(data.unreadCount);
+          } else {
+            await self.navigator.setAppBadge();
+          }
+        } catch {
+          /* ignorer badge fejl */
+        }
+      })(),
+    ])
   );
 });
 
