@@ -70,20 +70,31 @@ export function AdminTab() {
     e.preventDefault();
     if (!editingUser) return;
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: editingUser.full_name,
-        name: editingUser.full_name,
-        elo_rating: Number(editingUser.elo_rating)
-      })
-      .eq('id', editingUser.id);
+    try {
+      // 1. Update Name standard way
+      const { error: nameErr } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editingUser.full_name,
+          name: editingUser.full_name,
+        })
+        .eq('id', editingUser.id);
 
-    if (error) {
-      alert('Fejl ved opdatering: ' + error.message);
-    } else {
+      if (nameErr) throw nameErr;
+
+      // 2. Update ELO via specialized RPC (to handle history sync)
+      const { error: eloErr } = await supabase
+        .rpc('admin_adjust_elo', { 
+          p_user_id: editingUser.id, 
+          p_new_elo: Number(editingUser.elo_rating) 
+        });
+
+      if (eloErr) throw eloErr;
+
       setEditingUser(null);
       fetchUsers();
+    } catch (err) {
+      alert('Fejl ved opdatering: ' + err.message);
     }
   };
 
