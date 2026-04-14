@@ -9,7 +9,6 @@ import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
 import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
-import { americanoOutcomeColors } from './americanoOutcomeColors'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 
 import { isAvatarUrl } from '../../lib/avatarUpload'
