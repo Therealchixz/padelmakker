@@ -4,7 +4,9 @@ import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platfo
 import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
-import { LEVELS, levelStringFromNum } from '../lib/platformConstants';
+
+import { LEVELS, PLAY_STYLES, REGIONS, levelStringFromNum } from '../lib/platformConstants';
+
 
 export function AdminTab() {
   const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' or 'matches'
@@ -476,23 +478,30 @@ export function AdminTab() {
 
               <div>
                 <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Område</label>
-                <input 
-                  type="text" 
-                  value={editingUser.area || ''} 
+                <select
+                  value={editingUser.area || ''}
                   onChange={(e) => setEditingUser({ ...editingUser, area: e.target.value })}
                   style={inputStyle}
-                  placeholder="F.eks. Region Nordjylland"
-                />
+                >
+                  <option value="" disabled>Vælg område</option>
+                  {REGIONS.map((regionOption) => (
+                    <option key={regionOption} value={regionOption}>{regionOption}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
                 <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Spillestil</label>
-                <input 
-                  type="text" 
-                  value={editingUser.play_style || ''} 
+                <select
+                  value={editingUser.play_style || ''}
                   onChange={(e) => setEditingUser({ ...editingUser, play_style: e.target.value })}
                   style={inputStyle}
-                />
+                >
+                  <option value="" disabled>Vælg spillestil</option>
+                  {PLAY_STYLES.map((styleOption) => (
+                    <option key={styleOption} value={styleOption}>{styleOption}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
