@@ -6,17 +6,12 @@
 -- Problem A — multiple_permissive_policies (0006)
 --   I har ofte BÅDE engelsk- OG dansk-navngivne policies med samme formål.
 --   Postgres evaluerer ALLE permissive policies pr. rolle/handling → langsommere.
---   Løsning: behold ÉN policy pr. (tabel, kommando, hensigt). Her fjernes de
---   engelske navne der matcher par fra jeres advisor-udskrift.
+--   Løsning: behold ÉN policy pr. (tabel, kommando, hensigt).
 --
 -- Problem B — auth_rls_initplan (0003)
 --   I USING / WITH CHECK: skriv (select auth.uid()) i stedet for auth.uid()
---   (samme for auth.jwt(), auth.role(), current_setting(...) når det bruges i RLS).
+--   (samme idé for auth.jwt(), auth.role(), current_setting(...) i RLS).
 --   Se: https://supabase.com/docs/guides/database/postgres/row-level-security#call-functions-with-select
---
---   Denne fil retter IKKE automatisk alle udtryk (kræver jeres præcise SQL).
---   Efter DEL 1: eksporter policies og ret manuelt ELLER brug Dashboard → Authentication →
---   erstat i hver policy. Brug forespørgslen under DEL 2 til at se qual/with_check.
 -- =============================================================================
 
 -- ─── DEL 1: Fjern engelske dubletter (behold danske "Brugere / Alle kan / …") ───
@@ -53,30 +48,70 @@ DROP POLICY IF EXISTS "Profiles viewable by everyone" ON public.profiles;
 -- DROP POLICY IF EXISTS profiles_select_authenticated ON public.profiles;
 -- (Fjern kommentar kun hvis qual matcher "Alle kan læse profiler" — tjek DEL 2 først.)
 
--- OBS match_players DELETE: Efter drop af "Can leave match" kan I stadig have
--- to DELETE-policies (afmelding + opretter fjerner spillere). Linter kan stadig
--- klage — så merge til ÉN policy med OR i USING, eller accepter warning.
 
+-- ─── DEL 2: Find policies der stadig bruger auth.uid() uden SELECT ───
 
--- ─── DEL 2: Liste alle public RLS policies (kopier qual/with_check ind i editor og ret) ───
+-- Kør denne SELECT alene for at finde kandidater til initplan-fix.
+-- Brug resultatet til at lave DROP POLICY + CREATE POLICY med samme logik,
+-- men skift auth.uid() → (select auth.uid()).
 
--- Kør denne SELECT alene; ret derefter hver policy i Dashboard eller med
--- DROP POLICY + CREATE POLICY hvor auth.uid() → (select auth.uid()) osv.
-
--- SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check
+-- SELECT schemaname,
+--        tablename,
+--        policyname,
+--        cmd,
+--        qual,
+--        with_check
 -- FROM pg_policies
 -- WHERE schemaname = 'public'
+--   AND (
+--     coalesce(qual, '') ILIKE '%auth.uid()%'
+--     OR coalesce(with_check, '') ILIKE '%auth.uid()%'
+--   )
 -- ORDER BY tablename, policyname;
 
 
--- ─── DEL 3: Eksempel på initplan-fix (skabelon — tilpas til jeres kolonnenavne) ───
+-- ─── DEL 3: Skabeloner til hurtig re-create med initplan-fix ───
 
--- Før (langsom pr. række):
---   USING (auth.uid() = user_id)
--- Efter:
---   USING ((select auth.uid()) = user_id)
+-- Eksempel A: profiles_update_own
+-- DROP POLICY IF EXISTS profiles_update_own ON public.profiles;
+-- CREATE POLICY profiles_update_own
+--   ON public.profiles
+--   FOR UPDATE
+--   TO authenticated
+--   USING ((select auth.uid()) = id OR public.is_admin())
+--   WITH CHECK ((select auth.uid()) = id OR public.is_admin());
 
--- Før:
---   WITH CHECK (auth.uid() = id)
--- Efter:
---   WITH CHECK ((select auth.uid()) = id)
+-- Eksempel B: matches_delete_creator_or_admin
+-- DROP POLICY IF EXISTS matches_delete_creator_or_admin ON public.matches;
+-- CREATE POLICY matches_delete_creator_or_admin
+--   ON public.matches
+--   FOR DELETE
+--   TO authenticated
+--   USING (
+--     (select auth.uid()) = creator_id
+--     OR public.is_admin()
+--   );
+
+
+-- ─── DEL 4: Match players DELETE (samlet policy i stedet for to permissive) ───
+
+-- Brug denne hvis linter stadig klager på match_players DELETE.
+-- Idé: saml "spiller melder sig selv af" + "opretter fjerner spiller" i ÉN policy.
+
+-- DROP POLICY IF EXISTS match_players_delete_self ON public.match_players;
+-- DROP POLICY IF EXISTS "Can leave match" ON public.match_players;
+-- DROP POLICY IF EXISTS "Creators can remove all players from own match" ON public.match_players;
+--
+-- CREATE POLICY match_players_delete_self_or_creator
+--   ON public.match_players
+--   FOR DELETE
+--   TO authenticated
+--   USING (
+--     (select auth.uid()) = user_id
+--     OR EXISTS (
+--       SELECT 1
+--       FROM public.matches m
+--       WHERE m.id = match_players.match_id
+--         AND m.creator_id = (select auth.uid())
+--     )
+--   );

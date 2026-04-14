@@ -385,7 +385,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     finally { setBusyId(null); }
   };
 
-  const kickPlayer = async (matchId, targetUserId) => {
+  const kickPlayer = async (matchId, targetUserId, targetName = "spilleren") => {
+    const label = String(targetName || "spilleren").trim();
+    const actor = isAdmin ? "admin" : "kampopretter";
+    if (!window.confirm(`Er du sikker på, at du vil smide ${label} ud af kampen som ${actor}?`)) return;
+
     setBusyId(matchId + '-kick-' + targetUserId);
     try {
       const { error } = await supabase.from("match_players").delete()
@@ -640,7 +644,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 {t1Avg === null && <div style={{ height: "6px" }} />}
                 <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
                   {t1.map(p => {
-                    const canKick = isCreator && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
+                    const canKick = (isCreator || isAdmin) && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
                     const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
                     return (
                       <div key={p.id || p.user_id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
@@ -650,7 +654,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                           <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700 }}>{playerElo(p)}</span>
                         </div>
                         {canKick && (
-                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id); }} disabled={kickingBusy}
+                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy}
                             style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
                             ×
                           </button>
@@ -677,7 +681,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 {t2Avg === null && <div style={{ height: "6px" }} />}
                 <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
                   {t2.map(p => {
-                    const canKick = isCreator && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
+                    const canKick = (isCreator || isAdmin) && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
                     const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
                     return (
                       <div key={p.id || p.user_id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
@@ -687,7 +691,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                           <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700 }}>{playerElo(p)}</span>
                         </div>
                         {canKick && (
-                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id); }} disabled={kickingBusy}
+                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy}
                             style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
                             ×
                           </button>
