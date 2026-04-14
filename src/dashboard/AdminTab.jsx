@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { theme, font, btn, inputStyle, heading } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
 
@@ -11,6 +11,7 @@ export function AdminTab() {
   const [users, setUsers] = useState([]);
   const [matches, setMatches] = useState([]);
   const [search, setSearch] = useState('');
+  const [editingUser, setEditingUser] = useState(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -63,6 +64,27 @@ export function AdminTab() {
       .eq('id', matchId);
     
     if (!error) fetchMatches();
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: editingUser.full_name,
+        name: editingUser.full_name,
+        elo_rating: Number(editingUser.elo_rating)
+      })
+      .eq('id', editingUser.id);
+
+    if (error) {
+      alert('Fejl ved opdatering: ' + error.message);
+    } else {
+      setEditingUser(null);
+      fetchUsers();
+    }
   };
 
   const filteredUsers = users.filter(u => 
@@ -132,13 +154,22 @@ export function AdminTab() {
                       </span>
                     </td>
                     <td style={{ padding: "12px", textAlign: "right" }}>
-                      <button 
-                        onClick={() => toggleAdmin(u)}
-                        title={u.role === 'admin' ? "Fjern admin" : "Gør til admin"}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: u.role === 'admin' ? theme.red : theme.accent }}
-                      >
-                        {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
-                      </button>
+                      <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                        <button 
+                          onClick={() => setEditingUser({ ...u })}
+                          title="Rediger spiller"
+                          style={{ background: "none", border: "none", cursor: "pointer", color: theme.accent }}
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button 
+                          onClick={() => toggleAdmin(u)}
+                          title={u.role === 'admin' ? "Fjern admin" : "Gør til admin"}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: u.role === 'admin' ? theme.red : theme.accent }}
+                        >
+                          {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -168,6 +199,46 @@ export function AdminTab() {
           ))}
         </div>
       )}
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(4px)" }}>
+          <div style={{ background: "#fff", borderRadius: "16px", padding: "24px", maxWidth: "380px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.18)", position: "relative" }}>
+            <button onClick={() => setEditingUser(null)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", color: "#64748B", cursor: "pointer" }}>
+              <X size={20} />
+            </button>
+            <h3 style={{ ...heading("18px"), marginBottom: "20px" }}>Rediger Spiller</h3>
+            
+            <form onSubmit={handleUpdateUser} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div>
+                <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>Fulde Navn</label>
+                <input 
+                  type="text" 
+                  value={editingUser.full_name} 
+                  onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
+                  style={inputStyle}
+                  required 
+                />
+              </div>
+              <div>
+                <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>ELO Rating</label>
+                <input 
+                  type="number" 
+                  value={editingUser.elo_rating} 
+                  onChange={(e) => setEditingUser({ ...editingUser, elo_rating: e.target.value })}
+                  style={inputStyle}
+                  required 
+                />
+              </div>
+              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                <button type="button" onClick={() => setEditingUser(null)} style={{ ...btn(false), flex: 1 }}>Annuller</button>
+                <button type="submit" style={{ ...btn(true), flex: 1 }}>Gem ændringer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
