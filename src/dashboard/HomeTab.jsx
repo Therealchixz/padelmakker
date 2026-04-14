@@ -33,6 +33,7 @@ export function HomeTab({ user, setTab }) {
       .select('user_id, result, change, date, created_at, match_id, profiles(full_name, name, avatar)')
       .neq('change', 0)
       .not('change', 'is', null)
+      .neq('result', 'adjustment')
       .order('created_at', { ascending: false, nullsFirst: false })
       .limit(40);
     
