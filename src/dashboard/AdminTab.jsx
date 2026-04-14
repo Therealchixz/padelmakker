@@ -7,7 +7,7 @@ import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
 
 export function AdminTab() {
   const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' or 'matches'
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [matches, setMatches] = useState([]);
   const [search, setSearch] = useState('');
@@ -160,7 +160,7 @@ export function AdminTab() {
       : <ChevronDown size={12} style={{ marginLeft: '4px', color: theme.accent }} />;
   };
 
-  const thStyle = (key) => ({
+  const thStyle = () => ({
     padding: "12px", 
     fontSize: "12px", 
     color: theme.textMid, 
@@ -231,13 +231,13 @@ export function AdminTab() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ textAlign: "left", background: "#F8FAFC", borderBottom: "1px solid " + theme.border }}>
-                    <th style={thStyle('full_name')} onClick={() => requestSort('full_name')}>
+                    <th style={thStyle()} onClick={() => requestSort('full_name')}>
                       <div style={{ display: "flex", alignItems: "center" }}>SPILLER <SortIcon columnKey="full_name" /></div>
                     </th>
-                    <th style={thStyle('elo_rating')} onClick={() => requestSort('elo_rating')}>
+                    <th style={thStyle()} onClick={() => requestSort('elo_rating')}>
                       <div style={{ display: "flex", alignItems: "center" }}>ELO <SortIcon columnKey="elo_rating" /></div>
                     </th>
-                    <th style={thStyle('role')} onClick={() => requestSort('role')}>
+                    <th style={thStyle()} onClick={() => requestSort('role')}>
                       <div style={{ display: "flex", alignItems: "center" }}>ROLLE <SortIcon columnKey="role" /></div>
                     </th>
                     <th style={{ padding: "12px", fontSize: "12px", color: theme.textMid, textAlign: "right" }}>HANDLING</th>
@@ -540,4 +540,3 @@ export function AdminTab() {
     </div>
   );
 }
-
