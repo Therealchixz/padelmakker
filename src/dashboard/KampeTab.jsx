@@ -716,15 +716,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               {isFull ? "🎾 Start kamp" : isAdmin ? "⚡ Gennemtving start (Admin)" : "🎾 Venter på spillere (2 mod 2)"}
             </button>
           )}
-          {status === "in_progress" && isPlayerInMatch && !mr && (
+          {status === "in_progress" && (isPlayerInMatch || isAdmin) && !mr && (
             <button onClick={() => setResultMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>
-              📊 Indrapportér resultat
+              📊 Indrapportér resultat {isAdmin && !isPlayerInMatch && "(Admin)"}
             </button>
           )}
-          {mr && !mr.confirmed && mr.submitted_by !== user.id && isPlayerInMatch && (
+          {mr && !mr.confirmed && (isPlayerInMatch || isAdmin) && (
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={() => confirmResult(m.id)} disabled={busy} style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px" }}>✅ Bekræft</button>
-              <button onClick={() => rejectResult(m.id)} disabled={busy} style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.red }}>❌ Afvis</button>
+              {(isAdmin || mr.submitted_by !== user.id) && (
+                <button onClick={() => confirmResult(m.id)} disabled={busy} style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px" }}>✅ Bekræft</button>
+              )}
+              <button onClick={() => rejectResult(m.id)} disabled={busy} style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.red }}>❌ {isAdmin ? "Slet" : "Afvis"}</button>
             </div>
           )}
           {joined && !isCreator && (status === "open" || status === "full") && (
