@@ -275,7 +275,7 @@ export function LandingPage() {
 
       <footer className="pm-landing-footer" style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(24px,6vw,36px) clamp(16px,4vw,24px)", fontSize: "13px", color: theme.textLight, flexDirection: "column", alignItems: "stretch", gap: "20px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "16px", width: "100%" }}>
-          <span style={{ fontWeight: 500 }}>© 2026 PadelMakker</span>
+          <span style={{ fontWeight: 500 }}>© 2026 PadelMakker &nbsp;·&nbsp; CVR-nr. 46403193</span>
           <span style={{ display: "flex", flexWrap: "wrap", gap: "12px 20px", justifyContent: "center" }}>
             <a href="mailto:kontakt@padelmakker.dk" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
               kontakt@padelmakker.dk
