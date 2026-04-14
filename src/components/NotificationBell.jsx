@@ -5,6 +5,13 @@ import { supabase } from '../lib/supabase';
 import { font, theme } from '../lib/platformTheme';
 import { Bell, CheckCheck, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
+import {
+  isPushSupported,
+  getPushPermission,
+  subscribeToPush,
+  unsubscribeFromPush,
+  isPushSubscribed,
+} from '../lib/pushNotifications';
 
 const DISMISSED_MAX = 400;
 
@@ -45,6 +52,11 @@ export function NotificationBell() {
   const [notifs, setNotifs] = useState([]);
   const [confirmClear, setConfirmClear] = useState(false);
   const panelRef = useRef(null);
+
+  // Push notification opt-in state
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
 
   const unreadCount = notifs.filter(n => !n.read).length;
 
@@ -90,6 +102,13 @@ export function NotificationBell() {
       });
     return () => { try { supabase.removeChannel(channel); } catch { /* ignore */ } };
   }, [userId, load]);
+
+  // Tjek om push er understøttet og allerede aktiveret
+  useEffect(() => {
+    if (!isPushSupported()) return;
+    setPushSupported(true);
+    isPushSubscribed().then(setPushSubscribed);
+  }, [userId]);
 
   useEffect(() => {
     if (!open) return;
@@ -188,6 +207,22 @@ export function NotificationBell() {
     }
   };
 
+  const handleEnablePush = async () => {
+    if (!userId || pushLoading) return;
+    setPushLoading(true);
+    const result = await subscribeToPush(userId);
+    if (result === 'granted') setPushSubscribed(true);
+    setPushLoading(false);
+  };
+
+  const handleDisablePush = async () => {
+    if (pushLoading) return;
+    setPushLoading(true);
+    await unsubscribeFromPush();
+    setPushSubscribed(false);
+    setPushLoading(false);
+  };
+
   const iconBtn = {
     background: "none",
     border: "none",
@@ -264,6 +299,24 @@ export function NotificationBell() {
               )}
             </div>
           </div>
+
+          {/* Push opt-in / opt-out banner */}
+          {pushSupported && getPushPermission() !== 'denied' && (
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "16px" }}>🔔</span>
+              <span style={{ flex: 1, fontSize: "12px", color: theme.textMid, lineHeight: 1.4 }}>
+                {pushSubscribed ? "Push-beskeder er aktiveret" : "Få push-beskeder selv når du ikke er på siden"}
+              </span>
+              <button
+                type="button"
+                onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
+                disabled={pushLoading}
+                style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : "#fff", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: pushLoading ? "default" : "pointer", opacity: pushLoading ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
+              >
+                {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
+              </button>
+            </div>
+          )}
 
           <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
             {notifs.length === 0 ? (
