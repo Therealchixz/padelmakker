@@ -4,11 +4,12 @@ import { font, theme, heading } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
-import { Users, MapPin, Swords, Trophy } from 'lucide-react';
+import { Users, MapPin, Swords, Trophy, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 
 export function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
+  const [viewTournament, setViewTournament] = useState(null);
   const displayName = resolveDisplayName(user, authUser);
   const firstName   = displayName.split(/\s+/)[0];
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
@@ -78,11 +79,21 @@ export function HomeTab({ user, setTab }) {
           if (pts > bestPts) { bestPts = pts; bestPart = p; }
         });
         if (!bestPart) return null;
+
+        const leaderboard = tParts.map(p => ({
+          name: p.display_name,
+          points: totals[p.id] || 0,
+          userId: p.user_id,
+          avatar: avatarMap[String(p.user_id)] || '🎾'
+        })).sort((a, b) => b.points - a.points);
+
         return {
           type: 'americano_winner',
           name: bestPart.display_name,
           points: bestPts,
           tournamentName: t.name,
+          tournamentId: t.id,
+          leaderboard: leaderboard,
           avatar: avatarMap[String(bestPart.user_id)] || '🏆',
           created_at: t.updated_at || t.tournament_date,
         };
@@ -174,7 +185,7 @@ export function HomeTab({ user, setTab }) {
                   return (
                     <div
                       key={`am-${i}`}
-                      onClick={() => setTab("kampe")}
+                      onClick={() => setViewTournament(row)}
                       style={{
                         display: "flex", alignItems: "center", gap: "10px",
                         background: "linear-gradient(135deg, #FFFBEB, #FEF3C7)",
@@ -246,6 +257,48 @@ export function HomeTab({ user, setTab }) {
           </button>
         ))}
       </div>
+
+      {/* Tournament Results Modal */}
+      {viewTournament && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }} onClick={() => setViewTournament(null)}>
+          <div style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "400px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Americano Resultat</div>
+                <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewTournament.tournamentName}</h3>
+              </div>
+              <button onClick={() => setViewTournament(null)} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} /></button>
+            </div>
+            
+            <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
+              {viewTournament.leaderboard.map((p, idx) => {
+                const rank = idx + 1;
+                const isWinner = rank === 1;
+                const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+                
+                return (
+                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isWinner ? "#FFFBEB" : theme.surface, borderRadius: "10px", border: "1px solid " + (isWinner ? "#F59E0B" : theme.border) }}>
+                    <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isWinner ? "#B45309" : theme.textLight, textAlign: "center" }}>
+                      {rankIcon || rank}
+                    </div>
+                    <AvatarCircle avatar={p.avatar} size={36} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                    </div>
+                    <div style={{ fontSize: "15px", fontWeight: 800, color: isWinner ? "#B45309" : theme.text }}>
+                      {p.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
+              <button onClick={() => setViewTournament(null)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
