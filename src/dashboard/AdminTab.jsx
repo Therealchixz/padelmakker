@@ -225,7 +225,16 @@ export function AdminTab() {
           ))}
         </div>
       )}
-
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(4px)" }}>
+          <div style={{ background: "#fff", borderRadius: "16px", padding: "24px", maxWidth: "450px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.18)", position: "relative", maxHeight: "90vh", overflowY: "auto" }}>
+            <button onClick={() => setEditingUser(null)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", color: "#64748B", cursor: "pointer" }}>
+              <X size={20} />
+            </button>
+            <h3 style={{ ...heading("18px"), marginBottom: "20px" }}>Rediger Spiller</h3>
+            
+            <form onSubmit={handleUpdateUser} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
                   <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Fulde Navn</label>
