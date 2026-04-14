@@ -269,45 +269,53 @@ export function HomeTab({ user, setTab }) {
                   const winners = row.players.filter(p => p.win);
                   const losers = row.players.filter(p => !p.win);
                   return (
-                    <div key={`match-${i}`} style={{ background: theme.surface, borderRadius: "10px", padding: "16px", border: "1px solid " + theme.border, boxShadow: theme.shadow }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                        <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                            <MapPin size={10} /> {row.court}
-                          </div>
+                    <div key={`match-${i}`} style={{ background: theme.surface, borderRadius: "14px", padding: "18px", border: "1px solid " + theme.border, boxShadow: "0 4px 15px rgba(0,0,0,0.05)", position: "relative", overflow: "hidden" }}>
+                      {/* Venue Header - Centered */}
+                      <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+                        <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: "4px", background: "#F8FAFC", padding: "4px 10px", borderRadius: "20px", border: "1px solid #F1F5F9" }}>
+                          <MapPin size={10} /> {row.court}
                         </div>
-                        <div style={{ fontSize: "18px", fontWeight: 800, color: theme.accent, letterSpacing: "0.05em" }}>{row.score}</div>
                       </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "space-between" }}>
-                        {/* Winners */}
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        {/* Winners (Left) */}
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
                           {winners.map((p, idx) => (
-                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                              <AvatarCircle avatar={p.avatar} size={30} emojiSize="18px" />
+                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                              <AvatarCircle avatar={p.avatar} size={36} emojiSize="20px" />
                               <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: "12px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name.split(' ')[0]}</div>
-                                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 800 }}>+{p.change} ELO</div>
+                                <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name.split(' ')[0]}</div>
+                                <div style={{ fontSize: "10px", color: "#10B981", fontWeight: 800, display: "inline-block" }}>+{p.change} ELO</div>
                               </div>
                             </div>
                           ))}
                         </div>
 
-                        <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, padding: "0 10px" }}>VS</div>
+                        {/* Score (Center) */}
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 10px", minWidth: "80px" }}>
+                          <div style={{ fontSize: "22px", fontWeight: 900, color: theme.accent, letterSpacing: "0.02em", whiteSpace: "nowrap" }}>{row.score}</div>
+                          <div style={{ fontSize: "9px", fontWeight: 800, color: theme.textLight, marginTop: "4px", background: "#F1F5F9", padding: "2px 8px", borderRadius: "10px", letterSpacing: "0.1em" }}>VS</div>
+                        </div>
 
-                        {/* Losers */}
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-end" }}>
+                        {/* Losers (Right) - Mirrored for symmetry but consistent avatar position */}
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px", alignItems: "flex-end" }}>
                           {losers.map((p, idx) => (
-                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", flexDirection: "row-reverse" }}>
-                              <AvatarCircle avatar={p.avatar} size={30} emojiSize="18px" />
+                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", flexDirection: "row-reverse" }}>
+                              <AvatarCircle avatar={p.avatar} size={36} emojiSize="20px" />
                               <div style={{ minWidth: 0, textAlign: "right" }}>
-                                <div style={{ fontSize: "12px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name.split(' ')[0]}</div>
+                                <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name.split(' ')[0]}</div>
                                 <div style={{ fontSize: "10px", color: theme.red, fontWeight: 800 }}>{p.change} ELO</div>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
+
+                      {row.description && (
+                        <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px dashed #E2E8F0", fontSize: "11px", color: theme.textMid, fontStyle: "italic", textAlign: "center" }}>
+                          "{row.description}"
+                        </div>
+                      )}
                     </div>
                   );
                 }
