@@ -69,7 +69,12 @@ export function AdminTab() {
       .delete()
       .eq('id', matchId);
     
-    if (!error) fetchMatches();
+    if (error) {
+      console.error('Delete error:', error);
+      alert('Kunne ikke slette kampen: ' + error.message);
+    } else {
+      fetchMatches();
+    }
   };
 
   const handleUpdateUser = async (e) => {
