@@ -28,15 +28,19 @@ export function HomeTab({ user, setTab }) {
 
   const fetchFeed = useCallback(async () => {
     // ELO history feed
-    const { data: eloData } = await supabase
+    const { data: eloDataFull } = await supabase
       .from('elo_history')
       .select('user_id, result, change, date, created_at, match_id, profiles(full_name, name, avatar)')
+      .neq('change', 0)
       .not('change', 'is', null)
       .order('created_at', { ascending: false, nullsFirst: false })
-      .limit(30); // Increased limit as we will group them
+      .limit(40);
+    
+    // Safety: ignore the +0 entries entirely as they are noise
+    const eloData = (eloDataFull || []).filter(r => Number(r.change) !== 0);
     
     // Fetch match details for entries with match_id
-    const matchIds = [...new Set((eloData || []).filter(r => r.match_id).map(r => r.match_id))];
+    const matchIds = [...new Set(eloData.filter(r => r.match_id).map(r => r.match_id))];
     let matchMap = {};
     if (matchIds.length > 0) {
       const [{ data: mRes }, { data: mDetails }] = await Promise.all([
@@ -51,7 +55,7 @@ export function HomeTab({ user, setTab }) {
     const groupedFeed = [];
     const processedMatchIds = new Set();
 
-    (eloData || []).forEach(row => {
+    eloData.forEach(row => {
       if (!row.match_id) {
         groupedFeed.push({ ...row, type: 'elo' });
         return;
@@ -67,7 +71,7 @@ export function HomeTab({ user, setTab }) {
         created_at: row.created_at,
         players: sameMatch.map(r => ({
           id: r.user_id,
-          name: r.profiles?.full_name || r.profiles?.name || "En spiller",
+          name: r.profiles?.full_name || r.profiles?.name || "Spiller",
           avatar: r.profiles?.avatar || "🎾",
           change: Number(r.change),
           win: r.result === 'win'
