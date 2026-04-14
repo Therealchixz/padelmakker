@@ -301,10 +301,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       };
       const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
-      await supabase.from("match_players").insert({
+      const { error: mpErr } = await supabase.from("match_players").insert({
         match_id: created.id, user_id: user.id, user_name: myDisplayName,
         user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾", team: 1,
       });
+      if (mpErr) {
+        // Ryd op — slet kampen så der ikke hænger en tom kamp
+        await supabase.from("matches").delete().eq("id", created.id);
+        throw mpErr;
+      }
       setShowCreate(false);
       showToast("Kamp oprettet! Du er på Hold 1 🎾");
       await loadData();
@@ -322,14 +327,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       });
       if (error) throw error;
 
-      // Check if match is now full (4 players, 2 per team)
-      const mp = [...(matchPlayers[matchId] || []), { user_id: user.id, team: teamNum }];
-      const t1 = mp.filter(p => matchPlayerTeam(p) === 1).length;
-      const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
+      // Hent friske match_players fra DB (undgår race condition ved samtidige tilmeldinger)
+      const { data: freshMp } = await supabase.from("match_players").select("*").eq("match_id", matchId);
+      const allMp = freshMp || [];
+      const t1 = allMp.filter(p => matchPlayerTeam(p) === 1).length;
+      const t2 = allMp.filter(p => matchPlayerTeam(p) === 2).length;
       if (t1 >= 2 && t2 >= 2) {
-        await supabase.from("matches").update({ status: "full", current_players: 4 }).eq("id", matchId);
+        await supabase.from("matches").update({ status: "full", current_players: allMp.length }).eq("id", matchId);
       } else {
-        await supabase.from("matches").update({ current_players: mp.length }).eq("id", matchId);
+        await supabase.from("matches").update({ current_players: allMp.length }).eq("id", matchId);
       }
 
       /* Underret opretter via RPC (læser creator_id server-side — RLS kan skjule creator for B) */
@@ -463,9 +469,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       });
       if (error) throw error;
       // Notify other players to confirm the result
-      mp.filter(p => p.user_id !== user.id).forEach(p => {
-        createNotification(p.user_id, "result_submitted", "Resultat indsendt 📊", `${myDisplayName} har indsendt et resultat (${scoreDisplay}). Bekræft venligst.`, matchId);
-      });
+      await Promise.allSettled(mp.filter(p => p.user_id !== user.id).map(p =>
+        createNotification(p.user_id, "result_submitted", "Resultat indsendt 📊", `${myDisplayName} har indsendt et resultat (${scoreDisplay}). Bekræft venligst.`, matchId)
+      ));
       showToast("Resultat indsendt! Venter på bekræftelse ⏳");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }

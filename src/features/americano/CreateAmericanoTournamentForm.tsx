@@ -108,7 +108,11 @@ export function CreateAmericanoTournamentForm({
         user_id: userId,
         display_name: displayName.trim() || 'Spiller',
       })
-      if (partErr) throw partErr
+      if (partErr) {
+        // Ryd op — slet turneringen så der ikke hænger en tom turnering uden opretter
+        await supabase.from('americano_tournaments').delete().eq('id', row.id)
+        throw partErr
+      }
 
       onCreated?.(row.id)
     } catch (err: unknown) {
