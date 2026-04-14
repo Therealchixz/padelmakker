@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X } from 'lucide-react';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
 
@@ -12,13 +12,14 @@ export function AdminTab() {
   const [matches, setMatches] = useState([]);
   const [search, setSearch] = useState('');
   const [editingUser, setEditingUser] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'asc' });
 
   const fetchUsers = async () => {
     setLoading(true);
+    // Vi henter alle profil-data. Sortering sker nu lokalt i React for bedre UX
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
-      .order('full_name', { ascending: true });
+      .select('*');
     if (!error) setUsers(data || []);
     setLoading(false);
   };
@@ -71,7 +72,6 @@ export function AdminTab() {
     if (!editingUser) return;
 
     try {
-      // 1. Opdater profil-felter
       const { error: profErr } = await supabase
         .from('profiles')
         .update({
@@ -87,37 +87,77 @@ export function AdminTab() {
         })
         .eq('id', editingUser.id);
 
-      if (profErr) {
-        console.error('Profil-opdateringsfejl:', profErr);
-        throw profErr;
-      }
+      if (profErr) throw profErr;
 
-      // 2. Herefter ELO via RPC (som også trigger genberegning)
-      const { data: newElo, error: eloErr } = await supabase
+      const { error: eloErr } = await supabase
         .rpc('admin_adjust_elo', { 
           p_user_id: editingUser.id, 
           p_new_elo: Number(editingUser.elo_rating) 
         });
 
-      if (eloErr) {
-        console.error('ELO-fejl:', eloErr);
-        throw eloErr;
-      }
-
-      console.log(`Bruger opdateret. Ny ELO: ${newElo}`);
+      if (eloErr) throw eloErr;
       
       setEditingUser(null);
-      // Vi venter et kort øjeblik for at lade DB synkronisere færdig
       setTimeout(() => fetchUsers(), 300);
     } catch (err) {
-      alert('Der opstod en fejl under opdatering:\n' + (err.message || 'Ukendt fejl'));
+      alert('Fejl ved opdatering: ' + (err.message || 'Ukendt fejl'));
     }
   };
 
-  const filteredUsers = users.filter(u => 
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedUsers = useMemo(() => {
+    let sortableUsers = [...users];
+    if (sortConfig.key) {
+      sortableUsers.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // Special håndtering af roller (Admin > Player)
+        if (sortConfig.key === 'role') {
+          const priority = { admin: 1, player: 2 };
+          aValue = priority[aValue] || 3;
+          bValue = priority[bValue] || 3;
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableUsers;
+  }, [users, sortConfig]);
+
+  const filteredUsers = sortedUsers.filter(u => 
     (u.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
     (u.email || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  const SortIcon = ({ columnKey }) => {
+    if (sortConfig.key !== columnKey) return <ChevronDown size={12} style={{ opacity: 0.3, marginLeft: '4px' }} />;
+    return sortConfig.direction === 'asc' 
+      ? <ChevronUp size={12} style={{ marginLeft: '4px', color: theme.accent }} /> 
+      : <ChevronDown size={12} style={{ marginLeft: '4px', color: theme.accent }} />;
+  };
+
+  const thStyle = (key) => ({
+    padding: "12px", 
+    fontSize: "12px", 
+    color: theme.textMid, 
+    cursor: "pointer", 
+    userSelect: "none",
+    transition: "background 0.2s"
+  });
 
   return (
     <div style={{ padding: "16px", maxWidth: "1000px", margin: "0 auto", fontFamily: font }}>
@@ -156,9 +196,30 @@ export function AdminTab() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ textAlign: "left", background: "#F8FAFC", borderBottom: "1px solid " + theme.border }}>
-                  <th style={{ padding: "12px", fontSize: "12px", color: theme.textMid }}>SPILLER</th>
-                  <th style={{ padding: "12px", fontSize: "12px", color: theme.textMid }}>ELO</th>
-                  <th style={{ padding: "12px", fontSize: "12px", color: theme.textMid }}>ROLLE</th>
+                  <th 
+                    style={thStyle('full_name')} 
+                    onClick={() => requestSort('full_name')}
+                  >
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      SPILLER <SortIcon columnKey="full_name" />
+                    </div>
+                  </th>
+                  <th 
+                    style={thStyle('elo_rating')} 
+                    onClick={() => requestSort('elo_rating')}
+                  >
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      ELO <SortIcon columnKey="elo_rating" />
+                    </div>
+                  </th>
+                  <th 
+                    style={thStyle('role')} 
+                    onClick={() => requestSort('role')}
+                  >
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      ROLLE <SortIcon columnKey="role" />
+                    </div>
+                  </th>
                   <th style={{ padding: "12px", fontSize: "12px", color: theme.textMid, textAlign: "right" }}>HANDLING</th>
                 </tr>
               </thead>
