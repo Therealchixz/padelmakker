@@ -64,6 +64,23 @@ export function NotificationBell() {
 
   const unreadCount = notifs.filter(n => !n.read).length;
 
+  // App-ikon badge (virker på installerede PWA'er — Android og iOS 16.4+)
+  useEffect(() => {
+    if (!('setAppBadge' in navigator)) return;
+    if (unreadCount > 0) {
+      navigator.setAppBadge(unreadCount).catch(() => {});
+    } else {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }, [unreadCount]);
+
+  // Ryd badge når bruger logger ud
+  useEffect(() => {
+    if (!userId && 'clearAppBadge' in navigator) {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }, [userId]);
+
   const load = useCallback(async () => {
     if (!userId) {
       setNotifs([]);
