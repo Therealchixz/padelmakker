@@ -176,9 +176,16 @@ export function AdminTab() {
                     </td>
                     <td style={{ padding: "12px", fontSize: "14px", fontWeight: 700 }}>{u.elo_rating || 1000}</td>
                     <td style={{ padding: "12px" }}>
-                      <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : "#F1F5F9", color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
-                        {u.role}
-                      </span>
+                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                        <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : "#F1F5F9", color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
+                          {u.role}
+                        </span>
+                        {u.is_banned && (
+                          <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: theme.redBg, color: theme.red, textTransform: "uppercase" }}>
+                            Bannet
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: "12px", textAlign: "right" }}>
                       <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
