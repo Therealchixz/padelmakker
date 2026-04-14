@@ -231,22 +231,6 @@ export function HomeTab({ user, setTab }) {
     navigate(`/dashboard/kampe?focus=${encodeURIComponent(String(matchId))}`);
   }, [navigate, user.id]);
 
-  const personalFeed = useMemo(() => {
-    const merged = [...feed, ...americanoFeed];
-    return merged
-      .filter((row) => {
-        if (row.type === 'match_group') {
-          return (row.players || []).some((p) => String(p.id) === myUserId);
-        }
-        if (row.type === 'americano_winner') {
-          return (row.leaderboard || []).some((p) => String(p.userId) === myUserId);
-        }
-        return false;
-      })
-      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
-      .slice(0, 3);
-  }, [feed, americanoFeed, myUserId]);
-
   return (
     <div>
       <h2 style={{ ...heading("clamp(22px,5vw,26px)"), marginBottom: "4px" }}>Hej {firstName}! 👋</h2>
@@ -362,8 +346,6 @@ export function HomeTab({ user, setTab }) {
                           <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             &ldquo;{row.tournamentName}&rdquo; · {formatTimeAgo(row.created_at)}
 
-                            {row.marginToSecond > 0 ? ` · +${row.marginToSecond} til #2` : ''}
-
                           </div>
                         )}
                       </div>
@@ -464,8 +446,7 @@ export function HomeTab({ user, setTab }) {
                       )}
                       <div style={{ display: "flex", justifyContent: "center", marginTop: "8px" }}>
                         <button onClick={() => goToMatchFromFeed(row.match_id)} style={{ ...btn(false), padding: "4px 10px", fontSize: "11px" }}>
-                          Åbn kamp
-                        </button>
+ton>
                       </div>
                     </div>
                   );
