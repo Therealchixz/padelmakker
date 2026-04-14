@@ -1,20 +1,24 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { DateTime } from 'luxon';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, heading, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
+import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { Users, MapPin, Swords, Trophy, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PlayerStatsModal } from '../components/PlayerStatsModal';
 
 export function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
+  const navigate = useNavigate();
   const [viewTournament, setViewTournament] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
   const displayName = resolveDisplayName(user, authUser);
   const firstName   = displayName.split(/\s+/)[0];
+  const myUserId = String(user.id);
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { bundleLoading, profileFresh, ratedRows } = useProfileEloBundle(user.id, eloSyncKey);
   const histStats = useMemo(() => statsFromEloHistoryRows(ratedRows), [ratedRows]);
@@ -25,12 +29,13 @@ export function HomeTab({ user, setTab }) {
 
   const [feed, setFeed] = useState([]);
   const [americanoFeed, setAmericanoFeed] = useState([]);
+  const [streakByUserId, setStreakByUserId] = useState({});
 
   const fetchFeed = useCallback(async () => {
     // ELO history feed
     const { data: eloDataFull } = await supabase
       .from('elo_history')
-      .select('user_id, result, change, date, created_at, match_id, profiles(full_name, name, avatar)')
+      .select('user_id, result, change, old_rating, new_rating, date, created_at, match_id, profiles(full_name, name, avatar)')
       .neq('change', 0)
       .not('change', 'is', null)
       .neq('result', 'adjustment')
@@ -55,6 +60,24 @@ export function HomeTab({ user, setTab }) {
     // Grouping logic
     const groupedFeed = [];
     const processedMatchIds = new Set();
+    const sortedByNewest = [...eloData].sort((a, b) =>
+      new Date(b.created_at || b.date || 0).getTime() - new Date(a.created_at || a.date || 0).getTime()
+    );
+    const streakMap = {};
+    const seenUsers = new Set();
+    sortedByNewest.forEach((r) => {
+      const uid = String(r.user_id || '');
+      if (!uid || seenUsers.has(uid)) return;
+      seenUsers.add(uid);
+      const rows = sortedByNewest.filter((x) => String(x.user_id || '') === uid);
+      let streak = 0;
+      for (const row of rows) {
+        if (row.result === 'win') streak += 1;
+        else break;
+      }
+      streakMap[uid] = streak;
+    });
+    setStreakByUserId(streakMap);
 
     eloData.forEach(row => {
       if (!row.match_id) {
@@ -75,7 +98,8 @@ export function HomeTab({ user, setTab }) {
           name: r.profiles?.full_name || r.profiles?.name || "Spiller",
           avatar: r.profiles?.avatar || "🎾",
           change: Number(r.change),
-          win: r.result === 'win'
+          win: r.result === 'win',
+          newRating: Number(r.new_rating) || null,
         })),
         score: mInfo?.results?.score_display || "—",
         winner: mInfo?.results?.match_winner,
@@ -146,6 +170,7 @@ export function HomeTab({ user, setTab }) {
           userId: bestPart.user_id,
           name: bestPart.display_name,
           points: bestPts,
+          marginToSecond: Math.max(0, bestPts - (leaderboard[1]?.points ?? bestPts)),
           tournamentName: t.name,
           tournamentId: t.id,
           leaderboard: leaderboard,
@@ -200,6 +225,28 @@ export function HomeTab({ user, setTab }) {
     { icon: <Trophy  size={20} color={theme.accent} />, title: "Se ranking",     desc: "Din placering",      tab: "ranking" },
   ];
 
+  const goToMatchFromFeed = useCallback((matchId) => {
+    if (!matchId) return;
+    mergeKampeSessionPrefs(user.id, { scope: 'alle' });
+    navigate(`/dashboard/kampe?focus=${encodeURIComponent(String(matchId))}`);
+  }, [navigate, user.id]);
+
+  const personalFeed = useMemo(() => {
+    const merged = [...feed, ...americanoFeed];
+    return merged
+      .filter((row) => {
+        if (row.type === 'match_group') {
+          return (row.players || []).some((p) => String(p.id) === myUserId);
+        }
+        if (row.type === 'americano_winner') {
+          return (row.leaderboard || []).some((p) => String(p.userId) === myUserId);
+        }
+        return false;
+      })
+      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+      .slice(0, 3);
+  }, [feed, americanoFeed, myUserId]);
+
   return (
     <div>
       <h2 style={{ ...heading("clamp(22px,5vw,26px)"), marginBottom: "4px" }}>Hej {firstName}! 👋</h2>
@@ -242,6 +289,34 @@ export function HomeTab({ user, setTab }) {
       {/* Aktivitetsfeed */}
       {(feed.length > 0 || americanoFeed.length > 0) && (
         <div style={{ marginBottom: "24px" }}>
+          {personalFeed.length > 0 && (
+            <div style={{ marginBottom: "12px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: theme.accent, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>
+                For dig
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {personalFeed.map((row, idx) => (
+                  <div key={`me-${idx}`} style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: "8px", padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                    <div style={{ fontSize: "12px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {row.type === 'match_group'
+                        ? `🎾 Kamp opdateret: ${row.score || "—"} · ${formatTimeAgo(row.created_at)}`
+                        : `🏆 Americano: ${row.tournamentName || "Turnering"} · ${formatTimeAgo(row.created_at)}`
+                      }
+                    </div>
+                    {row.type === 'match_group' ? (
+                      <button onClick={() => goToMatchFromFeed(row.match_id)} style={{ ...btn(false), padding: "4px 8px", fontSize: "11px", whiteSpace: "nowrap" }}>
+                        Åbn kamp
+                      </button>
+                    ) : (
+                      <button onClick={() => setViewTournament(row)} style={{ ...btn(false), padding: "4px 8px", fontSize: "11px", whiteSpace: "nowrap" }}>
+                        Se resultat
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
             Seneste aktivitet
           </div>
@@ -286,6 +361,9 @@ export function HomeTab({ user, setTab }) {
                         {row.tournamentName && (
                           <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             &ldquo;{row.tournamentName}&rdquo; · {formatTimeAgo(row.created_at)}
+
+                            {row.marginToSecond > 0 ? ` · +${row.marginToSecond} til #2` : ''}
+
                           </div>
                         )}
                       </div>
@@ -302,6 +380,26 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'match_group') {
                   const winners = row.players.filter(p => p.win);
                   const losers = row.players.filter(p => !p.win);
+                  const avgWinnerGain = winners.length ? winners.reduce((s, p) => s + (Number(p.change) || 0), 0) / winners.length : 0;
+                  const scorePairs = String(row.score || '')
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                    .map((setScore) => {
+                      const m = setScore.match(/^(\d+)\s*-\s*(\d+)/);
+                      if (!m) return null;
+                      return Math.abs(Number(m[1]) - Number(m[2]));
+                    })
+                    .filter((n) => Number.isFinite(n));
+                  const tightMatch = scorePairs.length > 0 && scorePairs.every((d) => d <= 2);
+                  const streakWinner = winners.find((p) => (streakByUserId[String(p.id)] || 0) >= 3);
+                  const winnerWithPr = winners.find((p) => Number(p.newRating) >= 1500);
+                  const feedBadges = [
+                    avgWinnerGain >= 20 ? { label: 'Upset', bg: '#FEF3C7', color: '#92400E' } : null,
+                    tightMatch ? { label: 'Tæt kamp', bg: '#DBEAFE', color: '#1D4ED8' } : null,
+                    streakWinner ? { label: `🔥 ${streakByUserId[String(streakWinner.id)]} på stribe`, bg: '#ECFDF5', color: '#047857' } : null,
+                    winnerWithPr ? { label: 'PR', bg: '#EDE9FE', color: '#6D28D9' } : null,
+                  ].filter(Boolean);
                   return (
                     <div key={`match-${i}`} style={{ background: theme.surface, borderRadius: "10px", padding: "8px 14px", border: "1px solid " + theme.border, boxShadow: "0 2px 8px rgba(0,0,0,0.03)", position: "relative", overflow: "hidden" }}>
                       {/* Venue Header - Centered */}
@@ -349,11 +447,26 @@ export function HomeTab({ user, setTab }) {
                         </div>
                       </div>
 
+                      {feedBadges.length > 0 && (
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
+                          {feedBadges.map((b) => (
+                            <span key={b.label} style={{ background: b.bg, color: b.color, border: "1px solid " + b.color + "33", borderRadius: "999px", padding: "2px 8px", fontSize: "10px", fontWeight: 700, letterSpacing: "0.02em" }}>
+                              {b.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       {row.description && (
                         <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: "1px dashed #F1F5F9", fontSize: "11px", color: theme.textMid, fontStyle: "italic", textAlign: "center" }}>
                           &ldquo;{row.description}&rdquo;
                         </div>
                       )}
+                      <div style={{ display: "flex", justifyContent: "center", marginTop: "8px" }}>
+                        <button onClick={() => goToMatchFromFeed(row.match_id)} style={{ ...btn(false), padding: "4px 10px", fontSize: "11px" }}>
+                          Åbn kamp
+                        </button>
+                      </div>
                     </div>
                   );
                 }
