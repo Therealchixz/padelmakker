@@ -328,7 +328,7 @@ export function AmericanoTab({
       }
       const [cd, trRes, myRes] = await Promise.all([
         Court.filter(),
-        supabase.from('americano_tournaments').select('*').order('tournament_date', { ascending: false }).order('created_at', { ascending: false }).limit(40),
+        supabase.from('americano_tournaments').select('*').order('tournament_date', { ascending: false }).order('created_at', { ascending: false }).limit(200),
         supabase.from('americano_participants').select('tournament_id').eq('user_id', profileId),
       ])
       setCourts(
