@@ -32,7 +32,7 @@ export function AdminTab() {
     setLoading(true);
     const { data, error } = await supabase
       .from('matches')
-      .select('*, match_results(*)')
+      .select('*, match_results(*), match_players(*, profiles(full_name))')
       .order('created_at', { ascending: false })
       .limit(50);
     if (!error) setMatches(data || []);
@@ -326,26 +326,56 @@ export function AdminTab() {
           )}
         </>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {matches.map(m => (
-            <div key={m.id} style={{ background: theme.surface, padding: "12px", borderRadius: "12px", border: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "12px", color: theme.textMid, marginBottom: "4px" }}>
-                   {formatEloHistoryDate(m.created_at)} • {m.court_name || "Ukendt bane"}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {matches.map(m => {
+            const t1 = (m.match_players || []).filter(p => p.team === 1);
+            const t2 = (m.match_players || []).filter(p => p.team === 2);
+            const status = m.status;
+            const statusColor = status === 'completed' ? theme.accent : status === 'in_progress' ? theme.warm : theme.textMid;
+            const statusLabel = status === 'completed' ? 'Afsluttet' : status === 'in_progress' ? 'I gang' : 'Åben';
+
+            return (
+              <div key={m.id} style={{ background: theme.surface, padding: "16px", borderRadius: "12px", border: "1px solid " + theme.border, boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                  <div>
+                    <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "2px" }}>
+                       {formatEloHistoryDate(m.created_at)} • {m.court_name || "Ukendt bane"}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 800, padding: "2px 6px", borderRadius: "4px", background: statusColor + "15", color: statusColor, textTransform: "uppercase" }}>
+                        {statusLabel}
+                      </span>
+                      <div style={{ fontSize: "15px", fontWeight: 700 }}>
+                        {m.match_results?.[0]?.score_display || "Ingen score"}
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => deleteMatch(m.id)}
+                    style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer", display: "flex", alignItems: "center" }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-                <div style={{ fontSize: "14px", fontWeight: 600 }}>
-                  {m.match_results?.[0]?.score_display || "Ingen score"}
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: "12px", background: "#F8FAFC", padding: "10px", borderRadius: "8px" }}>
+                  <div style={{ textAlign: "right" }}>
+                    {t1.length > 0 ? t1.map(p => (
+                      <div key={p.user_id} style={{ fontSize: "12px", fontWeight: 600 }}>{p.profiles?.full_name || "Ukendt"}</div>
+                    )) : <div style={{ fontSize: "12px", color: theme.textLight, fontStyle: "italic" }}>Ingen spillere</div>}
+                  </div>
+                  <div style={{ fontSize: "10px", fontWeight: 800, color: theme.textLight }}>VS</div>
+                  <div>
+                    {t2.length > 0 ? t2.map(p => (
+                      <div key={p.user_id} style={{ fontSize: "12px", fontWeight: 600 }}>{p.profiles?.full_name || "Ukendt"}</div>
+                    )) : <div style={{ fontSize: "12px", color: theme.textLight, fontStyle: "italic" }}>Ingen spillere</div>}
+                  </div>
                 </div>
               </div>
-              <button 
-                onClick={() => deleteMatch(m.id)}
-                style={{ color: theme.red, background: "none", border: "none", cursor: "pointer", padding: "8px" }}
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
+       </div>
       )}
       {/* Edit User Modal */}
       {editingUser && (

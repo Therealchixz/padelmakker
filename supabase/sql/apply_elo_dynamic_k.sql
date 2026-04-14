@@ -45,6 +45,7 @@ DECLARE
   v_t2_games INTEGER;
   v_margin INTEGER;
   v_margin_mult REAL;
+  v_count_p INTEGER;
   v_t1_changes INTEGER[] := ARRAY[]::INTEGER[];
   v_t2_changes INTEGER[] := ARRAY[]::INTEGER[];
 BEGIN
@@ -64,6 +65,18 @@ BEGIN
   END IF;
   IF v_match.status = 'completed' THEN
     RETURN jsonb_build_object('error', 'ELO already calculated for this match');
+  END IF;
+
+  -- Tjek antal spillere - ELO beregnes kun ved 2 mod 2 (4 spillere i alt)
+  SELECT COUNT(*) INTO v_count_p FROM match_players WHERE match_id = v_mr.match_id;
+  IF v_count_p < 4 THEN
+    -- Vi afslutter kampen alligevel, da den er indsendt
+    UPDATE matches SET status = 'completed' WHERE id = v_mr.match_id;
+    RETURN jsonb_build_object(
+      'success', true, 
+      'players_updated', 0, 
+      'message', 'Kamp afsluttet uden ELO-ændringer (kræver 4 spillere)'
+    );
   END IF;
 
   -- Hvis kampen af en eller anden syg grund er endt uafgjort (draw)
