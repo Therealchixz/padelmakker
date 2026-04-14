@@ -61,6 +61,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user: authUser, refreshProfile } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const myDisplayName                 = resolveDisplayName(user, authUser);
   const eloSyncKeyKampe = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { profileFresh: kampeProfileFresh, ratedRows: kampeRatedRows, reloadProfileEloBundle: reloadKampeEloBundle } =
@@ -388,10 +389,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const mp = matchPlayers[matchId] || [];
     const t1 = mp.filter(p => matchPlayerTeam(p) === 1).length;
     const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
+    const isFull = t1 >= 2 && t2 >= 2;
 
-    if (t1 < 2 || t2 < 2) {
+    if (!isFull && !isAdmin) {
       showToast("Kampen kan kun startes når der er 2 spillere på hvert hold (2 mod 2).");
       return;
+    }
+
+    if (!isFull && isAdmin) {
+      if (!window.confirm("Kampen er ikke fuld endnu. Vil du gennemtvinge start som admin?")) return;
+    } else if (isAdmin && !matchPlayers[matchId]?.some(p => p.user_id === user.id)) {
+      if (!window.confirm("Vil du starte denne kamp som admin?")) return;
     }
 
     setBusyId(matchId);
@@ -410,24 +418,33 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
     const status = getStatus(match);
-    if (status === "in_progress" || status === "completed") {
-      showToast("Du kan ikke slette en kamp, der er i gang eller afsluttet.");
+    if (status === "completed" && !isAdmin) {
+      showToast("Du kan ikke slette en afsluttet kamp.");
       return;
     }
 
     const mp = matchPlayers[matchId] || [];
     const others = mp.filter(p => p.user_id !== user.id);
-    const msg = others.length > 0
+    const msg = isAdmin 
+      ? `Slet denne kamp som admin? Dette kan ikke fortrydes.`
+      : others.length > 0
       ? `Slet denne kamp? ${others.length} andre spillere bliver også afmeldt.`
       : "Slet denne kamp?";
+
     if (!window.confirm(msg)) return;
     setBusyId(matchId);
     try {
       const mpBefore = matchPlayers[matchId] || [];
       await supabase.from("match_players").delete().eq("match_id", matchId);
-      await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId).eq("creator_id", user.id);
+      // Admin kan slette ALLE kampe, ellers kun egne
+      let q = supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId);
+      if (!isAdmin) q = q.eq("creator_id", user.id);
+      
+      const { error } = await q;
+      if (error) throw error;
+
       mpBefore.filter(p => p.user_id !== user.id).forEach(p => {
-        createNotification(p.user_id, "match_cancelled", "Kamp aflyst ❌", `${myDisplayName} har aflyst kampen.`, matchId);
+        createNotification(p.user_id, "match_cancelled", "Kamp aflyst ❌", isAdmin ? "En admin har aflyst kampen." : `${myDisplayName} har aflyst kampen.`, matchId);
       });
       showToast("Kamp slettet.");
       await loadData();
@@ -682,21 +699,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           {joined && status !== "completed" && (
             <div style={{ textAlign: "center", fontSize: "13px", color: theme.accent, fontWeight: 600 }}>✅ Tilmeldt</div>
           )}
-          {isCreator && (status === "open" || status === "full") && (
+          {(isCreator || isAdmin) && (status === "open" || status === "full") && (
             <button 
               onClick={() => startMatch(m.id)} 
-              disabled={busy || !isFull} 
+              disabled={busy || (!isFull && !isAdmin)} 
               style={{ 
-                ...btn(isFull), 
+                ...btn(isFull || isAdmin), 
                 width: "100%", 
                 justifyContent: "center", 
                 fontSize: "13px", 
-                background: isFull ? theme.warm : theme.border,
-                cursor: isFull ? "pointer" : "not-allowed",
-                opacity: isFull ? 1 : 0.6
+                background: (isFull || isAdmin) ? theme.warm : theme.border,
+                cursor: (isFull || isAdmin) ? "pointer" : "not-allowed",
+                opacity: (isFull || isAdmin) ? 1 : 0.6
               }}
             >
-              🎾 {isFull ? "Start kamp" : "Venter på spillere (2 mod 2)"}
+              {isFull ? "🎾 Start kamp" : isAdmin ? "⚡ Gennemtving start (Admin)" : "🎾 Venter på spillere (2 mod 2)"}
             </button>
           )}
           {status === "in_progress" && isPlayerInMatch && !mr && (
@@ -715,9 +732,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <UserMinus size={14} /> Afmeld mig
             </button>
           )}
-          {isCreator && status !== "completed" && status !== "in_progress" && (
+          {(isCreator || isAdmin) && status !== "completed" && status !== "in_progress" && (
             <button onClick={() => deleteMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}>
-              <Trash2 size={14} /> Slet kamp
+              <Trash2 size={14} /> {isAdmin ? "Slet kamp (Admin)" : "Slet kamp"}
             </button>
           )}
         </div>
