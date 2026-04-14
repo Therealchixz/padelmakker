@@ -57,6 +57,7 @@ export function NotificationBell() {
   const [pushSupported, setPushSupported] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [pushMessage, setPushMessage] = useState(null); // kortvarig bekræftelsesbesked
 
   const unreadCount = notifs.filter(n => !n.read).length;
 
@@ -207,11 +208,23 @@ export function NotificationBell() {
     }
   };
 
+  const showPushMessage = (msg) => {
+    setPushMessage(msg);
+    setTimeout(() => setPushMessage(null), 3000);
+  };
+
   const handleEnablePush = async () => {
     if (!userId || pushLoading) return;
     setPushLoading(true);
     const result = await subscribeToPush(userId);
-    if (result === 'granted') setPushSubscribed(true);
+    // Tjek browser-state som sandhed, uafhængigt af DB
+    const subscribed = await isPushSubscribed();
+    setPushSubscribed(subscribed);
+    if (subscribed) {
+      showPushMessage('Push-beskeder aktiveret!');
+    } else if (result === 'denied') {
+      showPushMessage('Tilladelse afvist i browseren');
+    }
     setPushLoading(false);
   };
 
@@ -220,6 +233,7 @@ export function NotificationBell() {
     setPushLoading(true);
     await unsubscribeFromPush();
     setPushSubscribed(false);
+    showPushMessage('Push-beskeder slået fra');
     setPushLoading(false);
   };
 
@@ -302,19 +316,21 @@ export function NotificationBell() {
 
           {/* Push opt-in / opt-out banner */}
           {pushSupported && getPushPermission() !== 'denied' && (
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontSize: "16px" }}>🔔</span>
-              <span style={{ flex: 1, fontSize: "12px", color: theme.textMid, lineHeight: 1.4 }}>
-                {pushSubscribed ? "Push-beskeder er aktiveret" : "Få push-beskeder selv når du ikke er på siden"}
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
+              <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
+                {pushMessage || (pushSubscribed ? "Push-beskeder er aktiveret" : "Få push-beskeder selv når du ikke er på siden")}
               </span>
-              <button
-                type="button"
-                onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
-                disabled={pushLoading}
-                style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : "#fff", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: pushLoading ? "default" : "pointer", opacity: pushLoading ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
-              >
-                {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
-              </button>
+              {!pushMessage && (
+                <button
+                  type="button"
+                  onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
+                  disabled={pushLoading}
+                  style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : "#fff", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: pushLoading ? "default" : "pointer", opacity: pushLoading ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
+                >
+                  {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
+                </button>
+              )}
             </div>
           )}
 

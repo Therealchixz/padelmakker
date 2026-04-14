@@ -26,8 +26,8 @@ export function getPushPermission() {
 
 /**
  * Tilmeld denne browser til push-notifikationer.
- * Gemmer subscription i push_subscriptions-tabellen.
- * Returnerer 'granted' | 'denied' | 'error'.
+ * Returnerer 'granted' | 'denied' | 'unsupported' | 'error'.
+ * DB-gemning fejler stille — browser-subscription er sandheden.
  */
 export async function subscribeToPush(userId) {
   if (!isPushSupported()) return 'unsupported';
@@ -42,16 +42,17 @@ export async function subscribeToPush(userId) {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
 
-    const { endpoint, keys } = subscription.toJSON();
-    const { error } = await supabase.from('push_subscriptions').upsert(
-      { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
-      { onConflict: 'endpoint' }
-    );
-
-    if (error) {
-      console.warn('[push] Kunne ikke gemme subscription:', error.message);
-      return 'error';
+    // Gem i DB — fejl her blokerer ikke: browseren har subscription'en
+    try {
+      const { endpoint, keys } = subscription.toJSON();
+      await supabase.from('push_subscriptions').upsert(
+        { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
+        { onConflict: 'endpoint' }
+      );
+    } catch (dbErr) {
+      console.warn('[push] Kunne ikke gemme subscription i DB:', dbErr);
     }
+
     return 'granted';
   } catch (e) {
     console.warn('[push] subscribeToPush fejl:', e);
