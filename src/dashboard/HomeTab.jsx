@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
+import { DateTime } from 'luxon';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, heading, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
@@ -168,6 +169,21 @@ export function HomeTab({ user, setTab }) {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [fetchFeed]);
 
+  const formatTimeAgo = (iso) => {
+    if (!iso) return "";
+    const dt = DateTime.fromISO(iso).setLocale("da");
+    if (!dt.isValid) return "";
+    
+    // Hvis det er over en uge siden, vis bare datoen
+    if (Math.abs(dt.diffNow('days').days) > 7) {
+      return dt.toFormat('d. MMM');
+    }
+    
+    const rel = dt.toRelative();
+    // Gør første bogstav stort hvis nødvendigt
+    return rel ? rel.charAt(0).toUpperCase() + rel.slice(1) : "";
+  };
+
   const actions = [
     { icon: <Users   size={20} color={theme.accent} />, title: "Find en makker", desc: "Se ledige spillere",  tab: "makkere" },
     { icon: <MapPin  size={20} color={theme.accent} />, title: "Book en bane",   desc: "Ledige tider",       tab: "baner"   },
@@ -254,7 +270,7 @@ export function HomeTab({ user, setTab }) {
                         </div>
                         {row.tournamentName && (
                           <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            "{row.tournamentName}"
+                            "{row.tournamentName}" · {formatTimeAgo(row.created_at)}
                           </div>
                         )}
                       </div>
@@ -273,7 +289,7 @@ export function HomeTab({ user, setTab }) {
                       {/* Venue Header - Centered */}
                       <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
                         <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: "4px", background: "#F8FAFC", padding: "4px 10px", borderRadius: "20px", border: "1px solid #F1F5F9" }}>
-                          <MapPin size={10} /> {row.court}
+                          <MapPin size={10} /> {row.court} · {formatTimeAgo(row.created_at)}
                         </div>
                       </div>
 
