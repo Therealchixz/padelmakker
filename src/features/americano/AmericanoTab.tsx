@@ -108,7 +108,7 @@ function AmericanoParticipantStatsModal({
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name, name, avatar, americano_wins, americano_losses, americano_draws')
+          .select('full_name, name, avatar, americano_wins, americano_losses, americano_draws, americano_played')
           .eq('id', userId)
           .maybeSingle()
         if (cancelled) return
@@ -131,7 +131,7 @@ function AmericanoParticipantStatsModal({
   const w = Number(row?.americano_wins) || 0
   const l = Number(row?.americano_losses) || 0
   const d = Number(row?.americano_draws) || 0
-  const played = w + l + d
+  const played = Number(row?.americano_played) || 0
   const title = String(row?.full_name || row?.name || fallbackName || 'Spiller').trim() || fallbackName
 
   const cell = (
@@ -228,10 +228,10 @@ function AmericanoParticipantStatsModal({
               marginBottom: 16,
             }}
           >
-            {cell('Kampe', played, { ...americanoOutcomeColors.neutral, valueColor: '#1D4ED8' })}
-            {cell('Sejre', w, { ...americanoOutcomeColors.win })}
+            {cell('Turneringer', played, { ...americanoOutcomeColors.neutral, valueColor: '#1D4ED8' })}
+            {cell('Runder vundet', w, { ...americanoOutcomeColors.win })}
             {cell('Uafgjort', d, { ...americanoOutcomeColors.tie })}
-            {cell('Tab', l, { ...americanoOutcomeColors.loss })}
+            {cell('Runder tabt', l, { ...americanoOutcomeColors.loss })}
           </div>
         )}
 
