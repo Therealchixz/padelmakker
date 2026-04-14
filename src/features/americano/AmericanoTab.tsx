@@ -13,6 +13,7 @@ import { americanoOutcomeColors } from './americanoOutcomeColors'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 
 import { isAvatarUrl } from '../../lib/avatarUpload'
+import { PlayerStatsModal } from '../../components/PlayerStatsModal'
 
 const font = "'Inter', sans-serif"
 
@@ -79,185 +80,6 @@ type ProfileSnippet = {
   name?: string | null
 }
 
-function AmericanoParticipantStatsModal({
-  userId,
-  fallbackName,
-  onClose,
-}: {
-  userId: string
-  fallbackName: string
-  onClose: () => void
-}) {
-  const [loading, setLoading] = useState(true)
-  const [row, setRow] = useState<{
-    full_name?: string | null
-    name?: string | null
-    avatar?: string | null
-    americano_wins?: number | null
-    americano_losses?: number | null
-    americano_draws?: number | null
-  } | null>(null)
-  const [fetchErr, setFetchErr] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      setFetchErr(false)
-      setRow(null)
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('full_name, name, avatar, americano_wins, americano_losses, americano_draws, americano_played')
-          .eq('id', userId)
-          .maybeSingle()
-        if (cancelled) return
-        if (error) throw error
-        setRow(data)
-      } catch {
-        if (!cancelled) {
-          setFetchErr(true)
-          setRow(null)
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [userId])
-
-  const w = Number(row?.americano_wins) || 0
-  const l = Number(row?.americano_losses) || 0
-  const d = Number(row?.americano_draws) || 0
-  const played = Number(row?.americano_played) || 0
-  const title = String(row?.full_name || row?.name || fallbackName || 'Spiller').trim() || fallbackName
-
-  const cell = (
-    label: string,
-    value: string | number,
-    opts: { bg: string; border: string; text: string; valueColor?: string }
-  ) => {
-    const valueColor = opts.valueColor ?? opts.text
-    return (
-      <div
-        key={label}
-        style={{
-          textAlign: 'center',
-          padding: '10px 6px',
-          background: opts.bg,
-          borderRadius: 8,
-          border: `1px solid ${opts.border}`,
-        }}
-      >
-        <div style={{ fontSize: 16, fontWeight: 800, color: valueColor, fontFamily: font }}>{value}</div>
-        <div
-          style={{
-            fontSize: 9,
-            fontWeight: 700,
-            color: '#94A3B8',
-            marginTop: 4,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-          }}
-        >
-          {label}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div
-      role="presentation"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(15, 23, 42, 0.45)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: 16,
-        fontFamily: font,
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="americano-stats-title"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#fff',
-          borderRadius: 14,
-          padding: 24,
-          maxWidth: 380,
-          width: '100%',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 18 }}>
-
-          <AvatarInCircle av={row?.avatar || '🎾'} size={52} fontSize={26} bg="#DBEAFE" />
-
-          <div style={{ minWidth: 0 }}>
-            <div
-              id="americano-stats-title"
-              style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}
-            >
-              {loading ? '…' : title}
-            </div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>Americano (alle turneringer)</div>
-          </div>
-        </div>
-
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 16, color: '#64748B', fontSize: 13 }}>Henter statistik…</div>
-        ) : fetchErr ? (
-          <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16, lineHeight: 1.5 }}>
-            Kunne ikke hente profil — tjek forbindelse eller rettigheder.
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 8,
-              marginBottom: 16,
-            }}
-          >
-            {cell('Turneringer', played, { ...americanoOutcomeColors.neutral, valueColor: '#1D4ED8' })}
-            {cell('Runder vundet', w, { ...americanoOutcomeColors.win })}
-            {cell('Uafgjort', d, { ...americanoOutcomeColors.tie })}
-            {cell('Runder tabt', l, { ...americanoOutcomeColors.loss })}
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            width: '100%',
-            padding: '10px 14px',
-            borderRadius: 8,
-            border: '1px solid #D5DDE8',
-            background: '#fff',
-            color: '#3E4C63',
-            fontWeight: 600,
-            fontSize: 13,
-            cursor: 'pointer',
-            fontFamily: font,
-          }}
-        >
-          Luk
-        </button>
-      </div>
-    </div>
-  )
-}
-
 function resolveName(p: ProfileLike | null | undefined, authEmail?: string | null) {
   if (!p) {
     if (authEmail) return authEmail.split('@')[0]
@@ -296,8 +118,8 @@ export function AmericanoTab({
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [createOpenInternal, setCreateOpenInternal] = useState(false)
-  const createControlled = typeof createOpenProp === 'boolean'
-  const showCreate = createControlled ? createOpenProp : createOpenInternal
+  const createControlled = typeof createOpen === 'boolean'
+  const showCreate = createControlled ? createOpen : createOpenInternal
   const setShowCreate = (open: boolean) => {
     onCreateOpenChange?.(open)
     if (!createControlled) setCreateOpenInternal(open)
@@ -600,10 +422,6 @@ export function AmericanoTab({
       </div>
     )
   }
-
-  // These were unfiltered - removing to avoid confusion
-  // const playingAmericanos = rows.filter((t) => t.status === 'playing')
-  // const completedAmericanos = rows.filter((t) => t.status === 'completed')
 
   // Filtering based on scope and search
   const filteredRows = rows.filter(t => {
@@ -1106,7 +924,7 @@ export function AmericanoTab({
         </div>
       )}
       {participantStatsPick && (
-        <AmericanoParticipantStatsModal
+        <PlayerStatsModal
           userId={participantStatsPick.userId}
           fallbackName={participantStatsPick.name}
           onClose={() => setParticipantStatsPick(null)}
