@@ -58,6 +58,9 @@ export function NotificationBell() {
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [pushMessage, setPushMessage] = useState(null); // kortvarig bekræftelsesbesked
+  const [pushBlocked, setPushBlocked] = useState(() => {
+    try { return localStorage.getItem('pm_push_blocked') === '1'; } catch { return false; }
+  });
 
   const unreadCount = notifs.filter(n => !n.read).length;
 
@@ -225,7 +228,8 @@ export function NotificationBell() {
       } else if (result === 'denied') {
         showPushMessage('Tilladelse afvist — tjek browserindstillinger');
       } else if (result === 'blocked') {
-        showPushMessage('Din browser blokerer push (tjek Shields/indstillinger)');
+        try { localStorage.setItem('pm_push_blocked', '1'); } catch { /* ignore */ }
+        setPushBlocked(true);
       } else if (result === 'timeout') {
         showPushMessage('Timeout — prøv igen');
       } else {
@@ -326,7 +330,7 @@ export function NotificationBell() {
           </div>
 
           {/* Push opt-in / opt-out banner */}
-          {pushSupported && getPushPermission() !== 'denied' && (
+          {pushSupported && !pushBlocked && getPushPermission() !== 'denied' && (
             <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
               <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
               <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
