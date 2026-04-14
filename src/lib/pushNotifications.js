@@ -92,17 +92,3 @@ export async function isPushSubscribed() {
     return false;
   }
 }
-
-/** Synkronisér app-ikon badge med antal ulæste notifikationer (best effort). */
-export async function syncAppBadge(count) {
-  try {
-    if (!('setAppBadge' in navigator) || !('clearAppBadge' in navigator)) return;
-    if (typeof count === 'number' && count > 0) {
-      await navigator.setAppBadge(count);
-    } else {
-      await navigator.clearAppBadge();
-    }
-  } catch {
-    // Badging API er optional — ignorer fejl.
-  }
-}

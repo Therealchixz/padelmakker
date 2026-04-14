@@ -11,7 +11,6 @@ import {
   subscribeToPush,
   unsubscribeFromPush,
   isPushSubscribed,
-  syncAppBadge,
 } from '../lib/pushNotifications';
 
 const DISMISSED_MAX = 400;
@@ -60,10 +59,6 @@ export function NotificationBell() {
   const [pushLoading, setPushLoading] = useState(false);
 
   const unreadCount = notifs.filter(n => !n.read).length;
-
-  useEffect(() => {
-    syncAppBadge(unreadCount);
-  }, [unreadCount]);
 
   const load = useCallback(async () => {
     if (!userId) {
