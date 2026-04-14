@@ -172,7 +172,15 @@ export function AuthProvider({ children }) {
       new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
     ])
       .then((p) => {
-        if (profileReqId.current !== id) return
+        if (profileReqId.current !== id) return;
+
+        // Tjek for ban-status
+        if (p?.is_banned) {
+          alert('Din konto er blevet udelukket af en administrator.');
+          signOut();
+          return;
+        }
+
         setProfile(p)
         /**
          * Pending storage-upload kan tage lang tid. TOKEN_REFRESHED udløser ofte et nyt loadProfile

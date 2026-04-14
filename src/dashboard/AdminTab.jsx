@@ -71,30 +71,45 @@ export function AdminTab() {
     if (!editingUser) return;
 
     try {
-      // 1. Update Name standard way
-      const { error: nameErr } = await supabase
+      // 1. Opdater profil-felter
+      const { error: profErr } = await supabase
         .from('profiles')
         .update({
           full_name: editingUser.full_name,
           name: editingUser.full_name,
+          level: Number(editingUser.level),
+          play_style: editingUser.play_style,
+          area: editingUser.area,
+          bio: editingUser.bio,
+          court_side: editingUser.court_side,
+          is_banned: editingUser.is_banned
         })
         .eq('id', editingUser.id);
 
-      if (nameErr) throw nameErr;
+      if (profErr) {
+        console.error('Profil-opdateringsfejl:', profErr);
+        throw profErr;
+      }
 
-      // 2. Update ELO via specialized RPC (to handle history sync)
-      const { error: eloErr } = await supabase
+      // 2. Herefter ELO via RPC (som også trigger genberegning)
+      const { data: newElo, error: eloErr } = await supabase
         .rpc('admin_adjust_elo', { 
           p_user_id: editingUser.id, 
           p_new_elo: Number(editingUser.elo_rating) 
         });
 
-      if (eloErr) throw eloErr;
+      if (eloErr) {
+        console.error('ELO-fejl:', eloErr);
+        throw eloErr;
+      }
 
+      console.log(`Bruger opdateret. Ny ELO: ${newElo}`);
+      
       setEditingUser(null);
-      fetchUsers();
+      // Vi venter et kort øjeblik for at lade DB synkronisere færdig
+      setTimeout(() => fetchUsers(), 300);
     } catch (err) {
-      alert('Fejl ved opdatering: ' + err.message);
+      alert('Der opstod en fejl under opdatering:\n' + (err.message || 'Ukendt fejl'));
     }
   };
 
@@ -211,37 +226,104 @@ export function AdminTab() {
         </div>
       )}
 
-      {/* Edit User Modal */}
-      {editingUser && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(4px)" }}>
-          <div style={{ background: "#fff", borderRadius: "16px", padding: "24px", maxWidth: "380px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.18)", position: "relative" }}>
-            <button onClick={() => setEditingUser(null)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", color: "#64748B", cursor: "pointer" }}>
-              <X size={20} />
-            </button>
-            <h3 style={{ ...heading("18px"), marginBottom: "20px" }}>Rediger Spiller</h3>
-            
-            <form onSubmit={handleUpdateUser} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Fulde Navn</label>
+                  <input 
+                    type="text" 
+                    value={editingUser.full_name} 
+                    onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>ELO Rating</label>
+                  <input 
+                    type="number" 
+                    value={editingUser.elo_rating} 
+                    onChange={(e) => setEditingUser({ ...editingUser, elo_rating: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Niveau (1-10)</label>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    value={editingUser.level} 
+                    onChange={(e) => setEditingUser({ ...editingUser, level: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Foretrukket side</label>
+                  <select 
+                    value={editingUser.court_side || ''} 
+                    onChange={(e) => setEditingUser({ ...editingUser, court_side: e.target.value })}
+                    style={inputStyle}
+                  >
+                    <option value="">Ikke valgt</option>
+                    <option value="backhand">Backhand</option>
+                    <option value="forehand">Forehand</option>
+                    <option value="both">Begge sider</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>Fulde Navn</label>
+                <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Område</label>
                 <input 
                   type="text" 
-                  value={editingUser.full_name} 
-                  onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
+                  value={editingUser.area || ''} 
+                  onChange={(e) => setEditingUser({ ...editingUser, area: e.target.value })}
                   style={inputStyle}
-                  required 
+                  placeholder="F.eks. Region Nordjylland"
                 />
               </div>
+
               <div>
-                <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>ELO Rating</label>
+                <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Spillestil</label>
                 <input 
-                  type="number" 
-                  value={editingUser.elo_rating} 
-                  onChange={(e) => setEditingUser({ ...editingUser, elo_rating: e.target.value })}
+                  type="text" 
+                  value={editingUser.play_style || ''} 
+                  onChange={(e) => setEditingUser({ ...editingUser, play_style: e.target.value })}
                   style={inputStyle}
-                  required 
                 />
               </div>
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+
+              <div>
+                <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Bio / Om mig</label>
+                <textarea 
+                  value={editingUser.bio || ''} 
+                  onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })}
+                  style={{ ...inputStyle, minHeight: "60px", resize: "vertical" }}
+                />
+              </div>
+              
+              <div style={{ marginTop: "8px", padding: "12px", background: editingUser.is_banned ? "#FEF2F2" : "#F8FAFC", borderRadius: "10px", border: "1px solid " + (editingUser.is_banned ? "#FCA5A5" : theme.border) }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: editingUser.is_banned ? theme.red : theme.text }}>
+                      {editingUser.is_banned ? "Brugeren er UDELUKKET" : "Status: Aktiv"}
+                    </div>
+                    <div style={{ fontSize: "11px", color: theme.textMid }}>
+                      {editingUser.is_banned ? "Brugeren kan ikke logge ind." : "Brugeren har normal adgang."}
+                    </div>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setEditingUser({ ...editingUser, is_banned: !editingUser.is_banned })}
+                    style={{ ...btn(editingUser.is_banned), background: editingUser.is_banned ? theme.accent : theme.red, borderColor: editingUser.is_banned ? theme.accent : theme.red, fontSize: "12px", padding: "6px 12px" }}
+                  >
+                    {editingUser.is_banned ? "Ophæv ban" : "Udeluk spiller"}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
                 <button type="button" onClick={() => setEditingUser(null)} style={{ ...btn(false), flex: 1 }}>Annuller</button>
                 <button type="submit" style={{ ...btn(true), flex: 1 }}>Gem ændringer</button>
               </div>
