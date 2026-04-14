@@ -717,7 +717,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             </button>
           )}
           {status === "in_progress" && (isPlayerInMatch || isAdmin) && !mr && (
-            <button onClick={() => setResultMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>
+            <button 
+              onClick={() => setResultMatch(m.id)} 
+              disabled={busy} 
+              style={{ 
+                ...btn(true), 
+                width: "100%", 
+                justifyContent: "center", 
+                fontSize: "13px",
+                background: (isAdmin && !isPlayerInMatch) ? theme.warm : theme.accent,
+                borderColor: (isAdmin && !isPlayerInMatch) ? theme.warm : theme.accent
+              }}
+            >
               📊 Indrapportér resultat {isAdmin && !isPlayerInMatch && "(Admin)"}
             </button>
           )}
