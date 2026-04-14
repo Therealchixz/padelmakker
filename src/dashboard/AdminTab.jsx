@@ -343,43 +343,65 @@ export function AdminTab() {
 
             return (
               <div key={m.id} style={{ background: theme.surface, padding: "16px", borderRadius: "12px", border: "1px solid " + theme.border, boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
                   <div>
-                    <div style={{ fontSize: "10px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "6px" }}>
-                       <div>Oprettet: {formatEloHistoryDate(m.created_at)}</div>
+                    <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "8px", lineHeight: "1.4" }}>
+                       <div style={{ color: theme.text }}>Oprettet: {formatEloHistoryDate(m.created_at)}</div>
                        {m.completed_at ? (
                          <div style={{ marginTop: "2px", color: theme.accent }}>Spillet: {formatEloHistoryDate(m.completed_at)} • {m.court_name || "Ukendt bane"}</div>
                        ) : (
                          <div style={{ marginTop: "2px" }}>{m.court_name || "Ukendt bane"}</div>
                        )}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 800, padding: "2px 6px", borderRadius: "4px", background: statusColor + "15", color: statusColor, textTransform: "uppercase" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 800, padding: "3px 8px", borderRadius: "5px", background: statusColor + "15", color: statusColor, textTransform: "uppercase" }}>
                         {statusLabel}
                       </span>
-                      <div style={{ fontSize: "15px", fontWeight: 700 }}>
+                      <div style={{ fontSize: "16px", fontWeight: 800, color: theme.text }}>
                         {m.match_results?.[0]?.score_display || "Ingen score"}
                       </div>
                     </div>
                   </div>
                   <button 
                     onClick={() => deleteMatch(m.id)}
-                    style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer", display: "flex", alignItems: "center" }}
+                    style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "10px", padding: "10px", cursor: "pointer", display: "flex", alignItems: "center", transition: "all 0.2s" }}
+                    title="Slet kamp"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: "12px", background: "#F8FAFC", padding: "10px", borderRadius: "8px" }}>
-                  <div style={{ textAlign: "right" }}>
+                <div style={{ 
+                  display: "flex", 
+                  flexDirection: isMobile ? "column" : "row",
+                  alignItems: isMobile ? "stretch" : "center", 
+                  gap: isMobile ? "8px" : "12px", 
+                  background: "#F8FAFC", 
+                  padding: "12px", 
+                  borderRadius: "10px",
+                  border: "1px solid " + theme.border + "40"
+                }}>
+                  <div style={{ flex: 1, textAlign: isMobile ? "center" : "right" }}>
                     {t1.length > 0 ? t1.map(p => (
-                      <div key={p.user_id} style={{ fontSize: "12px", fontWeight: 600 }}>{p.profiles?.full_name || "Ukendt"}</div>
+                      <div key={p.user_id} style={{ fontSize: "13px", fontWeight: 600, color: theme.text }}>{p.profiles?.full_name || "Ukendt"}</div>
                     )) : <div style={{ fontSize: "12px", color: theme.textLight, fontStyle: "italic" }}>Ingen spillere</div>}
                   </div>
-                  <div style={{ fontSize: "10px", fontWeight: 800, color: theme.textLight }}>VS</div>
-                  <div>
+                  
+                  <div style={{ 
+                    fontSize: "10px", 
+                    fontWeight: 900, 
+                    color: theme.textLight, 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center",
+                    padding: isMobile ? "4px 0" : "0",
+                    background: isMobile ? theme.border + "30" : "transparent",
+                    borderRadius: "4px"
+                  }}>VS</div>
+                  
+                  <div style={{ flex: 1, textAlign: isMobile ? "center" : "left" }}>
                     {t2.length > 0 ? t2.map(p => (
-                      <div key={p.user_id} style={{ fontSize: "12px", fontWeight: 600 }}>{p.profiles?.full_name || "Ukendt"}</div>
+                      <div key={p.user_id} style={{ fontSize: "13px", fontWeight: 600, color: theme.text }}>{p.profiles?.full_name || "Ukendt"}</div>
                     )) : <div style={{ fontSize: "12px", color: theme.textLight, fontStyle: "italic" }}>Ingen spillere</div>}
                   </div>
                 </div>
