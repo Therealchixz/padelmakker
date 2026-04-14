@@ -327,6 +327,7 @@ export function AdminTab() {
         </>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "8px", textTransform: "uppercase" }}>Admin: Detaljeret Kamp-overblik</h3>
           {matches.map(m => {
             const t1 = (m.match_players || []).filter(p => p.team === 1);
             const t2 = (m.match_players || []).filter(p => p.team === 2);
