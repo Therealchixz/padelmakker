@@ -82,7 +82,8 @@ export function AdminTab() {
           area: editingUser.area,
           bio: editingUser.bio,
           court_side: editingUser.court_side,
-          is_banned: editingUser.is_banned
+          is_banned: editingUser.is_banned,
+          ban_reason: editingUser.ban_reason
         })
         .eq('id', editingUser.id);
 
@@ -330,6 +331,18 @@ export function AdminTab() {
                     {editingUser.is_banned ? "Ophæv ban" : "Udeluk spiller"}
                   </button>
                 </div>
+                
+                {editingUser.is_banned && (
+                  <div style={{ marginTop: "12px" }}>
+                    <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Begrundelse (vises til spilleren)</label>
+                    <textarea 
+                      value={editingUser.ban_reason || ''} 
+                      onChange={(e) => setEditingUser({ ...editingUser, ban_reason: e.target.value })}
+                      placeholder="Skriv hvorfor spilleren er udelukket..."
+                      style={{ ...inputStyle, minHeight: "50px", fontSize: "12px", background: "#fff", borderColor: theme.red + "40" }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>

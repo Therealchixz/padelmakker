@@ -176,7 +176,8 @@ export function AuthProvider({ children }) {
 
         // Tjek for ban-status
         if (p?.is_banned) {
-          alert('Din konto er blevet udelukket af en administrator.');
+          const reasonMsg = p.ban_reason ? `\n\nBegrundelse: ${p.ban_reason}` : '';
+          alert(`Din konto er blevet udelukket af en administrator.${reasonMsg}`);
           signOut();
           return;
         }
@@ -245,6 +246,25 @@ export function AuthProvider({ children }) {
     }
 
     init()
+    
+    // Realtids-overvågning af ban-status
+    let realtimeSub = null
+    if (user?.id) {
+      realtimeSub = supabase
+        .channel(`profile-status-${user.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+          (payload) => {
+            if (payload.new?.is_banned) {
+              const reason = payload.new.ban_reason ? `\n\nBegrundelse: ${payload.new.ban_reason}` : ''
+              alert(`Din konto er blevet udelukket af en administrator.${reason}`)
+              signOut()
+            }
+          }
+        )
+        .subscribe()
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, s) => {
@@ -266,6 +286,7 @@ export function AuthProvider({ children }) {
     return () => {
       cancelled = true
       subscription.unsubscribe()
+      if (realtimeSub) supabase.removeChannel(realtimeSub)
     }
   }, [loadProfile])
 
