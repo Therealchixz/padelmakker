@@ -4,6 +4,13 @@ import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platfo
 import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
+// Keep these in one import to avoid duplicate symbol declarations during merges.
+import {
+  LEVELS,
+  PLAY_STYLES,
+  REGIONS,
+  levelStringFromNum,
+} from '../lib/platformConstants';
 
 export function AdminTab() {
   const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' or 'matches'
@@ -168,6 +175,19 @@ export function AdminTab() {
     userSelect: "none",
     transition: "background 0.2s"
   });
+
+  const formatCreatedAt = (createdAt) => {
+    if (!createdAt) return 'Ukendt';
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return 'Ukendt';
+    return new Intl.DateTimeFormat('da-DK', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
 
   return (
     <div style={{ padding: "16px", maxWidth: "1000px", margin: "0 auto", fontFamily: font }}>
@@ -441,16 +461,33 @@ export function AdminTab() {
                 </div>
               </div>
 
+              <div style={{
+                fontSize: "12px",
+                color: theme.textMid,
+                background: "#F8FAFC",
+                border: "1px solid " + theme.border,
+                borderRadius: "10px",
+                padding: "10px 12px"
+              }}>
+                Oprettet: <strong style={{ color: theme.text }}>{formatCreatedAt(editingUser.created_at)}</strong>
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Niveau (1-10)</label>
-                  <input 
-                    type="number" 
-                    step="0.1"
-                    value={editingUser.level} 
-                    onChange={(e) => setEditingUser({ ...editingUser, level: e.target.value })}
+                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Niveau</label>
+                  <select
+                    value={levelStringFromNum(editingUser.level) || ''}
+                    onChange={(e) => {
+                      const levelNum = parseFloat(e.target.value.match(/[\d.]+/)?.[0] || '0');
+                      setEditingUser({ ...editingUser, level: levelNum });
+                    }}
                     style={inputStyle}
-                  />
+                  >
+                    <option value="" disabled>Vælg niveau</option>
+                    {LEVELS.map((levelOption) => (
+                      <option key={levelOption} value={levelOption}>{levelOption}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Foretrukket side</label>
@@ -469,23 +506,30 @@ export function AdminTab() {
 
               <div>
                 <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Område</label>
-                <input 
-                  type="text" 
-                  value={editingUser.area || ''} 
+                <select
+                  value={editingUser.area || ''}
                   onChange={(e) => setEditingUser({ ...editingUser, area: e.target.value })}
                   style={inputStyle}
-                  placeholder="F.eks. Region Nordjylland"
-                />
+                >
+                  <option value="" disabled>Vælg område</option>
+                  {REGIONS.map((regionOption) => (
+                    <option key={regionOption} value={regionOption}>{regionOption}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
                 <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Spillestil</label>
-                <input 
-                  type="text" 
-                  value={editingUser.play_style || ''} 
+                <select
+                  value={editingUser.play_style || ''}
                   onChange={(e) => setEditingUser({ ...editingUser, play_style: e.target.value })}
                   style={inputStyle}
-                />
+                >
+                  <option value="" disabled>Vælg spillestil</option>
+                  {PLAY_STYLES.map((styleOption) => (
+                    <option key={styleOption} value={styleOption}>{styleOption}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
