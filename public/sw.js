@@ -39,11 +39,27 @@ self.addEventListener('push', (event) => {
       (async () => {
         // App icon badge (hvis browser/OS understøtter Badging API)
         try {
-          if (!self.navigator || !('setAppBadge' in self.navigator)) return;
-          if (typeof data.unreadCount === 'number' && data.unreadCount >= 0) {
-            await self.navigator.setAppBadge(data.unreadCount);
+          const reg = self.registration;
+          const canSetOnRegistration = reg && typeof reg.setAppBadge === 'function';
+          const canClearOnRegistration = reg && typeof reg.clearAppBadge === 'function';
+          const canSetOnNavigator = self.navigator && typeof self.navigator.setAppBadge === 'function';
+          const canClearOnNavigator = self.navigator && typeof self.navigator.clearAppBadge === 'function';
+
+          if (!canSetOnRegistration && !canSetOnNavigator) return;
+
+          if (typeof data.unreadCount === 'number') {
+            if (data.unreadCount > 0) {
+              if (canSetOnRegistration) await reg.setAppBadge(data.unreadCount);
+              else await self.navigator.setAppBadge(data.unreadCount);
+            } else if (data.unreadCount === 0) {
+              if (canClearOnRegistration) await reg.clearAppBadge();
+              else if (canClearOnNavigator) await self.navigator.clearAppBadge();
+            }
           } else {
-            await self.navigator.setAppBadge();
+            // Fallback: vis "dot" badge uden count
+            if (canSetOnRegistration) await reg.setAppBadge();
+            else await self.navigator.setAppBadge();
+            
           }
         } catch {
           /* ignorer badge fejl */
