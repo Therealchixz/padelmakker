@@ -27,8 +27,7 @@ export function HomeTab({ user, setTab }) {
       .not('change', 'is', null)
       .order('created_at', { ascending: false, nullsFirst: false })
       .limit(10)
-      .then(({ data, error }) => { if (!error) setFeed(data || []); })
-      .catch(() => {});
+      .then(({ data }) => setFeed(data || []));
   }, []);
 
   useEffect(() => {
