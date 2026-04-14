@@ -18,10 +18,35 @@ interface PlayerStatsModalProps {
   fallbackName?: string;
 }
 
+type PlayerRow = {
+  full_name?: string | null;
+  name?: string | null;
+  avatar?: string | null;
+  elo_rating?: number | null;
+  games_played?: number | null;
+  games_won?: number | null;
+  americano_wins?: number | null;
+  americano_losses?: number | null;
+  americano_draws?: number | null;
+  americano_played?: number | null;
+} | null;
+
+type HistoryStats = {
+  elo: number;
+  games: number;
+  wins: number;
+} | null;
+
+type CellStyleOpts = {
+  bg: string;
+  border: string;
+  text: string;
+};
+
 export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsModalProps) {
   const [loading, setLoading] = useState(true);
-  const [row, setRow] = useState<any>(null);
-  const [histStats, setHistStats] = useState<any>(null);
+  const [row, setRow] = useState<PlayerRow>(null);
+  const [histStats, setHistStats] = useState<HistoryStats>(null);
   const [fetchErr, setFetchErr] = useState(false);
 
   useEffect(() => {
@@ -74,7 +99,7 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
 
   const title = String(row?.full_name || row?.name || fallbackName || 'Spiller').trim() || fallbackName || 'Spiller';
 
-  const cell = (label: string, value: string | number, opts: any) => (
+  const cell = (label: string, value: string | number, opts: CellStyleOpts) => (
     <div key={label} style={{ textAlign: 'center', padding: '10px 6px', background: opts.bg, borderRadius: 8, border: `1px solid ${opts.border}` }}>
       <div style={{ fontSize: 16, fontWeight: 800, color: opts.text, fontFamily: font }}>{value}</div>
       <div style={{ fontSize: 9, fontWeight: 700, color: '#64748B', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
@@ -117,7 +142,12 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
         </button>
 
         <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 20 }}>
-          <AvatarCircle avatar={row?.avatar || '🎾'} size={56} emojiSize="28px" bg="#F1F5F9" />
+          <AvatarCircle
+            avatar={row?.avatar || '🎾'}
+            size={56}
+            emojiSize="28px"
+            style={{ background: '#F1F5F9' }}
+          />
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {loading ? '…' : title}
