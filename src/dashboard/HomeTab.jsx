@@ -231,6 +231,9 @@ export function HomeTab({ user, setTab }) {
     navigate(`/dashboard/kampe?focus=${encodeURIComponent(String(matchId))}`);
   }, [navigate, user.id]);
 
+  const hasActivity = feed.length > 0 || americanoFeed.length > 0;
+
+
   return (
     <div>
       <h2 style={{ ...heading("clamp(22px,5vw,26px)"), marginBottom: "4px" }}>Hej {firstName}! 👋</h2>
@@ -271,7 +274,7 @@ export function HomeTab({ user, setTab }) {
       )}
 
       {/* Aktivitetsfeed */}
-      {(feed.length > 0 || americanoFeed.length > 0) && (
+      {hasActivity && (
         <div style={{ marginBottom: "24px" }}>
           {personalFeed.length > 0 && (
             <div style={{ marginBottom: "12px" }}>
