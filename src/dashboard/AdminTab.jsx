@@ -4,6 +4,7 @@ import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platfo
 import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
+
 // Keep these in one import to avoid duplicate symbol declarations during merges.
 import {
   LEVELS,
