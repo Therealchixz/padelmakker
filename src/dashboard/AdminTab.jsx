@@ -13,13 +13,17 @@ export function AdminTab() {
   const [search, setSearch] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'asc' });
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
-    // Vi henter alle profil-data. Sortering sker nu lokalt i React for bedre UX
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*');
+    const { data, error } = await supabase.from('profiles').select('*');
     if (!error) setUsers(data || []);
     setLoading(false);
   };
@@ -185,92 +189,141 @@ export function AdminTab() {
             <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: theme.textMid }} />
             <input 
               type="text"
-              placeholder="Søg på navn eller email..."
+              placeholder="Søg..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ ...inputStyle, paddingLeft: "38px" }}
             />
           </div>
 
-          <div style={{ background: theme.surface, borderRadius: "12px", border: "1px solid " + theme.border, overflow: "hidden" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ textAlign: "left", background: "#F8FAFC", borderBottom: "1px solid " + theme.border }}>
-                  <th 
-                    style={thStyle('full_name')} 
-                    onClick={() => requestSort('full_name')}
-                  >
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      SPILLER <SortIcon columnKey="full_name" />
-                    </div>
-                  </th>
-                  <th 
-                    style={thStyle('elo_rating')} 
-                    onClick={() => requestSort('elo_rating')}
-                  >
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      ELO <SortIcon columnKey="elo_rating" />
-                    </div>
-                  </th>
-                  <th 
-                    style={thStyle('role')} 
-                    onClick={() => requestSort('role')}
-                  >
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      ROLLE <SortIcon columnKey="role" />
-                    </div>
-                  </th>
-                  <th style={{ padding: "12px", fontSize: "12px", color: theme.textMid, textAlign: "right" }}>HANDLING</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map(u => (
-                  <tr key={u.id} style={{ borderBottom: "1px solid " + theme.border }}>
-                    <td style={{ padding: "12px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <AvatarCircle avatar={u.avatar || '🎾'} size={32} />
-                        <div>
-                          <div style={{ fontSize: "14px", fontWeight: 600 }}>{u.full_name}</div>
-                          <div style={{ fontSize: "11px", color: theme.textMid }}>{u.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: "12px", fontSize: "14px", fontWeight: 700 }}>{u.elo_rating || 1000}</td>
-                    <td style={{ padding: "12px" }}>
-                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                        <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : "#F1F5F9", color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
-                          {u.role}
-                        </span>
-                        {u.is_banned && (
-                          <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: theme.redBg, color: theme.red, textTransform: "uppercase" }}>
-                            Bannet
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td style={{ padding: "12px", textAlign: "right" }}>
-                      <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                        <button 
-                          onClick={() => setEditingUser({ ...u })}
-                          title="Rediger spiller"
-                          style={{ background: "none", border: "none", cursor: "pointer", color: theme.accent }}
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button 
-                          onClick={() => toggleAdmin(u)}
-                          title={u.role === 'admin' ? "Fjern admin" : "Gør til admin"}
-                          style={{ background: "none", border: "none", cursor: "pointer", color: u.role === 'admin' ? theme.red : theme.accent }}
-                        >
-                          {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
-                        </button>
-                      </div>
-                    </td>
+          {/* Sorterings-bar til mobil */}
+          {isMobile && (
+            <div style={{ display: "flex", gap: "8px", marginBottom: "12px", overflowX: "auto", paddingBottom: "4px" }}>
+              <button 
+                onClick={() => requestSort('full_name')}
+                style={{ ...btn(sortConfig.key === 'full_name'), fontSize: "11px", padding: "4px 10px", whiteSpace: "nowrap" }}
+              >
+                Navn <SortIcon columnKey="full_name" />
+              </button>
+              <button 
+                onClick={() => requestSort('elo_rating')}
+                style={{ ...btn(sortConfig.key === 'elo_rating'), fontSize: "11px", padding: "4px 10px", whiteSpace: "nowrap" }}
+              >
+                ELO <SortIcon columnKey="elo_rating" />
+              </button>
+              <button 
+                onClick={() => requestSort('role')}
+                style={{ ...btn(sortConfig.key === 'role'), fontSize: "11px", padding: "4px 10px", whiteSpace: "nowrap" }}
+              >
+                Rolle <SortIcon columnKey="role" />
+              </button>
+            </div>
+          )}
+
+          {!isMobile ? (
+            <div style={{ background: theme.surface, borderRadius: "12px", border: "1px solid " + theme.border, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ textAlign: "left", background: "#F8FAFC", borderBottom: "1px solid " + theme.border }}>
+                    <th style={thStyle('full_name')} onClick={() => requestSort('full_name')}>
+                      <div style={{ display: "flex", alignItems: "center" }}>SPILLER <SortIcon columnKey="full_name" /></div>
+                    </th>
+                    <th style={thStyle('elo_rating')} onClick={() => requestSort('elo_rating')}>
+                      <div style={{ display: "flex", alignItems: "center" }}>ELO <SortIcon columnKey="elo_rating" /></div>
+                    </th>
+                    <th style={thStyle('role')} onClick={() => requestSort('role')}>
+                      <div style={{ display: "flex", alignItems: "center" }}>ROLLE <SortIcon columnKey="role" /></div>
+                    </th>
+                    <th style={{ padding: "12px", fontSize: "12px", color: theme.textMid, textAlign: "right" }}>HANDLING</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredUsers.map(u => (
+                    <tr key={u.id} style={{ borderBottom: "1px solid " + theme.border }}>
+                      <td style={{ padding: "12px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <AvatarCircle avatar={u.avatar || '🎾'} size={32} />
+                          <div>
+                            <div style={{ fontSize: "14px", fontWeight: 600 }}>{u.full_name}</div>
+                            <div style={{ fontSize: "11px", color: theme.textMid }}>{u.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: "12px", fontSize: "14px", fontWeight: 700 }}>{u.elo_rating || 1000}</td>
+                      <td style={{ padding: "12px" }}>
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                          <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : "#F1F5F9", color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
+                            {u.role}
+                          </span>
+                          {u.is_banned && (
+                            <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: theme.redBg, color: theme.red, textTransform: "uppercase" }}>
+                              Bannet
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ padding: "12px", textAlign: "right" }}>
+                        <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                          <button onClick={() => setEditingUser({ ...u })} style={{ background: "none", border: "none", cursor: "pointer", color: theme.accent }}><Edit2 size={18} /></button>
+                          <button onClick={() => toggleAdmin(u)} style={{ background: "none", border: "none", cursor: "pointer", color: u.role === 'admin' ? theme.red : theme.accent }}>
+                            {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {filteredUsers.map(u => (
+                <div key={u.id} style={{ background: theme.surface, borderRadius: "12px", border: "1px solid " + theme.border, padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                    <div style={{ display: "flex", gap: "12px" }}>
+                      <AvatarCircle avatar={u.avatar || '🎾'} size={40} />
+                      <div>
+                        <div style={{ fontSize: "15px", fontWeight: 700 }}>{u.full_name}</div>
+                        <div style={{ fontSize: "12px", color: theme.textMid }}>{u.email}</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: "18px", fontWeight: 800, color: theme.accent }}>{u.elo_rating || 1000}</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase" }}>ELO</div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : "#F1F5F9", color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
+                        {u.role}
+                      </span>
+                      {u.is_banned && (
+                        <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "100px", background: theme.redBg, color: theme.red, textTransform: "uppercase" }}>
+                          Bannet
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button 
+                        onClick={() => toggleAdmin(u)} 
+                        style={{ background: u.role === 'admin' ? theme.redBg : theme.accentBg, border: "none", borderRadius: "8px", padding: "8px", color: u.role === 'admin' ? theme.red : theme.accent, display: "flex", alignItems: "center" }}
+                        title={u.role === 'admin' ? "Fjern admin" : "Gør til admin"}
+                      >
+                        {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
+                      </button>
+                      <button 
+                        onClick={() => setEditingUser({ ...u })} 
+                        style={{ background: theme.accent, border: "none", borderRadius: "8px", padding: "8px 16px", color: "#fff", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 600 }}
+                      >
+                        <Edit2 size={16} /> Rediger
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
