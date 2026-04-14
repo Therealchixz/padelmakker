@@ -293,15 +293,25 @@ button,
 
 .pm-tab-strip {
   display: flex;
-  gap: 4px;
-  padding: 10px clamp(10px, 3vw, 16px);
+  gap: clamp(2px, 1.5vw, 6px);
+  padding: 8px clamp(8px, 3vw, 16px);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+  scrollbar-color: rgba(29, 78, 216, 0.4) transparent;
 }
 
 .pm-tab-strip::-webkit-scrollbar {
-  height: 4px;
+  height: 6px;
+}
+
+.pm-tab-strip::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.pm-tab-strip::-webkit-scrollbar-thumb {
+  background: rgba(29, 78, 216, 0.2);
+  border-radius: 10px;
 }
 
 /* Meget smal skærm: kun ikoner i faner (tekst i title/aria-label) */
