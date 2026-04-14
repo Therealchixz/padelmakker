@@ -232,8 +232,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         if (tb >= ta) mrMap[mid] = mr;
       });
       setMatchResults(mrMap);
-    } catch (e) { console.error(e); }
-    finally {
+    } catch (e) {
+      console.error(e);
+      showToast('Kunne ikke hente data. Tjek din forbindelse og prøv igen.');
+    } finally {
       setLoadingMatches(false);
       void reloadKampeEloBundle();
     }

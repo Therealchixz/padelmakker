@@ -81,6 +81,7 @@ export function MakkereTab({ user, showToast }) {
       setStatsById(batch);
     } catch (e) {
       console.error(e);
+      showToast('Kunne ikke hente data. Tjek din forbindelse og prøv igen.');
     } finally {
       setLoading(false);
     }
