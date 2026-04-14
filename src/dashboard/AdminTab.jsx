@@ -375,7 +375,6 @@ export function AdminTab() {
             );
           })}
         </div>
-       </div>
       )}
       {/* Edit User Modal */}
       {editingUser && (
