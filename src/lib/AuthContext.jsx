@@ -288,7 +288,7 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe()
       if (realtimeSub) supabase.removeChannel(realtimeSub)
     }
-  }, [loadProfile])
+  }, [loadProfile, user?.id])
 
   useEffect(() => {
     activeUserIdRef.current = user?.id != null ? String(user.id) : ''
