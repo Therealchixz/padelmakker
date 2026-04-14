@@ -285,7 +285,7 @@ export function HomeTab({ user, setTab }) {
                         </div>
                         {row.tournamentName && (
                           <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            "{row.tournamentName}" · {formatTimeAgo(row.created_at)}
+                            &ldquo;{row.tournamentName}&rdquo; · {formatTimeAgo(row.created_at)}
                           </div>
                         )}
                       </div>
@@ -351,7 +351,7 @@ export function HomeTab({ user, setTab }) {
 
                       {row.description && (
                         <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: "1px dashed #F1F5F9", fontSize: "11px", color: theme.textMid, fontStyle: "italic", textAlign: "center" }}>
-                          "{row.description}"
+                          &ldquo;{row.description}&rdquo;
                         </div>
                       )}
                     </div>
