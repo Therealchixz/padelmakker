@@ -4,6 +4,7 @@ import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platfo
 import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
+import { LEVELS, PLAY_STYLES, REGIONS, levelStringFromNum } from '../lib/platformConstants';
 
 import { LEVELS, PLAY_STYLES, REGIONS, levelStringFromNum } from '../lib/platformConstants';
 
@@ -171,6 +172,19 @@ export function AdminTab() {
     userSelect: "none",
     transition: "background 0.2s"
   });
+
+  const formatCreatedAt = (createdAt) => {
+    if (!createdAt) return 'Ukendt';
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return 'Ukendt';
+    return new Intl.DateTimeFormat('da-DK', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
 
   return (
     <div style={{ padding: "16px", maxWidth: "1000px", margin: "0 auto", fontFamily: font }}>
@@ -442,6 +456,17 @@ export function AdminTab() {
                     style={inputStyle}
                   />
                 </div>
+              </div>
+
+              <div style={{
+                fontSize: "12px",
+                color: theme.textMid,
+                background: "#F8FAFC",
+                border: "1px solid " + theme.border,
+                borderRadius: "10px",
+                padding: "10px 12px"
+              }}>
+                Oprettet: <strong style={{ color: theme.text }}>{formatCreatedAt(editingUser.created_at)}</strong>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
