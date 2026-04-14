@@ -114,6 +114,13 @@ export function NotificationBell() {
     isPushSubscribed().then(setPushSubscribed);
   }, [userId]);
 
+  // Genindlæs notifikationer når siden bliver synlig igen (fx skift af tab)
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [load]);
+
   useEffect(() => {
     if (!open) return;
     const closeIfOutside = (e) => {
