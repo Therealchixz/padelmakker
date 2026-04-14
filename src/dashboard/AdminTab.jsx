@@ -340,10 +340,13 @@ export function AdminTab() {
               <div key={m.id} style={{ background: theme.surface, padding: "16px", borderRadius: "12px", border: "1px solid " + theme.border, boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                   <div>
-                    <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "2px" }}>
-                       Oprettet: {formatEloHistoryDate(m.created_at)}
-                       {m.completed_at && ` • Spillet: ${formatEloHistoryDate(m.completed_at)}`}
-                       {` • ${m.court_name || "Ukendt bane"}`}
+                    <div style={{ fontSize: "10px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "6px" }}>
+                       <div>Oprettet: {formatEloHistoryDate(m.created_at)}</div>
+                       {m.completed_at ? (
+                         <div style={{ marginTop: "2px", color: theme.accent }}>Spillet: {formatEloHistoryDate(m.completed_at)} • {m.court_name || "Ukendt bane"}</div>
+                       ) : (
+                         <div style={{ marginTop: "2px" }}>{m.court_name || "Ukendt bane"}</div>
+                       )}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "10px", fontWeight: 800, padding: "2px 6px", borderRadius: "4px", background: statusColor + "15", color: statusColor, textTransform: "uppercase" }}>
