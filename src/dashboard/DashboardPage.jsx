@@ -11,14 +11,17 @@ import { BanerTab } from './BanerTab';
 import { KampeTab } from './KampeTab';
 import { RankingTab } from './RankingTab';
 import { ProfilTab } from './ProfilTab';
+import { AdminTab } from './AdminTab';
+import { ShieldCheck } from 'lucide-react';
 
 export function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser, refreshProfileQuiet } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
-  const navigate = useNavigate();
+   const navigate = useNavigate();
   const location = useLocation();
+  const isAdmin = user?.role === 'admin';
   const pathTab = location.pathname.split("/")[2] || "hjem";
-  const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "profil"];
+  const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "profil", "admin"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
   const setTab = useCallback((t) => navigate("/dashboard/" + t), [navigate]);
 
@@ -32,9 +35,12 @@ export function DashboardPage({ user, onLogout, showToast }) {
     { id: "makkere", label: "Find Makker", icon: <Users   size={16} /> },
     { id: "baner",   label: "Baner",       icon: <MapPin  size={16} /> },
     { id: "kampe",   label: "Kampe",       icon: <Swords  size={16} /> },
-    { id: "ranking", label: "Ranking",     icon: <Trophy  size={16} /> },
+     { id: "ranking", label: "Ranking",     icon: <Trophy  size={16} /> },
     { id: "profil",  label: "Profil",      icon: <Settings size={16} /> },
   ];
+  if (isAdmin) {
+    tabs.push({ id: "admin", label: "Admin", icon: <ShieldCheck size={16} /> });
+  }
 
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", paddingBottom: "env(safe-area-inset-bottom)" }}>
@@ -71,6 +77,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         {tab === "kampe"   && <KampeTab   user={user} showToast={showToast} tabActive />}
         {tab === "ranking" && <RankingTab user={user} />}
         {tab === "profil"  && <ProfilTab  user={user} showToast={showToast} setTab={setTab} />}
+        {tab === "admin"   && isAdmin && <AdminTab />}
       </div>
     </div>
   );
