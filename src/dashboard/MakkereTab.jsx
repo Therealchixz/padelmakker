@@ -40,14 +40,17 @@ function writeFavoritesSet(userId, set) {
 
 // ----- Suggested player card -----
 
-function SuggestionCard({ suggestion, myElo, onView, onInvite }) {
+function matchQuality(score) {
+  if (score >= 80) return { label: 'Stærk match', color: '#15803D', bg: '#F0FDF4', border: '#86EFAC' };
+  if (score >= 65) return { label: 'God match',   color: '#1D4ED8', bg: '#DBEAFE', border: '#93C5FD' };
+  if (score >= 50) return { label: 'Okay match',  color: '#B45309', bg: '#FEF3C7', border: '#FCD34D' };
+  return               { label: 'Mulig match',  color: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB' };
+}
+
+function SuggestionCard({ suggestion, onView, onInvite }) {
   const { profile: p, score, breakdown } = suggestion;
   const reason = matchReason(breakdown, p);
-
-  const scoreColor =
-    score >= 75 ? '#10B981' :
-    score >= 55 ? theme.accent :
-    theme.textMid;
+  const quality = matchQuality(score);
 
   return (
     <div style={{
@@ -56,53 +59,68 @@ function SuggestionCard({ suggestion, myElo, onView, onInvite }) {
       padding: '14px 16px',
       boxShadow: theme.shadow,
       border: `1px solid ${theme.border}`,
-      display: 'flex',
-      gap: '12px',
-      alignItems: 'center',
     }}>
-      <div onClick={() => onView(p)} style={{ cursor: 'pointer', flexShrink: 0 }}>
-        <AvatarCircle
-          avatar={p.avatar}
-          size={46}
-          emojiSize="22px"
-          style={{ background: '#F1F5F9', border: '1px solid ' + theme.border }}
-        />
-      </div>
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div onClick={() => onView(p)} style={{ cursor: 'pointer', flexShrink: 0 }}>
+          <AvatarCircle
+            avatar={p.avatar}
+            size={46}
+            emojiSize="22px"
+            style={{ background: '#F1F5F9', border: '1px solid ' + theme.border }}
+          />
+        </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <span
             onClick={() => onView(p)}
-            style={{ fontSize: '14px', fontWeight: 700, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            style={{ fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '5px' }}
           >
             {p.full_name || p.name}
           </span>
-          <span title="Match-score baseret på ELO, tilgængelighed, geografi og intention" style={{ fontSize: '11px', fontWeight: 800, color: scoreColor, flexShrink: 0, display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-            {score}%
-            <span style={{ fontSize: '9px', fontWeight: 600, color: theme.textLight }}>match</span>
-          </span>
+
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={tag(theme.accentBg, theme.accent)}>ELO {Math.round(Number(p.elo_rating) || 1000)}</span>
+            {(p.city || p.area) && (
+              <span style={{ ...tag(theme.blueBg, theme.blue), display: 'flex', alignItems: 'center', gap: '2px' }}>
+                <MapPin size={8} />{p.city || p.area.replace('Region ', '')}
+              </span>
+            )}
+            {p.intent_now && INTENT_LABELS[p.intent_now] && (
+              <span style={tag('#F0FDF4', '#15803D')}>{INTENT_LABELS[p.intent_now]}</span>
+            )}
+            {p.seeking_match && (
+              <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>
+            )}
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap' }}>
-          <span style={tag(theme.accentBg, theme.accent)}>ELO {Math.round(Number(p.elo_rating) || 1000)}</span>
-          {p.area && <span style={{ ...tag(theme.blueBg, theme.blue), display: 'flex', alignItems: 'center', gap: '2px' }}><MapPin size={8} />{p.area.replace('Region ', '')}</span>}
-          {p.intent_now && INTENT_LABELS[p.intent_now] && (
-            <span style={tag('#F0FDF4', '#15803D')}>{INTENT_LABELS[p.intent_now]}</span>
-          )}
-          {p.seeking_match && (
-            <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>
-          )}
-        </div>
-
-        <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '4px' }}>{reason}</div>
+        <button
+          onClick={() => onInvite(p)}
+          style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', flexShrink: 0 }}
+        >
+          Invitér
+        </button>
       </div>
 
-      <button
-        onClick={() => onInvite(p)}
-        style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', flexShrink: 0 }}
-      >
-        Invitér
-      </button>
+      {/* Match-kvalitet — bundlinje */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '6px',
+        marginTop: '10px', paddingTop: '9px',
+        borderTop: '1px solid ' + theme.border,
+      }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: '5px',
+          background: quality.bg, color: quality.color,
+          border: '1px solid ' + quality.border,
+          borderRadius: '6px', padding: '3px 8px',
+          fontSize: '11px', fontWeight: 700,
+        }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.color, flexShrink: 0 }} />
+          {quality.label}
+        </span>
+        <span style={{ fontSize: '11px', color: theme.textLight }}>·</span>
+        <span style={{ fontSize: '11px', color: theme.textLight }}>{reason}</span>
+      </div>
     </div>
   );
 }
@@ -239,7 +257,6 @@ export function MakkereTab({ user, showToast }) {
               <SuggestionCard
                 key={s.profile.id}
                 suggestion={s}
-                myElo={myElo}
                 onView={setViewPlayer}
                 onInvite={setInviteTarget}
               />
