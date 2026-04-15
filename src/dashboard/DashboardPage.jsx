@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
-import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut } from 'lucide-react';
+import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, ShieldCheck } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
 import { HomeTab } from './HomeTab';
 import { MakkereTab } from './MakkereTab';
@@ -12,7 +12,6 @@ import { KampeTab } from './KampeTab';
 import { RankingTab } from './RankingTab';
 import { ProfilTab } from './ProfilTab';
 import { AdminTab } from './AdminTab';
-import { ShieldCheck } from 'lucide-react';
 
 export function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser, refreshProfileQuiet } = useAuth();
