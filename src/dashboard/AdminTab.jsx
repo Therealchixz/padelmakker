@@ -12,14 +12,6 @@ import {
   levelStringFromNum,
 } from '../lib/platformConstants';
 
-// Keep these in one import to avoid duplicate symbol declarations during merges.
-import {
-  LEVELS,
-  PLAY_STYLES,
-  REGIONS,
-  levelStringFromNum,
-} from '../lib/platformConstants';
-
 export function AdminTab() {
   const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' or 'matches'
   const [_loading, setLoading] = useState(true);
