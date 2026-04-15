@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
-import { REGIONS } from '../lib/platformConstants';
+import { REGIONS, levelLabel } from '../lib/platformConstants';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin } from 'lucide-react';
 import { calcAge } from '../lib/profileUtils';
-import { levelLabel } from '../lib/platformConstants';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
 import { AvatarCircle } from '../components/AvatarCircle';

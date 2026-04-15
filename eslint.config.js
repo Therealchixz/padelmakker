@@ -30,6 +30,7 @@ export default tseslint.config(
       'react-hooks/purity': 'off',
       /* Mount fetches (notifications, etc.) legitimately call setState from async loaders */
       'react-hooks/set-state-in-effect': 'off',
+      'no-duplicate-imports': 'error',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {

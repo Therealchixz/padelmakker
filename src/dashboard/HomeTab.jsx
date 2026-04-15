@@ -304,6 +304,8 @@ export function HomeTab({ user, setTab }) {
                   const losers = row.players.filter(p => !p.win);
                   return (
                     <div key={`match-${i}`} style={{ background: theme.surface, borderRadius: "10px", padding: "8px 14px", border: "1px solid " + theme.border, boxShadow: "0 2px 8px rgba(0,0,0,0.03)", position: "relative", overflow: "hidden" }}>
+                      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: "#10B981" }} />
+                      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "3px", background: theme.red }} />
                       {/* Venue Header - Centered */}
                       <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>
                         <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: "4px", background: "#F8FAFC", padding: "2px 8px", borderRadius: "14px", border: "1px solid #F1F5F9" }}>
