@@ -3,9 +3,50 @@
 -- Kør disse i rækkefølge i Supabase SQL Editor
 -- ============================================================================
 
+
+-- ============================================================================
+-- PRE-FIX: Opdater protect_elo_fields triggeren
+-- Tilføj bypass via session-variabel så SECURITY DEFINER RPCs kan opdatere
+-- ELO-felter, mens direkte bruger-manipulation stadig blokeres.
+-- Admins kan fortsat alt.
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION protect_elo_fields()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  -- Admins må alt
+  IF public.is_admin() THEN
+    RETURN NEW;
+  END IF;
+
+  -- Tillad interne RPCs (recalc, apply_elo osv.) at opdatere via session-variabel
+  IF current_setting('app.bypass_elo_protection', true) = 'true' THEN
+    RETURN NEW;
+  END IF;
+
+  -- Ingen direkte ændring af ELO/statistik
+  IF (NEW.elo_rating   IS DISTINCT FROM OLD.elo_rating)   OR
+     (NEW.games_played IS DISTINCT FROM OLD.games_played) OR
+     (NEW.games_won    IS DISTINCT FROM OLD.games_won)    THEN
+    RAISE EXCEPTION 'Sikkerhedsfejl: Kun admins kan ændre ELO eller statistikker direkte.';
+  END IF;
+
+  -- Ingen brugere må ændre role, is_banned eller ban_reason på sig selv
+  IF (NEW.role      IS DISTINCT FROM OLD.role)      OR
+     (NEW.is_banned IS DISTINCT FROM OLD.is_banned) OR
+     (NEW.ban_reason IS DISTINCT FROM OLD.ban_reason) THEN
+    RAISE EXCEPTION 'Sikkerhedsfejl: Kun admins kan ændre rolle eller ban-status.';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
 -- ============================================================================
 -- FIX #1: recalc_profile_stats_from_elo_history — v_wins var aldrig tildelt
 -- games_won blev sat til 0 ved hvert trigger-kald.
+-- Sætter bypass-variabel så protect_elo_fields tillader opdateringen.
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION recalc_profile_stats_from_elo_history(p_user_id uuid)
@@ -36,6 +77,9 @@ BEGIN
     ELSE 0 END), 0) INTO v_delta
   FROM public.elo_history WHERE user_id = p_user_id;
 
+  -- Bypass protect_elo_fields triggeren (transaction-scoped, nulstilles automatisk)
+  PERFORM set_config('app.bypass_elo_protection', 'true', true);
+
   -- Opdater profilen
   UPDATE public.profiles SET
     elo_rating   = GREATEST(100, ROUND(COALESCE(v_first, 1000) + COALESCE(v_delta, 0))::int),
@@ -45,7 +89,229 @@ BEGIN
 END;
 $$;
 
+
+-- ============================================================================
+-- Opdater apply_elo_for_match med samme bypass
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION apply_elo_for_match(p_match_result_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_mr match_results%ROWTYPE;
+  v_match matches%ROWTYPE;
+  v_t1_avg REAL;
+  v_t2_avg REAL;
+  v_t1_won BOOLEAN;
+  v_k1 INTEGER;
+  v_k2 INTEGER;
+  v_k_avg REAL;
+  v_min_t1 INTEGER;
+  v_min_t2 INTEGER;
+  v_player RECORD;
+  v_rp REAL;
+  v_opp_avg REAL;
+  v_e REAL;
+  v_raw REAL;
+  v_delta INTEGER;
+  v_old_elo REAL;
+  v_new_elo REAL;
+  v_won BOOLEAN;
+  v_updated_count INTEGER := 0;
+  v_t1_games INTEGER;
+  v_t2_games INTEGER;
+  v_margin INTEGER;
+  v_margin_mult REAL;
+  v_count_p INTEGER;
+  v_t1_changes INTEGER[] := ARRAY[]::INTEGER[];
+  v_t2_changes INTEGER[] := ARRAY[]::INTEGER[];
+BEGIN
+  SELECT * INTO v_mr FROM match_results WHERE id = p_match_result_id;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('error', 'Match result not found');
+  END IF;
+  IF v_mr.confirmed IS NOT TRUE THEN
+    RETURN jsonb_build_object('error', 'Match result not confirmed yet');
+  END IF;
+
+  SELECT * INTO v_match FROM matches WHERE id = v_mr.match_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('error', 'Match not found');
+  END IF;
+  IF v_match.status = 'completed' THEN
+    RETURN jsonb_build_object('error', 'ELO already calculated for this match');
+  END IF;
+
+  SELECT COUNT(*) INTO v_count_p FROM match_players WHERE match_id = v_mr.match_id;
+  IF v_count_p < 4 THEN
+    UPDATE matches SET status = 'completed', completed_at = now() WHERE id = v_mr.match_id;
+    RETURN jsonb_build_object(
+      'success', true,
+      'players_updated', 0,
+      'message', 'Kamp afsluttet uden ELO-ændringer (kræver 4 spillere)'
+    );
+  END IF;
+
+  IF v_mr.match_winner <> 'team1' AND v_mr.match_winner <> 'team2' THEN
+    RETURN jsonb_build_object('error', 'Match must have a distinct winner (team1 or team2) for ELO to apply');
+  END IF;
+
+  SELECT COALESCE(MIN(COALESCE(p.games_played, 0)), 0)
+  INTO v_min_t1
+  FROM match_players mp
+  JOIN profiles p ON p.id = mp.user_id
+  WHERE mp.match_id = v_mr.match_id AND mp.team = 1;
+
+  SELECT COALESCE(MIN(COALESCE(p.games_played, 0)), 0)
+  INTO v_min_t2
+  FROM match_players mp
+  JOIN profiles p ON p.id = mp.user_id
+  WHERE mp.match_id = v_mr.match_id AND mp.team = 2;
+
+  v_k1 := CASE WHEN v_min_t1 < 10 THEN 40 ELSE 24 END;
+  v_k2 := CASE WHEN v_min_t2 < 10 THEN 40 ELSE 24 END;
+  v_k_avg := (v_k1::REAL + v_k2::REAL) / 2.0;
+
+  SELECT COALESCE(AVG(p.elo_rating), 1000) INTO v_t1_avg
+  FROM match_players mp
+  JOIN profiles p ON p.id = mp.user_id
+  WHERE mp.match_id = v_mr.match_id AND mp.team = 1;
+
+  SELECT COALESCE(AVG(p.elo_rating), 1000) INTO v_t2_avg
+  FROM match_players mp
+  JOIN profiles p ON p.id = mp.user_id
+  WHERE mp.match_id = v_mr.match_id AND mp.team = 2;
+
+  v_t1_won := (v_mr.match_winner = 'team1');
+
+  v_t1_games :=
+    COALESCE(v_mr.set1_team1, 0) + COALESCE(v_mr.set2_team1, 0) + COALESCE(v_mr.set3_team1, 0);
+  v_t2_games :=
+    COALESCE(v_mr.set1_team2, 0) + COALESCE(v_mr.set2_team2, 0) + COALESCE(v_mr.set3_team2, 0);
+  v_margin := abs(v_t1_games - v_t2_games);
+
+  v_margin_mult := CASE
+    WHEN v_margin <= 4 THEN 1.0
+    WHEN v_margin <= 9 THEN 1.12
+    WHEN v_margin <= 14 THEN 1.24
+    ELSE 1.35
+  END;
+
+  -- Bypass protect_elo_fields triggeren for denne transaktion
+  PERFORM set_config('app.bypass_elo_protection', 'true', true);
+
+  FOR v_player IN
+    SELECT mp.user_id, mp.team, p.elo_rating, p.games_played, p.games_won
+    FROM match_players mp
+    JOIN profiles p ON p.id = mp.user_id
+    WHERE mp.match_id = v_mr.match_id
+    ORDER BY mp.team, mp.user_id
+  LOOP
+    v_rp := COALESCE(v_player.elo_rating, 1000)::REAL;
+    IF v_player.team = 1 THEN
+      v_opp_avg := v_t2_avg;
+      v_won := v_t1_won;
+    ELSE
+      v_opp_avg := v_t1_avg;
+      v_won := NOT v_t1_won;
+    END IF;
+
+    v_e := 1.0 / (1.0 + power(10.0, (v_opp_avg - v_rp) / 400.0));
+
+    IF v_won THEN
+      v_raw := v_k_avg * (1.0 - v_e);
+    ELSE
+      v_raw := v_k_avg * (0.0 - v_e);
+    END IF;
+
+    v_delta := round(v_raw * v_margin_mult);
+    IF v_delta = 0 AND v_raw <> 0.0 THEN
+      v_delta := CASE WHEN v_raw > 0 THEN 1 ELSE -1 END;
+    END IF;
+
+    v_old_elo := v_rp;
+    v_new_elo := GREATEST(100, v_old_elo + v_delta::REAL);
+
+    UPDATE profiles SET
+      elo_rating = v_new_elo,
+      games_played = COALESCE(games_played, 0) + 1,
+      games_won = COALESCE(games_won, 0) + CASE WHEN v_won THEN 1 ELSE 0 END
+    WHERE id = v_player.user_id;
+
+    INSERT INTO elo_history (user_id, match_id, old_rating, new_rating, change, result)
+    VALUES (v_player.user_id, v_mr.match_id, v_old_elo, v_new_elo, v_delta,
+            CASE WHEN v_won THEN 'win' ELSE 'loss' END);
+
+    v_updated_count := v_updated_count + 1;
+
+    IF v_player.team = 1 THEN
+      v_t1_changes := array_append(v_t1_changes, v_delta);
+    ELSE
+      v_t2_changes := array_append(v_t2_changes, v_delta);
+    END IF;
+  END LOOP;
+
+  UPDATE matches SET status = 'completed', completed_at = now() WHERE id = v_mr.match_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'model', 'individual_vs_opp_team_avg',
+    'players_updated', v_updated_count,
+    'k_used', round(v_k_avg)::int,
+    'k_team1', v_k1,
+    'k_team2', v_k2,
+    'k_avg', v_k_avg,
+    'min_games_team1', v_min_t1,
+    'min_games_team2', v_min_t2,
+    'team1_player_changes', to_jsonb(v_t1_changes),
+    'team2_player_changes', to_jsonb(v_t2_changes),
+    'winner', v_mr.match_winner,
+    'games_margin', v_margin,
+    'margin_multiplier', v_margin_mult,
+    'games_team1', v_t1_games,
+    'games_team2', v_t2_games,
+    'opp_avg_for_team1_players', v_t2_avg,
+    'opp_avg_for_team2_players', v_t1_avg
+  );
+END;
+$$;
+
+
+-- ============================================================================
+-- Opdater admin_adjust_elo med samme bypass
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION admin_adjust_elo(p_user_id uuid, p_new_elo int)
+RETURNS int LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_current_elo int;
+  v_diff int;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND lower(role) = 'admin') THEN
+    RAISE EXCEPTION 'Kun admins kan dette.';
+  END IF;
+
+  SELECT elo_rating INTO v_current_elo FROM public.profiles WHERE id = p_user_id;
+  v_diff := p_new_elo - COALESCE(v_current_elo, 1000);
+
+  IF v_diff <> 0 THEN
+    INSERT INTO public.elo_history (user_id, change, result, date, created_at, match_id)
+    VALUES (p_user_id, v_diff, 'adjustment', now(), now(), null);
+  END IF;
+
+  -- Bypass sættes automatisk i recalc via triggeren, men sæt den også her for sikkerhed
+  PERFORM set_config('app.bypass_elo_protection', 'true', true);
+  PERFORM public.recalc_profile_stats_from_elo_history(p_user_id);
+  SELECT elo_rating INTO v_current_elo FROM public.profiles WHERE id = p_user_id;
+  RETURN v_current_elo;
+END;
+$$;
+
+
+-- ============================================================================
 -- Genberegn games_won for alle eksisterende spillere (reparér korrupt data)
+-- Kører EFTER alle funktioner er opdateret med bypass.
+-- ============================================================================
+
 DO $$
 DECLARE r RECORD;
 BEGIN
@@ -79,7 +345,6 @@ BEGIN
 END;
 $$;
 
--- Drop hvis den allerede eksisterer
 DROP TRIGGER IF EXISTS trg_enforce_max_players ON match_players;
 
 CREATE TRIGGER trg_enforce_max_players
@@ -88,8 +353,7 @@ CREATE TRIGGER trg_enforce_max_players
 
 
 -- ============================================================================
--- FIX #2: RPC til atomisk match-join (erstatter client-side status-opdatering)
--- Frontend bør kalde denne i stedet for manuelt INSERT + UPDATE.
+-- FIX #2: RPC til atomisk match-join
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION join_match(
@@ -111,7 +375,6 @@ BEGIN
   v_uid := auth.uid();
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Ikke logget ind'; END IF;
 
-  -- Lås match-rækken for at forhindre race condition
   SELECT status, max_players INTO v_status, v_max
   FROM matches WHERE id = p_match_id FOR UPDATE;
 
@@ -119,22 +382,18 @@ BEGIN
     RETURN jsonb_build_object('error', 'Kampen er ikke åben for tilmelding');
   END IF;
 
-  -- Tjek om allerede tilmeldt (unique constraint fanger det også)
   IF EXISTS (SELECT 1 FROM match_players WHERE match_id = p_match_id AND user_id = v_uid) THEN
     RETURN jsonb_build_object('error', 'Du er allerede tilmeldt');
   END IF;
 
-  -- Tjek kapacitet
   SELECT COUNT(*) INTO v_count FROM match_players WHERE match_id = p_match_id;
   IF v_count >= COALESCE(v_max, 4) THEN
     RETURN jsonb_build_object('error', 'Kampen er fuld');
   END IF;
 
-  -- Indsæt spilleren
   INSERT INTO match_players (match_id, user_id, user_name, user_email, user_emoji, team)
   VALUES (p_match_id, v_uid, p_user_name, p_user_email, p_user_emoji, p_team);
 
-  -- Genoptæl og opdatér status atomisk
   SELECT COUNT(*) INTO v_count FROM match_players WHERE match_id = p_match_id;
   SELECT COUNT(*) INTO v_t1 FROM match_players WHERE match_id = p_match_id AND team = 1;
   SELECT COUNT(*) INTO v_t2 FROM match_players WHERE match_id = p_match_id AND team = 2;
@@ -155,7 +414,6 @@ $$;
 
 -- ============================================================================
 -- FIX #4: RPC til atomisk match-leave
--- Håndterer status-opdatering + creator-overdragelse server-side.
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION leave_match(p_match_id uuid)
@@ -170,7 +428,6 @@ BEGIN
   v_uid := auth.uid();
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Ikke logget ind'; END IF;
 
-  -- Lås match-rækken
   SELECT status, creator_id INTO v_status, v_creator
   FROM matches WHERE id = p_match_id FOR UPDATE;
 
@@ -178,15 +435,12 @@ BEGIN
     RETURN jsonb_build_object('error', 'Du kan ikke afmelde dig en kamp, der er i gang eller afsluttet.');
   END IF;
 
-  -- Tjek at brugeren er tilmeldt
   IF NOT EXISTS (SELECT 1 FROM match_players WHERE match_id = p_match_id AND user_id = v_uid) THEN
     RETURN jsonb_build_object('error', 'Du er ikke tilmeldt denne kamp.');
   END IF;
 
-  -- Fjern spilleren
   DELETE FROM match_players WHERE match_id = p_match_id AND user_id = v_uid;
 
-  -- Tæl tilbageværende
   SELECT COUNT(*) INTO v_remaining FROM match_players WHERE match_id = p_match_id;
 
   IF v_remaining = 0 THEN
@@ -195,7 +449,6 @@ BEGIN
   END IF;
 
   IF v_creator = v_uid THEN
-    -- Overdrag creator til næste spiller
     SELECT user_id INTO v_next_creator FROM match_players WHERE match_id = p_match_id ORDER BY joined_at ASC LIMIT 1;
     UPDATE matches SET creator_id = v_next_creator, status = 'open', current_players = v_remaining WHERE id = p_match_id;
     RETURN jsonb_build_object('success', true, 'message', 'Du er afmeldt. Kampen er givet videre.');
@@ -209,7 +462,6 @@ $$;
 
 -- ============================================================================
 -- FIX #5: RPC til atomisk kick-player
--- Opretter eller admin kan fjerne en spiller server-side.
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION kick_player_from_match(p_match_id uuid, p_target_user_id uuid)
@@ -222,16 +474,13 @@ BEGIN
   v_uid := auth.uid();
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Ikke logget ind'; END IF;
 
-  -- Tjek adgang: kun creator eller admin
   SELECT creator_id INTO v_creator FROM matches WHERE id = p_match_id;
   IF v_creator IS DISTINCT FROM v_uid AND NOT public.is_admin() THEN
     RETURN jsonb_build_object('error', 'Kun opretteren eller admin kan fjerne spillere.');
   END IF;
 
-  -- Fjern spilleren
   DELETE FROM match_players WHERE match_id = p_match_id AND user_id = p_target_user_id;
 
-  -- Opdatér status
   SELECT COUNT(*) INTO v_remaining FROM match_players WHERE match_id = p_match_id;
   UPDATE matches SET status = 'open', current_players = v_remaining WHERE id = p_match_id;
 
