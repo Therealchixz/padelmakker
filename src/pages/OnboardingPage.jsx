@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
@@ -19,7 +19,7 @@ export function OnboardingPage() {
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
@@ -81,14 +81,16 @@ export function OnboardingPage() {
         play_style: form.style,
         court_side: form.court_side || null,
         area: form.area,
+        city: form.city.trim() || null,
         availability: form.availability,
         bio: sanitizeText(form.bio),
-        /* Emoji i metadata under oprettelse; foto uploades efter login (pending) eller straks hvis session */
         avatar: avatarFile ? "🎾" : form.avatar,
         birth_year: parseInt(form.birth_year, 10) || null,
         birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
         birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
-        /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
+        intent_now: form.intent_now || null,
+        seeking_match: form.seeking_match,
+        travel_willing: form.travel_willing,
         onboarding_completed: true,
       });
 
@@ -191,23 +193,52 @@ export function OnboardingPage() {
         {PLAY_STYLES.map(s => <button key={s} onClick={() => set("style", s)} style={{ ...selBtn(form.style === s) }}>{s}</button>)}
       </div>
       <div style={labelStyle}>Foretrukken side på banen</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
         {COURT_SIDES.map(s => <button key={s} onClick={() => set("court_side", s)} style={{ ...selBtn(form.court_side === s) }}>{s}</button>)}
+      </div>
+      <div style={labelStyle}>Hvad søger du primært? <span style={{ fontWeight: 400, color: "#8494A7" }}>(valgfri)</span></div>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        {INTENTS.map(i => (
+          <button key={i.value} onClick={() => set("intent_now", form.intent_now === i.value ? "" : i.value)} style={{ ...selBtn(form.intent_now === i.value), flexDirection: "column", gap: "2px" }}>
+            <span style={{ fontWeight: 700 }}>{i.label}</span>
+            <span style={{ fontSize: "11px", fontWeight: 400, opacity: 0.7 }}>{i.desc}</span>
+          </button>
+        ))}
       </div>
     </div>,
 
     <div key={2}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Hvor og hvornår?</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg den region du primært spiller i — så kan andre finde dig.</p>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg region og by — så kan andre finde dig nemt.</p>
       <div style={labelStyle}>Region</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "14px" }}>
         {REGIONS.map((r) => (
           <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "8px 14px", fontSize: "13px" }}>{r}</button>
         ))}
       </div>
+      <label htmlFor="onb-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: "#8494A7" }}>(valgfri)</span></label>
+      <input
+        id="onb-city"
+        value={form.city}
+        onChange={e => set("city", e.target.value)}
+        placeholder="F.eks. Aarhus, København, Aalborg..."
+        style={{ ...inputStyle, marginBottom: "20px" }}
+      />
       <div style={labelStyle}>Hvornår kan du spille?</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
         {AVAILABILITY.map(a => <button key={a} onClick={() => toggleAvail(a)} style={{ ...btn(form.availability.includes(a)), padding: "8px 14px", fontSize: "13px" }}>{a}</button>)}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#F8FAFC", borderRadius: "10px", padding: "14px 16px", border: "1px solid " + theme.border }}>
+        <div>
+          <div style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>Søger kamp aktivt</div>
+          <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "2px" }}>Vis mig i foreslåede makkere for andre</div>
+        </div>
+        <button
+          onClick={() => set("seeking_match", !form.seeking_match)}
+          style={{ width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer", background: form.seeking_match ? theme.accent : theme.border, position: "relative", transition: "background 0.2s", flexShrink: 0 }}
+        >
+          <div style={{ position: "absolute", top: "3px", left: form.seeking_match ? "23px" : "3px", width: "18px", height: "18px", borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+        </button>
       </div>
     </div>,
 
