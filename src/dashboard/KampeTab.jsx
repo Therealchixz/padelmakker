@@ -13,7 +13,8 @@ import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHisto
 import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
-import { Clock, MapPin, Plus, UserMinus, Trash2, Search } from 'lucide-react';
+import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
+import { Clock, MapPin, Plus, UserMinus, Trash2, Search, Zap } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -324,7 +325,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const t1 = mp.filter(p => matchPlayerTeam(p) === 1).length;
       const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
       if (t1 >= 2 && t2 >= 2) {
-        await supabase.from("matches").update({ status: "full", current_players: 4 }).eq("id", matchId);
+        await supabase.from("matches").update({ status: "full", current_players: 4, seeking_player: false }).eq("id", matchId);
       } else {
         await supabase.from("matches").update({ current_players: mp.length }).eq("id", matchId);
       }
@@ -469,6 +470,44 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       showToast("Kamp slettet.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
+  const toggleSeekingPlayer = async (match) => {
+    // Sluk hvis allerede aktiv
+    if (match.seeking_player) {
+      setBusyId(match.id + '-seek');
+      try {
+        await deactivateSeekingPlayer(match.id);
+        showToast('Søgning stoppet.');
+        await loadData();
+      } catch (e) { showToast('Fejl: ' + (e.message || 'Prøv igen')); }
+      finally { setBusyId(null); }
+      return;
+    }
+
+    setBusyId(match.id + '-seek');
+    try {
+      const creatorProfile = profilesById[String(match.creator_id)] || user;
+      const playerIds = (matchPlayers[match.id] || []).map(p => p.user_id);
+      const allProfilesList = Object.values(profilesById);
+
+      const { notified, error } = await activateSeekingPlayer(
+        match, creatorProfile, allProfilesList, playerIds
+      );
+
+      if (error) {
+        showToast(error);
+        return;
+      }
+
+      if (notified > 0) {
+        showToast(`⚡ ${notified} spillere er notificeret!`);
+      } else {
+        showToast('Kampen er markeret som "søger spiller" — ingen matchende spillere fundet lige nu.');
+      }
+      await loadData();
+    } catch (e) { showToast('Fejl: ' + (e.message || 'Prøv igen')); }
     finally { setBusyId(null); }
   };
 
@@ -621,7 +660,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
             {m.description && <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "4px", fontStyle: "italic", lineHeight: 1.4 }}>💬 {m.description}</div>}
           </div>
-          <span style={{ ...tag(statusLabel.bg, statusLabel.color), flexShrink: 0 }}>{statusLabel.text}</span>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {m.seeking_player && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
+                <Zap size={10} /> Mangler 1 spiller
+              </span>
+            )}
+            <span style={{ ...tag(statusLabel.bg, statusLabel.color) }}>{statusLabel.text}</span>
+          </div>
         </div>
 
         {/* Teams display */}
@@ -809,6 +855,28 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 ❌ {isAdmin ? "Slet (Admin)" : "Afvis"}
               </button>
             </div>
+          )}
+          {isCreator && status === "open" && mp.length < 4 && (
+            <button
+              onClick={() => toggleSeekingPlayer(m)}
+              disabled={busyId === m.id + '-seek'}
+              style={{
+                ...btn(false),
+                width: "100%",
+                justifyContent: "center",
+                fontSize: "13px",
+                background: m.seeking_player ? '#FEF3C7' : theme.surface,
+                color: m.seeking_player ? '#B45309' : theme.textMid,
+                borderColor: m.seeking_player ? '#FCD34D' : theme.border,
+              }}
+            >
+              <Zap size={14} />
+              {busyId === m.id + '-seek'
+                ? 'Sender...'
+                : m.seeking_player
+                ? 'Søger spiller — klik for at stoppe'
+                : 'Råb op — mangler 1 spiller'}
+            </button>
           )}
           {joined && !isCreator && (status === "open" || status === "full") && (
             <button onClick={() => leaveMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.textMid }}>
