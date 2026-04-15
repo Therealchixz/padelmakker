@@ -31,7 +31,7 @@ export async function createNotification(userId, type, title, body, matchId = nu
     if (supabaseUrl && import.meta.env.VITE_VAPID_PUBLIC_KEY) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
-        fetch(`${supabaseUrl}/functions/v1/clever-worker`, {
+        fetch(`${supabaseUrl}/functions/v1/send-push`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
