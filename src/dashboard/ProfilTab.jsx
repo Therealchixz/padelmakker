@@ -81,6 +81,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     try {
       await updateProfile({
         area: region,
+        city: form.city.trim() || null,
         level: form.level ? parseFloat(form.level.match(/[\d.]+/)?.[0] || "3") : undefined,
         play_style: form.play_style,
         court_side: form.court_side || null,
@@ -132,7 +133,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 {user.level && <span style={tag(theme.blueBg, theme.blue)}>{levelLabel(user.level)}</span>}
                 <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
                 {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
-                <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.area || "?"}</span>
+                <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.city ? `${user.city}, ` : ""}{user.area || "?"}</span>
               </div>
             </div>
           </div>
@@ -331,13 +332,21 @@ export function ProfilTab({ user, showToast, setTab }) {
           <input value={form.birth_year || ""} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="År" type="text" inputMode="numeric" style={{ ...inputStyle, paddingLeft: "10px" }} />
         </div>
 
-        {/* Area */}
+        {/* Area + City */}
         <div style={labelStyle}>Region</div>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
           {REGIONS.map((r) => (
             <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "6px 12px", fontSize: "12px" }}>{r}</button>
           ))}
         </div>
+        <label htmlFor="profil-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: "#8494A7" }}>(valgfri)</span></label>
+        <input
+          id="profil-city"
+          value={form.city}
+          onChange={e => set("city", e.target.value)}
+          placeholder="F.eks. Aarhus, København, Aalborg..."
+          style={{ ...inputStyle, marginBottom: "14px" }}
+        />
 
         {/* Niveau */}
         <div style={labelStyle}>Niveau</div>

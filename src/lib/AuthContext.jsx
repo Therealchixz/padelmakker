@@ -121,6 +121,7 @@ async function fetchOrCreateProfileCore(userRow) {
       level: meta.level || 5,
       play_style: meta.play_style || 'Ved ikke endnu',
       area: regionFromMeta,
+      city: meta.city || null,
       availability: meta.availability || [],
       bio: meta.bio || '',
       avatar: meta.avatar || '🎾',
@@ -128,6 +129,9 @@ async function fetchOrCreateProfileCore(userRow) {
       birth_month: meta.birth_month ?? null,
       birth_day: meta.birth_day ?? null,
       court_side: meta.court_side ?? null,
+      intent_now: meta.intent_now || null,
+      seeking_match: meta.seeking_match === true,
+      travel_willing: meta.travel_willing === true,
     },
     { onConflict: 'id' }
   ).select().single()
@@ -349,6 +353,7 @@ export function AuthProvider({ children }) {
         level: metadata.level || 5,
         play_style: metadata.play_style || 'Ved ikke endnu',
         area: region,
+        city: metadata.city || null,
         availability: metadata.availability || [],
         bio: metadata.bio || '',
         avatar: metadata.avatar || '🎾',
@@ -356,6 +361,9 @@ export function AuthProvider({ children }) {
         birth_month: metadata.birth_month ?? null,
         birth_day: metadata.birth_day ?? null,
         court_side: metadata.court_side ?? null,
+        intent_now: metadata.intent_now || null,
+        seeking_match: metadata.seeking_match === true,
+        travel_willing: metadata.travel_willing === true,
       })
       if (upErr) console.warn('profiles upsert:', upErr.message)
       if (data.session) {

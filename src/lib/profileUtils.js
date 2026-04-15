@@ -185,6 +185,7 @@ export function normalizeProfileRow(p) {
   return {
     ...p,
     area:           region,
+    city:           p.city != null ? String(p.city).trim() : null,
     availability:   normalizeStringArrayField(p.availability),
     // Matchmaking-felter: sikr korrekte typer
     latitude:       p.latitude  != null ? Number(p.latitude)  : null,

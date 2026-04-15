@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
-import { REGIONS, INTENT_LABELS } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS } from '../lib/platformConstants';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
-import { Search, MapPin, Zap } from 'lucide-react';
+import { Search, MapPin, Zap, SlidersHorizontal } from 'lucide-react';
 import { calcAge } from '../lib/profileUtils';
 import { levelLabel } from '../lib/platformConstants';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -77,8 +77,9 @@ function SuggestionCard({ suggestion, myElo, onView, onInvite }) {
           >
             {p.full_name || p.name}
           </span>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: scoreColor, flexShrink: 0 }}>
+          <span title="Match-score baseret på ELO, tilgængelighed, geografi og intention" style={{ fontSize: '11px', fontWeight: 800, color: scoreColor, flexShrink: 0, display: 'flex', alignItems: 'baseline', gap: '2px' }}>
             {score}%
+            <span style={{ fontSize: '9px', fontWeight: 600, color: theme.textLight }}>match</span>
           </span>
         </div>
 
@@ -112,7 +113,11 @@ export function MakkereTab({ user, showToast }) {
   const [search, setSearch]           = useState('');
   const [filterElo, setFilterElo]     = useState('all');
   const [filterArea, setFilterArea]   = useState('all');
+  const [filterStyle, setFilterStyle] = useState('all');
+  const [filterIntent, setFilterIntent] = useState('all');
+  const [filterSeeking, setFilterSeeking] = useState(false);
   const [filterFav, setFilterFav]     = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [players, setPlayers]         = useState([]);
   const [statsById, setStatsById]     = useState({});
   const [loading, setLoading]         = useState(true);
@@ -176,12 +181,21 @@ export function MakkereTab({ user, showToast }) {
   // Filtrer til browse-listen
   const filtered = players.filter(p => {
     const n = p.full_name || p.name || '';
-    if (search && !n.toLowerCase().includes(search.toLowerCase())) return false;
+    const c = p.city || '';
+    if (search && !n.toLowerCase().includes(search.toLowerCase()) && !c.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterArea !== 'all' && p.area !== filterArea) return false;
     if (filterElo === 'close' && Math.abs(displayElo(p) - myElo) > 150) return false;
+    if (filterStyle !== 'all' && p.play_style !== filterStyle) return false;
+    if (filterIntent !== 'all' && p.intent_now !== filterIntent) return false;
+    if (filterSeeking && !p.seeking_match) return false;
     if (filterFav && !favorites.has(String(p.id))) return false;
     return true;
   });
+
+  const activeFilterCount = [
+    filterElo !== 'all', filterArea !== 'all', filterStyle !== 'all',
+    filterIntent !== 'all', filterSeeking, filterFav,
+  ].filter(Boolean).length;
 
   const PAGE_SIZE = 20;
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -247,36 +261,72 @@ export function MakkereTab({ user, showToast }) {
         <input
           value={search}
           onChange={e => handleFilterChange(() => setSearch(e.target.value))}
-          placeholder="Søg efter navn..."
+          placeholder="Søg efter navn eller by..."
           style={{ ...inputStyle, paddingLeft: '36px' }}
         />
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <select
-          value={filterElo}
-          onChange={e => handleFilterChange(() => setFilterElo(e.target.value))}
-          style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px' }}
+      {/* Filterknap + aktive filtre */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <button
+          onClick={() => setShowFilters(v => !v)}
+          style={{ ...btn(showFilters || activeFilterCount > 0), padding: '8px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
         >
-          <option value="all">Alle ELO</option>
-          <option value="close">±150 ELO om dig ({myElo})</option>
-        </select>
-        <select
-          value={filterArea}
-          onChange={e => handleFilterChange(() => setFilterArea(e.target.value))}
-          style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px' }}
-        >
-          <option value="all">Alle regioner</option>
-          {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-        </select>
+          <SlidersHorizontal size={13} />
+          Filtre
+          {activeFilterCount > 0 && (
+            <span style={{ background: showFilters ? 'rgba(255,255,255,0.3)' : theme.accent, color: '#fff', borderRadius: '10px', fontSize: '10px', fontWeight: 800, padding: '1px 6px', marginLeft: '2px' }}>
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
         <button
           onClick={() => handleFilterChange(() => setFilterFav(f => !f))}
           style={{ ...btn(filterFav), padding: '8px 12px', fontSize: '13px' }}
-          title="Vis kun favoritter"
         >
           {filterFav ? '★ Favoritter' : '☆ Favoritter'}
         </button>
+        {activeFilterCount > 0 && (
+          <button
+            onClick={() => { setFilterElo('all'); setFilterArea('all'); setFilterStyle('all'); setFilterIntent('all'); setFilterSeeking(false); setFilterFav(false); setPage(0); }}
+            style={{ fontSize: '12px', color: theme.red, background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontWeight: 600 }}
+          >
+            Nulstil filtre
+          </button>
+        )}
       </div>
+
+      {showFilters && (
+        <div style={{ background: '#F8FAFC', borderRadius: '10px', border: '1px solid ' + theme.border, padding: '14px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <select value={filterElo} onChange={e => handleFilterChange(() => setFilterElo(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+              <option value="all">Alle ELO-niveauer</option>
+              <option value="close">±150 ELO om dig ({myElo})</option>
+            </select>
+            <select value={filterArea} onChange={e => handleFilterChange(() => setFilterArea(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+              <option value="all">Alle regioner</option>
+              {REGIONS.map((r) => <option key={r} value={r}>{r.replace('Region ', '')}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <select value={filterStyle} onChange={e => handleFilterChange(() => setFilterStyle(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+              <option value="all">Alle spillestile</option>
+              {PLAY_STYLES.filter(s => s !== 'Ved ikke endnu').map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select value={filterIntent} onChange={e => handleFilterChange(() => setFilterIntent(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+              <option value="all">Alle intentioner</option>
+              {INTENTS.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
+            </select>
+          </div>
+          <button
+            onClick={() => handleFilterChange(() => setFilterSeeking(v => !v))}
+            style={{ ...btn(filterSeeking), padding: '8px 14px', fontSize: '13px', alignSelf: 'flex-start' }}
+          >
+            ⚡ {filterSeeking ? 'Kun søgende spillere' : 'Vis kun søgende spillere'}
+          </button>
+        </div>
+      )}
+
 
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '13px', color: theme.textMid }}>
@@ -299,7 +349,7 @@ export function MakkereTab({ user, showToast }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
                     <span style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em', wordBreak: 'break-word' }}>{p.full_name || p.name}</span>
-                    <span style={{ fontSize: '12px', color: theme.textLight, display: 'flex', alignItems: 'center', gap: '3px' }}><MapPin size={11} /> {p.area || '?'}</span>
+                    <span style={{ fontSize: '12px', color: theme.textLight, display: 'flex', alignItems: 'center', gap: '3px' }}><MapPin size={11} /> {p.city ? `${p.city}` : (p.area || '?')}</span>
                   </div>
                   <div style={{ display: 'flex', gap: '5px', marginTop: '7px', flexWrap: 'wrap' }}>
                     <span style={tag(theme.accentBg, theme.accent)}>ELO {displayElo(p)}</span>
