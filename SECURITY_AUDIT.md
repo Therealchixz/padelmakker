@@ -279,12 +279,12 @@ import { LEVELS, PLAY_STYLES, REGIONS, levelStringFromNum } from '../lib/platfor
 
 | # | Type | Sværhedsgrad | Status |
 |---|------|-------------|--------|
-| 1 | `v_wins` aldrig tildelt → games_won = 0 | KRITISK | Kræver SQL-fix |
-| 2 | matches UPDATE policy mismatch | KRITISK | Kræver policy-fix eller RPC |
-| 3 | Race condition ved match-join | KRITISK | Kræver DB-trigger |
+| 1 | `v_wins` aldrig tildelt → games_won = 0 | KRITISK | FIXET (SQL + data-reparation) |
+| 2 | matches UPDATE policy mismatch | KRITISK | FIXET (join/leave/kick RPCs) |
+| 3 | Race condition ved match-join | KRITISK | FIXET (trigger + RPC med FOR UPDATE) |
 | 4 | FK delete-regler = NO ACTION | MEDIUM | Overvej ON DELETE SET NULL/CASCADE |
 | 5 | match_results mangler UNIQUE on match_id | MEDIUM | Tilføj index |
-| 6 | Inkonsekvent fejlhåndtering i frontend | MEDIUM | Refactor DB-kald |
+| 6 | Inkonsekvent fejlhåndtering i frontend | MEDIUM | FIXET (HomeTab.jsx) |
 | 7 | notifications mangler INSERT policy | LAV | By design (RPCs) |
 | 8 | protect_elo_fields vs SECURITY DEFINER | MEDIUM | Test + evt. bypass-mekanisme |
-| 9 | Duplikeret import i AdminTab | LAV | Fjern duplikat |
+| 9 | Duplikeret import i AdminTab | LAV | FIXET |

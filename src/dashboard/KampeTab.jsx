@@ -313,21 +313,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     setTeamSelectMatch(null);
     setBusyId(matchId);
     try {
-      const { error } = await supabase.from("match_players").insert({
-        match_id: matchId, user_id: user.id, user_name: myDisplayName,
-        user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾", team: teamNum,
+      // Atomisk join via RPC — håndterer kapacitetstjek og status-opdatering server-side
+      const { data: rpcResult, error: rpcErr } = await supabase.rpc("join_match", {
+        p_match_id: matchId,
+        p_team: teamNum,
+        p_user_name: myDisplayName,
+        p_user_email: authUser?.email || user.email || null,
+        p_user_emoji: user.avatar || "🎾",
       });
-      if (error) throw error;
-
-      // Check if match is now full (4 players, 2 per team)
-      const mp = [...(matchPlayers[matchId] || []), { user_id: user.id, team: teamNum }];
-      const t1 = mp.filter(p => matchPlayerTeam(p) === 1).length;
-      const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
-      if (t1 >= 2 && t2 >= 2) {
-        await supabase.from("matches").update({ status: "full", current_players: 4 }).eq("id", matchId);
-      } else {
-        await supabase.from("matches").update({ current_players: mp.length }).eq("id", matchId);
-      }
+      if (rpcErr) throw rpcErr;
+      if (rpcResult?.error) throw new Error(rpcResult.error);
 
       /* Underret opretter via RPC (læser creator_id server-side — RLS kan skjule creator for B) */
       {
@@ -338,13 +333,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         });
         if (nErr) {
           console.warn("notify_match_creator_on_join:", nErr.message || nErr);
-          showToast(
-            "Tilmelding gemt, men notifikation fejlede. Kør opdateret create_notification_rpc.sql (notify_match_creator_on_join) i Supabase."
-          );
         }
       }
       // Notify all players if match is now full
-      if (t1 >= 2 && t2 >= 2) {
+      if (rpcResult?.status === "full") {
+        const mp = matchPlayers[matchId] || [];
         mp.filter(p => p.user_id !== user.id).forEach(p => {
           createNotification(p.user_id, "match_full", "Kampen er fuld! 🎾", "Alle 4 pladser er fyldt — kampen er klar til at starte.", matchId);
         });
@@ -367,21 +360,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     setBusyId(matchId);
     try {
-      const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
-      if (error) throw error;
-      const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== user.id);
-      const isCreator = match && String(match.creator_id) === String(user.id);
+      // Atomisk leave via RPC — håndterer status-opdatering og creator-overdragelse server-side
+      const { data: rpcResult, error: rpcErr } = await supabase.rpc("leave_match", {
+        p_match_id: matchId,
+      });
+      if (rpcErr) throw rpcErr;
+      if (rpcResult?.error) throw new Error(rpcResult.error);
 
-      if (mp.length === 0) {
-        await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId);
-        showToast("Kampen er slettet (ingen spillere tilbage).");
-      } else if (isCreator) {
-        await supabase.from("matches").update({ creator_id: mp[0].user_id, status: "open", current_players: mp.length }).eq("id", matchId);
-        showToast("Du er afmeldt. Kampen er givet videre.");
-      } else {
-        await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
-        showToast("Du er afmeldt.");
-      }
+      const msg = rpcResult?.message || "Du er afmeldt.";
+      showToast(msg);
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }
@@ -394,11 +381,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     setBusyId(matchId + '-kick-' + targetUserId);
     try {
-      const { error } = await supabase.from("match_players").delete()
-        .eq("match_id", matchId).eq("user_id", targetUserId);
-      if (error) throw error;
-      const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== targetUserId);
-      await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
+      // Atomisk kick via RPC — håndterer status-opdatering server-side
+      const { data: rpcResult, error: rpcErr } = await supabase.rpc("kick_player_from_match", {
+        p_match_id: matchId,
+        p_target_user_id: targetUserId,
+      });
+      if (rpcErr) throw rpcErr;
+      if (rpcResult?.error) throw new Error(rpcResult.error);
       showToast("Spiller fjernet.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
@@ -514,6 +503,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   };
 
   const confirmResult = async (matchId) => {
+    if (busyId) return; // Forhindre dobbelt-klik
     setBusyId(matchId);
     try {
       const mr = matchResults[matchId];

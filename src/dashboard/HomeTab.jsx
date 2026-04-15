@@ -28,7 +28,7 @@ export function HomeTab({ user, setTab }) {
 
   const fetchFeed = useCallback(async () => {
     // ELO history feed
-    const { data: eloDataFull } = await supabase
+    const { data: eloDataFull, error: eloErr } = await supabase
       .from('elo_history')
       .select('user_id, result, change, date, created_at, match_id, profiles(full_name, name, avatar)')
       .neq('change', 0)
@@ -36,20 +36,23 @@ export function HomeTab({ user, setTab }) {
       .neq('result', 'adjustment')
       .order('created_at', { ascending: false, nullsFirst: false })
       .limit(40);
-    
+    if (eloErr) { console.warn('Feed: elo_history fejl:', eloErr.message); setFeed([]); return; }
+
     // Safety: ignore the +0 entries entirely as they are noise
     const eloData = (eloDataFull || []).filter(r => Number(r.change) !== 0);
-    
+
     // Fetch match details for entries with match_id
     const matchIds = [...new Set(eloData.filter(r => r.match_id).map(r => r.match_id))];
     let matchMap = {};
     if (matchIds.length > 0) {
-      const [{ data: mRes }, { data: mDetails }] = await Promise.all([
+      const [resResults, resDetails] = await Promise.all([
         supabase.from('match_results').select('*').in('match_id', matchIds),
         supabase.from('matches').select('id, court_name, description').in('id', matchIds)
       ]);
-      (mRes || []).forEach(r => { matchMap[r.match_id] = { ...matchMap[r.match_id], results: r }; });
-      (mDetails || []).forEach(d => { matchMap[d.id] = { ...matchMap[d.id], details: d }; });
+      const mRes = resResults.data || [];
+      const mDetails = resDetails.data || [];
+      mRes.forEach(r => { matchMap[r.match_id] = { ...matchMap[r.match_id], results: r }; });
+      mDetails.forEach(d => { matchMap[d.id] = { ...matchMap[d.id], details: d }; });
     }
 
     // Grouping logic

@@ -151,3 +151,90 @@ BEGIN
   );
 END;
 $$;
+
+
+-- ============================================================================
+-- FIX #4: RPC til atomisk match-leave
+-- Håndterer status-opdatering + creator-overdragelse server-side.
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION leave_match(p_match_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_uid uuid;
+  v_status text;
+  v_creator uuid;
+  v_remaining int;
+  v_next_creator uuid;
+BEGIN
+  v_uid := auth.uid();
+  IF v_uid IS NULL THEN RAISE EXCEPTION 'Ikke logget ind'; END IF;
+
+  -- Lås match-rækken
+  SELECT status, creator_id INTO v_status, v_creator
+  FROM matches WHERE id = p_match_id FOR UPDATE;
+
+  IF v_status IN ('in_progress', 'completed') THEN
+    RETURN jsonb_build_object('error', 'Du kan ikke afmelde dig en kamp, der er i gang eller afsluttet.');
+  END IF;
+
+  -- Tjek at brugeren er tilmeldt
+  IF NOT EXISTS (SELECT 1 FROM match_players WHERE match_id = p_match_id AND user_id = v_uid) THEN
+    RETURN jsonb_build_object('error', 'Du er ikke tilmeldt denne kamp.');
+  END IF;
+
+  -- Fjern spilleren
+  DELETE FROM match_players WHERE match_id = p_match_id AND user_id = v_uid;
+
+  -- Tæl tilbageværende
+  SELECT COUNT(*) INTO v_remaining FROM match_players WHERE match_id = p_match_id;
+
+  IF v_remaining = 0 THEN
+    UPDATE matches SET status = 'cancelled', current_players = 0 WHERE id = p_match_id;
+    RETURN jsonb_build_object('success', true, 'message', 'Kampen er slettet (ingen spillere tilbage).');
+  END IF;
+
+  IF v_creator = v_uid THEN
+    -- Overdrag creator til næste spiller
+    SELECT user_id INTO v_next_creator FROM match_players WHERE match_id = p_match_id ORDER BY joined_at ASC LIMIT 1;
+    UPDATE matches SET creator_id = v_next_creator, status = 'open', current_players = v_remaining WHERE id = p_match_id;
+    RETURN jsonb_build_object('success', true, 'message', 'Du er afmeldt. Kampen er givet videre.');
+  END IF;
+
+  UPDATE matches SET status = 'open', current_players = v_remaining WHERE id = p_match_id;
+  RETURN jsonb_build_object('success', true, 'message', 'Du er afmeldt.');
+END;
+$$;
+
+
+-- ============================================================================
+-- FIX #5: RPC til atomisk kick-player
+-- Opretter eller admin kan fjerne en spiller server-side.
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION kick_player_from_match(p_match_id uuid, p_target_user_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_uid uuid;
+  v_creator uuid;
+  v_remaining int;
+BEGIN
+  v_uid := auth.uid();
+  IF v_uid IS NULL THEN RAISE EXCEPTION 'Ikke logget ind'; END IF;
+
+  -- Tjek adgang: kun creator eller admin
+  SELECT creator_id INTO v_creator FROM matches WHERE id = p_match_id;
+  IF v_creator IS DISTINCT FROM v_uid AND NOT public.is_admin() THEN
+    RETURN jsonb_build_object('error', 'Kun opretteren eller admin kan fjerne spillere.');
+  END IF;
+
+  -- Fjern spilleren
+  DELETE FROM match_players WHERE match_id = p_match_id AND user_id = p_target_user_id;
+
+  -- Opdatér status
+  SELECT COUNT(*) INTO v_remaining FROM match_players WHERE match_id = p_match_id;
+  UPDATE matches SET status = 'open', current_players = v_remaining WHERE id = p_match_id;
+
+  RETURN jsonb_build_object('success', true, 'remaining', v_remaining);
+END;
+$$;
