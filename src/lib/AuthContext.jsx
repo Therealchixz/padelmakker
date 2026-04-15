@@ -157,6 +157,23 @@ export function AuthProvider({ children }) {
   /** Til pending-avatar merge: undgå at sætte profil efter logout når core-load timeout gav prev=null */
   const activeUserIdRef = useRef('')
 
+  /**
+   * Opdater last_active_at for brugeren — fire-and-forget.
+   * Skal defineres FØR useEffect der bruger den i dependency array.
+   */
+  const touchLastActive = useCallback(async (userId) => {
+    const uid = userId || user?.id
+    if (!uid) return
+    try {
+      await supabase
+        .from('profiles')
+        .update({ last_active_at: new Date().toISOString() })
+        .eq('id', uid)
+    } catch {
+      /* ignorer — kritisk ikke for UX */
+    }
+  }, [user?.id])
+
   const loadProfile = useCallback((userRow, opts = {}) => {
     const quiet = opts.quiet === true
     const id = ++profileReqId.current
@@ -427,23 +444,6 @@ export function AuthProvider({ children }) {
   const refreshProfile = useCallback(() => {
     if (user) loadProfile(user)
   }, [user, loadProfile])
-
-  /**
-   * Opdater last_active_at for brugeren — fire-and-forget.
-   * Kaldes ved login og synligt app-åbning.
-   */
-  const touchLastActive = useCallback(async (userId) => {
-    const uid = userId || user?.id
-    if (!uid) return
-    try {
-      await supabase
-        .from('profiles')
-        .update({ last_active_at: new Date().toISOString() })
-        .eq('id', uid)
-    } catch {
-      /* ignorer — kritisk ikke for UX */
-    }
-  }, [user?.id])
 
   /** Genindlæs profiles-rækken uden fuldskærms-loading (fx efter DB-reset eller tab-skift). */
   const refreshProfileQuiet = useCallback(() => {
