@@ -210,8 +210,10 @@ export function ProfilTab({ user, showToast, setTab }) {
             const key = h.date?.slice(0, 7);
             if (!key) return;
             if (!monthStats[key]) monthStats[key] = { wins: 0, games: 0, change: 0 };
-            monthStats[key].games++;
-            if (h.result === "win") monthStats[key].wins++;
+            if (h.result !== 'adjustment') {
+              monthStats[key].games++;
+              if (h.result === "win") monthStats[key].wins++;
+            }
             monthStats[key].change += (h.change || 0);
           });
           const months = Object.entries(monthStats);

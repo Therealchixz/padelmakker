@@ -294,8 +294,8 @@ BEGIN
   v_diff := p_new_elo - COALESCE(v_current_elo, 1000);
 
   IF v_diff <> 0 THEN
-    INSERT INTO public.elo_history (user_id, change, result, date, created_at, match_id)
-    VALUES (p_user_id, v_diff, 'adjustment', now(), now(), null);
+    INSERT INTO public.elo_history (user_id, old_rating, new_rating, change, result, date, created_at, match_id)
+    VALUES (p_user_id, COALESCE(v_current_elo, 1000), p_new_elo, v_diff, 'adjustment', now(), now(), null);
   END IF;
 
   -- Bypass sættes automatisk i recalc via triggeren, men sæt den også her for sikkerhed
@@ -485,5 +485,67 @@ BEGIN
   UPDATE matches SET status = 'open', current_players = v_remaining WHERE id = p_match_id;
 
   RETURN jsonb_build_object('success', true, 'remaining', v_remaining);
+END;
+$$;
+
+
+-- ============================================================================
+-- FIX #6: match_results UPDATE policy mangler admin-adgang
+-- Admin kan ikke bekræfte kampresultater fordi UPDATE-policyen kun tillader
+-- deltagere. Tilføj OR is_admin() til begge klausuler.
+-- ============================================================================
+
+-- Først: find og fjern den eksisterende UPDATE policy
+DO $$
+DECLARE
+  pol RECORD;
+BEGIN
+  FOR pol IN
+    SELECT policyname FROM pg_policies
+    WHERE tablename = 'match_results' AND cmd = 'UPDATE'
+  LOOP
+    EXECUTE format('DROP POLICY %I ON match_results', pol.policyname);
+  END LOOP;
+END;
+$$;
+
+-- Opret ny UPDATE policy med admin-adgang
+CREATE POLICY match_results_update_by_participant_or_admin ON match_results
+  FOR UPDATE TO authenticated
+  USING (
+    auth.uid() IN (SELECT mp.user_id FROM match_players mp WHERE mp.match_id = match_results.match_id)
+    OR public.is_admin()
+  )
+  WITH CHECK (
+    auth.uid() IN (SELECT mp.user_id FROM match_players mp WHERE mp.match_id = match_results.match_id)
+    OR public.is_admin()
+  );
+
+
+-- ============================================================================
+-- FIX #7: Opdater admin_adjust_elo til at inkludere old_rating og new_rating
+-- Så frontend kan vise justeringer korrekt i ELO-graf og beregninger.
+-- (Allerede inkluderet i funktionsdefinitionen ovenfor)
+-- ============================================================================
+
+-- Reparer eksisterende adjustment-rækker der mangler old_rating/new_rating.
+-- Bruger profil-ELO minus ændring som tilnærmelse til old_rating.
+DO $$
+DECLARE
+  r RECORD;
+  v_profile_elo numeric;
+BEGIN
+  FOR r IN
+    SELECT id, user_id, change FROM public.elo_history
+    WHERE result = 'adjustment' AND old_rating IS NULL AND change IS NOT NULL
+  LOOP
+    SELECT COALESCE(elo_rating, 1000) INTO v_profile_elo
+    FROM public.profiles WHERE id = r.user_id;
+
+    UPDATE public.elo_history SET
+      old_rating = v_profile_elo - r.change,
+      new_rating = v_profile_elo
+    WHERE id = r.id;
+  END LOOP;
 END;
 $$;

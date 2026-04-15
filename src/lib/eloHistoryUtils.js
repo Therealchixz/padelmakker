@@ -2,9 +2,18 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabase';
 import { normalizeProfileRow } from './profileUtils';
 
-/** Samme filter som ELO-graf / streak (kun rigtige kampe med rating). */
-export function filterRatedEloHistoryRows(rows) {
+/** Kun rigtige kampe med rating (til graf, streak, kamp-tæl). */
+export function filterRatedMatchRows(rows) {
   return (rows || []).filter((h) => h.old_rating != null && h.match_id != null);
+}
+
+/** Alle rækker der påvirker ELO: rigtige kampe + admin-justeringer. */
+export function filterRatedEloHistoryRows(rows) {
+  return (rows || []).filter(
+    (h) =>
+      (h.old_rating != null && h.match_id != null) ||
+      (h.result === 'adjustment' && h.change != null)
+  );
 }
 
 /** Stabil kronologi: samme dato → match_id → id (undgår at "seneste" række bliver forkert). */
@@ -36,7 +45,9 @@ export function sortEloHistoryChronological(rows) {
  */
 export function currentEloFromSortedHistory(sorted) {
   if (!sorted.length) return 1000;
-  const base = Math.round(Number(sorted[0].old_rating) || 1000);
+  // Find det første entry med old_rating som fundament (spring justeringer uden old_rating over)
+  const firstWithRating = sorted.find((h) => h.old_rating != null && Number.isFinite(Number(h.old_rating)));
+  const base = firstWithRating ? Math.round(Number(firstWithRating.old_rating)) : 1000;
   let sumCh = 0;
   for (const row of sorted) {
     const ch = row.change;
@@ -57,13 +68,14 @@ export function currentEloFromSortedHistory(sorted) {
 
 /** Seneste ELO + antal kampe/sejre ud fra elo_history (kilde til graf). null hvis ingen rækker. */
 export function statsFromEloHistoryRows(rows) {
-  const list = filterRatedEloHistoryRows(rows);
-  if (!list.length) return null;
-  const sorted = sortEloHistoryChronological(list);
-  const elo = currentEloFromSortedHistory(sorted);
-  const games = sorted.length;
+  const allElo = filterRatedEloHistoryRows(rows);
+  const matchOnly = filterRatedMatchRows(rows);
+  if (!allElo.length && !matchOnly.length) return null;
+  const sorted = sortEloHistoryChronological(allElo);
+  const elo = sorted.length ? currentEloFromSortedHistory(sorted) : 1000;
+  const games = matchOnly.length;
   let wins = 0;
-  for (const h of sorted) {
+  for (const h of matchOnly) {
     if (h.result === 'win') wins++;
   }
   return { elo, games, wins };
@@ -72,7 +84,8 @@ export function statsFromEloHistoryRows(rows) {
 /** Kræver rækker med `date` og `result` ("win" / andet). Sorterer kronologisk internt. */
 export function winStreaksFromEloHistory(raw) {
   if (!raw?.length) return { currentStreak: 0, bestStreak: 0 };
-  const sorted = sortEloHistoryChronological(raw);
+  // Kun rigtige kampe tæller i streaks — spring admin-justeringer over
+  const sorted = sortEloHistoryChronological(raw).filter((h) => h.result !== 'adjustment');
   let bestStreak = 0;
   for (let start = 0; start < sorted.length; start++) {
     let s = 0;
@@ -258,7 +271,10 @@ export function useProfileEloBundle(userId, syncKey) {
 export function allTimeStatsMapFromEloHistory(eloHistory) {
   const byUser = {};
   for (const h of eloHistory || []) {
-    if (h.old_rating == null || h.match_id == null) continue;
+    // Inkludér rigtige kampe (med old_rating + match_id) OG admin-justeringer (result='adjustment' med change)
+    const isMatch = h.old_rating != null && h.match_id != null;
+    const isAdjustment = h.result === 'adjustment' && h.change != null;
+    if (!isMatch && !isAdjustment) continue;
     const uid = h.user_id;
     if (uid == null) continue;
     const key = String(uid);
