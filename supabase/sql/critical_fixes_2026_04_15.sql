@@ -549,3 +549,42 @@ BEGIN
   END LOOP;
 END;
 $$;
+
+
+-- ============================================================================
+-- FIX #8: Admin kan ikke slette kampe — DELETE policies mangler is_admin()
+-- matches, match_results og notifications DELETE policies opdateres.
+-- ============================================================================
+
+-- matches: kun creator kunne slette — tilføj admin
+DROP POLICY IF EXISTS "Opretteren kan slette sin kamp" ON matches;
+DROP POLICY IF EXISTS matches_delete_by_creator_or_admin ON matches;
+
+CREATE POLICY matches_delete_by_creator_or_admin ON matches
+  FOR DELETE TO authenticated
+  USING (
+    creator_id = auth.uid()
+    OR public.is_admin()
+  );
+
+-- match_results: kun submitter kunne slette — tilføj admin
+DROP POLICY IF EXISTS "Indsenderen kan slette afviste resultater" ON match_results;
+DROP POLICY IF EXISTS match_results_delete_by_submitter_or_admin ON match_results;
+
+CREATE POLICY match_results_delete_by_submitter_or_admin ON match_results
+  FOR DELETE TO authenticated
+  USING (
+    auth.uid() = submitted_by
+    OR public.is_admin()
+  );
+
+-- notifications: kun ejer kunne slette — tilføj admin
+DROP POLICY IF EXISTS notifications_delete_own ON notifications;
+DROP POLICY IF EXISTS notifications_delete_own_or_admin ON notifications;
+
+CREATE POLICY notifications_delete_own_or_admin ON notifications
+  FOR DELETE TO authenticated
+  USING (
+    auth.uid() = user_id
+    OR public.is_admin()
+  );
