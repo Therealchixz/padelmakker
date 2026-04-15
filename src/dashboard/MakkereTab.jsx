@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
-import { REGIONS } from '../lib/platformConstants';
+import { REGIONS, INTENT_LABELS } from '../lib/platformConstants';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, Zap } from 'lucide-react';
 import { calcAge } from '../lib/profileUtils';
 import { levelLabel } from '../lib/platformConstants';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { getMatchSuggestions, matchReason } from '../lib/matchmakingUtils';
 
 function favoritesKeyForUser(userId) {
   return userId != null && String(userId).trim() !== ''
@@ -17,7 +18,6 @@ function favoritesKeyForUser(userId) {
     : null;
 }
 
-/** Favoritter pr. indlogget konto — ikke delt på tværs af profiler i samme browser. */
 function readFavoritesSet(userId) {
   const key = favoritesKeyForUser(userId);
   if (!key) return new Set();
@@ -38,19 +38,89 @@ function writeFavoritesSet(userId, set) {
   }
 }
 
+// ----- Suggested player card -----
+
+function SuggestionCard({ suggestion, myElo, onView, onInvite }) {
+  const { profile: p, score, breakdown } = suggestion;
+  const reason = matchReason(breakdown, p);
+
+  const scoreColor =
+    score >= 75 ? '#10B981' :
+    score >= 55 ? theme.accent :
+    theme.textMid;
+
+  return (
+    <div style={{
+      background: theme.surface,
+      borderRadius: theme.radius,
+      padding: '14px 16px',
+      boxShadow: theme.shadow,
+      border: `1px solid ${theme.border}`,
+      display: 'flex',
+      gap: '12px',
+      alignItems: 'center',
+    }}>
+      <div onClick={() => onView(p)} style={{ cursor: 'pointer', flexShrink: 0 }}>
+        <AvatarCircle
+          avatar={p.avatar}
+          size={46}
+          emojiSize="22px"
+          style={{ background: '#F1F5F9', border: '1px solid ' + theme.border }}
+        />
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+          <span
+            onClick={() => onView(p)}
+            style={{ fontSize: '14px', fontWeight: 700, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          >
+            {p.full_name || p.name}
+          </span>
+          <span style={{ fontSize: '11px', fontWeight: 800, color: scoreColor, flexShrink: 0 }}>
+            {score}%
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap' }}>
+          <span style={tag(theme.accentBg, theme.accent)}>ELO {Math.round(Number(p.elo_rating) || 1000)}</span>
+          {p.area && <span style={{ ...tag(theme.blueBg, theme.blue), display: 'flex', alignItems: 'center', gap: '2px' }}><MapPin size={8} />{p.area.replace('Region ', '')}</span>}
+          {p.intent_now && INTENT_LABELS[p.intent_now] && (
+            <span style={tag('#F0FDF4', '#15803D')}>{INTENT_LABELS[p.intent_now]}</span>
+          )}
+          {p.seeking_match && (
+            <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>
+          )}
+        </div>
+
+        <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '4px' }}>{reason}</div>
+      </div>
+
+      <button
+        onClick={() => onInvite(p)}
+        style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', flexShrink: 0 }}
+      >
+        Invitér
+      </button>
+    </div>
+  );
+}
+
+// ----- Hoved-komponent -----
+
 export function MakkereTab({ user, showToast }) {
-  const [search, setSearch]           = useState("");
-  const [filterElo, setFilterElo]     = useState("all");
-  const [filterArea, setFilterArea]   = useState("all");
+  const [search, setSearch]           = useState('');
+  const [filterElo, setFilterElo]     = useState('all');
+  const [filterArea, setFilterArea]   = useState('all');
   const [filterFav, setFilterFav]     = useState(false);
   const [players, setPlayers]         = useState([]);
-  /** elo_history-afledt stats pr. bruger (matcher profil-modal) */
   const [statsById, setStatsById]     = useState({});
   const [loading, setLoading]         = useState(true);
   const [page, setPage]               = useState(0);
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [inviteTarget, setInviteTarget] = useState(null);
   const [favorites, setFavorites]     = useState(() => readFavoritesSet(user?.id));
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
 
   const myElo = eloOf(user);
 
@@ -72,7 +142,6 @@ export function MakkereTab({ user, showToast }) {
   const loadPlayers = useCallback(async () => {
     setLoading(true);
     try {
-      // Vi henter kun spillere der IKKE er udelukket
       const data = await Profile.filter({ is_banned: false });
       const list = (data || []).filter((p) => p.id !== user.id);
       setPlayers(list);
@@ -93,20 +162,23 @@ export function MakkereTab({ user, showToast }) {
 
   const displayElo = (p) => {
     const s = statsById[String(p.id)];
-    if (s != null) return s.elo;
-    return eloOf(p);
+    return s != null ? s.elo : eloOf(p);
   };
   const displayGames = (p) => {
     const s = statsById[String(p.id)];
-    if (s != null) return s.games;
-    return p.games_played || 0;
+    return s != null ? s.games : (p.games_played || 0);
   };
 
+  // Matchmaking-forslag (beregnes client-side på allerede-hentede spillere)
+  const suggestions = getMatchSuggestions(user, players, { limit: 10 });
+  const visibleSuggestions = showAllSuggestions ? suggestions : suggestions.slice(0, 3);
+
+  // Filtrer til browse-listen
   const filtered = players.filter(p => {
-    const n = p.full_name || p.name || "";
+    const n = p.full_name || p.name || '';
     if (search && !n.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filterArea !== "all" && p.area !== filterArea) return false;
-    if (filterElo === "close" && Math.abs(displayElo(p) - myElo) > 150) return false;
+    if (filterArea !== 'all' && p.area !== filterArea) return false;
+    if (filterElo === 'close' && Math.abs(displayElo(p) - myElo) > 150) return false;
     if (filterFav && !favorites.has(String(p.id))) return false;
     return true;
   });
@@ -118,114 +190,178 @@ export function MakkereTab({ user, showToast }) {
 
   const handleFilterChange = (fn) => { fn(); setPage(0); };
 
-  if (loading) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser spillere...</div>;
+  if (loading) return (
+    <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>
+      Indlæser spillere...
+    </div>
+  );
 
   return (
     <div>
-      <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "16px" }}>Find makker</h2>
+      <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Find makker</h2>
 
-      {/* Search */}
-      <div style={{ position: "relative", marginBottom: "10px" }}>
-        <Search size={15} color={theme.textLight} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-        <input value={search} onChange={e => handleFilterChange(() => setSearch(e.target.value))} placeholder="Søg efter navn..." style={{ ...inputStyle, paddingLeft: "36px" }} />
+      {/* Foreslåede makkere */}
+      {suggestions.length > 0 && (
+        <div style={{ marginBottom: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Zap size={14} color={theme.accent} />
+              <span style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Foreslåede makkere
+              </span>
+            </div>
+            {suggestions.length > 3 && (
+              <button
+                onClick={() => setShowAllSuggestions(v => !v)}
+                style={{ fontSize: '12px', color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+              >
+                {showAllSuggestions ? 'Vis færre' : `Se alle ${suggestions.length}`}
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {visibleSuggestions.map(s => (
+              <SuggestionCard
+                key={s.profile.id}
+                suggestion={s}
+                myElo={myElo}
+                onView={setViewPlayer}
+                onInvite={setInviteTarget}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Divider */}
+      <div style={{ borderTop: '1px solid ' + theme.border, marginBottom: '20px' }} />
+
+      {/* Browse / søg alle */}
+      <div style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+        Alle spillere
       </div>
 
-      <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
-        <select value={filterElo} onChange={e => handleFilterChange(() => setFilterElo(e.target.value))} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
+      <div style={{ position: 'relative', marginBottom: '10px' }}>
+        <Search size={15} color={theme.textLight} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        <input
+          value={search}
+          onChange={e => handleFilterChange(() => setSearch(e.target.value))}
+          placeholder="Søg efter navn..."
+          style={{ ...inputStyle, paddingLeft: '36px' }}
+        />
+      </div>
+
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <select
+          value={filterElo}
+          onChange={e => handleFilterChange(() => setFilterElo(e.target.value))}
+          style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px' }}
+        >
           <option value="all">Alle ELO</option>
           <option value="close">±150 ELO om dig ({myElo})</option>
         </select>
-        <select value={filterArea} onChange={e => handleFilterChange(() => setFilterArea(e.target.value))} style={{ ...inputStyle, width: "auto", padding: "8px 12px", fontSize: "13px" }}>
+        <select
+          value={filterArea}
+          onChange={e => handleFilterChange(() => setFilterArea(e.target.value))}
+          style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px' }}
+        >
           <option value="all">Alle regioner</option>
-          {REGIONS.map((r) => (
-            <option key={r} value={r}>{r}</option>
-          ))}
+          {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
         <button
           onClick={() => handleFilterChange(() => setFilterFav(f => !f))}
-          style={{ ...btn(filterFav), padding: "8px 12px", fontSize: "13px" }}
+          style={{ ...btn(filterFav), padding: '8px 12px', fontSize: '13px' }}
           title="Vis kun favoritter"
         >
-          {filterFav ? "★ Favoritter" : "☆ Favoritter"}
+          {filterFav ? '★ Favoritter' : '☆ Favoritter'}
         </button>
       </div>
 
       {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", fontSize: "13px", color: theme.textMid }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '13px', color: theme.textMid }}>
           <span>{filtered.length} spillere · side {safePage + 1} af {totalPages}</span>
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {paginated.map(p => {
           const age = calcAge(p.birth_year, p.birth_month, p.birth_day);
           return (
-          <div key={p.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "clamp(14px,3vw,18px)", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-            <div onClick={() => setViewPlayer(p)} style={{ display: "flex", gap: "14px", alignItems: "flex-start", cursor: "pointer" }}>
-              <AvatarCircle
-                avatar={p.avatar}
-                size={48}
-                emojiSize="22px"
-                style={{ background: "#F1F5F9", border: "1px solid " + theme.border }}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em", wordBreak: "break-word" }}>{p.full_name || p.name}</span>
-                  <span style={{ fontSize: "12px", color: theme.textLight, display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {p.area || "?"}</span>
+            <div key={p.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: 'clamp(14px,3vw,18px)', boxShadow: theme.shadow, border: '1px solid ' + theme.border }}>
+              <div onClick={() => setViewPlayer(p)} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', cursor: 'pointer' }}>
+                <AvatarCircle
+                  avatar={p.avatar}
+                  size={48}
+                  emojiSize="22px"
+                  style={{ background: '#F1F5F9', border: '1px solid ' + theme.border }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em', wordBreak: 'break-word' }}>{p.full_name || p.name}</span>
+                    <span style={{ fontSize: '12px', color: theme.textLight, display: 'flex', alignItems: 'center', gap: '3px' }}><MapPin size={11} /> {p.area || '?'}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '5px', marginTop: '7px', flexWrap: 'wrap' }}>
+                    <span style={tag(theme.accentBg, theme.accent)}>ELO {displayElo(p)}</span>
+                    {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
+                    {p.level && <span style={tag(theme.accentBg, theme.accent)}>{levelLabel(p.level)}</span>}
+                    <span style={tag(theme.blueBg, theme.blue)}>{p.play_style || '?'}</span>
+                    {p.court_side && <span style={tag(theme.blueBg, theme.blue)}>{p.court_side}</span>}
+                    <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>
+                    {p.seeking_match && <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>}
+                  </div>
+                  {p.bio && <p style={{ fontSize: '12px', color: theme.textMid, marginTop: '8px', lineHeight: 1.5 }}>{p.bio}</p>}
                 </div>
-                <div style={{ display: "flex", gap: "5px", marginTop: "7px", flexWrap: "wrap" }}>
-                  <span style={tag(theme.accentBg, theme.accent)}>ELO {displayElo(p)}</span>
-                  {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
-                  {p.level && <span style={tag(theme.accentBg, theme.accent)}>{levelLabel(p.level)}</span>}
-                  <span style={tag(theme.blueBg, theme.blue)}>{p.play_style || "?"}</span>
-                  {p.court_side && <span style={tag(theme.blueBg, theme.blue)}>{p.court_side}</span>}
-                  <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>
-                </div>
-                {p.bio && <p style={{ fontSize: "12px", color: theme.textMid, marginTop: "8px", lineHeight: 1.5 }}>{p.bio}</p>}
+              </div>
+              <div className="pm-makker-card-actions">
+                <button
+                  onClick={() => toggleFavorite(p.id)}
+                  title={favorites.has(String(p.id)) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'}
+                  style={{ ...btn(false), padding: '7px 10px', fontSize: '14px' }}
+                >
+                  {favorites.has(String(p.id)) ? '★' : '☆'}
+                </button>
+                <button onClick={() => setViewPlayer(p)} style={{ ...btn(false), padding: '7px 14px', fontSize: '12px' }}>
+                  👤 Se profil
+                </button>
+                <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '7px 14px', fontSize: '12px' }}>
+                  Invitér
+                </button>
               </div>
             </div>
-            <div className="pm-makker-card-actions">
-              <button
-                onClick={() => toggleFavorite(p.id)}
-                title={favorites.has(String(p.id)) ? "Fjern fra favoritter" : "Tilføj til favoritter"}
-                style={{ ...btn(false), padding: "7px 10px", fontSize: "14px" }}
-              >
-                {favorites.has(String(p.id)) ? "★" : "☆"}
-              </button>
-              <button onClick={() => setViewPlayer(p)} style={{ ...btn(false), padding: "7px 14px", fontSize: "12px" }}>
-                👤 Se profil
-              </button>
-              <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: "7px 14px", fontSize: "12px" }}>
-                Invitér
-              </button>
-            </div>
-          </div>
           );
         })}
-        {filtered.length === 0 && <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}><div style={{ fontSize: "32px", marginBottom: "12px" }}>🔍</div><div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen spillere fundet</div><div style={{ fontSize: "13px", lineHeight: 1.5 }}>Prøv at ændre filtre eller søg med et andet navn.</div></div>}
+        {filtered.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '48px 20px', color: theme.textLight }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</div>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>Ingen spillere fundet</div>
+            <div style={{ fontSize: '13px', lineHeight: 1.5 }}>Prøv at ændre filtre eller søg med et andet navn.</div>
+          </div>
+        )}
       </div>
 
       {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px", marginTop: "16px" }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '16px' }}>
           <button
             onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={safePage === 0}
-            style={{ ...btn(false), padding: "8px 18px", fontSize: "13px", opacity: safePage === 0 ? 0.35 : 1 }}
+            style={{ ...btn(false), padding: '8px 18px', fontSize: '13px', opacity: safePage === 0 ? 0.35 : 1 }}
           >
             ← Forrige
           </button>
-          <span style={{ fontSize: "13px", color: theme.textMid, fontWeight: 600 }}>
+          <span style={{ fontSize: '13px', color: theme.textMid, fontWeight: 600 }}>
             {safePage + 1} / {totalPages}
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
             disabled={safePage === totalPages - 1}
-            style={{ ...btn(false), padding: "8px 18px", fontSize: "13px", opacity: safePage === totalPages - 1 ? 0.35 : 1 }}
+            style={{ ...btn(false), padding: '8px 18px', fontSize: '13px', opacity: safePage === totalPages - 1 ? 0.35 : 1 }}
           >
             Næste →
           </button>
         </div>
       )}
+
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
       {inviteTarget && (
         <InviteToMatchModal

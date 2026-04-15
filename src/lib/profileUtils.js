@@ -182,7 +182,18 @@ export function normalizeProfileRow(p) {
           ? p.city
           : ""
   const region = rawRegion ? canonicalRegionForForm(rawRegion) : rawRegion
-  return { ...p, area: region, availability: normalizeStringArrayField(p.availability) }
+  return {
+    ...p,
+    area:           region,
+    availability:   normalizeStringArrayField(p.availability),
+    // Matchmaking-felter: sikr korrekte typer
+    latitude:       p.latitude  != null ? Number(p.latitude)  : null,
+    longitude:      p.longitude != null ? Number(p.longitude) : null,
+    travel_willing: p.travel_willing === true,
+    seeking_match:  p.seeking_match  === true,
+    intent_now:     p.intent_now     != null ? String(p.intent_now) : null,
+    last_active_at: p.last_active_at ?? null,
+  }
 }
 
 /** Danske + almindelige europæiske vokaler til navne-tjek */

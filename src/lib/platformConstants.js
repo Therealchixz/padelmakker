@@ -59,3 +59,13 @@ export const REGIONS = [
 export const DEFAULT_REGION = REGIONS[0];
 
 export const AVAILABILITY = ['Morgener', 'Formiddage', 'Eftermiddage', 'Aftener', 'Weekender', 'Flexibel'];
+
+export const INTENTS = [
+  { value: 'hygge',       label: 'Hygge',        desc: 'Afslappet spil med god stemning' },
+  { value: 'træning',     label: 'Træning',       desc: 'Fokus på at forbedre mit spil' },
+  { value: 'konkurrence', label: 'Konkurrence',   desc: 'Vil gerne vinde og teste mit niveau' },
+  { value: 'fast_makker', label: 'Fast makker',   desc: 'Søger en fast partner at spille med' },
+  { value: 'turnering',   label: 'Turnering',     desc: 'Klar til turneringer og ligaer' },
+];
+
+export const INTENT_LABELS = Object.fromEntries(INTENTS.map((i) => [i.value, i.label]));

@@ -24,5 +24,9 @@ export function profileFormState(p) {
     birth_year: p.birth_year ? String(p.birth_year) : "",
     birth_month: p.birth_month ? String(p.birth_month) : "",
     birth_day: p.birth_day ? String(p.birth_day) : "",
+    // Matchmaking
+    seeking_match:  p.seeking_match  === true,
+    intent_now:     p.intent_now     ?? "",
+    travel_willing: p.travel_willing === true,
   };
 }

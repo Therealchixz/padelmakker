@@ -275,6 +275,7 @@ export function AuthProvider({ children }) {
           // profileLoading true og hele appen erstattes af spinner (blink).
           const quietRefresh = event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED'
           loadProfile(s.user, { quiet: quietRefresh })
+          if (event === 'SIGNED_IN') void touchLastActive(s.user.id)
         } else {
           profileReqId.current += 1
           setProfile(null)
@@ -283,12 +284,25 @@ export function AuthProvider({ children }) {
       }
     )
 
+    // Touch last_active_at når brugeren kommer tilbage til appen
+    let lastTouch = 0
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return
+      const now = Date.now()
+      if (now - lastTouch < 5 * 60 * 1000) return // maks. ét kald pr. 5 min
+      lastTouch = now
+      void touchLastActive()
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
     return () => {
       cancelled = true
       subscription.unsubscribe()
       if (realtimeSub) supabase.removeChannel(realtimeSub)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  }, [loadProfile, user?.id])
+  }, [loadProfile, touchLastActive, user?.id])
 
   useEffect(() => {
     activeUserIdRef.current = user?.id != null ? String(user.id) : ''
@@ -344,6 +358,7 @@ export function AuthProvider({ children }) {
       setSession(data.session)
       setUser(data.user)
       loadProfile(data.user)
+      void touchLastActive(data.user.id)
     }
     return data
   }
@@ -413,6 +428,23 @@ export function AuthProvider({ children }) {
     if (user) loadProfile(user)
   }, [user, loadProfile])
 
+  /**
+   * Opdater last_active_at for brugeren — fire-and-forget.
+   * Kaldes ved login og synligt app-åbning.
+   */
+  const touchLastActive = useCallback(async (userId) => {
+    const uid = userId || user?.id
+    if (!uid) return
+    try {
+      await supabase
+        .from('profiles')
+        .update({ last_active_at: new Date().toISOString() })
+        .eq('id', uid)
+    } catch {
+      /* ignorer — kritisk ikke for UX */
+    }
+  }, [user?.id])
+
   /** Genindlæs profiles-rækken uden fuldskærms-loading (fx efter DB-reset eller tab-skift). */
   const refreshProfileQuiet = useCallback(() => {
     if (user) loadProfile(user, { quiet: true })
@@ -432,6 +464,7 @@ export function AuthProvider({ children }) {
         updateProfile,
         refreshProfile,
         refreshProfileQuiet,
+        touchLastActive,
       }}
     >
       {children}
