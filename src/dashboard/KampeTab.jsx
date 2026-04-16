@@ -433,16 +433,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         status: "pending",
       });
       if (error) throw error;
-      // Notify creator
-      const match = matches.find(m => m.id === matchId);
-      if (match) {
-        const { error: nErr } = await supabase.rpc("notify_match_creator_on_join", {
-          p_match_id: matchId,
-          p_title: "Ny tilmeldingsanmodning 🔒",
-          p_body: `${myDisplayName} anmoder om at deltage i din lukkede kamp.`,
-        });
-        if (nErr) console.warn("notify_match_creator_on_join:", nErr.message || nErr);
-      }
+      // Notify creator via dedikeret RPC (kræver IKKE at ansøger er i match_players)
+      const { error: nErr } = await supabase.rpc("notify_creator_join_request", {
+        p_match_id: matchId,
+        p_title: "Ny tilmeldingsanmodning 🔒",
+        p_body: `${myDisplayName} anmoder om at deltage i din lukkede kamp.`,
+      });
+      if (nErr) console.warn("notify_creator_join_request:", nErr.message || nErr);
       showToast("Anmodning sendt! Venter på godkendelse 🔒");
       await loadData();
     } catch (e) {
