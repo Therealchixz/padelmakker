@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
 import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS, COURT_SIDES } from '../lib/platformConstants';
@@ -128,6 +129,7 @@ function SuggestionCard({ suggestion, onView, onInvite }) {
 // ----- Hoved-komponent -----
 
 export function MakkereTab({ user, showToast }) {
+  const navigate = useNavigate();
   const [search, setSearch]           = useState('');
   const [filterElo, setFilterElo]     = useState('all');
   const [filterArea, setFilterArea]   = useState('all');
@@ -399,6 +401,9 @@ export function MakkereTab({ user, showToast }) {
                 <button onClick={() => setViewPlayer(p)} style={{ ...btn(false), padding: '7px 14px', fontSize: '12px' }}>
                   👤 Se profil
                 </button>
+                <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '7px 14px', fontSize: '12px' }}>
+                  Besked
+                </button>
                 <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '7px 14px', fontSize: '12px' }}>
                   Invitér
                 </button>
@@ -437,7 +442,13 @@ export function MakkereTab({ user, showToast }) {
         </div>
       )}
 
-      {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
+      {viewPlayer && (
+        <PlayerProfileModal
+          player={viewPlayer}
+          onClose={() => setViewPlayer(null)}
+          onMessage={() => { setViewPlayer(null); navigate(`/dashboard/beskeder?med=${viewPlayer.id}`); }}
+        />
+      )}
       {inviteTarget && (
         <InviteToMatchModal
           invitee={inviteTarget}
