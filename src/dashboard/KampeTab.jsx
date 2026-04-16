@@ -97,7 +97,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [kampeScope, setKampeScope]   = useState(() => {
     const s = readKampeSessionPrefs(user.id);
     if (s?.scope === "mine" || s?.scope === "alle") return s.scope;
-    return "mine";
+    return "alle";
   }); // "mine" | "alle"
   const [searchQuery, setSearchQuery] = useState("");
   const [joinRequests, setJoinRequests] = useState({}); // { [matchId]: [{ id, user_id, user_name, user_emoji, status }] }
@@ -724,23 +724,27 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   };
 
   const isMine = kampeScope === "mine";
+  const amInMatch = (m) => (matchPlayers[m.id] || []).some(p => p.user_id === user.id);
+  const amCreator = (m) => String(m.creator_id) === String(user.id);
 
   const openMatches = sortJoinedFirst(matches.filter(m => {
     const s = getStatus(m); if (s !== "open" && s !== "full") return false;
     if ((matchPlayers[m.id] || []).length === 0) return false;
+    // Mine kampe → kun kampe jeg har oprettet
+    if (isMine && !amCreator(m)) return false;
     if (!matchesSearch(m)) return false;
     return true;
   }));
   const activeMatches = matches.filter(m => {
     if (getStatus(m) !== "in_progress") return false;
-    if (isMine && !(matchPlayers[m.id] || []).some(p => p.user_id === user.id)) return false;
+    if (isMine && !amInMatch(m)) return false;
     if (!matchesSearch(m)) return false;
     return true;
   });
   const completedMatches = matches
     .filter(m => {
       if (getStatus(m) !== "completed") return false;
-      if (isMine && !(matchPlayers[m.id] || []).some(p => p.user_id === user.id)) return false;
+      if (isMine && !amInMatch(m)) return false;
       if (!matchesSearch(m)) return false;
       return true;
     })
@@ -1177,8 +1181,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       {/* Scope tabs: Mine kampe / Alle kampe */}
       <div style={{ display: "flex", marginBottom: "12px", borderRadius: "8px", overflow: "hidden", border: "1px solid " + theme.border }}>
         {[
-          { id: "mine", label: "Mine kampe" },
           { id: "alle", label: "Alle kampe" },
+          { id: "mine", label: "Mine kampe" },
         ].map((t) => (
           <button
             key={t.id}
