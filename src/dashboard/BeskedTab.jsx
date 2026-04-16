@@ -195,6 +195,7 @@ export function BeskedTab({ user }) {
         <div style={{
           flex: 1, overflowY: 'auto', padding: '14px 14px 8px',
           display: 'flex', flexDirection: 'column', gap: '6px',
+          background: theme.bg,
         }}>
           {loadingMsgs && (
             <div style={{ textAlign: 'center', color: theme.textLight, fontSize: '13px', padding: '20px' }}>
@@ -212,13 +213,15 @@ export function BeskedTab({ user }) {
               <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
                 <div style={{
                   maxWidth: '76%',
-                  background: isMe ? theme.accent : '#F1F5F9',
+                  background: isMe ? theme.accent : '#fff',
                   color: isMe ? '#fff' : theme.text,
                   borderRadius: isMe ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
                   padding: '9px 13px',
                   fontSize: '14px',
                   lineHeight: 1.45,
                   wordBreak: 'break-word',
+                  border: isMe ? 'none' : '1px solid #E2E8F0',
+                  boxShadow: isMe ? 'none' : '0 1px 2px rgba(0,0,0,0.07)',
                 }}>
                   <div>{msg.content}</div>
                   <div style={{ fontSize: '10px', opacity: 0.6, marginTop: '4px', textAlign: isMe ? 'right' : 'left' }}>
