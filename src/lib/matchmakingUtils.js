@@ -29,17 +29,35 @@ function skillScore(myElo, theirElo) {
 
 // ----- Tid / tilgængelighed score (25%) -----
 
-/**
- * Overlap af tilgængeligheds-arrays (fx ["Aftener", "Weekender"]).
- * Ingen data på begge → neutral (0.5), fuld overlap → 1.0, ingen overlap → 0.
- */
-function timeScore(myAvail, theirAvail) {
-  const mine = Array.isArray(myAvail) ? myAvail : [];
-  const theirs = Array.isArray(theirAvail) ? theirAvail : [];
-  if (mine.length === 0 || theirs.length === 0) return 0.5;
-  const intersection = mine.filter((t) => theirs.includes(t));
-  const union = new Set([...mine, ...theirs]);
+/** Jaccard-overlap for to arrays. Ingen data → neutral 0.5. */
+function jaccardOverlap(a, b) {
+  if (!a.length || !b.length) return 0.5;
+  const intersection = a.filter((x) => b.includes(x));
+  const union = new Set([...a, ...b]);
   return intersection.length / union.size;
+}
+
+/**
+ * Kombineret tidsscore:
+ *   60% vægt → ugedage (available_days: ['mon','tue',...])
+ *   40% vægt → tidspunkter (availability: ['Aftener','Weekender',...])
+ * Mangler begge felter → neutral 0.5.
+ */
+function timeScore(myProfile, theirProfile) {
+  const myDays    = Array.isArray(myProfile.available_days)    ? myProfile.available_days    : [];
+  const theirDays = Array.isArray(theirProfile.available_days) ? theirProfile.available_days : [];
+  const myAvail    = Array.isArray(myProfile.availability)    ? myProfile.availability    : [];
+  const theirAvail = Array.isArray(theirProfile.availability) ? theirProfile.availability : [];
+
+  const hasDays  = myDays.length > 0 && theirDays.length > 0;
+  const hasAvail = myAvail.length > 0 && theirAvail.length > 0;
+
+  if (!hasDays && !hasAvail) return 0.5;
+  if (hasDays && !hasAvail)  return jaccardOverlap(myDays, theirDays);
+  if (!hasDays && hasAvail)  return jaccardOverlap(myAvail, theirAvail);
+
+  // Begge felter udfyldt — vægtet kombination
+  return 0.6 * jaccardOverlap(myDays, theirDays) + 0.4 * jaccardOverlap(myAvail, theirAvail);
 }
 
 // ----- Geo score (25%) -----
@@ -153,7 +171,7 @@ export function scoreCandidate(myProfile, candidate) {
 
   const scores = {
     skill:     skillScore(myElo, theirElo),
-    time:      timeScore(myProfile.availability, candidate.availability),
+    time:      timeScore(myProfile, candidate),
     geo:       geoScore(myProfile, candidate),
     intent:    intentScore(myProfile.intent_now, candidate.intent_now),
     courtSide: courtSideScore(myProfile.court_side, candidate.court_side),
@@ -209,7 +227,7 @@ export function matchReason(breakdown, candidate) {
   const reasons = [];
   if (breakdown.skill >= 0.8)      reasons.push('Tæt ELO-niveau');
   if (breakdown.geo   >= 0.75)     reasons.push('Tæt på dig');
-  if (breakdown.time  >= 0.75)     reasons.push('Samme tider');
+  if (breakdown.time  >= 0.75)     reasons.push('Samme spilledage');
   if (breakdown.intent >= 0.8)     reasons.push('Samme intention');
   if (breakdown.courtSide >= 0.95) reasons.push('Komplementær side');
   if (candidate.seeking_match)     reasons.push('Søger kamp nu');

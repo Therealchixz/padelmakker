@@ -45,6 +45,7 @@ type ProfileLike = {
   full_name?: string | null
   name?: string | null
   email?: string | null
+  role?: string | null
 }
 
 type AmericanoSubTab = 'open' | 'playing' | 'completed'
@@ -111,6 +112,7 @@ export function AmericanoTab({
       ? String((authUser as { id?: string }).id || '')
       : ''
   const profileId = profile?.id ?? authUserId
+  const isAdmin = profile?.role === 'admin'
   const displayName = resolveName(profile, authEmail || null)
   const [courts, setCourts] = useState<{ id: string; name: string }[]>([])
   const [rows, setRows] = useState<AmericanoTournament[]>([])
@@ -276,10 +278,14 @@ export function AmericanoTab({
     }
   }, [rows, participantsByTournament])
 
-  const startTournament = async (t: AmericanoTournament) => {
-    if (String(t.creator_id) !== String(profileId)) {
-      showToast('Kun opretteren kan starte turneringen.')
+  const startTournament = async (t: AmericanoTournament, forceAsAdmin = false) => {
+    const isCreatorOrAdmin = String(t.creator_id) === String(profileId) || isAdmin
+    if (!isCreatorOrAdmin) {
+      showToast('Kun opretteren eller en admin kan starte turneringen.')
       return
+    }
+    if (forceAsAdmin) {
+      if (!window.confirm(`Gennemtving start af "${t.name}" som admin? Turneringen er ikke fyldt endnu.`)) return
     }
     setBusyId(t.id)
     try {
@@ -293,24 +299,37 @@ export function AmericanoTab({
       const list = (parts || []) as Pick<AmericanoParticipant, 'id' | 'joined_at'>[]
       const slots = Number(t.player_slots)
       const n = list.length
-      if (n !== slots) {
-        showToast(`Turneringen skal være fyldt før start: ${slots} tilmeldte kræves (nu: ${n}).`)
-        return
-      }
       let matchRows
-      if (canStartAmericano5767(n, slots)) {
-        const passes = Number(t.opponent_passes) === 2 ? 2 : 1
-        matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id), passes)
-      } else if (slots === 8 && n === 8) {
-        // Gamle turneringer oprettet med 8 pladser (før skift til 5–7)
-        matchRows = buildAmericano8MatchRows(t.id, list.map((p) => p.id))
+      if (forceAsAdmin) {
+        // Admin: brug faktisk antal spillere som schedule-basis (skal være 5–8)
+        if (n >= 5 && n <= 7) {
+          const passes = Number(t.opponent_passes) === 2 ? 2 : 1
+          matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id), passes)
+        } else if (n === 8) {
+          matchRows = buildAmericano8MatchRows(t.id, list.map((p) => p.id))
+        } else {
+          showToast(`Kan ikke gennemtvinge: ${n} tilmeldte er ikke gyldigt (kræver 5–8).`)
+          return
+        }
       } else {
-        showToast(
-          slots === 8
-            ? `Denne turnering kræver præcis 8 tilmeldte (gammel type). Nu: ${n}.`
-            : `Du skal have præcis ${slots} tilmeldte for at starte. Nu: ${n}.`
-        )
-        return
+        if (n !== slots) {
+          showToast(`Turneringen skal være fyldt før start: ${slots} tilmeldte kræves (nu: ${n}).`)
+          return
+        }
+        if (canStartAmericano5767(n, slots)) {
+          const passes = Number(t.opponent_passes) === 2 ? 2 : 1
+          matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id), passes)
+        } else if (slots === 8 && n === 8) {
+          // Gamle turneringer oprettet med 8 pladser (før skift til 5–7)
+          matchRows = buildAmericano8MatchRows(t.id, list.map((p) => p.id))
+        } else {
+          showToast(
+            slots === 8
+              ? `Denne turnering kræver præcis 8 tilmeldte (gammel type). Nu: ${n}.`
+              : `Du skal have præcis ${slots} tilmeldte for at starte. Nu: ${n}.`
+          )
+          return
+        }
       }
 
       await supabase.from('americano_matches').delete().eq('tournament_id', t.id)
@@ -791,7 +810,7 @@ export function AmericanoTab({
                                     ) : null}
                                   </span>
                                 </button>
-                                {isCreator && !isMe && (
+                                {(isCreator || isAdmin) && !isMe && (
                                   <button
                                     type="button"
                                     onClick={() => kickParticipant(t.id, p.id)}
@@ -885,7 +904,7 @@ export function AmericanoTab({
                   <span style={{ fontSize: 12, color: '#1D4ED8', fontWeight: 600, alignSelf: 'center' }}>Du er tilmeldt</span>
                 )}
               </div>
-              {isCreator && t.status === 'registration' && (
+              {(isCreator || isAdmin) && t.status === 'registration' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                   {!tournamentFull && (
                     <div style={{ fontSize: 12, color: '#B45309', fontWeight: 600 }}>
@@ -916,6 +935,27 @@ export function AmericanoTab({
                   >
                     {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
                   </button>
+                  {isAdmin && !tournamentFull && partCount >= 5 && (
+                    <button
+                      type="button"
+                      disabled={busyId === t.id}
+                      onClick={() => startTournament(t, true)}
+                      style={{
+                        fontFamily: font,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        padding: '8px 14px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: '#D97706',
+                        color: '#fff',
+                        cursor: busyId === t.id ? 'wait' : 'pointer',
+                      }}
+                    >
+                      ⚡ Gennemtving start (Admin)
+                    </button>
+                  )}
+                  {isCreator && (
                   <button
                     type="button"
                     disabled={busyId === t.id}
@@ -938,6 +978,7 @@ export function AmericanoTab({
                     <Trash2 size={14} aria-hidden />
                     Slet turnering
                   </button>
+                  )}
                   </div>
                 </div>
               )}

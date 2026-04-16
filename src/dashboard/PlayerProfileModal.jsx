@@ -5,8 +5,8 @@ import { availabilityTags } from '../lib/platformUtils';
 import { filterRatedEloHistoryRows, statsFromEloHistoryRows, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { MapPin, MessageCircle } from 'lucide-react';
-import { calcAge } from '../lib/profileUtils';
-import { levelLabel } from '../lib/platformConstants';
+import { calcAge, normalizeStringArrayField } from '../lib/profileUtils';
+import { levelLabel, DAYS_OF_WEEK } from '../lib/platformConstants';
 import { AvatarCircle } from '../components/AvatarCircle';
 
 export function PlayerProfileModal({ player, onClose, onMessage }) {
@@ -157,6 +157,25 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
               </div>
             </div>
           )}
+          {(() => {
+            const days = normalizeStringArrayField(player.available_days);
+            if (!days.length) return null;
+            return (
+              <div style={{ fontSize: "13px" }}>
+                <span style={{ color: theme.textLight }}>Spilledage</span>
+                <div style={{ display: "flex", gap: "4px", marginTop: "6px" }}>
+                  {DAYS_OF_WEEK.map(({ key, label }) => {
+                    const active = days.includes(key);
+                    return (
+                      <div key={key} style={{ flex: 1, textAlign: "center", padding: "4px 2px", borderRadius: "5px", fontSize: "11px", fontWeight: 700, background: active ? theme.accent : "#F1F5F9", color: active ? "#fff" : theme.textLight }}>
+                        {label}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {player.bio && (

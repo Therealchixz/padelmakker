@@ -3,7 +3,7 @@ import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
-import { REGIONS, AVAILABILITY, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel, INTENTS } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel, INTENTS } from '../lib/platformConstants';
 import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
@@ -80,10 +80,15 @@ export function ProfilTab({ user, showToast, setTab }) {
     const cur = normalizeStringArrayField(f.availability);
     return { ...f, availability: cur.includes(a) ? cur.filter((x) => x !== a) : [...cur, a] };
   });
+  const toggleDay = (d) => setForm(f => {
+    const cur = normalizeStringArrayField(f.available_days);
+    return { ...f, available_days: cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d] };
+  });
 
   const handleSave = async () => {
     const region = canonicalRegionForForm(form.area) || form.area;
     const availability = normalizeStringArrayField(form.availability);
+    const available_days = normalizeStringArrayField(form.available_days);
     setSaving(true);
     let avatarValue = form.avatar;
     if (pendingAvatarFile) {
@@ -108,6 +113,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         bio: sanitizeText(form.bio.trim()),
         avatar: avatarValue,
         availability,
+        available_days,
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
         birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
         birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
@@ -213,15 +219,36 @@ export function ProfilTab({ user, showToast, setTab }) {
           </>
           )}
 
-          {/* Availability */}
+          {/* Availability — tidspunkter */}
           {availabilityTags(user).length > 0 && (
-            <div style={{ marginBottom: "16px" }}>
+            <div style={{ marginBottom: "10px" }}>
               <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tilgængelighed</div>
               <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
                 {availabilityTags(user).map((a) => <span key={a} style={tag(theme.accentBg, theme.accent)}>{a}</span>)}
               </div>
             </div>
           )}
+
+          {/* Availability — ugedage */}
+          {(() => {
+            const days = normalizeStringArrayField(user.available_days);
+            if (!days.length) return null;
+            return (
+              <div style={{ marginBottom: "16px" }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Spilledage</div>
+                <div style={{ display: "flex", gap: "4px" }}>
+                  {DAYS_OF_WEEK.map(({ key, label }) => {
+                    const active = days.includes(key);
+                    return (
+                      <div key={key} style={{ flex: 1, textAlign: "center", padding: "5px 2px", borderRadius: "6px", fontSize: "11px", fontWeight: 700, background: active ? theme.accent : "#F1F5F9", color: active ? "#fff" : theme.textLight }}>
+                        {label}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           <button onClick={() => { setForm(profileFormState(user)); setEditing(true); }} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
             <Settings size={14} /> Rediger profil
@@ -471,12 +498,41 @@ export function ProfilTab({ user, showToast, setTab }) {
           ))}
         </div>
 
-        {/* Availability */}
+        {/* Availability — tidspunkter */}
         <div style={labelStyle}>Hvornår kan du spille?</div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
           {AVAILABILITY.map(a => (
             <button key={a} onClick={() => toggleAvail(a)} style={{ ...btn(form.availability.includes(a)), padding: "6px 12px", fontSize: "12px" }}>{a}</button>
           ))}
+        </div>
+
+        {/* Availability — ugedage */}
+        <div style={labelStyle}>Hvilke dage kan du typisk spille?</div>
+        <div style={{ display: "flex", gap: "6px", marginBottom: "14px" }}>
+          {DAYS_OF_WEEK.map(({ key, label }) => {
+            const active = normalizeStringArrayField(form.available_days).includes(key);
+            return (
+              <button
+                key={key}
+                onClick={() => toggleDay(key)}
+                style={{
+                  flex: 1,
+                  padding: "8px 2px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  borderRadius: "8px",
+                  border: "1.5px solid " + (active ? theme.accent : theme.border),
+                  background: active ? theme.accent : theme.surface,
+                  color: active ? "#fff" : theme.textMid,
+                  cursor: "pointer",
+                  transition: "all 0.12s",
+                  minWidth: 0,
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Bio */}

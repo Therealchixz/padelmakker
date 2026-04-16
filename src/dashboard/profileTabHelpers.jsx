@@ -22,6 +22,7 @@ export function profileFormState(p) {
     bio: p.bio || "",
     avatar: p.avatar || "🎾",
     availability: normalizeStringArrayField(p.availability),
+    available_days: normalizeStringArrayField(p.available_days),
     birth_year: p.birth_year ? String(p.birth_year) : "",
     birth_month: p.birth_month ? String(p.birth_month) : "",
     birth_day: p.birth_day ? String(p.birth_day) : "",

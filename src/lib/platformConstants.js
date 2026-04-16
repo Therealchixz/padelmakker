@@ -60,6 +60,16 @@ export const DEFAULT_REGION = REGIONS[0];
 
 export const AVAILABILITY = ['Morgener', 'Formiddage', 'Eftermiddage', 'Aftener', 'Weekender', 'Flexibel'];
 
+export const DAYS_OF_WEEK = [
+  { key: 'mon', label: 'Man' },
+  { key: 'tue', label: 'Tir' },
+  { key: 'wed', label: 'Ons' },
+  { key: 'thu', label: 'Tor' },
+  { key: 'fri', label: 'Fre' },
+  { key: 'sat', label: 'Lør' },
+  { key: 'sun', label: 'Søn' },
+];
+
 export const INTENTS = [
   { value: 'hygge',       label: 'Hygge',        desc: 'Afslappet spil med god stemning' },
   { value: 'træning',     label: 'Træning',       desc: 'Fokus på at forbedre mit spil' },
