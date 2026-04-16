@@ -39,25 +39,21 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Verificér at kalder er autentificeret
-    const userClient = createClient(
+    // Hent subscriptions via service role (bypasser RLS)
+    const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
+
+    // Verificér at kalder er autentificeret — send JWT eksplicit (Edge Functions har ingen session-storage)
+    const jwt = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await adminClient.auth.getUser(jwt);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Hent subscriptions via service role (bypasser RLS)
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
     const { data: subs, error: subsError } = await adminClient
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
