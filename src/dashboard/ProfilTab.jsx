@@ -33,6 +33,12 @@ export function ProfilTab({ user, showToast, setTab }) {
   const [pushStatus, setPushStatus] = useState('unknown'); // 'unknown'|'unsupported'|'subscribed'|'not-subscribed'|'denied'
   const [pushLoading, setPushLoading] = useState(false);
 
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+    navigator.standalone === true;
+  const needsPWA = isIOS && !isStandalone;
+
   useEffect(() => {
     if (!editing) setForm(profileFormState(user));
   }, [user, editing]);
@@ -300,36 +306,50 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {/* Push notifikationer */}
         {pushStatus !== 'unsupported' && pushStatus !== 'unknown' && (
-          <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px 20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, display: "flex", alignItems: "center", gap: "6px" }}>
-                {pushStatus === 'subscribed' ? <Bell size={15} color={theme.accent} /> : <BellOff size={15} color={theme.textLight} />}
-                Push notifikationer
+          needsPWA ? (
+            <div style={{ background: "#FFFBEB", borderRadius: theme.radius, padding: "16px 20px", border: "1px solid #FCD34D", marginBottom: "16px" }}>
+              <div style={{ fontSize: "14px", fontWeight: 700, color: "#92400E", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <Bell size={15} /> Få push-notifikationer på iPhone
               </div>
-              <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "3px" }}>
-                {pushStatus === 'subscribed'
-                  ? 'Du får besked direkte på telefonen om ledige kampe og makkere.'
-                  : pushStatus === 'denied'
-                    ? 'Blokeret i browser — tillad notifikationer i browserindstillinger.'
-                    : 'Aktiver for at få beskeder om ledige kampe og "Mangler 1 spiller".'}
+              <div style={{ fontSize: "12px", color: "#78350F", lineHeight: 1.6 }}>
+                iPhone kræver at appen er gemt på hjemmeskærmen:<br />
+                1. Tryk på <strong>Del-ikonet</strong> (firkant med pil op) i Safari<br />
+                2. Vælg <strong>&ldquo;Føj til hjemmeskærm&rdquo;</strong><br />
+                3. Åbn appen fra hjemmeskærmen og aktiver notifikationer her
               </div>
             </div>
-            {pushStatus !== 'denied' && (
-              <button
-                onClick={handlePushToggle}
-                disabled={pushLoading}
-                style={{
-                  ...btn(pushStatus === 'subscribed'),
-                  padding: "8px 14px",
-                  fontSize: "12px",
-                  flexShrink: 0,
-                  opacity: pushLoading ? 0.6 : 1,
-                }}
-              >
-                {pushLoading ? '...' : pushStatus === 'subscribed' ? 'Deaktivér' : 'Aktiver'}
-              </button>
-            )}
-          </div>
+          ) : (
+            <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px 20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, display: "flex", alignItems: "center", gap: "6px" }}>
+                  {pushStatus === 'subscribed' ? <Bell size={15} color={theme.accent} /> : <BellOff size={15} color={theme.textLight} />}
+                  Push notifikationer
+                </div>
+                <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "3px" }}>
+                  {pushStatus === 'subscribed'
+                    ? 'Du får besked direkte på telefonen om ledige kampe og makkere.'
+                    : pushStatus === 'denied'
+                      ? 'Blokeret i browser — tillad notifikationer i browserindstillinger.'
+                      : 'Aktiver for at få beskeder om ledige kampe og "Mangler 1 spiller".'}
+                </div>
+              </div>
+              {pushStatus !== 'denied' && (
+                <button
+                  onClick={handlePushToggle}
+                  disabled={pushLoading}
+                  style={{
+                    ...btn(pushStatus === 'subscribed'),
+                    padding: "8px 14px",
+                    fontSize: "12px",
+                    flexShrink: 0,
+                    opacity: pushLoading ? 0.6 : 1,
+                  }}
+                >
+                  {pushLoading ? '...' : pushStatus === 'subscribed' ? 'Deaktivér' : 'Aktiver'}
+                </button>
+              )}
+            </div>
+          )
         )}
 
         {/* Quick links */}
