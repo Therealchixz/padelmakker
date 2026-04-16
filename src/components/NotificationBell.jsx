@@ -124,11 +124,6 @@ export function NotificationBell() {
     return () => { try { supabase.removeChannel(channel); } catch { /* ignore */ } };
   }, [userId, load]);
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-    navigator.standalone === true;
-
   // Tjek om push er understøttet og allerede aktiveret
   useEffect(() => {
     if (!isPushSupported()) return;
@@ -360,31 +355,22 @@ export function NotificationBell() {
 
           {/* Push opt-in / opt-out banner */}
           {pushSupported && !pushBlocked && getPushPermission() !== 'denied' && (
-            isIOS && !isStandalone ? (
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: "#FFFBEB" }}>
-                <div style={{ fontSize: "12px", fontWeight: 700, color: "#92400E", marginBottom: "3px" }}>📱 iPhone: tilføj til hjemmeskærm</div>
-                <div style={{ fontSize: "11px", color: "#78350F", lineHeight: 1.5 }}>
-                  Tryk <strong>Del</strong> i Safari → <strong>"Føj til hjemmeskærm"</strong> → åbn derfra → aktiver notifikationer her
-                </div>
-              </div>
-            ) : (
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
-                <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
-                  {pushMessage || (pushSubscribed ? "Push-beskeder er aktiveret" : "Få push-beskeder selv når du ikke er på siden")}
-                </span>
-                {!pushMessage && (
-                  <button
-                    type="button"
-                    onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
-                    disabled={pushLoading}
-                    style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : "#fff", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: pushLoading ? "default" : "pointer", opacity: pushLoading ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
-                  >
-                    {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
-                  </button>
-                )}
-              </div>
-            )
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
+              <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
+                {pushMessage || (pushSubscribed ? "Push-beskeder er aktiveret" : "Få push-beskeder selv når du ikke er på siden")}
+              </span>
+              {!pushMessage && (
+                <button
+                  type="button"
+                  onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
+                  disabled={pushLoading}
+                  style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : "#fff", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: pushLoading ? "default" : "pointer", opacity: pushLoading ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
+                >
+                  {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
+                </button>
+              )}
+            </div>
           )}
 
           <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
