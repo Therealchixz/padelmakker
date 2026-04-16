@@ -29,19 +29,19 @@ export function LandingPage() {
   }, []);
 
   const steps = [
-    { step: "01", icon: <UserPlus  size={24} color="#fff" />, title: "Opret profil", desc: "Angiv dit niveau, spillestil og region — det tager under et minut." },
-    { step: "02", icon: <Users     size={24} color="#fff" />, title: "Find makker",  desc: "Se spillere nær dig på dit niveau og invitér dem til en kamp." },
+    { step: "01", icon: <UserPlus  size={24} color="#fff" />, title: "Opret profil", desc: "Angiv dit niveau, spillestil, region og hvilke ugedage du typisk spiller — det tager under et minut." },
+    { step: "02", icon: <Users     size={24} color="#fff" />, title: "Find makker",  desc: "Se spillere nær dig på dit niveau med overlappende spilledage, og invitér dem til en kamp." },
     { step: "03", icon: <MapPin    size={24} color="#fff" />, title: "Book bane",    desc: "Find ledige baner med priser og tider — book direkte i appen." },
     { step: "04", icon: <TrendingUp size={24} color="#fff" />, title: "Rank op",     desc: "Spil kampe, optjen ELO-point og klatr op ad ranglisten." },
   ];
 
   const features = [
-    { icon: <Trophy size={22} color={theme.accent} />, title: "ELO-ranking", desc: "Avanceret ranking-system der matcher dig med jævnbyrdige spillere." },
-    { icon: <Swords size={22} color={theme.accent} />, title: "Holdkampe", desc: "Opret 2v2 kampe, vælg hold og registrér resultater med tiebreak-validering." },
+    { icon: <Trophy size={22} color={theme.accent} />, title: "ELO-ranking", desc: "Avanceret ranking-system der matcher dig med jævnbyrdige spillere baseret på niveau, region og spilledage." },
+    { icon: <Swords size={22} color={theme.accent} />, title: "Holdkampe", desc: "Opret åbne eller lukkede 2v2 kampe. Åbne kampe kan alle tilslutte sig direkte — lukkede kræver godkendelse fra opretteren." },
     { icon: <Medal size={22} color={theme.accent} />, title: "Americano", desc: "Opret turneringer med automatisk rundeplan, fair rotation og stilling — et format for sig, uden at det påvirker din ELO." },
     { icon: <MapPinned size={22} color={theme.accent} />, title: "Ledige baner", desc: "Se live ledige tider hos udvalgte centre og hop direkte videre til booking, når du har fundet et tidspunkt." },
-    { icon: <MessageCircle size={22} color={theme.accent} />, title: "Fællesskab", desc: "Bliv en del af Danmarks voksende padel-community med hundredvis af aktive spillere." },
-    { icon: <LineChart size={22} color={theme.accent} />, title: "Profil & udvikling", desc: "Følg din ELO over tid, se streaks og kamphistorik — så du kan se, hvordan dit niveau udvikler sig." },
+    { icon: <MessageCircle size={22} color={theme.accent} />, title: "Direkte beskeder", desc: "Chat direkte med andre spillere i appen — aftale kamp, koordinér tider og hold kontakten med dine faste makkere." },
+    { icon: <LineChart size={22} color={theme.accent} />, title: "Profil & udvikling", desc: "Følg din ELO over tid, se sejrsstreaks, bedste makker og kamphistorik — alt på ét sted." },
   ];
 
   return (
