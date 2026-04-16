@@ -333,15 +333,14 @@ export function ProfilTab({ user, showToast, setTab }) {
               </div>
             )}
             {(() => {
-              const hardOpponents = partnerOpponentStats.opponents.filter(
-                p => (p.asOpponent.wins / p.asOpponent.games) < 0.5
-              );
+              const hardOpponents = partnerOpponentStats.opponents;
               if (hardOpponents.length === 0) return null;
               return (
                 <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
                   <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Hårdeste modstandere</div>
                   {hardOpponents.map((p, i) => {
                     const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.games) * 100);
+                    const isActuallyHard = theirWinPct > 50;
                     return (
                       <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < hardOpponents.length - 1 ? "10px" : 0 }}>
                         <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: "#FEF2F2", border: "1px solid #FECACA", flexShrink: 0 }} />
@@ -350,7 +349,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                           <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.games} kampe imod</div>
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontSize: "15px", fontWeight: 800, color: "#DC2626" }}>{theirWinPct}%</div>
+                          <div style={{ fontSize: "15px", fontWeight: 800, color: isActuallyHard ? "#DC2626" : "#16A34A" }}>{theirWinPct}%</div>
                           <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
                         </div>
                       </div>
