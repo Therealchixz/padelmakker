@@ -998,8 +998,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {pendingRequests.map(req => (
                   <div key={req.id} style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 600 }}>
-                      <span>{req.user_emoji || "🎾"}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600 }}>
+                      <AvatarCircle
+                        avatar={profilesById[String(req.user_id)]?.avatar || req.user_emoji || "🎾"}
+                        size={28}
+                        emojiSize="13px"
+                        style={{ background: theme.accentBg, border: "1px solid " + theme.border, flexShrink: 0 }}
+                      />
                       <span>{req.user_name || "Ukendt"}</span>
                     </div>
                     <div style={{ display: "flex", gap: "6px" }}>
