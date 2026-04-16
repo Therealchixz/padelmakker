@@ -455,34 +455,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const approveJoinRequest = async (matchId, requestId, reqUserId, reqUserName, reqUserEmoji) => {
     setBusyId(matchId + '-approve-' + requestId);
     try {
-      // Approve request
-      const { error: upErr } = await supabase.from("match_join_requests")
-        .update({ status: "approved" }).eq("id", requestId);
-      if (upErr) throw upErr;
-
-      // Place on team with fewer players
-      const mp = matchPlayers[matchId] || [];
-      const t1 = mp.filter(p => matchPlayerTeam(p) === 1).length;
-      const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
-      const teamNum = t1 <= t2 ? 1 : 2;
-
-      const { error: mpErr } = await supabase.from("match_players").insert({
-        match_id: matchId, user_id: reqUserId, user_name: reqUserName,
-        user_email: "", user_emoji: reqUserEmoji || "🎾", team: teamNum,
+      const { data, error } = await supabase.rpc("approve_match_join_request", {
+        p_request_id: requestId,
+        p_match_id:   matchId,
+        p_user_id:    reqUserId,
+        p_user_name:  reqUserName,
+        p_user_emoji: reqUserEmoji || "🎾",
       });
-      if (mpErr) throw mpErr;
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Ukendt fejl");
 
-      // Update match player count / status
-      const newMp = [...mp, { user_id: reqUserId, team: teamNum }];
-      const nt1 = newMp.filter(p => matchPlayerTeam(p) === 1).length;
-      const nt2 = newMp.filter(p => matchPlayerTeam(p) === 2).length;
-      if (nt1 >= 2 && nt2 >= 2) {
-        await supabase.from("matches").update({ status: "full", current_players: 4, seeking_player: false }).eq("id", matchId);
-      } else {
-        await supabase.from("matches").update({ current_players: newMp.length }).eq("id", matchId);
-      }
-
-      // Notify the approved user
+      const teamNum = data.team;
       createNotification(reqUserId, "match_invite", "Anmodning godkendt! 🎾",
         `${myDisplayName} har godkendt din tilmeldingsanmodning. Du er sat på Hold ${teamNum}.`, matchId);
 
