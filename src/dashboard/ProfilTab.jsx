@@ -8,12 +8,11 @@ import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../l
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
-import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X, Bell, BellOff } from 'lucide-react';
+import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
-import { subscribeToPush, unsubscribeFromPush, isPushSupported, isPushSubscribed } from '../lib/pushNotifications';
 
 export function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, user: authUser } = useAuth();
@@ -30,49 +29,10 @@ export function ProfilTab({ user, showToast, setTab }) {
   const eloHistory = ratedRows;
   const statsLoading = bundleLoading;
   const [form, setForm] = useState(() => profileFormState(user));
-  const [pushStatus, setPushStatus] = useState('unknown'); // 'unknown'|'unsupported'|'subscribed'|'not-subscribed'|'denied'
-  const [pushLoading, setPushLoading] = useState(false);
-
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-    navigator.standalone === true;
-  const needsPWA = isIOS && !isStandalone;
 
   useEffect(() => {
     if (!editing) setForm(profileFormState(user));
   }, [user, editing]);
-
-  useEffect(() => {
-    if (!isPushSupported()) { setPushStatus('unsupported'); return; }
-    isPushSubscribed().then(sub => setPushStatus(sub ? 'subscribed' : 'not-subscribed'));
-  }, []);
-
-  const handlePushToggle = async () => {
-    setPushLoading(true);
-    if (pushStatus === 'subscribed') {
-      await unsubscribeFromPush();
-      setPushStatus('not-subscribed');
-      showToast('Push notifikationer deaktiveret.');
-    } else {
-      const result = await subscribeToPush(user.id);
-      if (result === 'granted') {
-        setPushStatus('subscribed');
-        showToast('Push notifikationer aktiveret! 🔔');
-      } else if (result === 'denied') {
-        setPushStatus('denied');
-        showToast('Notifikationer er blokeret i din browser. Tillad dem manuelt i browserindstillinger.');
-      } else if (result === 'blocked') {
-        showToast('Din browser tillader ikke push notifikationer. Prøv en anden browser.');
-      } else if (result === 'unsupported') {
-        setPushStatus('unsupported');
-        showToast('Push notifikationer understøttes ikke i denne browser.');
-      } else {
-        showToast('Noget gik galt. Prøv igen.');
-      }
-    }
-    setPushLoading(false);
-  };
 
   /* Automatisk upload af billede valgt under oprettelse — gemmes i sessionStorage */
   useEffect(() => {
@@ -303,54 +263,6 @@ export function ProfilTab({ user, showToast, setTab }) {
             </div>
           );
         })()}
-
-        {/* Push notifikationer */}
-        {pushStatus !== 'unsupported' && pushStatus !== 'unknown' && (
-          needsPWA ? (
-            <div style={{ background: "#FFFBEB", borderRadius: theme.radius, padding: "16px 20px", border: "1px solid #FCD34D", marginBottom: "16px" }}>
-              <div style={{ fontSize: "14px", fontWeight: 700, color: "#92400E", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
-                <Bell size={15} /> Få push-notifikationer på iPhone
-              </div>
-              <div style={{ fontSize: "12px", color: "#78350F", lineHeight: 1.6 }}>
-                iPhone kræver at appen er gemt på hjemmeskærmen:<br />
-                1. Tryk på <strong>Del-ikonet</strong> (firkant med pil op) i Safari<br />
-                2. Vælg <strong>&ldquo;Føj til hjemmeskærm&rdquo;</strong><br />
-                3. Åbn appen fra hjemmeskærmen og aktiver notifikationer her
-              </div>
-            </div>
-          ) : (
-            <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px 20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, display: "flex", alignItems: "center", gap: "6px" }}>
-                  {pushStatus === 'subscribed' ? <Bell size={15} color={theme.accent} /> : <BellOff size={15} color={theme.textLight} />}
-                  Push notifikationer
-                </div>
-                <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "3px" }}>
-                  {pushStatus === 'subscribed'
-                    ? 'Du får besked direkte på telefonen om ledige kampe og makkere.'
-                    : pushStatus === 'denied'
-                      ? 'Blokeret i browser — tillad notifikationer i browserindstillinger.'
-                      : 'Aktiver for at få beskeder om ledige kampe og "Mangler 1 spiller".'}
-                </div>
-              </div>
-              {pushStatus !== 'denied' && (
-                <button
-                  onClick={handlePushToggle}
-                  disabled={pushLoading}
-                  style={{
-                    ...btn(pushStatus === 'subscribed'),
-                    padding: "8px 14px",
-                    fontSize: "12px",
-                    flexShrink: 0,
-                    opacity: pushLoading ? 0.6 : 1,
-                  }}
-                >
-                  {pushLoading ? '...' : pushStatus === 'subscribed' ? 'Deaktivér' : 'Aktiver'}
-                </button>
-              )}
-            </div>
-          )
-        )}
 
         {/* Quick links */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
