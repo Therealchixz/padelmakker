@@ -181,31 +181,83 @@ export function OnboardingPage() {
     <div key={1}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Dit padel-niveau</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vær ærlig — vi matcher dig bedre!</p>
+
+      {/* Niveau — beskrivelse vises kun for valgt */}
       <div style={labelStyle}>Niveau</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
-        {LEVELS.map(l => (
-          <button key={l} onClick={() => set("level", l)} style={{ ...selBtn(form.level === l), display: "flex", flexDirection: "column", gap: "3px" }}>
-            <span style={{ fontWeight: 700 }}>{l}</span>
-            <span style={{ fontSize: "12px", fontWeight: 400, opacity: 0.75, lineHeight: 1.4 }}>{LEVEL_DESCS[l]}</span>
-          </button>
-        ))}
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "24px" }}>
+        {LEVELS.map(l => {
+          const active = form.level === l;
+          return (
+            <button key={l} onClick={() => set("level", l)} style={{
+              textAlign: "left", padding: "10px 14px",
+              borderRadius: "8px", border: "1.5px solid " + (active ? theme.accent : theme.border),
+              background: active ? theme.accentBg : theme.surface,
+              cursor: "pointer", transition: "all 0.15s",
+              display: "flex", flexDirection: "column", gap: active ? "4px" : 0,
+              fontFamily: "inherit",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontWeight: 700, fontSize: "14px", color: active ? theme.accent : theme.text }}>{l}</span>
+                {active && <span style={{ fontSize: "13px", color: theme.accent, fontWeight: 700 }}>✓</span>}
+              </div>
+              {active && (
+                <span style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.45 }}>{LEVEL_DESCS[l]}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
-      <div style={labelStyle}>Spillestil</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
-        {PLAY_STYLES.map(s => <button key={s} onClick={() => set("style", s)} style={{ ...selBtn(form.style === s) }}>{s}</button>)}
+
+      {/* Spillestil + Side på banen — 2 kolonner */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+        <div>
+          <div style={labelStyle}>Spillestil</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {PLAY_STYLES.map(s => (
+              <button key={s} onClick={() => set("style", s)} style={{
+                padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+                border: "1.5px solid " + (form.style === s ? theme.accent : theme.border),
+                background: form.style === s ? theme.accentBg : theme.surface,
+                color: form.style === s ? theme.accent : theme.text,
+                cursor: "pointer", textAlign: "left", fontFamily: "inherit",
+              }}>{s}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div style={labelStyle}>Side på banen</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {COURT_SIDES.map(s => (
+              <button key={s} onClick={() => set("court_side", s)} style={{
+                padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+                border: "1.5px solid " + (form.court_side === s ? theme.accent : theme.border),
+                background: form.court_side === s ? theme.accentBg : theme.surface,
+                color: form.court_side === s ? theme.accent : theme.text,
+                cursor: "pointer", textAlign: "left", fontFamily: "inherit",
+              }}>{s}</button>
+            ))}
+          </div>
+        </div>
       </div>
-      <div style={labelStyle}>Foretrukken side på banen</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
-        {COURT_SIDES.map(s => <button key={s} onClick={() => set("court_side", s)} style={{ ...selBtn(form.court_side === s) }}>{s}</button>)}
-      </div>
+
+      {/* Intention — 2×2 gitter */}
       <div style={labelStyle}>Hvad søger du primært? <span style={{ fontWeight: 400, color: "#8494A7" }}>(valgfri)</span></div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-        {INTENTS.map(i => (
-          <button key={i.value} onClick={() => set("intent_now", form.intent_now === i.value ? "" : i.value)} style={{ ...selBtn(form.intent_now === i.value), flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontWeight: 700 }}>{i.label}</span>
-            <span style={{ fontSize: "11px", fontWeight: 400, opacity: 0.7 }}>{i.desc}</span>
-          </button>
-        ))}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+        {INTENTS.map(i => {
+          const active = form.intent_now === i.value;
+          return (
+            <button key={i.value} onClick={() => set("intent_now", active ? "" : i.value)} style={{
+              padding: "10px 12px", borderRadius: "10px", textAlign: "left",
+              border: "1.5px solid " + (active ? theme.accent : theme.border),
+              background: active ? theme.accentBg : theme.surface,
+              cursor: "pointer", display: "flex", flexDirection: "column", gap: "3px",
+              fontFamily: "inherit",
+            }}>
+              <span style={{ fontWeight: 700, fontSize: "13px", color: active ? theme.accent : theme.text }}>{i.label}</span>
+              <span style={{ fontSize: "11px", color: active ? theme.accent : theme.textMid, lineHeight: 1.35, opacity: 0.85 }}>{i.desc}</span>
+            </button>
+          );
+        })}
       </div>
     </div>,
 
