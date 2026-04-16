@@ -374,6 +374,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     finally { setBusyId(null); }
   };
 
+  const switchTeam = async (matchId, newTeam) => {
+    setBusyId(matchId + '-switch');
+    try {
+      const { error } = await supabase
+        .from("match_players")
+        .update({ team: newTeam })
+        .eq("match_id", matchId)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      showToast(`Skiftet til Hold ${newTeam}! ⚔️`);
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
   const leaveMatch = async (matchId) => {
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
@@ -746,6 +761,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
     const isFull = t1.length >= 2 && t2.length >= 2;
     const isPlayerInMatch = mp.some(p => p.user_id === user.id);
+    const myTeam = t1.some(p => p.user_id === user.id) ? 1 : t2.some(p => p.user_id === user.id) ? 2 : null;
     const isClosed = (m.match_type || "open") === "closed";
     const myRequest = (joinRequests[m.id] || []).find(r => r.user_id === user.id);
     const pendingRequests = (joinRequests[m.id] || []).filter(r => r.status === "pending");
@@ -824,11 +840,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                       </div>
                     );
                   })}
-                  {Array.from({ length: Math.max(0, 2 - t1.length) }).map((_, i) => (
-                    <div key={"t1e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                      <div style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={10} color={theme.textLight} /></div>
-                    </div>
-                  ))}
+                  {Array.from({ length: Math.max(0, 2 - t1.length) }).map((_, i) => {
+                    const canSwitch = joined && myTeam === 2 && (status === "open" || status === "full") && busyId !== m.id + '-switch';
+                    return (
+                      <div key={"t1e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
+                        <div
+                          onClick={canSwitch ? () => switchTeam(m.id, 1) : undefined}
+                          title={canSwitch ? "Skift til Hold 1" : undefined}
+                          style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? theme.accent : theme.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? theme.accentBg : "transparent", transition: "all 0.15s" }}
+                        >
+                          <Plus size={10} color={canSwitch ? theme.accent : theme.textLight} />
+                        </div>
+                        {canSwitch && <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700, marginTop: "2px" }}>Skift</span>}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -861,11 +887,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                       </div>
                     );
                   })}
-                  {Array.from({ length: Math.max(0, 2 - t2.length) }).map((_, i) => (
-                    <div key={"t2e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                      <div style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + theme.border, display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={10} color={theme.textLight} /></div>
-                    </div>
-                  ))}
+                  {Array.from({ length: Math.max(0, 2 - t2.length) }).map((_, i) => {
+                    const canSwitch = joined && myTeam === 1 && (status === "open" || status === "full") && busyId !== m.id + '-switch';
+                    return (
+                      <div key={"t2e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
+                        <div
+                          onClick={canSwitch ? () => switchTeam(m.id, 2) : undefined}
+                          title={canSwitch ? "Skift til Hold 2" : undefined}
+                          style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? theme.blue : theme.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? theme.blueBg : "transparent", transition: "all 0.15s" }}
+                        >
+                          <Plus size={10} color={canSwitch ? theme.blue : theme.textLight} />
+                        </div>
+                        {canSwitch && <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700, marginTop: "2px" }}>Skift</span>}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
