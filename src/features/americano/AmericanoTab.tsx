@@ -810,7 +810,7 @@ export function AmericanoTab({
                                     ) : null}
                                   </span>
                                 </button>
-                                {isCreator && !isMe && (
+                                {(isCreator || isAdmin) && !isMe && (
                                   <button
                                     type="button"
                                     onClick={() => kickParticipant(t.id, p.id)}
