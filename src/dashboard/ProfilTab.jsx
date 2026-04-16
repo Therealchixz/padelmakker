@@ -5,7 +5,7 @@ import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platf
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { REGIONS, AVAILABILITY, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel, INTENTS } from '../lib/platformConstants';
 import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
-import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats } from '../lib/eloHistoryUtils';
+import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
@@ -30,9 +30,20 @@ export function ProfilTab({ user, showToast, setTab }) {
   const statsLoading = bundleLoading;
 
   // Ekstra statistik beregnet fra allerede indlæste ratedRows
-  const peakElo = ratedRows.length > 0
-    ? Math.max(...ratedRows.map(r => Math.round(Number(r.new_rating) || 0)).filter(x => x > 0))
-    : null;
+  const peakElo = useMemo(() => {
+    if (ratedRows.length === 0) return null;
+    const sorted = sortEloHistoryChronological(ratedRows);
+    let running = Math.round(Number(sorted[0].old_rating) || 1000);
+    let peak = running;
+    for (const row of sorted) {
+      const ch = row.change != null && Number.isFinite(Number(row.change))
+        ? Number(row.change)
+        : Math.round(Number(row.new_rating || 0) - Number(row.old_rating || 0));
+      running = Math.max(100, Math.round(running + ch));
+      peak = Math.max(peak, running);
+    }
+    return peak;
+  }, [ratedRows]);
   const recentForm = ratedRows.slice(-5).reverse();
 
   const { partnerOpponentStats, partnerOpponentLoading } = usePartnerOpponentStats(user.id, ratedRows);
