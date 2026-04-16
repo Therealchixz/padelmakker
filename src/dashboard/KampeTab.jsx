@@ -100,12 +100,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return "mine";
   }); // "mine" | "alle"
   const [searchQuery, setSearchQuery] = useState("");
+  const [joinRequests, setJoinRequests] = useState({}); // { [matchId]: [{ id, user_id, user_name, user_emoji, status }] }
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
     time: nearestHalfHour(),
     duration: "120",
     description: "",
+    match_type: "open",
   });
 
   /**
@@ -233,6 +235,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         if (tb >= ta) mrMap[mid] = mr;
       });
       setMatchResults(mrMap);
+
+      // Load join requests (RLS returns: own requests + requests for matches I created)
+      if (allMatchIds.length > 0) {
+        const jrMap = {};
+        const { data: jrd } = await supabase
+          .from("match_join_requests")
+          .select("*")
+          .in("match_id", allMatchIds.slice(0, 100)); // first chunk — closed matches will be few
+        (jrd || []).forEach((jr) => {
+          if (!jrMap[jr.match_id]) jrMap[jr.match_id] = [];
+          jrMap[jr.match_id].push(jr);
+        });
+        setJoinRequests(jrMap);
+      }
     } catch (e) {
       console.error(e);
       showToast('Kunne ikke hente data. Tjek din forbindelse og prøv igen.');
@@ -296,6 +312,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         date: newMatch.date, time: fmtClock(newMatch.time), time_end: timeEnd,
         level_range: String(myElo), status: "open", max_players: 4, current_players: 1,
         description: sanitizeText(newMatch.description.trim()) || null,
+        match_type: newMatch.match_type || "open",
       };
       const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
@@ -304,7 +321,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾", team: 1,
       });
       setShowCreate(false);
-      showToast("Kamp oprettet! Du er på Hold 1 🎾");
+      showToast(newMatch.match_type === "closed" ? "Lukket kamp oprettet! Du er på Hold 1 🔒" : "Kamp oprettet! Du er på Hold 1 🎾");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setCreating(false); }
@@ -387,6 +404,112 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }
   };
+
+  // ---- Join request functions (for closed matches) ----
+
+  const requestJoin = async (matchId) => {
+    setBusyId(matchId + '-req');
+    try {
+      const { error } = await supabase.from("match_join_requests").insert({
+        match_id: matchId,
+        user_id: user.id,
+        user_name: myDisplayName,
+        user_emoji: user.avatar || "🎾",
+        status: "pending",
+      });
+      if (error) throw error;
+      // Notify creator
+      const match = matches.find(m => m.id === matchId);
+      if (match) {
+        const { error: nErr } = await supabase.rpc("notify_match_creator_on_join", {
+          p_match_id: matchId,
+          p_title: "Ny tilmeldingsanmodning 🔒",
+          p_body: `${myDisplayName} anmoder om at deltage i din lukkede kamp.`,
+        });
+        if (nErr) console.warn("notify_match_creator_on_join:", nErr.message || nErr);
+      }
+      showToast("Anmodning sendt! Venter på godkendelse 🔒");
+      await loadData();
+    } catch (e) {
+      if (e.code === "23505") {
+        showToast("Du har allerede anmodet om at deltage i denne kamp.");
+      } else {
+        showToast("Fejl: " + (e.message || "Prøv igen"));
+      }
+    }
+    finally { setBusyId(null); }
+  };
+
+  const cancelJoinRequest = async (matchId) => {
+    setBusyId(matchId + '-req');
+    try {
+      const { error } = await supabase.from("match_join_requests")
+        .delete().eq("match_id", matchId).eq("user_id", user.id);
+      if (error) throw error;
+      showToast("Anmodning trukket tilbage.");
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
+  const approveJoinRequest = async (matchId, requestId, reqUserId, reqUserName, reqUserEmoji) => {
+    setBusyId(matchId + '-approve-' + requestId);
+    try {
+      // Approve request
+      const { error: upErr } = await supabase.from("match_join_requests")
+        .update({ status: "approved" }).eq("id", requestId);
+      if (upErr) throw upErr;
+
+      // Place on team with fewer players
+      const mp = matchPlayers[matchId] || [];
+      const t1 = mp.filter(p => matchPlayerTeam(p) === 1).length;
+      const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
+      const teamNum = t1 <= t2 ? 1 : 2;
+
+      const { error: mpErr } = await supabase.from("match_players").insert({
+        match_id: matchId, user_id: reqUserId, user_name: reqUserName,
+        user_email: "", user_emoji: reqUserEmoji || "🎾", team: teamNum,
+      });
+      if (mpErr) throw mpErr;
+
+      // Update match player count / status
+      const newMp = [...mp, { user_id: reqUserId, team: teamNum }];
+      const nt1 = newMp.filter(p => matchPlayerTeam(p) === 1).length;
+      const nt2 = newMp.filter(p => matchPlayerTeam(p) === 2).length;
+      if (nt1 >= 2 && nt2 >= 2) {
+        await supabase.from("matches").update({ status: "full", current_players: 4, seeking_player: false }).eq("id", matchId);
+      } else {
+        await supabase.from("matches").update({ current_players: newMp.length }).eq("id", matchId);
+      }
+
+      // Notify the approved user
+      createNotification(reqUserId, "match_invite", "Anmodning godkendt! 🎾",
+        `${myDisplayName} har godkendt din tilmeldingsanmodning. Du er sat på Hold ${teamNum}.`, matchId);
+
+      showToast(`${reqUserName} er godkendt og sat på Hold ${teamNum}!`);
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
+  const rejectJoinRequest = async (matchId, requestId, reqUserId, reqUserName) => {
+    setBusyId(matchId + '-reject-' + requestId);
+    try {
+      const { error } = await supabase.from("match_join_requests")
+        .update({ status: "rejected" }).eq("id", requestId);
+      if (error) throw error;
+
+      // Notify the rejected user
+      createNotification(reqUserId, "match_cancelled", "Anmodning afvist",
+        `Din anmodning om at deltage i kampen er desværre ikke godkendt.`, matchId);
+
+      showToast(`Anmodning fra ${reqUserName} afvist.`);
+      await loadData();
+    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
+    finally { setBusyId(null); }
+  };
+
+  // ---- End join request functions ----
 
   const kickPlayer = async (matchId, targetUserId, targetName = "spilleren") => {
     const label = String(targetName || "spilleren").trim();
@@ -640,6 +763,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
     const isFull = t1.length >= 2 && t2.length >= 2;
     const isPlayerInMatch = mp.some(p => p.user_id === user.id);
+    const isClosed = (m.match_type || "open") === "closed";
+    const myRequest = (joinRequests[m.id] || []).find(r => r.user_id === user.id);
+    const pendingRequests = (joinRequests[m.id] || []).filter(r => r.status === "pending");
 
     const statusLabel = {
       open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", bg: left > 0 ? theme.accentBg : theme.warmBg, color: left > 0 ? theme.accent : theme.warm },
@@ -664,6 +790,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             {m.seeking_player && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
                 <Zap size={10} /> Mangler 1 spiller
+              </span>
+            )}
+            {isClosed && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
+                🔒 Lukket
               </span>
             )}
             <span style={{ ...tag(statusLabel.bg, statusLabel.color) }}>{statusLabel.text}</span>
@@ -783,9 +914,96 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
         {/* Actions */}
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {status === "open" && left > 0 && !joined && (
+
+          {/* ---- Open match: direct join ---- */}
+          {!isClosed && status === "open" && left > 0 && !joined && (
             <button onClick={() => setTeamSelectMatch(m.id)} disabled={busy} style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}>Tilmeld mig</button>
           )}
+
+          {/* ---- Closed match: request to join ---- */}
+          {isClosed && status === "open" && left > 0 && !joined && !isCreator && (() => {
+            if (!myRequest) {
+              return (
+                <button
+                  onClick={() => requestJoin(m.id)}
+                  disabled={busyId === m.id + '-req'}
+                  style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px" }}
+                >
+                  {busyId === m.id + '-req' ? "Sender..." : "🔒 Anmod om tilmelding"}
+                </button>
+              );
+            }
+            if (myRequest.status === "pending") {
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <div style={{ textAlign: "center", fontSize: "13px", color: "#B45309", fontWeight: 600, background: "#FEF3C7", borderRadius: "8px", padding: "8px" }}>
+                    ⏳ Anmodning afventer godkendelse
+                  </div>
+                  <button
+                    onClick={() => cancelJoinRequest(m.id)}
+                    disabled={busyId === m.id + '-req'}
+                    style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.textMid }}
+                  >
+                    Træk anmodning tilbage
+                  </button>
+                </div>
+              );
+            }
+            if (myRequest.status === "approved") {
+              return (
+                <button
+                  onClick={() => setTeamSelectMatch(m.id)}
+                  disabled={busy}
+                  style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: "#16A34A", borderColor: "#16A34A" }}
+                >
+                  ✅ Godkendt — Vælg hold og tilmeld
+                </button>
+              );
+            }
+            if (myRequest.status === "rejected") {
+              return (
+                <div style={{ textAlign: "center", fontSize: "13px", color: theme.red, fontWeight: 600, background: theme.redBg, borderRadius: "8px", padding: "8px" }}>
+                  ❌ Din anmodning er ikke godkendt
+                </div>
+              );
+            }
+          })()}
+
+          {/* ---- Creator: pending join requests (closed match) ---- */}
+          {isCreator && isClosed && pendingRequests.length > 0 && (
+            <div style={{ background: "#F8FAFC", borderRadius: "8px", padding: "12px", border: "1px solid " + theme.border }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
+                🔒 Tilmeldingsanmodninger ({pendingRequests.length})
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {pendingRequests.map(req => (
+                  <div key={req.id} style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 600 }}>
+                      <span>{req.user_emoji || "🎾"}</span>
+                      <span>{req.user_name || "Ukendt"}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button
+                        onClick={() => approveJoinRequest(m.id, req.id, req.user_id, req.user_name, req.user_emoji)}
+                        disabled={busyId === m.id + '-approve-' + req.id}
+                        style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 700, background: theme.accent, color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}
+                      >
+                        {busyId === m.id + '-approve-' + req.id ? "..." : "✓ Godkend"}
+                      </button>
+                      <button
+                        onClick={() => rejectJoinRequest(m.id, req.id, req.user_id, req.user_name)}
+                        disabled={busyId === m.id + '-reject-' + req.id}
+                        style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 700, background: theme.surface, color: theme.red, border: "1px solid " + theme.red + "55", borderRadius: "6px", cursor: "pointer" }}
+                      >
+                        {busyId === m.id + '-reject-' + req.id ? "..." : "✕ Afvis"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {joined && status !== "completed" && (
             <div style={{ textAlign: "center", fontSize: "13px", color: theme.accent, fontWeight: 600 }}>✅ Tilmeldt</div>
           )}
@@ -1066,6 +1284,41 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
           <label style={{ ...labelStyle, marginTop: "12px" }}>Beskrivelse (valgfrit)</label>
           <textarea value={newMatch.description} onChange={e => setNewMatch(m => ({ ...m, description: e.target.value }))} placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'" style={{ ...inputStyle, fontSize: "13px", height: "60px", resize: "vertical" }} />
+
+          {/* Open / Closed toggle */}
+          <label style={{ ...labelStyle, marginTop: "14px" }}>Kamptyp</label>
+          <div style={{ display: "flex", gap: "0", borderRadius: "8px", overflow: "hidden", border: "1px solid " + theme.border, marginTop: "4px" }}>
+            <button
+              type="button"
+              onClick={() => setNewMatch(m => ({ ...m, match_type: "open" }))}
+              style={{
+                flex: 1, padding: "10px 12px", fontSize: "13px", fontWeight: newMatch.match_type === "open" ? 700 : 500,
+                background: newMatch.match_type === "open" ? theme.accent : theme.surface,
+                color: newMatch.match_type === "open" ? "#fff" : theme.textMid,
+                border: "none", cursor: "pointer", transition: "all 0.15s",
+              }}
+            >
+              🔓 Åben kamp
+            </button>
+            <button
+              type="button"
+              onClick={() => setNewMatch(m => ({ ...m, match_type: "closed" }))}
+              style={{
+                flex: 1, padding: "10px 12px", fontSize: "13px", fontWeight: newMatch.match_type === "closed" ? 700 : 500,
+                background: newMatch.match_type === "closed" ? "#475569" : theme.surface,
+                color: newMatch.match_type === "closed" ? "#fff" : theme.textMid,
+                border: "none", borderLeft: "1px solid " + theme.border, cursor: "pointer", transition: "all 0.15s",
+              }}
+            >
+              🔒 Lukket kamp
+            </button>
+          </div>
+          <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
+            {newMatch.match_type === "open"
+              ? "Alle kan tilmelde sig direkte."
+              : "Alle kan se kampen, men skal anmode om at deltage — du godkender selv."}
+          </p>
+
           <button onClick={createMatch} disabled={creating || !newMatch.court_id || venueOptions.length === 0} style={{ ...btn(true), marginTop: "16px", width: "100%", justifyContent: "center", opacity: creating ? 0.55 : 1 }}>
             {creating ? "Opretter..." : "Opret kamp"}
           </button>
