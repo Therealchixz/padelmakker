@@ -4,12 +4,12 @@ import { theme, btn, tag } from '../lib/platformTheme';
 import { availabilityTags } from '../lib/platformUtils';
 import { filterRatedEloHistoryRows, statsFromEloHistoryRows, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { eloOf } from '../lib/matchDisplayUtils';
-import { MapPin } from 'lucide-react';
+import { MapPin, MessageCircle } from 'lucide-react';
 import { calcAge } from '../lib/profileUtils';
 import { levelLabel } from '../lib/platformConstants';
 import { AvatarCircle } from '../components/AvatarCircle';
 
-export function PlayerProfileModal({ player, onClose }) {
+export function PlayerProfileModal({ player, onClose, onMessage }) {
   const [dataLoading, setDataLoading] = useState(true);
   const [streakError, setStreakError] = useState(false);
   const [streakStats, setStreakStats] = useState({ currentStreak: 0, bestStreak: 0 });
@@ -165,6 +165,14 @@ export function PlayerProfileModal({ player, onClose }) {
           </p>
         )}
 
+        {onMessage && (
+          <button
+            onClick={onMessage}
+            style={{ ...btn(true), width: "100%", justifyContent: "center", marginBottom: "8px" }}
+          >
+            <MessageCircle size={15} /> Send besked
+          </button>
+        )}
         <button onClick={onClose} style={{ ...btn(false), width: "100%", justifyContent: "center" }}>Luk</button>
       </div>
     </div>

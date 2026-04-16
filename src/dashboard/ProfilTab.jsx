@@ -5,7 +5,7 @@ import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platf
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { REGIONS, AVAILABILITY, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel, INTENTS } from '../lib/platformConstants';
 import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
-import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
+import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
@@ -28,6 +28,26 @@ export function ProfilTab({ user, showToast, setTab }) {
   const wins = histStats?.wins ?? (pStats.games_won || 0);
   const eloHistory = ratedRows;
   const statsLoading = bundleLoading;
+
+  // Ekstra statistik beregnet fra allerede indlæste ratedRows
+  const peakElo = useMemo(() => {
+    if (ratedRows.length === 0) return null;
+    const sorted = sortEloHistoryChronological(ratedRows);
+    let running = Math.round(Number(sorted[0].old_rating) || 1000);
+    let peak = running;
+    for (const row of sorted) {
+      const ch = row.change != null && Number.isFinite(Number(row.change))
+        ? Number(row.change)
+        : Math.round(Number(row.new_rating || 0) - Number(row.old_rating || 0));
+      running = Math.max(100, Math.round(running + ch));
+      peak = Math.max(peak, running);
+    }
+    return peak;
+  }, [ratedRows]);
+  const recentForm = ratedRows.slice(-5).reverse();
+
+  const { partnerOpponentStats, partnerOpponentLoading } = usePartnerOpponentStats(user.id, ratedRows);
+
   const [form, setForm] = useState(() => profileFormState(user));
 
   useEffect(() => {
@@ -263,6 +283,82 @@ export function ProfilTab({ user, showToast, setTab }) {
             </div>
           );
         })()}
+
+        {/* Peak ELO + Seneste form */}
+        {!statsLoading && ratedRows.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+            {peakElo && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
+                <div style={{ fontSize: "24px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.03em" }}>🏆 {peakElo}</div>
+                <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste nogensinde</div>
+              </div>
+            )}
+            {recentForm.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>Seneste form</div>
+                <div style={{ display: "flex", gap: "5px", alignItems: "center", marginBottom: "6px" }}>
+                  {recentForm.map((r, i) => (
+                    <div key={i} title={r.result === 'win' ? 'Sejr' : r.result === 'loss' ? 'Nederlag' : 'Uafgjort'} style={{
+                      width: "22px", height: "22px", borderRadius: "50%", flexShrink: 0,
+                      background: r.result === 'win' ? "#22C55E" : r.result === 'loss' ? "#EF4444" : "#9CA3AF",
+                    }} />
+                  ))}
+                </div>
+                <div style={{ fontSize: "11px", color: theme.textMid }}>Seneste {recentForm.length} kampe</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Bedste makker + Hårdeste modstandere */}
+        {!statsLoading && !partnerOpponentLoading && partnerOpponentStats && (
+          <>
+            {partnerOpponentStats.partners.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Bedste makker</div>
+                {partnerOpponentStats.partners.map((p, i) => (
+                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.partners.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.games} kampe sammen</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: "#16A34A" }}>{Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(() => {
+              const hardOpponents = partnerOpponentStats.opponents;
+              if (hardOpponents.length === 0) return null;
+              return (
+                <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Hårdeste modstandere</div>
+                  {hardOpponents.map((p, i) => {
+                    const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.games) * 100);
+                    return (
+                      <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < hardOpponents.length - 1 ? "10px" : 0 }}>
+                        <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: "#FEF2F2", border: "1px solid #FECACA", flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                          <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.games} kampe imod</div>
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          <div style={{ fontSize: "15px", fontWeight: 800, color: "#DC2626" }}>{theirWinPct}%</div>
+                          <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </>
+        )}
 
         {/* Quick links */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>

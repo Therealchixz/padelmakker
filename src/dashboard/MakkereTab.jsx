@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
-import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS, COURT_SIDES } from '../lib/platformConstants';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin, Zap, SlidersHorizontal } from 'lucide-react';
@@ -128,11 +129,13 @@ function SuggestionCard({ suggestion, onView, onInvite }) {
 // ----- Hoved-komponent -----
 
 export function MakkereTab({ user, showToast }) {
+  const navigate = useNavigate();
   const [search, setSearch]           = useState('');
   const [filterElo, setFilterElo]     = useState('all');
   const [filterArea, setFilterArea]   = useState('all');
   const [filterStyle, setFilterStyle] = useState('all');
   const [filterIntent, setFilterIntent] = useState('all');
+  const [filterCourtSide, setFilterCourtSide] = useState('all');
   const [filterSeeking, setFilterSeeking] = useState(false);
   const [filterFav, setFilterFav]     = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -205,6 +208,7 @@ export function MakkereTab({ user, showToast }) {
     if (filterElo === 'close' && Math.abs(displayElo(p) - myElo) > 150) return false;
     if (filterStyle !== 'all' && p.play_style !== filterStyle) return false;
     if (filterIntent !== 'all' && p.intent_now !== filterIntent) return false;
+    if (filterCourtSide !== 'all' && p.court_side !== filterCourtSide) return false;
     if (filterSeeking && !p.seeking_match) return false;
     if (filterFav && !favorites.has(String(p.id))) return false;
     return true;
@@ -212,7 +216,7 @@ export function MakkereTab({ user, showToast }) {
 
   const activeFilterCount = [
     filterElo !== 'all', filterArea !== 'all', filterStyle !== 'all',
-    filterIntent !== 'all', filterSeeking, filterFav,
+    filterIntent !== 'all', filterCourtSide !== 'all', filterSeeking, filterFav,
   ].filter(Boolean).length;
 
   const PAGE_SIZE = 20;
@@ -305,7 +309,7 @@ export function MakkereTab({ user, showToast }) {
         </button>
         {activeFilterCount > 0 && (
           <button
-            onClick={() => { setFilterElo('all'); setFilterArea('all'); setFilterStyle('all'); setFilterIntent('all'); setFilterSeeking(false); setFilterFav(false); setPage(0); }}
+            onClick={() => { setFilterElo('all'); setFilterArea('all'); setFilterStyle('all'); setFilterIntent('all'); setFilterCourtSide('all'); setFilterSeeking(false); setFilterFav(false); setPage(0); }}
             style={{ fontSize: '12px', color: theme.red, background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontWeight: 600 }}
           >
             Nulstil filtre
@@ -333,6 +337,12 @@ export function MakkereTab({ user, showToast }) {
             <select value={filterIntent} onChange={e => handleFilterChange(() => setFilterIntent(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
               <option value="all">Alle intentioner</option>
               {INTENTS.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <select value={filterCourtSide} onChange={e => handleFilterChange(() => setFilterCourtSide(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+              <option value="all">Alle bandesider</option>
+              {COURT_SIDES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <button
@@ -391,6 +401,9 @@ export function MakkereTab({ user, showToast }) {
                 <button onClick={() => setViewPlayer(p)} style={{ ...btn(false), padding: '7px 14px', fontSize: '12px' }}>
                   👤 Se profil
                 </button>
+                <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '7px 14px', fontSize: '12px' }}>
+                  Besked
+                </button>
                 <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '7px 14px', fontSize: '12px' }}>
                   Invitér
                 </button>
@@ -429,7 +442,13 @@ export function MakkereTab({ user, showToast }) {
         </div>
       )}
 
-      {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
+      {viewPlayer && (
+        <PlayerProfileModal
+          player={viewPlayer}
+          onClose={() => setViewPlayer(null)}
+          onMessage={() => { setViewPlayer(null); navigate(`/dashboard/beskeder?med=${viewPlayer.id}`); }}
+        />
+      )}
       {inviteTarget && (
         <InviteToMatchModal
           invitee={inviteTarget}

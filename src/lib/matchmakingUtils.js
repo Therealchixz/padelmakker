@@ -86,7 +86,22 @@ function geoScore(myProfile, theirProfile) {
   return myProfile.area === theirProfile.area ? 0.6 : 0.15;
 }
 
-// ----- Intent score (15%) -----
+// ----- Court side score (10%) -----
+
+/**
+ * Komplementære sider = god match (1.0), samme side = svag match (0.35),
+ * "Begge sider" eller uudfyldt = neutral (0.6).
+ */
+function courtSideScore(mySide, theirSide) {
+  if (!mySide || !theirSide) return 0.6;
+  if (mySide === 'Begge sider' || theirSide === 'Begge sider') return 0.6;
+  const complementary =
+    (mySide === 'Venstre side' && theirSide === 'Højre side') ||
+    (mySide === 'Højre side' && theirSide === 'Venstre side');
+  return complementary ? 1.0 : 0.35;
+}
+
+// ----- Intent score (13%) -----
 
 /**
  * Kompatibilitetsmatrix for intent_now.
@@ -119,10 +134,11 @@ function isActive(profile) {
 // ----- Samlet scoring -----
 
 const WEIGHTS = {
-  skill:  0.35,
-  time:   0.25,
-  geo:    0.25,
-  intent: 0.15,
+  skill:     0.32,
+  time:      0.23,
+  geo:       0.22,
+  intent:    0.13,
+  courtSide: 0.10,
 };
 
 /**
@@ -136,17 +152,19 @@ export function scoreCandidate(myProfile, candidate) {
   const theirElo = Math.round(Number(candidate.elo_rating) || 1000);
 
   const scores = {
-    skill:  skillScore(myElo, theirElo),
-    time:   timeScore(myProfile.availability, candidate.availability),
-    geo:    geoScore(myProfile, candidate),
-    intent: intentScore(myProfile.intent_now, candidate.intent_now),
+    skill:     skillScore(myElo, theirElo),
+    time:      timeScore(myProfile.availability, candidate.availability),
+    geo:       geoScore(myProfile, candidate),
+    intent:    intentScore(myProfile.intent_now, candidate.intent_now),
+    courtSide: courtSideScore(myProfile.court_side, candidate.court_side),
   };
 
   const total = Math.round(
-    (scores.skill  * WEIGHTS.skill  +
-     scores.time   * WEIGHTS.time   +
-     scores.geo    * WEIGHTS.geo    +
-     scores.intent * WEIGHTS.intent) * 100
+    (scores.skill     * WEIGHTS.skill     +
+     scores.time      * WEIGHTS.time      +
+     scores.geo       * WEIGHTS.geo       +
+     scores.intent    * WEIGHTS.intent    +
+     scores.courtSide * WEIGHTS.courtSide) * 100
   );
 
   return { total, breakdown: scores };
@@ -189,11 +207,12 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
  */
 export function matchReason(breakdown, candidate) {
   const reasons = [];
-  if (breakdown.skill >= 0.8)  reasons.push('Tæt ELO-niveau');
-  if (breakdown.geo   >= 0.75) reasons.push('Tæt på dig');
-  if (breakdown.time  >= 0.75) reasons.push('Samme tider');
-  if (breakdown.intent >= 0.8) reasons.push('Samme intention');
-  if (candidate.seeking_match)  reasons.push('Søger kamp nu');
-  if (reasons.length === 0)    reasons.push('God match');
+  if (breakdown.skill >= 0.8)      reasons.push('Tæt ELO-niveau');
+  if (breakdown.geo   >= 0.75)     reasons.push('Tæt på dig');
+  if (breakdown.time  >= 0.75)     reasons.push('Samme tider');
+  if (breakdown.intent >= 0.8)     reasons.push('Samme intention');
+  if (breakdown.courtSide >= 0.95) reasons.push('Komplementær side');
+  if (candidate.seeking_match)     reasons.push('Søger kamp nu');
+  if (reasons.length === 0)        reasons.push('God match');
   return reasons.join(' · ');
 }
