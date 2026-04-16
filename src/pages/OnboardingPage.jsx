@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
@@ -19,12 +19,13 @@ export function OnboardingPage() {
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
+  const toggleDay   = (d) => setForm(f => ({ ...f, available_days: f.available_days.includes(d) ? f.available_days.filter(x => x !== d) : [...f.available_days, d] }));
   const passwordMismatch =
     form.password_confirm.length > 0 &&
     form.password !== form.password_confirm;
@@ -83,6 +84,7 @@ export function OnboardingPage() {
         area: form.area,
         city: form.city.trim() || null,
         availability: form.availability,
+        available_days: form.available_days,
         bio: sanitizeText(form.bio),
         avatar: avatarFile ? "🎾" : form.avatar,
         birth_year: parseInt(form.birth_year, 10) || null,
@@ -227,6 +229,34 @@ export function OnboardingPage() {
       <div style={labelStyle}>Hvornår kan du spille?</div>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
         {AVAILABILITY.map(a => <button key={a} onClick={() => toggleAvail(a)} style={{ ...btn(form.availability.includes(a)), padding: "8px 14px", fontSize: "13px" }}>{a}</button>)}
+      </div>
+
+      <div style={labelStyle}>Hvilke dage kan du typisk spille?</div>
+      <div style={{ display: "flex", gap: "6px", marginBottom: "20px" }}>
+        {DAYS_OF_WEEK.map(({ key, label }) => {
+          const active = form.available_days.includes(key);
+          return (
+            <button
+              key={key}
+              onClick={() => toggleDay(key)}
+              style={{
+                flex: 1,
+                padding: "10px 2px",
+                fontSize: "13px",
+                fontWeight: 700,
+                borderRadius: "8px",
+                border: "1.5px solid " + (active ? theme.accent : theme.border),
+                background: active ? theme.accent : "#fff",
+                color: active ? "#fff" : theme.textMid,
+                cursor: "pointer",
+                transition: "all 0.12s",
+                minWidth: 0,
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#F8FAFC", borderRadius: "10px", padding: "14px 16px", border: "1px solid " + theme.border }}>
         <div>
