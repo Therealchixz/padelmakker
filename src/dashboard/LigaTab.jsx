@@ -802,9 +802,26 @@ export function LigaTab({ user, showToast }) {
           <div style={{ fontSize: '15px', fontWeight: 700, color: theme.text, marginBottom: '6px' }}>
             {view === 'registration' ? 'Ingen åbne ligaer' : view === 'active' ? 'Ingen aktive ligaer' : 'Ingen afsluttede ligaer'}
           </div>
-          {isAdmin && view === 'registration' && (
+          {isAdmin && view === 'registration' ? (
             <div style={{ fontSize: '13px', color: theme.textLight }}>Opret en ny liga via knappen ovenfor.</div>
-          )}
+          ) : !isAdmin && view === 'registration' ? (
+            <div style={{ marginTop: '14px' }}>
+              <div style={{ fontSize: '13px', color: theme.textMid, marginBottom: '14px', lineHeight: 1.5 }}>
+                Der er ingen åbne ligaer i øjeblikket.<br />
+                Kontakt en admin for at få oprettet en ny liga.
+              </div>
+              <button
+                onClick={async () => {
+                  const { data } = await supabase.from('profiles').select('id').eq('role', 'admin').limit(1).maybeSingle();
+                  if (data?.id) navigate('/dashboard/beskeder?med=' + data.id);
+                  else showToast('Ingen admin fundet.');
+                }}
+                style={{ ...btn(true), fontSize: '13px', display: 'inline-flex' }}
+              >
+                💬 Kontakt admin
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
