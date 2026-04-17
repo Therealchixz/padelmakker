@@ -708,18 +708,30 @@ export function LigaTab({ user, showToast }) {
                         {/* Vores hold vs modstanderhold */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                           <div style={{ flex: 1, textAlign: 'center' }}>
-                            <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>{myTeam.name}</div>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
-                              <AvatarCircle avatar={myTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
-                              <AvatarCircle avatar={myTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                            <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>{myTeam.name}</div>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                              <span onClick={() => openProfile(myTeam.player1_id, myTeam.player1_name, myTeam.player1_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+                                <AvatarCircle avatar={myTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{myTeam.player1_name}</span>
+                              </span>
+                              <span onClick={() => openProfile(myTeam.player2_id, myTeam.player2_name, myTeam.player2_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+                                <AvatarCircle avatar={myTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{myTeam.player2_name}</span>
+                              </span>
                             </div>
                           </div>
                           <div style={{ fontSize: '18px', fontWeight: 800, color: theme.textLight }}>vs</div>
                           <div style={{ flex: 1, textAlign: 'center' }}>
-                            <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>{opponentTeam.name}</div>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
-                              <AvatarCircle avatar={opponentTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
-                              <AvatarCircle avatar={opponentTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                            <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>{opponentTeam.name}</div>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                              <span onClick={() => openProfile(opponentTeam.player1_id, opponentTeam.player1_name, opponentTeam.player1_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+                                <AvatarCircle avatar={opponentTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{opponentTeam.player1_name}</span>
+                              </span>
+                              <span onClick={() => openProfile(opponentTeam.player2_id, opponentTeam.player2_name, opponentTeam.player2_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+                                <AvatarCircle avatar={opponentTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{opponentTeam.player2_name}</span>
+                              </span>
                             </div>
                           </div>
                         </div>
