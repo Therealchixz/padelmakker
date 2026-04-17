@@ -231,6 +231,7 @@ export function NotificationBell() {
       case "elo_change": return "📈";
       case "match_cancelled": return "❌";
       case "welcome": return "👋";
+      case "team_invite": return "🎾";
       default: return "🔔";
     }
   };
