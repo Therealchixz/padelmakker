@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
@@ -157,16 +157,39 @@ function TeamChip({ team, onOpenProfile, align = 'left' }) {
   );
 }
 
+function getOffsetIn(el, container) {
+  let left = 0, top = 0;
+  let cur = el;
+  while (cur && cur !== container) { left += cur.offsetLeft; top += cur.offsetTop; cur = cur.offsetParent; }
+  return { left, top, w: el.offsetWidth, h: el.offsetHeight };
+}
+
 function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpenProfile }) {
   const [open, setOpen] = useState(false);
+  const bracketRef = useRef(null);
+  const [connectors, setConnectors] = useState([]);
+  const [svgSize, setSvgSize] = useState({ w: 0, h: 0 });
+
   if (teams.length === 0) return null;
 
   const teamMap = Object.fromEntries(teams.map(t => [t.id, t]));
 
+  // teamId -> { round -> matchId }  — used to draw connectors
+  const teamMatchByRound = useMemo(() => {
+    const map = {};
+    for (const m of matches) {
+      for (const tid of [m.team1_id, m.team2_id].filter(Boolean)) {
+        if (!map[tid]) map[tid] = {};
+        map[tid][m.round_number] = m.id;
+      }
+    }
+    return map;
+  }, [matches]);
+
   // Build cumulative W-L after each round
   const cumWins = {}, cumLosses = {};
   for (const t of teams) { cumWins[t.id] = 0; cumLosses[t.id] = 0; }
-  const statsAfterRound = {}; // round -> { teamId -> {wins, losses} }
+  const statsAfterRound = {};
   const sortedRounds = [...new Set(matches.map(m => m.round_number))].sort((a, b) => a - b);
   for (const rn of sortedRounds) {
     const done = matches.filter(m => m.round_number === rn && m.status === 'reported');
@@ -188,6 +211,42 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
   const maxRound = Math.max(totalRounds || 0, currentRound || 0, ...Object.keys(roundsMap).map(Number), 1);
   const allRounds = Array.from({ length: maxRound }, (_, i) => i + 1);
 
+  // Measure DOM positions and compute SVG connector paths after each render
+  useLayoutEffect(() => {
+    if (!open || !bracketRef.current) { setConnectors([]); return; }
+    const container = bracketRef.current;
+    const lines = [];
+
+    for (const m of matches) {
+      const round = m.round_number;
+      const loserId = m.winner_id ? (m.winner_id === m.team1_id ? m.team2_id : m.team1_id) : null;
+
+      // Pairs: [teamId, color, dashed]
+      const pairs = m.winner_id
+        ? [[m.winner_id, '#16A34A', false], [loserId, '#EF4444', false]]
+        : [[m.team1_id, '#94A3B8', true], [m.team2_id, '#94A3B8', true]];
+
+      for (const [tid, color, dashed] of pairs) {
+        if (!tid) continue;
+        const nextId = teamMatchByRound[tid]?.[round + 1];
+        if (!nextId) continue;
+        const fromEl = container.querySelector(`[data-match-id="${m.id}"]`);
+        const toEl   = container.querySelector(`[data-match-id="${nextId}"]`);
+        if (!fromEl || !toEl) continue;
+        const f = getOffsetIn(fromEl, container);
+        const t = getOffsetIn(toEl,   container);
+        lines.push({
+          x1: f.left + f.w,   y1: f.top + f.h / 2,
+          x2: t.left,         y2: t.top + t.h / 2,
+          color, dashed,
+        });
+      }
+    }
+
+    setSvgSize({ w: container.scrollWidth, h: container.scrollHeight });
+    setConnectors(lines);
+  }, [open, matches, teamMatchByRound]);
+
   return (
     <div style={{ marginBottom: '10px' }}>
       <button onClick={() => setOpen(o => !o)}
@@ -197,18 +256,50 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
       </button>
       {open && (
         <div style={{ marginTop: '10px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '6px' }}>
-          <div style={{ display: 'flex', gap: '10px', minWidth: 'max-content' }}>
+          {/* SVG connectors legend */}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '8px', paddingLeft: '2px' }}>
+            {[['#16A34A', 'Vinder'], ['#EF4444', 'Taber'], ['#94A3B8', 'Afventer']].map(([c, l]) => (
+              <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: theme.textLight }}>
+                <svg width="18" height="8"><line x1="0" y1="4" x2="18" y2="4" stroke={c} strokeWidth="1.5" strokeDasharray={l === 'Afventer' ? '3,2' : undefined} /></svg>
+                {l}
+              </div>
+            ))}
+          </div>
+
+          <div ref={bracketRef} style={{ display: 'flex', gap: '28px', minWidth: 'max-content', position: 'relative', paddingBottom: '4px' }}>
+            {/* SVG overlay for connectors */}
+            {connectors.length > 0 && (
+              <svg
+                style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', overflow: 'visible', zIndex: 0 }}
+                width={svgSize.w} height={svgSize.h}
+              >
+                {connectors.map((c, i) => {
+                  const midX = (c.x1 + c.x2) / 2;
+                  return (
+                    <path
+                      key={i}
+                      d={`M ${c.x1} ${c.y1} H ${midX} V ${c.y2} H ${c.x2}`}
+                      stroke={c.color}
+                      strokeWidth="1.5"
+                      strokeOpacity="0.55"
+                      fill="none"
+                      strokeDasharray={c.dashed ? '4,3' : undefined}
+                    />
+                  );
+                })}
+              </svg>
+            )}
+
             {allRounds.map(rn => {
               const roundMatches = roundsMap[rn] || [];
               const isCurrent = rn === currentRound;
               const isDone = roundMatches.length > 0 && roundMatches.every(m => m.status === 'reported');
               const isFuture = rn > (currentRound || 0);
-
               const headerBg = isDone ? '#DCFCE7' : isCurrent ? theme.accentBg : '#F8FAFC';
               const headerColor = isDone ? '#15803D' : isCurrent ? theme.accent : theme.textLight;
 
               return (
-                <div key={rn} style={{ minWidth: '170px', maxWidth: '200px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div key={rn} style={{ minWidth: '170px', maxWidth: '200px', display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative', zIndex: 1 }}>
                   {/* Column header */}
                   <div style={{ textAlign: 'center', padding: '5px 10px', borderRadius: '8px', background: headerBg, border: '1px solid ' + (isDone ? '#BBF7D0' : isCurrent ? theme.accent + '40' : theme.border) }}>
                     <div style={{ fontSize: '11px', fontWeight: 700, color: headerColor, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -246,12 +337,10 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                         return (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: isRight ? 'flex-end' : 'flex-start', opacity: isLoser ? 0.5 : 1 }}>
                             {!isRight && <span style={{ fontSize: '9px', fontWeight: 700, color: wlColor, background: wlColor + '15', borderRadius: '3px', padding: '1px 4px', flexShrink: 0 }}>{stats.wins}W-{stats.losses}L</span>}
-                            <span onClick={() => onOpenProfile(team.player1_id, team.player1_name, team.player1_avatar)}
-                              style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                            <span onClick={() => onOpenProfile(team.player1_id, team.player1_name, team.player1_avatar)} style={{ cursor: 'pointer', display: 'inline-flex' }}>
                               <AvatarCircle avatar={team.player1_avatar} size={14} emojiSize="7px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
                             </span>
-                            <span onClick={() => onOpenProfile(team.player2_id, team.player2_name, team.player2_avatar)}
-                              style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                            <span onClick={() => onOpenProfile(team.player2_id, team.player2_name, team.player2_avatar)} style={{ cursor: 'pointer', display: 'inline-flex' }}>
                               <AvatarCircle avatar={team.player2_avatar} size={14} emojiSize="7px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
                             </span>
                             <span style={{ fontSize: '11px', fontWeight: isWinner ? 700 : 500, color: isWinner ? '#15803D' : theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70px' }}>{team.name}</span>
@@ -262,7 +351,8 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                       };
 
                       return (
-                        <div key={match.id} style={{ borderRadius: '8px', border: '1px solid ' + (isMyMatch ? theme.accent + '60' : theme.border), background: isMyMatch ? theme.accentBg + '60' : '#FAFAFA', overflow: 'hidden' }}>
+                        <div key={match.id} data-match-id={match.id}
+                          style={{ borderRadius: '8px', border: '1px solid ' + (isMyMatch ? theme.accent + '60' : theme.border), background: isMyMatch ? theme.accentBg + '60' : '#FAFAFA', overflow: 'hidden' }}>
                           {!t2 ? (
                             <div style={{ padding: '8px 10px' }}>
                               {renderTeamRow(t1, 'left')}
@@ -272,11 +362,9 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                             <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                               {renderTeamRow(t1, 'left')}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-                                {reported ? (
-                                  <span style={{ fontSize: '12px', fontWeight: 800, color: theme.text, background: '#F1F5F9', padding: '2px 7px', borderRadius: '5px' }}>{match.score_text || '—'}</span>
-                                ) : (
-                                  <span style={{ fontSize: '10px', color: theme.textLight, fontStyle: 'italic' }}>vs</span>
-                                )}
+                                {reported
+                                  ? <span style={{ fontSize: '12px', fontWeight: 800, color: theme.text, background: '#F1F5F9', padding: '2px 7px', borderRadius: '5px' }}>{match.score_text || '—'}</span>
+                                  : <span style={{ fontSize: '10px', color: theme.textLight, fontStyle: 'italic' }}>vs</span>}
                               </div>
                               {renderTeamRow(t2, 'right')}
                               {!reported && (
