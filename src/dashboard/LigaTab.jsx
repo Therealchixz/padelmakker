@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
-import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search, Check } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -157,24 +157,30 @@ function TeamChip({ team, onOpenProfile, align = 'left' }) {
   );
 }
 
-function getOffsetIn(el, container) {
-  let left = 0, top = 0;
-  let cur = el;
-  while (cur && cur !== container) { left += cur.offsetLeft; top += cur.offsetTop; cur = cur.offsetParent; }
-  return { left, top, w: el.offsetWidth, h: el.offsetHeight };
-}
+const TEAM_PALETTE = [
+  'oklch(0.62 0.14 155)',
+  'oklch(0.55 0.14 255)',
+  'oklch(0.62 0.14 25)',
+  'oklch(0.58 0.15 295)',
+  'oklch(0.65 0.14 60)',
+  'oklch(0.55 0.14 195)',
+];
 
 function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpenProfile }) {
   const [open, setOpen] = useState(false);
+  const [highlightTeam, setHighlightTeam] = useState(null);
   const bracketRef = useRef(null);
   const [connectors, setConnectors] = useState([]);
   const [svgSize, setSvgSize] = useState({ w: 0, h: 0 });
 
-  if (teams.length === 0) return null;
+  const teamMap = useMemo(() => Object.fromEntries(teams.map(t => [t.id, t])), [teams]);
 
-  const teamMap = Object.fromEntries(teams.map(t => [t.id, t]));
+  const teamColors = useMemo(() => {
+    const m = {};
+    teams.forEach((t, i) => { m[t.id] = TEAM_PALETTE[i % TEAM_PALETTE.length]; });
+    return m;
+  }, [teams]);
 
-  // teamId -> { round -> matchId }  — used to draw connectors
   const teamMatchByRound = useMemo(() => {
     const map = {};
     for (const m of matches) {
@@ -186,66 +192,89 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
     return map;
   }, [matches]);
 
-  // Build cumulative W-L after each round
-  const cumWins = {}, cumLosses = {};
-  for (const t of teams) { cumWins[t.id] = 0; cumLosses[t.id] = 0; }
-  const statsAfterRound = {};
-  const sortedRounds = [...new Set(matches.map(m => m.round_number))].sort((a, b) => a - b);
-  for (const rn of sortedRounds) {
-    const done = matches.filter(m => m.round_number === rn && m.status === 'reported');
-    for (const m of done) {
-      const loserId = m.winner_id === m.team1_id ? m.team2_id : m.team1_id;
-      if (m.winner_id && cumWins[m.winner_id] !== undefined) cumWins[m.winner_id]++;
-      if (loserId && cumLosses[loserId] !== undefined) cumLosses[loserId]++;
-    }
-    statsAfterRound[rn] = {};
-    for (const id of Object.keys(cumWins)) statsAfterRound[rn][id] = { wins: cumWins[id], losses: cumLosses[id] };
-  }
-
-  const roundsMap = {};
-  for (const m of matches) {
-    if (!roundsMap[m.round_number]) roundsMap[m.round_number] = [];
-    roundsMap[m.round_number].push(m);
-  }
-
-  const maxRound = Math.max(totalRounds || 0, currentRound || 0, ...Object.keys(roundsMap).map(Number), 1);
-  const allRounds = Array.from({ length: maxRound }, (_, i) => i + 1);
-
-  // Measure DOM positions and compute SVG connector paths after each render
-  useLayoutEffect(() => {
-    if (!open || !bracketRef.current) { setConnectors([]); return; }
-    const container = bracketRef.current;
-    const lines = [];
-
+  const { statsAfterRound, roundsMap, allRounds } = useMemo(() => {
+    const cumW = {}, cumL = {};
+    for (const t of teams) { cumW[t.id] = 0; cumL[t.id] = 0; }
+    const sar = {};
+    const rMap = {};
     for (const m of matches) {
-      const round = m.round_number;
-      const loserId = m.winner_id ? (m.winner_id === m.team1_id ? m.team2_id : m.team1_id) : null;
-
-      // Pairs: [teamId, color, dashed]
-      const pairs = m.winner_id
-        ? [[m.winner_id, '#16A34A', false], [loserId, '#EF4444', false]]
-        : [[m.team1_id, '#94A3B8', true], [m.team2_id, '#94A3B8', true]];
-
-      for (const [tid, color, dashed] of pairs) {
-        if (!tid) continue;
-        const nextId = teamMatchByRound[tid]?.[round + 1];
-        if (!nextId) continue;
-        const fromEl = container.querySelector(`[data-match-id="${m.id}"]`);
-        const toEl   = container.querySelector(`[data-match-id="${nextId}"]`);
-        if (!fromEl || !toEl) continue;
-        const f = getOffsetIn(fromEl, container);
-        const t = getOffsetIn(toEl,   container);
-        lines.push({
-          x1: f.left + f.w,   y1: f.top + f.h / 2,
-          x2: t.left,         y2: t.top + t.h / 2,
-          color, dashed,
-        });
-      }
+      if (!rMap[m.round_number]) rMap[m.round_number] = [];
+      rMap[m.round_number].push(m);
     }
+    const sortedRNs = Object.keys(rMap).map(Number).sort((a, b) => a - b);
+    for (const rn of sortedRNs) {
+      for (const m of rMap[rn]) {
+        if (m.status !== 'reported' || !m.winner_id) continue;
+        const loserId = m.winner_id === m.team1_id ? m.team2_id : m.team1_id;
+        if (cumW[m.winner_id] !== undefined) cumW[m.winner_id]++;
+        if (loserId && cumL[loserId] !== undefined) cumL[loserId]++;
+      }
+      sar[rn] = {};
+      for (const id of Object.keys(cumW)) sar[rn][id] = { wins: cumW[id], losses: cumL[id] };
+    }
+    const maxR = Math.max(totalRounds || 0, currentRound || 0, ...Object.keys(rMap).map(Number), 1);
+    const allR = Array.from({ length: maxR }, (_, i) => i + 1);
+    return { statsAfterRound: sar, roundsMap: rMap, allRounds: allR };
+  }, [matches, teams, totalRounds, currentRound]);
 
-    setSvgSize({ w: container.scrollWidth, h: container.scrollHeight });
-    setConnectors(lines);
-  }, [open, matches, teamMatchByRound]);
+  useEffect(() => {
+    if (!open) { setConnectors([]); return; }
+    const compute = () => {
+      if (!bracketRef.current) return;
+      const br = bracketRef.current;
+      const bracketRect = br.getBoundingClientRect();
+      setSvgSize({ w: br.scrollWidth, h: br.scrollHeight });
+      const lines = [];
+      for (let ri = 0; ri < allRounds.length - 1; ri++) {
+        const rn = allRounds[ri];
+        const roundMatches = roundsMap[rn] || [];
+        const teamsHere = new Set();
+        roundMatches.forEach(m => {
+          if (m.team1_id) teamsHere.add(m.team1_id);
+          if (m.team2_id) teamsHere.add(m.team2_id);
+        });
+        for (const tid of teamsHere) {
+          const srcMatch = roundMatches.find(m => m.team1_id === tid || m.team2_id === tid);
+          const nextMatchId = teamMatchByRound[tid]?.[rn + 1];
+          if (!srcMatch || !nextMatchId) continue;
+          const srcEl = br.querySelector(`[data-match-id="${srcMatch.id}"]`);
+          const tgtEl = br.querySelector(`[data-match-id="${nextMatchId}"]`);
+          if (!srcEl || !tgtEl) continue;
+          const sRect = srcEl.getBoundingClientRect();
+          const tRect = tgtEl.getBoundingClientRect();
+          const srcRow = srcEl.querySelector(`[data-team-row="${tid}"]`);
+          const tgtRow = tgtEl.querySelector(`[data-team-row="${tid}"]`);
+          const sr = srcRow ? srcRow.getBoundingClientRect() : sRect;
+          const tr = tgtRow ? tgtRow.getBoundingClientRect() : tRect;
+          let kind = 'pending';
+          if (srcMatch.status === 'reported') {
+            kind = (!srcMatch.team2_id || srcMatch.winner_id === tid) ? 'win' : 'lose';
+          }
+          const x1 = sRect.right - bracketRect.left;
+          const y1 = sr.top + sr.height / 2 - bracketRect.top;
+          const x2 = tRect.left - bracketRect.left;
+          const y2 = tr.top + tr.height / 2 - bracketRect.top;
+          const dx = x2 - x1;
+          lines.push({
+            path: `M ${x1} ${y1} C ${x1 + dx * 0.55} ${y1}, ${x2 - dx * 0.55} ${y2}, ${x2} ${y2}`,
+            kind, tid, x1, y1, x2, y2,
+          });
+        }
+      }
+      setConnectors(lines);
+    };
+    requestAnimationFrame(() => requestAnimationFrame(compute));
+    const ro = new ResizeObserver(compute);
+    if (bracketRef.current) ro.observe(bracketRef.current);
+    window.addEventListener('resize', compute);
+    return () => { ro.disconnect(); window.removeEventListener('resize', compute); };
+  }, [open, allRounds, roundsMap, teamMatchByRound]);
+
+  if (teams.length === 0) return null;
+
+  const orderedConnectors = [...connectors].sort((a, b) =>
+    ({ pending: 0, lose: 1, win: 2 }[a.kind] - { pending: 0, lose: 1, win: 2 }[b.kind])
+  );
 
   return (
     <div style={{ marginBottom: '10px' }}>
@@ -255,130 +284,203 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
       {open && (
-        <div style={{ marginTop: '10px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '6px' }}>
-          {/* SVG connectors legend */}
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '8px', paddingLeft: '2px' }}>
-            {[['#16A34A', 'Vinder'], ['#EF4444', 'Taber'], ['#94A3B8', 'Afventer']].map(([c, l]) => (
-              <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: theme.textLight }}>
-                <svg width="18" height="8"><line x1="0" y1="4" x2="18" y2="4" stroke={c} strokeWidth="1.5" strokeDasharray={l === 'Afventer' ? '3,2' : undefined} /></svg>
-                {l}
+        <div style={{ marginTop: '12px' }}>
+          {/* Legend */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '12px' }}>
+            {[['win', 'Vinder', '#16A34A', false], ['lose', 'Taber', '#EF4444', false], ['pending', 'Afventer', '#CBD5E1', true]].map(([kind, label, color, dashed]) => (
+              <div key={kind} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#64748B' }}>
+                <svg width="18" height="8" style={{ flexShrink: 0 }}>
+                  <line x1="0" y1="4" x2="18" y2="4" stroke={color} strokeWidth="2"
+                    strokeDasharray={dashed ? '4 5' : undefined} strokeLinecap="round" />
+                </svg>
+                {label}
               </div>
             ))}
           </div>
 
-          <div ref={bracketRef} style={{ display: 'flex', gap: '28px', minWidth: 'max-content', position: 'relative', paddingBottom: '4px' }}>
-            {/* SVG overlay for connectors */}
-            {connectors.length > 0 && (
-              <svg
-                style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', overflow: 'visible', zIndex: 0 }}
-                width={svgSize.w} height={svgSize.h}
+          {/* Team hover-highlight chips */}
+          {teams.length > 1 && (
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginRight: 4 }}>Hold:</span>
+              {teams.map(t => (
+                <span key={t.id}
+                  onMouseEnter={() => setHighlightTeam(t.id)}
+                  onMouseLeave={() => setHighlightTeam(null)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '4px 10px 4px 4px', borderRadius: '999px',
+                    border: '1px solid ' + (highlightTeam === t.id ? theme.accent : '#E2E8F0'),
+                    background: highlightTeam === t.id ? theme.accentBg : '#F8FAFC',
+                    color: highlightTeam === t.id ? theme.accent : '#64748B',
+                    fontSize: '12px', fontWeight: 500, cursor: 'default', transition: 'all .15s',
+                  }}
+                >
+                  <span style={{ width: 14, height: 14, borderRadius: '50%', background: teamColors[t.id], display: 'inline-grid', placeItems: 'center', fontSize: '8px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                    {t.name.slice(0, 1).toUpperCase()}
+                  </span>
+                  {t.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Bracket */}
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', padding: '20px 20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div
+                ref={bracketRef}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${allRounds.length}, minmax(200px, 1fr))`,
+                  gap: '24px',
+                  position: 'relative',
+                  minWidth: Math.max(allRounds.length * 200 + (allRounds.length - 1) * 24, 400) + 'px',
+                }}
               >
-                {connectors.map((c, i) => {
-                  const midX = (c.x1 + c.x2) / 2;
+                {/* SVG connector overlay */}
+                <svg style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', overflow: 'visible', zIndex: 0 }} width={svgSize.w} height={svgSize.h}>
+                  {orderedConnectors.map((c, i) => (
+                    <path key={`halo-${i}`} d={c.path} fill="none" stroke="white" strokeWidth="6" strokeLinecap="round"
+                      opacity={highlightTeam && c.tid !== highlightTeam ? 0.05 : 0.9} />
+                  ))}
+                  {orderedConnectors.map((c, i) => {
+                    const dim = highlightTeam && c.tid !== highlightTeam;
+                    const isHi = highlightTeam === c.tid;
+                    const stroke = c.kind === 'win' ? '#16A34A' : c.kind === 'lose' ? '#EF4444' : '#CBD5E1';
+                    return (
+                      <g key={i} style={{ opacity: dim ? 0.1 : c.kind === 'lose' ? 0.55 : 1 }}>
+                        <path d={c.path} fill="none" stroke={stroke} strokeWidth={isHi ? 3 : 2}
+                          strokeLinecap="round" strokeDasharray={c.kind === 'pending' ? '4 5' : undefined} />
+                        <circle cx={c.x1} cy={c.y1} r="3.5" fill="white" stroke={stroke} strokeWidth="2" />
+                        <circle cx={c.x2} cy={c.y2} r="3.5" fill="white" stroke={stroke} strokeWidth="2" />
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* Round columns */}
+                {allRounds.map(rn => {
+                  const roundMatches = roundsMap[rn] || [];
+                  const isCurrent = rn === currentRound;
+                  const isDone = roundMatches.length > 0 && roundMatches.every(m => m.status === 'reported');
+                  const isFuture = rn > (currentRound || 0);
+                  const prevStats = statsAfterRound[rn - 1] || {};
+
                   return (
-                    <path
-                      key={i}
-                      d={`M ${c.x1} ${c.y1} H ${midX} V ${c.y2} H ${c.x2}`}
-                      stroke={c.color}
-                      strokeWidth="1.5"
-                      strokeOpacity="0.55"
-                      fill="none"
-                      strokeDasharray={c.dashed ? '4,3' : undefined}
-                    />
-                  );
-                })}
-              </svg>
-            )}
+                    <div key={rn} style={{ display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative', zIndex: 1 }}>
+                      {/* Round header */}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 14px', borderRadius: '10px',
+                        background: isDone ? theme.accentBg : '#F8FAFC',
+                        border: '1px solid ' + (isDone ? 'transparent' : '#E2E8F0'),
+                        marginBottom: '6px',
+                      }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isDone ? theme.accent : isCurrent ? '#334155' : '#94A3B8' }}>
+                          Runde {rn}{totalRounds ? ` / ${totalRounds}` : ''}
+                        </span>
+                        <span style={{ fontSize: '11px', color: isDone ? theme.accent : '#94A3B8' }}>
+                          {isDone ? '✓ Afsluttet' : isCurrent ? '● Aktiv' : 'Kommende'}
+                        </span>
+                      </div>
 
-            {allRounds.map(rn => {
-              const roundMatches = roundsMap[rn] || [];
-              const isCurrent = rn === currentRound;
-              const isDone = roundMatches.length > 0 && roundMatches.every(m => m.status === 'reported');
-              const isFuture = rn > (currentRound || 0);
-              const headerBg = isDone ? '#DCFCE7' : isCurrent ? theme.accentBg : '#F8FAFC';
-              const headerColor = isDone ? '#15803D' : isCurrent ? theme.accent : theme.textLight;
+                      {isFuture ? (
+                        <div style={{ border: '2px dashed #E2E8F0', borderRadius: '12px', padding: '20px 12px', textAlign: 'center', color: '#CBD5E1', fontSize: '11px' }}>
+                          Genereres efter<br />runde {rn - 1}
+                        </div>
+                      ) : roundMatches.length === 0 ? (
+                        <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', padding: '20px', textAlign: 'center', color: '#CBD5E1', fontSize: '11px' }}>
+                          Ingen kampe
+                        </div>
+                      ) : roundMatches.map(match => {
+                        const t1 = teamMap[match.team1_id];
+                        const t2 = match.team2_id ? teamMap[match.team2_id] : null;
+                        const reported = match.status === 'reported';
+                        const isMyMatch = myTeam && (match.team1_id === myTeam?.id || match.team2_id === myTeam?.id);
+                        const t1Stats = prevStats[match.team1_id] || { wins: 0, losses: 0 };
+                        const t2Stats = t2 ? (prevStats[match.team2_id] || { wins: 0, losses: 0 }) : null;
+                        const t1Wins = reported && (match.winner_id === match.team1_id || !match.team2_id);
+                        const t2Wins = reported && !!t2 && match.winner_id === match.team2_id;
 
-              return (
-                <div key={rn} style={{ minWidth: '170px', maxWidth: '200px', display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative', zIndex: 1 }}>
-                  {/* Column header */}
-                  <div style={{ textAlign: 'center', padding: '5px 10px', borderRadius: '8px', background: headerBg, border: '1px solid ' + (isDone ? '#BBF7D0' : isCurrent ? theme.accent + '40' : theme.border) }}>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: headerColor, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Runde {rn}{totalRounds ? ` / ${totalRounds}` : ''}
-                    </div>
-                    {isDone && <div style={{ fontSize: '9px', color: '#16A34A', fontWeight: 600 }}>✓ Afsluttet</div>}
-                    {isCurrent && !isDone && <div style={{ fontSize: '9px', color: theme.accent, fontWeight: 600 }}>● Igangværende</div>}
-                    {isFuture && <div style={{ fontSize: '9px', color: theme.textLight }}>Kommende</div>}
-                  </div>
+                        // Resolve per-team scores from score_text
+                        let t1Score = '—', t2Score = '—';
+                        if (reported && match.score_text) {
+                          const sp = match.score_text.match(/^(\d+)-(\d+)$/);
+                          if (sp) {
+                            const ws = Math.max(+sp[1], +sp[2]);
+                            const ls = Math.min(+sp[1], +sp[2]);
+                            t1Score = String(t1Wins ? ws : ls);
+                            t2Score = String(t2Wins ? ws : ls);
+                          }
+                        }
 
-                  {/* Match cards */}
-                  {isFuture ? (
-                    <div style={{ border: '2px dashed ' + theme.border, borderRadius: '8px', padding: '14px 10px', textAlign: 'center', color: theme.textLight, fontSize: '11px' }}>
-                      Parringer genereres<br />efter runde {rn - 1}
-                    </div>
-                  ) : roundMatches.length === 0 ? (
-                    <div style={{ border: '1px solid ' + theme.border, borderRadius: '8px', padding: '14px 10px', textAlign: 'center', color: theme.textLight, fontSize: '11px' }}>
-                      Ingen kampe
-                    </div>
-                  ) : (
-                    roundMatches.map(match => {
-                      const t1 = teamMap[match.team1_id];
-                      const t2 = match.team2_id ? teamMap[match.team2_id] : null;
-                      const reported = match.status === 'reported';
-                      const isMyMatch = myTeam && (match.team1_id === myTeam?.id || match.team2_id === myTeam?.id);
-                      const prevStats = statsAfterRound[rn - 1] || {};
+                        const recStyle = (isWin, isLose) => ({
+                          fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+                          fontSize: '10px', fontWeight: 600,
+                          padding: '3px 6px', borderRadius: '5px',
+                          background: isWin ? '#DCFCE7' : isLose ? '#FEE2E2' : '#F1F5F9',
+                          color: isWin ? '#16A34A' : isLose ? '#DC2626' : '#94A3B8',
+                          minWidth: '44px', textAlign: 'center', flexShrink: 0, display: 'inline-block',
+                        });
 
-                      const renderTeamRow = (team, align) => {
-                        if (!team) return null;
-                        const isWinner = reported && match.winner_id === team.id;
-                        const isLoser = reported && match.winner_id && match.winner_id !== team.id;
-                        const stats = prevStats[team.id] || { wins: 0, losses: 0 };
-                        const wlColor = stats.wins > stats.losses ? '#16A34A' : stats.wins < stats.losses ? '#DC2626' : theme.textLight;
-                        const isRight = align === 'right';
+                        const dotStyle = (teamId) => ({
+                          width: 14, height: 14, borderRadius: '50%',
+                          background: teamColors[teamId] || '#94A3B8',
+                          display: 'inline-grid', placeItems: 'center',
+                          fontSize: '8px', fontWeight: 700, color: 'white', flexShrink: 0,
+                        });
+
                         return (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: isRight ? 'flex-end' : 'flex-start', opacity: isLoser ? 0.5 : 1 }}>
-                            {!isRight && <span style={{ fontSize: '9px', fontWeight: 700, color: wlColor, background: wlColor + '15', borderRadius: '3px', padding: '1px 4px', flexShrink: 0 }}>{stats.wins}W-{stats.losses}L</span>}
-                            <span onClick={() => onOpenProfile(team.player1_id, team.player1_name, team.player1_avatar)} style={{ cursor: 'pointer', display: 'inline-flex' }}>
-                              <AvatarCircle avatar={team.player1_avatar} size={14} emojiSize="7px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
-                            </span>
-                            <span onClick={() => onOpenProfile(team.player2_id, team.player2_name, team.player2_avatar)} style={{ cursor: 'pointer', display: 'inline-flex' }}>
-                              <AvatarCircle avatar={team.player2_avatar} size={14} emojiSize="7px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
-                            </span>
-                            <span style={{ fontSize: '11px', fontWeight: isWinner ? 700 : 500, color: isWinner ? '#15803D' : theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70px' }}>{team.name}</span>
-                            {isRight && <span style={{ fontSize: '9px', fontWeight: 700, color: wlColor, background: wlColor + '15', borderRadius: '3px', padding: '1px 4px', flexShrink: 0 }}>{stats.wins}W-{stats.losses}L</span>}
-                            {isWinner && <span style={{ fontSize: '9px' }}>🏆</span>}
+                          <div key={match.id} data-match-id={match.id}
+                            style={{
+                              background: '#fff',
+                              border: '1px solid ' + (isMyMatch ? theme.accent + '60' : '#E2E8F0'),
+                              borderRadius: '12px', padding: '10px 12px',
+                              display: 'grid', gap: '6px',
+                              boxShadow: isMyMatch ? '0 0 0 3px ' + theme.accentBg : '0 1px 2px rgba(0,0,0,0.04)',
+                            }}
+                          >
+                            {!t2 ? (
+                              <>
+                                <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'center', gap: '8px', padding: '4px 2px' }}>
+                                  <span style={recStyle(reported, false)}>{t1Stats.wins}W-{t1Stats.losses}L</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: '#0F172A', overflow: 'hidden' }}>
+                                    <span style={dotStyle(t1.id)}>{t1.name.slice(0, 1).toUpperCase()}</span>
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t1.name}</span>
+                                  </span>
+                                </div>
+                                <div style={{ height: '1px', background: '#F1F5F9', margin: '0 2px' }} />
+                                <div style={{ textAlign: 'center', fontSize: '11px', color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 0' }}>Fri runde</div>
+                              </>
+                            ) : (
+                              <>
+                                <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px', opacity: reported && !t1Wins ? 0.55 : 1 }}>
+                                  <span style={recStyle(t1Wins, reported && !t1Wins)}>{t1Stats.wins}W-{t1Stats.losses}L</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t1Wins ? 600 : 500, color: t1Wins ? '#0F172A' : '#64748B', overflow: 'hidden' }}>
+                                    <span style={dotStyle(t1.id)}>{t1.name.slice(0, 1).toUpperCase()}</span>
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t1.name}</span>
+                                  </span>
+                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t1Wins ? '#0F172A' : '#94A3B8', minWidth: '20px', textAlign: 'right' }}>{t1Score}</span>
+                                </div>
+                                <div style={{ height: '1px', background: '#F1F5F9', margin: '0 2px' }} />
+                                <div data-team-row={match.team2_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px', opacity: reported && !t2Wins ? 0.55 : 1 }}>
+                                  <span style={recStyle(t2Wins, reported && !t2Wins)}>{t2Stats.wins}W-{t2Stats.losses}L</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t2Wins ? 600 : 500, color: t2Wins ? '#0F172A' : '#64748B', overflow: 'hidden' }}>
+                                    <span style={dotStyle(t2.id)}>{t2.name.slice(0, 1).toUpperCase()}</span>
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t2.name}</span>
+                                  </span>
+                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t2Wins ? '#0F172A' : '#94A3B8', minWidth: '20px', textAlign: 'right' }}>{t2Score}</span>
+                                </div>
+                              </>
+                            )}
                           </div>
                         );
-                      };
-
-                      return (
-                        <div key={match.id} data-match-id={match.id}
-                          style={{ borderRadius: '8px', border: '1px solid ' + (isMyMatch ? theme.accent + '60' : theme.border), background: isMyMatch ? theme.accentBg + '60' : '#FAFAFA', overflow: 'hidden' }}>
-                          {!t2 ? (
-                            <div style={{ padding: '8px 10px' }}>
-                              {renderTeamRow(t1, 'left')}
-                              <div style={{ fontSize: '10px', color: '#16A34A', fontWeight: 700, marginTop: '4px', textAlign: 'center' }}>🏆 Fri runde</div>
-                            </div>
-                          ) : (
-                            <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                              {renderTeamRow(t1, 'left')}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-                                {reported
-                                  ? <span style={{ fontSize: '12px', fontWeight: 800, color: theme.text, background: '#F1F5F9', padding: '2px 7px', borderRadius: '5px' }}>{match.score_text || '—'}</span>
-                                  : <span style={{ fontSize: '10px', color: theme.textLight, fontStyle: 'italic' }}>vs</span>}
-                              </div>
-                              {renderTeamRow(t2, 'right')}
-                              {!reported && (
-                                <div style={{ textAlign: 'center', fontSize: '9px', color: '#92400E', background: '#FEF9C3', borderRadius: '4px', padding: '2px 6px', marginTop: '2px' }}>⏳ Afventer</div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              );
-            })}
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -869,17 +971,39 @@ export function LigaTab({ user, showToast }) {
       )}
 
       {/* Sub-tabs */}
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid #E2E8F0', marginBottom: '20px', gap: 0 }}>
         {[
-          { id: 'registration', label: 'Tilmelding' },
-          { id: 'active',       label: 'Aktiv sæson' },
-          { id: 'completed',    label: 'Afsluttede' },
-        ].map(v => (
-          <button key={v.id} onClick={() => setView(v.id)} style={{ ...btn(view === v.id), padding: '7px 14px', fontSize: '13px' }}>
-            {v.label}
-            <span style={{ marginLeft: '5px', fontSize: '11px', opacity: 0.65 }}>({leagues.filter(l => l.status === v.id).length})</span>
-          </button>
-        ))}
+          { id: 'registration', label: 'Tilmelding',  icon: <Users size={13} /> },
+          { id: 'active',       label: 'Aktiv sæson', icon: <Trophy size={13} /> },
+          { id: 'completed',    label: 'Afsluttede',  icon: <Check size={13} /> },
+        ].map(v => {
+          const count = leagues.filter(l => l.status === v.id).length;
+          const active = view === v.id;
+          return (
+            <button key={v.id} onClick={() => setView(v.id)} style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '10px 16px', border: 'none',
+              borderBottom: '2px solid ' + (active ? theme.accent : 'transparent'),
+              background: 'transparent',
+              fontSize: '13px', fontWeight: active ? 600 : 500,
+              color: active ? theme.accent : '#64748B',
+              cursor: 'pointer', marginBottom: '-1px', transition: 'color .15s',
+            }}>
+              {v.icon}
+              {v.label}
+              {count > 0 && (
+                <span style={{
+                  background: active ? theme.accent : '#E2E8F0',
+                  color: active ? '#fff' : '#64748B',
+                  borderRadius: '999px', padding: '1px 7px',
+                  fontSize: '11px', fontWeight: 600, minWidth: '20px', textAlign: 'center',
+                }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (
