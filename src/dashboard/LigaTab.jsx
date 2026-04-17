@@ -812,7 +812,7 @@ export function LigaTab({ user, showToast }) {
               </div>
               <button
                 onClick={async () => {
-                  const { data } = await supabase.from('profiles').select('id').eq('role', 'admin').limit(1).maybeSingle();
+                  const { data } = await supabase.from('profiles').select('id').eq('role', 'admin').ilike('full_name', '%Mike Pedersen%').maybeSingle();
                   if (data?.id) navigate('/dashboard/beskeder?med=' + data.id);
                   else showToast('Ingen admin fundet.');
                 }}
