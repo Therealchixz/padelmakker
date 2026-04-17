@@ -136,7 +136,7 @@ export function LigaTab({ user, showToast }) {
 
   // Create league form (admin)
   const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '' });
+  const [createForm, setCreateForm] = useState({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
 
   // Create team form
   const [teamFormLeagueId, setTeamFormLeagueId] = useState(null);
@@ -271,6 +271,18 @@ export function LigaTab({ user, showToast }) {
     finally { setBusyId(null); }
   };
 
+  const kickTeam = async (team) => {
+    if (!window.confirm(`Smid "${team.name}" ud af ligaen?`)) return;
+    setBusyId(team.id + '-kick');
+    try {
+      const { error } = await supabase.from('league_teams').delete().eq('id', team.id);
+      if (error) throw error;
+      showToast('Hold fjernet fra ligaen.');
+      await load();
+    } catch (e) { showToast('Fejl: ' + e.message); }
+    finally { setBusyId(null); }
+  };
+
   const reportResult = async (match, myTeamWon) => {
     const myTeam = myTeamByLeague[match.league_id];
     if (!myTeam) return;
@@ -297,18 +309,20 @@ export function LigaTab({ user, showToast }) {
     }
     setBusyId('create');
     try {
+      const maxT = createForm.max_teams !== '' ? parseInt(createForm.max_teams, 10) : null;
       const { error } = await supabase.from('leagues').insert({
         name: createForm.name.trim(),
         description: createForm.description.trim() || null,
         season_type: createForm.season_type,
         start_date: createForm.start_date,
         end_date: createForm.end_date,
+        max_teams: maxT && maxT > 0 ? maxT : null,
         created_by: user.id,
       });
       if (error) throw error;
       showToast('Liga oprettet!');
       setCreateOpen(false);
-      setCreateForm({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '' });
+      setCreateForm({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
     finally { setBusyId(null); }
@@ -424,7 +438,7 @@ export function LigaTab({ user, showToast }) {
               </button>
             ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
             <div>
               <label style={labelStyle}>Startdato</label>
               <input type="date" value={createForm.start_date} onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))} style={inputStyle} />
@@ -434,6 +448,15 @@ export function LigaTab({ user, showToast }) {
               <input type="date" value={createForm.end_date} onChange={e => setCreateForm(f => ({ ...f, end_date: e.target.value }))} style={inputStyle} />
             </div>
           </div>
+          <label style={labelStyle}>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
+          <input
+            type="number"
+            min="2"
+            value={createForm.max_teams}
+            onChange={e => setCreateForm(f => ({ ...f, max_teams: e.target.value }))}
+            placeholder="Ubegrænset"
+            style={{ ...inputStyle, marginBottom: '14px', width: '140px' }}
+          />
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={createLeague} disabled={busyId === 'create'} style={{ ...btn(true), fontSize: '13px' }}>
               {busyId === 'create' ? 'Opretter…' : 'Opret liga'}
@@ -518,6 +541,10 @@ export function LigaTab({ user, showToast }) {
             const opponentTeam = opponentTeamId ? teams.find(t => t.id === opponentTeamId) : null;
 
             const showTeamForm = teamFormLeagueId === league.id;
+            const isCreator = league.created_by === user.id;
+            const canManageTeams = isAdmin || isCreator;
+            const regTeamCount = (allTeamsByLeague[league.id] || []).length;
+            const isFull = league.max_teams && regTeamCount >= league.max_teams;
 
             return (
               <div key={league.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: '18px', border: '1px solid ' + theme.border, boxShadow: theme.shadow }}>
@@ -539,7 +566,7 @@ export function LigaTab({ user, showToast }) {
                       {STATUS_LABELS[league.status]}
                     </span>
                     <span style={tag(theme.blueBg, theme.blue)}>
-                      <Users size={10} /> {(allTeamsByLeague[league.id] || []).length} hold
+                      <Users size={10} /> {(allTeamsByLeague[league.id] || []).length}{league.max_teams ? `/${league.max_teams}` : ''} hold
                     </span>
                   </div>
                 </div>
@@ -591,6 +618,10 @@ export function LigaTab({ user, showToast }) {
                           <button onClick={() => { setTeamFormLeagueId(null); setTeamName(''); setSelectedPartner(null); }} style={{ ...btn(false), fontSize: '13px' }}>Annullér</button>
                         </div>
                       </div>
+                    ) : isFull ? (
+                      <div style={{ fontSize: '13px', color: theme.textMid, padding: '8px 0' }}>
+                        Ligaen er fuld ({league.max_teams}/{league.max_teams} hold).
+                      </div>
                     ) : (
                       <button onClick={() => setTeamFormLeagueId(league.id)} style={{ ...btn(true), padding: '8px 16px', fontSize: '13px' }}>
                         <Plus size={14} /> Tilmeld hold
@@ -623,6 +654,15 @@ export function LigaTab({ user, showToast }) {
                             </div>
                             {t.status === 'pending' && (
                               <span style={{ fontSize: '10px', fontWeight: 700, color: '#92400E', background: '#FEF3C7', padding: '2px 7px', borderRadius: '10px', flexShrink: 0 }}>Afventer</span>
+                            )}
+                            {canManageTeams && (t.player1_id !== user.id && t.player2_id !== user.id) && (
+                              <button
+                                onClick={() => kickTeam(t)}
+                                disabled={busyId === t.id + '-kick'}
+                                style={{ ...btn(false), padding: '3px 9px', fontSize: '11px', color: '#DC2626', borderColor: '#FCA5A5', flexShrink: 0 }}
+                              >
+                                Fjern
+                              </button>
                             )}
                           </div>
                         ))}
