@@ -832,6 +832,36 @@ export function LigaTab({ user, showToast }) {
             return (
               <div key={league.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: '18px', border: '1px solid ' + theme.border, boxShadow: theme.shadow }}>
 
+                {/* Winner banner for completed leagues */}
+                {league.status === 'completed' && standings.length > 0 && (() => {
+                  const w = standings[0];
+                  return (
+                    <div style={{ marginBottom: '14px', padding: '14px 16px', background: 'linear-gradient(135deg, #FEF9C3, #FEF3C7)', borderRadius: '10px', border: '1.5px solid #F59E0B', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ fontSize: '28px', lineHeight: 1 }}>🏆</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Vinder</div>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: '#78350F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
+                          <span onClick={() => openProfile(w.player1_id, w.player1_name, w.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: '#92400E' }}>
+                            <AvatarCircle avatar={w.player1_avatar} size={20} emojiSize="10px" style={{ background: '#FEF3C7', border: '1px solid #F59E0B' }} />
+                            {w.player1_name}
+                          </span>
+                          <span style={{ color: '#F59E0B', fontSize: '10px' }}>+</span>
+                          <span onClick={() => openProfile(w.player2_id, w.player2_name, w.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: '#92400E' }}>
+                            <AvatarCircle avatar={w.player2_avatar} size={20} emojiSize="10px" style={{ background: '#FEF3C7', border: '1px solid #F59E0B' }} />
+                            {w.player2_name}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#B45309' }}>{w.points}</div>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#92400E' }}>point</div>
+                        <div style={{ fontSize: '10px', color: '#A16207', marginTop: '2px' }}>{w.wins}W · {w.losses}L</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
