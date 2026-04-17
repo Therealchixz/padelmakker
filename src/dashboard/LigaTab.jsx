@@ -1050,9 +1050,13 @@ export function LigaTab({ user, showToast }) {
                                     >
                                       <div style={{ fontSize: '9px', fontWeight: 700, color: isSelected ? '#15803D' : theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
                                       <div style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? '#15803D' : theme.text, marginBottom: '8px' }}>{team.name}</div>
-                                      <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
-                                        <AvatarCircle avatar={team.player1_avatar} size={24} emojiSize="11px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
-                                        <AvatarCircle avatar={team.player2_avatar} size={24} emojiSize="11px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
+                                      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                                        {[{ avatar: team.player1_avatar, name: team.player1_name }, { avatar: team.player2_avatar, name: team.player2_name }].map(p => (
+                                          <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                                            <AvatarCircle avatar={p.avatar} size={26} emojiSize="12px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
+                                            <span style={{ fontSize: '10px', color: isSelected ? '#15803D' : theme.textMid, fontWeight: 600 }}>{p.name.split(' ')[0]}</span>
+                                          </div>
+                                        ))}
                                       </div>
                                       {isSelected && <div style={{ fontSize: '18px', marginTop: '6px' }}>🏆</div>}
                                     </button>
