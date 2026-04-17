@@ -104,7 +104,7 @@ const SWISS_RULES = [
   { icon: '🔁', text: 'To hold mødes aldrig hinanden mere end én gang i samme turnering.' },
   { icon: '🏆', text: 'Point: Sejr = 3 · Tab i tiebreak (7-6) = 1 · Klart tab = 0.' },
   { icon: '📏', text: 'Ved pointlighed afgøres placeringen af spilsforskel (antal games vundet minus tabt).' },
-  { icon: '🔢', text: 'Antal runder beregnes automatisk ud fra holdantal: f.eks. 4 hold → 2 runder, 8 hold → 3 runder.' },
+  { icon: '🔢', text: 'Antal runder beregnes automatisk: 3 hold → 2 runder, 4 hold → 3 runder, 8 hold → 3 runder, 16 hold → 4 runder.' },
   { icon: '🎯', text: 'Score er obligatorisk ved indberetning — gyldige: 6-0 til 6-4, 7-5 eller 7-6.' },
   { icon: '⏸️', text: 'Næste runde genereres først når alle kampe i indeværende runde er indberettet.' },
   { icon: '👥', text: 'Ulige antal hold? Ét hold får fri runde og tæller automatisk som sejr (3 point).' },
@@ -580,7 +580,11 @@ export function LigaTab({ user, showToast }) {
     if (!window.confirm(`Start "${league.name}" og generér runde 1?`)) return;
     setBusyId(league.id + '-start');
     try {
-      const totalRounds = Math.ceil(Math.log2(Math.max(2, teams.length)));
+      // Use the larger of log2 (Swiss minimum) and teams-1 (full round-robin for small groups)
+      const totalRounds = Math.max(
+        Math.ceil(Math.log2(Math.max(2, teams.length))),
+        teams.length <= 6 ? teams.length - 1 : 0
+      );
       const allMatches = matchesByLeague[league.id] || [];
       const standings = computeStandings(teams, allMatches);
       const pairings = generatePairings(standings, allMatches);
@@ -616,6 +620,18 @@ export function LigaTab({ user, showToast }) {
       return;
     }
     const round = league.current_round + 1;
+
+    // Check if any real pairings are possible before generating
+    const previewStandings = computeStandings(teams, allMatches);
+    const previewPairings = generatePairings(previewStandings, allMatches);
+    const hasRealMatches = previewPairings.some(p => p.team2_id !== null);
+    if (!hasRealMatches) {
+      if (window.confirm('Alle hold har allerede spillet mod hinanden — der er ingen gyldige parringer tilbage.\n\nVil du afslutte ligaen og låse ranglisten?')) {
+        await completeLeague(league);
+      }
+      return;
+    }
+
     if (!window.confirm(`Generér runde ${round}${totalRounds ? ` af ${totalRounds}` : ''}?`)) return;
     setBusyId(league.id + '-next');
     try {
