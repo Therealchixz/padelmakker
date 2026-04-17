@@ -5,6 +5,7 @@ import { theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platfor
 import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
+import { PlayerProfileModal } from './PlayerProfileModal';
 
 function computeStandings(teams, matches) {
   const map = {};
@@ -125,10 +126,8 @@ function PartnerSearch({ userId, onSelect }) {
 export function LigaTab({ user, showToast }) {
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
-  const [view, setView] = useState('active');
-  const [profileModal, setProfileModal] = useState(null);
-  const [profileData, setProfileData] = useState(null);
-  const [profileLoading, setProfileLoading] = useState(false);
+  const [view, setView] = useState('registration');
+  const [viewPlayer, setViewPlayer] = useState(null);
   const [leagues, setLeagues] = useState([]);
   const [teamsByLeague, setTeamsByLeague] = useState({});
   const [allTeamsByLeague, setAllTeamsByLeague] = useState({});
@@ -203,18 +202,7 @@ export function LigaTab({ user, showToast }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const openProfile = async (id, name, avatar, teamStats = null) => {
-    setProfileModal({ id, name, avatar, teamStats });
-    setProfileData(null);
-    setProfileLoading(true);
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, name, avatar, elo_rating, city, level')
-      .eq('id', id)
-      .maybeSingle();
-    setProfileData(data);
-    setProfileLoading(false);
-  };
+  const openProfile = (id, name, avatar) => setViewPlayer({ id, full_name: name, avatar });
 
   const createTeam = async (leagueId) => {
     if (!teamName.trim()) { showToast('Angiv et holdnavn.'); return; }
@@ -431,71 +419,12 @@ export function LigaTab({ user, showToast }) {
 
   return (
     <div>
-      {/* Spiller-profil modal */}
-      {profileModal && (
-        <div
-          onClick={() => setProfileModal(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '300px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', position: 'relative' }}
-          >
-            <button onClick={() => setProfileModal(null)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: theme.textLight, lineHeight: 1 }}>×</button>
-            {profileLoading ? (
-              <div style={{ textAlign: 'center', padding: '20px 0', color: theme.textLight, fontSize: '13px' }}>Indlæser…</div>
-            ) : (
-              <>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
-                  <AvatarCircle
-                    avatar={profileData?.avatar || profileModal.avatar}
-                    size={64} emojiSize="30px"
-                    style={{ background: theme.accentBg, border: '2px solid ' + theme.border, marginBottom: '10px' }}
-                  />
-                  <div style={{ fontSize: '17px', fontWeight: 800, textAlign: 'center' }}>
-                    {profileData?.full_name || profileData?.name || profileModal.name}
-                  </div>
-                  {profileData?.city && (
-                    <div style={{ fontSize: '12px', color: theme.textLight, marginTop: '2px' }}>📍 {profileData.city}</div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '16px' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: theme.accent }}>{Math.round(Number(profileData?.elo_rating) || 1000)}</div>
-                    <div style={{ fontSize: '10px', color: theme.textLight, textTransform: 'uppercase', fontWeight: 600 }}>ELO</div>
-                  </div>
-                  {profileModal.teamStats && (
-                    <>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#16A34A' }}>{profileModal.teamStats.wins}</div>
-                        <div style={{ fontSize: '10px', color: theme.textLight, textTransform: 'uppercase', fontWeight: 600 }}>Sejre</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#DC2626' }}>{profileModal.teamStats.losses}</div>
-                        <div style={{ fontSize: '10px', color: theme.textLight, textTransform: 'uppercase', fontWeight: 600 }}>Nederlag</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 800, color: theme.accent }}>{profileModal.teamStats.points}</div>
-                        <div style={{ fontSize: '10px', color: theme.textLight, textTransform: 'uppercase', fontWeight: 600 }}>Point</div>
-                      </div>
-                    </>
-                  )}
-                </div>
-                {profileData?.level && (
-                  <div style={{ textAlign: 'center', fontSize: '12px', color: theme.textMid, marginBottom: '14px' }}>Niveau: <strong>{profileData.level}</strong></div>
-                )}
-                {profileModal.id !== user.id && (
-                  <button
-                    onClick={() => { setProfileModal(null); navigate('/dashboard/beskeder?med=' + profileModal.id); }}
-                    style={{ ...btn(true), width: '100%', justifyContent: 'center', fontSize: '13px' }}
-                  >
-                    Send besked
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
+      {viewPlayer && (
+        <PlayerProfileModal
+          player={viewPlayer}
+          onClose={() => setViewPlayer(null)}
+          onMessage={() => { setViewPlayer(null); navigate('/dashboard/beskeder?med=' + viewPlayer.id); }}
+        />
       )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
@@ -853,12 +782,12 @@ export function LigaTab({ user, showToast }) {
                                   {t.name}{isMyTeam ? ' (jer)' : ''}
                                 </div>
                                 <div style={{ fontSize: '11px', color: theme.textLight, display: 'flex', gap: '4px', alignItems: 'center', marginTop: '2px', flexWrap: 'wrap' }}>
-                                  <span onClick={() => openProfile(t.player1_id, t.player1_name, t.player1_avatar, t)} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer', borderRadius: '4px', padding: '1px 3px', background: theme.accentBg }}>
+                                  <span onClick={() => openProfile(t.player1_id, t.player1_name, t.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer', borderRadius: '4px', padding: '1px 3px', background: theme.accentBg }}>
                                     <AvatarCircle avatar={t.player1_avatar} size={14} emojiSize="7px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
                                     {t.player1_name}
                                   </span>
                                   <span style={{ color: theme.border }}>+</span>
-                                  <span onClick={() => openProfile(t.player2_id, t.player2_name, t.player2_avatar, t)} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer', borderRadius: '4px', padding: '1px 3px', background: theme.accentBg }}>
+                                  <span onClick={() => openProfile(t.player2_id, t.player2_name, t.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer', borderRadius: '4px', padding: '1px 3px', background: theme.accentBg }}>
                                     <AvatarCircle avatar={t.player2_avatar} size={14} emojiSize="7px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
                                     {t.player2_name}
                                   </span>
