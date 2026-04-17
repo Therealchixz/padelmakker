@@ -7,20 +7,44 @@ import { AvatarCircle } from '../components/AvatarCircle';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
 
+function isTiebreakScore(scoreText) {
+  return !!(scoreText && /7-6|6-7/.test(scoreText));
+}
+
+function parseGameDiff(scoreText, winnerId, team1Id) {
+  if (!scoreText) return 0;
+  const m = scoreText.trim().match(/^(\d+)-(\d+)$/);
+  if (!m) return 0;
+  const a = parseInt(m[1], 10), b = parseInt(m[2], 10);
+  // max(a,b) always belongs to winner; min(a,b) to loser
+  const winnerGames = Math.max(a, b), loserGames = Math.min(a, b);
+  // return diff from team1 perspective
+  return winnerId === team1Id ? winnerGames - loserGames : loserGames - winnerGames;
+}
+
 function computeStandings(teams, matches) {
   const map = {};
-  for (const t of teams) map[t.id] = { ...t, points: 0, wins: 0, losses: 0, played: 0 };
+  for (const t of teams) map[t.id] = { ...t, points: 0, wins: 0, losses: 0, played: 0, gameDiff: 0 };
   for (const m of matches) {
     if (m.status !== 'reported' || !m.winner_id) continue;
     const winner = map[m.winner_id];
     const loserId = m.winner_id === m.team1_id ? m.team2_id : m.team1_id;
     const loser = loserId ? map[loserId] : null;
-    if (winner) { winner.wins++; winner.points += 3; winner.played++; }
-    if (loser)  { loser.losses++; loser.played++; }
+    const tb = isTiebreakScore(m.score_text);
+    const diffT1 = parseGameDiff(m.score_text, m.winner_id, m.team1_id);
+    if (winner) {
+      winner.wins++; winner.points += 3; winner.played++;
+      winner.gameDiff += m.winner_id === m.team1_id ? diffT1 : -diffT1;
+    }
+    if (loser) {
+      loser.losses++; if (tb) loser.points += 1; loser.played++;
+      loser.gameDiff += loserId === m.team1_id ? diffT1 : -diffT1;
+    }
   }
   return Object.values(map).sort((a, b) =>
-    b.points !== a.points ? b.points - a.points :
-    b.wins   !== a.wins   ? b.wins   - a.wins   :
+    b.points   !== a.points   ? b.points   - a.points   :
+    b.gameDiff !== a.gameDiff ? b.gameDiff - a.gameDiff :
+    b.wins     !== a.wins     ? b.wins     - a.wins     :
     b.elo_combined - a.elo_combined
   );
 }
@@ -78,7 +102,7 @@ const SWISS_RULES = [
   { icon: '🎾', text: 'Hvert hold spiller én kamp per runde.' },
   { icon: '📊', text: 'Hold parres mod andre med samme pointtal — jo flere runder, jo mere præcis rangliste.' },
   { icon: '🔁', text: 'To hold mødes aldrig hinanden mere end én gang.' },
-  { icon: '🏆', text: 'Sejr giver 3 point. Ingen point for tab.' },
+  { icon: '🏆', text: 'Sejr giver 3 point. Tab i tiebreak (7-6) giver 1 point. Klart tab giver 0.' },
   { icon: '🎯', text: 'Score er obligatorisk ved indberetning af resultat.' },
   { icon: '⏸️', text: 'Næste runde genereres først når alle kampe er indberettet.' },
   { icon: '👥', text: 'Ulige antal hold? Ét hold får fri runde og tæller som automatisk sejr.' },
@@ -130,104 +154,141 @@ function TeamChip({ team, onOpenProfile, align = 'left' }) {
   );
 }
 
-function TournamentSchedule({ teams, matches, currentRound, myTeam, onOpenProfile }) {
+function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpenProfile }) {
   const [open, setOpen] = useState(false);
+  if (teams.length === 0) return null;
+
   const teamMap = Object.fromEntries(teams.map(t => [t.id, t]));
-  const rounds = {};
-  for (const m of matches) {
-    if (!rounds[m.round_number]) rounds[m.round_number] = [];
-    rounds[m.round_number].push(m);
+
+  // Build cumulative W-L after each round
+  const cumWins = {}, cumLosses = {};
+  for (const t of teams) { cumWins[t.id] = 0; cumLosses[t.id] = 0; }
+  const statsAfterRound = {}; // round -> { teamId -> {wins, losses} }
+  const sortedRounds = [...new Set(matches.map(m => m.round_number))].sort((a, b) => a - b);
+  for (const rn of sortedRounds) {
+    const done = matches.filter(m => m.round_number === rn && m.status === 'reported');
+    for (const m of done) {
+      const loserId = m.winner_id === m.team1_id ? m.team2_id : m.team1_id;
+      if (m.winner_id && cumWins[m.winner_id] !== undefined) cumWins[m.winner_id]++;
+      if (loserId && cumLosses[loserId] !== undefined) cumLosses[loserId]++;
+    }
+    statsAfterRound[rn] = {};
+    for (const id of Object.keys(cumWins)) statsAfterRound[rn][id] = { wins: cumWins[id], losses: cumLosses[id] };
   }
-  const roundNumbers = Object.keys(rounds).map(Number).sort((a, b) => a - b);
-  if (roundNumbers.length === 0) return null;
+
+  const roundsMap = {};
+  for (const m of matches) {
+    if (!roundsMap[m.round_number]) roundsMap[m.round_number] = [];
+    roundsMap[m.round_number].push(m);
+  }
+
+  const maxRound = Math.max(totalRounds || 0, currentRound || 0, ...Object.keys(roundsMap).map(Number), 1);
+  const allRounds = Array.from({ length: maxRound }, (_, i) => i + 1);
 
   return (
     <div style={{ marginBottom: '10px' }}>
       <button onClick={() => setOpen(o => !o)}
         style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', width: '100%', justifyContent: 'space-between' }}>
-        <span>📋 Turneringsplan</span>
+        <span>🏟️ Swiss-turneringsplan</span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
       {open && (
-        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {roundNumbers.map(rn => {
-            const roundMatches = rounds[rn];
-            const isCurrent = rn === currentRound;
-            const allDone = roundMatches.every(m => m.status === 'reported');
-            return (
-              <div key={rn}>
-                {/* Round header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <div style={{ height: '1px', flex: 1, background: theme.border }} />
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: isCurrent ? theme.accent : theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    Runde {rn}
-                    {isCurrent && !allDone && <span style={{ background: theme.accent, color: '#fff', borderRadius: '4px', padding: '1px 5px', fontSize: '9px' }}>Igangværende</span>}
-                    {allDone && <span style={{ background: '#16A34A', color: '#fff', borderRadius: '4px', padding: '1px 5px', fontSize: '9px' }}>✓ Afsluttet</span>}
-                  </span>
-                  <div style={{ height: '1px', flex: 1, background: theme.border }} />
-                </div>
+        <div style={{ marginTop: '10px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '6px' }}>
+          <div style={{ display: 'flex', gap: '10px', minWidth: 'max-content' }}>
+            {allRounds.map(rn => {
+              const roundMatches = roundsMap[rn] || [];
+              const isCurrent = rn === currentRound;
+              const isDone = roundMatches.length > 0 && roundMatches.every(m => m.status === 'reported');
+              const isFuture = rn > (currentRound || 0);
 
-                {/* Matches */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {roundMatches.map(match => {
-                    const t1 = teamMap[match.team1_id];
-                    const t2 = match.team2_id ? teamMap[match.team2_id] : null;
-                    const isMyMatch = myTeam && (match.team1_id === myTeam?.id || match.team2_id === myTeam?.id);
-                    const reported = match.status === 'reported';
+              const headerBg = isDone ? '#DCFCE7' : isCurrent ? theme.accentBg : '#F8FAFC';
+              const headerColor = isDone ? '#15803D' : isCurrent ? theme.accent : theme.textLight;
 
-                    return (
-                      <div key={match.id} style={{ borderRadius: '8px', border: '1px solid ' + (isMyMatch ? theme.accent + '50' : theme.border), background: isMyMatch ? theme.accentBg + '50' : '#FAFAFA', overflow: 'hidden' }}>
-                        {!t2 ? (
-                          /* Fri runde */
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', gap: '10px' }}>
-                            <TeamChip team={t1} onOpenProfile={onOpenProfile} />
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '6px', padding: '3px 8px', flexShrink: 0 }}>
-                              🏆 Fri runde
+              return (
+                <div key={rn} style={{ minWidth: '170px', maxWidth: '200px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {/* Column header */}
+                  <div style={{ textAlign: 'center', padding: '5px 10px', borderRadius: '8px', background: headerBg, border: '1px solid ' + (isDone ? '#BBF7D0' : isCurrent ? theme.accent + '40' : theme.border) }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: headerColor, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Runde {rn}{totalRounds ? ` / ${totalRounds}` : ''}
+                    </div>
+                    {isDone && <div style={{ fontSize: '9px', color: '#16A34A', fontWeight: 600 }}>✓ Afsluttet</div>}
+                    {isCurrent && !isDone && <div style={{ fontSize: '9px', color: theme.accent, fontWeight: 600 }}>● Igangværende</div>}
+                    {isFuture && <div style={{ fontSize: '9px', color: theme.textLight }}>Kommende</div>}
+                  </div>
+
+                  {/* Match cards */}
+                  {isFuture ? (
+                    <div style={{ border: '2px dashed ' + theme.border, borderRadius: '8px', padding: '14px 10px', textAlign: 'center', color: theme.textLight, fontSize: '11px' }}>
+                      Parringer genereres<br />efter runde {rn - 1}
+                    </div>
+                  ) : roundMatches.length === 0 ? (
+                    <div style={{ border: '1px solid ' + theme.border, borderRadius: '8px', padding: '14px 10px', textAlign: 'center', color: theme.textLight, fontSize: '11px' }}>
+                      Ingen kampe
+                    </div>
+                  ) : (
+                    roundMatches.map(match => {
+                      const t1 = teamMap[match.team1_id];
+                      const t2 = match.team2_id ? teamMap[match.team2_id] : null;
+                      const reported = match.status === 'reported';
+                      const isMyMatch = myTeam && (match.team1_id === myTeam?.id || match.team2_id === myTeam?.id);
+                      const prevStats = statsAfterRound[rn - 1] || {};
+
+                      const renderTeamRow = (team, align) => {
+                        if (!team) return null;
+                        const isWinner = reported && match.winner_id === team.id;
+                        const isLoser = reported && match.winner_id && match.winner_id !== team.id;
+                        const stats = prevStats[team.id] || { wins: 0, losses: 0 };
+                        const wlColor = stats.wins > stats.losses ? '#16A34A' : stats.wins < stats.losses ? '#DC2626' : theme.textLight;
+                        const isRight = align === 'right';
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: isRight ? 'flex-end' : 'flex-start', opacity: isLoser ? 0.5 : 1 }}>
+                            {!isRight && <span style={{ fontSize: '9px', fontWeight: 700, color: wlColor, background: wlColor + '15', borderRadius: '3px', padding: '1px 4px', flexShrink: 0 }}>{stats.wins}V-{stats.losses}T</span>}
+                            <span onClick={() => onOpenProfile(team.player1_id, team.player1_name, team.player1_avatar)}
+                              style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                              <AvatarCircle avatar={team.player1_avatar} size={14} emojiSize="7px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
                             </span>
+                            <span onClick={() => onOpenProfile(team.player2_id, team.player2_name, team.player2_avatar)}
+                              style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                              <AvatarCircle avatar={team.player2_avatar} size={14} emojiSize="7px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
+                            </span>
+                            <span style={{ fontSize: '11px', fontWeight: isWinner ? 700 : 500, color: isWinner ? '#15803D' : theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70px' }}>{team.name}</span>
+                            {isRight && <span style={{ fontSize: '9px', fontWeight: 700, color: wlColor, background: wlColor + '15', borderRadius: '3px', padding: '1px 4px', flexShrink: 0 }}>{stats.wins}V-{stats.losses}T</span>}
+                            {isWinner && <span style={{ fontSize: '9px' }}>🏆</span>}
                           </div>
-                        ) : (
-                          <>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '8px', padding: '10px 14px' }}>
-                              {/* Team 1 */}
-                              <div style={{ opacity: reported && match.winner_id !== t1?.id ? 0.45 : 1 }}>
-                                <TeamChip team={t1} onOpenProfile={onOpenProfile} align="left" />
-                              </div>
+                        );
+                      };
 
-                              {/* Centre */}
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '70px' }}>
+                      return (
+                        <div key={match.id} style={{ borderRadius: '8px', border: '1px solid ' + (isMyMatch ? theme.accent + '60' : theme.border), background: isMyMatch ? theme.accentBg + '60' : '#FAFAFA', overflow: 'hidden' }}>
+                          {!t2 ? (
+                            <div style={{ padding: '8px 10px' }}>
+                              {renderTeamRow(t1, 'left')}
+                              <div style={{ fontSize: '10px', color: '#16A34A', fontWeight: 700, marginTop: '4px', textAlign: 'center' }}>🏆 Fri runde</div>
+                            </div>
+                          ) : (
+                            <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                              {renderTeamRow(t1, 'left')}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
                                 {reported ? (
-                                  <>
-                                    <div style={{ fontSize: '13px', fontWeight: 800, color: theme.text }}>{match.score_text || '—'}</div>
-                                    <div style={{ fontSize: '10px', color: match.winner_id === t1?.id ? '#16A34A' : '#DC2626', fontWeight: 700 }}>
-                                      {match.winner_id === t1?.id ? '← Vinder' : 'Vinder →'}
-                                    </div>
-                                  </>
+                                  <span style={{ fontSize: '12px', fontWeight: 800, color: theme.text, background: '#F1F5F9', padding: '2px 7px', borderRadius: '5px' }}>{match.score_text || '—'}</span>
                                 ) : (
-                                  <span style={{ fontSize: '13px', fontWeight: 700, color: theme.textLight }}>vs</span>
+                                  <span style={{ fontSize: '10px', color: theme.textLight, fontStyle: 'italic' }}>vs</span>
                                 )}
                               </div>
-
-                              {/* Team 2 */}
-                              <div style={{ opacity: reported && match.winner_id !== t2?.id ? 0.45 : 1 }}>
-                                <TeamChip team={t2} onOpenProfile={onOpenProfile} align="right" />
-                              </div>
+                              {renderTeamRow(t2, 'right')}
+                              {!reported && (
+                                <div style={{ textAlign: 'center', fontSize: '9px', color: '#92400E', background: '#FEF9C3', borderRadius: '4px', padding: '2px 6px', marginTop: '2px' }}>⏳ Afventer</div>
+                              )}
                             </div>
-
-                            {/* Status strip */}
-                            {!reported && (
-                              <div style={{ background: '#FEF9C3', borderTop: '1px solid #FDE68A', padding: '4px 14px', fontSize: '10px', fontWeight: 600, color: '#92400E' }}>
-                                ⏳ Afventer resultat
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
@@ -515,6 +576,7 @@ export function LigaTab({ user, showToast }) {
     if (!window.confirm(`Start "${league.name}" og generér runde 1?`)) return;
     setBusyId(league.id + '-start');
     try {
+      const totalRounds = Math.ceil(Math.log2(Math.max(2, teams.length)));
       const allMatches = matchesByLeague[league.id] || [];
       const standings = computeStandings(teams, allMatches);
       const pairings = generatePairings(standings, allMatches);
@@ -526,9 +588,9 @@ export function LigaTab({ user, showToast }) {
       }));
       const { error: mErr } = await supabase.from('league_matches').insert(rows);
       if (mErr) throw mErr;
-      const { error: uErr } = await supabase.from('leagues').update({ status: 'active', current_round: 1 }).eq('id', league.id);
+      const { error: uErr } = await supabase.from('leagues').update({ status: 'active', current_round: 1, total_rounds: totalRounds }).eq('id', league.id);
       if (uErr) throw uErr;
-      showToast('Liga startet — runde 1 genereret!');
+      showToast(`Liga startet — runde 1 af ${totalRounds} genereret!`);
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
     finally { setBusyId(null); }
@@ -542,12 +604,19 @@ export function LigaTab({ user, showToast }) {
       showToast(`${pending.length} kamp${pending.length > 1 ? 'e' : ''} mangler stadig resultat i runde ${league.current_round}.`);
       return;
     }
-    if (!window.confirm(`Generér runde ${league.current_round + 1}?`)) return;
+    const totalRounds = league.total_rounds;
+    if (totalRounds && league.current_round >= totalRounds) {
+      if (window.confirm(`Alle ${totalRounds} planlagte runder er spillet! Afslut ligaen nu?`)) {
+        await completeLeague(league);
+      }
+      return;
+    }
+    const round = league.current_round + 1;
+    if (!window.confirm(`Generér runde ${round}${totalRounds ? ` af ${totalRounds}` : ''}?`)) return;
     setBusyId(league.id + '-next');
     try {
       const standings = computeStandings(teams, allMatches);
       const pairings = generatePairings(standings, allMatches);
-      const round = league.current_round + 1;
       const rows = pairings.map(p => ({
         league_id: league.id, round_number: round,
         team1_id: p.team1_id, team2_id: p.team2_id || null,
@@ -558,7 +627,7 @@ export function LigaTab({ user, showToast }) {
       if (mErr) throw mErr;
       const { error: uErr } = await supabase.from('leagues').update({ current_round: round }).eq('id', league.id);
       if (uErr) throw uErr;
-      showToast(`Runde ${round} genereret!`);
+      showToast(`Runde ${round}${totalRounds ? ` af ${totalRounds}` : ''} genereret!`);
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
     finally { setBusyId(null); }
@@ -749,7 +818,7 @@ export function LigaTab({ user, showToast }) {
                     <div style={{ fontWeight: 800, fontSize: '16px', marginBottom: '4px' }}>{league.name}</div>
                     <div style={{ fontSize: '12px', color: theme.textLight }}>
                       {SEASON_LABELS[league.season_type]} · {formatMatchDateDa(league.start_date)} – {formatMatchDateDa(league.end_date)}
-                      {league.status === 'active' && <span style={{ color: theme.accent, fontWeight: 700 }}> · Runde {league.current_round}</span>}
+                      {league.status === 'active' && <span style={{ color: theme.accent, fontWeight: 700 }}> · Runde {league.current_round}{league.total_rounds ? ` af ${league.total_rounds}` : ''}</span>}
                     </div>
                     {league.description && (
                       <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '4px', fontStyle: 'italic' }}>{league.description}</div>
@@ -962,15 +1031,16 @@ export function LigaTab({ user, showToast }) {
                     </button>
                     {standingsOpen && (
                       <div style={{ marginTop: '8px', border: '1px solid ' + theme.border, borderRadius: '8px', overflow: 'hidden' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 44px 36px 36px', background: '#F8FAFC', borderBottom: '1px solid ' + theme.border }}>
-                          {['#', 'Hold', 'Pts', 'V', 'T'].map(h => (
+                        <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 44px 36px 36px 44px', background: '#F8FAFC', borderBottom: '1px solid ' + theme.border }}>
+                          {['#', 'Hold', 'Pts', 'V', 'T', 'Diff'].map(h => (
                             <div key={h} style={{ padding: '7px 8px', fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', textAlign: h === 'Hold' ? 'left' : 'center' }}>{h}</div>
                           ))}
                         </div>
                         {standings.map((t, i) => {
                           const isMyTeam = myTeam?.id === t.id;
+                          const diffColor = t.gameDiff > 0 ? '#16A34A' : t.gameDiff < 0 ? '#DC2626' : theme.textLight;
                           return (
-                            <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '28px 1fr 44px 36px 36px', borderTop: i > 0 ? '1px solid ' + theme.border : 'none', background: isMyTeam ? theme.accentBg : 'transparent' }}>
+                            <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '28px 1fr 44px 36px 36px 44px', borderTop: i > 0 ? '1px solid ' + theme.border : 'none', background: isMyTeam ? theme.accentBg : 'transparent' }}>
                               <div style={{ padding: '10px 8px', fontSize: '12px', fontWeight: 700, color: i < 3 ? theme.warm : theme.textLight, textAlign: 'center' }}>
                                 {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                               </div>
@@ -993,6 +1063,7 @@ export function LigaTab({ user, showToast }) {
                               <div style={{ padding: '10px 4px', fontSize: '13px', fontWeight: 700, color: theme.accent, textAlign: 'center' }}>{t.points}</div>
                               <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: '#16A34A', textAlign: 'center' }}>{t.wins}</div>
                               <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: '#DC2626', textAlign: 'center' }}>{t.losses}</div>
+                              <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: diffColor, textAlign: 'center' }}>{t.gameDiff > 0 ? '+' : ''}{t.gameDiff}</div>
                             </div>
                           );
                         })}
@@ -1003,10 +1074,11 @@ export function LigaTab({ user, showToast }) {
 
                 {/* Turneringsplan */}
                 {(league.status === 'active' || league.status === 'completed') && (
-                  <TournamentSchedule
+                  <SwissBracket
                     teams={teams}
                     matches={matches}
                     currentRound={league.current_round}
+                    totalRounds={league.total_rounds}
                     myTeam={myTeam}
                     onOpenProfile={openProfile}
                   />
