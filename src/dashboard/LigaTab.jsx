@@ -292,6 +292,7 @@ export function LigaTab({ user, showToast }) {
   const reportResult = async (match, myTeamWon) => {
     const myTeam = myTeamByLeague[match.league_id];
     if (!myTeam) return;
+    if (!scoreText.trim()) { showToast('Angiv scoren før du indberetter resultatet.'); return; }
     const winnerId = myTeamWon ? myTeam.id : (match.team1_id === myTeam.id ? match.team2_id : match.team1_id);
     setBusyId(match.id);
     try {
@@ -364,8 +365,10 @@ export function LigaTab({ user, showToast }) {
     const allMatches = matchesByLeague[league.id] || [];
     const pending = allMatches.filter(m => m.round_number === league.current_round && m.status === 'pending');
     if (pending.length > 0) {
-      if (!window.confirm(`${pending.length} kampe i runde ${league.current_round} mangler stadig resultat. Fortsæt alligevel?`)) return;
+      showToast(`${pending.length} kamp${pending.length > 1 ? 'e' : ''} mangler stadig resultat i runde ${league.current_round}.`);
+      return;
     }
+    if (!window.confirm(`Generér runde ${league.current_round + 1}?`)) return;
     setBusyId(league.id + '-next');
     try {
       const standings = computeStandings(teams, allMatches);
@@ -740,7 +743,7 @@ export function LigaTab({ user, showToast }) {
                             <input
                               value={scoreText}
                               onChange={e => setScoreText(e.target.value)}
-                              placeholder="Score f.eks. 6-4, 6-2 (valgfri)"
+                              placeholder="Score f.eks. 6-4, 6-2 (påkrævet)"
                               style={{ ...inputStyle, marginBottom: '10px', fontSize: '13px' }}
                             />
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -825,18 +828,22 @@ export function LigaTab({ user, showToast }) {
                         <Play size={13} /> Start liga
                       </button>
                     )}
-                    {league.status === 'active' && (
-                      <>
-                        <button onClick={() => nextRound(league)} disabled={busy}
-                          style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: '#D97706', borderColor: '#D97706' }}>
-                          ⏭ Næste runde
-                        </button>
-                        <button onClick={() => completeLeague(league)} disabled={busy}
-                          style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
-                          Afslut liga
-                        </button>
-                      </>
-                    )}
+                    {league.status === 'active' && (() => {
+                      const pendingCount = (matchesByLeague[league.id] || []).filter(m => m.round_number === league.current_round && m.status === 'pending').length;
+                      return (
+                        <>
+                          <button onClick={() => nextRound(league)} disabled={busy || pendingCount > 0}
+                            title={pendingCount > 0 ? `${pendingCount} kamp${pendingCount > 1 ? 'e' : ''} mangler resultat` : ''}
+                            style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: pendingCount > 0 ? '#9CA3AF' : '#D97706', borderColor: pendingCount > 0 ? '#9CA3AF' : '#D97706', opacity: pendingCount > 0 ? 0.7 : 1 }}>
+                            ⏭ Næste runde{pendingCount > 0 ? ` (${pendingCount} afventer)` : ''}
+                          </button>
+                          <button onClick={() => completeLeague(league)} disabled={busy}
+                            style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
+                            Afslut liga
+                          </button>
+                        </>
+                      );
+                    })()}
                     <button onClick={() => deleteLeague(league)} disabled={busy}
                       style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', color: '#DC2626', borderColor: '#FCA5A5' }}>
                       Slet
