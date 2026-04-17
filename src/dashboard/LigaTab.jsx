@@ -97,7 +97,131 @@ function SwissRulesBox({ collapsible = false }) {
   );
 }
 
-function PartnerSearch({ userId, onSelect }) {
+function TeamChip({ team, onOpenProfile, align = 'left' }) {
+  if (!team) return <span style={{ fontSize: '12px', color: theme.textLight }}>?</span>;
+  const isRight = align === 'right';
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: isRight ? 'flex-end' : 'flex-start' }}>
+      <div style={{ fontSize: '12px', fontWeight: 700 }}>{team.name}</div>
+      <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexDirection: isRight ? 'row-reverse' : 'row' }}>
+        {[{ id: team.player1_id, name: team.player1_name, avatar: team.player1_avatar },
+          { id: team.player2_id, name: team.player2_name, avatar: team.player2_avatar }].map(p => (
+          <span key={p.id} onClick={() => onOpenProfile(p.id, p.name, p.avatar)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer', fontSize: '10px', color: theme.textMid }}>
+            <AvatarCircle avatar={p.avatar} size={16} emojiSize="8px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
+            {p.name.split(' ')[0]}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TournamentSchedule({ teams, matches, currentRound, myTeam, onOpenProfile }) {
+  const [open, setOpen] = useState(false);
+  const teamMap = Object.fromEntries(teams.map(t => [t.id, t]));
+  const rounds = {};
+  for (const m of matches) {
+    if (!rounds[m.round_number]) rounds[m.round_number] = [];
+    rounds[m.round_number].push(m);
+  }
+  const roundNumbers = Object.keys(rounds).map(Number).sort((a, b) => a - b);
+  if (roundNumbers.length === 0) return null;
+
+  return (
+    <div style={{ marginBottom: '10px' }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', width: '100%', justifyContent: 'space-between' }}>
+        <span>📋 Turneringsplan</span>
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </button>
+      {open && (
+        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {roundNumbers.map(rn => {
+            const roundMatches = rounds[rn];
+            const isCurrent = rn === currentRound;
+            const allDone = roundMatches.every(m => m.status === 'reported');
+            return (
+              <div key={rn}>
+                {/* Round header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <div style={{ height: '1px', flex: 1, background: theme.border }} />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: isCurrent ? theme.accent : theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    Runde {rn}
+                    {isCurrent && !allDone && <span style={{ background: theme.accent, color: '#fff', borderRadius: '4px', padding: '1px 5px', fontSize: '9px' }}>Igangværende</span>}
+                    {allDone && <span style={{ background: '#16A34A', color: '#fff', borderRadius: '4px', padding: '1px 5px', fontSize: '9px' }}>✓ Afsluttet</span>}
+                  </span>
+                  <div style={{ height: '1px', flex: 1, background: theme.border }} />
+                </div>
+
+                {/* Matches */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {roundMatches.map(match => {
+                    const t1 = teamMap[match.team1_id];
+                    const t2 = match.team2_id ? teamMap[match.team2_id] : null;
+                    const isMyMatch = myTeam && (match.team1_id === myTeam?.id || match.team2_id === myTeam?.id);
+                    const reported = match.status === 'reported';
+
+                    return (
+                      <div key={match.id} style={{ borderRadius: '8px', border: '1px solid ' + (isMyMatch ? theme.accent + '50' : theme.border), background: isMyMatch ? theme.accentBg + '50' : '#FAFAFA', overflow: 'hidden' }}>
+                        {!t2 ? (
+                          /* Fri runde */
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', gap: '10px' }}>
+                            <TeamChip team={t1} onOpenProfile={onOpenProfile} />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '6px', padding: '3px 8px', flexShrink: 0 }}>
+                              🏆 Fri runde
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '8px', padding: '10px 14px' }}>
+                              {/* Team 1 */}
+                              <div style={{ opacity: reported && match.winner_id !== t1?.id ? 0.45 : 1 }}>
+                                <TeamChip team={t1} onOpenProfile={onOpenProfile} align="left" />
+                              </div>
+
+                              {/* Centre */}
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '70px' }}>
+                                {reported ? (
+                                  <>
+                                    <div style={{ fontSize: '13px', fontWeight: 800, color: theme.text }}>{match.score_text || '—'}</div>
+                                    <div style={{ fontSize: '10px', color: match.winner_id === t1?.id ? '#16A34A' : '#DC2626', fontWeight: 700 }}>
+                                      {match.winner_id === t1?.id ? '← Vinder' : 'Vinder →'}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <span style={{ fontSize: '13px', fontWeight: 700, color: theme.textLight }}>vs</span>
+                                )}
+                              </div>
+
+                              {/* Team 2 */}
+                              <div style={{ opacity: reported && match.winner_id !== t2?.id ? 0.45 : 1 }}>
+                                <TeamChip team={t2} onOpenProfile={onOpenProfile} align="right" />
+                              </div>
+                            </div>
+
+                            {/* Status strip */}
+                            {!reported && (
+                              <div style={{ background: '#FEF9C3', borderTop: '1px solid #FDE68A', padding: '4px 14px', fontSize: '10px', fontWeight: 600, color: '#92400E' }}>
+                                ⏳ Afventer resultat
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
@@ -861,6 +985,17 @@ export function LigaTab({ user, showToast }) {
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Turneringsplan */}
+                {(league.status === 'active' || league.status === 'completed') && (
+                  <TournamentSchedule
+                    teams={teams}
+                    matches={matches}
+                    currentRound={league.current_round}
+                    myTeam={myTeam}
+                    onOpenProfile={openProfile}
+                  />
                 )}
 
                 {/* Admin-panel */}
