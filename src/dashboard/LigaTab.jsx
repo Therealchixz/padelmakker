@@ -4,7 +4,6 @@ import { theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platfor
 import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
-import { createNotification } from '../lib/notifications';
 
 function computeStandings(teams, matches) {
   const map = {};
@@ -215,12 +214,11 @@ export function LigaTab({ user, showToast }) {
       });
       if (error) throw error;
       const leagueName = leagues.find(l => l.id === leagueId)?.name || 'ligaen';
-      await createNotification(
-        selectedPartner.id,
-        'team_invite',
-        'Holdinvitation 🎾',
-        `${user.full_name || user.name || 'En spiller'} inviterer dig til holdet "${teamName.trim()}" i ${leagueName}`,
-      );
+      await supabase.rpc('notify_league_invite', {
+        p_user_id: selectedPartner.id,
+        p_title: 'Holdinvitation 🎾',
+        p_body: `${user.full_name || user.name || 'En spiller'} inviterer dig til holdet "${teamName.trim()}" i ${leagueName}`,
+      });
       showToast('Hold tilmeldt — invitation sendt til ' + (selectedPartner.full_name || selectedPartner.name) + '!');
       setTeamFormLeagueId(null);
       setTeamName('');
