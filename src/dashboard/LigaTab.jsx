@@ -108,7 +108,7 @@ const SWISS_RULES = [
   { icon: '🎯', text: 'Score er obligatorisk ved indberetning — gyldige: 6-0 til 6-4, 7-5 eller 7-6.' },
   { icon: '⏸️', text: 'Næste runde genereres først når alle kampe i indeværende runde er indberettet.' },
   { icon: '👥', text: 'Ulige antal hold? Ét hold får fri runde og tæller automatisk som sejr (3 point).' },
-  { icon: '📋', text: 'S = Sejre · N = Nederlag · Diff = spilsforskel (games vundet minus games tabt).' },
+  { icon: '📋', text: 'W = Wins (sejre) · L = Losses (nederlag) · Diff = spilsforskel (games vundet minus games tabt).' },
 ];
 
 function SwissRulesBox({ collapsible = false }) {
@@ -245,7 +245,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                         const isRight = align === 'right';
                         return (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: isRight ? 'flex-end' : 'flex-start', opacity: isLoser ? 0.5 : 1 }}>
-                            {!isRight && <span style={{ fontSize: '9px', fontWeight: 700, color: wlColor, background: wlColor + '15', borderRadius: '3px', padding: '1px 4px', flexShrink: 0 }}>{stats.wins}S-{stats.losses}N</span>}
+                            {!isRight && <span style={{ fontSize: '9px', fontWeight: 700, color: wlColor, background: wlColor + '15', borderRadius: '3px', padding: '1px 4px', flexShrink: 0 }}>{stats.wins}W-{stats.losses}L</span>}
                             <span onClick={() => onOpenProfile(team.player1_id, team.player1_name, team.player1_avatar)}
                               style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
                               <AvatarCircle avatar={team.player1_avatar} size={14} emojiSize="7px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
@@ -255,7 +255,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                               <AvatarCircle avatar={team.player2_avatar} size={14} emojiSize="7px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
                             </span>
                             <span style={{ fontSize: '11px', fontWeight: isWinner ? 700 : 500, color: isWinner ? '#15803D' : theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70px' }}>{team.name}</span>
-                            {isRight && <span style={{ fontSize: '9px', fontWeight: 700, color: wlColor, background: wlColor + '15', borderRadius: '3px', padding: '1px 4px', flexShrink: 0 }}>{stats.wins}S-{stats.losses}N</span>}
+                            {isRight && <span style={{ fontSize: '9px', fontWeight: 700, color: wlColor, background: wlColor + '15', borderRadius: '3px', padding: '1px 4px', flexShrink: 0 }}>{stats.wins}W-{stats.losses}L</span>}
                             {isWinner && <span style={{ fontSize: '9px' }}>🏆</span>}
                           </div>
                         );
@@ -1035,7 +1035,7 @@ export function LigaTab({ user, showToast }) {
                     {standingsOpen && (
                       <div style={{ marginTop: '8px', border: '1px solid ' + theme.border, borderRadius: '8px', overflow: 'hidden' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 44px 36px 36px 44px', background: '#F8FAFC', borderBottom: '1px solid ' + theme.border }}>
-                          {['#', 'Hold', 'Pts', 'S', 'N', 'Diff'].map(h => (
+                          {['#', 'Hold', 'Pts', 'W', 'L', 'Diff'].map(h => (
                             <div key={h} style={{ padding: '7px 8px', fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', textAlign: h === 'Hold' ? 'left' : 'center' }}>{h}</div>
                           ))}
                         </div>
