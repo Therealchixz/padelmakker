@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
@@ -16,6 +16,30 @@ import { BeskedTab } from './BeskedTab';
 import { LigaTab } from './LigaTab';
 import { ShieldCheck } from 'lucide-react';
 import { useUnreadMessageCount } from '../lib/chatUtils';
+import { supabase } from '../lib/supabase';
+
+function usePendingLigaInvites(userId) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!userId) { setCount(0); return; }
+    let cancelled = false;
+    const fetch = async () => {
+      const { count: c } = await supabase
+        .from('league_teams')
+        .select('id', { count: 'exact', head: true })
+        .eq('player2_id', userId)
+        .eq('status', 'pending');
+      if (!cancelled) setCount(c || 0);
+    };
+    fetch();
+    const channel = supabase
+      .channel('liga-invites-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'league_teams', filter: 'player2_id=eq.' + userId }, fetch)
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+  }, [userId]);
+  return count;
+}
 
 export function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser, refreshProfileQuiet } = useAuth();
@@ -24,6 +48,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const location = useLocation();
   const isAdmin = user?.role === 'admin';
   const unreadMessages = useUnreadMessageCount(user?.id);
+  const pendingLigaInvites = usePendingLigaInvites(user?.id);
   const pathTab = location.pathname.split("/")[2] || "hjem";
   const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "admin"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
@@ -40,7 +65,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     { id: "baner",     label: "Baner",       icon: <MapPin        size={16} /> },
     { id: "kampe",     label: "Kampe",       icon: <Swords        size={16} /> },
     { id: "ranking",   label: "Ranking",     icon: <Trophy        size={16} /> },
-    { id: "liga",      label: "Liga",        icon: <Medal         size={16} /> },
+    { id: "liga",      label: "Liga",        icon: <Medal         size={16} />, badge: pendingLigaInvites > 0 ? pendingLigaInvites : null },
     { id: "beskeder",  label: "Beskeder",    icon: <MessageCircle size={16} />, badge: unreadMessages > 0 ? unreadMessages : null },
     { id: "profil",    label: "Profil",      icon: <Settings      size={16} /> },
   ];
