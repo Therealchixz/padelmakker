@@ -61,6 +61,42 @@ const STATUS_COLORS = {
   completed:    { bg: '#F1F5F9', color: '#475569' },
 };
 
+const SWISS_RULES = [
+  { icon: '🎾', text: 'Hvert hold spiller én kamp per runde.' },
+  { icon: '📊', text: 'Hold parres mod andre med samme pointtal — jo flere runder, jo mere præcis rangliste.' },
+  { icon: '🔁', text: 'To hold mødes aldrig hinanden mere end én gang.' },
+  { icon: '🏆', text: 'Sejr giver 3 point. Ingen point for tab.' },
+  { icon: '🎯', text: 'Score er obligatorisk ved indberetning af resultat.' },
+  { icon: '⏸️', text: 'Næste runde genereres først når alle kampe er indberettet.' },
+  { icon: '👥', text: 'Ulige antal hold? Ét hold får fri runde og tæller som automatisk sejr.' },
+];
+
+function SwissRulesBox({ collapsible = false }) {
+  const [open, setOpen] = useState(!collapsible);
+  return (
+    <div style={{ background: '#F0F9FF', borderRadius: '10px', border: '1px solid #BAE6FD', overflow: 'hidden' }}>
+      <button
+        type="button"
+        onClick={() => collapsible && setOpen(o => !o)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 14px', background: 'none', border: 'none', cursor: collapsible ? 'pointer' : 'default', textAlign: 'left' }}
+      >
+        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0369A1' }}>ℹ️ Sådan fungerer Swiss-ligaen</span>
+        {collapsible && <span style={{ fontSize: '12px', color: '#0369A1' }}>{open ? '▲' : '▼'}</span>}
+      </button>
+      {open && (
+        <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {SWISS_RULES.map((r, i) => (
+            <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '12px', color: '#0C4A6E', lineHeight: 1.5 }}>
+              <span style={{ flexShrink: 0 }}>{r.icon}</span>
+              <span>{r.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PartnerSearch({ userId, onSelect }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -474,6 +510,9 @@ export function LigaTab({ user, showToast }) {
             placeholder="Ubegrænset"
             style={{ ...inputStyle, marginBottom: '14px', width: '140px' }}
           />
+          <div style={{ marginBottom: '14px' }}>
+            <SwissRulesBox />
+          </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={createLeague} disabled={busyId === 'create'} style={{ ...btn(true), fontSize: '13px' }}>
               {busyId === 'create' ? 'Opretter…' : 'Opret liga'}
@@ -586,6 +625,11 @@ export function LigaTab({ user, showToast }) {
                       <Users size={10} /> {(allTeamsByLeague[league.id] || []).length}{league.max_teams ? `/${league.max_teams}` : ''} hold
                     </span>
                   </div>
+                </div>
+
+                {/* Swiss-regler — sammenklappelig */}
+                <div style={{ marginBottom: '12px' }}>
+                  <SwissRulesBox collapsible />
                 </div>
 
                 {/* Tilmelding */}
