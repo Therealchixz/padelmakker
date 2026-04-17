@@ -221,7 +221,7 @@ function TournamentSchedule({ teams, matches, currentRound, myTeam, onOpenProfil
   );
 }
 
-
+function PartnerSearch({ userId, onSelect }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
