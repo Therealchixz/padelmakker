@@ -128,6 +128,7 @@ export function LigaTab({ user, showToast }) {
   const [teamsByLeague, setTeamsByLeague] = useState({});
   const [matchesByLeague, setMatchesByLeague] = useState({});
   const [myTeamByLeague, setMyTeamByLeague] = useState({});
+  const [pendingInvites, setPendingInvites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [openStandings, setOpenStandings] = useState(new Set());
@@ -156,8 +157,14 @@ export function LigaTab({ user, showToast }) {
       const lgList = lgRes.data || [];
       setLeagues(lgList);
 
+      const myTeams = teamsRes.data || [];
+      // Invitationer: hold hvor jeg er player2 og status = pending
+      setPendingInvites(myTeams.filter(t => t.player2_id === user.id && t.status === 'pending'));
       const myTeamMap = {};
-      for (const t of (teamsRes.data || [])) myTeamMap[t.league_id] = t;
+      for (const t of myTeams) {
+        // Mit hold i en liga: kun ready, eller pending hvis jeg selv oprettede det
+        if (t.status === 'ready' || t.player1_id === user.id) myTeamMap[t.league_id] = t;
+      }
       setMyTeamByLeague(myTeamMap);
 
       if (lgList.length === 0) return;
@@ -168,6 +175,7 @@ export function LigaTab({ user, showToast }) {
       ]);
       const tMap = {};
       for (const t of (allTeamsRes.data || [])) {
+        if (t.status !== 'ready') continue; // kun godkendte hold vises i ligaen
         if (!tMap[t.league_id]) tMap[t.league_id] = [];
         tMap[t.league_id].push(t);
       }
@@ -202,6 +210,7 @@ export function LigaTab({ user, showToast }) {
         player1_avatar: user.avatar || '🎾',
         player2_avatar: selectedPartner.avatar || '🎾',
         elo_combined: myElo + partnerElo,
+        status: 'pending',
       });
       if (error) throw error;
       showToast('Hold tilmeldt!');
@@ -212,6 +221,29 @@ export function LigaTab({ user, showToast }) {
     } catch (e) {
       showToast(e.message.includes('unique') ? 'En af spillerne er allerede tilmeldt denne liga.' : 'Fejl: ' + e.message);
     } finally { setBusyId(null); }
+  };
+
+  const acceptInvite = async (team) => {
+    setBusyId(team.id + '-accept');
+    try {
+      const { error } = await supabase.from('league_teams').update({ status: 'ready' }).eq('id', team.id);
+      if (error) throw error;
+      showToast('Du har accepteret invitationen! 🎾');
+      await load();
+    } catch (e) { showToast('Fejl: ' + e.message); }
+    finally { setBusyId(null); }
+  };
+
+  const declineInvite = async (team) => {
+    if (!window.confirm(`Afvis invitation til holdet "${team.name}"?`)) return;
+    setBusyId(team.id + '-decline');
+    try {
+      const { error } = await supabase.from('league_teams').delete().eq('id', team.id);
+      if (error) throw error;
+      showToast('Invitation afvist.');
+      await load();
+    } catch (e) { showToast('Fejl: ' + e.message); }
+    finally { setBusyId(null); }
   };
 
   const leaveLeague = async (leagueId) => {
@@ -400,6 +432,37 @@ export function LigaTab({ user, showToast }) {
         </div>
       )}
 
+      {/* Ventende invitationer */}
+      {pendingInvites.length > 0 && (
+        <div style={{ marginBottom: '16px' }}>
+          {pendingInvites.map(invite => {
+            const league = leagues.find(l => l.id === invite.league_id);
+            const busy = busyId === invite.id + '-accept' || busyId === invite.id + '-decline';
+            return (
+              <div key={invite.id} style={{ background: '#FEF3C7', borderRadius: theme.radius, padding: '14px 16px', border: '1px solid #FDE68A', marginBottom: '8px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                  ⚡ Holdinvitation
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '2px' }}>{invite.name}</div>
+                <div style={{ fontSize: '12px', color: theme.textMid, marginBottom: '10px' }}>
+                  {invite.player1_name} inviterer dig med i {league?.name || 'en liga'}
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => acceptInvite(invite)} disabled={busy}
+                    style={{ ...btn(true), padding: '7px 14px', fontSize: '13px', background: '#16A34A', borderColor: '#16A34A' }}>
+                    {busyId === invite.id + '-accept' ? 'Accepterer…' : '✓ Acceptér'}
+                  </button>
+                  <button onClick={() => declineInvite(invite)} disabled={busy}
+                    style={{ ...btn(false), padding: '7px 14px', fontSize: '13px', color: '#DC2626', borderColor: '#FCA5A5' }}>
+                    Afvis
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Sub-tabs */}
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
         {[
@@ -474,15 +537,18 @@ export function LigaTab({ user, showToast }) {
                 {league.status === 'registration' && (
                   <div style={{ marginBottom: '12px' }}>
                     {joined ? (
-                      <div style={{ background: '#F0FDF4', borderRadius: '10px', padding: '12px 14px', border: '1px solid #BBF7D0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{ background: myTeam.status === 'pending' ? '#FEF9EC' : '#F0FDF4', borderRadius: '10px', padding: '12px 14px', border: '1px solid ' + (myTeam.status === 'pending' ? '#FDE68A' : '#BBF7D0'), display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                         <div>
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#15803D', marginBottom: '4px' }}>✓ {myTeam.name}</div>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: myTeam.status === 'pending' ? '#92400E' : '#15803D', marginBottom: '4px' }}>
+                            {myTeam.status === 'pending' ? '⏳ Afventer godkendelse' : '✓'} {myTeam.name}
+                          </div>
                           <div style={{ fontSize: '12px', color: theme.textMid, display: 'flex', gap: '6px', alignItems: 'center' }}>
                             <AvatarCircle avatar={myTeam.player1_avatar} size={20} emojiSize="10px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
                             {myTeam.player1_name}
                             <span style={{ color: theme.textLight }}>+</span>
                             <AvatarCircle avatar={myTeam.player2_avatar} size={20} emojiSize="10px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
                             {myTeam.player2_name}
+                            {myTeam.status === 'pending' && <span style={{ color: '#92400E', fontSize: '11px' }}>(venter på {myTeam.player2_name})</span>}
                           </div>
                         </div>
                         <button onClick={() => leaveLeague(league.id)} disabled={busy} style={{ ...btn(false), padding: '6px 12px', fontSize: '12px' }}>Afmeld hold</button>
