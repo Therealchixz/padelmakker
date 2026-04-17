@@ -53,6 +53,19 @@ function generatePairings(standings, allMatches) {
   return pairings;
 }
 
+function validatePadelScore(score) {
+  const s = score.trim();
+  if (!s) return 'Angiv scoren før du indberetter resultatet.';
+  const m = s.match(/^(\d+)-(\d+)$/);
+  if (!m) return 'Scoren skal skrives som X-Y, f.eks. 6-4';
+  const a = parseInt(m[1], 10);
+  const b = parseInt(m[2], 10);
+  const hi = Math.max(a, b);
+  const lo = Math.min(a, b);
+  if ((hi === 6 && lo <= 4) || (hi === 7 && (lo === 5 || lo === 6))) return null;
+  return 'Ugyldig padel-score. Gyldige resultater: 6-0 → 6-4, 7-5 eller 7-6';
+}
+
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
 const STATUS_LABELS = { registration: 'Tilmelding åben', active: 'Aktiv', completed: 'Afsluttet' };
 const STATUS_COLORS = {
@@ -452,7 +465,8 @@ export function LigaTab({ user, showToast }) {
   const reportResult = async (match, myTeamWon) => {
     const myTeam = myTeamByLeague[match.league_id];
     if (!myTeam) return;
-    if (!scoreText.trim()) { showToast('Angiv scoren før du indberetter resultatet.'); return; }
+    const scoreErr = validatePadelScore(scoreText);
+    if (scoreErr) { showToast(scoreErr); return; }
     const winnerId = myTeamWon ? myTeam.id : (match.team1_id === myTeam.id ? match.team2_id : match.team1_id);
     setBusyId(match.id);
     try {
@@ -911,7 +925,7 @@ export function LigaTab({ user, showToast }) {
                             <input
                               value={scoreText}
                               onChange={e => setScoreText(e.target.value)}
-                              placeholder="Score f.eks. 6-4, 6-2 (påkrævet)"
+                              placeholder="Score f.eks. 6-4 (påkrævet)"
                               style={{ ...inputStyle, marginBottom: '10px', fontSize: '13px' }}
                             />
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
