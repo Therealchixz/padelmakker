@@ -126,6 +126,7 @@ export function LigaTab({ user, showToast }) {
   const [view, setView] = useState('active');
   const [leagues, setLeagues] = useState([]);
   const [teamsByLeague, setTeamsByLeague] = useState({});
+  const [allTeamsByLeague, setAllTeamsByLeague] = useState({});
   const [matchesByLeague, setMatchesByLeague] = useState({});
   const [myTeamByLeague, setMyTeamByLeague] = useState({});
   const [pendingInvites, setPendingInvites] = useState([]);
@@ -174,12 +175,16 @@ export function LigaTab({ user, showToast }) {
         supabase.from('league_matches').select('*').in('league_id', ids),
       ]);
       const tMap = {};
+      const allMap = {};
       for (const t of (allTeamsRes.data || [])) {
-        if (t.status !== 'ready') continue; // kun godkendte hold vises i ligaen
+        if (!allMap[t.league_id]) allMap[t.league_id] = [];
+        allMap[t.league_id].push(t);
+        if (t.status !== 'ready') continue;
         if (!tMap[t.league_id]) tMap[t.league_id] = [];
         tMap[t.league_id].push(t);
       }
       setTeamsByLeague(tMap);
+      setAllTeamsByLeague(allMap);
       const mMap = {};
       for (const m of (matchRes.data || [])) {
         if (!mMap[m.league_id]) mMap[m.league_id] = [];
@@ -534,7 +539,7 @@ export function LigaTab({ user, showToast }) {
                       {STATUS_LABELS[league.status]}
                     </span>
                     <span style={tag(theme.blueBg, theme.blue)}>
-                      <Users size={10} /> {teams.length} hold
+                      <Users size={10} /> {(allTeamsByLeague[league.id] || []).length} hold
                     </span>
                   </div>
                 </div>
@@ -593,6 +598,38 @@ export function LigaTab({ user, showToast }) {
                     )}
                   </div>
                 )}
+
+                {/* Tilmeldte hold under tilmeldingsfasen */}
+                {league.status === 'registration' && (() => {
+                  const regTeams = allTeamsByLeague[league.id] || [];
+                  if (regTeams.length === 0) return null;
+                  return (
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: theme.textMid, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                        Tilmeldte hold ({regTeams.length})
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {regTeams.map(t => (
+                          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', background: t.status === 'pending' ? '#FFFBEB' : '#F0FDF4', border: '1px solid ' + (t.status === 'pending' ? '#FDE68A' : '#BBF7D0') }}>
+                            <div style={{ display: 'flex', gap: '3px' }}>
+                              <AvatarCircle avatar={t.player1_avatar} size={24} emojiSize="11px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
+                              <AvatarCircle avatar={t.player2_avatar} size={24} emojiSize="11px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
+                              <div style={{ fontSize: '11px', color: theme.textLight, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {t.player1_name} + {t.player2_name}
+                              </div>
+                            </div>
+                            {t.status === 'pending' && (
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#92400E', background: '#FEF3C7', padding: '2px 7px', borderRadius: '10px', flexShrink: 0 }}>Afventer</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Min kamp denne runde */}
                 {league.status === 'active' && joined && myMatch && (
