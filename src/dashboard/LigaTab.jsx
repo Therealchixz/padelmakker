@@ -387,6 +387,8 @@ export function LigaTab({ user, showToast }) {
   // Report result
   const [reportingMatch, setReportingMatch] = useState(null);
   const [scoreText, setScoreText] = useState('');
+  const [selectedWinnerId, setSelectedWinnerId] = useState(null);
+  const [confirmPending, setConfirmPending] = useState(null); // { match, winnerId }
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -526,23 +528,22 @@ export function LigaTab({ user, showToast }) {
     finally { setBusyId(null); }
   };
 
-  const reportResult = async (match, myTeamWon) => {
-    const myTeam = myTeamByLeague[match.league_id];
-    if (!myTeam) return;
-    const scoreErr = validatePadelScore(scoreText);
-    if (scoreErr) { showToast(scoreErr); return; }
-    const winnerId = myTeamWon ? myTeam.id : (match.team1_id === myTeam.id ? match.team2_id : match.team1_id);
+  const cancelReporting = () => {
+    setReportingMatch(null); setScoreText(''); setSelectedWinnerId(null); setConfirmPending(null);
+  };
+
+  const reportResult = async (match, winnerId, score) => {
     setBusyId(match.id);
     try {
       const { error } = await supabase.from('league_matches').update({
         winner_id: winnerId,
-        score_text: scoreText.trim() || null,
+        score_text: score || null,
         status: 'reported',
         reported_by: user.id,
       }).eq('id', match.id);
       if (error) throw error;
-      showToast('Resultat registreret!');
-      setReportingMatch(null); setScoreText('');
+      showToast('Resultat registreret! 🎾');
+      cancelReporting();
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
     finally { setBusyId(null); }
@@ -993,26 +994,88 @@ export function LigaTab({ user, showToast }) {
                           </div>
                         </div>
                         {reportingMatch === myMatch.id ? (
-                          <div>
-                            <input
-                              value={scoreText}
-                              onChange={e => setScoreText(e.target.value)}
-                              placeholder="Score f.eks. 6-4 (påkrævet)"
-                              style={{ ...inputStyle, marginBottom: '10px', fontSize: '13px' }}
-                            />
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                              <button onClick={() => reportResult(myMatch, true)} disabled={busyId === myMatch.id}
-                                style={{ ...btn(true), padding: '8px 14px', fontSize: '13px', background: '#16A34A', borderColor: '#16A34A' }}>
-                                🏆 Vi vandt
-                              </button>
-                              <button onClick={() => reportResult(myMatch, false)} disabled={busyId === myMatch.id}
-                                style={{ ...btn(false), padding: '8px 14px', fontSize: '13px' }}>
-                                😔 Vi tabte
-                              </button>
-                              <button onClick={() => { setReportingMatch(null); setScoreText(''); }}
-                                style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>Annullér</button>
+                          confirmPending ? (
+                            /* Step 2: Confirmation */
+                            <div style={{ background: '#fff', borderRadius: '10px', padding: '16px', border: '2px solid ' + (confirmPending.winnerId === myTeam.id ? '#16A34A' : '#DC2626') }}>
+                              <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px', color: theme.text }}>Bekræft resultat</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '12px 0', padding: '10px 12px', background: '#F8FAFC', borderRadius: '8px' }}>
+                                <span style={{ fontSize: '20px' }}>{confirmPending.winnerId === myTeam.id ? '🏆' : '😔'}</span>
+                                <div>
+                                  <div style={{ fontSize: '13px', fontWeight: 700, color: confirmPending.winnerId === myTeam.id ? '#15803D' : '#DC2626' }}>
+                                    {confirmPending.winnerId === myTeam.id ? myTeam.name + ' vandt' : opponentTeam.name + ' vandt'}
+                                  </div>
+                                  <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '2px' }}>
+                                    Score: <strong>{confirmPending.score}</strong>
+                                    {' · '}{myTeam.name} vs {opponentTeam.name}
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button onClick={() => reportResult(myMatch, confirmPending.winnerId, confirmPending.score)} disabled={busyId === myMatch.id}
+                                  style={{ ...btn(true), padding: '9px 16px', fontSize: '13px', background: '#16A34A', borderColor: '#16A34A' }}>
+                                  {busyId === myMatch.id ? 'Gemmer…' : '✓ Bekræft'}
+                                </button>
+                                <button onClick={() => setConfirmPending(null)} style={{ ...btn(false), padding: '8px 14px', fontSize: '13px' }}>
+                                  ← Ret
+                                </button>
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            /* Step 1: Score + winner selection */
+                            <div>
+                              {/* Score input */}
+                              <div style={{ marginBottom: '14px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Score (påkrævet)</div>
+                                <input
+                                  value={scoreText}
+                                  onChange={e => setScoreText(e.target.value)}
+                                  placeholder="F.eks. 6-4"
+                                  style={{ ...inputStyle, fontSize: '18px', textAlign: 'center', fontWeight: 700, letterSpacing: '0.08em' }}
+                                />
+                              </div>
+
+                              {/* Winner selection */}
+                              <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Hvem vandt?</div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
+                                {[
+                                  { team: myTeam, label: 'Jeres hold' },
+                                  { team: opponentTeam, label: 'Modstanderne' },
+                                ].map(({ team, label }) => {
+                                  const isSelected = selectedWinnerId === team.id;
+                                  return (
+                                    <button
+                                      key={team.id}
+                                      onClick={() => setSelectedWinnerId(team.id)}
+                                      style={{ border: '2px solid ' + (isSelected ? '#16A34A' : theme.border), background: isSelected ? '#F0FDF4' : '#fff', borderRadius: '10px', padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}
+                                    >
+                                      <div style={{ fontSize: '9px', fontWeight: 700, color: isSelected ? '#15803D' : theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
+                                      <div style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? '#15803D' : theme.text, marginBottom: '8px' }}>{team.name}</div>
+                                      <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
+                                        <AvatarCircle avatar={team.player1_avatar} size={24} emojiSize="11px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
+                                        <AvatarCircle avatar={team.player2_avatar} size={24} emojiSize="11px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
+                                      </div>
+                                      {isSelected && <div style={{ fontSize: '18px', marginTop: '6px' }}>🏆</div>}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                  onClick={() => {
+                                    const err = validatePadelScore(scoreText);
+                                    if (err) { showToast(err); return; }
+                                    if (!selectedWinnerId) { showToast('Vælg en vinder.'); return; }
+                                    setConfirmPending({ winnerId: selectedWinnerId, score: scoreText.trim() });
+                                  }}
+                                  style={{ ...btn(true), padding: '9px 18px', fontSize: '13px', opacity: (!scoreText || !selectedWinnerId) ? 0.5 : 1 }}
+                                >
+                                  Fortsæt →
+                                </button>
+                                <button onClick={cancelReporting} style={{ ...btn(false), padding: '8px 12px', fontSize: '12px' }}>Annullér</button>
+                              </div>
+                            </div>
+                          )
                         ) : (
                           <button onClick={() => setReportingMatch(myMatch.id)}
                             style={{ ...btn(true), padding: '8px 14px', fontSize: '13px' }}>
