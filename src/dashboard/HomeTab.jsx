@@ -372,7 +372,7 @@ export function HomeTab({ user, setTab }) {
               <button onClick={enableAllFilters} style={{
                 padding: "2px 8px", borderRadius: "20px", fontSize: "10px", fontWeight: allActive ? 700 : 500,
                 border: "1px solid " + (allActive ? theme.accent : theme.border),
-                background: allActive ? theme.accent : '#F1F5F9',
+                background: allActive ? theme.accent : theme.surfaceAlt,
                 color: allActive ? "#fff" : theme.textMid,
                 cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
               }}>Alle</button>
@@ -382,7 +382,7 @@ export function HomeTab({ user, setTab }) {
                   <button key={f.id} onClick={() => toggleFilter(f.id)} style={{
                     padding: "2px 8px", borderRadius: "20px", fontSize: "10px", fontWeight: on ? 700 : 500,
                     border: "1px solid " + (on ? theme.accent : theme.border),
-                    background: on ? theme.accent : '#F1F5F9',
+                    background: on ? theme.accent : theme.surfaceAlt,
                     color: on ? "#fff" : theme.textMid,
                     cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
                     display: "flex", alignItems: "center", gap: "3px",
@@ -406,9 +406,9 @@ export function HomeTab({ user, setTab }) {
                       key={`am-${i}`}
                       style={{
                         display: "flex", alignItems: "center", gap: "10px",
-                        background: "linear-gradient(135deg, #FFFBEB, #FEF3C7)",
+                        background: theme.warmBg,
                         borderRadius: "8px", padding: "8px 12px",
-                        border: "1.5px solid #F59E0B",
+                        border: "1.5px solid " + theme.warm,
                         position: "relative"
                       }}
                     >
@@ -420,7 +420,7 @@ export function HomeTab({ user, setTab }) {
                           avatar={row.avatar}
                           size={38}
                           emojiSize="24px"
-                          style={{ background: "#FEF3C7", border: "1.5px solid #F59E0B" }}
+                          style={{ background: theme.warmBg, border: "1.5px solid " + theme.warm }}
                         />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -433,14 +433,14 @@ export function HomeTab({ user, setTab }) {
                           </span> vandt Americano
                         </div>
                         {row.tournamentName && (
-                          <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <div style={{ fontSize: "11px", color: theme.warm, marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             &ldquo;{row.tournamentName}&rdquo; · {formatTimeAgo(row.created_at)}
                           </div>
                         )}
                       </div>
                       <button 
                         onClick={() => setViewTournament(row)}
-                        style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#F59E0B", color: "#92400E" }}
+                        style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.warm, color: theme.warm }}
                       >
                         Se resultat
                       </button>
@@ -451,21 +451,21 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'liga_completed') {
                   const c = row.champion;
                   return (
-                    <div key={`liga-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #EFF6FF, #DBEAFE)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #3B82F6" }}>
+                    <div key={`liga-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.blue }}>
                       {/* Overlapping avatars for winning team */}
                       <div style={{ display: "flex", position: "relative", width: "46px", height: "34px", flexShrink: 0 }}>
-                        <AvatarCircle avatar={c.player1_avatar} size={30} emojiSize="15px" style={{ background: "#DBEAFE", border: "2px solid #fff", position: "absolute", left: 0, top: 2, zIndex: 2 }} />
-                        <AvatarCircle avatar={c.player2_avatar} size={30} emojiSize="15px" style={{ background: "#DBEAFE", border: "2px solid #fff", position: "absolute", left: 16, top: 2, zIndex: 1 }} />
+                        <AvatarCircle avatar={c.player1_avatar} size={30} emojiSize="15px" style={{ background: theme.accentBg, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
+                        <AvatarCircle avatar={c.player2_avatar} size={30} emojiSize="15px" style={{ background: theme.accentBg, border: "2px solid " + theme.surface, position: "absolute", left: 16, top: 2, zIndex: 1 }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           <span style={{ fontWeight: 700 }}>{c.name}</span> vandt ligaen 🏆
                         </div>
-                        <div style={{ fontSize: "11px", color: "#1E40AF", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div style={{ fontSize: "11px", color: theme.accent, marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           &ldquo;{row.leagueName}&rdquo; · {formatTimeAgo(row.created_at)}
                         </div>
                       </div>
-                      <button onClick={() => setViewLeague(row)} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#3B82F6", color: "#1E40AF", flexShrink: 0 }}>
+                      <button onClick={() => setViewLeague(row)} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.blue, color: theme.accent, flexShrink: 0 }}>
                         Se resultat
                       </button>
                     </div>
@@ -475,17 +475,17 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'open_match') {
                   const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                   return (
-                    <div key={`open-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #ECFDF5, #D1FAE5)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #10B981" }}>
+                    <div key={`open-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.greenBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.green }}>
                       <div onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: "#D1FAE5", border: "1.5px solid #10B981" }} />
+                        <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: theme.greenBg, border: "1.5px solid " + theme.green }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })}>{row.creatorName}</span> søger spillere til <strong>2v2</strong>
                         </div>
-                        <div style={{ fontSize: "11px", color: "#065F46", marginTop: "1px" }}>{dateStr} · {row.court}</div>
+                        <div style={{ fontSize: "11px", color: theme.green, marginTop: "1px" }}>{dateStr} · {row.court}</div>
                       </div>
-                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'open' }); setTab('kampe'); }} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#10B981", color: "#065F46", flexShrink: 0 }}>Se kamp</button>
+                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'open' }); setTab('kampe'); }} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.green, color: theme.green, flexShrink: 0 }}>Se kamp</button>
                     </div>
                   );
                 }
@@ -493,30 +493,30 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'americano_registration') {
                   const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                   return (
-                    <div key={`amreg-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #FFFBEB, #FEF9C3)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #EAB308" }}>
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#FEF3C7", border: "1.5px solid #EAB308", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
+                    <div key={`amreg-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.warmBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.warm }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.warmBg, border: "1.5px solid " + theme.warm, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>
-                        <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px" }}>
+                        <div style={{ fontSize: "11px", color: theme.warm, marginTop: "1px" }}>
                           Americano · {dateStr}{row.time ? ` · ${row.time}` : ''} · {row.participants}/{row.slots} tilmeldt
                         </div>
                       </div>
-                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#EAB308", color: "#92400E", flexShrink: 0 }}>Tilmeld</button>
+                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.warm, color: theme.warm, flexShrink: 0 }}>Tilmeld</button>
                     </div>
                   );
                 }
 
                 if (row.type === 'elo_milestone') {
                   return (
-                    <div key={`milestone-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #F5F3FF, #EDE9FE)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #7C3AED" }}>
+                    <div key={`milestone-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.purpleBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.purple }}>
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: "#EDE9FE", border: "1.5px solid #7C3AED" }} />
+                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.purpleBg, border: "1.5px solid " + theme.purple }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.userId, name: row.name })}>{row.name}</span> nåede {row.milestone} ELO 🎯
                         </div>
-                        <div style={{ fontSize: "11px", color: "#5B21B6", marginTop: "1px" }}>{formatTimeAgo(row.created_at)}</div>
+                        <div style={{ fontSize: "11px", color: theme.purple, marginTop: "1px" }}>{formatTimeAgo(row.created_at)}</div>
                       </div>
                     </div>
                   );
@@ -526,17 +526,17 @@ export function HomeTab({ user, setTab }) {
                   const levelStr = row.level ? levelLabel(row.level) : null;
                   const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                   return (
-                    <div key={`seek-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #F0F9FF, #E0F2FE)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #0EA5E9" }}>
+                    <div key={`seek-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.blue }}>
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: "#E0F2FE", border: "1.5px solid #0EA5E9" }} />
+                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.accentBg, border: "1.5px solid " + theme.blue }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.userId, name: row.name })}>{row.name}</span> søger makker
                         </div>
-                        {sub && <div style={{ fontSize: "11px", color: "#0369A1", marginTop: "1px" }}>{sub}</div>}
+                        {sub && <div style={{ fontSize: "11px", color: theme.blue, marginTop: "1px" }}>{sub}</div>}
                       </div>
-                      <button onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#0EA5E9", color: "#0369A1", flexShrink: 0 }}>Se profil</button>
+                      <button onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.blue, color: theme.blue, flexShrink: 0 }}>Se profil</button>
                     </div>
                   );
                 }
@@ -544,15 +544,15 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'league_new') {
                   const isReg = row.status === 'registration';
                   return (
-                    <div key={`lnew-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #EFF6FF, #DBEAFE)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #3B82F6" }}>
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#DBEAFE", border: "1.5px solid #3B82F6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
+                    <div key={`lnew-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.blue }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.accentBg, border: "1.5px solid " + theme.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.leagueName}</div>
-                        <div style={{ fontSize: "11px", color: "#1E40AF", marginTop: "1px" }}>
+                        <div style={{ fontSize: "11px", color: theme.accent, marginTop: "1px" }}>
                           Liga · {isReg ? 'Tilmelding åben' : 'I gang'} · {row.teamCount} hold · {formatTimeAgo(row.created_at)}
                         </div>
                       </div>
-                      <button onClick={() => setTab('liga')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#3B82F6", color: "#1E40AF", flexShrink: 0 }}>
+                      <button onClick={() => setTab('liga')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.blue, color: theme.accent, flexShrink: 0 }}>
                         {isReg ? 'Tilmeld' : 'Se liga'}
                       </button>
                     </div>
@@ -564,11 +564,11 @@ export function HomeTab({ user, setTab }) {
                   const losers = row.players.filter(p => !p.win);
                   return (
                     <div key={`match-${i}`} style={{ background: theme.surface, borderRadius: "10px", padding: "8px 14px", border: "1px solid " + theme.border, boxShadow: "0 2px 8px rgba(0,0,0,0.03)", position: "relative", overflow: "hidden" }}>
-                      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: "#10B981" }} />
+                      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: theme.green }} />
                       <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "3px", background: theme.red }} />
                       {/* Venue Header - Centered */}
                       <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>
-                        <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: "4px", background: "#F8FAFC", padding: "2px 8px", borderRadius: "14px", border: "1px solid #F1F5F9" }}>
+                        <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: "4px", background: theme.surfaceAlt, padding: "2px 8px", borderRadius: "14px", border: "1px solid " + theme.border }}>
                           <MapPin size={9} /> {row.court} · {formatTimeAgo(row.created_at)}
                         </div>
                       </div>
@@ -583,7 +583,7 @@ export function HomeTab({ user, setTab }) {
                               </div>
                               <div style={{ minWidth: 0 }}>
                                 <div onClick={() => setViewPlayer(p)} style={{ fontSize: "13px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "pointer" }}>{p.name.split(' ')[0]}</div>
-                                <div style={{ fontSize: "10px", color: "#10B981", fontWeight: 800 }}>+{p.change} ELO</div>
+                                <div style={{ fontSize: "10px", color: theme.green, fontWeight: 800 }}>+{p.change} ELO</div>
                               </div>
                             </div>
                           ))}
@@ -592,7 +592,7 @@ export function HomeTab({ user, setTab }) {
                         {/* Score (Center) */}
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 8px", minWidth: "70px" }}>
                           <div style={{ fontSize: "20px", fontWeight: 900, color: theme.accent, letterSpacing: "0.02em", whiteSpace: "nowrap" }}>{row.score}</div>
-                          <div style={{ fontSize: "8px", fontWeight: 800, color: theme.textLight, marginTop: "2px", background: "#F1F5F9", padding: "1px 6px", borderRadius: "8px", letterSpacing: "0.1em" }}>VS</div>
+                          <div style={{ fontSize: "8px", fontWeight: 800, color: theme.textLight, marginTop: "2px", background: theme.surfaceAlt, padding: "1px 6px", borderRadius: "8px", letterSpacing: "0.1em" }}>VS</div>
                         </div>
 
                         {/* Losers (Right) */}
@@ -612,7 +612,7 @@ export function HomeTab({ user, setTab }) {
                       </div>
 
                       {row.description && (
-                        <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: "1px dashed #F1F5F9", fontSize: "11px", color: theme.textMid, fontStyle: "italic", textAlign: "center" }}>
+                        <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: "1px dashed " + theme.border, fontSize: "11px", color: theme.textMid, fontStyle: "italic", textAlign: "center" }}>
                           &ldquo;{row.description}&rdquo;
                         </div>
                       )}
@@ -631,7 +631,7 @@ export function HomeTab({ user, setTab }) {
                       avatar={avatar}
                       size={40}
                       emojiSize="26px"
-                      style={{ background: "#F1F5F9", border: "1px solid " + theme.border }}
+                      style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }}
                     />
                     <span style={{ fontSize: "13px", color: theme.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       <strong>{name}</strong> {won ? "vandt" : "tabte"}
@@ -678,15 +678,15 @@ export function HomeTab({ user, setTab }) {
                 const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
                 
                 return (
-                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isWinner ? "#FFFBEB" : theme.surface, borderRadius: "10px", border: "1px solid " + (isWinner ? "#F59E0B" : theme.border) }}>
-                    <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isWinner ? "#B45309" : theme.textLight, textAlign: "center" }}>
+                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isWinner ? theme.warmBg : theme.surface, borderRadius: "10px", border: "1px solid " + (isWinner ? theme.warm : theme.border) }}>
+                    <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isWinner ? theme.warm : theme.textLight, textAlign: "center" }}>
                       {rankIcon || rank}
                     </div>
                     <AvatarCircle avatar={p.avatar} size={36} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
                     </div>
-                    <div style={{ fontSize: "15px", fontWeight: 800, color: isWinner ? "#B45309" : theme.text }}>
+                    <div style={{ fontSize: "15px", fontWeight: 800, color: isWinner ? theme.warm : theme.text }}>
                       {p.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span>
                     </div>
                   </div>
@@ -714,7 +714,7 @@ export function HomeTab({ user, setTab }) {
           <div style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "400px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: "10px", color: "#2563EB", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Ligaresultat</div>
+                <div style={{ fontSize: "10px", color: theme.blue, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Ligaresultat</div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewLeague.leagueName}</h3>
               </div>
               <button onClick={() => setViewLeague(null)} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} /></button>
@@ -724,20 +724,20 @@ export function HomeTab({ user, setTab }) {
                 const rankIcon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null;
                 const isChamp = idx === 0;
                 return (
-                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isChamp ? "#EFF6FF" : theme.surface, borderRadius: "10px", border: "1px solid " + (isChamp ? "#3B82F6" : theme.border) }}>
-                    <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isChamp ? "#1D4ED8" : theme.textLight, textAlign: "center", flexShrink: 0 }}>
+                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isChamp ? theme.blueBg : theme.surface, borderRadius: "10px", border: "1px solid " + (isChamp ? theme.blue : theme.border) }}>
+                    <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isChamp ? theme.accent : theme.textLight, textAlign: "center", flexShrink: 0 }}>
                       {rankIcon || idx + 1}
                     </div>
                     <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
-                      <AvatarCircle avatar={t.player1_avatar} size={28} emojiSize="13px" style={{ background: "#DBEAFE", border: "1px solid #BFDBFE" }} />
-                      <AvatarCircle avatar={t.player2_avatar} size={28} emojiSize="13px" style={{ background: "#DBEAFE", border: "1px solid #BFDBFE" }} />
+                      <AvatarCircle avatar={t.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.accentBg, border: "1px solid " + theme.border }} />
+                      <AvatarCircle avatar={t.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.accentBg, border: "1px solid " + theme.border }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
                       <div style={{ fontSize: "11px", color: theme.textLight }}>{t.player1_name} & {t.player2_name}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: isChamp ? "#1D4ED8" : theme.text }}>{t.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span></div>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: isChamp ? theme.accent : theme.text }}>{t.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span></div>
                       <div style={{ fontSize: "10px", color: theme.textLight }}>{t.wins}W · {t.losses}L</div>
                     </div>
                   </div>
