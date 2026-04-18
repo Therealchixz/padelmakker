@@ -61,3 +61,8 @@ button:disabled {
 @keyframes pm-spin {
   to { transform: rotate(360deg); }
 }
+
+@keyframes pm-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.8; }
+}

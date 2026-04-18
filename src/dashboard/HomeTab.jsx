@@ -33,132 +33,136 @@ export function HomeTab({ user, setTab }) {
   const [milestoneFeed, setMilestoneFeed] = useState([]);
   const [seekingFeed, setSeekingFeed] = useState([]);
   const [leagueNewFeed, setLeagueNewFeed] = useState([]);
+  const [feedLoading, setFeedLoading] = useState(true);
   const [viewLeague, setViewLeague] = useState(null);
 
   const fetchFeed = useCallback(async () => {
-    // ELO history feed
-    const { data: eloDataFull } = await supabase
-      .from('elo_history')
-      .select('user_id, result, change, date, created_at, match_id, profiles(full_name, name, avatar)')
-      .neq('change', 0)
-      .not('change', 'is', null)
-      .neq('result', 'adjustment')
-      .order('created_at', { ascending: false, nullsFirst: false })
-      .limit(40);
-    
-    // Safety: ignore the +0 entries entirely as they are noise
-    const eloData = (eloDataFull || []).filter(r => Number(r.change) !== 0);
-    
-    // Fetch match details for entries with match_id
-    const matchIds = [...new Set(eloData.filter(r => r.match_id).map(r => r.match_id))];
-    let matchMap = {};
-    if (matchIds.length > 0) {
-      const [{ data: mRes }, { data: mDetails }] = await Promise.all([
-        supabase.from('match_results').select('*').in('match_id', matchIds),
-        supabase.from('matches').select('id, court_name, description').in('id', matchIds)
+    setFeedLoading(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+      // Round 1: alle primære queries i parallel
+      const [
+        eloRes, completedAmRes, completedLigaRes,
+        openMatchRes, regAmRes, seekingRes, newLigaRes,
+      ] = await Promise.allSettled([
+        supabase.from('elo_history')
+          .select('user_id, result, change, old_rating, new_rating, date, created_at, match_id, profiles(full_name, name, avatar)')
+          .neq('change', 0).not('change', 'is', null).neq('result', 'adjustment')
+          .order('created_at', { ascending: false, nullsFirst: false }).limit(150),
+        supabase.from('americano_tournaments')
+          .select('id, name, tournament_date, updated_at').eq('status', 'completed')
+          .order('updated_at', { ascending: false }).limit(5),
+        supabase.from('leagues')
+          .select('id, name, updated_at').eq('status', 'completed')
+          .order('updated_at', { ascending: false }).limit(5),
+        supabase.from('matches')
+          .select('id, creator_id, date, court_name, created_at').eq('status', 'open')
+          .gte('date', today).order('created_at', { ascending: false }).limit(5),
+        supabase.from('americano_tournaments')
+          .select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration')
+          .order('created_at', { ascending: false }).limit(5),
+        supabase.from('profiles')
+          .select('id, full_name, name, avatar, level, area, intent_now, last_active_at')
+          .eq('seeking_match', true).gt('last_active_at', since24h)
+          .order('last_active_at', { ascending: false, nullsFirst: false }).limit(5),
+        supabase.from('leagues')
+          .select('id, name, status, created_at').in('status', ['registration', 'active'])
+          .order('created_at', { ascending: false }).limit(5),
       ]);
-      (mRes || []).forEach(r => { matchMap[r.match_id] = { ...matchMap[r.match_id], results: r }; });
-      (mDetails || []).forEach(d => { matchMap[d.id] = { ...matchMap[d.id], details: d }; });
-    }
 
-    // Grouping logic
-    const groupedFeed = [];
-    const processedMatchIds = new Set();
+      const eloFull     = (eloRes.value?.data         || []).filter(r => Number(r.change) !== 0);
+      const completedAm = completedAmRes.value?.data   || [];
+      const completedLg = completedLigaRes.value?.data || [];
+      const openMatches = openMatchRes.value?.data     || [];
+      const regAm       = regAmRes.value?.data         || [];
+      const seeking     = seekingRes.value?.data       || [];
+      const newLiga     = newLigaRes.value?.data       || [];
 
-    eloData.forEach(row => {
-      if (!row.match_id) {
-        groupedFeed.push({ ...row, type: 'elo' });
-        return;
+      const matchIds       = [...new Set(eloFull.filter(r => r.match_id).map(r => r.match_id))];
+      const completedAmIds = completedAm.map(t => t.id);
+      const completedLgIds = completedLg.map(l => l.id);
+      const creatorIds     = [...new Set(openMatches.map(m => m.creator_id))];
+      const regAmIds       = regAm.map(t => t.id);
+      const newLigaIds     = newLiga.map(l => l.id);
+
+      // Round 2: alle sekundære queries i parallel
+      const [
+        mResultsRes, mDetailsRes,
+        amPartsRes, amMatchesRes,
+        lgTeamsRes, lgMatchesRes,
+        creatorProfilesRes, regAmPartsRes, newLgTeamsRes,
+      ] = await Promise.allSettled([
+        matchIds.length       ? supabase.from('match_results').select('*').in('match_id', matchIds)                                                                                                                                              : Promise.resolve({ data: [] }),
+        matchIds.length       ? supabase.from('matches').select('id, court_name, description').in('id', matchIds)                                                                                                                                : Promise.resolve({ data: [] }),
+        completedAmIds.length ? supabase.from('americano_participants').select('id, tournament_id, user_id, display_name').in('tournament_id', completedAmIds)                                                                                   : Promise.resolve({ data: [] }),
+        completedAmIds.length ? supabase.from('americano_matches').select('tournament_id, team_a_p1, team_a_p2, team_b_p1, team_b_p2, team_a_score, team_b_score').in('tournament_id', completedAmIds)                                           : Promise.resolve({ data: [] }),
+        completedLgIds.length ? supabase.from('league_teams').select('id, league_id, name, player1_id, player1_name, player1_avatar, player2_id, player2_name, player2_avatar').eq('status', 'ready').in('league_id', completedLgIds)            : Promise.resolve({ data: [] }),
+        completedLgIds.length ? supabase.from('league_matches').select('league_id, team1_id, team2_id, winner_id, score_text').eq('status', 'reported').in('league_id', completedLgIds)                                                         : Promise.resolve({ data: [] }),
+        creatorIds.length     ? supabase.from('profiles').select('id, full_name, name, avatar').in('id', creatorIds)                                                                                                                             : Promise.resolve({ data: [] }),
+        regAmIds.length       ? supabase.from('americano_participants').select('tournament_id').in('tournament_id', regAmIds)                                                                                                                     : Promise.resolve({ data: [] }),
+        newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
+      ]);
+
+      // Round 3: Americano avatar-opslag (afhænger af participants fra Round 2)
+      const amParts = amPartsRes.value?.data || [];
+      const amUserIds = [...new Set(amParts.map(p => p.user_id).filter(Boolean))];
+      let amAvatarMap = {};
+      if (amUserIds.length) {
+        const { data: amProfiles } = await supabase.from('profiles').select('id, avatar').in('id', amUserIds);
+        (amProfiles || []).forEach(p => { amAvatarMap[String(p.id)] = p.avatar; });
       }
-      if (processedMatchIds.has(row.match_id)) return;
 
-      const sameMatch = eloData.filter(r => r.match_id === row.match_id);
-      const mInfo = matchMap[row.match_id];
-      
-      groupedFeed.push({
-        type: 'match_group',
-        match_id: row.match_id,
-        created_at: row.created_at,
-        players: sameMatch.map(r => ({
-          id: r.user_id,
-          name: r.profiles?.full_name || r.profiles?.name || "Spiller",
-          avatar: r.profiles?.avatar || "🎾",
-          change: Number(r.change),
-          win: r.result === 'win'
-        })),
-        score: mInfo?.results?.score_display || "—",
-        winner: mInfo?.results?.match_winner,
-        court: mInfo?.details?.court_name || "Bane",
-        description: mInfo?.details?.description
+      // --- Byg alle feed-items ---
+
+      // ELO feed (de første 40 poster)
+      const eloSlice = eloFull.slice(0, 40);
+      const matchMap = {};
+      (mResultsRes.value?.data || []).forEach(r => { matchMap[r.match_id] = { ...matchMap[r.match_id], results: r }; });
+      (mDetailsRes.value?.data || []).forEach(d => { matchMap[d.id]       = { ...matchMap[d.id],       details: d }; });
+      const processedMIds = new Set();
+      const groupedFeed = [];
+      eloSlice.forEach(row => {
+        if (!row.match_id) { groupedFeed.push({ ...row, type: 'elo' }); return; }
+        if (processedMIds.has(row.match_id)) return;
+        const sameMatch = eloSlice.filter(r => r.match_id === row.match_id);
+        const mInfo = matchMap[row.match_id];
+        groupedFeed.push({
+          type: 'match_group', match_id: row.match_id, created_at: row.created_at,
+          players: sameMatch.map(r => ({ id: r.user_id, name: r.profiles?.full_name || r.profiles?.name || 'Spiller', avatar: r.profiles?.avatar || '🎾', change: Number(r.change), win: r.result === 'win' })),
+          score: mInfo?.results?.score_display || '—', winner: mInfo?.results?.match_winner,
+          court: mInfo?.details?.court_name || 'Bane', description: mInfo?.details?.description,
+        });
+        processedMIds.add(row.match_id);
       });
-      processedMatchIds.add(row.match_id);
-    });
 
-    setFeed(groupedFeed);
+      // Americano afsluttede
+      const amMatches = amMatchesRes.value?.data || [];
+      const completedAmFeed = completedAm.map(t => {
+        const tParts = amParts.filter(p => p.tournament_id === t.id);
+        const tMatches = amMatches.filter(m => m.tournament_id === t.id);
+        const totals = {};
+        tParts.forEach(p => { totals[p.id] = 0; });
+        tMatches.forEach(m => {
+          if (m.team_a_score == null || m.team_b_score == null) return;
+          const add = (pid, pts) => { totals[pid] = (totals[pid] || 0) + pts; };
+          add(m.team_a_p1, m.team_a_score); add(m.team_a_p2, m.team_a_score);
+          add(m.team_b_p1, m.team_b_score); add(m.team_b_p2, m.team_b_score);
+        });
+        let bestPart = null, bestPts = -1;
+        tParts.forEach(p => { const pts = totals[p.id] || 0; if (pts > bestPts) { bestPts = pts; bestPart = p; } });
+        if (!bestPart) return null;
+        const leaderboard = tParts.map(p => ({ name: p.display_name, points: totals[p.id] || 0, userId: p.user_id, avatar: amAvatarMap[String(p.user_id)] || '🎾' })).sort((a, b) => b.points - a.points);
+        return { type: 'americano_winner', userId: bestPart.user_id, name: bestPart.display_name, points: bestPts, tournamentName: t.name, tournamentId: t.id, leaderboard, avatar: amAvatarMap[String(bestPart.user_id)] || '🏆', created_at: t.updated_at || t.tournament_date };
+      }).filter(Boolean);
 
-    // Americano completed tournaments
-    try {
-      const { data: tournaments } = await supabase
-        .from('americano_tournaments')
-        .select('id, name, tournament_date, updated_at')
-        .eq('status', 'completed')
-        .order('updated_at', { ascending: false })
-        .limit(5);
-      if (tournaments?.length) {
-        const tIds = tournaments.map(t => t.id);
-        const [{ data: parts }, { data: matches }] = await Promise.all([
-          supabase.from('americano_participants').select('id, tournament_id, user_id, display_name').in('tournament_id', tIds),
-          supabase.from('americano_matches').select('tournament_id, team_a_p1, team_a_p2, team_b_p1, team_b_p2, team_a_score, team_b_score').in('tournament_id', tIds),
-        ]);
-        const userIds = [...new Set((parts || []).map(p => p.user_id))];
-        let avatarMap = {};
-        if (userIds.length > 0) {
-          const { data: profiles } = await supabase.from('profiles').select('id, avatar').in('id', userIds);
-          (profiles || []).forEach(p => { avatarMap[String(p.id)] = p.avatar; });
-        }
-        const items = tournaments.map(t => {
-          const tParts = (parts || []).filter(p => p.tournament_id === t.id);
-          const tMatches = (matches || []).filter(m => m.tournament_id === t.id);
-          const totals = {};
-          tParts.forEach(p => { totals[p.id] = 0; });
-          tMatches.forEach(m => {
-            if (m.team_a_score == null || m.team_b_score == null) return;
-            const add = (pid, pts) => { totals[pid] = (totals[pid] || 0) + pts; };
-            add(m.team_a_p1, m.team_a_score); add(m.team_a_p2, m.team_a_score);
-            add(m.team_b_p1, m.team_b_score); add(m.team_b_p2, m.team_b_score);
-          });
-          let bestPart = null, bestPts = -1;
-          tParts.forEach(p => { const pts = totals[p.id] || 0; if (pts > bestPts) { bestPts = pts; bestPart = p; } });
-          if (!bestPart) return null;
-          const leaderboard = tParts.map(p => ({ name: p.display_name, points: totals[p.id] || 0, userId: p.user_id, avatar: avatarMap[String(p.user_id)] || '🎾' })).sort((a, b) => b.points - a.points);
-          return { type: 'americano_winner', userId: bestPart.user_id, name: bestPart.display_name, points: bestPts, tournamentName: t.name, tournamentId: t.id, leaderboard, avatar: avatarMap[String(bestPart.user_id)] || '🏆', created_at: t.updated_at || t.tournament_date };
-        }).filter(Boolean);
-        setAmericanoFeed(items);
-      } else {
-        setAmericanoFeed([]);
-      }
-    } catch (e) {
-      console.warn('Americano feed error:', e);
-      setAmericanoFeed([]);
-    }
-
-    // Completed leagues feed
-    try {
-      const { data: completedLeagues } = await supabase
-        .from('leagues')
-        .select('id, name, updated_at')
-        .eq('status', 'completed')
-        .order('updated_at', { ascending: false })
-        .limit(5);
-      if (!completedLeagues?.length) { setLigaFeed([]); return; }
-      const lIds = completedLeagues.map(l => l.id);
-      const [{ data: teamsData }, { data: matchData }] = await Promise.all([
-        supabase.from('league_teams').select('id, league_id, name, player1_id, player1_name, player1_avatar, player2_id, player2_name, player2_avatar').eq('status', 'ready').in('league_id', lIds),
-        supabase.from('league_matches').select('league_id, team1_id, team2_id, winner_id, score_text').eq('status', 'reported').in('league_id', lIds),
-      ]);
-      const items = completedLeagues.map(l => {
-        const lTeams = (teamsData || []).filter(t => t.league_id === l.id);
-        const lMs = (matchData || []).filter(m => m.league_id === l.id);
+      // Liga afsluttede
+      const lgTeams = lgTeamsRes.value?.data || [];
+      const lgMatches = lgMatchesRes.value?.data || [];
+      const completedLgFeed = completedLg.map(l => {
+        const lTeams = lgTeams.filter(t => t.league_id === l.id);
+        const lMs = lgMatches.filter(m => m.league_id === l.id);
         const map = {};
         for (const t of lTeams) map[t.id] = { ...t, points: 0, wins: 0, losses: 0 };
         for (const m of lMs) {
@@ -174,87 +178,58 @@ export function HomeTab({ user, setTab }) {
         if (!standings.length) return null;
         return { type: 'liga_completed', leagueId: l.id, leagueName: l.name, champion: standings[0], standings, created_at: l.updated_at };
       }).filter(Boolean);
-      setLigaFeed(items);
-    } catch (e) {
-      console.warn('Liga feed error:', e);
-      setLigaFeed([]);
-    }
 
-    // New feed types — run in parallel, each isolated so one failure doesn't break the rest
-    const [openMatchRes, americanoRegRes, milestoneRes, seekingRes, leagueNewRes] = await Promise.allSettled([
-      supabase.from('matches').select('id, creator_id, date, court_name, created_at').eq('status', 'open').gte('date', new Date().toISOString().split('T')[0]).order('created_at', { ascending: false }).limit(5),
-      supabase.from('americano_tournaments').select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration').order('created_at', { ascending: false }).limit(5),
-      supabase.from('elo_history').select('user_id, old_rating, new_rating, created_at, profiles(full_name, name, avatar)').not('old_rating', 'is', null).not('new_rating', 'is', null).order('created_at', { ascending: false, nullsFirst: false }).limit(150),
-      supabase.from('profiles').select('id, full_name, name, avatar, level, area, intent_now, last_active_at').eq('seeking_match', true).gt('last_active_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()).order('last_active_at', { ascending: false, nullsFirst: false }).limit(5),
-      supabase.from('leagues').select('id, name, status, created_at').in('status', ['registration', 'active']).order('created_at', { ascending: false }).limit(5),
-    ]);
-    try {
-      const openMatchesData = openMatchRes.status === 'fulfilled' ? openMatchRes.value.data : null;
-      const americanoRegData = americanoRegRes.status === 'fulfilled' ? americanoRegRes.value.data : null;
-      const milestoneData = milestoneRes.status === 'fulfilled' ? milestoneRes.value.data : null;
-      const seekingData = seekingRes.status === 'fulfilled' ? seekingRes.value.data : null;
-      const newLeaguesData = leagueNewRes.status === 'fulfilled' ? leagueNewRes.value.data : null;
-
-      // Open matches
-      if (openMatchesData?.length) {
-        const creatorIds = [...new Set(openMatchesData.map(m => m.creator_id))];
-        const { data: creatorProfiles } = await supabase.from('profiles').select('id, full_name, name, avatar').in('id', creatorIds);
-        const pMap = {};
-        (creatorProfiles || []).forEach(p => { pMap[p.id] = p; });
-        setOpenMatchFeed(openMatchesData.map(m => {
-          const p = pMap[m.creator_id] || {};
-          return { type: 'open_match', matchId: m.id, creatorName: p.full_name || p.name || 'En spiller', creatorAvatar: p.avatar || '🎾', creatorId: m.creator_id, date: m.date, court: m.court_name || 'Ukendt bane', created_at: m.created_at };
-        }));
-      }
+      // Åbne kampe
+      const pMap = {};
+      (creatorProfilesRes.value?.data || []).forEach(p => { pMap[p.id] = p; });
+      const openMatchFeed_ = openMatches.map(m => {
+        const p = pMap[m.creator_id] || {};
+        return { type: 'open_match', matchId: m.id, creatorName: p.full_name || p.name || 'En spiller', creatorAvatar: p.avatar || '🎾', creatorId: m.creator_id, date: m.date, court: m.court_name || 'Ukendt bane', created_at: m.created_at };
+      });
 
       // Americano under tilmelding
-      if (americanoRegData?.length) {
-        const regIds = americanoRegData.map(t => t.id);
-        const { data: regParts } = await supabase.from('americano_participants').select('tournament_id').in('tournament_id', regIds);
-        const counts = {};
-        (regParts || []).forEach(p => { counts[p.tournament_id] = (counts[p.tournament_id] || 0) + 1; });
-        setAmericanoRegFeed(americanoRegData.map(t => ({ type: 'americano_registration', tournamentId: t.id, name: t.name, date: t.tournament_date, time: t.time_slot, slots: t.player_slots, participants: counts[t.id] || 0, created_at: t.created_at })));
+      const regCounts = {};
+      (regAmPartsRes.value?.data || []).forEach(p => { regCounts[p.tournament_id] = (regCounts[p.tournament_id] || 0) + 1; });
+      const americanoRegFeed_ = regAm.map(t => ({ type: 'americano_registration', tournamentId: t.id, name: t.name, date: t.tournament_date, time: t.time_slot, slots: t.player_slots, participants: regCounts[t.id] || 0, created_at: t.created_at }));
+
+      // ELO milepæle (fra det fulde 150-opslag)
+      const MILESTONES = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
+      const milestoneItems = [];
+      const seenMilestones = new Set();
+      for (const r of eloFull) {
+        const oldR = Number(r.old_rating || 0), newR = Number(r.new_rating || 0);
+        const milestone = MILESTONES.find(m => oldR < m && newR >= m);
+        if (!milestone) continue;
+        const key = `${r.user_id}-${milestone}`;
+        if (seenMilestones.has(key)) continue;
+        seenMilestones.add(key);
+        milestoneItems.push({ type: 'elo_milestone', userId: r.user_id, name: r.profiles?.full_name || r.profiles?.name || 'En spiller', avatar: r.profiles?.avatar || '🎾', milestone, created_at: r.created_at });
+        if (milestoneItems.length >= 3) break;
       }
 
-      // ELO-milepæle
-      if (milestoneData?.length) {
-        const MILESTONES = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
-        const items = [];
-        const seen = new Set();
-        for (const r of milestoneData) {
-          const oldR = Number(r.old_rating || 0);
-          const newR = Number(r.new_rating || 0);
-          const milestone = MILESTONES.find(m => oldR < m && newR >= m);
-          if (!milestone) continue;
-          const key = `${r.user_id}-${milestone}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          items.push({ type: 'elo_milestone', userId: r.user_id, name: r.profiles?.full_name || r.profiles?.name || 'En spiller', avatar: r.profiles?.avatar || '🎾', milestone, created_at: r.created_at });
-          if (items.length >= 3) break;
-        }
-        setMilestoneFeed(items);
-      }
+      // Søger makker
+      const seekingFeed_ = seeking
+        .filter(p => String(p.id) !== String(user.id)).slice(0, 3)
+        .map(p => ({ type: 'seeking_player', userId: p.id, name: p.full_name || p.name || 'En spiller', avatar: p.avatar || '🎾', level: p.level, area: p.area, intent: p.intent_now, created_at: p.last_active_at }));
 
-      // Spillere der søger makker
-      if (seekingData?.length) {
-        setSeekingFeed(
-          seekingData
-            .filter(p => String(p.id) !== String(user.id))
-            .slice(0, 3)
-            .map(p => ({ type: 'seeking_player', userId: p.id, name: p.full_name || p.name || 'En spiller', avatar: p.avatar || '🎾', level: p.level, area: p.area, intent: p.intent_now, created_at: p.last_active_at }))
-        );
-      }
+      // Nye/aktive ligaer
+      const lgTeamCounts = {};
+      (newLgTeamsRes.value?.data || []).forEach(t => { lgTeamCounts[t.league_id] = (lgTeamCounts[t.league_id] || 0) + 1; });
+      const leagueNewFeed_ = newLiga.map(l => ({ type: 'league_new', leagueId: l.id, leagueName: l.name, status: l.status, teamCount: lgTeamCounts[l.id] || 0, created_at: l.created_at }));
 
-      // Nye ligaer
-      if (newLeaguesData?.length) {
-        const leagueIds = newLeaguesData.map(l => l.id);
-        const { data: teams } = await supabase.from('league_teams').select('league_id').in('league_id', leagueIds).eq('status', 'ready');
-        const teamCounts = {};
-        (teams || []).forEach(t => { teamCounts[t.league_id] = (teamCounts[t.league_id] || 0) + 1; });
-        setLeagueNewFeed(newLeaguesData.map(l => ({ type: 'league_new', leagueId: l.id, leagueName: l.name, status: l.status, teamCount: teamCounts[l.id] || 0, created_at: l.created_at })));
-      }
+      // Sæt al state på én gang (React 18 batcher disse i async-kontekst)
+      setFeed(groupedFeed);
+      setAmericanoFeed(completedAmFeed);
+      setLigaFeed(completedLgFeed);
+      setOpenMatchFeed(openMatchFeed_);
+      setAmericanoRegFeed(americanoRegFeed_);
+      setMilestoneFeed(milestoneItems);
+      setSeekingFeed(seekingFeed_);
+      setLeagueNewFeed(leagueNewFeed_);
     } catch (e) {
-      console.warn('Extended feed error:', e);
+      console.warn('Feed error:', e);
+    } finally {
+      setFeedLoading(false);
     }
   }, [user.id]);
 
@@ -338,7 +313,18 @@ export function HomeTab({ user, setTab }) {
       )}
 
       {/* Aktivitetsfeed */}
-      {(feed.length > 0 || americanoFeed.length > 0 || ligaFeed.length > 0 || openMatchFeed.length > 0 || americanoRegFeed.length > 0 || milestoneFeed.length > 0 || seekingFeed.length > 0 || leagueNewFeed.length > 0) && (
+      {feedLoading ? (
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
+            Seneste aktivitet
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {[54, 46, 54, 38, 50].map((w, i) => (
+              <div key={i} style={{ height: "54px", borderRadius: "8px", background: theme.border, opacity: 0.5 + (i * 0.08), animation: "pm-pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+            ))}
+          </div>
+        </div>
+      ) : (feed.length > 0 || americanoFeed.length > 0 || ligaFeed.length > 0 || openMatchFeed.length > 0 || americanoRegFeed.length > 0 || milestoneFeed.length > 0 || seekingFeed.length > 0 || leagueNewFeed.length > 0) && (
         <div style={{ marginBottom: "24px" }}>
           <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
             Seneste aktivitet
