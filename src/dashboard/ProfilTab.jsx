@@ -8,7 +8,7 @@ import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../l
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
-import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
+import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X, Sun, Moon } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
@@ -165,20 +165,35 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
                       onClick={() => onDarkModeChange(d => !d)}
                       title={dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
                       style={{
-                        width: 46, height: 26, borderRadius: 13, border: "none", cursor: "pointer", flexShrink: 0,
-                        background: dark ? "#1e293b" : "#d1d5db",
+                        width: 60, height: 30, borderRadius: 15, border: "none", cursor: "pointer", flexShrink: 0,
+                        background: dark ? "#1e293b" : "#e5e7eb",
                         position: "relative", transition: "background 0.25s",
-                        boxShadow: dark ? "inset 0 2px 4px rgba(0,0,0,0.5)" : "inset 0 2px 4px rgba(0,0,0,0.15)",
+                        boxShadow: dark ? "inset 0 2px 5px rgba(0,0,0,0.6)" : "inset 0 2px 4px rgba(0,0,0,0.12)",
                         padding: 0,
                       }}
                     >
+                      {/* Sun icon — left */}
+                      <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? "#475569" : "#f59e0b", transition: "color 0.25s" }}>
+                        <Sun size={13} />
+                      </span>
+                      {/* Moon icon — right */}
+                      <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? "#94a3b8" : "#9ca3af", transition: "color 0.25s" }}>
+                        <Moon size={13} />
+                      </span>
+                      {/* Sliding circle with active icon */}
                       <div style={{
-                        position: "absolute", top: 3, left: dark ? 23 : 3,
-                        width: 20, height: 20, borderRadius: "50%",
-                        background: dark ? "#475569" : "#f9fafb",
+                        position: "absolute", top: 3, left: dark ? 31 : 3,
+                        width: 24, height: 24, borderRadius: "50%",
+                        background: dark ? "#334155" : "#ffffff",
                         transition: "left 0.25s",
-                        boxShadow: dark ? "0 1px 4px rgba(0,0,0,0.6)" : "0 1px 4px rgba(0,0,0,0.25)",
-                      }} />
+                        boxShadow: dark ? "0 1px 5px rgba(0,0,0,0.7)" : "0 1px 4px rgba(0,0,0,0.2)",
+                        zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {dark
+                          ? <Moon size={13} style={{ color: "#e2e8f0" }} />
+                          : <Sun size={13} style={{ color: "#f59e0b" }} />
+                        }
+                      </div>
                     </button>
                   )}
                 </div>
