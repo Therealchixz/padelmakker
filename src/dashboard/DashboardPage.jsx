@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
@@ -116,12 +117,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const setTab = useCallback((t) => navigate("/dashboard/" + t), [navigate]);
 
   const [moreOpen, setMoreOpen] = useState(false);
-  const moreRef = useRef(null);
+  const [morePos, setMorePos] = useState(null);
+  const moreBtnRef = useRef(null);
+  const moreDropRef = useRef(null);
 
   useEffect(() => {
     if (!moreOpen) return;
+    const rect = moreBtnRef.current?.getBoundingClientRect();
+    if (rect) setMorePos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
     const handler = (e) => {
-      if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false);
+      if (moreBtnRef.current?.contains(e.target) || moreDropRef.current?.contains(e.target)) return;
+      setMoreOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -183,46 +189,46 @@ export function DashboardPage({ user, onLogout, showToast }) {
         ))}
 
         {/* Mere dropdown */}
-        <div ref={moreRef} style={{ position: "relative", flexShrink: 0 }}>
-          <button
-            type="button"
-            onClick={() => setMoreOpen(o => !o)}
-            style={{ ...tabBtnStyle(moreIsActive), gap: "3px" }}
-          >
-            <span aria-hidden style={{ display: "flex", position: "relative" }}>
-              <ChevronDown size={15} style={{ transition: "transform 0.15s", transform: moreOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
-              {moreBadge > 0 && (
-                <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.red, color: "#fff", borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
-                  {moreBadge > 9 ? "9+" : moreBadge}
-                </span>
-              )}
-            </span>
-            <span className="pm-tab-label">Mere</span>
-          </button>
+        <button
+          ref={moreBtnRef}
+          type="button"
+          onClick={() => setMoreOpen(o => !o)}
+          style={{ ...tabBtnStyle(moreIsActive), gap: "3px" }}
+        >
+          <span aria-hidden style={{ display: "flex", position: "relative" }}>
+            <ChevronDown size={15} style={{ transition: "transform 0.15s", transform: moreOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
+            {moreBadge > 0 && (
+              <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.red, color: "#fff", borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
+                {moreBadge > 9 ? "9+" : moreBadge}
+              </span>
+            )}
+          </span>
+          <span className="pm-tab-label">Mere</span>
+        </button>
 
-          {moreOpen && (
-            <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", boxShadow: theme.shadowLg || "0 8px 32px rgba(0,0,0,0.12)", zIndex: 30, minWidth: "160px", overflow: "hidden" }}>
-              {moreTabs.map(t => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => { setTab(t.id); setMoreOpen(false); }}
-                  style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "11px 16px", background: tab === t.id ? theme.accentBg : "transparent", color: tab === t.id ? theme.accent : theme.text, border: "none", borderBottom: "1px solid " + theme.border, fontSize: "13px", fontWeight: tab === t.id ? 700 : 500, cursor: "pointer", fontFamily: font, textAlign: "left" }}
-                >
-                  <span style={{ display: "flex", position: "relative" }}>
-                    {t.icon}
-                    {t.badge && (
-                      <span style={{ position: "absolute", top: "-4px", right: "-6px", background: theme.red, color: "#fff", borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
-                        {t.badge > 9 ? "9+" : t.badge}
-                      </span>
-                    )}
-                  </span>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {moreOpen && morePos && createPortal(
+          <div ref={moreDropRef} style={{ position: "fixed", top: morePos.top, right: morePos.right, background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", boxShadow: "0 8px 32px rgba(0,0,0,0.14)", zIndex: 9999, minWidth: "165px", overflow: "hidden" }}>
+            {moreTabs.map((t, i) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => { setTab(t.id); setMoreOpen(false); }}
+                style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "11px 16px", background: tab === t.id ? theme.accentBg : "transparent", color: tab === t.id ? theme.accent : theme.text, border: "none", borderBottom: i < moreTabs.length - 1 ? "1px solid " + theme.border : "none", fontSize: "13px", fontWeight: tab === t.id ? 700 : 500, cursor: "pointer", fontFamily: font, textAlign: "left" }}
+              >
+                <span style={{ display: "flex", position: "relative" }}>
+                  {t.icon}
+                  {t.badge && (
+                    <span style={{ position: "absolute", top: "-4px", right: "-6px", background: theme.red, color: "#fff", borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
+                      {t.badge > 9 ? "9+" : t.badge}
+                    </span>
+                  )}
+                </span>
+                {t.label}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
       </div>
 
       <div className="pm-dash-main">
