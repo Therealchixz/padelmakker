@@ -66,6 +66,12 @@ export function HomeTab({ user, setTab }) {
       return next;
     });
   };
+  const allActive = activeFilters.size === FEED_FILTERS.length;
+  const enableAllFilters = () => {
+    const all = new Set(FEED_FILTERS.map(f => f.id));
+    setActiveFilters(all);
+    try { localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...all])); } catch {}
+  };
   const enabledTypes = new Set(FEED_FILTERS.filter(f => activeFilters.has(f.id)).flatMap(f => f.types));
 
   const fetchFeed = useCallback(async () => {
@@ -362,18 +368,26 @@ export function HomeTab({ user, setTab }) {
             <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Seneste aktivitet
             </div>
-            <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+              <button onClick={enableAllFilters} style={{
+                padding: "2px 8px", borderRadius: "20px", fontSize: "10px", fontWeight: allActive ? 700 : 500,
+                border: "1px solid " + (allActive ? theme.accent : theme.border),
+                background: allActive ? theme.accent : '#F1F5F9',
+                color: allActive ? "#fff" : theme.textMid,
+                cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+              }}>Alle</button>
               {FEED_FILTERS.map(f => {
                 const on = activeFilters.has(f.id);
                 return (
                   <button key={f.id} onClick={() => toggleFilter(f.id)} style={{
-                    padding: "3px 9px", borderRadius: "20px", border: "1px solid " + (on ? theme.accent : theme.border),
-                    background: on ? theme.accentBg : "transparent",
-                    color: on ? theme.accent : theme.textLight,
-                    fontSize: "11px", fontWeight: on ? 700 : 500, cursor: "pointer",
-                    fontFamily: "inherit", transition: "all 0.15s", display: "flex", alignItems: "center", gap: "3px",
+                    padding: "2px 8px", borderRadius: "20px", fontSize: "10px", fontWeight: on ? 700 : 500,
+                    border: "1px solid " + (on ? theme.accent : theme.border),
+                    background: on ? theme.accent : '#F1F5F9',
+                    color: on ? "#fff" : theme.textMid,
+                    cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+                    display: "flex", alignItems: "center", gap: "3px",
                   }}>
-                    <span>{f.icon}</span> {f.label}
+                    <span>{f.icon}</span>{f.label}
                   </button>
                 );
               })}
