@@ -8,13 +8,13 @@ import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../l
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
-import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
+import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X, Sun, Moon } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
 
-export function ProfilTab({ user, showToast, setTab }) {
+export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   const { updateProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
   const [editing, setEditing] = useState(false);
@@ -143,7 +143,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {/* Profile card */}
         <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
-          <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "20px" }}>
+          <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", marginBottom: "20px" }}>
             <AvatarCircle
               avatar={user.avatar}
               size={64}
@@ -151,8 +151,53 @@ export function ProfilTab({ user, showToast, setTab }) {
               style={{ background: theme.accentBg, border: "2px solid " + theme.accent + "40" }}
             />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{displayName}</div>
-              <div style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{displayName}</div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px", flexShrink: 0 }}>
+                  <button
+                    onClick={() => { setForm(profileFormState(user)); setEditing(true); }}
+                    style={{ ...btn(false), padding: "5px 10px", fontSize: "12px", color: theme.textMid, background: theme.surfaceAlt, borderColor: theme.border }}
+                  >
+                    <Settings size={12} /> Rediger
+                  </button>
+                  {onDarkModeChange && (
+                    <button
+                      onClick={() => onDarkModeChange(d => !d)}
+                      title={dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
+                      style={{
+                        width: 60, height: 30, borderRadius: 15, border: "none", cursor: "pointer", flexShrink: 0,
+                        background: dark ? "#1e293b" : "#e5e7eb",
+                        position: "relative", transition: "background 0.25s",
+                        boxShadow: dark ? "inset 0 2px 5px rgba(0,0,0,0.6)" : "inset 0 2px 4px rgba(0,0,0,0.12)",
+                        padding: 0,
+                      }}
+                    >
+                      {/* Sun icon — left */}
+                      <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? "#475569" : "#f59e0b", transition: "color 0.25s" }}>
+                        <Sun size={13} />
+                      </span>
+                      {/* Moon icon — right */}
+                      <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? "#94a3b8" : "#9ca3af", transition: "color 0.25s" }}>
+                        <Moon size={13} />
+                      </span>
+                      {/* Sliding circle with active icon */}
+                      <div style={{
+                        position: "absolute", top: 3, left: dark ? 31 : 3,
+                        width: 24, height: 24, borderRadius: "50%",
+                        background: dark ? "#334155" : "#ffffff",
+                        transition: "left 0.25s",
+                        boxShadow: dark ? "0 1px 5px rgba(0,0,0,0.7)" : "0 1px 4px rgba(0,0,0,0.2)",
+                        zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {dark
+                          ? <Moon size={13} style={{ color: "#e2e8f0" }} />
+                          : <Sun size={13} style={{ color: "#f59e0b" }} />
+                        }
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </div>              <div style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
               <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
                 {!statsLoading && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
                 {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
@@ -166,19 +211,24 @@ export function ProfilTab({ user, showToast, setTab }) {
 
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
-          {/* Matchmaking-status */}
-          {(user.seeking_match || user.intent_now) && (
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "16px" }}>
-              {user.seeking_match && (
-                <span style={tag('#FEF3C7', '#B45309')}>⚡ Søger kamp nu</span>
-              )}
-              {user.intent_now && INTENTS.find(i => i.value === user.intent_now) && (
-                <span style={tag('#F0FDF4', '#15803D')}>
-                  {INTENTS.find(i => i.value === user.intent_now).label}
-                </span>
-              )}
+          {/* Søger kamp — standalone toggle der gemmer øjeblikkeligt */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: user.seeking_match ? theme.warmBg : theme.surfaceAlt, border: '1px solid ' + (user.seeking_match ? theme.warm : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>⚡ Søger kamp nu</div>
+              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Vises i andres feed. Forsvinder automatisk hvis du ikke har været aktiv i 24 timer.</div>
             </div>
-          )}
+            <button
+              onClick={async () => {
+                try {
+                  await updateProfile({ seeking_match: !user.seeking_match });
+                  showToast(user.seeking_match ? 'Du søger ikke længere kamp.' : 'Du søger nu kamp! ⚡');
+                } catch { showToast('Kunne ikke gemme. Prøv igen.'); }
+              }}
+              style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: user.seeking_match ? theme.accent : theme.border, position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+            >
+              <div style={{ position: 'absolute', top: 3, left: user.seeking_match ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+            </button>
+          </div>
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading ? (
@@ -192,14 +242,14 @@ export function ProfilTab({ user, showToast, setTab }) {
               { label: "Sejre", value: wins, color: theme.warm },
               { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
             ].map((s, i) => (
-              <div key={i} style={{ textAlign: "center", padding: "12px 4px", background: "#F8FAFC", borderRadius: "8px" }}>
+              <div key={i} style={{ textAlign: "center", padding: "12px 4px", background: theme.surfaceAlt, borderRadius: "8px" }}>
                 <div style={{ fontSize: "18px", fontWeight: 800, color: s.color }}>{s.value}</div>
                 <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
               </div>
             ))}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
-            <div style={{ textAlign: "center", padding: "10px 4px", background: "#F1F5F9", borderRadius: "8px", border: "1px solid " + theme.border }}>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: theme.surfaceAlt, borderRadius: "8px", border: "1px solid " + theme.border }}>
               <div style={{ fontSize: "16px", fontWeight: 800, color: theme.text }}>{Number(user.americano_played) || 0}</div>
               <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Turneringer</div>
             </div>
@@ -250,9 +300,6 @@ export function ProfilTab({ user, showToast, setTab }) {
             );
           })()}
 
-          <button onClick={() => { setForm(profileFormState(user)); setEditing(true); }} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
-            <Settings size={14} /> Rediger profil
-          </button>
         </div>
 
         {/* ELO over tid */}

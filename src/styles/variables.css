@@ -1,7 +1,8 @@
-/* ── PadelMakker design tokens ── */
+/* ── PadelMakker design tokens — light mode ── */
 :root {
   --pm-bg:          #F0F4F8;
   --pm-surface:     #FFFFFF;
+  --pm-surface-alt: #F8FAFC;
   --pm-text:        #0B1120;
   --pm-text-mid:    #3E4C63;
   --pm-text-light:  #8494A7;
@@ -17,11 +18,47 @@
   --pm-red:         #DC2626;
   --pm-red-bg:      #FEF2F2;
 
+  --pm-green:       #059669;
+  --pm-green-bg:    #ECFDF5;
+  --pm-purple:      #7C3AED;
+  --pm-purple-bg:   #F5F3FF;
+
   --pm-border:      #D5DDE8;
   --pm-shadow:      0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
   --pm-shadow-lg:   0 8px 32px rgba(0,0,0,0.12);
   --pm-radius:      10px;
   --pm-font:        'Inter', sans-serif;
+}
+
+/* ── Dark mode overrides ── */
+[data-theme="dark"] {
+  --pm-bg:          #0F172A;
+  --pm-surface:     #1E293B;
+  --pm-surface-alt: #162032;
+
+  --pm-text:        #E2E8F0;
+  --pm-text-mid:    #94A3B8;
+  --pm-text-light:  #64748B;
+
+  --pm-accent:      #60A5FA;
+  --pm-accent-hover:#3B82F6;
+  --pm-accent-bg:   #1E3A5F;
+
+  --pm-warm:        #FBBF24;
+  --pm-warm-bg:     #292010;
+  --pm-blue:        #60A5FA;
+  --pm-blue-bg:     #162038;
+  --pm-red:         #F87171;
+  --pm-red-bg:      #2D1515;
+
+  --pm-green:       #34D399;
+  --pm-green-bg:    #0A2A1A;
+  --pm-purple:      #A78BFA;
+  --pm-purple-bg:   #1A0F35;
+
+  --pm-border:      #334155;
+  --pm-shadow:      0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3);
+  --pm-shadow-lg:   0 8px 32px rgba(0,0,0,0.5);
 }
 
 /* ── Global reset ── */
@@ -37,6 +74,23 @@ textarea:focus {
   border-color: var(--pm-accent) !important;
   box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15) !important;
   outline: none;
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
+}
+
+/* ── Base colors for html/body ── */
+html, body {
+  background: var(--pm-bg);
+  color: var(--pm-text);
+}
+
+input, select, textarea {
+  background: var(--pm-surface);
+  color: var(--pm-text);
 }
 
 ::placeholder {
@@ -60,4 +114,9 @@ button:disabled {
 
 @keyframes pm-spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes pm-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.8; }
 }
