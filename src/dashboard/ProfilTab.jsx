@@ -166,19 +166,24 @@ export function ProfilTab({ user, showToast, setTab }) {
 
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
-          {/* Matchmaking-status */}
-          {(user.seeking_match || user.intent_now) && (
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "16px" }}>
-              {user.seeking_match && (
-                <span style={tag('#FEF3C7', '#B45309')}>⚡ Søger kamp nu</span>
-              )}
-              {user.intent_now && INTENTS.find(i => i.value === user.intent_now) && (
-                <span style={tag('#F0FDF4', '#15803D')}>
-                  {INTENTS.find(i => i.value === user.intent_now).label}
-                </span>
-              )}
+          {/* Søger kamp — standalone toggle der gemmer øjeblikkeligt */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: user.seeking_match ? '#FFFBEB' : '#F8FAFC', border: '1px solid ' + (user.seeking_match ? '#F59E0B' : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>⚡ Søger kamp nu</div>
+              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Vis mig i feedet hos andre spillere</div>
             </div>
-          )}
+            <button
+              onClick={async () => {
+                try {
+                  await updateProfile({ seeking_match: !user.seeking_match });
+                  showToast(user.seeking_match ? 'Du søger ikke længere kamp.' : 'Du søger nu kamp! ⚡');
+                } catch { showToast('Kunne ikke gemme. Prøv igen.'); }
+              }}
+              style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: user.seeking_match ? theme.accent : theme.border, position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+            >
+              <div style={{ position: 'absolute', top: 3, left: user.seeking_match ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+            </button>
+          </div>
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading ? (
