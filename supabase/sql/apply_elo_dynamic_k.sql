@@ -17,7 +17,8 @@ CREATE OR REPLACE FUNCTION public.apply_elo_for_match(p_match_result_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO 'public'
+SET search_path = public
+SET row_security = off
 AS $function$
 DECLARE
   v_mr match_results%ROWTYPE;
@@ -44,6 +45,7 @@ DECLARE
   v_t2_games INTEGER;
   v_margin INTEGER;
   v_margin_mult REAL;
+  v_count_p INTEGER;
   v_t1_changes INTEGER[] := ARRAY[]::INTEGER[];
   v_t2_changes INTEGER[] := ARRAY[]::INTEGER[];
 BEGIN
@@ -55,12 +57,32 @@ BEGIN
     RETURN jsonb_build_object('error', 'Match result not confirmed yet');
   END IF;
 
-  SELECT * INTO v_match FROM matches WHERE id = v_mr.match_id;
+  -- Låser rækken under denne transaktion, så vi ikke kan ramme en race-condition
+  -- hvis to spillere bekræfter resultatet på præcis samme tid.
+  SELECT * INTO v_match FROM matches WHERE id = v_mr.match_id FOR UPDATE;
   IF NOT FOUND THEN
     RETURN jsonb_build_object('error', 'Match not found');
   END IF;
   IF v_match.status = 'completed' THEN
     RETURN jsonb_build_object('error', 'ELO already calculated for this match');
+  END IF;
+
+  -- Tjek antal spillere - ELO beregnes kun ved 2 mod 2 (4 spillere i alt)
+  SELECT COUNT(*) INTO v_count_p FROM match_players WHERE match_id = v_mr.match_id;
+  IF v_count_p < 4 THEN
+    -- Vi afslutter kampen alligevel, da den er indsendt
+    UPDATE matches SET status = 'completed', completed_at = now() WHERE id = v_mr.match_id;
+    RETURN jsonb_build_object(
+      'success', true, 
+      'players_updated', 0, 
+      'message', 'Kamp afsluttet uden ELO-ændringer (kræver 4 spillere)'
+    );
+  END IF;
+
+  -- Hvis kampen af en eller anden syg grund er endt uafgjort (draw)
+  -- Tillader vi ikke normal ELO distribution, da der ikke er en vinder.
+  IF v_mr.match_winner <> 'team1' AND v_mr.match_winner <> 'team2' THEN
+    RETURN jsonb_build_object('error', 'Match must have a distinct winner (team1 or team2) for ELO to apply');
   END IF;
 
   SELECT COALESCE(MIN(COALESCE(p.games_played, 0)), 0)
@@ -155,7 +177,7 @@ BEGIN
     END IF;
   END LOOP;
 
-  UPDATE matches SET status = 'completed' WHERE id = v_mr.match_id;
+  UPDATE matches SET status = 'completed', completed_at = now() WHERE id = v_mr.match_id;
 
   RETURN jsonb_build_object(
     'success', true,

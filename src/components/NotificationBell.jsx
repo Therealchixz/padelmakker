@@ -5,6 +5,13 @@ import { supabase } from '../lib/supabase';
 import { font, theme } from '../lib/platformTheme';
 import { Bell, CheckCheck, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
+import {
+  isPushSupported,
+  getPushPermission,
+  subscribeToPush,
+  unsubscribeFromPush,
+  isPushSubscribed,
+} from '../lib/pushNotifications';
 
 const DISMISSED_MAX = 400;
 
@@ -46,7 +53,33 @@ export function NotificationBell() {
   const [confirmClear, setConfirmClear] = useState(false);
   const panelRef = useRef(null);
 
+  // Push notification opt-in state
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushMessage, setPushMessage] = useState(null); // kortvarig bekræftelsesbesked
+  const [pushBlocked, setPushBlocked] = useState(() => {
+    try { return localStorage.getItem('pm_push_blocked') === '1'; } catch { return false; }
+  });
+
   const unreadCount = notifs.filter(n => !n.read).length;
+
+  // App-ikon badge (virker på installerede PWA'er — Android og iOS 16.4+)
+  useEffect(() => {
+    if (!('setAppBadge' in navigator)) return;
+    if (unreadCount > 0) {
+      navigator.setAppBadge(unreadCount).catch(() => {});
+    } else {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }, [unreadCount]);
+
+  // Ryd badge når bruger logger ud
+  useEffect(() => {
+    if (!userId && 'clearAppBadge' in navigator) {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }, [userId]);
 
   const load = useCallback(async () => {
     if (!userId) {
@@ -90,6 +123,20 @@ export function NotificationBell() {
       });
     return () => { try { supabase.removeChannel(channel); } catch { /* ignore */ } };
   }, [userId, load]);
+
+  // Tjek om push er understøttet og allerede aktiveret
+  useEffect(() => {
+    if (!isPushSupported()) return;
+    setPushSupported(true);
+    isPushSubscribed().then(setPushSubscribed);
+  }, [userId]);
+
+  // Genindlæs notifikationer når siden bliver synlig igen (fx skift af tab)
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [load]);
 
   useEffect(() => {
     if (!open) return;
@@ -184,7 +231,49 @@ export function NotificationBell() {
       case "elo_change": return "📈";
       case "match_cancelled": return "❌";
       case "welcome": return "👋";
+      case "team_invite": return "🎾";
       default: return "🔔";
+    }
+  };
+
+  const showPushMessage = (msg) => {
+    setPushMessage(msg);
+    setTimeout(() => setPushMessage(null), 3000);
+  };
+
+  const handleEnablePush = async () => {
+    if (!userId || pushLoading) return;
+    setPushLoading(true);
+    try {
+      const result = await subscribeToPush(userId);
+      const subscribed = await isPushSubscribed();
+      setPushSubscribed(subscribed);
+      if (subscribed) {
+        showPushMessage('Push-beskeder aktiveret!');
+      } else if (result === 'denied') {
+        showPushMessage('Tilladelse afvist — tjek browserindstillinger');
+      } else if (result === 'blocked') {
+        try { localStorage.setItem('pm_push_blocked', '1'); } catch { /* ignore */ }
+        setPushBlocked(true);
+      } else if (result === 'timeout') {
+        showPushMessage('Timeout — prøv igen');
+      } else {
+        showPushMessage('Kunne ikke aktivere — prøv igen');
+      }
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const handleDisablePush = async () => {
+    if (pushLoading) return;
+    setPushLoading(true);
+    try {
+      await unsubscribeFromPush();
+      setPushSubscribed(false);
+      showPushMessage('Push-beskeder slået fra');
+    } finally {
+      setPushLoading(false);
     }
   };
 
@@ -264,6 +353,26 @@ export function NotificationBell() {
               )}
             </div>
           </div>
+
+          {/* Push opt-in / opt-out banner */}
+          {pushSupported && !pushBlocked && getPushPermission() !== 'denied' && (
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
+              <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
+                {pushMessage || (pushSubscribed ? "Push-beskeder er aktiveret" : "Få push-beskeder selv når du ikke er på siden")}
+              </span>
+              {!pushMessage && (
+                <button
+                  type="button"
+                  onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
+                  disabled={pushLoading}
+                  style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : "#fff", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: pushLoading ? "default" : "pointer", opacity: pushLoading ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
+                >
+                  {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
+                </button>
+              )}
+            </div>
+          )}
 
           <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
             {notifs.length === 0 ? (

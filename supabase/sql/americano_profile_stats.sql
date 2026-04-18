@@ -96,6 +96,8 @@ BEGIN
 END;
 $$;
 
+-- Trigger-funktion: kører som STATEMENT (ikke per-række) for at undgå N+1-storm
+-- ved bulk-insert af runder. Bruger transition-tabel "changed_rows".
 CREATE OR REPLACE FUNCTION public.trg_americano_match_recalc_stats()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -104,30 +106,46 @@ SET search_path = public
 SET row_security = off
 AS $$
 DECLARE
-  tid uuid;
   uid uuid;
 BEGIN
-  tid := COALESCE(NEW.tournament_id, OLD.tournament_id);
-  IF tid IS NULL THEN
-    RETURN COALESCE(NEW, OLD);
-  END IF;
   FOR uid IN
-    SELECT DISTINCT p.user_id
-    FROM public.americano_participants p
-    WHERE p.tournament_id = tid
+    SELECT DISTINCT ap.user_id
+    FROM public.americano_participants ap
+    WHERE ap.tournament_id IN (
+      SELECT DISTINCT tournament_id FROM changed_rows
+    )
   LOOP
     PERFORM public.recalc_americano_profile_stats(uid);
   END LOOP;
-  RETURN COALESCE(NEW, OLD);
+  RETURN NULL;
 END;
 $$;
 
+-- Fjern alle gamle triggers (per-række og statement)
 DROP TRIGGER IF EXISTS trg_americano_matches_recalc ON public.americano_matches;
-CREATE TRIGGER trg_americano_matches_recalc
-  AFTER INSERT OR UPDATE OR DELETE
-  ON public.americano_matches
-  FOR EACH ROW
+DROP TRIGGER IF EXISTS trg_americano_matches_recalc_ins_upd ON public.americano_matches;
+DROP TRIGGER IF EXISTS trg_americano_matches_recalc_ins ON public.americano_matches;
+DROP TRIGGER IF EXISTS trg_americano_matches_recalc_upd ON public.americano_matches;
+DROP TRIGGER IF EXISTS trg_americano_matches_recalc_del ON public.americano_matches;
+
+-- PostgreSQL kræver separate triggers pr. event når transition tables bruges
+CREATE TRIGGER trg_americano_matches_recalc_ins
+  AFTER INSERT ON public.americano_matches
+  REFERENCING NEW TABLE AS changed_rows
+  FOR EACH STATEMENT
   EXECUTE FUNCTION public.trg_americano_match_recalc_stats();
--- Ældre Postgres: brug EXECUTE PROCEDURE ... hvis ovenstående fejler.
+
+CREATE TRIGGER trg_americano_matches_recalc_upd
+  AFTER UPDATE ON public.americano_matches
+  REFERENCING NEW TABLE AS changed_rows
+  FOR EACH STATEMENT
+  EXECUTE FUNCTION public.trg_americano_match_recalc_stats();
+
+CREATE TRIGGER trg_americano_matches_recalc_del
+  AFTER DELETE ON public.americano_matches
+  REFERENCING OLD TABLE AS changed_rows
+  FOR EACH STATEMENT
+  EXECUTE FUNCTION public.trg_americano_match_recalc_stats();
 
 REVOKE ALL ON FUNCTION public.recalc_americano_profile_stats(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.trg_americano_match_recalc_stats() FROM PUBLIC;

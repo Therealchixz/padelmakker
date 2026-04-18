@@ -27,7 +27,14 @@ BEGIN
       AND p.proname IN (
         'protect_elo_fields',
         'handle_new_user',
-        'apply_elo_for_match'
+        'apply_elo_for_match',
+        'recalc_profile_stats_from_elo_history',
+        'recalc_americano_profile_stats',
+        'trg_americano_match_recalc_stats',
+        'trg_elo_history_sync_profile',
+        'create_notification_for_user',
+        'notify_match_creator_on_join',
+        'public_upcoming_americano_events'
       )
   LOOP
     EXECUTE format('ALTER FUNCTION %s SET search_path = public', r.sig);

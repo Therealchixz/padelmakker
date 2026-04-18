@@ -121,6 +121,7 @@ async function fetchOrCreateProfileCore(userRow) {
       level: meta.level || 5,
       play_style: meta.play_style || 'Ved ikke endnu',
       area: regionFromMeta,
+      city: meta.city || null,
       availability: meta.availability || [],
       bio: meta.bio || '',
       avatar: meta.avatar || '🎾',
@@ -128,6 +129,9 @@ async function fetchOrCreateProfileCore(userRow) {
       birth_month: meta.birth_month ?? null,
       birth_day: meta.birth_day ?? null,
       court_side: meta.court_side ?? null,
+      intent_now: meta.intent_now || null,
+      seeking_match: meta.seeking_match === true,
+      travel_willing: meta.travel_willing === true,
     },
     { onConflict: 'id' }
   ).select().single()
@@ -157,6 +161,23 @@ export function AuthProvider({ children }) {
   /** Til pending-avatar merge: undgå at sætte profil efter logout når core-load timeout gav prev=null */
   const activeUserIdRef = useRef('')
 
+  /**
+   * Opdater last_active_at for brugeren — fire-and-forget.
+   * Skal defineres FØR useEffect der bruger den i dependency array.
+   */
+  const touchLastActive = useCallback(async (userId) => {
+    const uid = userId || user?.id
+    if (!uid) return
+    try {
+      await supabase
+        .from('profiles')
+        .update({ last_active_at: new Date().toISOString() })
+        .eq('id', uid)
+    } catch {
+      /* ignorer — kritisk ikke for UX */
+    }
+  }, [user?.id])
+
   const loadProfile = useCallback((userRow, opts = {}) => {
     const quiet = opts.quiet === true
     const id = ++profileReqId.current
@@ -172,7 +193,16 @@ export function AuthProvider({ children }) {
       new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
     ])
       .then((p) => {
-        if (profileReqId.current !== id) return
+        if (profileReqId.current !== id) return;
+
+        // Tjek for ban-status
+        if (p?.is_banned) {
+          const reasonMsg = p.ban_reason ? `\n\nBegrundelse: ${p.ban_reason}` : '';
+          alert(`Din konto er blevet udelukket af en administrator.${reasonMsg}`);
+          signOut();
+          return;
+        }
+
         setProfile(p)
         /**
          * Pending storage-upload kan tage lang tid. TOKEN_REFRESHED udløser ofte et nyt loadProfile
@@ -237,6 +267,25 @@ export function AuthProvider({ children }) {
     }
 
     init()
+    
+    // Realtids-overvågning af ban-status
+    let realtimeSub = null
+    if (user?.id) {
+      realtimeSub = supabase
+        .channel(`profile-status-${user.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+          (payload) => {
+            if (payload.new?.is_banned) {
+              const reason = payload.new.ban_reason ? `\n\nBegrundelse: ${payload.new.ban_reason}` : ''
+              alert(`Din konto er blevet udelukket af en administrator.${reason}`)
+              signOut()
+            }
+          }
+        )
+        .subscribe()
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, s) => {
@@ -247,6 +296,7 @@ export function AuthProvider({ children }) {
           // profileLoading true og hele appen erstattes af spinner (blink).
           const quietRefresh = event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED'
           loadProfile(s.user, { quiet: quietRefresh })
+          if (event === 'SIGNED_IN') void touchLastActive(s.user.id)
         } else {
           profileReqId.current += 1
           setProfile(null)
@@ -255,11 +305,25 @@ export function AuthProvider({ children }) {
       }
     )
 
+    // Touch last_active_at når brugeren kommer tilbage til appen
+    let lastTouch = 0
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return
+      const now = Date.now()
+      if (now - lastTouch < 5 * 60 * 1000) return // maks. ét kald pr. 5 min
+      lastTouch = now
+      void touchLastActive()
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
     return () => {
       cancelled = true
       subscription.unsubscribe()
+      if (realtimeSub) supabase.removeChannel(realtimeSub)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  }, [loadProfile])
+  }, [loadProfile, touchLastActive, user?.id])
 
   useEffect(() => {
     activeUserIdRef.current = user?.id != null ? String(user.id) : ''
@@ -289,6 +353,7 @@ export function AuthProvider({ children }) {
         level: metadata.level || 5,
         play_style: metadata.play_style || 'Ved ikke endnu',
         area: region,
+        city: metadata.city || null,
         availability: metadata.availability || [],
         bio: metadata.bio || '',
         avatar: metadata.avatar || '🎾',
@@ -296,6 +361,9 @@ export function AuthProvider({ children }) {
         birth_month: metadata.birth_month ?? null,
         birth_day: metadata.birth_day ?? null,
         court_side: metadata.court_side ?? null,
+        intent_now: metadata.intent_now || null,
+        seeking_match: metadata.seeking_match === true,
+        travel_willing: metadata.travel_willing === true,
       })
       if (upErr) console.warn('profiles upsert:', upErr.message)
       if (data.session) {
@@ -315,6 +383,7 @@ export function AuthProvider({ children }) {
       setSession(data.session)
       setUser(data.user)
       loadProfile(data.user)
+      void touchLastActive(data.user.id)
     }
     return data
   }
@@ -403,6 +472,7 @@ export function AuthProvider({ children }) {
         updateProfile,
         refreshProfile,
         refreshProfileQuiet,
+        touchLastActive,
       }}
     >
       {children}

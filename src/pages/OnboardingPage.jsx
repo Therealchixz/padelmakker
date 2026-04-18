@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { REGIONS, AVAILABILITY, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail } from '../lib/validationHelpers';
@@ -19,12 +19,13 @@ export function OnboardingPage() {
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", availability: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
+  const toggleDay   = (d) => setForm(f => ({ ...f, available_days: f.available_days.includes(d) ? f.available_days.filter(x => x !== d) : [...f.available_days, d] }));
   const passwordMismatch =
     form.password_confirm.length > 0 &&
     form.password !== form.password_confirm;
@@ -81,14 +82,17 @@ export function OnboardingPage() {
         play_style: form.style,
         court_side: form.court_side || null,
         area: form.area,
+        city: form.city.trim() || null,
         availability: form.availability,
+        available_days: form.available_days,
         bio: sanitizeText(form.bio),
-        /* Emoji i metadata under oprettelse; foto uploades efter login (pending) eller straks hvis session */
         avatar: avatarFile ? "🎾" : form.avatar,
         birth_year: parseInt(form.birth_year, 10) || null,
         birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
         birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
-        /** Én-gangs merge til profiles hvis DB-trigger har oprettet en minimal række først */
+        intent_now: form.intent_now || null,
+        seeking_match: form.seeking_match,
+        travel_willing: form.travel_willing,
         onboarding_completed: true,
       });
 
@@ -177,37 +181,146 @@ export function OnboardingPage() {
     <div key={1}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Dit padel-niveau</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vær ærlig — vi matcher dig bedre!</p>
+
+      {/* Niveau — beskrivelse vises kun for valgt */}
       <div style={labelStyle}>Niveau</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
-        {LEVELS.map(l => (
-          <button key={l} onClick={() => set("level", l)} style={{ ...selBtn(form.level === l), display: "flex", flexDirection: "column", gap: "3px" }}>
-            <span style={{ fontWeight: 700 }}>{l}</span>
-            <span style={{ fontSize: "12px", fontWeight: 400, opacity: 0.75, lineHeight: 1.4 }}>{LEVEL_DESCS[l]}</span>
-          </button>
-        ))}
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "24px" }}>
+        {LEVELS.map(l => {
+          const active = form.level === l;
+          return (
+            <button key={l} onClick={() => set("level", l)} style={{
+              textAlign: "left", padding: "10px 14px",
+              borderRadius: "8px", border: "1.5px solid " + (active ? theme.accent : theme.border),
+              background: active ? theme.accentBg : theme.surface,
+              cursor: "pointer", transition: "all 0.15s",
+              display: "flex", flexDirection: "column", gap: active ? "4px" : 0,
+              fontFamily: "inherit",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontWeight: 700, fontSize: "14px", color: active ? theme.accent : theme.text }}>{l}</span>
+                {active && <span style={{ fontSize: "13px", color: theme.accent, fontWeight: 700 }}>✓</span>}
+              </div>
+              {active && (
+                <span style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.45 }}>{LEVEL_DESCS[l]}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
-      <div style={labelStyle}>Spillestil</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
-        {PLAY_STYLES.map(s => <button key={s} onClick={() => set("style", s)} style={{ ...selBtn(form.style === s) }}>{s}</button>)}
+
+      {/* Spillestil + Side på banen — 2 kolonner */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+        <div>
+          <div style={labelStyle}>Spillestil</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {PLAY_STYLES.map(s => (
+              <button key={s} onClick={() => set("style", s)} style={{
+                padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+                border: "1.5px solid " + (form.style === s ? theme.accent : theme.border),
+                background: form.style === s ? theme.accentBg : theme.surface,
+                color: form.style === s ? theme.accent : theme.text,
+                cursor: "pointer", textAlign: "left", fontFamily: "inherit",
+              }}>{s}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div style={labelStyle}>Side på banen</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {COURT_SIDES.map(s => (
+              <button key={s} onClick={() => set("court_side", s)} style={{
+                padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+                border: "1.5px solid " + (form.court_side === s ? theme.accent : theme.border),
+                background: form.court_side === s ? theme.accentBg : theme.surface,
+                color: form.court_side === s ? theme.accent : theme.text,
+                cursor: "pointer", textAlign: "left", fontFamily: "inherit",
+              }}>{s}</button>
+            ))}
+          </div>
+        </div>
       </div>
-      <div style={labelStyle}>Foretrukken side på banen</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-        {COURT_SIDES.map(s => <button key={s} onClick={() => set("court_side", s)} style={{ ...selBtn(form.court_side === s) }}>{s}</button>)}
+
+      {/* Intention — 2×2 gitter */}
+      <div style={labelStyle}>Hvad søger du primært? <span style={{ fontWeight: 400, color: "#8494A7" }}>(valgfri)</span></div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+        {INTENTS.map(i => {
+          const active = form.intent_now === i.value;
+          return (
+            <button key={i.value} onClick={() => set("intent_now", active ? "" : i.value)} style={{
+              padding: "10px 12px", borderRadius: "10px", textAlign: "left",
+              border: "1.5px solid " + (active ? theme.accent : theme.border),
+              background: active ? theme.accentBg : theme.surface,
+              cursor: "pointer", display: "flex", flexDirection: "column", gap: "3px",
+              fontFamily: "inherit",
+            }}>
+              <span style={{ fontWeight: 700, fontSize: "13px", color: active ? theme.accent : theme.text }}>{i.label}</span>
+              <span style={{ fontSize: "11px", color: active ? theme.accent : theme.textMid, lineHeight: 1.35, opacity: 0.85 }}>{i.desc}</span>
+            </button>
+          );
+        })}
       </div>
     </div>,
 
     <div key={2}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Hvor og hvornår?</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg den region du primært spiller i — så kan andre finde dig.</p>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg region og by — så kan andre finde dig nemt.</p>
       <div style={labelStyle}>Region</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "14px" }}>
         {REGIONS.map((r) => (
           <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "8px 14px", fontSize: "13px" }}>{r}</button>
         ))}
       </div>
+      <label htmlFor="onb-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: "#8494A7" }}>(valgfri)</span></label>
+      <input
+        id="onb-city"
+        value={form.city}
+        onChange={e => set("city", e.target.value)}
+        placeholder="F.eks. Aarhus, København, Aalborg..."
+        style={{ ...inputStyle, marginBottom: "20px" }}
+      />
       <div style={labelStyle}>Hvornår kan du spille?</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
         {AVAILABILITY.map(a => <button key={a} onClick={() => toggleAvail(a)} style={{ ...btn(form.availability.includes(a)), padding: "8px 14px", fontSize: "13px" }}>{a}</button>)}
+      </div>
+
+      <div style={labelStyle}>Hvilke dage kan du typisk spille?</div>
+      <div style={{ display: "flex", gap: "6px", marginBottom: "20px" }}>
+        {DAYS_OF_WEEK.map(({ key, label }) => {
+          const active = form.available_days.includes(key);
+          return (
+            <button
+              key={key}
+              onClick={() => toggleDay(key)}
+              style={{
+                flex: 1,
+                padding: "10px 2px",
+                fontSize: "13px",
+                fontWeight: 700,
+                borderRadius: "8px",
+                border: "1.5px solid " + (active ? theme.accent : theme.border),
+                background: active ? theme.accent : "#fff",
+                color: active ? "#fff" : theme.textMid,
+                cursor: "pointer",
+                transition: "all 0.12s",
+                minWidth: 0,
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#F8FAFC", borderRadius: "10px", padding: "14px 16px", border: "1px solid " + theme.border }}>
+        <div>
+          <div style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>Søger kamp aktivt</div>
+          <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "2px" }}>Vis mig i foreslåede makkere for andre</div>
+        </div>
+        <button
+          onClick={() => set("seeking_match", !form.seeking_match)}
+          style={{ width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer", background: form.seeking_match ? theme.accent : theme.border, position: "relative", transition: "background 0.2s", flexShrink: 0 }}
+        >
+          <div style={{ position: "absolute", top: "3px", left: form.seeking_match ? "23px" : "3px", width: "18px", height: "18px", borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+        </button>
       </div>
     </div>,
 

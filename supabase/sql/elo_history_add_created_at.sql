@@ -15,3 +15,7 @@ ALTER TABLE public.elo_history
 UPDATE public.elo_history
 SET created_at = date::timestamptz
 WHERE created_at IS NULL;
+
+-- 3) Sæt NOT NULL nu da alle rækker har en værdi
+ALTER TABLE public.elo_history
+  ALTER COLUMN created_at SET NOT NULL;

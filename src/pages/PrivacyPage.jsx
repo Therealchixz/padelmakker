@@ -4,11 +4,6 @@ import { theme } from '../lib/platformTheme';
 export function PrivacyPage() {
   return (
     <LegalPageLayout title="Privatlivspolitik">
-      <p style={{ marginTop: 0, fontSize: '13px', color: theme.textLight }}>
-        Senest opdateret: april 2026. PadelMakker drives som en digital tjeneste; denne tekst beskriver kort, hvordan vi behandler
-        personoplysninger. Den er ikke juridisk rådgivning — tilpas den gerne med jeres advokat før endelig publicering.
-      </p>
-
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '24px 0 12px' }}>Dataansvarlig</h2>
       <p style={{ color: theme.textMid }}>
         PadelMakker / den juridiske enhed, der driver tjenesten. Kontakt:{' '}

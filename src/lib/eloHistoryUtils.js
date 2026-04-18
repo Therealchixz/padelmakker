@@ -254,6 +254,98 @@ export function useProfileEloBundle(userId, syncKey) {
   };
 }
 
+/**
+ * Henter og beregner partner- og modstander-statistik for en spiller.
+ * Joiner elo_history (resultater) med match_players (hold-sammensætning).
+ */
+export function usePartnerOpponentStats(userId, ratedRows) {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const matchIdsKey = (ratedRows || [])
+    .map(r => r.match_id).filter(Boolean).sort().join(',');
+
+  useEffect(() => {
+    if (!userId || !matchIdsKey) {
+      setStats({ partners: [], opponents: [] });
+      return;
+    }
+    const matchIds = matchIdsKey.split(',').filter(Boolean);
+    setLoading(true);
+
+    supabase
+      .from('match_players')
+      .select('match_id, user_id, team, user_name, user_emoji')
+      .in('match_id', matchIds)
+      .then(({ data: players, error }) => {
+        if (error || !players) {
+          setStats({ partners: [], opponents: [] });
+          setLoading(false);
+          return;
+        }
+
+        // Brugerens hold pr. kamp
+        const myTeamMap = {};
+        for (const p of players) {
+          if (p.user_id === userId) myTeamMap[p.match_id] = p.team;
+        }
+
+        // Resultat pr. kamp fra elo_history
+        const resultMap = {};
+        for (const r of ratedRows) {
+          if (r.match_id) resultMap[r.match_id] = r.result;
+        }
+
+        // Aggregér stats pr. modspiller
+        const statsMap = {};
+        for (const p of players) {
+          if (p.user_id === userId) continue;
+          const result = resultMap[p.match_id];
+          if (!result || result === 'adjustment') continue;
+          const myTeam = myTeamMap[p.match_id];
+          if (myTeam == null) continue;
+
+          const isPartner = myTeam === p.team;
+          if (!statsMap[p.user_id]) {
+            statsMap[p.user_id] = {
+              userId: p.user_id,
+              name: p.user_name || 'Ukendt',
+              emoji: p.user_emoji || '👤',
+              asPartner:  { games: 0, wins: 0 },
+              asOpponent: { games: 0, wins: 0 },
+            };
+          }
+          if (isPartner) {
+            statsMap[p.user_id].asPartner.games++;
+            if (result === 'win') statsMap[p.user_id].asPartner.wins++;
+          } else {
+            statsMap[p.user_id].asOpponent.games++;
+            if (result === 'win') statsMap[p.user_id].asOpponent.wins++;
+          }
+        }
+
+        const all = Object.values(statsMap);
+
+        const partners = all
+          .filter(p => p.asPartner.games >= 2)
+          .sort((a, b) => (b.asPartner.wins / b.asPartner.games) - (a.asPartner.wins / a.asPartner.games))
+          .slice(0, 3);
+
+        // Hårdeste: laveste sejrsprocent mod dem
+        const opponents = all
+          .filter(p => p.asOpponent.games >= 2)
+          .sort((a, b) => (a.asOpponent.wins / a.asOpponent.games) - (b.asOpponent.wins / b.asOpponent.games))
+          .slice(0, 3);
+
+        setStats({ partners, opponents });
+        setLoading(false);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, matchIdsKey]);
+
+  return { partnerOpponentStats: stats, partnerOpponentLoading: loading };
+}
+
 /** Per bruger: seneste ELO + kampe/sejre fra elo_history (til ranking all-time). */
 export function allTimeStatsMapFromEloHistory(eloHistory) {
   const byUser = {};

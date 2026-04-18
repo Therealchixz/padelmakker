@@ -3,9 +3,9 @@ import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
-import { REGIONS, AVAILABILITY, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel, INTENTS } from '../lib/platformConstants';
 import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
-import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
+import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
@@ -28,6 +28,26 @@ export function ProfilTab({ user, showToast, setTab }) {
   const wins = histStats?.wins ?? (pStats.games_won || 0);
   const eloHistory = ratedRows;
   const statsLoading = bundleLoading;
+
+  // Ekstra statistik beregnet fra allerede indlæste ratedRows
+  const peakElo = useMemo(() => {
+    if (ratedRows.length === 0) return null;
+    const sorted = sortEloHistoryChronological(ratedRows);
+    let running = Math.round(Number(sorted[0].old_rating) || 1000);
+    let peak = running;
+    for (const row of sorted) {
+      const ch = row.change != null && Number.isFinite(Number(row.change))
+        ? Number(row.change)
+        : Math.round(Number(row.new_rating || 0) - Number(row.old_rating || 0));
+      running = Math.max(100, Math.round(running + ch));
+      peak = Math.max(peak, running);
+    }
+    return peak;
+  }, [ratedRows]);
+  const recentForm = ratedRows.slice(-5).reverse();
+
+  const { partnerOpponentStats, partnerOpponentLoading } = usePartnerOpponentStats(user.id, ratedRows);
+
   const [form, setForm] = useState(() => profileFormState(user));
 
   useEffect(() => {
@@ -60,10 +80,15 @@ export function ProfilTab({ user, showToast, setTab }) {
     const cur = normalizeStringArrayField(f.availability);
     return { ...f, availability: cur.includes(a) ? cur.filter((x) => x !== a) : [...cur, a] };
   });
+  const toggleDay = (d) => setForm(f => {
+    const cur = normalizeStringArrayField(f.available_days);
+    return { ...f, available_days: cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d] };
+  });
 
   const handleSave = async () => {
     const region = canonicalRegionForForm(form.area) || form.area;
     const availability = normalizeStringArrayField(form.availability);
+    const available_days = normalizeStringArrayField(form.available_days);
     setSaving(true);
     let avatarValue = form.avatar;
     if (pendingAvatarFile) {
@@ -81,15 +106,21 @@ export function ProfilTab({ user, showToast, setTab }) {
     try {
       await updateProfile({
         area: region,
+        city: form.city.trim() || null,
         level: form.level ? parseFloat(form.level.match(/[\d.]+/)?.[0] || "3") : undefined,
         play_style: form.play_style,
         court_side: form.court_side || null,
         bio: sanitizeText(form.bio.trim()),
         avatar: avatarValue,
         availability,
+        available_days,
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
         birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
         birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
+        // Matchmaking
+        seeking_match:  form.seeking_match,
+        intent_now:     form.intent_now || null,
+        travel_willing: form.travel_willing,
       });
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       setPendingAvatarFile(null);
@@ -128,12 +159,26 @@ export function ProfilTab({ user, showToast, setTab }) {
                 {user.level && <span style={tag(theme.blueBg, theme.blue)}>{levelLabel(user.level)}</span>}
                 <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
                 {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
-                <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.area || "?"}</span>
+                <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.city ? `${user.city}, ` : ""}{user.area || "?"}</span>
               </div>
             </div>
           </div>
 
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
+
+          {/* Matchmaking-status */}
+          {(user.seeking_match || user.intent_now) && (
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "16px" }}>
+              {user.seeking_match && (
+                <span style={tag('#FEF3C7', '#B45309')}>⚡ Søger kamp nu</span>
+              )}
+              {user.intent_now && INTENTS.find(i => i.value === user.intent_now) && (
+                <span style={tag('#F0FDF4', '#15803D')}>
+                  {INTENTS.find(i => i.value === user.intent_now).label}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading ? (
@@ -153,32 +198,57 @@ export function ProfilTab({ user, showToast, setTab }) {
               </div>
             ))}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: "#F1F5F9", borderRadius: "8px", border: "1px solid " + theme.border }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: theme.text }}>{Number(user.americano_played) || 0}</div>
+              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Turneringer</div>
+            </div>
             <div style={{ textAlign: "center", padding: "10px 4px", background: americanoOutcomeColors.win.bg, borderRadius: "8px", border: "1px solid " + americanoOutcomeColors.win.border }}>
               <div style={{ fontSize: "16px", fontWeight: 800, color: americanoOutcomeColors.win.text }}>{Number(user.americano_wins) || 0}</div>
-              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano sejre</div>
+              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Runder vundet</div>
             </div>
             <div style={{ textAlign: "center", padding: "10px 4px", background: americanoOutcomeColors.tie.bg, borderRadius: "8px", border: "1px solid " + americanoOutcomeColors.tie.border }}>
               <div style={{ fontSize: "16px", fontWeight: 800, color: americanoOutcomeColors.tie.text }}>{Number(user.americano_draws) || 0}</div>
-              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano uafgjort</div>
+              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Runder uafgjort</div>
             </div>
             <div style={{ textAlign: "center", padding: "10px 4px", background: americanoOutcomeColors.loss.bg, borderRadius: "8px", border: "1px solid " + americanoOutcomeColors.loss.border }}>
               <div style={{ fontSize: "16px", fontWeight: 800, color: americanoOutcomeColors.loss.text }}>{Number(user.americano_losses) || 0}</div>
-              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Americano tab</div>
+              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Runder tabt</div>
             </div>
           </div>
           </>
           )}
 
-          {/* Availability */}
+          {/* Availability — tidspunkter */}
           {availabilityTags(user).length > 0 && (
-            <div style={{ marginBottom: "16px" }}>
+            <div style={{ marginBottom: "10px" }}>
               <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tilgængelighed</div>
               <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
                 {availabilityTags(user).map((a) => <span key={a} style={tag(theme.accentBg, theme.accent)}>{a}</span>)}
               </div>
             </div>
           )}
+
+          {/* Availability — ugedage */}
+          {(() => {
+            const days = normalizeStringArrayField(user.available_days);
+            if (!days.length) return null;
+            return (
+              <div style={{ marginBottom: "16px" }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Spilledage</div>
+                <div style={{ display: "flex", gap: "4px" }}>
+                  {DAYS_OF_WEEK.map(({ key, label }) => {
+                    const active = days.includes(key);
+                    return (
+                      <div key={key} style={{ flex: 1, textAlign: "center", padding: "5px 2px", borderRadius: "6px", fontSize: "11px", fontWeight: 700, background: active ? theme.accent : "#F1F5F9", color: active ? "#fff" : theme.textLight }}>
+                        {label}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           <button onClick={() => { setForm(profileFormState(user)); setEditing(true); }} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
             <Settings size={14} /> Rediger profil
@@ -240,6 +310,82 @@ export function ProfilTab({ user, showToast, setTab }) {
             </div>
           );
         })()}
+
+        {/* Peak ELO + Seneste form */}
+        {!statsLoading && ratedRows.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+            {peakElo && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
+                <div style={{ fontSize: "24px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.03em" }}>🏆 {peakElo}</div>
+                <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste nogensinde</div>
+              </div>
+            )}
+            {recentForm.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>Seneste form</div>
+                <div style={{ display: "flex", gap: "5px", alignItems: "center", marginBottom: "6px" }}>
+                  {recentForm.map((r, i) => (
+                    <div key={i} title={r.result === 'win' ? 'Sejr' : r.result === 'loss' ? 'Nederlag' : 'Uafgjort'} style={{
+                      width: "22px", height: "22px", borderRadius: "50%", flexShrink: 0,
+                      background: r.result === 'win' ? "#22C55E" : r.result === 'loss' ? "#EF4444" : "#9CA3AF",
+                    }} />
+                  ))}
+                </div>
+                <div style={{ fontSize: "11px", color: theme.textMid }}>Seneste {recentForm.length} kampe</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Bedste makker + Hårdeste modstandere */}
+        {!statsLoading && !partnerOpponentLoading && partnerOpponentStats && (
+          <>
+            {partnerOpponentStats.partners.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Bedste makker</div>
+                {partnerOpponentStats.partners.map((p, i) => (
+                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.partners.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.games} kampe sammen</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: "#16A34A" }}>{Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(() => {
+              const hardOpponents = partnerOpponentStats.opponents;
+              if (hardOpponents.length === 0) return null;
+              return (
+                <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Hårdeste modstandere</div>
+                  {hardOpponents.map((p, i) => {
+                    const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.games) * 100);
+                    return (
+                      <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < hardOpponents.length - 1 ? "10px" : 0 }}>
+                        <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: "#FEF2F2", border: "1px solid #FECACA", flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                          <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.games} kampe imod</div>
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          <div style={{ fontSize: "15px", fontWeight: 800, color: "#DC2626" }}>{theirWinPct}%</div>
+                          <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </>
+        )}
 
         {/* Quick links */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
@@ -309,13 +455,21 @@ export function ProfilTab({ user, showToast, setTab }) {
           <input value={form.birth_year || ""} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="År" type="text" inputMode="numeric" style={{ ...inputStyle, paddingLeft: "10px" }} />
         </div>
 
-        {/* Area */}
+        {/* Area + City */}
         <div style={labelStyle}>Region</div>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
           {REGIONS.map((r) => (
             <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "6px 12px", fontSize: "12px" }}>{r}</button>
           ))}
         </div>
+        <label htmlFor="profil-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: "#8494A7" }}>(valgfri)</span></label>
+        <input
+          id="profil-city"
+          value={form.city}
+          onChange={e => set("city", e.target.value)}
+          placeholder="F.eks. Aarhus, København, Aalborg..."
+          style={{ ...inputStyle, marginBottom: "14px" }}
+        />
 
         {/* Niveau */}
         <div style={labelStyle}>Niveau</div>
@@ -344,7 +498,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           ))}
         </div>
 
-        {/* Availability */}
+        {/* Availability — tidspunkter */}
         <div style={labelStyle}>Hvornår kan du spille?</div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
           {AVAILABILITY.map(a => (
@@ -352,9 +506,112 @@ export function ProfilTab({ user, showToast, setTab }) {
           ))}
         </div>
 
+        {/* Availability — ugedage */}
+        <div style={labelStyle}>Hvilke dage kan du typisk spille?</div>
+        <div style={{ display: "flex", gap: "6px", marginBottom: "14px" }}>
+          {DAYS_OF_WEEK.map(({ key, label }) => {
+            const active = normalizeStringArrayField(form.available_days).includes(key);
+            return (
+              <button
+                key={key}
+                onClick={() => toggleDay(key)}
+                style={{
+                  flex: 1,
+                  padding: "8px 2px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  borderRadius: "8px",
+                  border: "1.5px solid " + (active ? theme.accent : theme.border),
+                  background: active ? theme.accent : theme.surface,
+                  color: active ? "#fff" : theme.textMid,
+                  cursor: "pointer",
+                  transition: "all 0.12s",
+                  minWidth: 0,
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Bio */}
         <label htmlFor="profil-bio" style={labelStyle}>Bio</label>
         <textarea id="profil-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl lidt om dig som spiller..." style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "20px" }} />
+
+        {/* Matchmaking */}
+        <div style={{ borderTop: "1px solid " + theme.border, paddingTop: "20px", marginBottom: "20px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "14px" }}>
+            Matchmaking-præferencer
+          </div>
+
+          {/* Søger kamp nu */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>Søger kamp aktivt</div>
+              <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "2px" }}>Vis mig i foreslåede makkere for andre spillere</div>
+            </div>
+            <button
+              onClick={() => set("seeking_match", !form.seeking_match)}
+              style={{
+                width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer",
+                background: form.seeking_match ? theme.accent : theme.border,
+                position: "relative", transition: "background 0.2s", flexShrink: 0,
+              }}
+            >
+              <div style={{
+                position: "absolute", top: "3px",
+                left: form.seeking_match ? "23px" : "3px",
+                width: "18px", height: "18px", borderRadius: "50%",
+                background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }} />
+            </button>
+          </div>
+
+          {/* Intention */}
+          <div style={labelStyle}>Hvad søger du?</div>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+            <button
+              onClick={() => set("intent_now", "")}
+              style={{ ...btn(!form.intent_now), padding: "6px 12px", fontSize: "12px" }}
+            >
+              Ikke angivet
+            </button>
+            {INTENTS.map(i => (
+              <button
+                key={i.value}
+                onClick={() => set("intent_now", i.value)}
+                style={{ ...btn(form.intent_now === i.value), padding: "6px 12px", fontSize: "12px" }}
+                title={i.desc}
+              >
+                {i.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Vil rejse */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>Vil gerne rejse lidt</div>
+              <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "2px" }}>Åben for spillere uden for dit nærområde</div>
+            </div>
+            <button
+              onClick={() => set("travel_willing", !form.travel_willing)}
+              style={{
+                width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer",
+                background: form.travel_willing ? theme.accent : theme.border,
+                position: "relative", transition: "background 0.2s", flexShrink: 0,
+              }}
+            >
+              <div style={{
+                position: "absolute", top: "3px",
+                left: form.travel_willing ? "23px" : "3px",
+                width: "18px", height: "18px", borderRadius: "50%",
+                background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }} />
+            </button>
+          </div>
+        </div>
 
         <button onClick={handleSave} disabled={saving} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Gemmer..." : <><Save size={14} /> Gem ændringer</>}

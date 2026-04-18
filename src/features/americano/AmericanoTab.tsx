@@ -9,10 +9,10 @@ import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
 import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
-import { americanoOutcomeColors } from './americanoOutcomeColors'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 
 import { isAvatarUrl } from '../../lib/avatarUpload'
+import { PlayerStatsModal } from '../../components/PlayerStatsModal'
 
 const font = "'Inter', sans-serif"
 
@@ -45,6 +45,7 @@ type ProfileLike = {
   full_name?: string | null
   name?: string | null
   email?: string | null
+  role?: string | null
 }
 
 type AmericanoSubTab = 'open' | 'playing' | 'completed'
@@ -60,6 +61,9 @@ type Props = {
   /** Styret opret-formular (sammen med onCreateOpenChange) */
   createOpen?: boolean
   onCreateOpenChange?: (open: boolean) => void
+  /** Filtrering fra overordnet Kampe-fane */
+  scope?: 'mine' | 'alle'
+  searchQuery?: string
 }
 
 type ParticipantListRow = {
@@ -74,185 +78,6 @@ type ProfileSnippet = {
   avatar?: string | null
   full_name?: string | null
   name?: string | null
-}
-
-function AmericanoParticipantStatsModal({
-  userId,
-  fallbackName,
-  onClose,
-}: {
-  userId: string
-  fallbackName: string
-  onClose: () => void
-}) {
-  const [loading, setLoading] = useState(true)
-  const [row, setRow] = useState<{
-    full_name?: string | null
-    name?: string | null
-    avatar?: string | null
-    americano_wins?: number | null
-    americano_losses?: number | null
-    americano_draws?: number | null
-  } | null>(null)
-  const [fetchErr, setFetchErr] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      setFetchErr(false)
-      setRow(null)
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('full_name, name, avatar, americano_wins, americano_losses, americano_draws')
-          .eq('id', userId)
-          .maybeSingle()
-        if (cancelled) return
-        if (error) throw error
-        setRow(data)
-      } catch {
-        if (!cancelled) {
-          setFetchErr(true)
-          setRow(null)
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [userId])
-
-  const w = Number(row?.americano_wins) || 0
-  const l = Number(row?.americano_losses) || 0
-  const d = Number(row?.americano_draws) || 0
-  const played = w + l + d
-  const title = String(row?.full_name || row?.name || fallbackName || 'Spiller').trim() || fallbackName
-
-  const cell = (
-    label: string,
-    value: string | number,
-    opts: { bg: string; border: string; text: string; valueColor?: string }
-  ) => {
-    const valueColor = opts.valueColor ?? opts.text
-    return (
-      <div
-        key={label}
-        style={{
-          textAlign: 'center',
-          padding: '10px 6px',
-          background: opts.bg,
-          borderRadius: 8,
-          border: `1px solid ${opts.border}`,
-        }}
-      >
-        <div style={{ fontSize: 16, fontWeight: 800, color: valueColor, fontFamily: font }}>{value}</div>
-        <div
-          style={{
-            fontSize: 9,
-            fontWeight: 700,
-            color: '#94A3B8',
-            marginTop: 4,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-          }}
-        >
-          {label}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div
-      role="presentation"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(15, 23, 42, 0.45)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: 16,
-        fontFamily: font,
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="americano-stats-title"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#fff',
-          borderRadius: 14,
-          padding: 24,
-          maxWidth: 380,
-          width: '100%',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 18 }}>
-
-          <AvatarInCircle av={row?.avatar || '🎾'} size={52} fontSize={26} bg="#DBEAFE" />
-
-          <div style={{ minWidth: 0 }}>
-            <div
-              id="americano-stats-title"
-              style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}
-            >
-              {loading ? '…' : title}
-            </div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>Americano (alle turneringer)</div>
-          </div>
-        </div>
-
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 16, color: '#64748B', fontSize: 13 }}>Henter statistik…</div>
-        ) : fetchErr ? (
-          <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16, lineHeight: 1.5 }}>
-            Kunne ikke hente profil — tjek forbindelse eller rettigheder.
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 8,
-              marginBottom: 16,
-            }}
-          >
-            {cell('Kampe', played, { ...americanoOutcomeColors.neutral, valueColor: '#1D4ED8' })}
-            {cell('Sejre', w, { ...americanoOutcomeColors.win })}
-            {cell('Uafgjort', d, { ...americanoOutcomeColors.tie })}
-            {cell('Tab', l, { ...americanoOutcomeColors.loss })}
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            width: '100%',
-            padding: '10px 14px',
-            borderRadius: 8,
-            border: '1px solid #D5DDE8',
-            background: '#fff',
-            color: '#3E4C63',
-            fontWeight: 600,
-            fontSize: 13,
-            cursor: 'pointer',
-            fontFamily: font,
-          }}
-        >
-          Luk
-        </button>
-      </div>
-    </div>
-  )
 }
 
 function resolveName(p: ProfileLike | null | undefined, authEmail?: string | null) {
@@ -272,8 +97,10 @@ export function AmericanoTab({
   initialSubTab,
   onAmericanoSubTabChange,
   embedInKampe,
-  createOpen: createOpenProp,
+  createOpen,
   onCreateOpenChange,
+  scope = 'mine',
+  searchQuery = '',
 }: Props) {
   const { user: authUser, refreshProfileQuiet } = useAuth()
   const authEmail =
@@ -285,14 +112,15 @@ export function AmericanoTab({
       ? String((authUser as { id?: string }).id || '')
       : ''
   const profileId = profile?.id ?? authUserId
+  const isAdmin = profile?.role === 'admin'
   const displayName = resolveName(profile, authEmail || null)
   const [courts, setCourts] = useState<{ id: string; name: string }[]>([])
   const [rows, setRows] = useState<AmericanoTournament[]>([])
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [createOpenInternal, setCreateOpenInternal] = useState(false)
-  const createControlled = typeof createOpenProp === 'boolean'
-  const showCreate = createControlled ? createOpenProp : createOpenInternal
+  const createControlled = typeof createOpen === 'boolean'
+  const showCreate = createControlled ? createOpen : createOpenInternal
   const setShowCreate = (open: boolean) => {
     onCreateOpenChange?.(open)
     if (!createControlled) setCreateOpenInternal(open)
@@ -323,7 +151,7 @@ export function AmericanoTab({
       }
       const [cd, trRes, myRes] = await Promise.all([
         Court.filter(),
-        supabase.from('americano_tournaments').select('*').order('tournament_date', { ascending: false }).limit(40),
+        supabase.from('americano_tournaments').select('*').order('tournament_date', { ascending: false }).order('created_at', { ascending: false }).limit(200),
         supabase.from('americano_participants').select('tournament_id').eq('user_id', profileId),
       ])
       setCourts(
@@ -373,7 +201,11 @@ export function AmericanoTab({
             grouped[tid].push(row)
           })
           Object.keys(grouped).forEach((tid) => {
-            grouped[tid].sort((a, b) => a.joined_at.localeCompare(b.joined_at))
+            grouped[tid].sort((a, b) => {
+              const c = a.joined_at.localeCompare(b.joined_at)
+              if (c !== 0) return c
+              return String(a.id).localeCompare(String(b.id))
+            })
           })
           setParticipantsByTournament(grouped)
         }
@@ -446,10 +278,14 @@ export function AmericanoTab({
     }
   }, [rows, participantsByTournament])
 
-  const startTournament = async (t: AmericanoTournament) => {
-    if (String(t.creator_id) !== String(profileId)) {
-      showToast('Kun opretteren kan starte turneringen.')
+  const startTournament = async (t: AmericanoTournament, forceAsAdmin = false) => {
+    const isCreatorOrAdmin = String(t.creator_id) === String(profileId) || isAdmin
+    if (!isCreatorOrAdmin) {
+      showToast('Kun opretteren eller en admin kan starte turneringen.')
       return
+    }
+    if (forceAsAdmin) {
+      if (!window.confirm(`Gennemtving start af "${t.name}" som admin? Turneringen er ikke fyldt endnu.`)) return
     }
     setBusyId(t.id)
     try {
@@ -458,28 +294,42 @@ export function AmericanoTab({
         .select('id, joined_at')
         .eq('tournament_id', t.id)
         .order('joined_at', { ascending: true })
+        .order('id', { ascending: true })
       if (pErr) throw pErr
       const list = (parts || []) as Pick<AmericanoParticipant, 'id' | 'joined_at'>[]
       const slots = Number(t.player_slots)
       const n = list.length
-      if (n !== slots) {
-        showToast(`Turneringen skal være fyldt før start: ${slots} tilmeldte kræves (nu: ${n}).`)
-        return
-      }
       let matchRows
-      if (canStartAmericano5767(n, slots)) {
-        const passes = Number(t.opponent_passes) === 2 ? 2 : 1
-        matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id), passes)
-      } else if (slots === 8 && n === 8) {
-        // Gamle turneringer oprettet med 8 pladser (før skift til 5–7)
-        matchRows = buildAmericano8MatchRows(t.id, list.map((p) => p.id))
+      if (forceAsAdmin) {
+        // Admin: brug faktisk antal spillere som schedule-basis (skal være 5–8)
+        if (n >= 5 && n <= 7) {
+          const passes = Number(t.opponent_passes) === 2 ? 2 : 1
+          matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id), passes)
+        } else if (n === 8) {
+          matchRows = buildAmericano8MatchRows(t.id, list.map((p) => p.id))
+        } else {
+          showToast(`Kan ikke gennemtvinge: ${n} tilmeldte er ikke gyldigt (kræver 5–8).`)
+          return
+        }
       } else {
-        showToast(
-          slots === 8
-            ? `Denne turnering kræver præcis 8 tilmeldte (gammel type). Nu: ${n}.`
-            : `Du skal have præcis ${slots} tilmeldte for at starte. Nu: ${n}.`
-        )
-        return
+        if (n !== slots) {
+          showToast(`Turneringen skal være fyldt før start: ${slots} tilmeldte kræves (nu: ${n}).`)
+          return
+        }
+        if (canStartAmericano5767(n, slots)) {
+          const passes = Number(t.opponent_passes) === 2 ? 2 : 1
+          matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id), passes)
+        } else if (slots === 8 && n === 8) {
+          // Gamle turneringer oprettet med 8 pladser (før skift til 5–7)
+          matchRows = buildAmericano8MatchRows(t.id, list.map((p) => p.id))
+        } else {
+          showToast(
+            slots === 8
+              ? `Denne turnering kræver præcis 8 tilmeldte (gammel type). Nu: ${n}.`
+              : `Du skal have præcis ${slots} tilmeldte for at starte. Nu: ${n}.`
+          )
+          return
+        }
       }
 
       await supabase.from('americano_matches').delete().eq('tournament_id', t.id)
@@ -550,6 +400,25 @@ export function AmericanoTab({
     }
   }
 
+  const kickParticipant = async (tournamentId: string, participantId: string) => {
+    setBusyId(tournamentId + '-kick-' + participantId)
+    try {
+      const { error } = await supabase
+        .from('americano_participants')
+        .delete()
+        .eq('id', participantId)
+        .eq('tournament_id', tournamentId)
+      if (error) throw error
+      showToast('Spiller fjernet.')
+      await load()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      showToast('Kunne ikke fjerne spiller: ' + msg)
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   /** Kun under tilmelding — som almindelig kamp (opretter). CASCADE sletter deltagere + kampe. */
   const deleteTournament = async (t: AmericanoTournament) => {
     if (String(t.creator_id) !== String(profileId)) {
@@ -591,15 +460,40 @@ export function AmericanoTab({
     )
   }
 
-  const openAmericanos = rows.filter((t) => t.status === 'registration')
-  const playingAmericanos = rows.filter((t) => t.status === 'playing')
-  const completedAmericanos = rows.filter((t) => t.status === 'completed')
+  // Filtering based on scope and search
+  const filteredRows = rows.filter(t => {
+    // 1. Scope filter
+    if (scope === 'mine') {
+      if (!joinedIds.has(t.id)) return false
+    }
+
+    // 2. Search filter
+    if (searchQuery && searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      const tName = (t.name || '').toLowerCase()
+      if (tName.includes(q)) return true
+
+      const parts = participantsByTournament[t.id] || []
+      const hasPartMatch = parts.some(p => (p.display_name || '').toLowerCase().includes(q))
+      if (hasPartMatch) return true
+
+      return false
+    }
+
+    return true
+  })
+
+  // Group by status after filtering
+  const openAmericanos = filteredRows.filter((t) => t.status === 'registration')
+  const playingAmericanosFiltered = filteredRows.filter((t) => t.status === 'playing')
+  const completedAmericanosFiltered = filteredRows.filter((t) => t.status === 'completed')
+
   const visibleRows =
     americanoView === 'open'
       ? openAmericanos
       : americanoView === 'playing'
-        ? playingAmericanos
-        : completedAmericanos
+        ? playingAmericanosFiltered
+        : completedAmericanosFiltered
 
   const subTabBtn = (active: boolean) =>
     ({
@@ -675,8 +569,8 @@ export function AmericanoTab({
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
         {[
           { id: 'open' as const, label: `Åbne (${openAmericanos.length})` },
-          { id: 'playing' as const, label: `I gang (${playingAmericanos.length})` },
-          { id: 'completed' as const, label: `Afsluttede (${completedAmericanos.length})` },
+          { id: 'playing' as const, label: `I gang (${playingAmericanosFiltered.length})` },
+          { id: 'completed' as const, label: `Afsluttede (${completedAmericanosFiltered.length})` },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -876,45 +770,69 @@ export function AmericanoTab({
                             const label =
                               String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name
                             const isMe = String(p.user_id) === String(profileId)
+                            const kickBusy = busyId === t.id + '-kick-' + p.id
                             return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() =>
-                                  setParticipantStatsPick({ userId: p.user_id, name: p.display_name })
-                                }
-                                title="Se Americano-statistik"
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 10,
-                                  padding: '8px 10px',
-                                  borderRadius: 8,
-                                  border: '1px solid #E2E8F0',
-                                  background: '#fff',
-                                  cursor: 'pointer',
-                                  textAlign: 'left',
-                                  fontFamily: font,
-                                }}
-                              >
-
-                                <AvatarInCircle av={av} />
-
-                                <span
+                              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setParticipantStatsPick({ userId: p.user_id, name: p.display_name })
+                                  }
+                                  title="Se Americano-statistik"
                                   style={{
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    color: '#0F172A',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    padding: '8px 10px',
+                                    borderRadius: 8,
+                                    border: '1px solid #E2E8F0',
+                                    background: '#fff',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    fontFamily: font,
                                     flex: 1,
                                     minWidth: 0,
                                   }}
                                 >
-                                  {label}
-                                  {isMe ? (
-                                    <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
-                                  ) : null}
-                                </span>
-                              </button>
+                                  <AvatarInCircle av={av} />
+                                  <span
+                                    style={{
+                                      fontSize: 13,
+                                      fontWeight: 600,
+                                      color: '#0F172A',
+                                      flex: 1,
+                                      minWidth: 0,
+                                    }}
+                                  >
+                                    {label}
+                                    {isMe ? (
+                                      <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
+                                    ) : null}
+                                  </span>
+                                </button>
+                                {(isCreator || isAdmin) && !isMe && (
+                                  <button
+                                    type="button"
+                                    onClick={() => kickParticipant(t.id, p.id)}
+                                    disabled={kickBusy}
+                                    title="Fjern spiller"
+                                    style={{
+                                      flexShrink: 0,
+                                      padding: '6px 8px',
+                                      borderRadius: 8,
+                                      border: '1px solid #FCA5A5',
+                                      background: '#FEF2F2',
+                                      color: '#DC2626',
+                                      cursor: kickBusy ? 'wait' : 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      fontFamily: font,
+                                    }}
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                )}
+                              </div>
                             )
                           })}
                         </div>
@@ -986,7 +904,7 @@ export function AmericanoTab({
                   <span style={{ fontSize: 12, color: '#1D4ED8', fontWeight: 600, alignSelf: 'center' }}>Du er tilmeldt</span>
                 )}
               </div>
-              {isCreator && t.status === 'registration' && (
+              {(isCreator || isAdmin) && t.status === 'registration' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                   {!tournamentFull && (
                     <div style={{ fontSize: 12, color: '#B45309', fontWeight: 600 }}>
@@ -1017,6 +935,27 @@ export function AmericanoTab({
                   >
                     {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
                   </button>
+                  {isAdmin && !tournamentFull && partCount >= 5 && (
+                    <button
+                      type="button"
+                      disabled={busyId === t.id}
+                      onClick={() => startTournament(t, true)}
+                      style={{
+                        fontFamily: font,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        padding: '8px 14px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: '#D97706',
+                        color: '#fff',
+                        cursor: busyId === t.id ? 'wait' : 'pointer',
+                      }}
+                    >
+                      ⚡ Gennemtving start (Admin)
+                    </button>
+                  )}
+                  {isCreator && (
                   <button
                     type="button"
                     disabled={busyId === t.id}
@@ -1039,6 +978,7 @@ export function AmericanoTab({
                     <Trash2 size={14} aria-hidden />
                     Slet turnering
                   </button>
+                  )}
                   </div>
                 </div>
               )}
@@ -1067,7 +1007,7 @@ export function AmericanoTab({
         </div>
       )}
       {participantStatsPick && (
-        <AmericanoParticipantStatsModal
+        <PlayerStatsModal
           userId={participantStatsPick.userId}
           fallbackName={participantStatsPick.name}
           onClose={() => setParticipantStatsPick(null)}

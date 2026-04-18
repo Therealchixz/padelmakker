@@ -1,14 +1,18 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
+import { DateTime } from 'luxon';
 import { useAuth } from '../lib/AuthContext';
-import { font, theme, heading } from '../lib/platformTheme';
+import { font, theme, heading, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
-import { Users, MapPin, Swords, Trophy } from 'lucide-react';
+import { Users, MapPin, Swords, Trophy, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { PlayerStatsModal } from '../components/PlayerStatsModal';
 
 export function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
+  const [viewTournament, setViewTournament] = useState(null);
+  const [viewPlayer, setViewPlayer] = useState(null);
   const displayName = resolveDisplayName(user, authUser);
   const firstName   = displayName.split(/\s+/)[0];
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
@@ -20,14 +24,154 @@ export function HomeTab({ user, setTab }) {
   const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
 
   const [feed, setFeed] = useState([]);
-  const fetchFeed = useCallback(() => {
-    supabase
+  const [americanoFeed, setAmericanoFeed] = useState([]);
+  const [ligaFeed, setLigaFeed] = useState([]);
+  const [viewLeague, setViewLeague] = useState(null);
+
+  const fetchFeed = useCallback(async () => {
+    // ELO history feed
+    const { data: eloDataFull } = await supabase
       .from('elo_history')
-      .select('user_id, result, change, date, created_at, profiles(full_name, name, avatar)')
+      .select('user_id, result, change, date, created_at, match_id, profiles(full_name, name, avatar)')
+      .neq('change', 0)
       .not('change', 'is', null)
+      .neq('result', 'adjustment')
       .order('created_at', { ascending: false, nullsFirst: false })
-      .limit(10)
-      .then(({ data }) => setFeed(data || []));
+      .limit(40);
+    
+    // Safety: ignore the +0 entries entirely as they are noise
+    const eloData = (eloDataFull || []).filter(r => Number(r.change) !== 0);
+    
+    // Fetch match details for entries with match_id
+    const matchIds = [...new Set(eloData.filter(r => r.match_id).map(r => r.match_id))];
+    let matchMap = {};
+    if (matchIds.length > 0) {
+      const [{ data: mRes }, { data: mDetails }] = await Promise.all([
+        supabase.from('match_results').select('*').in('match_id', matchIds),
+        supabase.from('matches').select('id, court_name, description').in('id', matchIds)
+      ]);
+      (mRes || []).forEach(r => { matchMap[r.match_id] = { ...matchMap[r.match_id], results: r }; });
+      (mDetails || []).forEach(d => { matchMap[d.id] = { ...matchMap[d.id], details: d }; });
+    }
+
+    // Grouping logic
+    const groupedFeed = [];
+    const processedMatchIds = new Set();
+
+    eloData.forEach(row => {
+      if (!row.match_id) {
+        groupedFeed.push({ ...row, type: 'elo' });
+        return;
+      }
+      if (processedMatchIds.has(row.match_id)) return;
+
+      const sameMatch = eloData.filter(r => r.match_id === row.match_id);
+      const mInfo = matchMap[row.match_id];
+      
+      groupedFeed.push({
+        type: 'match_group',
+        match_id: row.match_id,
+        created_at: row.created_at,
+        players: sameMatch.map(r => ({
+          id: r.user_id,
+          name: r.profiles?.full_name || r.profiles?.name || "Spiller",
+          avatar: r.profiles?.avatar || "🎾",
+          change: Number(r.change),
+          win: r.result === 'win'
+        })),
+        score: mInfo?.results?.score_display || "—",
+        winner: mInfo?.results?.match_winner,
+        court: mInfo?.details?.court_name || "Bane",
+        description: mInfo?.details?.description
+      });
+      processedMatchIds.add(row.match_id);
+    });
+
+    setFeed(groupedFeed);
+
+    // Americano completed tournaments
+    try {
+      const { data: tournaments } = await supabase
+        .from('americano_tournaments')
+        .select('id, name, tournament_date, updated_at')
+        .eq('status', 'completed')
+        .order('updated_at', { ascending: false })
+        .limit(5);
+      if (tournaments?.length) {
+        const tIds = tournaments.map(t => t.id);
+        const [{ data: parts }, { data: matches }] = await Promise.all([
+          supabase.from('americano_participants').select('id, tournament_id, user_id, display_name').in('tournament_id', tIds),
+          supabase.from('americano_matches').select('tournament_id, team_a_p1, team_a_p2, team_b_p1, team_b_p2, team_a_score, team_b_score').in('tournament_id', tIds),
+        ]);
+        const userIds = [...new Set((parts || []).map(p => p.user_id))];
+        let avatarMap = {};
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase.from('profiles').select('id, avatar').in('id', userIds);
+          (profiles || []).forEach(p => { avatarMap[String(p.id)] = p.avatar; });
+        }
+        const items = tournaments.map(t => {
+          const tParts = (parts || []).filter(p => p.tournament_id === t.id);
+          const tMatches = (matches || []).filter(m => m.tournament_id === t.id);
+          const totals = {};
+          tParts.forEach(p => { totals[p.id] = 0; });
+          tMatches.forEach(m => {
+            if (m.team_a_score == null || m.team_b_score == null) return;
+            const add = (pid, pts) => { totals[pid] = (totals[pid] || 0) + pts; };
+            add(m.team_a_p1, m.team_a_score); add(m.team_a_p2, m.team_a_score);
+            add(m.team_b_p1, m.team_b_score); add(m.team_b_p2, m.team_b_score);
+          });
+          let bestPart = null, bestPts = -1;
+          tParts.forEach(p => { const pts = totals[p.id] || 0; if (pts > bestPts) { bestPts = pts; bestPart = p; } });
+          if (!bestPart) return null;
+          const leaderboard = tParts.map(p => ({ name: p.display_name, points: totals[p.id] || 0, userId: p.user_id, avatar: avatarMap[String(p.user_id)] || '🎾' })).sort((a, b) => b.points - a.points);
+          return { type: 'americano_winner', userId: bestPart.user_id, name: bestPart.display_name, points: bestPts, tournamentName: t.name, tournamentId: t.id, leaderboard, avatar: avatarMap[String(bestPart.user_id)] || '🏆', created_at: t.updated_at || t.tournament_date };
+        }).filter(Boolean);
+        setAmericanoFeed(items);
+      } else {
+        setAmericanoFeed([]);
+      }
+    } catch (e) {
+      console.warn('Americano feed error:', e);
+      setAmericanoFeed([]);
+    }
+
+    // Completed leagues feed
+    try {
+      const { data: completedLeagues } = await supabase
+        .from('leagues')
+        .select('id, name, updated_at')
+        .eq('status', 'completed')
+        .order('updated_at', { ascending: false })
+        .limit(5);
+      if (!completedLeagues?.length) { setLigaFeed([]); return; }
+      const lIds = completedLeagues.map(l => l.id);
+      const [{ data: teamsData }, { data: matchData }] = await Promise.all([
+        supabase.from('league_teams').select('id, league_id, name, player1_id, player1_name, player1_avatar, player2_id, player2_name, player2_avatar').eq('status', 'ready').in('league_id', lIds),
+        supabase.from('league_matches').select('league_id, team1_id, team2_id, winner_id, score_text').eq('status', 'reported').in('league_id', lIds),
+      ]);
+      const items = completedLeagues.map(l => {
+        const lTeams = (teamsData || []).filter(t => t.league_id === l.id);
+        const lMs = (matchData || []).filter(m => m.league_id === l.id);
+        const map = {};
+        for (const t of lTeams) map[t.id] = { ...t, points: 0, wins: 0, losses: 0 };
+        for (const m of lMs) {
+          if (!m.winner_id) continue;
+          const winner = map[m.winner_id];
+          const loserId = m.winner_id === m.team1_id ? m.team2_id : m.team1_id;
+          const loser = loserId ? map[loserId] : null;
+          const tb = m.score_text && /7-6|6-7/.test(m.score_text);
+          if (winner) { winner.wins++; winner.points += 3; }
+          if (loser) { loser.losses++; if (tb) loser.points += 1; }
+        }
+        const standings = Object.values(map).sort((a, b) => b.points - a.points);
+        if (!standings.length) return null;
+        return { type: 'liga_completed', leagueId: l.id, leagueName: l.name, champion: standings[0], standings, created_at: l.updated_at };
+      }).filter(Boolean);
+      setLigaFeed(items);
+    } catch (e) {
+      console.warn('Liga feed error:', e);
+      setLigaFeed([]);
+    }
   }, []);
 
   useEffect(() => {
@@ -47,6 +191,21 @@ export function HomeTab({ user, setTab }) {
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [fetchFeed]);
+
+  const formatTimeAgo = (iso) => {
+    if (!iso) return "";
+    const dt = DateTime.fromISO(iso).setLocale("da");
+    if (!dt.isValid) return "";
+    
+    // Hvis det er over en uge siden, vis bare datoen
+    if (Math.abs(dt.diffNow('days').days) > 7) {
+      return dt.toFormat('d. MMM');
+    }
+    
+    const rel = dt.toRelative();
+    // Gør første bogstav stort hvis nødvendigt
+    return rel ? rel.charAt(0).toUpperCase() + rel.slice(1) : "";
+  };
 
   const actions = [
     { icon: <Users   size={20} color={theme.accent} />, title: "Find en makker", desc: "Se ledige spillere",  tab: "makkere" },
@@ -95,37 +254,172 @@ export function HomeTab({ user, setTab }) {
       )}
 
       {/* Aktivitetsfeed */}
-      {feed.length > 0 && (
+      {(feed.length > 0 || americanoFeed.length > 0 || ligaFeed.length > 0) && (
         <div style={{ marginBottom: "24px" }}>
           <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
             Seneste aktivitet
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            {feed.map((row, i) => {
-              const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
-              const avatar = row.profiles?.avatar || "🎾";
-              const won = row.result === "win";
-              const change = Number(row.change) || 0;
-              return (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.surface, borderRadius: "8px", padding: "9px 12px", border: "1px solid " + theme.border }}>
-                  <AvatarCircle
-                    avatar={avatar}
-                    size={40}
-                    emojiSize="26px"
-                    style={{
-                      background: "#F1F5F9",
-                      border: "1px solid " + theme.border,
-                    }}
-                  />
-                  <span style={{ fontSize: "13px", color: theme.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    <strong>{name}</strong> {won ? "vandt" : "tabte"}
-                  </span>
-                  <span style={{ fontSize: "12px", fontWeight: 700, flexShrink: 0, color: change >= 0 ? theme.accent : theme.red }}>
-                    {change >= 0 ? "+" : ""}{change} ELO
-                  </span>
-                </div>
-              );
-            })}
+            {/* Merge and sort all feeds by date */}
+            {[...feed, ...americanoFeed, ...ligaFeed]
+              .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+              .slice(0, 15)
+              .map((row, i) => {
+                if (row.type === 'americano_winner') {
+                  return (
+                    <div
+                      key={`am-${i}`}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "10px",
+                        background: "linear-gradient(135deg, #FFFBEB, #FEF3C7)",
+                        borderRadius: "8px", padding: "8px 12px",
+                        border: "1.5px solid #F59E0B",
+                        position: "relative"
+                      }}
+                    >
+                      <div 
+                        onClick={() => setViewPlayer({ id: row.userId, name: row.name })}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <AvatarCircle
+                          avatar={row.avatar}
+                          size={38}
+                          emojiSize="24px"
+                          style={{ background: "#FEF3C7", border: "1.5px solid #F59E0B" }}
+                        />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <span 
+                            onClick={() => setViewPlayer({ id: row.userId, name: row.name })}
+                            style={{ cursor: "pointer", fontWeight: 700 }}
+                          >
+                            {row.name}
+                          </span> vandt Americano
+                        </div>
+                        {row.tournamentName && (
+                          <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            &ldquo;{row.tournamentName}&rdquo; · {formatTimeAgo(row.created_at)}
+                          </div>
+                        )}
+                      </div>
+                      <button 
+                        onClick={() => setViewTournament(row)}
+                        style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#F59E0B", color: "#92400E" }}
+                      >
+                        Se resultat
+                      </button>
+                    </div>
+                  );
+                }
+
+                if (row.type === 'liga_completed') {
+                  const c = row.champion;
+                  return (
+                    <div key={`liga-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #EFF6FF, #DBEAFE)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #3B82F6" }}>
+                      {/* Overlapping avatars for winning team */}
+                      <div style={{ display: "flex", position: "relative", width: "46px", height: "34px", flexShrink: 0 }}>
+                        <AvatarCircle avatar={c.player1_avatar} size={30} emojiSize="15px" style={{ background: "#DBEAFE", border: "2px solid #fff", position: "absolute", left: 0, top: 2, zIndex: 2 }} />
+                        <AvatarCircle avatar={c.player2_avatar} size={30} emojiSize="15px" style={{ background: "#DBEAFE", border: "2px solid #fff", position: "absolute", left: 16, top: 2, zIndex: 1 }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <span style={{ fontWeight: 700 }}>{c.name}</span> vandt ligaen 🏆
+                        </div>
+                        <div style={{ fontSize: "11px", color: "#1E40AF", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          &ldquo;{row.leagueName}&rdquo; · {formatTimeAgo(row.created_at)}
+                        </div>
+                      </div>
+                      <button onClick={() => setViewLeague(row)} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#3B82F6", color: "#1E40AF", flexShrink: 0 }}>
+                        Se resultat
+                      </button>
+                    </div>
+                  );
+                }
+
+                if (row.type === 'match_group') {
+                  const winners = row.players.filter(p => p.win);
+                  const losers = row.players.filter(p => !p.win);
+                  return (
+                    <div key={`match-${i}`} style={{ background: theme.surface, borderRadius: "10px", padding: "8px 14px", border: "1px solid " + theme.border, boxShadow: "0 2px 8px rgba(0,0,0,0.03)", position: "relative", overflow: "hidden" }}>
+                      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: "#10B981" }} />
+                      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "3px", background: theme.red }} />
+                      {/* Venue Header - Centered */}
+                      <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>
+                        <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: "4px", background: "#F8FAFC", padding: "2px 8px", borderRadius: "14px", border: "1px solid #F1F5F9" }}>
+                          <MapPin size={9} /> {row.court} · {formatTimeAgo(row.created_at)}
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        {/* Winners (Left) */}
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                          {winners.map((p, idx) => (
+                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <div onClick={() => setViewPlayer(p)} style={{ cursor: "pointer" }}>
+                                <AvatarCircle avatar={p.avatar} size={32} emojiSize="18px" />
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div onClick={() => setViewPlayer(p)} style={{ fontSize: "13px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "pointer" }}>{p.name.split(' ')[0]}</div>
+                                <div style={{ fontSize: "10px", color: "#10B981", fontWeight: 800 }}>+{p.change} ELO</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Score (Center) */}
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 8px", minWidth: "70px" }}>
+                          <div style={{ fontSize: "20px", fontWeight: 900, color: theme.accent, letterSpacing: "0.02em", whiteSpace: "nowrap" }}>{row.score}</div>
+                          <div style={{ fontSize: "8px", fontWeight: 800, color: theme.textLight, marginTop: "2px", background: "#F1F5F9", padding: "1px 6px", borderRadius: "8px", letterSpacing: "0.1em" }}>VS</div>
+                        </div>
+
+                        {/* Losers (Right) */}
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-end" }}>
+                          {losers.map((p, idx) => (
+                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", flexDirection: "row-reverse" }}>
+                              <div onClick={() => setViewPlayer(p)} style={{ cursor: "pointer" }}>
+                                <AvatarCircle avatar={p.avatar} size={32} emojiSize="18px" />
+                              </div>
+                              <div style={{ minWidth: 0, textAlign: "right" }}>
+                                <div onClick={() => setViewPlayer(p)} style={{ fontSize: "13px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "pointer" }}>{p.name.split(' ')[0]}</div>
+                                <div style={{ fontSize: "10px", color: theme.red, fontWeight: 800 }}>{p.change} ELO</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {row.description && (
+                        <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: "1px dashed #F1F5F9", fontSize: "11px", color: theme.textMid, fontStyle: "italic", textAlign: "center" }}>
+                          &ldquo;{row.description}&rdquo;
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Individual ELO row (fallback)
+                const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
+                const avatar = row.profiles?.avatar || "🎾";
+                const won = row.result === "win";
+                const change = Number(row.change) || 0;
+                return (
+                  <div key={`elo-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.surface, borderRadius: "8px", padding: "9px 12px", border: "1px solid " + theme.border }}>
+                    <AvatarCircle
+                      avatar={avatar}
+                      size={40}
+                      emojiSize="26px"
+                      style={{ background: "#F1F5F9", border: "1px solid " + theme.border }}
+                    />
+                    <span style={{ fontSize: "13px", color: theme.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <strong>{name}</strong> {won ? "vandt" : "tabte"}
+                    </span>
+                    <span style={{ fontSize: "12px", fontWeight: 700, flexShrink: 0, color: change >= 0 ? theme.accent : theme.red }}>
+                      {change >= 0 ? "+" : ""}{change} ELO
+                    </span>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
@@ -142,6 +436,98 @@ export function HomeTab({ user, setTab }) {
           </button>
         ))}
       </div>
+
+      {/* Modals */}
+      {viewTournament && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} onClick={() => setViewTournament(null)}>
+          <div style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "400px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Americano Resultat</div>
+                <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewTournament.tournamentName}</h3>
+              </div>
+              <button onClick={() => setViewTournament(null)} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} /></button>
+            </div>
+            
+            <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
+              {viewTournament.leaderboard.map((p, idx) => {
+                const rank = idx + 1;
+                const isWinner = rank === 1;
+                const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+                
+                return (
+                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isWinner ? "#FFFBEB" : theme.surface, borderRadius: "10px", border: "1px solid " + (isWinner ? "#F59E0B" : theme.border) }}>
+                    <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isWinner ? "#B45309" : theme.textLight, textAlign: "center" }}>
+                      {rankIcon || rank}
+                    </div>
+                    <AvatarCircle avatar={p.avatar} size={36} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                    </div>
+                    <div style={{ fontSize: "15px", fontWeight: 800, color: isWinner ? "#B45309" : theme.text }}>
+                      {p.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
+              <button onClick={() => setViewTournament(null)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewPlayer && (
+        <PlayerStatsModal
+          userId={viewPlayer.id}
+          fallbackName={viewPlayer.name}
+          onClose={() => setViewPlayer(null)}
+        />
+      )}
+
+      {viewLeague && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} onClick={() => setViewLeague(null)}>
+          <div style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "400px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <div style={{ fontSize: "10px", color: "#2563EB", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Ligaresultat</div>
+                <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewLeague.leagueName}</h3>
+              </div>
+              <button onClick={() => setViewLeague(null)} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} /></button>
+            </div>
+            <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
+              {viewLeague.standings.map((t, idx) => {
+                const rankIcon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null;
+                const isChamp = idx === 0;
+                return (
+                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: isChamp ? "#EFF6FF" : theme.surface, borderRadius: "10px", border: "1px solid " + (isChamp ? "#3B82F6" : theme.border) }}>
+                    <div style={{ width: "24px", fontSize: "14px", fontWeight: 800, color: isChamp ? "#1D4ED8" : theme.textLight, textAlign: "center", flexShrink: 0 }}>
+                      {rankIcon || idx + 1}
+                    </div>
+                    <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+                      <AvatarCircle avatar={t.player1_avatar} size={28} emojiSize="13px" style={{ background: "#DBEAFE", border: "1px solid #BFDBFE" }} />
+                      <AvatarCircle avatar={t.player2_avatar} size={28} emojiSize="13px" style={{ background: "#DBEAFE", border: "1px solid #BFDBFE" }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{t.player1_name} & {t.player2_name}</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: isChamp ? "#1D4ED8" : theme.text }}>{t.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span></div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>{t.wins}W · {t.losses}L</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
+              <button onClick={() => setViewLeague(null)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

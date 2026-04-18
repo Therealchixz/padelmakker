@@ -4,11 +4,6 @@ import { theme } from '../lib/platformTheme';
 export function TermsPage() {
   return (
     <LegalPageLayout title="Handelsbetingelser">
-      <p style={{ marginTop: 0, fontSize: '13px', color: theme.textLight }}>
-        Senest opdateret: april 2026. Disse vilkår regulerer brugen af PadelMakker som digital tjeneste. De bør gennemgås af juridisk
-        rådgiver før endelig publicering.
-      </p>
-
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '24px 0 12px' }}>Accept</h2>
       <p style={{ color: theme.textMid }}>
         Ved at oprette konto eller bruge tjenesten accepterer du disse betingelser. Hvis du ikke accepterer dem, må du ikke bruge
