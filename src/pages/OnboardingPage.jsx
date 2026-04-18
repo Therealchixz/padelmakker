@@ -107,8 +107,6 @@ export function OnboardingPage() {
     }
   };
 
-  const selBtn = (active) => ({ ...btn(active), textAlign: "left", padding: "11px 16px" });
-
   const steps = [
     <div key={0}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Velkommen! 👋</h2>
