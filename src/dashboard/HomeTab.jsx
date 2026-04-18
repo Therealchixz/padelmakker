@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { Users, MapPin, Swords, Trophy, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PlayerStatsModal } from '../components/PlayerStatsModal';
+import { levelLabel } from '../lib/platformConstants';
 
 export function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
@@ -26,6 +27,11 @@ export function HomeTab({ user, setTab }) {
   const [feed, setFeed] = useState([]);
   const [americanoFeed, setAmericanoFeed] = useState([]);
   const [ligaFeed, setLigaFeed] = useState([]);
+  const [openMatchFeed, setOpenMatchFeed] = useState([]);
+  const [americanoRegFeed, setAmericanoRegFeed] = useState([]);
+  const [milestoneFeed, setMilestoneFeed] = useState([]);
+  const [seekingFeed, setSeekingFeed] = useState([]);
+  const [leagueNewFeed, setLeagueNewFeed] = useState([]);
   const [viewLeague, setViewLeague] = useState(null);
 
   const fetchFeed = useCallback(async () => {
@@ -172,7 +178,85 @@ export function HomeTab({ user, setTab }) {
       console.warn('Liga feed error:', e);
       setLigaFeed([]);
     }
-  }, []);
+
+    // New feed types — run in parallel
+    try {
+      const [
+        { data: openMatchesData },
+        { data: americanoRegData },
+        { data: milestoneData },
+        { data: seekingData },
+        { data: newLeaguesData },
+      ] = await Promise.all([
+        supabase.from('matches').select('id, creator_id, date, court_name, created_at').eq('status', 'open').gte('date', new Date().toISOString().split('T')[0]).order('created_at', { ascending: false }).limit(5),
+        supabase.from('americano_tournaments').select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration').order('created_at', { ascending: false }).limit(5),
+        supabase.from('elo_history').select('user_id, old_rating, new_rating, created_at, profiles(full_name, name, avatar)').not('old_rating', 'is', null).not('new_rating', 'is', null).order('created_at', { ascending: false, nullsFirst: false }).limit(150),
+        supabase.from('profiles').select('id, full_name, name, avatar, level, area, intent_now, updated_at').eq('seeking_match', true).order('updated_at', { ascending: false }).limit(5),
+        supabase.from('leagues').select('id, name, status, created_at').in('status', ['registration', 'active']).order('created_at', { ascending: false }).limit(5),
+      ]);
+
+      // Open matches
+      if (openMatchesData?.length) {
+        const creatorIds = [...new Set(openMatchesData.map(m => m.creator_id))];
+        const { data: creatorProfiles } = await supabase.from('profiles').select('id, full_name, name, avatar').in('id', creatorIds);
+        const pMap = {};
+        (creatorProfiles || []).forEach(p => { pMap[p.id] = p; });
+        setOpenMatchFeed(openMatchesData.map(m => {
+          const p = pMap[m.creator_id] || {};
+          return { type: 'open_match', matchId: m.id, creatorName: p.full_name || p.name || 'En spiller', creatorAvatar: p.avatar || '🎾', creatorId: m.creator_id, date: m.date, court: m.court_name || 'Ukendt bane', created_at: m.created_at };
+        }));
+      }
+
+      // Americano under tilmelding
+      if (americanoRegData?.length) {
+        const regIds = americanoRegData.map(t => t.id);
+        const { data: regParts } = await supabase.from('americano_participants').select('tournament_id').in('tournament_id', regIds);
+        const counts = {};
+        (regParts || []).forEach(p => { counts[p.tournament_id] = (counts[p.tournament_id] || 0) + 1; });
+        setAmericanoRegFeed(americanoRegData.map(t => ({ type: 'americano_registration', tournamentId: t.id, name: t.name, date: t.tournament_date, time: t.time_slot, slots: t.player_slots, participants: counts[t.id] || 0, created_at: t.created_at })));
+      }
+
+      // ELO-milepæle
+      if (milestoneData?.length) {
+        const MILESTONES = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
+        const items = [];
+        const seen = new Set();
+        for (const r of milestoneData) {
+          const oldR = Number(r.old_rating || 0);
+          const newR = Number(r.new_rating || 0);
+          const milestone = MILESTONES.find(m => oldR < m && newR >= m);
+          if (!milestone) continue;
+          const key = `${r.user_id}-${milestone}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          items.push({ type: 'elo_milestone', userId: r.user_id, name: r.profiles?.full_name || r.profiles?.name || 'En spiller', avatar: r.profiles?.avatar || '🎾', milestone, created_at: r.created_at });
+          if (items.length >= 3) break;
+        }
+        setMilestoneFeed(items);
+      }
+
+      // Spillere der søger makker
+      if (seekingData?.length) {
+        setSeekingFeed(
+          seekingData
+            .filter(p => String(p.id) !== String(user.id))
+            .slice(0, 3)
+            .map(p => ({ type: 'seeking_player', userId: p.id, name: p.full_name || p.name || 'En spiller', avatar: p.avatar || '🎾', level: p.level, area: p.area, intent: p.intent_now, created_at: p.updated_at }))
+        );
+      }
+
+      // Nye ligaer
+      if (newLeaguesData?.length) {
+        const leagueIds = newLeaguesData.map(l => l.id);
+        const { data: teams } = await supabase.from('league_teams').select('league_id').in('league_id', leagueIds).eq('status', 'ready');
+        const teamCounts = {};
+        (teams || []).forEach(t => { teamCounts[t.league_id] = (teamCounts[t.league_id] || 0) + 1; });
+        setLeagueNewFeed(newLeaguesData.map(l => ({ type: 'league_new', leagueId: l.id, leagueName: l.name, status: l.status, teamCount: teamCounts[l.id] || 0, created_at: l.created_at })));
+      }
+    } catch (e) {
+      console.warn('Extended feed error:', e);
+    }
+  }, [user.id]);
 
   useEffect(() => {
     fetchFeed();
@@ -254,14 +338,14 @@ export function HomeTab({ user, setTab }) {
       )}
 
       {/* Aktivitetsfeed */}
-      {(feed.length > 0 || americanoFeed.length > 0 || ligaFeed.length > 0) && (
+      {(feed.length > 0 || americanoFeed.length > 0 || ligaFeed.length > 0 || openMatchFeed.length > 0 || americanoRegFeed.length > 0 || milestoneFeed.length > 0 || seekingFeed.length > 0 || leagueNewFeed.length > 0) && (
         <div style={{ marginBottom: "24px" }}>
           <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
             Seneste aktivitet
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {/* Merge and sort all feeds by date */}
-            {[...feed, ...americanoFeed, ...ligaFeed]
+            {[...feed, ...americanoFeed, ...ligaFeed, ...openMatchFeed, ...americanoRegFeed, ...milestoneFeed, ...seekingFeed, ...leagueNewFeed]
               .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
               .slice(0, 15)
               .map((row, i) => {
@@ -332,6 +416,93 @@ export function HomeTab({ user, setTab }) {
                       </div>
                       <button onClick={() => setViewLeague(row)} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#3B82F6", color: "#1E40AF", flexShrink: 0 }}>
                         Se resultat
+                      </button>
+                    </div>
+                  );
+                }
+
+                if (row.type === 'open_match') {
+                  const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
+                  return (
+                    <div key={`open-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #ECFDF5, #D1FAE5)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #10B981" }}>
+                      <div onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })} style={{ cursor: "pointer" }}>
+                        <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: "#D1FAE5", border: "1.5px solid #10B981" }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })}>{row.creatorName}</span> søger medspillere
+                        </div>
+                        <div style={{ fontSize: "11px", color: "#065F46", marginTop: "1px" }}>{dateStr} · {row.court}</div>
+                      </div>
+                      <button onClick={() => setTab('kampe')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#10B981", color: "#065F46", flexShrink: 0 }}>Se kamp</button>
+                    </div>
+                  );
+                }
+
+                if (row.type === 'americano_registration') {
+                  const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
+                  return (
+                    <div key={`amreg-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #FFFBEB, #FEF9C3)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #EAB308" }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#FEF3C7", border: "1.5px solid #EAB308", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>
+                        <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px" }}>
+                          {dateStr}{row.time ? ` · ${row.time}` : ''} · {row.participants}/{row.slots} tilmeldt
+                        </div>
+                      </div>
+                      <button onClick={() => setTab('kampe')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#EAB308", color: "#92400E", flexShrink: 0 }}>Tilmeld</button>
+                    </div>
+                  );
+                }
+
+                if (row.type === 'elo_milestone') {
+                  return (
+                    <div key={`milestone-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #F5F3FF, #EDE9FE)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #7C3AED" }}>
+                      <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
+                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: "#EDE9FE", border: "1.5px solid #7C3AED" }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.userId, name: row.name })}>{row.name}</span> nåede {row.milestone} ELO 🎯
+                        </div>
+                        <div style={{ fontSize: "11px", color: "#5B21B6", marginTop: "1px" }}>{formatTimeAgo(row.created_at)}</div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (row.type === 'seeking_player') {
+                  const levelStr = row.level ? levelLabel(row.level) : null;
+                  const sub = [row.area, levelStr].filter(Boolean).join(' · ');
+                  return (
+                    <div key={`seek-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #F0F9FF, #E0F2FE)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #0EA5E9" }}>
+                      <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
+                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: "#E0F2FE", border: "1.5px solid #0EA5E9" }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.userId, name: row.name })}>{row.name}</span> søger makker
+                        </div>
+                        {sub && <div style={{ fontSize: "11px", color: "#0369A1", marginTop: "1px" }}>{sub}</div>}
+                      </div>
+                      <button onClick={() => setTab('makkere')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#0EA5E9", color: "#0369A1", flexShrink: 0 }}>Se profil</button>
+                    </div>
+                  );
+                }
+
+                if (row.type === 'league_new') {
+                  const isReg = row.status === 'registration';
+                  return (
+                    <div key={`lnew-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #EFF6FF, #DBEAFE)", borderRadius: "8px", padding: "8px 12px", border: "1.5px solid #3B82F6" }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#DBEAFE", border: "1.5px solid #3B82F6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.leagueName}</div>
+                        <div style={{ fontSize: "11px", color: "#1E40AF", marginTop: "1px" }}>
+                          {isReg ? 'Tilmelding åben' : 'I gang'} · {row.teamCount} hold · {formatTimeAgo(row.created_at)}
+                        </div>
+                      </div>
+                      <button onClick={() => setTab('liga')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#3B82F6", color: "#1E40AF", flexShrink: 0 }}>
+                        {isReg ? 'Tilmeld' : 'Se liga'}
                       </button>
                     </div>
                   );
