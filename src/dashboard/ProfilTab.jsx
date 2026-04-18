@@ -153,12 +153,35 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
                 <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{displayName}</div>
-                <button
-                  onClick={() => { setForm(profileFormState(user)); setEditing(true); }}
-                  style={{ ...btn(false), padding: "5px 10px", fontSize: "12px", color: theme.textMid, background: theme.surfaceAlt, borderColor: theme.border, flexShrink: 0 }}
-                >
-                  <Settings size={12} /> Rediger
-                </button>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px", flexShrink: 0 }}>
+                  <button
+                    onClick={() => { setForm(profileFormState(user)); setEditing(true); }}
+                    style={{ ...btn(false), padding: "5px 10px", fontSize: "12px", color: theme.textMid, background: theme.surfaceAlt, borderColor: theme.border }}
+                  >
+                    <Settings size={12} /> Rediger
+                  </button>
+                  {onDarkModeChange && (
+                    <button
+                      onClick={() => onDarkModeChange(d => !d)}
+                      title={dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
+                      style={{
+                        width: 46, height: 26, borderRadius: 13, border: "none", cursor: "pointer", flexShrink: 0,
+                        background: dark ? "#1e293b" : "#d1d5db",
+                        position: "relative", transition: "background 0.25s",
+                        boxShadow: dark ? "inset 0 2px 4px rgba(0,0,0,0.5)" : "inset 0 2px 4px rgba(0,0,0,0.15)",
+                        padding: 0,
+                      }}
+                    >
+                      <div style={{
+                        position: "absolute", top: 3, left: dark ? 23 : 3,
+                        width: 20, height: 20, borderRadius: "50%",
+                        background: dark ? "#475569" : "#f9fafb",
+                        transition: "left 0.25s",
+                        boxShadow: dark ? "0 1px 4px rgba(0,0,0,0.6)" : "0 1px 4px rgba(0,0,0,0.25)",
+                      }} />
+                    </button>
+                  )}
+                </div>
               </div>              <div style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
               <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
                 {!statsLoading && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
@@ -191,22 +214,6 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
               <div style={{ position: 'absolute', top: 3, left: user.seeking_match ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
             </button>
           </div>
-
-          {/* Mørk tilstand toggle */}
-          {onDarkModeChange && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: theme.surfaceAlt, border: "1px solid " + theme.border, borderRadius: 10, padding: "10px 14px", marginBottom: 16 }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>🌙 Mørk tilstand</div>
-                <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Skifter appen til mørkt udseende.</div>
-              </div>
-              <button
-                onClick={() => onDarkModeChange(d => !d)}
-                style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", background: dark ? theme.accent : theme.border, position: "relative", transition: "background 0.2s", flexShrink: 0 }}
-              >
-                <div style={{ position: "absolute", top: 3, left: dark ? 23 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
-              </button>
-            </div>
-          )}
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading ? (
