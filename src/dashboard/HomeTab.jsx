@@ -185,7 +185,7 @@ export function HomeTab({ user, setTab }) {
       supabase.from('matches').select('id, creator_id, date, court_name, created_at').eq('status', 'open').gte('date', new Date().toISOString().split('T')[0]).order('created_at', { ascending: false }).limit(5),
       supabase.from('americano_tournaments').select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration').order('created_at', { ascending: false }).limit(5),
       supabase.from('elo_history').select('user_id, old_rating, new_rating, created_at, profiles(full_name, name, avatar)').not('old_rating', 'is', null).not('new_rating', 'is', null).order('created_at', { ascending: false, nullsFirst: false }).limit(150),
-      supabase.from('profiles').select('id, full_name, name, avatar, level, area, intent_now, last_active_at').eq('seeking_match', true).order('last_active_at', { ascending: false, nullsFirst: false }).limit(5),
+      supabase.from('profiles').select('id, full_name, name, avatar, level, area, intent_now, last_active_at').eq('seeking_match', true).gt('last_active_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()).order('last_active_at', { ascending: false, nullsFirst: false }).limit(5),
       supabase.from('leagues').select('id, name, status, created_at').in('status', ['registration', 'active']).order('created_at', { ascending: false }).limit(5),
     ]);
     try {
@@ -485,7 +485,7 @@ export function HomeTab({ user, setTab }) {
                         </div>
                         {sub && <div style={{ fontSize: "11px", color: "#0369A1", marginTop: "1px" }}>{sub}</div>}
                       </div>
-                      <button onClick={() => setTab('makkere')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#0EA5E9", color: "#0369A1", flexShrink: 0 }}>Se profil</button>
+                      <button onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#0EA5E9", color: "#0369A1", flexShrink: 0 }}>Se profil</button>
                     </div>
                   );
                 }

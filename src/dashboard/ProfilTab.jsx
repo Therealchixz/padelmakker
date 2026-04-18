@@ -170,7 +170,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: user.seeking_match ? '#FFFBEB' : '#F8FAFC', border: '1px solid ' + (user.seeking_match ? '#F59E0B' : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>⚡ Søger kamp nu</div>
-              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Vis mig i feedet hos andre spillere</div>
+              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Vises i andres feed. Forsvinder automatisk hvis du ikke har været aktiv i 24 timer.</div>
             </div>
             <button
               onClick={async () => {
