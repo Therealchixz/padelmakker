@@ -143,7 +143,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {/* Profile card */}
         <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
-          <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "20px" }}>
+          <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", marginBottom: "20px" }}>
             <AvatarCircle
               avatar={user.avatar}
               size={64}
@@ -151,8 +151,15 @@ export function ProfilTab({ user, showToast, setTab }) {
               style={{ background: theme.accentBg, border: "2px solid " + theme.accent + "40" }}
             />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{displayName}</div>
-              <div style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{displayName}</div>
+                <button
+                  onClick={() => { setForm(profileFormState(user)); setEditing(true); }}
+                  style={{ ...btn(false), padding: "5px 10px", fontSize: "12px", color: theme.textMid, background: "#F1F5F9", borderColor: theme.border, flexShrink: 0 }}
+                >
+                  <Settings size={12} /> Rediger
+                </button>
+              </div>              <div style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
               <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
                 {!statsLoading && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
                 {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
@@ -255,9 +262,6 @@ export function ProfilTab({ user, showToast, setTab }) {
             );
           })()}
 
-          <button onClick={() => { setForm(profileFormState(user)); setEditing(true); }} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
-            <Settings size={14} /> Rediger profil
-          </button>
         </div>
 
         {/* ELO over tid */}
