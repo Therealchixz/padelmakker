@@ -166,9 +166,118 @@ const TEAM_PALETTE = [
   'oklch(0.55 0.14 195)',
 ];
 
+function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, onOpenProfile }) {
+  const t1 = teamMap[match.team1_id];
+  const t2 = match.team2_id ? teamMap[match.team2_id] : null;
+  const reported = match.status === 'reported';
+  const t1Stats = prevStats[match.team1_id] || { wins: 0, losses: 0 };
+  const t2Stats = match.team2_id ? (prevStats[match.team2_id] || { wins: 0, losses: 0 }) : null;
+  const t1Wins = reported && (match.winner_id === match.team1_id || !match.team2_id);
+  const t2Wins = reported && !!t2 && match.winner_id === match.team2_id;
+
+  let t1Score = '—', t2Score = '—';
+  if (reported && match.score_text) {
+    const sp = match.score_text.match(/^(\d+)-(\d+)$/);
+    if (sp) {
+      const ws = Math.max(+sp[1], +sp[2]), ls = Math.min(+sp[1], +sp[2]);
+      t1Score = String(t1Wins ? ws : ls);
+      t2Score = String(t2Wins ? ws : ls);
+    }
+  }
+
+  const winner = t1Wins ? t1 : t2Wins ? t2 : null;
+  const statusLabel = !t2 ? 'Fri runde' : !reported ? 'Planlagt' : 'Afsluttet';
+  const resultLabel = !t2 ? `${t1?.name} — fri runde (automatisk sejr)` : !reported ? '—' : `${winner?.name} vinder ${Math.max(+t1Score || 0, +t2Score || 0)}–${Math.min(+t1Score || 0, +t2Score || 0)}`;
+
+  const DotName = ({ teamId, name }) => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+      <span style={{ width: 20, height: 20, borderRadius: '50%', background: teamColors[teamId] || '#94A3B8', display: 'inline-grid', placeItems: 'center', fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
+        {name?.slice(0, 1).toUpperCase()}
+      </span>
+      <span style={{ fontFamily: 'system-ui', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em' }}>{name}</span>
+    </span>
+  );
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'grid', placeItems: 'center', padding: '20px', animation: 'fadein .2s ease' }}
+    >
+      <style>{`@keyframes fadein{from{opacity:0}to{opacity:1}}@keyframes popin{from{opacity:0;transform:translateY(10px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>
+      <div onClick={e => e.stopPropagation()}
+        style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '520px', boxShadow: '0 8px 24px rgba(0,0,0,0.08),0 24px 60px rgba(0,0,0,0.08)', overflow: 'hidden', animation: 'popin .24s cubic-bezier(.2,.9,.3,1)' }}
+      >
+        {/* Header */}
+        <div style={{ padding: '22px 26px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#94A3B8', fontWeight: 600 }}>
+            Runde {rn}
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '8px', border: '1px solid #E2E8F0', background: '#F8FAFC', color: '#64748B', cursor: 'pointer', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+            ×
+          </button>
+        </div>
+
+        {/* Score section */}
+        <div style={{ padding: '10px 26px 26px' }}>
+          {!t2 ? (
+            <div style={{ padding: '20px 0', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>
+              <DotName teamId={t1?.id} name={t1?.name} />
+              <div style={{ marginTop: '8px', fontSize: '12px', color: '#94A3B8' }}>{t1?.player1_name} · {t1?.player2_name}</div>
+              <div style={{ marginTop: '14px', fontSize: '13px', color: '#64748B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fri runde</div>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '16px', padding: '20px 0', borderBottom: '1px solid #E2E8F0' }}>
+              {/* Team 1 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', opacity: reported && !t1Wins ? 0.45 : 1 }}>
+                <DotName teamId={t1?.id} name={t1?.name} />
+                <div style={{ fontSize: '12px', color: '#94A3B8' }}>
+                  {[t1?.player1_name, t1?.player2_name].filter(Boolean).join(' · ')}
+                </div>
+                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t1Wins ? '#0F172A' : '#94A3B8', marginTop: '6px' }}>
+                  {t1Score}
+                </div>
+              </div>
+              {/* VS */}
+              <div style={{ color: '#94A3B8', fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '18px', alignSelf: 'center' }}>vs</div>
+              {/* Team 2 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end', textAlign: 'right', opacity: reported && !t2Wins ? 0.45 : 1 }}>
+                <DotName teamId={t2?.id} name={t2?.name} />
+                <div style={{ fontSize: '12px', color: '#94A3B8' }}>
+                  {[t2?.player1_name, t2?.player2_name].filter(Boolean).join(' · ')}
+                </div>
+                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t2Wins ? '#0F172A' : '#94A3B8', marginTop: '6px' }}>
+                  {t2Score}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Info table */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '16px', fontSize: '13px' }}>
+            <tbody>
+              {[
+                ['Runde', `Runde ${rn}`],
+                ['Status', statusLabel],
+                ['Resultat', resultLabel],
+                t2 && ['Records før', `${t1Stats.wins}W-${t1Stats.losses}L · ${t2Stats?.wins}W-${t2Stats?.losses}L`],
+              ].filter(Boolean).map(([label, value]) => (
+                <tr key={label} style={{ borderTop: '1px solid #E2E8F0' }}>
+                  <td style={{ padding: '10px 0', color: '#94A3B8', fontSize: '12px' }}>{label}</td>
+                  <td style={{ padding: '10px 0', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, monospace', color: '#0F172A' }}>{value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpenProfile }) {
   const [open, setOpen] = useState(false);
   const [highlightTeam, setHighlightTeam] = useState(null);
+  const [selectedMatch, setSelectedMatch] = useState(null);
   const bracketRef = useRef(null);
   const [connectors, setConnectors] = useState([]);
   const [svgSize, setSvgSize] = useState({ w: 0, h: 0 });
@@ -432,12 +541,14 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
 
                         return (
                           <div key={match.id} data-match-id={match.id}
+                            onClick={() => setSelectedMatch({ match, rn, prevStats })}
                             style={{
                               background: '#fff',
                               border: '1px solid ' + (isMyMatch ? theme.accent + '60' : '#E2E8F0'),
                               borderRadius: '12px', padding: '10px 12px',
-                              display: 'grid', gap: '6px',
+                              display: 'grid', gap: '6px', cursor: 'pointer',
                               boxShadow: isMyMatch ? '0 0 0 3px ' + theme.accentBg : '0 1px 2px rgba(0,0,0,0.04)',
+                              transition: 'border-color .18s, box-shadow .18s, transform .18s',
                             }}
                           >
                             {!t2 ? (
@@ -483,6 +594,19 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
             </div>
           </div>
         </div>
+      )}
+
+      {/* Match detail modal */}
+      {selectedMatch && (
+        <MatchDetailModal
+          match={selectedMatch.match}
+          rn={selectedMatch.rn}
+          teamMap={teamMap}
+          teamColors={teamColors}
+          prevStats={selectedMatch.prevStats}
+          onClose={() => setSelectedMatch(null)}
+          onOpenProfile={onOpenProfile}
+        />
       )}
     </div>
   );
