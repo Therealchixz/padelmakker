@@ -124,7 +124,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
   useEffect(() => {
     if (!moreOpen) return;
     const rect = moreBtnRef.current?.getBoundingClientRect();
-    if (rect) setMorePos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    if (rect) {
+      const left = Math.min(rect.left, window.innerWidth - 170);
+      setMorePos({ top: rect.bottom + 4, left });
+    }
     const handler = (e) => {
       if (moreBtnRef.current?.contains(e.target) || moreDropRef.current?.contains(e.target)) return;
       setMoreOpen(false);
@@ -207,7 +210,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         </button>
 
         {moreOpen && morePos && createPortal(
-          <div ref={moreDropRef} style={{ position: "fixed", top: morePos.top, right: morePos.right, background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", boxShadow: "0 8px 32px rgba(0,0,0,0.14)", zIndex: 9999, minWidth: "165px", overflow: "hidden" }}>
+          <div ref={moreDropRef} style={{ position: "fixed", top: morePos.top, left: morePos.left, background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", boxShadow: "0 8px 32px rgba(0,0,0,0.14)", zIndex: 9999, minWidth: "165px", overflow: "hidden" }}>
             {moreTabs.map((t, i) => (
               <button
                 key={t.id}
