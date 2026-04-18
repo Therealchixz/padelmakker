@@ -180,21 +180,20 @@ export function HomeTab({ user, setTab }) {
       setLigaFeed([]);
     }
 
-    // New feed types — run in parallel
+    // New feed types — run in parallel, each isolated so one failure doesn't break the rest
+    const [openMatchRes, americanoRegRes, milestoneRes, seekingRes, leagueNewRes] = await Promise.allSettled([
+      supabase.from('matches').select('id, creator_id, date, court_name, created_at').eq('status', 'open').gte('date', new Date().toISOString().split('T')[0]).order('created_at', { ascending: false }).limit(5),
+      supabase.from('americano_tournaments').select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration').order('created_at', { ascending: false }).limit(5),
+      supabase.from('elo_history').select('user_id, old_rating, new_rating, created_at, profiles(full_name, name, avatar)').not('old_rating', 'is', null).not('new_rating', 'is', null).order('created_at', { ascending: false, nullsFirst: false }).limit(150),
+      supabase.from('profiles').select('id, full_name, name, avatar, level, area, intent_now, updated_at').eq('seeking_match', true).order('updated_at', { ascending: false }).limit(5),
+      supabase.from('leagues').select('id, name, status, created_at').in('status', ['registration', 'active']).order('created_at', { ascending: false }).limit(5),
+    ]);
     try {
-      const [
-        { data: openMatchesData },
-        { data: americanoRegData },
-        { data: milestoneData },
-        { data: seekingData },
-        { data: newLeaguesData },
-      ] = await Promise.all([
-        supabase.from('matches').select('id, creator_id, date, court_name, created_at').eq('status', 'open').gte('date', new Date().toISOString().split('T')[0]).order('created_at', { ascending: false }).limit(5),
-        supabase.from('americano_tournaments').select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration').order('created_at', { ascending: false }).limit(5),
-        supabase.from('elo_history').select('user_id, old_rating, new_rating, created_at, profiles(full_name, name, avatar)').not('old_rating', 'is', null).not('new_rating', 'is', null).order('created_at', { ascending: false, nullsFirst: false }).limit(150),
-        supabase.from('profiles').select('id, full_name, name, avatar, level, area, intent_now, updated_at').eq('seeking_match', true).order('updated_at', { ascending: false }).limit(5),
-        supabase.from('leagues').select('id, name, status, created_at').in('status', ['registration', 'active']).order('created_at', { ascending: false }).limit(5),
-      ]);
+      const openMatchesData = openMatchRes.status === 'fulfilled' ? openMatchRes.value.data : null;
+      const americanoRegData = americanoRegRes.status === 'fulfilled' ? americanoRegRes.value.data : null;
+      const milestoneData = milestoneRes.status === 'fulfilled' ? milestoneRes.value.data : null;
+      const seekingData = seekingRes.status === 'fulfilled' ? seekingRes.value.data : null;
+      const newLeaguesData = leagueNewRes.status === 'fulfilled' ? leagueNewRes.value.data : null;
 
       // Open matches
       if (openMatchesData?.length) {
