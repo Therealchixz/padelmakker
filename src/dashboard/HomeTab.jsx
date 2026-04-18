@@ -431,7 +431,7 @@ export function HomeTab({ user, setTab }) {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })}>{row.creatorName}</span> søger medspillere
+                          <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })}>{row.creatorName}</span> søger spillere til <strong>2v2</strong>
                         </div>
                         <div style={{ fontSize: "11px", color: "#065F46", marginTop: "1px" }}>{dateStr} · {row.court}</div>
                       </div>
@@ -448,7 +448,7 @@ export function HomeTab({ user, setTab }) {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>
                         <div style={{ fontSize: "11px", color: "#92400E", marginTop: "1px" }}>
-                          {dateStr}{row.time ? ` · ${row.time}` : ''} · {row.participants}/{row.slots} tilmeldt
+                          Americano · {dateStr}{row.time ? ` · ${row.time}` : ''} · {row.participants}/{row.slots} tilmeldt
                         </div>
                       </div>
                       <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#EAB308", color: "#92400E", flexShrink: 0 }}>Tilmeld</button>
@@ -499,7 +499,7 @@ export function HomeTab({ user, setTab }) {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.leagueName}</div>
                         <div style={{ fontSize: "11px", color: "#1E40AF", marginTop: "1px" }}>
-                          {isReg ? 'Tilmelding åben' : 'I gang'} · {row.teamCount} hold · {formatTimeAgo(row.created_at)}
+                          Liga · {isReg ? 'Tilmelding åben' : 'I gang'} · {row.teamCount} hold · {formatTimeAgo(row.created_at)}
                         </div>
                       </div>
                       <button onClick={() => setTab('liga')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#3B82F6", color: "#1E40AF", flexShrink: 0 }}>
