@@ -36,6 +36,38 @@ export function HomeTab({ user, setTab }) {
   const [feedLoading, setFeedLoading] = useState(true);
   const [viewLeague, setViewLeague] = useState(null);
 
+  const FEED_FILTERS = [
+    { id: 'kampe',      label: 'Kampe',      icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
+    { id: 'americano',  label: 'Americano',  icon: '🎾', types: ['americano_winner', 'americano_registration'] },
+    { id: 'liga',       label: 'Liga',       icon: '🏆', types: ['liga_completed', 'league_new'] },
+    { id: 'spillere',   label: 'Spillere',   icon: '⚡', types: ['elo_milestone', 'seeking_player'] },
+  ];
+  const FILTER_STORAGE_KEY = `pm_feed_filters_${user.id}`;
+  const [activeFilters, setActiveFilters] = useState(() => {
+    try {
+      const saved = localStorage.getItem(FILTER_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return new Set(parsed);
+      }
+    } catch {}
+    return new Set(FEED_FILTERS.map(f => f.id));
+  });
+  const toggleFilter = (id) => {
+    setActiveFilters(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        if (next.size === 1) return prev; // altid mindst ét aktiv
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      try { localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  };
+  const enabledTypes = new Set(FEED_FILTERS.filter(f => activeFilters.has(f.id)).flatMap(f => f.types));
+
   const fetchFeed = useCallback(async () => {
     setFeedLoading(true);
     try {
@@ -326,12 +358,31 @@ export function HomeTab({ user, setTab }) {
         </div>
       ) : (feed.length > 0 || americanoFeed.length > 0 || ligaFeed.length > 0 || openMatchFeed.length > 0 || americanoRegFeed.length > 0 || milestoneFeed.length > 0 || seekingFeed.length > 0 || leagueNewFeed.length > 0) && (
         <div style={{ marginBottom: "24px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
-            Seneste aktivitet
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Seneste aktivitet
+            </div>
+            <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+              {FEED_FILTERS.map(f => {
+                const on = activeFilters.has(f.id);
+                return (
+                  <button key={f.id} onClick={() => toggleFilter(f.id)} style={{
+                    padding: "3px 9px", borderRadius: "20px", border: "1px solid " + (on ? theme.accent : theme.border),
+                    background: on ? theme.accentBg : "transparent",
+                    color: on ? theme.accent : theme.textLight,
+                    fontSize: "11px", fontWeight: on ? 700 : 500, cursor: "pointer",
+                    fontFamily: "inherit", transition: "all 0.15s", display: "flex", alignItems: "center", gap: "3px",
+                  }}>
+                    <span>{f.icon}</span> {f.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {/* Merge and sort all feeds by date */}
             {[...feed, ...americanoFeed, ...ligaFeed, ...openMatchFeed, ...americanoRegFeed, ...milestoneFeed, ...seekingFeed, ...leagueNewFeed]
+              .filter(row => enabledTypes.has(row.type))
               .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
               .slice(0, 15)
               .map((row, i) => {
