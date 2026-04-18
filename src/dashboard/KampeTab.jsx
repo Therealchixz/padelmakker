@@ -72,6 +72,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     useProfileEloBundle(user.id, eloSyncKeyKampe);
   const [showCreate, setShowCreate]   = useState(false);
   const [showAmericanoCreate, setShowAmericanoCreate] = useState(false);
+  const [showLigaCreate, setShowLigaCreate] = useState(false);
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
   const [matchPlayers, setMatchPlayers] = useState({});
@@ -1154,6 +1155,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               {showAmericanoCreate ? "Annullér" : <><Plus size={15} /> Opret turnering</>}
             </button>
           )}
+          {!loadingMatches && kampeFormat === "liga" && user?.role === "admin" && (
+            <button type="button" onClick={() => setShowLigaCreate(v => !v)} style={btn(true)}>
+              {showLigaCreate ? "Annullér" : <><Plus size={15} /> Opret liga</>}
+            </button>
+          )}
         </div>
       </div>
 
@@ -1166,7 +1172,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           <button
             key={f.id}
             type="button"
-            onClick={() => { setKampeFormat(f.id); setShowCreate(false); setShowAmericanoCreate(false); }}
+            onClick={() => { setKampeFormat(f.id); setShowCreate(false); setShowAmericanoCreate(false); setShowLigaCreate(false); }}
             style={{ ...btn(kampeFormat === f.id), padding: "8px 16px", fontSize: "13px" }}
           >
             {f.label}
@@ -1176,7 +1182,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {kampeFormat === "liga" && (
         <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser liga…</div>}>
-          <LigaTabEmbed user={user} showToast={showToast} />
+          <LigaTabEmbed user={user} showToast={showToast} createOpen={showLigaCreate} onCreateOpenChange={setShowLigaCreate} />
         </Suspense>
       )}
 

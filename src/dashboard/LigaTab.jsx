@@ -674,7 +674,7 @@ function PartnerSearch({ userId, onSelect }) {
   );
 }
 
-export function LigaTab({ user, showToast }) {
+export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateOpenChange }) {
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
   const [view, setView] = useState('registration');
@@ -691,8 +691,10 @@ export function LigaTab({ user, showToast }) {
   const [busyId, setBusyId] = useState(null);
   const [openStandings, setOpenStandings] = useState(new Set());
 
-  // Create league form (admin)
-  const [createOpen, setCreateOpen] = useState(false);
+  // Create league form (admin) — controlled by parent if props provided
+  const [createOpenLocal, setCreateOpenLocal] = useState(false);
+  const createOpen = createOpenProp !== undefined ? createOpenProp : createOpenLocal;
+  const setCreateOpen = onCreateOpenChange !== undefined ? onCreateOpenChange : setCreateOpenLocal;
   const [createForm, setCreateForm] = useState({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
 
   // Create team form
@@ -1016,15 +1018,6 @@ export function LigaTab({ user, showToast }) {
           onMessage={() => { setViewPlayer(null); navigate('/dashboard/beskeder?med=' + viewPlayer.id); }}
         />
       )}
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-        <h2 style={{ ...heading('clamp(20px,4.5vw,24px)') }}>Liga</h2>
-        {isAdmin && (
-          <button onClick={() => setCreateOpen(o => !o)} style={{ ...btn(createOpen), padding: '8px 14px', fontSize: '13px' }}>
-            <Plus size={14} /> Opret liga
-          </button>
-        )}
-      </div>
 
       {/* Scope selector: Mine / Alle */}
       <div style={{ display: 'flex', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid ' + theme.border }}>
