@@ -17,6 +17,7 @@ import { BeskedTab } from './BeskedTab';
 import { LigaTab } from './LigaTab';
 import { ShieldCheck } from 'lucide-react';
 import { useUnreadMessageCount } from '../lib/chatUtils';
+import { useDarkMode } from '../lib/useDarkMode';
 import { supabase } from '../lib/supabase';
 
 function usePendingLigaInvites(userId) {
@@ -116,6 +117,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
   const setTab = useCallback((t) => navigate("/dashboard/" + t), [navigate]);
 
+  const [dark, setDark] = useDarkMode();
   const [moreOpen, setMoreOpen] = useState(false);
   const [morePos, setMorePos] = useState(null);
   const moreBtnRef = useRef(null);
@@ -242,7 +244,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         {tab === "ranking"  && <RankingTab user={user} />}
         {tab === "liga"     && <LigaTab    user={user} showToast={showToast} />}
         {tab === "beskeder" && <BeskedTab  user={user} />}
-        {tab === "profil"   && <ProfilTab  user={user} showToast={showToast} setTab={setTab} />}
+        {tab === "profil"   && <ProfilTab  user={user} showToast={showToast} setTab={setTab} dark={dark} onDarkModeChange={setDark} />}
         {tab === "admin"    && isAdmin && <AdminTab />}
       </div>
     </div>

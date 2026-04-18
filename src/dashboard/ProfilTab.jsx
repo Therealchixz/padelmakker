@@ -14,7 +14,7 @@ import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avata
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
 
-export function ProfilTab({ user, showToast, setTab }) {
+export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   const { updateProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
   const [editing, setEditing] = useState(false);
@@ -155,7 +155,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{displayName}</div>
                 <button
                   onClick={() => { setForm(profileFormState(user)); setEditing(true); }}
-                  style={{ ...btn(false), padding: "5px 10px", fontSize: "12px", color: theme.textMid, background: "#F1F5F9", borderColor: theme.border, flexShrink: 0 }}
+                  style={{ ...btn(false), padding: "5px 10px", fontSize: "12px", color: theme.textMid, background: theme.surfaceAlt, borderColor: theme.border, flexShrink: 0 }}
                 >
                   <Settings size={12} /> Rediger
                 </button>
@@ -174,7 +174,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
           {/* Søger kamp — standalone toggle der gemmer øjeblikkeligt */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: user.seeking_match ? '#FFFBEB' : '#F8FAFC', border: '1px solid ' + (user.seeking_match ? '#F59E0B' : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: user.seeking_match ? theme.warmBg : theme.surfaceAlt, border: '1px solid ' + (user.seeking_match ? theme.warm : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>⚡ Søger kamp nu</div>
               <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Vises i andres feed. Forsvinder automatisk hvis du ikke har været aktiv i 24 timer.</div>
@@ -192,6 +192,22 @@ export function ProfilTab({ user, showToast, setTab }) {
             </button>
           </div>
 
+          {/* Mørk tilstand toggle */}
+          {onDarkModeChange && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: theme.surfaceAlt, border: "1px solid " + theme.border, borderRadius: 10, padding: "10px 14px", marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>🌙 Mørk tilstand</div>
+                <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Skifter appen til mørkt udseende.</div>
+              </div>
+              <button
+                onClick={() => onDarkModeChange(d => !d)}
+                style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", background: dark ? theme.accent : theme.border, position: "relative", transition: "background 0.2s", flexShrink: 0 }}
+              >
+                <div style={{ position: "absolute", top: 3, left: dark ? 23 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+              </button>
+            </div>
+          )}
+
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading ? (
             <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px", marginBottom: "20px" }}>Indlæser statistik…</div>
@@ -204,14 +220,14 @@ export function ProfilTab({ user, showToast, setTab }) {
               { label: "Sejre", value: wins, color: theme.warm },
               { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
             ].map((s, i) => (
-              <div key={i} style={{ textAlign: "center", padding: "12px 4px", background: "#F8FAFC", borderRadius: "8px" }}>
+              <div key={i} style={{ textAlign: "center", padding: "12px 4px", background: theme.surfaceAlt, borderRadius: "8px" }}>
                 <div style={{ fontSize: "18px", fontWeight: 800, color: s.color }}>{s.value}</div>
                 <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
               </div>
             ))}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
-            <div style={{ textAlign: "center", padding: "10px 4px", background: "#F1F5F9", borderRadius: "8px", border: "1px solid " + theme.border }}>
+            <div style={{ textAlign: "center", padding: "10px 4px", background: theme.surfaceAlt, borderRadius: "8px", border: "1px solid " + theme.border }}>
               <div style={{ fontSize: "16px", fontWeight: 800, color: theme.text }}>{Number(user.americano_played) || 0}</div>
               <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Turneringer</div>
             </div>

@@ -17,9 +17,10 @@
     <title>PadelMakker — Find makker. Book bane. Spil padel.</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <style>
-      html, body { margin: 0; min-height: 100%; background: #F0F4F8; }
+      html, body { margin: 0; min-height: 100%; background: var(--pm-bg, #F0F4F8); }
       #root { min-height: 100dvh; }
     </style>
+    <script>try{var t=localStorage.getItem('pm-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   </head>
   <body>
     <div id="root"></div>
