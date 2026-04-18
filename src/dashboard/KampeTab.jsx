@@ -404,10 +404,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     setBusyId(matchId);
     try {
+      // Notify creator BEFORE delete (while still in match_players so RPC check passes)
+      const isCreator = match && String(match.creator_id) === String(user.id);
+      if (!isCreator && match?.creator_id) {
+        createNotification(match.creator_id, 'match_cancelled', 'Spiller afmeldt ❌', `${myDisplayName} er afmeldt kampen.`, matchId);
+      }
       const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
       if (error) throw error;
       const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== user.id);
-      const isCreator = match && String(match.creator_id) === String(user.id);
 
       if (mp.length === 0) {
         await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId);
@@ -522,6 +526,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       if (error) throw error;
       const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== targetUserId);
       await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
+      // Notify kicked player (caller is still creator → RPC check passes)
+      createNotification(targetUserId, 'match_cancelled', 'Du er fjernet fra kampen ❌', `En admin/opretter har fjernet dig fra kampen.`, matchId);
       showToast("Spiller fjernet.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
@@ -703,6 +709,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const mr = matchResults[matchId];
       if (!mr) return;
       await supabase.from("match_results").delete().eq("id", mr.id);
+      // Notify the submitter (if someone else rejected)
+      if (mr.submitted_by && mr.submitted_by !== user.id) {
+        createNotification(mr.submitted_by, 'result_submitted', 'Resultat afvist ❌', `Dit indberettede resultat er blevet afvist. Indrapportér igen.`, matchId);
+      }
       showToast("Resultat afvist. Indrapportér igen.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }

@@ -802,6 +802,14 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
     try {
       const { error } = await supabase.from('league_teams').update({ status: 'ready' }).eq('id', team.id);
       if (error) throw error;
+      // Notify inviter (player1) via SECURITY DEFINER RPC
+      supabase.rpc('notify_league_invite_accepted', {
+        p_team_id: team.id,
+        p_title: 'Invitation accepteret! 🎾',
+        p_body: `${user.full_name || user.name || 'Din makker'} har accepteret invitationen til holdet "${team.name}".`,
+      }).then(({ error: nErr }) => {
+        if (nErr) console.warn('notify_league_invite_accepted:', nErr.message || nErr);
+      });
       showToast('Du har accepteret invitationen! 🎾');
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
