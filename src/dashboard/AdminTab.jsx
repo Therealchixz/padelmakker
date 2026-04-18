@@ -14,9 +14,12 @@ import {
 
 export function AdminTab() {
   const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' or 'matches'
+  const [matchSubTab, setMatchSubTab] = useState('2v2'); // '2v2' | 'americano' | 'liga'
   const [_loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [matches, setMatches] = useState([]);
+  const [americanoTournaments, setAmericanoTournaments] = useState([]);
+  const [ligaLeagues, setLigaLeagues] = useState([]);
   const [search, setSearch] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'asc' });
@@ -47,10 +50,55 @@ export function AdminTab() {
     setLoading(false);
   };
 
+  const fetchAmericano = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('americano_tournaments')
+      .select('id, name, status, tournament_date, updated_at, created_at')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (!error) setAmericanoTournaments(data || []);
+    setLoading(false);
+  };
+
+  const fetchLiga = async () => {
+    setLoading(true);
+    const { data: leagues, error } = await supabase
+      .from('leagues')
+      .select('id, name, status, season_type, start_date, end_date, current_round, total_rounds, created_at')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) { setLoading(false); return; }
+    const lIds = (leagues || []).map(l => l.id);
+    let teamCounts = {};
+    if (lIds.length) {
+      const { data: teams } = await supabase.from('league_teams').select('league_id').in('league_id', lIds);
+      for (const t of (teams || [])) teamCounts[t.league_id] = (teamCounts[t.league_id] || 0) + 1;
+    }
+    setLigaLeagues((leagues || []).map(l => ({ ...l, team_count: teamCounts[l.id] || 0 })));
+    setLoading(false);
+  };
+
+  const deleteAmericano = async (id, name) => {
+    if (!window.confirm(`Slet turneringen "${name}"? Dette kan ikke fortrydes.`)) return;
+    const { error } = await supabase.from('americano_tournaments').delete().eq('id', id);
+    if (error) alert('Fejl: ' + error.message);
+    else fetchAmericano();
+  };
+
+  const deleteLiga = async (id, name) => {
+    if (!window.confirm(`Slet ligaen "${name}"? Hold og kampe slettes også. Dette kan ikke fortrydes.`)) return;
+    const { error } = await supabase.from('leagues').delete().eq('id', id);
+    if (error) alert('Fejl: ' + error.message);
+    else fetchLiga();
+  };
+
   useEffect(() => {
     if (activeSubTab === 'users') fetchUsers();
-    else fetchMatches();
-  }, [activeSubTab]);
+    else if (matchSubTab === '2v2') fetchMatches();
+    else if (matchSubTab === 'americano') fetchAmericano();
+    else fetchLiga();
+  }, [activeSubTab, matchSubTab]);
 
   const toggleAdmin = async (user) => {
     const newRole = user.role === 'admin' ? 'player' : 'admin';
@@ -352,6 +400,81 @@ export function AdminTab() {
           )}
         </>
       ) : (
+        <div>
+          {/* Match type sub-tabs */}
+          <div style={{ display: "flex", gap: "6px", marginBottom: "16px", flexWrap: "wrap" }}>
+            {[
+              { id: '2v2',       label: '2v2-kampe' },
+              { id: 'americano', label: 'Americano' },
+              { id: 'liga',      label: '🏆 Liga' },
+            ].map(t => (
+              <button key={t.id} onClick={() => setMatchSubTab(t.id)}
+                style={{ ...btn(matchSubTab === t.id), padding: "7px 14px", fontSize: "13px" }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Americano ── */}
+          {matchSubTab === 'americano' && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "4px", textTransform: "uppercase" }}>Americano-turneringer</h3>
+              {americanoTournaments.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen turneringer fundet.</div>}
+              {americanoTournaments.map(t => {
+                const statusLabel = t.status === 'completed' ? 'Afsluttet' : t.status === 'active' ? 'Aktiv' : 'Åben';
+                const statusColor = t.status === 'completed' ? theme.accent : t.status === 'active' ? '#16A34A' : theme.textMid;
+                return (
+                  <div key={t.id} style={{ background: theme.surface, padding: "14px 16px", borderRadius: "12px", border: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "14px", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "2px" }}>
+                        {t.tournament_date || formatEloHistoryDate(t.created_at)}
+                        <span style={{ marginLeft: "8px", fontWeight: 700, color: statusColor, background: statusColor + '15', padding: "1px 6px", borderRadius: "4px", textTransform: "uppercase", fontSize: "10px" }}>{statusLabel}</span>
+                      </div>
+                    </div>
+                    <button onClick={() => deleteAmericano(t.id, t.name)}
+                      style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer", flexShrink: 0 }}
+                      title="Slet turnering">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Liga ── */}
+          {matchSubTab === 'liga' && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "4px", textTransform: "uppercase" }}>Ligaer</h3>
+              {ligaLeagues.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen ligaer fundet.</div>}
+              {ligaLeagues.map(l => {
+                const statusLabel = l.status === 'completed' ? 'Afsluttet' : l.status === 'active' ? 'Aktiv' : 'Tilmelding';
+                const statusColor = l.status === 'completed' ? theme.textMid : l.status === 'active' ? '#16A34A' : '#D97706';
+                return (
+                  <div key={l.id} style={{ background: theme.surface, padding: "14px 16px", borderRadius: "12px", border: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "14px", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "2px", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                        <span style={{ fontWeight: 700, color: statusColor, background: statusColor + '18', padding: "1px 6px", borderRadius: "4px", textTransform: "uppercase", fontSize: "10px" }}>{statusLabel}</span>
+                        <span>{l.team_count} hold</span>
+                        {l.status === 'active' && <span>Runde {l.current_round}{l.total_rounds ? `/${l.total_rounds}` : ''}</span>}
+                        <span>{formatEloHistoryDate(l.start_date)} – {formatEloHistoryDate(l.end_date)}</span>
+                      </div>
+                    </div>
+                    <button onClick={() => deleteLiga(l.id, l.name)}
+                      style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer", flexShrink: 0 }}
+                      title="Slet liga">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── 2v2 kampe ── */}
+          {matchSubTab === '2v2' && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "8px", textTransform: "uppercase" }}>Admin: Detaljeret Kamp-overblik</h3>
           {matches.map(m => {
@@ -428,6 +551,8 @@ export function AdminTab() {
               </div>
             );
           })}
+        </div>
+          )}
         </div>
       )}
       {/* Edit User Modal */}

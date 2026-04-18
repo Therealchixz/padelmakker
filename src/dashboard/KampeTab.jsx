@@ -7,6 +7,9 @@ import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessi
 const AmericanoTab = lazy(() =>
   import('../features/americano/AmericanoTab').then(m => ({ default: m.AmericanoTab }))
 );
+const LigaTabEmbed = lazy(() =>
+  import('./LigaTab').then(m => ({ default: m.LigaTab }))
+);
 import { theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
@@ -91,9 +94,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   }); // "open" | "active" | "completed"
   const [kampeFormat, setKampeFormat] = useState(() => {
     const s = readKampeSessionPrefs(user.id);
-    if (s?.format === "padel" || s?.format === "americano") return s.format;
+    if (s?.format === "padel" || s?.format === "americano" || s?.format === "liga") return s.format;
     return "padel";
-  }); // "padel" | "americano"
+  }); // "padel" | "americano" | "liga"
   const [kampeScope, setKampeScope]   = useState(() => {
     const s = readKampeSessionPrefs(user.id);
     if (s?.scope === "mine" || s?.scope === "alle") return s.scope;
@@ -1155,33 +1158,31 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       </div>
 
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
-        <button
-          type="button"
-          onClick={() => {
-            setKampeFormat("padel");
-            setShowCreate(false);
-            setShowAmericanoCreate(false);
-          }}
-          style={{ ...btn(kampeFormat === "padel"), padding: "8px 16px", fontSize: "13px" }}
-        >
-          Almindelig padel (2v2)
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setKampeFormat("americano");
-            setShowCreate(false);
-            setShowAmericanoCreate(false);
-          }}
-          style={{ ...btn(kampeFormat === "americano"), padding: "8px 16px", fontSize: "13px" }}
-        >
-          Americano
-        </button>
+        {[
+          { id: "padel",    label: "2v2-kampe" },
+          { id: "americano", label: "Americano" },
+          { id: "liga",     label: "🏆 Liga" },
+        ].map(f => (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => { setKampeFormat(f.id); setShowCreate(false); setShowAmericanoCreate(false); }}
+            style={{ ...btn(kampeFormat === f.id), padding: "8px 16px", fontSize: "13px" }}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
-      {loadingMatches ? (
+      {kampeFormat === "liga" && (
+        <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser liga…</div>}>
+          <LigaTabEmbed user={user} showToast={showToast} />
+        </Suspense>
+      )}
+
+      {loadingMatches && kampeFormat !== "liga" ? (
         <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>
-      ) : (
+      ) : kampeFormat === "liga" ? null : (
       <>
       {/* Scope tabs: Mine kampe / Alle kampe */}
       <div style={{ display: "flex", marginBottom: "12px", borderRadius: "8px", overflow: "hidden", border: "1px solid " + theme.border }}>
