@@ -9,6 +9,7 @@ import { Users, MapPin, Swords, Trophy, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PlayerStatsModal } from '../components/PlayerStatsModal';
 import { levelLabel } from '../lib/platformConstants';
+import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 
 export function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
@@ -434,7 +435,7 @@ export function HomeTab({ user, setTab }) {
                         </div>
                         <div style={{ fontSize: "11px", color: "#065F46", marginTop: "1px" }}>{dateStr} · {row.court}</div>
                       </div>
-                      <button onClick={() => setTab('kampe')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#10B981", color: "#065F46", flexShrink: 0 }}>Se kamp</button>
+                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'open' }); setTab('kampe'); }} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#10B981", color: "#065F46", flexShrink: 0 }}>Se kamp</button>
                     </div>
                   );
                 }
@@ -450,7 +451,7 @@ export function HomeTab({ user, setTab }) {
                           {dateStr}{row.time ? ` · ${row.time}` : ''} · {row.participants}/{row.slots} tilmeldt
                         </div>
                       </div>
-                      <button onClick={() => setTab('kampe')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#EAB308", color: "#92400E", flexShrink: 0 }}>Tilmeld</button>
+                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", background: "white", borderColor: "#EAB308", color: "#92400E", flexShrink: 0 }}>Tilmeld</button>
                     </div>
                   );
                 }
