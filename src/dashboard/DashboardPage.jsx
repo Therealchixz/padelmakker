@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
-import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal } from 'lucide-react';
+import { Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
 import { HomeTab } from './HomeTab';
 import { MakkereTab } from './MakkereTab';
@@ -97,14 +97,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [tab, refreshProfileQuiet]);
 
   const tabs = [
-    { id: "hjem",      label: "Hjem",        icon: <Home          size={16} /> },
-    { id: "makkere",   label: "Find Makker", icon: <Users         size={16} /> },
-    { id: "baner",     label: "Baner",       icon: <MapPin        size={16} /> },
-    { id: "kampe",     label: "Kampe",       icon: <Swords        size={16} />, badge: pendingKampe > 0 ? pendingKampe : null },
-    { id: "ranking",   label: "Ranking",     icon: <Trophy        size={16} /> },
-    { id: "liga",      label: "Liga",        icon: <Medal         size={16} />, badge: pendingLigaInvites > 0 ? pendingLigaInvites : null },
-    { id: "beskeder",  label: "Beskeder",    icon: <MessageCircle size={16} />, badge: unreadMessages > 0 ? unreadMessages : null },
-    { id: "profil",    label: "Profil",      icon: <Settings      size={16} /> },
+    { id: "makkere",   label: "Find Makker", icon: <Users         size={15} /> },
+    { id: "baner",     label: "Book Bane",   icon: <MapPin        size={15} /> },
+    { id: "kampe",     label: "Kampe",       icon: <Swords        size={15} />, badge: pendingKampe > 0 ? pendingKampe : null },
+    { id: "ranking",   label: "Ranking",     icon: <Trophy        size={15} /> },
+    { id: "liga",      label: "Liga",        icon: <Medal         size={15} />, badge: pendingLigaInvites > 0 ? pendingLigaInvites : null },
+    { id: "beskeder",  label: "Beskeder",    icon: <MessageCircle size={15} />, badge: unreadMessages > 0 ? unreadMessages : null },
+    { id: "profil",    label: "Profil",      icon: <Settings      size={15} /> },
   ];
   if (isAdmin) {
     tabs.push({ id: "admin", label: "Admin", icon: <ShieldCheck size={16} /> });
@@ -114,9 +113,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", paddingBottom: "env(safe-area-inset-bottom)" }}>
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(10px,2.5vw,14px) clamp(12px,3vw,20px)", paddingTop: "max(clamp(10px,2.5vw,14px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
-        <div className="pm-dash-brand" style={{ ...heading("clamp(16px,4vw,18px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px" }}>
-          <img src="/logo-nav.png" alt="" aria-hidden style={{ height: "40px", width: "auto", objectFit: "contain" }} /> PadelMakker
-        </div>
+        <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ ...heading("clamp(16px,4vw,18px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }}>
+          <img src="/logo-nav.png" alt="PadelMakker" style={{ height: "40px", width: "auto", objectFit: "contain" }} /> PadelMakker
+        </button>
         <div className="pm-dash-user">
           <span className="pm-dash-name">{displayName}</span>
           <div className="pm-dash-header-actions">
@@ -131,7 +130,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       {/* Tab strip */}
       <div className="pm-tab-strip" style={{ background: theme.surface, borderBottom: "1px solid " + theme.border }}>
         {tabs.map(t => (
-          <button key={t.id} type="button" title={t.label} aria-label={t.label} onClick={() => setTab(t.id)} style={{ background: tab === t.id ? theme.accentBg : "transparent", color: tab === t.id ? theme.accent : theme.textMid, border: "none", padding: "8px 12px", borderRadius: "7px", fontSize: "clamp(12px,3.2vw,13px)", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap", fontFamily: font, flexShrink: 0, transition: "all 0.15s", letterSpacing: "-0.01em", position: "relative" }}>
+          <button key={t.id} type="button" title={t.label} aria-label={t.label} onClick={() => setTab(t.id)} style={{ background: "transparent", color: tab === t.id ? theme.accent : theme.textMid, border: "none", borderBottom: tab === t.id ? "2px solid " + theme.accent : "2px solid transparent", marginBottom: "-1px", padding: "6px 9px 6px", borderRadius: 0, fontSize: "clamp(11px,2.8vw,12px)", fontWeight: tab === t.id ? 700 : 500, cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap", fontFamily: font, flexShrink: 0, transition: "color 0.12s, border-color 0.12s", letterSpacing: "-0.01em", position: "relative" }}>
             <span aria-hidden style={{ display: "flex", position: "relative" }}>
               {t.icon}
               {t.badge && (
