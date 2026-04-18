@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { theme, btn, inputStyle, heading } from '../lib/platformTheme';
 import { AvatarCircle } from '../components/AvatarCircle';
-import { Send, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Send, ArrowLeft, MessageCircle, SquarePen, Search, X } from 'lucide-react';
 import {
   fetchConversations,
   fetchMessages,
@@ -39,8 +39,13 @@ export function BeskedTab({ user }) {
   const [sending, setSending] = useState(false);
   const [loadingConvos, setLoadingConvos] = useState(true);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeQuery, setComposeQuery] = useState('');
+  const [composeResults, setComposeResults] = useState([]);
+  const [composeSearching, setComposeSearching] = useState(false);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  const composeRef = useRef(null);
 
   // Hent profil for en enkelt bruger (til ny samtale via ?med=)
   const ensureProfile = useCallback(async (id) => {
@@ -153,7 +158,37 @@ export function BeskedTab({ user }) {
     setSelectedId(otherId);
     navigate('/dashboard/beskeder', { replace: true });
     ensureProfile(otherId);
+    setComposeOpen(false);
+    setComposeQuery('');
+    setComposeResults([]);
   };
+
+  // Debounced søgning efter brugere til ny besked
+  useEffect(() => {
+    if (!composeOpen) return;
+    if (!composeQuery.trim()) { setComposeResults([]); return; }
+    const timer = setTimeout(async () => {
+      setComposeSearching(true);
+      try {
+        const q = composeQuery.trim();
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, full_name, name, avatar')
+          .or(`full_name.ilike.%${q}%,name.ilike.%${q}%`)
+          .neq('id', user.id)
+          .limit(8);
+        setComposeResults(data || []);
+      } finally {
+        setComposeSearching(false);
+      }
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [composeQuery, composeOpen, user.id]);
+
+  // Fokusér søgefeltet når compose åbner
+  useEffect(() => {
+    if (composeOpen) setTimeout(() => composeRef.current?.focus(), 50);
+  }, [composeOpen]);
 
   const getName = (id) => {
     const p = profiles[id];
@@ -272,7 +307,62 @@ export function BeskedTab({ user }) {
   // ── Samtaleliste ──────────────────────────────────────────────────────────
   return (
     <div>
-      <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Beskeder</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h2 style={{ ...heading('clamp(20px,4.5vw,24px)') }}>Beskeder</h2>
+        <button
+          onClick={() => setComposeOpen(o => !o)}
+          style={{ ...btn(composeOpen), padding: '8px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+        >
+          <SquarePen size={14} /> Ny besked
+        </button>
+      </div>
+
+      {/* Compose-panel */}
+      {composeOpen && (
+        <div style={{ background: theme.surface, borderRadius: theme.radius, border: '1px solid ' + theme.border, boxShadow: theme.shadow, marginBottom: '16px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderBottom: '1px solid ' + theme.border }}>
+            <Search size={15} color={theme.textLight} style={{ flexShrink: 0 }} />
+            <input
+              ref={composeRef}
+              value={composeQuery}
+              onChange={e => setComposeQuery(e.target.value)}
+              placeholder="Søg efter spiller..."
+              style={{ flex: 1, border: 'none', outline: 'none', fontSize: '14px', background: 'transparent', fontFamily: 'inherit', color: theme.text }}
+            />
+            {composeQuery && (
+              <button onClick={() => { setComposeQuery(''); setComposeResults([]); }} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '2px', color: theme.textLight, display: 'flex' }}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          {composeSearching && (
+            <div style={{ padding: '14px 16px', fontSize: '13px', color: theme.textLight }}>Søger…</div>
+          )}
+          {!composeSearching && composeQuery && composeResults.length === 0 && (
+            <div style={{ padding: '14px 16px', fontSize: '13px', color: theme.textLight }}>Ingen spillere fundet.</div>
+          )}
+          {!composeSearching && !composeQuery && (
+            <div style={{ padding: '14px 16px', fontSize: '13px', color: theme.textLight }}>Skriv et navn for at søge.</div>
+          )}
+          {composeResults.map((p, idx) => (
+            <div
+              key={p.id}
+              onClick={() => openConversation(p.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                padding: '12px 14px', cursor: 'pointer',
+                borderTop: idx > 0 ? '1px solid ' + theme.border : 'none',
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = theme.accentBg}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <AvatarCircle avatar={p.avatar} size={38} emojiSize="18px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border, flexShrink: 0 }} />
+              <span style={{ fontSize: '14px', fontWeight: 600, color: theme.text }}>{p.full_name || p.name || 'Spiller'}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {loadingConvos ? (
         <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>
@@ -285,7 +375,7 @@ export function BeskedTab({ user }) {
             Ingen samtaler endnu
           </div>
           <div style={{ fontSize: '13px', lineHeight: 1.6 }}>
-            Find en spiller under <strong>Find Makker</strong> og tryk <strong>Besked</strong>.
+            Tryk <strong>Ny besked</strong> for at starte en samtale.
           </div>
         </div>
       ) : (
