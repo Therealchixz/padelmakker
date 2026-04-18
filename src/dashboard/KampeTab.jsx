@@ -723,7 +723,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const sortJoinedFirst = (list) => [...list].sort((a, b) => {
     const aJ = (matchPlayers[a.id] || []).some(p => p.user_id === user.id) ? 1 : 0;
     const bJ = (matchPlayers[b.id] || []).some(p => p.user_id === user.id) ? 1 : 0;
-    return bJ - aJ;
+    if (bJ !== aJ) return bJ - aJ;
+    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
   });
 
   // Search filter helper
