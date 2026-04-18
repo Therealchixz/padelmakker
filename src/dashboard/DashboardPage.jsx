@@ -41,6 +41,42 @@ function usePendingLigaInvites(userId) {
   return count;
 }
 
+function usePendingKampeBadge(userId) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!userId) { setCount(0); return; }
+    let cancelled = false;
+    const refetch = async () => {
+      try {
+        const [myMatchesRes, myPlayerRes] = await Promise.all([
+          supabase.from('matches').select('id').eq('creator_id', userId),
+          supabase.from('match_players').select('match_id').eq('user_id', userId),
+        ]);
+        const myMatchIds    = (myMatchesRes.data || []).map(m => m.id);
+        const myPlayerMIds  = (myPlayerRes.data  || []).map(p => p.match_id);
+        const [joinRes, resultRes] = await Promise.all([
+          myMatchIds.length > 0
+            ? supabase.from('match_join_requests').select('id', { count: 'exact', head: true }).in('match_id', myMatchIds).eq('status', 'pending')
+            : { count: 0 },
+          myPlayerMIds.length > 0
+            ? supabase.from('match_results').select('id', { count: 'exact', head: true }).in('match_id', myPlayerMIds).eq('confirmed', false).neq('submitted_by', userId)
+            : { count: 0 },
+        ]);
+        if (!cancelled) setCount((joinRes.count || 0) + (resultRes.count || 0));
+      } catch { /* stille fejl */ }
+    };
+    refetch();
+    const ch1 = supabase.channel('kampe-badge-req-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_join_requests' }, refetch)
+      .subscribe();
+    const ch2 = supabase.channel('kampe-badge-res-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_results' }, refetch)
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
+  }, [userId]);
+  return count;
+}
+
 export function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser, refreshProfileQuiet } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
@@ -49,6 +85,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const isAdmin = user?.role === 'admin';
   const unreadMessages = useUnreadMessageCount(user?.id);
   const pendingLigaInvites = usePendingLigaInvites(user?.id);
+  const pendingKampe = usePendingKampeBadge(user?.id);
   const pathTab = location.pathname.split("/")[2] || "hjem";
   const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "admin"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
@@ -63,7 +100,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     { id: "hjem",      label: "Hjem",        icon: <Home          size={16} /> },
     { id: "makkere",   label: "Find Makker", icon: <Users         size={16} /> },
     { id: "baner",     label: "Baner",       icon: <MapPin        size={16} /> },
-    { id: "kampe",     label: "Kampe",       icon: <Swords        size={16} /> },
+    { id: "kampe",     label: "Kampe",       icon: <Swords        size={16} />, badge: pendingKampe > 0 ? pendingKampe : null },
     { id: "ranking",   label: "Ranking",     icon: <Trophy        size={16} /> },
     { id: "liga",      label: "Liga",        icon: <Medal         size={16} />, badge: pendingLigaInvites > 0 ? pendingLigaInvites : null },
     { id: "beskeder",  label: "Beskeder",    icon: <MessageCircle size={16} />, badge: unreadMessages > 0 ? unreadMessages : null },
