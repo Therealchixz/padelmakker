@@ -260,7 +260,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       setLoadingMatches(false);
       void reloadKampeEloBundle();
     }
-  }, [user.id, reloadKampeEloBundle]);
+  }, [user.id, showToast, reloadKampeEloBundle]);
 
   useEffect(() => { void loadData(); }, [loadData]);
 

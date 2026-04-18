@@ -54,6 +54,39 @@ Deno.serve(async (req: Request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Autorisation: push til andre end sig selv kræver match-kontekst + at afsender
+    // enten er kamp-opretter eller deltager i den kamp.
+    const callerId = user.id;
+    if (String(targetUserId) !== String(callerId)) {
+      if (!matchId) {
+        return new Response(JSON.stringify({ error: "Forbidden: matchId kræves ved push til andre" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const [{ data: inMatch }, { data: isCreator }] = await Promise.all([
+        adminClient
+          .from("match_players")
+          .select("id")
+          .eq("match_id", matchId)
+          .eq("user_id", callerId)
+          .maybeSingle(),
+        adminClient
+          .from("matches")
+          .select("id")
+          .eq("id", matchId)
+          .eq("creator_id", callerId)
+          .maybeSingle(),
+      ]);
+      if (!inMatch && !isCreator) {
+        return new Response(JSON.stringify({ error: "Forbidden: ingen adgang til denne match-notifikation" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const { data: subs, error: subsError } = await adminClient
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
