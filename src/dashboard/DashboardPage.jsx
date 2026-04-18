@@ -77,7 +77,7 @@ function usePendingKampeBadge(userId) {
   return count;
 }
 
-const PRIMARY_TAB_IDS = ["hjem", "kampe", "liga", "beskeder", "profil"];
+const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking"];
 
 const tabBtnStyle = (active) => ({
   background: "transparent",
@@ -133,13 +133,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const allTabs = [
     { id: "hjem",     label: "Hjem",        icon: <Home          size={15} /> },
+    { id: "makkere",  label: "Find Makker",  icon: <Users         size={15} /> },
+    { id: "baner",    label: "Book Bane",    icon: <MapPin        size={15} /> },
     { id: "kampe",    label: "Kampe",        icon: <Swords        size={15} />, badge: pendingKampe > 0 ? pendingKampe : null },
+    { id: "ranking",  label: "Ranking",      icon: <Trophy        size={15} /> },
     { id: "liga",     label: "Liga",         icon: <Medal         size={15} />, badge: pendingLigaInvites > 0 ? pendingLigaInvites : null },
     { id: "beskeder", label: "Beskeder",     icon: <MessageCircle size={15} />, badge: unreadMessages > 0 ? unreadMessages : null },
     { id: "profil",   label: "Profil",       icon: <Settings      size={15} /> },
-    { id: "makkere",  label: "Find Makker",  icon: <Users         size={15} /> },
-    { id: "baner",    label: "Book Bane",    icon: <MapPin        size={15} /> },
-    { id: "ranking",  label: "Ranking",      icon: <Trophy        size={15} /> },
   ];
   if (isAdmin) allTabs.push({ id: "admin", label: "Admin", icon: <ShieldCheck size={15} /> });
 
