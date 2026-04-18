@@ -678,6 +678,8 @@ export function LigaTab({ user, showToast }) {
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
   const [view, setView] = useState('registration');
+  const [scope, setScope] = useState('alle');
+  const [search, setSearch] = useState('');
   const [viewPlayer, setViewPlayer] = useState(null);
   const [leagues, setLeagues] = useState([]);
   const [teamsByLeague, setTeamsByLeague] = useState({});
@@ -995,7 +997,15 @@ export function LigaTab({ user, showToast }) {
     const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
   });
 
-  const visibleLeagues = leagues.filter(l => l.status === view);
+  const visibleLeagues = leagues.filter(l => {
+    if (l.status !== view) return false;
+    if (scope === 'mine' && !myTeamByLeague[l.id] && l.created_by !== user.id) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!l.name?.toLowerCase().includes(q) && !l.description?.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <div>
@@ -1014,6 +1024,36 @@ export function LigaTab({ user, showToast }) {
             <Plus size={14} /> Opret liga
           </button>
         )}
+      </div>
+
+      {/* Scope selector: Mine / Alle */}
+      <div style={{ display: 'flex', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid ' + theme.border }}>
+        {[
+          { id: 'alle', label: 'Alle ligaer' },
+          { id: 'mine', label: 'Mine ligaer' },
+        ].map(t => (
+          <button key={t.id} onClick={() => { setScope(t.id); setSearch(''); }} style={{
+            flex: 1, padding: '10px 16px', fontSize: '13px',
+            fontWeight: scope === t.id ? 700 : 500,
+            background: scope === t.id ? theme.accent : theme.surface,
+            color: scope === t.id ? '#fff' : theme.textMid,
+            border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+          }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div style={{ position: 'relative', marginBottom: '12px' }}>
+        <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: theme.textLight }} />
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Søg liga…"
+          style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '8px', border: '1px solid ' + theme.border, fontSize: '13px', fontFamily: 'inherit', background: theme.surface, outline: 'none', boxSizing: 'border-box' }}
+        />
       </div>
 
       {/* Admin: opret-formular */}
@@ -1095,36 +1135,16 @@ export function LigaTab({ user, showToast }) {
       )}
 
       {/* Sub-tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #E2E8F0', marginBottom: '20px', gap: 0 }}>
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
         {[
-          { id: 'registration', label: 'Tilmelding',  icon: <Users size={13} /> },
-          { id: 'active',       label: 'Aktiv sæson', icon: <Trophy size={13} /> },
-          { id: 'completed',    label: 'Afsluttede',  icon: <Check size={13} /> },
+          { id: 'registration', label: 'Tilmelding' },
+          { id: 'active',       label: 'Aktiv sæson' },
+          { id: 'completed',    label: 'Afsluttede' },
         ].map(v => {
           const count = leagues.filter(l => l.status === v.id).length;
-          const active = view === v.id;
           return (
-            <button key={v.id} onClick={() => setView(v.id)} style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '10px 16px', border: 'none',
-              borderBottom: '2px solid ' + (active ? theme.accent : 'transparent'),
-              background: 'transparent',
-              fontSize: '13px', fontWeight: active ? 600 : 500,
-              color: active ? theme.accent : '#64748B',
-              cursor: 'pointer', marginBottom: '-1px', transition: 'color .15s',
-            }}>
-              {v.icon}
-              {v.label}
-              {count > 0 && (
-                <span style={{
-                  background: active ? theme.accent : '#E2E8F0',
-                  color: active ? '#fff' : '#64748B',
-                  borderRadius: '999px', padding: '1px 7px',
-                  fontSize: '11px', fontWeight: 600, minWidth: '20px', textAlign: 'center',
-                }}>
-                  {count}
-                </span>
-              )}
+            <button key={v.id} onClick={() => setView(v.id)} style={{ ...btn(view === v.id), padding: '7px 14px', fontSize: '12px' }}>
+              {v.label}{count > 0 ? ` (${count})` : ''}
             </button>
           );
         })}
