@@ -786,8 +786,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", bg: left > 0 ? theme.accentBg : theme.warmBg, color: left > 0 ? theme.accent : theme.warm },
       full: { text: "Klar til start", bg: theme.blueBg, color: theme.blue },
       in_progress: { text: "I gang", bg: theme.warmBg, color: theme.warm },
-      completed: { text: "Afsluttet", bg: "#F1F5F9", color: theme.textLight },
-    }[status] || { text: status, bg: "#F1F5F9", color: theme.textLight };
+      completed: { text: "Afsluttet", bg: theme.surfaceAlt, color: theme.textLight },
+    }[status] || { text: status, bg: theme.surfaceAlt, color: theme.textLight };
 
     return (
       <div id={"pm-match-" + m.id} key={m.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, scrollMarginTop: "88px" }}>
@@ -803,12 +803,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {m.seeking_player && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: theme.warmBg, color: theme.warm, border: '1px solid ' + theme.warm, borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
                 <Zap size={10} /> Mangler 1 spiller
               </span>
             )}
             {isClosed && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: theme.surfaceAlt, color: theme.textMid, border: '1px solid ' + theme.border, borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
                 🔒 Lukket
               </span>
             )}
@@ -830,7 +830,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const t1Avg = avgElo(t1);
           const t2Avg = avgElo(t2);
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", padding: "12px", background: "#F8FAFC", borderRadius: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", padding: "12px", background: theme.surfaceAlt, borderRadius: "8px" }}>
               {/* Team 1 */}
               <div style={{ flex: 1, textAlign: "center" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>Hold 1</div>
@@ -849,7 +849,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                         </div>
                         {canKick && (
                           <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy}
-                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
+                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
                             ×
                           </button>
                         )}
@@ -896,7 +896,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                         </div>
                         {canKick && (
                           <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy}
-                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
+                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
                             ×
                           </button>
                         )}
@@ -929,7 +929,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const myTeam = t1.some(p => p.user_id === user.id) ? "team1" : t2.some(p => p.user_id === user.id) ? "team2" : null;
           const iWon = mr.confirmed && myTeam === mr.match_winner;
           const iLost = mr.confirmed && myTeam && myTeam !== mr.match_winner;
-          const bgColor = !mr.confirmed ? theme.warmBg : iWon ? theme.accentBg : iLost ? theme.redBg : "#F1F5F9";
+          const bgColor = !mr.confirmed ? theme.warmBg : iWon ? theme.accentBg : iLost ? theme.redBg : theme.surfaceAlt;
           const borderColor = !mr.confirmed ? theme.warm : iWon ? theme.accent : iLost ? theme.red : theme.border;
           const textColor = !mr.confirmed ? theme.warm : iWon ? theme.accent : iLost ? theme.red : theme.textMid;
           return (
@@ -971,7 +971,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             if (myRequest.status === "pending") {
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <div style={{ textAlign: "center", fontSize: "13px", color: "#B45309", fontWeight: 600, background: "#FEF3C7", borderRadius: "8px", padding: "8px" }}>
+                  <div style={{ textAlign: "center", fontSize: "13px", color: theme.warm, fontWeight: 600, background: theme.warmBg, borderRadius: "8px", padding: "8px" }}>
                     ⏳ Anmodning afventer godkendelse
                   </div>
                   <button
@@ -989,7 +989,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <button
                   onClick={() => setTeamSelectMatch(m.id)}
                   disabled={busy}
-                  style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: "#16A34A", borderColor: "#16A34A" }}
+                  style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.green, borderColor: theme.green }}
                 >
                   ✅ Godkendt — Vælg hold og tilmeld
                 </button>
@@ -1006,7 +1006,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
           {/* ---- Creator: pending join requests (closed match) ---- */}
           {isCreator && isClosed && pendingRequests.length > 0 && (
-            <div style={{ background: "#F8FAFC", borderRadius: "8px", padding: "12px", border: "1px solid " + theme.border }}>
+            <div style={{ background: theme.surfaceAlt, borderRadius: "8px", padding: "12px", border: "1px solid " + theme.border }}>
               <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
                 🔒 Tilmeldingsanmodninger ({pendingRequests.length})
               </div>
@@ -1123,9 +1123,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 width: "100%",
                 justifyContent: "center",
                 fontSize: "13px",
-                background: m.seeking_player ? '#FEF3C7' : theme.surface,
-                color: m.seeking_player ? '#B45309' : theme.textMid,
-                borderColor: m.seeking_player ? '#FCD34D' : theme.border,
+                background: m.seeking_player ? theme.warmBg : theme.surface,
+                color: m.seeking_player ? theme.warm : theme.textMid,
+                borderColor: m.seeking_player ? theme.warm : theme.border,
               }}
             >
               <Zap size={14} />
@@ -1348,7 +1348,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               onClick={() => setNewMatch(m => ({ ...m, match_type: "closed" }))}
               style={{
                 flex: 1, padding: "10px 12px", fontSize: "13px", fontWeight: newMatch.match_type === "closed" ? 700 : 500,
-                background: newMatch.match_type === "closed" ? "#475569" : theme.surface,
+                background: newMatch.match_type === "closed" ? theme.textMid : theme.surface,
                 color: newMatch.match_type === "closed" ? "#fff" : theme.textMid,
                 border: "none", borderLeft: "1px solid " + theme.border, cursor: "pointer", transition: "all 0.15s",
               }}

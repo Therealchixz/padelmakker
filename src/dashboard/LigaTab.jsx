@@ -93,9 +93,9 @@ function validatePadelScore(score) {
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
 const STATUS_LABELS = { registration: 'Tilmelding åben', active: 'Aktiv', completed: 'Afsluttet' };
 const STATUS_COLORS = {
-  registration: { bg: '#FEF3C7', color: '#92400E' },
-  active:       { bg: '#D1FAE5', color: '#065F46' },
-  completed:    { bg: '#F1F5F9', color: '#475569' },
+  registration: { bg: theme.warmBg, color: theme.warm },
+  active:       { bg: theme.greenBg, color: theme.green },
+  completed:    { bg: theme.surfaceAlt, color: theme.textMid },
 };
 
 const SWISS_RULES = [
@@ -114,19 +114,19 @@ const SWISS_RULES = [
 function SwissRulesBox({ collapsible = false }) {
   const [open, setOpen] = useState(!collapsible);
   return (
-    <div style={{ background: '#F0F9FF', borderRadius: '10px', border: '1px solid #BAE6FD', overflow: 'hidden' }}>
+    <div style={{ background: theme.blueBg, borderRadius: '10px', border: '1px solid ' + theme.blue, overflow: 'hidden' }}>
       <button
         type="button"
         onClick={() => collapsible && setOpen(o => !o)}
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 14px', background: 'none', border: 'none', cursor: collapsible ? 'pointer' : 'default', textAlign: 'left' }}
       >
-        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0369A1' }}>ℹ️ Sådan fungerer Swiss-ligaen</span>
-        {collapsible && <span style={{ fontSize: '12px', color: '#0369A1' }}>{open ? '▲' : '▼'}</span>}
+        <span style={{ fontSize: '12px', fontWeight: 700, color: theme.accent }}>ℹ️ Sådan fungerer Swiss-ligaen</span>
+        {collapsible && <span style={{ fontSize: '12px', color: theme.accent }}>{open ? '▲' : '▼'}</span>}
       </button>
       {open && (
         <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {SWISS_RULES.map((r, i) => (
-            <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '12px', color: '#0C4A6E', lineHeight: 1.5 }}>
+            <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '12px', color: theme.accent, lineHeight: 1.5 }}>
               <span style={{ flexShrink: 0 }}>{r.icon}</span>
               <span>{r.text}</span>
             </div>
