@@ -191,7 +191,7 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }
       >
         {/* Header */}
         <div style={{ padding: '22px 26px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#94A3B8', fontWeight: 600 }}>
+          <div style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: theme.textLight, fontWeight: 600 }}>
             Runde {rn}
           </div>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '8px', border: '1px solid ' + theme.border, background: theme.surfaceAlt, color: theme.textLight, cursor: 'pointer', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
@@ -204,30 +204,30 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }
           {!t2 ? (
             <div style={{ padding: '20px 0', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>
               <DotName teamId={t1?.id} name={t1?.name} teamColors={teamColors} />
-              <div style={{ marginTop: '8px', fontSize: '12px', color: '#94A3B8' }}>{t1?.player1_name} · {t1?.player2_name}</div>
-              <div style={{ marginTop: '14px', fontSize: '13px', color: '#64748B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fri runde</div>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: theme.textLight }}>{t1?.player1_name} · {t1?.player2_name}</div>
+              <div style={{ marginTop: '14px', fontSize: '13px', color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fri runde</div>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '16px', padding: '20px 0', borderBottom: '1px solid #E2E8F0' }}>
               {/* Team 1 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', opacity: reported && !t1Wins ? 0.45 : 1 }}>
                 <DotName teamId={t1?.id} name={t1?.name} teamColors={teamColors} />
-                <div style={{ fontSize: '12px', color: '#94A3B8' }}>
+                <div style={{ fontSize: '12px', color: theme.textLight }}>
                   {[t1?.player1_name, t1?.player2_name].filter(Boolean).join(' · ')}
                 </div>
-                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t1Wins ? '#0F172A' : '#94A3B8', marginTop: '6px' }}>
+                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t1Wins ? theme.text : theme.textLight, marginTop: '6px' }}>
                   {t1Score}
                 </div>
               </div>
               {/* VS */}
-              <div style={{ color: '#94A3B8', fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '18px', alignSelf: 'center' }}>vs</div>
+              <div style={{ color: theme.textLight, fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '18px', alignSelf: 'center' }}>vs</div>
               {/* Team 2 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end', textAlign: 'right', opacity: reported && !t2Wins ? 0.45 : 1 }}>
                 <DotName teamId={t2?.id} name={t2?.name} teamColors={teamColors} />
-                <div style={{ fontSize: '12px', color: '#94A3B8' }}>
+                <div style={{ fontSize: '12px', color: theme.textLight }}>
                   {[t2?.player1_name, t2?.player2_name].filter(Boolean).join(' · ')}
                 </div>
-                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t2Wins ? '#0F172A' : '#94A3B8', marginTop: '6px' }}>
+                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t2Wins ? theme.text : theme.textLight, marginTop: '6px' }}>
                   {t2Score}
                 </div>
               </div>
@@ -244,8 +244,8 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }
                 t2 && ['Records før', `${t1Stats.wins}W-${t1Stats.losses}L · ${t2Stats?.wins}W-${t2Stats?.losses}L`],
               ].filter(Boolean).map(([label, value]) => (
                 <tr key={label} style={{ borderTop: '1px solid #E2E8F0' }}>
-                  <td style={{ padding: '10px 0', color: '#94A3B8', fontSize: '12px' }}>{label}</td>
-                  <td style={{ padding: '10px 0', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, monospace', color: '#0F172A' }}>{value}</td>
+                  <td style={{ padding: '10px 0', color: theme.textLight, fontSize: '12px' }}>{label}</td>
+                  <td style={{ padding: '10px 0', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, monospace', color: theme.text }}>{value}</td>
                 </tr>
               ))}
             </tbody>
@@ -379,7 +379,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
           {/* Legend */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '12px' }}>
             {[['win', 'Vinder', '#16A34A', false], ['lose', 'Taber', '#EF4444', false], ['pending', 'Afventer', '#CBD5E1', true]].map(([kind, label, color, dashed]) => (
-              <div key={kind} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#64748B' }}>
+              <div key={kind} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: theme.textMid }}>
                 <svg width="18" height="8" style={{ flexShrink: 0 }}>
                   <line x1="0" y1="4" x2="18" y2="4" stroke={color} strokeWidth="2"
                     strokeDasharray={dashed ? '4 5' : undefined} strokeLinecap="round" />
@@ -392,7 +392,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
           {/* Team hover-highlight chips */}
           {teams.length > 1 && (
             <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginRight: 4 }}>Hold:</span>
+              <span style={{ fontSize: '11px', color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginRight: 4 }}>Hold:</span>
               {teams.map(t => (
                 <span key={t.id}
                   onMouseEnter={() => setHighlightTeam(t.id)}
@@ -467,10 +467,10 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
                         border: '1px solid ' + (isDone ? 'transparent' : theme.border),
                         marginBottom: '6px',
                       }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isDone ? theme.accent : isCurrent ? '#334155' : '#94A3B8' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isDone ? theme.accent : isCurrent ? theme.textMid : theme.textLight }}>
                           Runde {rn}{totalRounds ? ` / ${totalRounds}` : ''}
                         </span>
-                        <span style={{ fontSize: '11px', color: isDone ? theme.accent : '#94A3B8' }}>
+                        <span style={{ fontSize: '11px', color: isDone ? theme.accent : theme.textLight }}>
                           {isDone ? '✓ Afsluttet' : isCurrent ? '● Aktiv' : 'Kommende'}
                         </span>
                       </div>
@@ -537,32 +537,32 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
                               <>
                                 <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'center', gap: '8px', padding: '4px 2px' }}>
                                   <span style={recStyle(reported, false)}>{t1Stats.wins}W-{t1Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: '#0F172A', overflow: 'hidden' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: theme.text, overflow: 'hidden' }}>
                                     <span style={dotStyle(t1.id)}>{t1.name.slice(0, 1).toUpperCase()}</span>
                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t1.name}</span>
                                   </span>
                                 </div>
                                 <div style={{ height: '1px', background: theme.border, margin: '0 2px' }} />
-                                <div style={{ textAlign: 'center', fontSize: '11px', color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 0' }}>Fri runde</div>
+                                <div style={{ textAlign: 'center', fontSize: '11px', color: theme.textLight, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 0' }}>Fri runde</div>
                               </>
                             ) : (
                               <>
                                 <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px', opacity: reported && !t1Wins ? 0.55 : 1 }}>
                                   <span style={recStyle(t1Wins, reported && !t1Wins)}>{t1Stats.wins}W-{t1Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t1Wins ? 600 : 500, color: t1Wins ? '#0F172A' : '#64748B', overflow: 'hidden' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t1Wins ? 600 : 500, color: t1Wins ? theme.text : theme.textMid, overflow: 'hidden' }}>
                                     <span style={dotStyle(t1.id)}>{t1.name.slice(0, 1).toUpperCase()}</span>
                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t1.name}</span>
                                   </span>
-                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t1Wins ? '#0F172A' : '#94A3B8', minWidth: '20px', textAlign: 'right' }}>{t1Score}</span>
+                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t1Wins ? theme.text : theme.textLight, minWidth: '20px', textAlign: 'right' }}>{t1Score}</span>
                                 </div>
                                 <div style={{ height: '1px', background: theme.border, margin: '0 2px' }} />
                                 <div data-team-row={match.team2_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px', opacity: reported && !t2Wins ? 0.55 : 1 }}>
                                   <span style={recStyle(t2Wins, reported && !t2Wins)}>{t2Stats.wins}W-{t2Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t2Wins ? 600 : 500, color: t2Wins ? '#0F172A' : '#64748B', overflow: 'hidden' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t2Wins ? 600 : 500, color: t2Wins ? theme.text : theme.textMid, overflow: 'hidden' }}>
                                     <span style={dotStyle(t2.id)}>{t2.name.slice(0, 1).toUpperCase()}</span>
                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t2.name}</span>
                                   </span>
-                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t2Wins ? '#0F172A' : '#94A3B8', minWidth: '20px', textAlign: 'right' }}>{t2Score}</span>
+                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t2Wins ? theme.text : theme.textLight, minWidth: '20px', textAlign: 'right' }}>{t2Score}</span>
                                 </div>
                               </>
                             )}
