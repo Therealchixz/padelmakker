@@ -7,9 +7,7 @@ import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessi
 const AmericanoTab = lazy(() =>
   import('../features/americano/AmericanoTab').then(m => ({ default: m.AmericanoTab }))
 );
-const LigaTabEmbed = lazy(() =>
-  import('./LigaTab').then(m => ({ default: m.LigaTab }))
-);
+import { LigaTab as LigaTabEmbed } from './LigaTab';
 import { theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
@@ -1192,9 +1190,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       </div>
 
       {kampeFormat === "liga" && (
-        <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser liga…</div>}>
-          <LigaTabEmbed user={user} showToast={showToast} createOpen={showLigaCreate} onCreateOpenChange={setShowLigaCreate} />
-        </Suspense>
+        <LigaTabEmbed user={user} showToast={showToast} createOpen={showLigaCreate} onCreateOpenChange={setShowLigaCreate} />
       )}
 
       {loadingMatches && kampeFormat !== "liga" ? (

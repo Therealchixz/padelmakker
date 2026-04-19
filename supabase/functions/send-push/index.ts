@@ -31,7 +31,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { targetUserId, title, body, matchId } = await req.json();
+    const { targetUserId, title, body, matchId, type } = await req.json();
     if (!targetUserId || !title) {
       return new Response(JSON.stringify({ error: "targetUserId og title er påkrævet" }), {
         status: 400,
@@ -85,6 +85,47 @@ Deno.serve(async (req: Request) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+
+      // Ikke-seeking push til andre må kun sendes til personer i samme kamp
+      // (eller kamp-opretter).
+      if (type !== "seeking_player") {
+        const [{ data: targetInMatch }, { data: targetIsCreator }] = await Promise.all([
+          adminClient
+            .from("match_players")
+            .select("id")
+            .eq("match_id", matchId)
+            .eq("user_id", targetUserId)
+            .maybeSingle(),
+          adminClient
+            .from("matches")
+            .select("id")
+            .eq("id", matchId)
+            .eq("creator_id", targetUserId)
+            .maybeSingle(),
+        ]);
+        if (!targetInMatch && !targetIsCreator) {
+          return new Response(JSON.stringify({ error: "Forbidden: target bruger er ikke relateret til kampen" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
+        // seeking_player må kun sendes til brugere der faktisk søger kamp
+        const { data: targetSeeking } = await adminClient
+          .from("profiles")
+          .select("id")
+          .eq("id", targetUserId)
+          .eq("seeking_match", true)
+          .maybeSingle();
+        if (!targetSeeking) {
+          return new Response(JSON.stringify({ error: "Forbidden: target bruger søger ikke kamp" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
     }
 
     const { data: subs, error: subsError } = await adminClient

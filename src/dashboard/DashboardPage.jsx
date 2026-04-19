@@ -48,6 +48,11 @@ function usePendingKampeBadge(userId) {
   useEffect(() => {
     if (!userId) { setCount(0); return; }
     let cancelled = false;
+    let timer = null;
+    const scheduleRefetch = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { void refetch(); }, 250);
+    };
     const refetch = async () => {
       try {
         const [myMatchesRes, myPlayerRes] = await Promise.all([
@@ -65,16 +70,27 @@ function usePendingKampeBadge(userId) {
             : { count: 0 },
         ]);
         if (!cancelled) setCount((joinRes.count || 0) + (resultRes.count || 0));
-      } catch { /* stille fejl */ }
+      } catch (e) {
+        console.warn('kampe badge refetch:', e);
+      }
     };
-    refetch();
+    void refetch();
     const ch1 = supabase.channel('kampe-badge-req-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_join_requests' }, refetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_join_requests' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_join_requests' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'match_join_requests' }, scheduleRefetch)
       .subscribe();
     const ch2 = supabase.channel('kampe-badge-res-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_results' }, refetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_results' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_results' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'match_results' }, scheduleRefetch)
       .subscribe();
-    return () => { cancelled = true; supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(ch1);
+      supabase.removeChannel(ch2);
+    };
   }, [userId]);
   return count;
 }
