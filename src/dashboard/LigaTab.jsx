@@ -402,7 +402,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
                     padding: '4px 10px 4px 4px', borderRadius: '999px',
                     border: '1px solid ' + (highlightTeam === t.id ? theme.accent : theme.border),
                     background: highlightTeam === t.id ? theme.accentBg : theme.surfaceAlt,
-                    color: highlightTeam === t.id ? theme.accent : theme.textLight,
+                    color: highlightTeam === t.id ? theme.accent : theme.text,
                     fontSize: '12px', fontWeight: 500, cursor: 'default', transition: 'all .15s',
                   }}
                 >
@@ -549,20 +549,20 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
                               <>
                                 <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px', opacity: reported && !t1Wins ? 0.55 : 1 }}>
                                   <span style={recStyle(t1Wins, reported && !t1Wins)}>{t1Stats.wins}W-{t1Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t1Wins ? 600 : 500, color: t1Wins ? theme.text : theme.textMid, overflow: 'hidden' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t1Wins ? 600 : 500, color: theme.text, overflow: 'hidden' }}>
                                     <span style={dotStyle(t1.id)}>{t1.name.slice(0, 1).toUpperCase()}</span>
                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t1.name}</span>
                                   </span>
-                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t1Wins ? theme.text : theme.textLight, minWidth: '20px', textAlign: 'right' }}>{t1Score}</span>
+                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: theme.text, minWidth: '20px', textAlign: 'right' }}>{t1Score}</span>
                                 </div>
                                 <div style={{ height: '1px', background: theme.border, margin: '0 2px' }} />
                                 <div data-team-row={match.team2_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px', opacity: reported && !t2Wins ? 0.55 : 1 }}>
                                   <span style={recStyle(t2Wins, reported && !t2Wins)}>{t2Stats.wins}W-{t2Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t2Wins ? 600 : 500, color: t2Wins ? theme.text : theme.textMid, overflow: 'hidden' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t2Wins ? 600 : 500, color: theme.text, overflow: 'hidden' }}>
                                     <span style={dotStyle(t2.id)}>{t2.name.slice(0, 1).toUpperCase()}</span>
                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t2.name}</span>
                                   </span>
-                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t2Wins ? theme.text : theme.textLight, minWidth: '20px', textAlign: 'right' }}>{t2Score}</span>
+                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: theme.text, minWidth: '20px', textAlign: 'right' }}>{t2Score}</span>
                                 </div>
                               </>
                             )}
