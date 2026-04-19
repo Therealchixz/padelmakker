@@ -1,24 +1,24 @@
 /** Fælles farver: sejr (grøn), uafgjort (lys grå), tab (rød) — Americano + profil */
 export const americanoOutcomeColors = {
   win: {
-    bg: '#DCFCE7',
-    border: '#86EFAC',
-    text: '#166534',
+    bg: 'var(--pm-green-bg)',
+    border: 'var(--pm-green)',
+    text: 'var(--pm-green)',
   },
   tie: {
-    bg: '#F1F5F9',
-    border: '#E2E8F0',
-    text: '#475569',
+    bg: 'var(--pm-surface-alt)',
+    border: 'var(--pm-border)',
+    text: 'var(--pm-text-mid)',
   },
   loss: {
-    bg: '#FEE2E2',
-    border: '#FECACA',
-    text: '#991B1B',
+    bg: 'var(--pm-red-bg)',
+    border: 'var(--pm-red)',
+    text: 'var(--pm-red)',
   },
   neutral: {
-    bg: '#FFFFFF',
-    border: '#E8ECF1',
-    text: '#0F172A',
+    bg: 'var(--pm-surface)',
+    border: 'var(--pm-border)',
+    text: 'var(--pm-text)',
   },
 } as const
 

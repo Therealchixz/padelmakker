@@ -15,6 +15,7 @@ for (let h = 6; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
 }
 import { supabase } from '../../lib/supabase'
+import { theme as pmTheme } from '../../lib/platformTheme'
 import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses } from './types'
 import {
   getMatchVenueOptions,
@@ -127,20 +128,20 @@ export function CreateAmericanoTournamentForm({
     <form
       onSubmit={handleSubmit}
       style={{
-        background: '#fff',
+        background: pmTheme.surface,
         borderRadius: 12,
         padding: 'clamp(16px, 3vw, 22px)',
-        border: '1px solid #D5DDE8',
+        border: `1px solid ${pmTheme.border}`,
         boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
         maxWidth: 520,
       }}
     >
       <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Opret Americano</h3>
-      <p style={{ fontSize: 13, color: '#3E4C63', marginBottom: 18, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 13, color: pmTheme.textMid, marginBottom: 18, lineHeight: 1.5 }}>
         Individuel turnering med skiftende makkere. <strong>Ingen ELO</strong> — kun separat Americano V/T på profilen (som i Padelboard-lignende apps). Du tilmeldes automatisk som første spiller.
       </p>
 
-      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#0B1120' }}>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: pmTheme.text }}>
         Turneringsnavn
       </label>
       <input
@@ -172,7 +173,7 @@ export function CreateAmericanoTournamentForm({
             </option>
           ))}
         </select>
-        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6, lineHeight: 1.45 }}>
+        <p style={{ fontSize: 11, color: pmTheme.textLight, marginTop: 6, lineHeight: 1.45 }}>
           Samme steder som under fanen Baner. Matcher automatisk til baner i databasen når navnet stemmer overens.
         </p>
       </div>
@@ -190,7 +191,7 @@ export function CreateAmericanoTournamentForm({
             </option>
           ))}
         </select>
-        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
+        <p style={{ fontSize: 11, color: pmTheme.textLight, marginTop: 6 }}>
           Én bane: fire på banen, resten sidder over (5: én over, 6: to over, 7: tre over). Start når præcis dette antal har tilmeldt sig.
         </p>
       </div>
@@ -205,7 +206,7 @@ export function CreateAmericanoTournamentForm({
           <option value={1}>Normal — én gennemgang af alle runder</option>
           <option value={2}>Lang — samme rundeplan to gange (dobbelt så mange kampe)</option>
         </select>
-        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
+        <p style={{ fontSize: 11, color: pmTheme.textLight, marginTop: 6 }}>
           Ved &quot;Lang&quot; gentages hele rotationsplanen; du møder de andre oftere som modstander og makker uden at oprette en ny turnering.
         </p>
       </div>
@@ -223,7 +224,7 @@ export function CreateAmericanoTournamentForm({
             </option>
           ))}
         </select>
-        <p style={{ fontSize: 11, color: '#8494A7', marginTop: 6 }}>
+        <p style={{ fontSize: 11, color: pmTheme.textLight, marginTop: 6 }}>
           Efter hver kamp skal de to hold tilsammen give formatet (fx 10+6 eller 8+8 ved 16). Du kan skrive kun ét hold — app’en udfylder resten.
         </p>
       </div>
@@ -240,7 +241,7 @@ export function CreateAmericanoTournamentForm({
       </div>
 
       {error && (
-        <p style={{ color: '#DC2626', fontSize: 13, marginTop: 12 }}>{error}</p>
+        <p style={{ color: pmTheme.red, fontSize: 13, marginTop: 12 }}>{error}</p>
       )}
 
       <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
@@ -254,7 +255,7 @@ export function CreateAmericanoTournamentForm({
             padding: '10px 20px',
             borderRadius: 10,
             border: 'none',
-            background: '#1D4ED8',
+            background: pmTheme.accent,
             color: '#fff',
             cursor: submitting ? 'wait' : 'pointer',
             opacity: 1,
@@ -272,9 +273,9 @@ export function CreateAmericanoTournamentForm({
               fontWeight: 600,
               padding: '10px 20px',
               borderRadius: 10,
-              border: '1px solid #D5DDE8',
-              background: '#fff',
-              color: '#3E4C63',
+              border: `1px solid ${pmTheme.border}`,
+              background: pmTheme.surface,
+              color: pmTheme.textMid,
               cursor: 'pointer',
             }}
           >
@@ -291,7 +292,7 @@ const labelSmall: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 600,
   marginBottom: 6,
-  color: '#0B1120',
+  color: pmTheme.text,
 }
 
 const inputStyle: React.CSSProperties = {
@@ -301,8 +302,8 @@ const inputStyle: React.CSSProperties = {
   height: 42,
   lineHeight: '20px',
   borderRadius: 8,
-  border: '1px solid #D5DDE8',
+  border: `1px solid ${pmTheme.border}`,
   fontSize: 14,
   fontFamily: "'Inter', sans-serif",
-  background: '#fff',
+  background: pmTheme.surface,
 }

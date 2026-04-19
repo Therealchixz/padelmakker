@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { Check, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { theme as pmTheme } from '../../lib/platformTheme'
 import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
 import {
   americanoOutcomeColors,
@@ -12,13 +13,13 @@ import {
 const font = "'Inter', sans-serif"
 
 const c = {
-  line: '#E8ECF1',
-  muted: '#94A3B8',
-  text: '#0F172A',
-  softBg: '#F8FAFC',
-  avatarBg: '#E2E8F0',
-  avatarText: '#64748B',
-  accent: '#2563EB',
+  line: pmTheme.border,
+  muted: pmTheme.textLight,
+  text: pmTheme.text,
+  softBg: pmTheme.surfaceAlt,
+  avatarBg: pmTheme.border,
+  avatarText: pmTheme.textLight,
+  accent: pmTheme.accent,
 } as const
 
 function initialsFromName(name: string): string {
@@ -454,7 +455,7 @@ export function AmericanoResultsPanel({
   const leaderboard = buildLeaderboard(participants, matches, scores, P)
 
   if (loading) {
-    return <div style={{ fontSize: 12, color: '#8494A7', marginTop: 12 }}>Henter kampe…</div>
+    return <div style={{ fontSize: 12, color: pmTheme.textLight, marginTop: 12 }}>Henter kampe…</div>
   }
 
   return (
@@ -465,12 +466,12 @@ export function AmericanoResultsPanel({
       <p style={{ fontSize: 11, color: c.muted, margin: '0 0 14px', lineHeight: 1.55, fontFamily: font }}>
         {isCreator ? (
           <>
-            <strong style={{ color: '#475569' }}>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
+            <strong style={{ color: pmTheme.textMid }}>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
             <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Uafgjort tæller ikke som V/T på profilen.
           </>
         ) : (
           <>
-            <strong style={{ color: '#475569' }}>Format {P} point:</strong> Her ser du stilling og alle kampe. Kun{' '}
+            <strong style={{ color: pmTheme.textMid }}>Format {P} point:</strong> Her ser du stilling og alle kampe. Kun{' '}
             <strong>opretteren</strong> kan indtaste og rette resultater.
           </>
         )}
@@ -486,7 +487,7 @@ export function AmericanoResultsPanel({
         }}
       >
         <div style={{ fontWeight: 700, marginBottom: 10, color: c.text, fontSize: 12 }}>Stilling (sum af kampoint)</div>
-        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.65, fontSize: 13, color: '#334155' }}>
+        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.65, fontSize: 13, color: pmTheme.textMid }}>
           {leaderboard.map((row) => (
             <li key={row.id}>
               <span style={{ color: c.text }}>{row.name}</span>{' '}
@@ -542,8 +543,8 @@ export function AmericanoResultsPanel({
                 marginBottom: 14,
                 padding: isActiveRound ? '14px 14px 6px' : '12px 12px 4px',
                 borderRadius: 10,
-                background: isActiveRound ? '#FFFBEB' : matchPal.bg,
-                border: isActiveRound ? `2px solid #F59E0B` : `1px solid ${matchPal.border}`,
+                background: isActiveRound ? pmTheme.warmBg : matchPal.bg,
+                border: isActiveRound ? `2px solid ${pmTheme.warm}` : `1px solid ${matchPal.border}`,
                 boxShadow: isActiveRound ? '0 4px 14px rgba(245, 158, 11, 0.15)' : 'none',
                 opacity: containerOpacity,
                 transition: 'opacity 0.2s',
@@ -551,8 +552,8 @@ export function AmericanoResultsPanel({
             >
               {isActiveRound && (
                 <div style={{
-                  background: onCourt ? '#10B981' : '#E2E8F0',
-                  color: onCourt ? '#fff' : '#475569',
+                  background: onCourt ? pmTheme.green : pmTheme.border,
+                  color: onCourt ? '#fff' : pmTheme.textMid,
                   padding: '6px 12px',
                   borderRadius: '6px 6px 0 0',
                   margin: '-14px -14px 10px -14px',
@@ -611,7 +612,7 @@ export function AmericanoResultsPanel({
                         height: 40,
                         borderRadius: '50%',
                         border: `2px solid ${c.accent}`,
-                        background: '#fff',
+                        background: pmTheme.surface,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -666,7 +667,7 @@ export function AmericanoResultsPanel({
                           textAlign: 'center',
                           fontFamily: font,
                           color: c.accent,
-                          background: '#F0F7FF',
+                          background: pmTheme.blueBg,
                           outline: 'none',
                         }}
                       />
@@ -709,7 +710,7 @@ export function AmericanoResultsPanel({
                           textAlign: 'center',
                           fontFamily: font,
                           color: c.accent,
-                          background: '#F0F7FF',
+                          background: pmTheme.blueBg,
                           outline: 'none',
                         }}
                       />
@@ -733,9 +734,9 @@ export function AmericanoResultsPanel({
             fontWeight: 600,
             padding: '8px 14px',
             borderRadius: 8,
-            border: '1px solid #D5DDE8',
-            background: '#fff',
-            color: '#3E4C63',
+            border: `1px solid ${pmTheme.border}`,
+            background: pmTheme.surface,
+            color: pmTheme.textMid,
             cursor: saving ? 'wait' : 'pointer',
           }}
         >

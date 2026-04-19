@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { theme as pmTheme } from '../../lib/platformTheme'
 import type { AmericanoMatchRow, AmericanoTournament } from './types'
 import {
   americanoOutcomeColors,
@@ -108,9 +109,9 @@ export function AmericanoCompletedSummary({
     <div
       style={{
         marginTop: 12,
-        background: '#F8FAFC',
+        background: pmTheme.surfaceAlt,
         borderRadius: 8,
-        border: '1px solid #E2E8F0',
+        border: `1px solid ${pmTheme.border}`,
         overflow: 'hidden',
         fontFamily: font,
       }}
@@ -133,8 +134,8 @@ export function AmericanoCompletedSummary({
         }}
       >
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#0B1120' }}>Resultater og stilling</div>
-          <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: pmTheme.text }}>Resultater og stilling</div>
+          <div style={{ fontSize: 11, color: pmTheme.textLight, marginTop: 2 }}>
             {matches === undefined
               ? 'Tryk for at se samlet stilling og alle kampresultater'
               : `Samlet point + alle kampe (${sortedMatches.length} ${sortedMatches.length === 1 ? 'kamp' : 'kampe'})`}
@@ -142,7 +143,7 @@ export function AmericanoCompletedSummary({
         </div>
         <ChevronDown
           size={18}
-          color="#64748B"
+          color={pmTheme.textLight}
           strokeWidth={2}
           style={{
             flexShrink: 0,
@@ -154,27 +155,27 @@ export function AmericanoCompletedSummary({
       </button>
 
       {open && (
-        <div style={{ padding: '0 12px 14px', borderTop: '1px solid #E2E8F0' }}>
+        <div style={{ padding: '0 12px 14px', borderTop: `1px solid ${pmTheme.border}` }}>
           {loading && (
-            <div style={{ fontSize: 12, color: '#64748B', paddingTop: 12 }}>Henter resultater…</div>
+            <div style={{ fontSize: 12, color: pmTheme.textLight, paddingTop: 12 }}>Henter resultater…</div>
           )}
           {fetchErr && !loading && (
-            <div style={{ fontSize: 12, color: '#B45309', paddingTop: 12 }}>{fetchErr}</div>
+            <div style={{ fontSize: 12, color: pmTheme.warm, paddingTop: 12 }}>{fetchErr}</div>
           )}
           {!loading && matches !== undefined && (
             <>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 12, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: pmTheme.textLight, marginTop: 12, marginBottom: 8 }}>
                 Samlet stilling (alle kampoint)
               </div>
               {leaderboard.length === 0 ? (
-                <div style={{ fontSize: 12, color: '#94A3B8' }}>Ingen deltagere.</div>
+                <div style={{ fontSize: 12, color: pmTheme.textLight }}>Ingen deltagere.</div>
               ) : (
                 <ol
                   style={{
                     margin: 0,
                     paddingLeft: 18,
                     fontSize: 13,
-                    color: '#334155',
+                    color: pmTheme.textMid,
                     lineHeight: 1.65,
                   }}
                 >
@@ -183,24 +184,24 @@ export function AmericanoCompletedSummary({
                     const isMe = pu && String(pu.user_id) === String(currentUserId)
                     return (
                       <li key={row.id}>
-                        <span style={{ color: '#0F172A', fontWeight: idx === 0 ? 700 : 500 }}>{row.name}</span>
+                        <span style={{ color: pmTheme.text, fontWeight: idx === 0 ? 700 : 500 }}>{row.name}</span>
                         {isMe ? (
-                          <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
+                          <span style={{ color: pmTheme.accent, fontWeight: 600 }}> (dig)</span>
                         ) : null}
                         {' — '}
-                        <strong style={{ color: '#0F172A' }}>{row.points}</strong> point
+                        <strong style={{ color: pmTheme.text }}>{row.points}</strong> point
                       </li>
                     )
                   })}
                 </ol>
               )}
 
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 16, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: pmTheme.textLight, marginTop: 16, marginBottom: 8 }}>
                 Kamp for kamp (format {P} point)
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {sortedMatches.length === 0 ? (
-                  <div style={{ fontSize: 12, color: '#94A3B8' }}>Ingen kampe i turneringen.</div>
+                  <div style={{ fontSize: 12, color: pmTheme.textLight }}>Ingen kampe i turneringen.</div>
                 ) : (
                   sortedMatches.map((m, i) => {
                     const a = m.team_a_score
