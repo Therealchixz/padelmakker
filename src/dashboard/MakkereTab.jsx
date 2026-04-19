@@ -153,7 +153,7 @@ export function MakkereTab({ user, showToast }) {
   useEffect(() => {
     setFavorites(readFavoritesSet(user.id));
     setFilterFav(false);
-  }, [user.id]);
+  }, [user.id, showToast]);
 
   const toggleFavorite = (playerId) => {
     setFavorites(prev => {
@@ -180,7 +180,7 @@ export function MakkereTab({ user, showToast }) {
     } finally {
       setLoading(false);
     }
-  }, [user.id]);
+  }, [user.id, showToast]);
 
   useEffect(() => {
     loadPlayers();

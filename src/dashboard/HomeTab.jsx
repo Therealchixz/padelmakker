@@ -50,7 +50,9 @@ export function HomeTab({ user, setTab }) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return new Set(parsed);
       }
-    } catch {}
+    } catch (e) {
+      console.warn('[home-feed] Kunne ikke læse gemte feed-filtre:', e);
+    }
     return new Set(FEED_FILTERS.map(f => f.id));
   });
   const toggleFilter = (id) => {
@@ -62,7 +64,11 @@ export function HomeTab({ user, setTab }) {
       } else {
         next.add(id);
       }
-      try { localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...next])); } catch {}
+      try {
+        localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...next]));
+      } catch (e) {
+        console.warn('[home-feed] Kunne ikke gemme feed-filtre:', e);
+      }
       return next;
     });
   };
@@ -70,7 +76,11 @@ export function HomeTab({ user, setTab }) {
   const enableAllFilters = () => {
     const all = new Set(FEED_FILTERS.map(f => f.id));
     setActiveFilters(all);
-    try { localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...all])); } catch {}
+    try {
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...all]));
+    } catch (e) {
+      console.warn('[home-feed] Kunne ikke gemme feed-filtre:', e);
+    }
   };
   const enabledTypes = new Set(FEED_FILTERS.filter(f => activeFilters.has(f.id)).flatMap(f => f.types));
 
@@ -88,7 +98,7 @@ export function HomeTab({ user, setTab }) {
         supabase.from('elo_history')
           .select('user_id, result, change, old_rating, new_rating, date, created_at, match_id, profiles(full_name, name, avatar)')
           .neq('change', 0).not('change', 'is', null).neq('result', 'adjustment')
-          .order('created_at', { ascending: false, nullsFirst: false }).limit(150),
+          .order('created_at', { ascending: false, nullsFirst: false }).limit(100),
         supabase.from('americano_tournaments')
           .select('id, name, tournament_date, updated_at').eq('status', 'completed')
           .order('updated_at', { ascending: false }).limit(5),
@@ -109,6 +119,12 @@ export function HomeTab({ user, setTab }) {
           .select('id, name, status, created_at').in('status', ['registration', 'active'])
           .order('created_at', { ascending: false }).limit(5),
       ]);
+      const round1Results = {
+        eloRes, completedAmRes, completedLigaRes, openMatchRes, regAmRes, seekingRes, newLigaRes,
+      };
+      for (const [key, result] of Object.entries(round1Results)) {
+        if (result.status === 'rejected') console.warn('[home-feed] Round1 query fejlede:', key, result.reason);
+      }
 
       const eloFull     = (eloRes.value?.data         || []).filter(r => Number(r.change) !== 0);
       const completedAm = completedAmRes.value?.data   || [];
@@ -142,6 +158,12 @@ export function HomeTab({ user, setTab }) {
         regAmIds.length       ? supabase.from('americano_participants').select('tournament_id').in('tournament_id', regAmIds)                                                                                                                     : Promise.resolve({ data: [] }),
         newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
       ]);
+      const round2Results = {
+        mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes,
+      };
+      for (const [key, result] of Object.entries(round2Results)) {
+        if (result.status === 'rejected') console.warn('[home-feed] Round2 query fejlede:', key, result.reason);
+      }
 
       // Round 3: Americano avatar-opslag (afhænger af participants fra Round 2)
       const amParts = amPartsRes.value?.data || [];
@@ -159,12 +181,20 @@ export function HomeTab({ user, setTab }) {
       const matchMap = {};
       (mResultsRes.value?.data || []).forEach(r => { matchMap[r.match_id] = { ...matchMap[r.match_id], results: r }; });
       (mDetailsRes.value?.data || []).forEach(d => { matchMap[d.id]       = { ...matchMap[d.id],       details: d }; });
-      const processedMIds = new Set();
+      const rowsByMatchId = new Map();
+      eloSlice.forEach((row) => {
+        if (!row.match_id) return;
+        const mid = String(row.match_id);
+        if (!rowsByMatchId.has(mid)) rowsByMatchId.set(mid, []);
+        rowsByMatchId.get(mid).push(row);
+      });
       const groupedFeed = [];
       eloSlice.forEach(row => {
         if (!row.match_id) { groupedFeed.push({ ...row, type: 'elo' }); return; }
-        if (processedMIds.has(row.match_id)) return;
-        const sameMatch = eloSlice.filter(r => r.match_id === row.match_id);
+        const mid = String(row.match_id);
+        const sameMatch = rowsByMatchId.get(mid);
+        if (!sameMatch) return;
+        rowsByMatchId.delete(mid);
         const mInfo = matchMap[row.match_id];
         groupedFeed.push({
           type: 'match_group', match_id: row.match_id, created_at: row.created_at,
@@ -172,7 +202,6 @@ export function HomeTab({ user, setTab }) {
           score: mInfo?.results?.score_display || '—', winner: mInfo?.results?.match_winner,
           court: mInfo?.details?.court_name || 'Bane', description: mInfo?.details?.description,
         });
-        processedMIds.add(row.match_id);
       });
 
       // Americano afsluttede
@@ -230,7 +259,7 @@ export function HomeTab({ user, setTab }) {
       (regAmPartsRes.value?.data || []).forEach(p => { regCounts[p.tournament_id] = (regCounts[p.tournament_id] || 0) + 1; });
       const americanoRegFeed_ = regAm.map(t => ({ type: 'americano_registration', tournamentId: t.id, name: t.name, date: t.tournament_date, time: t.time_slot, slots: t.player_slots, participants: regCounts[t.id] || 0, created_at: t.created_at }));
 
-      // ELO milepæle (fra det fulde 150-opslag)
+      // ELO milepæle (fra det fulde opslag)
       const MILESTONES = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
       const milestoneItems = [];
       const seenMilestones = new Set();
