@@ -41,7 +41,6 @@ export async function createNotification(userId, type, title, body, matchId = nu
             'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({ targetUserId: userId, title, body, matchId, type }),
-
         })
           .then(async (res) => {
             if (res.ok) return;
@@ -50,7 +49,6 @@ export async function createNotification(userId, type, title, body, matchId = nu
             console.warn(`[push] send-push svarede ${res.status}${details ? `: ${details}` : ''}`);
           })
           .catch(() => { /* ignorér netværksfejl */ });
-
       }
     }
   } catch { /* ignorér */ }

@@ -29,7 +29,6 @@ export default function PadelMakker() {
   const toastTimerRef = useRef(null);
   const navigate = useNavigate();
   const showToast = useCallback((msg) => {
-
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast(msg);
     toastTimerRef.current = setTimeout(() => {
