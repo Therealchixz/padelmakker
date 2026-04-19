@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
@@ -26,8 +26,14 @@ export default function PadelMakker() {
   const [toast, setToast] = useState(null);
   const [resetMode, setResetMode] = useState(false);
   const navigate = useNavigate();
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-  const handleLogout = async () => { await signOut(); navigate("/", { replace: true }); };
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+  const handleLogout = useCallback(async () => {
+    await signOut();
+    navigate("/", { replace: true });
+  }, [navigate, signOut]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
