@@ -208,7 +208,8 @@ export function useProfileEloBundle(userId, syncKey) {
             .select('*')
             .eq('user_id', userId)
             .order('date', { ascending: true })
-            .order('match_id', { ascending: true }),
+            .order('match_id', { ascending: true })
+            .order('id', { ascending: true }),
         ]);
         setProfileFresh(normalizeProfileRow(pr.data || null));
         setRatedRows(filterRatedEloHistoryRows(hist.data || []));
