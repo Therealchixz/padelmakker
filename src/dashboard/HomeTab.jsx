@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { DateTime } from 'luxon';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, heading, btn } from '../lib/platformTheme';
@@ -25,6 +25,7 @@ export function HomeTab({ user, setTab }) {
   const wins = histStats?.wins ?? (profileFresh?.games_won || 0);
   const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
 
+  const fetchIdRef = useRef(0);
   const [feed, setFeed] = useState([]);
   const [americanoFeed, setAmericanoFeed] = useState([]);
   const [ligaFeed, setLigaFeed] = useState([]);
@@ -85,6 +86,7 @@ export function HomeTab({ user, setTab }) {
   const enabledTypes = new Set(FEED_FILTERS.filter(f => activeFilters.has(f.id)).flatMap(f => f.types));
 
   const fetchFeed = useCallback(async () => {
+    const fetchId = ++fetchIdRef.current;
     setFeedLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -287,6 +289,7 @@ export function HomeTab({ user, setTab }) {
       const leagueNewFeed_ = newLiga.map(l => ({ type: 'league_new', leagueId: l.id, leagueName: l.name, status: l.status, teamCount: lgTeamCounts[l.id] || 0, created_at: l.created_at }));
 
       // Sæt al state på én gang (React 18 batcher disse i async-kontekst)
+      if (fetchIdRef.current !== fetchId) return;
       setFeed(groupedFeed);
       setAmericanoFeed(completedAmFeed);
       setLigaFeed(completedLgFeed);
@@ -296,9 +299,9 @@ export function HomeTab({ user, setTab }) {
       setSeekingFeed(seekingFeed_);
       setLeagueNewFeed(leagueNewFeed_);
     } catch (e) {
-      console.warn('Feed error:', e);
+      if (fetchIdRef.current === fetchId) console.warn('Feed error:', e);
     } finally {
-      setFeedLoading(false);
+      if (fetchIdRef.current === fetchId) setFeedLoading(false);
     }
   }, [user.id]);
 

@@ -160,6 +160,8 @@ export function AuthProvider({ children }) {
   const profileReqId = useRef(0)
   /** Til pending-avatar merge: undgå at sætte profil efter logout når core-load timeout gav prev=null */
   const activeUserIdRef = useRef('')
+  /** Forhindrer dobbelt signOut() fra loadProfile + realtime-lytter */
+  const signingOutRef = useRef(false)
 
   /**
    * Opdater last_active_at for brugeren — fire-and-forget.
@@ -197,6 +199,8 @@ export function AuthProvider({ children }) {
 
         // Tjek for ban-status
         if (p?.is_banned) {
+          if (signingOutRef.current) return
+          signingOutRef.current = true
           const reasonMsg = p.ban_reason ? `\n\nBegrundelse: ${p.ban_reason}` : '';
           alert(`Din konto er blevet udelukket af en administrator.${reasonMsg}`);
           signOut();
@@ -278,6 +282,8 @@ export function AuthProvider({ children }) {
           { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
           (payload) => {
             if (payload.new?.is_banned) {
+              if (signingOutRef.current) return
+              signingOutRef.current = true
               const reason = payload.new.ban_reason ? `\n\nBegrundelse: ${payload.new.ban_reason}` : ''
               alert(`Din konto er blevet udelukket af en administrator.${reason}`)
               signOut()
@@ -390,6 +396,7 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     profileReqId.current += 1
+    signingOutRef.current = false
     await supabase.auth.signOut()
     setSession(null)
     setUser(null)
