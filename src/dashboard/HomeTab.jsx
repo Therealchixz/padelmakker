@@ -89,6 +89,7 @@ export function HomeTab({ user, setTab }) {
     try {
       const today = new Date().toISOString().split('T')[0];
       const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
       // Round 1: alle primære queries i parallel
       const [
@@ -97,6 +98,7 @@ export function HomeTab({ user, setTab }) {
       ] = await Promise.allSettled([
         supabase.from('elo_history')
           .select('user_id, result, change, old_rating, new_rating, date, created_at, match_id, profiles(full_name, name, avatar)')
+          .gte('created_at', since30d)
           .neq('change', 0).not('change', 'is', null).neq('result', 'adjustment')
           .order('created_at', { ascending: false, nullsFirst: false }).limit(100),
         supabase.from('americano_tournaments')

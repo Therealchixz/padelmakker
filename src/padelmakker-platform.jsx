@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
-
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
@@ -37,7 +36,6 @@ export default function PadelMakker() {
       setToast(null);
       toastTimerRef.current = null;
     }, 3000);
-
   }, []);
   const handleLogout = useCallback(async () => {
     await signOut();

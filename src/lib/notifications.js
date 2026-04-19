@@ -41,7 +41,16 @@ export async function createNotification(userId, type, title, body, matchId = nu
             'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({ targetUserId: userId, title, body, matchId, type }),
-        }).catch(() => { /* ignorér netværksfejl */ });
+
+        })
+          .then(async (res) => {
+            if (res.ok) return;
+            let details = '';
+            try { details = await res.text(); } catch { /* ignore */ }
+            console.warn(`[push] send-push svarede ${res.status}${details ? `: ${details}` : ''}`);
+          })
+          .catch(() => { /* ignorér netværksfejl */ });
+
       }
     }
   } catch { /* ignorér */ }

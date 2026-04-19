@@ -86,7 +86,6 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-
       // Ikke-seeking push til andre må kun sendes til personer i samme kamp
       // (eller kamp-opretter).
       if (type !== "seeking_player") {
@@ -125,7 +124,6 @@ Deno.serve(async (req: Request) => {
           });
         }
       }
-
     }
 
     const { data: subs, error: subsError } = await adminClient
