@@ -116,9 +116,9 @@ export function HomeTab({ user, setTab }) {
           .select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration')
           .order('created_at', { ascending: false }).limit(5),
         supabase.from('profiles')
-          .select('id, full_name, name, avatar, level, area, intent_now, last_active_at')
-          .eq('seeking_match', true).gt('last_active_at', since24h)
-          .order('last_active_at', { ascending: false, nullsFirst: false }).limit(5),
+          .select('id, full_name, name, avatar, level, area, intent_now, seeking_match_at')
+          .eq('seeking_match', true).gt('seeking_match_at', since24h)
+          .order('seeking_match_at', { ascending: false, nullsFirst: false }).limit(5),
         supabase.from('leagues')
           .select('id, name, status, created_at').in('status', ['registration', 'active'])
           .order('created_at', { ascending: false }).limit(5),
@@ -281,7 +281,7 @@ export function HomeTab({ user, setTab }) {
       // Søger makker
       const seekingFeed_ = seeking
         .filter(p => String(p.id) !== String(user.id)).slice(0, 3)
-        .map(p => ({ type: 'seeking_player', userId: p.id, name: p.full_name || p.name || 'En spiller', avatar: p.avatar || '🎾', level: p.level, area: p.area, intent: p.intent_now, created_at: p.last_active_at }));
+        .map(p => ({ type: 'seeking_player', userId: p.id, name: p.full_name || p.name || 'En spiller', avatar: p.avatar || '🎾', level: p.level, area: p.area, intent: p.intent_now, created_at: p.seeking_match_at }));
 
       // Nye/aktive ligaer
       const lgTeamCounts = {};
