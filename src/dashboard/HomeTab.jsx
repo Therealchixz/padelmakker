@@ -439,7 +439,7 @@ export function HomeTab({ user, setTab }) {
                         display: "flex", alignItems: "center", gap: "10px",
                         background: theme.warmBg,
                         borderRadius: "8px", padding: "8px 12px",
-                        border: "1.5px solid " + theme.warm,
+                        border: "1px solid " + theme.border,
                         position: "relative"
                       }}
                     >
@@ -451,7 +451,7 @@ export function HomeTab({ user, setTab }) {
                           avatar={row.avatar}
                           size={38}
                           emojiSize="24px"
-                          style={{ background: theme.warmBg, border: "1.5px solid " + theme.warm }}
+                          style={{ background: theme.warmBg, border: "1px solid " + theme.border }}
                         />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -482,7 +482,7 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'liga_completed') {
                   const c = row.champion;
                   return (
-                    <div key={`liga-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.blue }}>
+                    <div key={`liga-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
                       {/* Overlapping avatars for winning team */}
                       <div style={{ display: "flex", position: "relative", width: "46px", height: "34px", flexShrink: 0 }}>
                         <AvatarCircle avatar={c.player1_avatar} size={30} emojiSize="15px" style={{ background: theme.accentBg, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
@@ -506,9 +506,9 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'open_match') {
                   const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                   return (
-                    <div key={`open-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.greenBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.green }}>
+                    <div key={`open-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.greenBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
                       <div onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: theme.greenBg, border: "1.5px solid " + theme.green }} />
+                        <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: theme.greenBg, border: "1px solid " + theme.border }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -524,8 +524,8 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'americano_registration') {
                   const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                   return (
-                    <div key={`amreg-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.warmBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.warm }}>
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.warmBg, border: "1.5px solid " + theme.warm, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
+                    <div key={`amreg-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.warmBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.warmBg, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>
                         <div style={{ fontSize: "11px", color: theme.warm, marginTop: "1px" }}>
@@ -539,9 +539,9 @@ export function HomeTab({ user, setTab }) {
 
                 if (row.type === 'elo_milestone') {
                   return (
-                    <div key={`milestone-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.purpleBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.purple }}>
+                    <div key={`milestone-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.purpleBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.purpleBg, border: "1.5px solid " + theme.purple }} />
+                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.purpleBg, border: "1px solid " + theme.border }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -557,9 +557,9 @@ export function HomeTab({ user, setTab }) {
                   const levelStr = row.level ? levelLabel(row.level) : null;
                   const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                   return (
-                    <div key={`seek-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.blue }}>
+                    <div key={`seek-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.accentBg, border: "1.5px solid " + theme.blue }} />
+                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.accentBg, border: "1px solid " + theme.border }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -575,8 +575,8 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'league_new') {
                   const isReg = row.status === 'registration';
                   return (
-                    <div key={`lnew-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.blue }}>
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.accentBg, border: "1.5px solid " + theme.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
+                    <div key={`lnew-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.accentBg, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.leagueName}</div>
                         <div style={{ fontSize: "11px", color: theme.accent, marginTop: "1px" }}>
