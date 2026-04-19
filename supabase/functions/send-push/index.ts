@@ -11,12 +11,37 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const defaultAllowedOrigins = [
+  "https://padelmakker.dk",
+  "https://www.padelmakker.dk",
+];
+
+function normalizeOrigin(value: string | null) {
+  return String(value || "").trim().replace(/\/+$/, "");
+}
+
+function allowedOrigins() {
+  const raw = Deno.env.get("CORS_ALLOWED_ORIGINS") || "";
+  const parsed = raw
+    .split(",")
+    .map((v) => normalizeOrigin(v))
+    .filter(Boolean);
+  return parsed.length ? parsed : defaultAllowedOrigins;
+}
+
+function corsHeadersForRequest(req: Request) {
+  const origin = normalizeOrigin(req.headers.get("origin"));
+  const allowed = allowedOrigins();
+  const allowOrigin = origin && allowed.includes(origin) ? origin : allowed[0];
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Vary": "Origin",
+  };
+}
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = corsHeadersForRequest(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -46,7 +71,14 @@ Deno.serve(async (req: Request) => {
     );
 
     // Verificér at kalder er autentificeret — send JWT eksplicit (Edge Functions har ingen session-storage)
-    const jwt = authHeader.replace("Bearer ", "");
+    const bearerPrefix = "Bearer ";
+    const jwt = authHeader.startsWith(bearerPrefix) ? authHeader.slice(bearerPrefix.length) : "";
+    if (!jwt) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const { data: { user }, error: authError } = await adminClient.auth.getUser(jwt);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -84,45 +116,6 @@ Deno.serve(async (req: Request) => {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
-      }
-
-      // Ikke-seeking push til andre må kun sendes til personer i samme kamp
-      // (eller kamp-opretter).
-      if (type !== "seeking_player") {
-        const [{ data: targetInMatch }, { data: targetIsCreator }] = await Promise.all([
-          adminClient
-            .from("match_players")
-            .select("id")
-            .eq("match_id", matchId)
-            .eq("user_id", targetUserId)
-            .maybeSingle(),
-          adminClient
-            .from("matches")
-            .select("id")
-            .eq("id", matchId)
-            .eq("creator_id", targetUserId)
-            .maybeSingle(),
-        ]);
-        if (!targetInMatch && !targetIsCreator) {
-          return new Response(JSON.stringify({ error: "Forbidden: target bruger er ikke relateret til kampen" }), {
-            status: 403,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-      } else {
-        // seeking_player må kun sendes til brugere der faktisk søger kamp
-        const { data: targetSeeking } = await adminClient
-          .from("profiles")
-          .select("id")
-          .eq("id", targetUserId)
-          .eq("seeking_match", true)
-          .maybeSingle();
-        if (!targetSeeking) {
-          return new Response(JSON.stringify({ error: "Forbidden: target bruger søger ikke kamp" }), {
-            status: 403,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
       }
     }
 

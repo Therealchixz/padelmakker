@@ -91,14 +91,14 @@ function usePendingKampeBadge(userId) {
     };
     void refetch();
     const ch1 = supabase.channel('kampe-badge-req-' + userId)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_join_requests' }, scheduleRefetch)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_join_requests' }, scheduleRefetch)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'match_join_requests' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_join_requests', filter: 'status=eq.pending' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_join_requests', filter: 'status=eq.pending' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'match_join_requests', filter: 'status=eq.pending' }, scheduleRefetch)
       .subscribe();
     const ch2 = supabase.channel('kampe-badge-res-' + userId)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_results' }, scheduleRefetch)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_results' }, scheduleRefetch)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'match_results' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_results', filter: 'confirmed=eq.false' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_results', filter: 'confirmed=eq.false' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'match_results', filter: 'confirmed=eq.false' }, scheduleRefetch)
       .subscribe();
     return () => {
       cancelled = true;

@@ -150,7 +150,7 @@ export function HomeTab({ user, setTab }) {
         lgTeamsRes, lgMatchesRes,
         creatorProfilesRes, regAmPartsRes, newLgTeamsRes,
       ] = await Promise.allSettled([
-        matchIds.length       ? supabase.from('match_results').select('*').in('match_id', matchIds)                                                                                                                                              : Promise.resolve({ data: [] }),
+        matchIds.length       ? supabase.from('match_results').select('match_id, score_display, match_winner').in('match_id', matchIds)                                                                                                       : Promise.resolve({ data: [] }),
         matchIds.length       ? supabase.from('matches').select('id, court_name, description').in('id', matchIds)                                                                                                                                : Promise.resolve({ data: [] }),
         completedAmIds.length ? supabase.from('americano_participants').select('id, tournament_id, user_id, display_name').in('tournament_id', completedAmIds)                                                                                   : Promise.resolve({ data: [] }),
         completedAmIds.length ? supabase.from('americano_matches').select('tournament_id, team_a_p1, team_a_p2, team_b_p1, team_b_p2, team_a_score, team_b_score').in('tournament_id', completedAmIds)                                           : Promise.resolve({ data: [] }),
