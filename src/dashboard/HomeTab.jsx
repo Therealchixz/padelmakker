@@ -89,6 +89,7 @@ export function HomeTab({ user, setTab }) {
     try {
       const today = new Date().toISOString().split('T')[0];
       const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
       // Round 1: alle primære queries i parallel
       const [
@@ -97,6 +98,7 @@ export function HomeTab({ user, setTab }) {
       ] = await Promise.allSettled([
         supabase.from('elo_history')
           .select('user_id, result, change, old_rating, new_rating, date, created_at, match_id, profiles(full_name, name, avatar)')
+          .gte('created_at', since30d)
           .neq('change', 0).not('change', 'is', null).neq('result', 'adjustment')
           .order('created_at', { ascending: false, nullsFirst: false }).limit(100),
         supabase.from('americano_tournaments')
@@ -119,6 +121,12 @@ export function HomeTab({ user, setTab }) {
           .select('id, name, status, created_at').in('status', ['registration', 'active'])
           .order('created_at', { ascending: false }).limit(5),
       ]);
+      const round1Results = {
+        eloRes, completedAmRes, completedLigaRes, openMatchRes, regAmRes, seekingRes, newLigaRes,
+      };
+      for (const [key, result] of Object.entries(round1Results)) {
+        if (result.status === 'rejected') console.warn('[home-feed] Round1 query fejlede:', key, result.reason);
+      }
 
       const eloFull     = (eloRes.value?.data         || []).filter(r => Number(r.change) !== 0);
       const completedAm = completedAmRes.value?.data   || [];
@@ -152,6 +160,12 @@ export function HomeTab({ user, setTab }) {
         regAmIds.length       ? supabase.from('americano_participants').select('tournament_id').in('tournament_id', regAmIds)                                                                                                                     : Promise.resolve({ data: [] }),
         newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
       ]);
+      const round2Results = {
+        mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes,
+      };
+      for (const [key, result] of Object.entries(round2Results)) {
+        if (result.status === 'rejected') console.warn('[home-feed] Round2 query fejlede:', key, result.reason);
+      }
 
       // Round 3: Americano avatar-opslag (afhænger af participants fra Round 2)
       const amParts = amPartsRes.value?.data || [];
