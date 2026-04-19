@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Profile } from '../api/base44Client';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import {
@@ -42,16 +41,19 @@ export function RankingTab({ user }) {
 
   const loadRankingData = useCallback(async () => {
     try {
-      const [profileData, historyData] = await Promise.all([
-        Profile.filter(),
+      const [profileRes, historyData] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, full_name, name, avatar, area, elo_rating, games_played, games_won, level")
+          .order("elo_rating", { ascending: false }),
         supabase
           .from("elo_history")
-          .select("*")
+          .select("user_id, result, change, old_rating, new_rating, date, match_id")
           .order("date", { ascending: false })
           .order("match_id", { ascending: false })
-          .limit(10000),
+          .limit(5000),
       ]);
-      setPlayers(profileData || []);
+      setPlayers(profileRes.data || []);
       setEloHistory(historyData.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }

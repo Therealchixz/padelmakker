@@ -396,9 +396,10 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, op
   const maxSteps = 400;
 
   if (targetUtc) {
+    let reached = false;
     for (let step = 0; step < maxSteps; step++) {
       const curYmd = parseScheduleDateYmd(parseDateLabel(html) || '');
-      if (curYmd === targetDateYmd) break;
+      if (curYmd === targetDateYmd) { reached = true; break; }
 
       const curUtc = curYmd ? utcDateFromYmd(curYmd) : null;
       if (!curUtc) {
@@ -411,12 +412,16 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, op
       else if (diffDays < 0) nav = 'dagback';
       else if (diffDays >= 7) nav = 'ugefrem';
       else if (diffDays > 0) nav = 'dagfrem';
-      else break;
+      else { reached = true; break; }
 
       const navRes = await postHalbookingCalendarNav(procBanerUrl, cookie, html, nav);
       if (navRes.error) return { error: navRes.error };
       html = navRes.html;
       cookie = navRes.cookie;
+    }
+    if (!reached) {
+      const finalYmd = parseScheduleDateYmd(parseDateLabel(html) || '') || 'ukendt';
+      return { error: `Kunne ikke navigere til ${targetDateYmd} (nåede ${finalYmd} efter ${maxSteps} forsøg)` };
     }
   }
 

@@ -36,7 +36,8 @@ export function sortEloHistoryChronological(rows) {
  */
 export function currentEloFromSortedHistory(sorted) {
   if (!sorted.length) return 1000;
-  const base = Math.round(Number(sorted[0].old_rating) || 1000);
+  const rawBase = Number(sorted[0].old_rating);
+  const base = Number.isFinite(rawBase) && rawBase > 0 ? Math.round(rawBase) : 1000;
   let sumCh = 0;
   for (const row of sorted) {
     const ch = row.change;
