@@ -191,7 +191,7 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, 
 
   const DotName = ({ teamId, name }) => (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-      <span style={{ width: 20, height: 20, borderRadius: '50%', background: teamColors[teamId] || '#94A3B8', display: 'inline-grid', placeItems: 'center', fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
+      <span style={{ width: 20, height: 20, borderRadius: '50%', background: teamColors[teamId] || theme.textLight, display: 'inline-grid', placeItems: 'center', fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
         {name?.slice(0, 1).toUpperCase()}
       </span>
       <span style={{ fontFamily: 'system-ui', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em' }}>{name}</span>
@@ -205,14 +205,14 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, 
     >
       <style>{`@keyframes fadein{from{opacity:0}to{opacity:1}}@keyframes popin{from{opacity:0;transform:translateY(10px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>
       <div onClick={e => e.stopPropagation()}
-        style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '520px', boxShadow: '0 8px 24px rgba(0,0,0,0.08),0 24px 60px rgba(0,0,0,0.08)', overflow: 'hidden', animation: 'popin .24s cubic-bezier(.2,.9,.3,1)' }}
+        style={{ background: theme.surface, borderRadius: '20px', width: '100%', maxWidth: '520px', boxShadow: '0 8px 24px rgba(0,0,0,0.08),0 24px 60px rgba(0,0,0,0.08)', overflow: 'hidden', animation: 'popin .24s cubic-bezier(.2,.9,.3,1)' }}
       >
         {/* Header */}
         <div style={{ padding: '22px 26px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#94A3B8', fontWeight: 600 }}>
+          <div style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: theme.textLight, fontWeight: 600 }}>
             Runde {rn}
           </div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '8px', border: '1px solid #E2E8F0', background: '#F8FAFC', color: '#64748B', cursor: 'pointer', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '8px', border: '1px solid ' + theme.border, background: theme.surfaceAlt, color: theme.textLight, cursor: 'pointer', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
             ×
           </button>
         </div>
@@ -220,32 +220,32 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, 
         {/* Score section */}
         <div style={{ padding: '10px 26px 26px' }}>
           {!t2 ? (
-            <div style={{ padding: '20px 0', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>
+            <div style={{ padding: '20px 0', borderBottom: '1px solid ' + theme.border, textAlign: 'center' }}>
               <DotName teamId={t1?.id} name={t1?.name} />
-              <div style={{ marginTop: '8px', fontSize: '12px', color: '#94A3B8' }}>{t1?.player1_name} · {t1?.player2_name}</div>
-              <div style={{ marginTop: '14px', fontSize: '13px', color: '#64748B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fri runde</div>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: theme.textLight }}>{t1?.player1_name} · {t1?.player2_name}</div>
+              <div style={{ marginTop: '14px', fontSize: '13px', color: theme.textLight, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fri runde</div>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '16px', padding: '20px 0', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '16px', padding: '20px 0', borderBottom: '1px solid ' + theme.border }}>
               {/* Team 1 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', opacity: reported && !t1Wins ? 0.45 : 1 }}>
                 <DotName teamId={t1?.id} name={t1?.name} />
-                <div style={{ fontSize: '12px', color: '#94A3B8' }}>
+                <div style={{ fontSize: '12px', color: theme.textLight }}>
                   {[t1?.player1_name, t1?.player2_name].filter(Boolean).join(' · ')}
                 </div>
-                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t1Wins ? '#0F172A' : '#94A3B8', marginTop: '6px' }}>
+                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t1Wins ? theme.text : theme.textLight, marginTop: '6px' }}>
                   {t1Score}
                 </div>
               </div>
               {/* VS */}
-              <div style={{ color: '#94A3B8', fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '18px', alignSelf: 'center' }}>vs</div>
+              <div style={{ color: theme.textLight, fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '18px', alignSelf: 'center' }}>vs</div>
               {/* Team 2 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end', textAlign: 'right', opacity: reported && !t2Wins ? 0.45 : 1 }}>
                 <DotName teamId={t2?.id} name={t2?.name} />
-                <div style={{ fontSize: '12px', color: '#94A3B8' }}>
+                <div style={{ fontSize: '12px', color: theme.textLight }}>
                   {[t2?.player1_name, t2?.player2_name].filter(Boolean).join(' · ')}
                 </div>
-                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t2Wins ? '#0F172A' : '#94A3B8', marginTop: '6px' }}>
+                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t2Wins ? theme.text : theme.textLight, marginTop: '6px' }}>
                   {t2Score}
                 </div>
               </div>
@@ -261,9 +261,9 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, 
                 ['Resultat', resultLabel],
                 t2 && ['Records før', `${t1Stats.wins}W-${t1Stats.losses}L · ${t2Stats?.wins}W-${t2Stats?.losses}L`],
               ].filter(Boolean).map(([label, value]) => (
-                <tr key={label} style={{ borderTop: '1px solid #E2E8F0' }}>
-                  <td style={{ padding: '10px 0', color: '#94A3B8', fontSize: '12px' }}>{label}</td>
-                  <td style={{ padding: '10px 0', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, monospace', color: '#0F172A' }}>{value}</td>
+                <tr key={label} style={{ borderTop: '1px solid ' + theme.border }}>
+                  <td style={{ padding: '10px 0', color: theme.textLight, fontSize: '12px' }}>{label}</td>
+                  <td style={{ padding: '10px 0', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, monospace', color: theme.text }}>{value}</td>
                 </tr>
               ))}
             </tbody>
@@ -396,8 +396,8 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
         <div style={{ marginTop: '12px' }}>
           {/* Legend */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '12px' }}>
-            {[['win', 'Vinder', '#16A34A', false], ['lose', 'Taber', '#EF4444', false], ['pending', 'Afventer', '#CBD5E1', true]].map(([kind, label, color, dashed]) => (
-              <div key={kind} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: '#64748B' }}>
+            {[['win', 'Vinder', theme.green, false], ['lose', 'Taber', theme.red, false], ['pending', 'Afventer', theme.border, true]].map(([kind, label, color, dashed]) => (
+              <div key={kind} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: theme.textLight }}>
                 <svg width="18" height="8" style={{ flexShrink: 0 }}>
                   <line x1="0" y1="4" x2="18" y2="4" stroke={color} strokeWidth="2"
                     strokeDasharray={dashed ? '4 5' : undefined} strokeLinecap="round" />
@@ -410,7 +410,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
           {/* Team hover-highlight chips */}
           {teams.length > 1 && (
             <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginRight: 4 }}>Hold:</span>
+              <span style={{ fontSize: '11px', color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginRight: 4 }}>Hold:</span>
               {teams.map(t => (
                 <span key={t.id}
                   onMouseEnter={() => setHighlightTeam(t.id)}
@@ -418,9 +418,9 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: '6px',
                     padding: '4px 10px 4px 4px', borderRadius: '999px',
-                    border: '1px solid ' + (highlightTeam === t.id ? theme.accent : '#E2E8F0'),
-                    background: highlightTeam === t.id ? theme.accentBg : '#F8FAFC',
-                    color: highlightTeam === t.id ? theme.accent : '#64748B',
+                    border: '1px solid ' + (highlightTeam === t.id ? theme.accent : theme.border),
+                    background: highlightTeam === t.id ? theme.accentBg : theme.surfaceAlt,
+                    color: highlightTeam === t.id ? theme.accent : theme.textLight,
                     fontSize: '12px', fontWeight: 500, cursor: 'default', transition: 'all .15s',
                   }}
                 >
@@ -435,7 +435,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
 
           {/* Bracket */}
           <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', padding: '20px 20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ background: theme.surface, borderRadius: '14px', border: '1px solid ' + theme.border, padding: '20px 20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div
                 ref={bracketRef}
                 style={{
@@ -455,7 +455,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                   {orderedConnectors.map((c, i) => {
                     const dim = highlightTeam && c.tid !== highlightTeam;
                     const isHi = highlightTeam === c.tid;
-                    const stroke = c.kind === 'win' ? '#16A34A' : c.kind === 'lose' ? '#EF4444' : '#CBD5E1';
+                    const stroke = c.kind === 'win' ? theme.green : c.kind === 'lose' ? theme.red : theme.border;
                     return (
                       <g key={i} style={{ opacity: dim ? 0.1 : c.kind === 'lose' ? 0.55 : 1 }}>
                         <path d={c.path} fill="none" stroke={stroke} strokeWidth={isHi ? 3 : 2}
@@ -481,24 +481,24 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                       <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         padding: '10px 14px', borderRadius: '10px',
-                        background: isDone ? theme.accentBg : '#F8FAFC',
-                        border: '1px solid ' + (isDone ? 'transparent' : '#E2E8F0'),
+                        background: isDone ? theme.accentBg : theme.surfaceAlt,
+                        border: '1px solid ' + (isDone ? 'transparent' : theme.border),
                         marginBottom: '6px',
                       }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isDone ? theme.accent : isCurrent ? '#334155' : '#94A3B8' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isDone ? theme.accent : isCurrent ? theme.textMid : theme.textLight }}>
                           Runde {rn}{totalRounds ? ` / ${totalRounds}` : ''}
                         </span>
-                        <span style={{ fontSize: '11px', color: isDone ? theme.accent : '#94A3B8' }}>
+                        <span style={{ fontSize: '11px', color: isDone ? theme.accent : theme.textLight }}>
                           {isDone ? '✓ Afsluttet' : isCurrent ? '● Aktiv' : 'Kommende'}
                         </span>
                       </div>
 
                       {isFuture ? (
-                        <div style={{ border: '2px dashed #E2E8F0', borderRadius: '12px', padding: '20px 12px', textAlign: 'center', color: '#CBD5E1', fontSize: '11px' }}>
+                        <div style={{ border: '2px dashed ' + theme.border, borderRadius: '12px', padding: '20px 12px', textAlign: 'center', color: theme.border, fontSize: '11px' }}>
                           Genereres efter<br />runde {rn - 1}
                         </div>
                       ) : roundMatches.length === 0 ? (
-                        <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', padding: '20px', textAlign: 'center', color: '#CBD5E1', fontSize: '11px' }}>
+                        <div style={{ border: '1px solid ' + theme.border, borderRadius: '12px', padding: '20px', textAlign: 'center', color: theme.border, fontSize: '11px' }}>
                           Ingen kampe
                         </div>
                       ) : roundMatches.map(match => {
@@ -527,14 +527,14 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                           fontFamily: 'ui-monospace, SFMono-Regular, monospace',
                           fontSize: '10px', fontWeight: 600,
                           padding: '3px 6px', borderRadius: '5px',
-                          background: isWin ? '#DCFCE7' : isLose ? '#FEE2E2' : '#F1F5F9',
-                          color: isWin ? '#16A34A' : isLose ? '#DC2626' : '#94A3B8',
+                          background: isWin ? theme.greenBg : isLose ? theme.redBg : theme.surfaceAlt,
+                          color: isWin ? theme.green : isLose ? theme.red : theme.textLight,
                           minWidth: '44px', textAlign: 'center', flexShrink: 0, display: 'inline-block',
                         });
 
                         const dotStyle = (teamId) => ({
                           width: 14, height: 14, borderRadius: '50%',
-                          background: teamColors[teamId] || '#94A3B8',
+                          background: teamColors[teamId] || theme.textLight,
                           display: 'inline-grid', placeItems: 'center',
                           fontSize: '8px', fontWeight: 700, color: 'white', flexShrink: 0,
                         });
@@ -543,8 +543,8 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                           <div key={match.id} data-match-id={match.id}
                             onClick={() => setSelectedMatch({ match, rn, prevStats })}
                             style={{
-                              background: '#fff',
-                              border: '1px solid ' + (isMyMatch ? theme.accent + '60' : '#E2E8F0'),
+                              background: theme.surface,
+                              border: '1px solid ' + (isMyMatch ? theme.accent + '60' : theme.border),
                               borderRadius: '12px', padding: '10px 12px',
                               display: 'grid', gap: '6px', cursor: 'pointer',
                               boxShadow: isMyMatch ? '0 0 0 3px ' + theme.accentBg : '0 1px 2px rgba(0,0,0,0.04)',
@@ -555,32 +555,32 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
                               <>
                                 <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'center', gap: '8px', padding: '4px 2px' }}>
                                   <span style={recStyle(reported, false)}>{t1Stats.wins}W-{t1Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: '#0F172A', overflow: 'hidden' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: theme.text, overflow: 'hidden' }}>
                                     <span style={dotStyle(t1.id)}>{t1.name.slice(0, 1).toUpperCase()}</span>
                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t1.name}</span>
                                   </span>
                                 </div>
-                                <div style={{ height: '1px', background: '#F1F5F9', margin: '0 2px' }} />
-                                <div style={{ textAlign: 'center', fontSize: '11px', color: '#94A3B8', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 0' }}>Fri runde</div>
+                                <div style={{ height: '1px', background: theme.surfaceAlt, margin: '0 2px' }} />
+                                <div style={{ textAlign: 'center', fontSize: '11px', color: theme.textLight, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 0' }}>Fri runde</div>
                               </>
                             ) : (
                               <>
                                 <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px', opacity: reported && !t1Wins ? 0.55 : 1 }}>
                                   <span style={recStyle(t1Wins, reported && !t1Wins)}>{t1Stats.wins}W-{t1Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t1Wins ? 600 : 500, color: t1Wins ? '#0F172A' : '#64748B', overflow: 'hidden' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t1Wins ? 600 : 500, color: t1Wins ? theme.text : theme.textLight, overflow: 'hidden' }}>
                                     <span style={dotStyle(t1.id)}>{t1.name.slice(0, 1).toUpperCase()}</span>
                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t1.name}</span>
                                   </span>
-                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t1Wins ? '#0F172A' : '#94A3B8', minWidth: '20px', textAlign: 'right' }}>{t1Score}</span>
+                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t1Wins ? theme.text : theme.textLight, minWidth: '20px', textAlign: 'right' }}>{t1Score}</span>
                                 </div>
-                                <div style={{ height: '1px', background: '#F1F5F9', margin: '0 2px' }} />
+                                <div style={{ height: '1px', background: theme.surfaceAlt, margin: '0 2px' }} />
                                 <div data-team-row={match.team2_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px', opacity: reported && !t2Wins ? 0.55 : 1 }}>
                                   <span style={recStyle(t2Wins, reported && !t2Wins)}>{t2Stats.wins}W-{t2Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t2Wins ? 600 : 500, color: t2Wins ? '#0F172A' : '#64748B', overflow: 'hidden' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t2Wins ? 600 : 500, color: t2Wins ? theme.text : theme.textLight, overflow: 'hidden' }}>
                                     <span style={dotStyle(t2.id)}>{t2.name.slice(0, 1).toUpperCase()}</span>
                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t2.name}</span>
                                   </span>
-                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t2Wins ? '#0F172A' : '#94A3B8', minWidth: '20px', textAlign: 'right' }}>{t2Score}</span>
+                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: t2Wins ? theme.text : theme.textLight, minWidth: '20px', textAlign: 'right' }}>{t2Score}</span>
                                 </div>
                               </>
                             )}
@@ -651,7 +651,7 @@ function PartnerSearch({ userId, onSelect }) {
         />
       </div>
       {open && results.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid ' + theme.border, borderRadius: '8px', boxShadow: theme.shadow, zIndex: 100, marginTop: '4px' }}>
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: theme.surface, border: '1px solid ' + theme.border, borderRadius: '8px', boxShadow: theme.shadow, zIndex: 100, marginTop: '4px' }}>
           {results.map(p => {
             const name = p.full_name || p.name || 'Spiller';
             return (
@@ -1037,7 +1037,7 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
             flex: 1, padding: '10px 16px', fontSize: '13px',
             fontWeight: scope === t.id ? 700 : 500,
             background: scope === t.id ? theme.accent : theme.surface,
-            color: scope === t.id ? '#fff' : theme.textMid,
+            color: scope === t.id ? '#fff' : theme.textMid, // '#fff' = white text on accent bg
             border: 'none', cursor: 'pointer', transition: 'all 0.15s',
           }}>
             {t.label}
@@ -1111,8 +1111,8 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
             const league = leagues.find(l => l.id === invite.league_id);
             const busy = busyId === invite.id + '-accept' || busyId === invite.id + '-decline';
             return (
-              <div key={invite.id} style={{ background: '#FEF3C7', borderRadius: theme.radius, padding: '14px 16px', border: '1px solid #FDE68A', marginBottom: '8px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              <div key={invite.id} style={{ background: theme.warmBg, borderRadius: theme.radius, padding: '14px 16px', border: '1px solid ' + theme.warm, marginBottom: '8px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: theme.warm, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                   ⚡ Holdinvitation
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '2px' }}>{invite.name}</div>
@@ -1121,11 +1121,11 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={() => acceptInvite(invite)} disabled={busy}
-                    style={{ ...btn(true), padding: '7px 14px', fontSize: '13px', background: '#16A34A', borderColor: '#16A34A' }}>
+                    style={{ ...btn(true), padding: '7px 14px', fontSize: '13px', background: theme.green, borderColor: theme.green }}>
                     {busyId === invite.id + '-accept' ? 'Accepterer…' : '✓ Acceptér'}
                   </button>
                   <button onClick={() => declineInvite(invite)} disabled={busy}
-                    style={{ ...btn(false), padding: '7px 14px', fontSize: '13px', color: '#DC2626', borderColor: '#FCA5A5' }}>
+                    style={{ ...btn(false), padding: '7px 14px', fontSize: '13px', color: theme.red, borderColor: theme.redBg }}>
                     Afvis
                   </button>
                 </div>
@@ -1210,27 +1210,27 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                 {league.status === 'completed' && standings.length > 0 && (() => {
                   const w = standings[0];
                   return (
-                    <div style={{ marginBottom: '14px', padding: '14px 16px', background: 'linear-gradient(135deg, #FEF9C3, #FEF3C7)', borderRadius: '10px', border: '1.5px solid #F59E0B', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ marginBottom: '14px', padding: '14px 16px', background: theme.warmBg, borderRadius: '10px', border: '1.5px solid ' + theme.warm, display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ fontSize: '28px', lineHeight: 1 }}>🏆</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Vinder</div>
-                        <div style={{ fontSize: '16px', fontWeight: 800, color: '#78350F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: theme.warm, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Vinder</div>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: theme.warm, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-                          <span onClick={() => openProfile(w.player1_id, w.player1_name, w.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: '#92400E' }}>
-                            <AvatarCircle avatar={w.player1_avatar} size={20} emojiSize="10px" style={{ background: '#FEF3C7', border: '1px solid #F59E0B' }} />
+                          <span onClick={() => openProfile(w.player1_id, w.player1_name, w.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: theme.warm }}>
+                            <AvatarCircle avatar={w.player1_avatar} size={20} emojiSize="10px" style={{ background: theme.warmBg, border: '1px solid #F59E0B' }} />
                             {w.player1_name}
                           </span>
-                          <span style={{ color: '#F59E0B', fontSize: '10px' }}>+</span>
-                          <span onClick={() => openProfile(w.player2_id, w.player2_name, w.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: '#92400E' }}>
-                            <AvatarCircle avatar={w.player2_avatar} size={20} emojiSize="10px" style={{ background: '#FEF3C7', border: '1px solid #F59E0B' }} />
+                          <span style={{ color: theme.warm, fontSize: '10px' }}>+</span>
+                          <span onClick={() => openProfile(w.player2_id, w.player2_name, w.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: theme.warm }}>
+                            <AvatarCircle avatar={w.player2_avatar} size={20} emojiSize="10px" style={{ background: theme.warmBg, border: '1px solid #F59E0B' }} />
                             {w.player2_name}
                           </span>
                         </div>
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#B45309' }}>{w.points}</div>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#92400E' }}>point</div>
-                        <div style={{ fontSize: '10px', color: '#A16207', marginTop: '2px' }}>{w.wins}W · {w.losses}L</div>
+                        <div style={{ fontSize: '20px', fontWeight: 800, color: theme.warm }}>{w.points}</div>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: theme.warm }}>point</div>
+                        <div style={{ fontSize: '10px', color: theme.warm, marginTop: '2px' }}>{w.wins}W · {w.losses}L</div>
                       </div>
                     </div>
                   );
@@ -1267,9 +1267,9 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                 {league.status === 'registration' && (
                   <div style={{ marginBottom: '12px' }}>
                     {joined ? (
-                      <div style={{ background: myTeam.status === 'pending' ? '#FEF9EC' : '#F0FDF4', borderRadius: '10px', padding: '12px 14px', border: '1px solid ' + (myTeam.status === 'pending' ? '#FDE68A' : '#BBF7D0'), display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{ background: myTeam.status === 'pending' ? theme.warmBg : theme.greenBg, borderRadius: '10px', padding: '12px 14px', border: '1px solid ' + (myTeam.status === 'pending' ? theme.warm : theme.green), display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                         <div>
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: myTeam.status === 'pending' ? '#92400E' : '#15803D', marginBottom: '4px' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: myTeam.status === 'pending' ? theme.warm : theme.green, marginBottom: '4px' }}>
                             {myTeam.status === 'pending' ? '⏳ Afventer godkendelse' : '✓'} {myTeam.name}
                           </div>
                           <div style={{ fontSize: '12px', color: theme.textMid, display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -1278,13 +1278,13 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                             <span style={{ color: theme.textLight }}>+</span>
                             <AvatarCircle avatar={myTeam.player2_avatar} size={20} emojiSize="10px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
                             {myTeam.player2_name}
-                            {myTeam.status === 'pending' && <span style={{ color: '#92400E', fontSize: '11px' }}>(venter på {myTeam.player2_name})</span>}
+                            {myTeam.status === 'pending' && <span style={{ color: theme.warm, fontSize: '11px' }}>(venter på {myTeam.player2_name})</span>}
                           </div>
                         </div>
                         <button onClick={() => leaveLeague(league.id)} disabled={busy} style={{ ...btn(false), padding: '6px 12px', fontSize: '12px' }}>Afmeld hold</button>
                       </div>
                     ) : showTeamForm ? (
-                      <div style={{ background: '#F8FAFC', borderRadius: '10px', padding: '14px', border: '1px solid ' + theme.border }}>
+                      <div style={{ background: theme.surfaceAlt, borderRadius: '10px', padding: '14px', border: '1px solid ' + theme.border }}>
                         <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>Tilmeld hold</div>
                         <label style={labelStyle}>Holdnavn</label>
                         <input
@@ -1333,7 +1333,7 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {regTeams.map(t => (
-                          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', background: t.status === 'pending' ? '#FFFBEB' : '#F0FDF4', border: '1px solid ' + (t.status === 'pending' ? '#FDE68A' : '#BBF7D0') }}>
+                          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', background: t.status === 'pending' ? theme.warmBg : theme.greenBg, border: '1px solid ' + (t.status === 'pending' ? theme.warm : theme.green) }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
                               <div style={{ fontSize: '11px', color: theme.textLight, display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>
@@ -1349,13 +1349,13 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                               </div>
                             </div>
                             {t.status === 'pending' && (
-                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#92400E', background: '#FEF3C7', padding: '2px 7px', borderRadius: '10px', flexShrink: 0 }}>Afventer</span>
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: theme.warm, background: theme.warmBg, padding: '2px 7px', borderRadius: '10px', flexShrink: 0 }}>Afventer</span>
                             )}
                             {canManageTeams && (t.player1_id !== user.id && t.player2_id !== user.id) && (
                               <button
                                 onClick={() => kickTeam(t)}
                                 disabled={busyId === t.id + '-kick'}
-                                style={{ ...btn(false), padding: '3px 9px', fontSize: '11px', color: '#DC2626', borderColor: '#FCA5A5', flexShrink: 0 }}
+                                style={{ ...btn(false), padding: '3px 9px', fontSize: '11px', color: theme.red, borderColor: theme.redBg, flexShrink: 0 }}
                               >
                                 Fjern
                               </button>
@@ -1416,12 +1416,12 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                         {reportingMatch === myMatch.id ? (
                           confirmPending ? (
                             /* Step 2: Confirmation */
-                            <div style={{ background: '#fff', borderRadius: '10px', padding: '16px', border: '2px solid ' + (confirmPending.winnerId === myTeam.id ? '#16A34A' : '#DC2626') }}>
+                            <div style={{ background: '#fff', borderRadius: '10px', padding: '16px', border: '2px solid ' + (confirmPending.winnerId === myTeam.id ? theme.green : theme.red) }}>
                               <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px', color: theme.text }}>Bekræft resultat</div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '12px 0', padding: '10px 12px', background: '#F8FAFC', borderRadius: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '12px 0', padding: '10px 12px', background: theme.surfaceAlt, borderRadius: '8px' }}>
                                 <span style={{ fontSize: '20px' }}>{confirmPending.winnerId === myTeam.id ? '🏆' : '😔'}</span>
                                 <div>
-                                  <div style={{ fontSize: '13px', fontWeight: 700, color: confirmPending.winnerId === myTeam.id ? '#15803D' : '#DC2626' }}>
+                                  <div style={{ fontSize: '13px', fontWeight: 700, color: confirmPending.winnerId === myTeam.id ? theme.green : theme.red }}>
                                     {confirmPending.winnerId === myTeam.id ? myTeam.name + ' vandt' : opponentTeam.name + ' vandt'}
                                   </div>
                                   <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '2px' }}>
@@ -1432,7 +1432,7 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                               </div>
                               <div style={{ display: 'flex', gap: '8px' }}>
                                 <button onClick={() => reportResult(myMatch, confirmPending.winnerId, confirmPending.score)} disabled={busyId === myMatch.id}
-                                  style={{ ...btn(true), padding: '9px 16px', fontSize: '13px', background: '#16A34A', borderColor: '#16A34A' }}>
+                                  style={{ ...btn(true), padding: '9px 16px', fontSize: '13px', background: theme.green, borderColor: theme.green }}>
                                   {busyId === myMatch.id ? 'Gemmer…' : '✓ Bekræft'}
                                 </button>
                                 <button onClick={() => setConfirmPending(null)} style={{ ...btn(false), padding: '8px 14px', fontSize: '13px' }}>
@@ -1466,15 +1466,15 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                                     <button
                                       key={team.id}
                                       onClick={() => setSelectedWinnerId(team.id)}
-                                      style={{ border: '2px solid ' + (isSelected ? '#16A34A' : theme.border), background: isSelected ? '#F0FDF4' : '#fff', borderRadius: '10px', padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}
+                                      style={{ border: '2px solid ' + (isSelected ? theme.green : theme.border), background: isSelected ? theme.greenBg : '#fff', borderRadius: '10px', padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}
                                     >
-                                      <div style={{ fontSize: '9px', fontWeight: 700, color: isSelected ? '#15803D' : theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
-                                      <div style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? '#15803D' : theme.text, marginBottom: '8px' }}>{team.name}</div>
+                                      <div style={{ fontSize: '9px', fontWeight: 700, color: isSelected ? theme.green : theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
+                                      <div style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? theme.green : theme.text, marginBottom: '8px' }}>{team.name}</div>
                                       <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
                                         {[{ avatar: team.player1_avatar, name: team.player1_name }, { avatar: team.player2_avatar, name: team.player2_name }].map(p => (
                                           <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
                                             <AvatarCircle avatar={p.avatar} size={26} emojiSize="12px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
-                                            <span style={{ fontSize: '10px', color: isSelected ? '#15803D' : theme.textMid, fontWeight: 600 }}>{p.name.split(' ')[0]}</span>
+                                            <span style={{ fontSize: '10px', color: isSelected ? theme.green : theme.textMid, fontWeight: 600 }}>{p.name.split(' ')[0]}</span>
                                           </div>
                                         ))}
                                       </div>
@@ -1521,14 +1521,14 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                     </button>
                     {standingsOpen && (
                       <div style={{ marginTop: '8px', border: '1px solid ' + theme.border, borderRadius: '8px', overflow: 'hidden' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 44px 36px 36px 44px', background: '#F8FAFC', borderBottom: '1px solid ' + theme.border }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 44px 36px 36px 44px', background: theme.surfaceAlt, borderBottom: '1px solid ' + theme.border }}>
                           {['#', 'Hold', 'Pts', 'W', 'L', 'Diff'].map(h => (
                             <div key={h} style={{ padding: '7px 8px', fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', textAlign: h === 'Hold' ? 'left' : 'center' }}>{h}</div>
                           ))}
                         </div>
                         {standings.map((t, i) => {
                           const isMyTeam = myTeam?.id === t.id;
-                          const diffColor = t.gameDiff > 0 ? '#16A34A' : t.gameDiff < 0 ? '#DC2626' : theme.textLight;
+                          const diffColor = t.gameDiff > 0 ? theme.green : t.gameDiff < 0 ? theme.red : theme.textLight;
                           return (
                             <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '28px 1fr 44px 36px 36px 44px', borderTop: i > 0 ? '1px solid ' + theme.border : 'none', background: isMyTeam ? theme.accentBg : 'transparent' }}>
                               <div style={{ padding: '10px 8px', fontSize: '12px', fontWeight: 700, color: i < 3 ? theme.warm : theme.textLight, textAlign: 'center' }}>
@@ -1551,8 +1551,8 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                                 </div>
                               </div>
                               <div style={{ padding: '10px 4px', fontSize: '13px', fontWeight: 700, color: theme.accent, textAlign: 'center' }}>{t.points}</div>
-                              <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: '#16A34A', textAlign: 'center' }}>{t.wins}</div>
-                              <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: '#DC2626', textAlign: 'center' }}>{t.losses}</div>
+                              <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: theme.green, textAlign: 'center' }}>{t.wins}</div>
+                              <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: theme.red, textAlign: 'center' }}>{t.losses}</div>
                               <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: diffColor, textAlign: 'center' }}>{t.gameDiff > 0 ? '+' : ''}{t.gameDiff}</div>
                             </div>
                           );
@@ -1579,7 +1579,7 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                   <div style={{ borderTop: '1px solid ' + theme.border, paddingTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {league.status === 'registration' && (
                       <button onClick={() => startLeague(league)} disabled={busy}
-                        style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: '#D97706', borderColor: '#D97706' }}>
+                        style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: theme.warm, borderColor: theme.warm }}>
                         <Play size={13} /> Start liga
                       </button>
                     )}
@@ -1589,7 +1589,7 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                         <>
                           <button onClick={() => nextRound(league)} disabled={busy || pendingCount > 0}
                             title={pendingCount > 0 ? `${pendingCount} kamp${pendingCount > 1 ? 'e' : ''} mangler resultat` : ''}
-                            style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: pendingCount > 0 ? '#9CA3AF' : '#D97706', borderColor: pendingCount > 0 ? '#9CA3AF' : '#D97706', opacity: pendingCount > 0 ? 0.7 : 1 }}>
+                            style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: pendingCount > 0 ? theme.textLight : theme.warm, borderColor: pendingCount > 0 ? theme.textLight : theme.warm, opacity: pendingCount > 0 ? 0.7 : 1 }}>
                             ⏭ Næste runde{pendingCount > 0 ? ` (${pendingCount} afventer)` : ''}
                           </button>
                           <button onClick={() => completeLeague(league)} disabled={busy}
@@ -1600,7 +1600,7 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                       );
                     })()}
                     <button onClick={() => deleteLeague(league)} disabled={busy}
-                      style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', color: '#DC2626', borderColor: '#FCA5A5' }}>
+                      style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', color: theme.red, borderColor: theme.redBg }}>
                       Slet
                     </button>
                   </div>
