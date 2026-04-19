@@ -1196,13 +1196,13 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                         <div style={{ fontSize: '10px', fontWeight: 700, color: theme.warm, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Vinder</div>
                         <div style={{ fontSize: '16px', fontWeight: 800, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-                          <span onClick={() => openProfile(w.player1_id, w.player1_name, w.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: theme.warm }}>
-                            <AvatarCircle avatar={w.player1_avatar} size={20} emojiSize="10px" style={{ background: theme.warmBg, border: '1px solid ' + theme.warm }} />
+                          <span onClick={() => openProfile(w.player1_id, w.player1_name, w.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: theme.text }}>
+                            <AvatarCircle avatar={w.player1_avatar} size={20} emojiSize="10px" style={{ background: theme.surfaceAlt, border: '1px solid ' + theme.border }} />
                             {w.player1_name}
                           </span>
-                          <span style={{ color: theme.warm, fontSize: '10px' }}>+</span>
-                          <span onClick={() => openProfile(w.player2_id, w.player2_name, w.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: theme.warm }}>
-                            <AvatarCircle avatar={w.player2_avatar} size={20} emojiSize="10px" style={{ background: theme.warmBg, border: '1px solid ' + theme.warm }} />
+                          <span style={{ color: theme.textMid, fontSize: '10px' }}>+</span>
+                          <span onClick={() => openProfile(w.player2_id, w.player2_name, w.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: theme.text }}>
+                            <AvatarCircle avatar={w.player2_avatar} size={20} emojiSize="10px" style={{ background: theme.surfaceAlt, border: '1px solid ' + theme.border }} />
                             {w.player2_name}
                           </span>
                         </div>
