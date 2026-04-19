@@ -56,7 +56,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { targetUserId, title, body, matchId } = await req.json();
+    const { targetUserId, title, body, matchId, type } = await req.json();
     if (!targetUserId || !title) {
       return new Response(JSON.stringify({ error: "targetUserId og title er påkrævet" }), {
         status: 400,

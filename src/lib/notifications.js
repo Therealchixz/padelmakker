@@ -25,7 +25,10 @@ export async function createNotification(userId, type, title, body, matchId = nu
     rpcError = e;
   }
 
-  // 2. Browser push — fire-and-forget, fejler stille så in-app-notifikation ikke blokeres
+  // 2. Browser push kun når in-app notifikation lykkedes.
+  // Undgår at push sendes hvis RPC afvises.
+  if (rpcError) return rpcError;
+
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     if (supabaseUrl && import.meta.env.VITE_VAPID_PUBLIC_KEY) {
@@ -37,8 +40,15 @@ export async function createNotification(userId, type, title, body, matchId = nu
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ targetUserId: userId, title, body, matchId }),
-        }).catch(() => { /* ignorér netværksfejl */ });
+          body: JSON.stringify({ targetUserId: userId, title, body, matchId, type }),
+        })
+          .then(async (res) => {
+            if (res.ok) return;
+            let details = '';
+            try { details = await res.text(); } catch { /* ignore */ }
+            console.warn(`[push] send-push svarede ${res.status}${details ? `: ${details}` : ''}`);
+          })
+          .catch(() => { /* ignorér netværksfejl */ });
       }
     }
   } catch { /* ignorér */ }
