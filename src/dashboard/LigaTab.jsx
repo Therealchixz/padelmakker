@@ -1217,12 +1217,12 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                         <div style={{ fontSize: '16px', fontWeight: 800, color: theme.warm, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
                           <span onClick={() => openProfile(w.player1_id, w.player1_name, w.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: theme.warm }}>
-                            <AvatarCircle avatar={w.player1_avatar} size={20} emojiSize="10px" style={{ background: theme.warmBg, border: '1px solid #F59E0B' }} />
+                            <AvatarCircle avatar={w.player1_avatar} size={20} emojiSize="10px" style={{ background: theme.warmBg, border: '1px solid ' + theme.warm }} />
                             {w.player1_name}
                           </span>
                           <span style={{ color: theme.warm, fontSize: '10px' }}>+</span>
                           <span onClick={() => openProfile(w.player2_id, w.player2_name, w.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: theme.warm }}>
-                            <AvatarCircle avatar={w.player2_avatar} size={20} emojiSize="10px" style={{ background: theme.warmBg, border: '1px solid #F59E0B' }} />
+                            <AvatarCircle avatar={w.player2_avatar} size={20} emojiSize="10px" style={{ background: theme.warmBg, border: '1px solid ' + theme.warm }} />
                             {w.player2_name}
                           </span>
                         </div>
@@ -1297,7 +1297,7 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                         <PartnerSearch userId={user.id} onSelect={setSelectedPartner} />
                         {selectedPartner && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', padding: '8px 10px', background: theme.accentBg, borderRadius: '8px' }}>
-                            <AvatarCircle avatar={selectedPartner.avatar} size={24} emojiSize="12px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                            <AvatarCircle avatar={selectedPartner.avatar} size={24} emojiSize="12px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
                             <span style={{ fontSize: '13px', fontWeight: 600 }}>{selectedPartner.full_name || selectedPartner.name}</span>
                             <span style={{ fontSize: '11px', color: theme.textLight }}>ELO {Math.round(Number(selectedPartner.elo_rating) || 1000)}</span>
                             <button onClick={() => setSelectedPartner(null)} style={{ ...btn(false), padding: '2px 8px', fontSize: '11px', marginLeft: 'auto' }}>×</button>
@@ -1338,12 +1338,12 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                               <div style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
                               <div style={{ fontSize: '11px', color: theme.textLight, display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>
                                 <span onClick={() => openProfile(t.player1_id, t.player1_name, t.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', borderRadius: '6px', padding: '1px 4px', background: theme.accentBg }}>
-                                  <AvatarCircle avatar={t.player1_avatar} size={18} emojiSize="9px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                  <AvatarCircle avatar={t.player1_avatar} size={18} emojiSize="9px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
                                   {t.player1_name}
                                 </span>
                                 <span style={{ color: theme.border }}>+</span>
                                 <span onClick={() => openProfile(t.player2_id, t.player2_name, t.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', borderRadius: '6px', padding: '1px 4px', background: theme.accentBg }}>
-                                  <AvatarCircle avatar={t.player2_avatar} size={18} emojiSize="9px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                  <AvatarCircle avatar={t.player2_avatar} size={18} emojiSize="9px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
                                   {t.player2_name}
                                 </span>
                               </div>
@@ -1389,11 +1389,11 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                             <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>{myTeam.name}</div>
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
                               <span onClick={() => openProfile(myTeam.player1_id, myTeam.player1_name, myTeam.player1_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-                                <AvatarCircle avatar={myTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                <AvatarCircle avatar={myTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
                                 <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{myTeam.player1_name}</span>
                               </span>
                               <span onClick={() => openProfile(myTeam.player2_id, myTeam.player2_name, myTeam.player2_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-                                <AvatarCircle avatar={myTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                <AvatarCircle avatar={myTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
                                 <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{myTeam.player2_name}</span>
                               </span>
                             </div>
@@ -1403,11 +1403,11 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                             <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>{opponentTeam.name}</div>
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
                               <span onClick={() => openProfile(opponentTeam.player1_id, opponentTeam.player1_name, opponentTeam.player1_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-                                <AvatarCircle avatar={opponentTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                <AvatarCircle avatar={opponentTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
                                 <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{opponentTeam.player1_name}</span>
                               </span>
                               <span onClick={() => openProfile(opponentTeam.player2_id, opponentTeam.player2_name, opponentTeam.player2_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-                                <AvatarCircle avatar={opponentTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                <AvatarCircle avatar={opponentTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
                                 <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{opponentTeam.player2_name}</span>
                               </span>
                             </div>
@@ -1416,7 +1416,7 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                         {reportingMatch === myMatch.id ? (
                           confirmPending ? (
                             /* Step 2: Confirmation */
-                            <div style={{ background: '#fff', borderRadius: '10px', padding: '16px', border: '2px solid ' + (confirmPending.winnerId === myTeam.id ? theme.green : theme.red) }}>
+                            <div style={{ background: theme.surface, borderRadius: '10px', padding: '16px', border: '2px solid ' + (confirmPending.winnerId === myTeam.id ? theme.green : theme.red) }}>
                               <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px', color: theme.text }}>Bekræft resultat</div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '12px 0', padding: '10px 12px', background: theme.surfaceAlt, borderRadius: '8px' }}>
                                 <span style={{ fontSize: '20px' }}>{confirmPending.winnerId === myTeam.id ? '🏆' : '😔'}</span>
@@ -1466,7 +1466,7 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                                     <button
                                       key={team.id}
                                       onClick={() => setSelectedWinnerId(team.id)}
-                                      style={{ border: '2px solid ' + (isSelected ? theme.green : theme.border), background: isSelected ? theme.greenBg : '#fff', borderRadius: '10px', padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}
+                                      style={{ border: '2px solid ' + (isSelected ? theme.green : theme.border), background: isSelected ? theme.greenBg : theme.surface, borderRadius: '10px', padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}
                                     >
                                       <div style={{ fontSize: '9px', fontWeight: 700, color: isSelected ? theme.green : theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
                                       <div style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? theme.green : theme.text, marginBottom: '8px' }}>{team.name}</div>
@@ -1540,12 +1540,12 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                                 </div>
                                 <div style={{ fontSize: '11px', color: theme.textLight, display: 'flex', gap: '4px', alignItems: 'center', marginTop: '2px', flexWrap: 'wrap' }}>
                                   <span onClick={() => openProfile(t.player1_id, t.player1_name, t.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer', borderRadius: '4px', padding: '1px 3px', background: theme.accentBg }}>
-                                    <AvatarCircle avatar={t.player1_avatar} size={14} emojiSize="7px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                    <AvatarCircle avatar={t.player1_avatar} size={14} emojiSize="7px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
                                     {t.player1_name}
                                   </span>
                                   <span style={{ color: theme.border }}>+</span>
                                   <span onClick={() => openProfile(t.player2_id, t.player2_name, t.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer', borderRadius: '4px', padding: '1px 3px', background: theme.accentBg }}>
-                                    <AvatarCircle avatar={t.player2_avatar} size={14} emojiSize="7px" style={{ background: '#fff', border: '1px solid ' + theme.border }} />
+                                    <AvatarCircle avatar={t.player2_avatar} size={14} emojiSize="7px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
                                     {t.player2_name}
                                   </span>
                                 </div>
