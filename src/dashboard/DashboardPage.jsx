@@ -25,20 +25,35 @@ function usePendingLigaInvites(userId) {
   useEffect(() => {
     if (!userId) { setCount(0); return; }
     let cancelled = false;
-    const fetch = async () => {
-      const { count: c } = await supabase
-        .from('league_teams')
-        .select('id', { count: 'exact', head: true })
-        .eq('player2_id', userId)
-        .eq('status', 'pending');
-      if (!cancelled) setCount(c || 0);
+    let timer = null;
+    const scheduleFetch = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { void fetch(); }, 250);
     };
-    fetch();
+    const fetch = async () => {
+      try {
+        const { count: c } = await supabase
+          .from('league_teams')
+          .select('id', { count: 'exact', head: true })
+          .eq('player2_id', userId)
+          .eq('status', 'pending');
+        if (!cancelled) setCount(c || 0);
+      } catch (e) {
+        console.warn('liga invites badge:', e);
+      }
+    };
+    void fetch();
     const channel = supabase
       .channel('liga-invites-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'league_teams', filter: 'player2_id=eq.' + userId }, fetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'league_teams', filter: 'player2_id=eq.' + userId }, scheduleFetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'league_teams', filter: 'player2_id=eq.' + userId }, scheduleFetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'league_teams', filter: 'player2_id=eq.' + userId }, scheduleFetch)
       .subscribe();
-    return () => { cancelled = true; supabase.removeChannel(channel); };
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
   return count;
 }
@@ -48,6 +63,11 @@ function usePendingKampeBadge(userId) {
   useEffect(() => {
     if (!userId) { setCount(0); return; }
     let cancelled = false;
+    let timer = null;
+    const scheduleRefetch = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { void refetch(); }, 250);
+    };
     const refetch = async () => {
       try {
         const [myMatchesRes, myPlayerRes] = await Promise.all([
@@ -65,16 +85,27 @@ function usePendingKampeBadge(userId) {
             : { count: 0 },
         ]);
         if (!cancelled) setCount((joinRes.count || 0) + (resultRes.count || 0));
-      } catch { /* stille fejl */ }
+      } catch (e) {
+        console.warn('kampe badge refetch:', e);
+      }
     };
-    refetch();
+    void refetch();
     const ch1 = supabase.channel('kampe-badge-req-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_join_requests' }, refetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_join_requests' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_join_requests' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'match_join_requests' }, scheduleRefetch)
       .subscribe();
     const ch2 = supabase.channel('kampe-badge-res-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_results' }, refetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_results' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_results' }, scheduleRefetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'match_results' }, scheduleRefetch)
       .subscribe();
-    return () => { cancelled = true; supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(ch1);
+      supabase.removeChannel(ch2);
+    };
   }, [userId]);
   return count;
 }

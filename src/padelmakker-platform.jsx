@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
@@ -25,9 +25,20 @@ export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
   const [toast, setToast] = useState(null);
   const [resetMode, setResetMode] = useState(false);
+  const toastTimerRef = useRef(null);
   const navigate = useNavigate();
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-  const handleLogout = async () => { await signOut(); navigate("/", { replace: true }); };
+  const showToast = useCallback((msg) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast(msg);
+    toastTimerRef.current = setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 3000);
+  }, []);
+  const handleLogout = useCallback(async () => {
+    await signOut();
+    navigate("/", { replace: true });
+  }, [navigate, signOut]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -35,7 +46,10 @@ export default function PadelMakker() {
         setResetMode(true);
       }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
   }, []);
 
   if (loading || (user && profileLoading && !profile)) {
