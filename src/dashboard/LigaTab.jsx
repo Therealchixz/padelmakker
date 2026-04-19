@@ -430,16 +430,12 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
               >
                 {/* SVG connector overlay */}
                 <svg style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', overflow: 'visible', zIndex: 0 }} width={svgSize.w} height={svgSize.h}>
-                  {orderedConnectors.map((c, i) => (
-                    <path key={`halo-${i}`} d={c.path} fill="none" stroke="white" strokeWidth="6" strokeLinecap="round"
-                      opacity={highlightTeam && c.tid !== highlightTeam ? 0.05 : 0.9} />
-                  ))}
                   {orderedConnectors.map((c, i) => {
                     const dim = highlightTeam && c.tid !== highlightTeam;
                     const isHi = highlightTeam === c.tid;
                     const stroke = c.kind === 'win' ? '#16A34A' : c.kind === 'lose' ? '#EF4444' : '#CBD5E1';
                     return (
-                      <g key={i} style={{ opacity: dim ? 0.1 : c.kind === 'lose' ? 0.55 : 1 }}>
+                      <g key={i} style={{ opacity: dim ? 0.1 : 1 }}>
                         <path d={c.path} fill="none" stroke={stroke} strokeWidth={isHi ? 3 : 2}
                           strokeLinecap="round" strokeDasharray={c.kind === 'pending' ? '4 5' : undefined} />
                         <circle cx={c.x1} cy={c.y1} r="3.5" fill="white" stroke={stroke} strokeWidth="2" />
@@ -547,7 +543,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
                               </>
                             ) : (
                               <>
-                                <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px', opacity: reported && !t1Wins ? 0.55 : 1 }}>
+                                <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px' }}>
                                   <span style={recStyle(t1Wins, reported && !t1Wins)}>{t1Stats.wins}W-{t1Stats.losses}L</span>
                                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t1Wins ? 600 : 500, color: theme.text, overflow: 'hidden' }}>
                                     <span style={dotStyle(t1.id)}>{t1.name.slice(0, 1).toUpperCase()}</span>
@@ -556,7 +552,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
                                   <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: theme.text, minWidth: '20px', textAlign: 'right' }}>{t1Score}</span>
                                 </div>
                                 <div style={{ height: '1px', background: theme.border, margin: '0 2px' }} />
-                                <div data-team-row={match.team2_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px', opacity: reported && !t2Wins ? 0.55 : 1 }}>
+                                <div data-team-row={match.team2_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px' }}>
                                   <span style={recStyle(t2Wins, reported && !t2Wins)}>{t2Stats.wins}W-{t2Stats.losses}L</span>
                                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t2Wins ? 600 : 500, color: theme.text, overflow: 'hidden' }}>
                                     <span style={dotStyle(t2.id)}>{t2.name.slice(0, 1).toUpperCase()}</span>
