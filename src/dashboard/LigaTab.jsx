@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
-import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search, Check } from 'lucide-react';
+import { theme, btn, inputStyle, labelStyle, tag } from '../lib/platformTheme';
+import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -137,26 +137,6 @@ function SwissRulesBox({ collapsible = false }) {
   );
 }
 
-function TeamChip({ team, onOpenProfile, align = 'left' }) {
-  if (!team) return <span style={{ fontSize: '12px', color: theme.textLight }}>?</span>;
-  const isRight = align === 'right';
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: isRight ? 'flex-end' : 'flex-start' }}>
-      <div style={{ fontSize: '12px', fontWeight: 700 }}>{team.name}</div>
-      <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexDirection: isRight ? 'row-reverse' : 'row' }}>
-        {[{ id: team.player1_id, name: team.player1_name, avatar: team.player1_avatar },
-          { id: team.player2_id, name: team.player2_name, avatar: team.player2_avatar }].map(p => (
-          <span key={p.id} onClick={() => onOpenProfile(p.id, p.name, p.avatar)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer', fontSize: '10px', color: theme.textMid }}>
-            <AvatarCircle avatar={p.avatar} size={16} emojiSize="8px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
-            {p.name.split(' ')[0]}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 const TEAM_PALETTE = [
   'oklch(0.62 0.14 155)',
   'oklch(0.55 0.14 255)',
@@ -166,7 +146,18 @@ const TEAM_PALETTE = [
   'oklch(0.55 0.14 195)',
 ];
 
-function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, onOpenProfile }) {
+function DotName({ teamId, name, teamColors }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+      <span style={{ width: 20, height: 20, borderRadius: '50%', background: teamColors[teamId] || '#94A3B8', display: 'inline-grid', placeItems: 'center', fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
+        {name?.slice(0, 1).toUpperCase()}
+      </span>
+      <span style={{ fontFamily: 'system-ui', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em' }}>{name}</span>
+    </span>
+  );
+}
+
+function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }) {
   const t1 = teamMap[match.team1_id];
   const t2 = match.team2_id ? teamMap[match.team2_id] : null;
   const reported = match.status === 'reported';
@@ -188,15 +179,6 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, 
   const winner = t1Wins ? t1 : t2Wins ? t2 : null;
   const statusLabel = !t2 ? 'Fri runde' : !reported ? 'Planlagt' : 'Afsluttet';
   const resultLabel = !t2 ? `${t1?.name} — fri runde (automatisk sejr)` : !reported ? '—' : `${winner?.name} vinder ${Math.max(+t1Score || 0, +t2Score || 0)}–${Math.min(+t1Score || 0, +t2Score || 0)}`;
-
-  const DotName = ({ teamId, name }) => (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-      <span style={{ width: 20, height: 20, borderRadius: '50%', background: teamColors[teamId] || '#94A3B8', display: 'inline-grid', placeItems: 'center', fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
-        {name?.slice(0, 1).toUpperCase()}
-      </span>
-      <span style={{ fontFamily: 'system-ui', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em' }}>{name}</span>
-    </span>
-  );
 
   return (
     <div
@@ -221,7 +203,7 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, 
         <div style={{ padding: '10px 26px 26px' }}>
           {!t2 ? (
             <div style={{ padding: '20px 0', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>
-              <DotName teamId={t1?.id} name={t1?.name} />
+              <DotName teamId={t1?.id} name={t1?.name} teamColors={teamColors} />
               <div style={{ marginTop: '8px', fontSize: '12px', color: '#94A3B8' }}>{t1?.player1_name} · {t1?.player2_name}</div>
               <div style={{ marginTop: '14px', fontSize: '13px', color: '#64748B', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fri runde</div>
             </div>
@@ -229,7 +211,7 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '16px', padding: '20px 0', borderBottom: '1px solid #E2E8F0' }}>
               {/* Team 1 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', opacity: reported && !t1Wins ? 0.45 : 1 }}>
-                <DotName teamId={t1?.id} name={t1?.name} />
+                <DotName teamId={t1?.id} name={t1?.name} teamColors={teamColors} />
                 <div style={{ fontSize: '12px', color: '#94A3B8' }}>
                   {[t1?.player1_name, t1?.player2_name].filter(Boolean).join(' · ')}
                 </div>
@@ -241,7 +223,7 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, 
               <div style={{ color: '#94A3B8', fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '18px', alignSelf: 'center' }}>vs</div>
               {/* Team 2 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end', textAlign: 'right', opacity: reported && !t2Wins ? 0.45 : 1 }}>
-                <DotName teamId={t2?.id} name={t2?.name} />
+                <DotName teamId={t2?.id} name={t2?.name} teamColors={teamColors} />
                 <div style={{ fontSize: '12px', color: '#94A3B8' }}>
                   {[t2?.player1_name, t2?.player2_name].filter(Boolean).join(' · ')}
                 </div>
@@ -274,7 +256,7 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose, 
   );
 }
 
-function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpenProfile }) {
+function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
   const [open, setOpen] = useState(false);
   const [highlightTeam, setHighlightTeam] = useState(null);
   const [selectedMatch, setSelectedMatch] = useState(null);
@@ -605,7 +587,6 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam, onOpe
           teamColors={teamColors}
           prevStats={selectedMatch.prevStats}
           onClose={() => setSelectedMatch(null)}
-          onOpenProfile={onOpenProfile}
         />
       )}
     </div>
@@ -1004,7 +985,10 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
   };
 
   const toggleStandings = (id) => setOpenStandings(s => {
-    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
+    const n = new Set(s);
+    if (n.has(id)) n.delete(id);
+    else n.add(id);
+    return n;
   });
 
   const visibleLeagues = leagues.filter(l => {
@@ -1570,7 +1554,6 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                     currentRound={league.current_round}
                     totalRounds={league.total_rounds}
                     myTeam={myTeam}
-                    onOpenProfile={openProfile}
                   />
                 )}
 
