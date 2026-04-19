@@ -806,7 +806,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               </span>
             )}
             {isClosed && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: theme.surfaceAlt, color: theme.textMid, border: '1px solid ' + theme.border, borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
                 🔒 Lukket
               </span>
             )}
@@ -828,7 +828,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const t1Avg = avgElo(t1);
           const t2Avg = avgElo(t2);
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", padding: "12px", background: "#F8FAFC", borderRadius: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", padding: "12px", background: theme.surfaceAlt, borderRadius: "8px" }}>
               {/* Team 1 */}
               <div style={{ flex: 1, textAlign: "center" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>Hold 1</div>
@@ -1004,7 +1004,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
           {/* ---- Creator: pending join requests (closed match) ---- */}
           {isCreator && isClosed && pendingRequests.length > 0 && (
-            <div style={{ background: "#F8FAFC", borderRadius: "8px", padding: "12px", border: "1px solid " + theme.border }}>
+            <div style={{ background: theme.surfaceAlt, borderRadius: "8px", padding: "12px", border: "1px solid " + theme.border }}>
               <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
                 🔒 Tilmeldingsanmodninger ({pendingRequests.length})
               </div>

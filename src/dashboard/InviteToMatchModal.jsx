@@ -84,7 +84,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose })
       onClick={onClose}
     >
       <div
-        style={{ background: '#fff', borderRadius: '14px', padding: '24px', maxWidth: '420px', width: '100%', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+        style={{ background: theme.surface, borderRadius: '14px', padding: '24px', maxWidth: '420px', width: '100%', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', border: '1px solid ' + theme.border }}
         onClick={e => e.stopPropagation()}
       >
         <h3 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '4px' }}>

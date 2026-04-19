@@ -11,7 +11,7 @@ export function ConfirmDialog({ message, confirmLabel = 'Ja, fortsæt', cancelLa
       onClick={onCancel}
     >
       <div
-        style={{ background: '#fff', borderRadius: '14px', padding: '24px', maxWidth: '320px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}
+        style={{ background: theme.surface, borderRadius: '14px', padding: '24px', maxWidth: '320px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', border: '1px solid ' + theme.border }}
         onClick={e => e.stopPropagation()}
       >
         <p style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '20px', lineHeight: 1.45 }}>{message}</p>
