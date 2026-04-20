@@ -248,14 +248,14 @@ export function BeskedTab({ user }) {
               <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
                 <div style={{
                   maxWidth: '76%',
-                  background: isMe ? theme.accent : '#fff',
+                  background: isMe ? theme.accent : theme.surfaceAlt,
                   color: isMe ? '#fff' : theme.text,
                   borderRadius: isMe ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
                   padding: '9px 13px',
                   fontSize: '14px',
                   lineHeight: 1.45,
                   wordBreak: 'break-word',
-                  border: isMe ? 'none' : '1px solid #E2E8F0',
+                  border: isMe ? 'none' : '1px solid ' + theme.border,
                   boxShadow: isMe ? 'none' : '0 1px 2px rgba(0,0,0,0.07)',
                 }}>
                   <div>{msg.content}</div>
@@ -405,7 +405,7 @@ export function BeskedTab({ user }) {
                       position: 'absolute', top: -2, right: -2,
                       background: theme.accent, color: '#fff',
                       borderRadius: '10px', fontSize: '9px', fontWeight: 800,
-                      padding: '1px 5px', border: '2px solid #fff',
+                      padding: '1px 5px', border: '2px solid ' + theme.surface,
                     }}>
                       {convo.unread}
                     </span>
