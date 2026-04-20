@@ -17,7 +17,7 @@ export async function handleBookliSlots(req, res) {
     return;
   }
 
-  if (!checkRateLimit(getClientIp(req), 30, 60_000)) {
+  if (!await checkRateLimit(getClientIp(req), 30, 60_000)) {
     res.status(429).json({ error: 'For mange forespørgsler. Prøv igen om et øjeblik.' });
     return;
   }

@@ -446,7 +446,7 @@ export function AmericanoTab({
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: 40, color: '#8494A7', fontSize: 14, fontFamily: font }}>
+      <div style={{ textAlign: 'center', padding: 40, color: 'var(--pm-text-light)', fontSize: 14, fontFamily: font }}>
         Indlæser Americano…
       </div>
     )
@@ -454,7 +454,7 @@ export function AmericanoTab({
 
   if (!profileId) {
     return (
-      <div style={{ textAlign: 'center', padding: 40, color: '#8494A7', fontSize: 14, fontFamily: font }}>
+      <div style={{ textAlign: 'center', padding: 40, color: 'var(--pm-text-light)', fontSize: 14, fontFamily: font }}>
         Du skal være logget ind for at bruge Americano.
       </div>
     )
@@ -502,9 +502,9 @@ export function AmericanoTab({
       fontWeight: 600,
       padding: '7px 14px',
       borderRadius: 8,
-      border: active ? 'none' : '1px solid #D5DDE8',
-      background: active ? '#1D4ED8' : '#fff',
-      color: active ? '#fff' : '#3E4C63',
+      border: active ? 'none' : '1px solid var(--pm-border)',
+      background: active ? 'var(--pm-accent)' : 'var(--pm-surface)',
+      color: active ? '#fff' : 'var(--pm-text-mid)',
       cursor: 'pointer',
     }) as const
 
@@ -560,7 +560,7 @@ export function AmericanoTab({
         </div>
       )}
 
-      <p style={{ fontSize: 13, color: '#3E4C63', marginBottom: 16, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 13, color: 'var(--pm-text-mid)', marginBottom: 16, lineHeight: 1.5 }}>
         <strong>Americano bruger ikke ELO.</strong> Kampe tæller kun i separat V/T på profilen (som i apps som Padelboard — turnering og stilling for sig selv).
         Makkere og modstandere roterer hver runde. Valget 16/24/32 er <strong>spilformat på banen</strong> (typisk først til det tal); når kampen er slut, indtastes den{' '}
         <strong>slutstilling</strong> der summerer til formatet (fx 10–6 eller 8–8 ved 16 point) — hvert rally tæller ét point til holdet; det andet hold udfyldes automatisk hvis du kun skriver ét tal.
@@ -587,11 +587,11 @@ export function AmericanoTab({
       </div>
 
       {rows.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#8494A7', fontSize: 14 }}>
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--pm-text-light)', fontSize: 14 }}>
           Ingen Americano-turneringer endnu.
         </div>
       ) : visibleRows.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#8494A7', fontSize: 14 }}>
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--pm-text-light)', fontSize: 14 }}>
           {americanoView === 'open' && 'Ingen åbne Americano-turneringer.'}
           {americanoView === 'playing' && 'Ingen Americano i gang.'}
           {americanoView === 'completed' && 'Ingen afsluttede Americano endnu.'}
@@ -608,10 +608,10 @@ export function AmericanoTab({
             <div
               key={t.id}
               style={{
-                background: '#fff',
+                background: 'var(--pm-surface)',
                 borderRadius: 12,
                 padding: 18,
-                border: '1px solid #D5DDE8',
+                border: '1px solid var(--pm-border)',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
               }}
             >
@@ -623,7 +623,7 @@ export function AmericanoTab({
                 <span style={{ textTransform: 'capitalize' }}>{t.status}</span>
               </div>
               {t.description && (
-                <div style={{ fontSize: 12, color: '#8494A7', marginTop: 8, fontStyle: 'italic' }}>{t.description}</div>
+                <div style={{ fontSize: 12, color: 'var(--pm-text-light)', marginTop: 8, fontStyle: 'italic' }}>{t.description}</div>
               )}
               {(() => {
                 const parts = participantsByTournament[t.id] || []
@@ -643,9 +643,9 @@ export function AmericanoTab({
                     style={{
                       marginTop: 12,
                       padding: playingCollapsed && !listOpen ? '8px 12px' : '10px 12px',
-                      background: '#F8FAFC',
+                      background: 'var(--pm-surface-alt)',
                       borderRadius: 8,
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--pm-border)',
                     }}
                   >
                     {playingCollapsed ? (
@@ -685,7 +685,7 @@ export function AmericanoTab({
                         />
                       </button>
                     ) : (
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0B1120', marginBottom: 8 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--pm-text)', marginBottom: 8 }}>
                         Deltagere ({parts.length}/{maxSlots})
                       </div>
                     )}
@@ -694,7 +694,7 @@ export function AmericanoTab({
                         <div
                           style={{
                             fontSize: 12,
-                            color: '#8494A7',
+                            color: 'var(--pm-text-light)',
                             marginTop: playingCollapsed ? 10 : 0,
                           }}
                         >
@@ -727,8 +727,8 @@ export function AmericanoTab({
                                   gap: 10,
                                   padding: '8px 10px',
                                   borderRadius: 8,
-                                  border: '1px solid #E2E8F0',
-                                  background: '#fff',
+                                  border: '1px solid var(--pm-border)',
+                                  background: 'var(--pm-surface)',
                                   cursor: 'pointer',
                                   textAlign: 'left',
                                   fontFamily: font,
@@ -741,7 +741,7 @@ export function AmericanoTab({
                                   style={{
                                     fontSize: 13,
                                     fontWeight: 600,
-                                    color: '#0F172A',
+                                    color: 'var(--pm-text)',
                                     flex: 1,
                                     minWidth: 0,
                                   }}
@@ -785,8 +785,8 @@ export function AmericanoTab({
                                     gap: 10,
                                     padding: '8px 10px',
                                     borderRadius: 8,
-                                    border: '1px solid #E2E8F0',
-                                    background: '#fff',
+                                    border: '1px solid var(--pm-border)',
+                                    background: 'var(--pm-surface)',
                                     cursor: 'pointer',
                                     textAlign: 'left',
                                     fontFamily: font,
@@ -799,7 +799,7 @@ export function AmericanoTab({
                                     style={{
                                       fontSize: 13,
                                       fontWeight: 600,
-                                      color: '#0F172A',
+                                      color: 'var(--pm-text)',
                                       flex: 1,
                                       minWidth: 0,
                                     }}
@@ -842,7 +842,7 @@ export function AmericanoTab({
                             margin: playingCollapsed ? '10px 0 0' : 0,
                             paddingLeft: 18,
                             fontSize: 12,
-                            color: '#3E4C63',
+                            color: 'var(--pm-text-mid)',
                             lineHeight: 1.65,
                           }}
                         >
@@ -891,9 +891,9 @@ export function AmericanoTab({
                       fontWeight: 600,
                       padding: '8px 14px',
                       borderRadius: 8,
-                      border: '1px solid #D5DDE8',
-                      background: '#fff',
-                      color: '#3E4C63',
+                      border: '1px solid var(--pm-border)',
+                      background: 'var(--pm-surface)',
+                      color: 'var(--pm-text-mid)',
                       cursor: busyId === t.id ? 'wait' : 'pointer',
                     }}
                   >
@@ -967,7 +967,7 @@ export function AmericanoTab({
                       padding: '8px 14px',
                       borderRadius: 8,
                       border: '1px solid #FCA5A5',
-                      background: '#fff',
+                      background: 'var(--pm-surface)',
                       color: '#B91C1C',
                       cursor: busyId === t.id ? 'wait' : 'pointer',
                       display: 'inline-flex',

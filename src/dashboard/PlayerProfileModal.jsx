@@ -84,7 +84,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "14px", padding: "clamp(18px,5vw,28px)", maxWidth: "380px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90dvh", overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: theme.surface, borderRadius: "14px", padding: "clamp(18px,5vw,28px)", maxWidth: "380px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", border: "1px solid " + theme.border, maxHeight: "90dvh", overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
         {/* Header */}
         <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "20px" }}>
           <AvatarCircle
@@ -114,7 +114,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
               { label: "Sejre",  value: wins,   color: theme.warm },
               { label: "Win %",  value: games != null && games > 0 ? winPct + "%" : "—", color: theme.accent },
             ].map((s, i) => (
-              <div key={i} style={{ textAlign: "center", padding: "10px 4px", background: "#F8FAFC", borderRadius: "8px" }}>
+              <div key={i} style={{ textAlign: "center", padding: "10px 4px", background: theme.surfaceAlt, borderRadius: "8px" }}>
                 <div style={{ fontSize: "16px", fontWeight: 800, color: s.color }}>{s.value}</div>
                 <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
               </div>
@@ -124,7 +124,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
 
         {/* Liga-statistik */}
         {!dataLoading && ligaWins !== null && (
-          <div style={{ marginBottom: "16px", padding: "12px 14px", background: "#EFF6FF", borderRadius: "10px", border: "1px solid #BFDBFE", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ marginBottom: "16px", padding: "12px 14px", background: theme.accentBg, borderRadius: "10px", border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Ligakampe vundet</div>
               <div style={{ fontSize: "22px", fontWeight: 800, color: theme.blue, letterSpacing: "-0.02em" }}>🏅 {ligaWins}</div>
@@ -133,7 +133,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
         )}
 
         {/* Sejrsstreak */}
-        <div style={{ marginBottom: "16px", padding: "12px 14px", background: "#FFFBEB", borderRadius: "10px", border: "1px solid rgba(217, 119, 6, 0.2)" }}>
+        <div style={{ marginBottom: "16px", padding: "12px 14px", background: theme.surfaceAlt, borderRadius: "10px", border: "1px solid " + theme.border }}>
           <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em" }}>Sejrsstreak</div>
           {dataLoading ? (
             <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "8px" }}>Indlæser…</div>
@@ -195,7 +195,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
                   {DAYS_OF_WEEK.map(({ key, label }) => {
                     const active = days.includes(key);
                     return (
-                      <div key={key} style={{ flex: 1, textAlign: "center", padding: "4px 2px", borderRadius: "5px", fontSize: "11px", fontWeight: 700, background: active ? theme.accent : "#F1F5F9", color: active ? "#fff" : theme.textLight }}>
+                      <div key={key} style={{ flex: 1, textAlign: "center", padding: "4px 2px", borderRadius: "5px", fontSize: "11px", fontWeight: 700, background: active ? theme.accent : theme.surfaceAlt, color: active ? "#fff" : theme.textLight }}>
                         {label}
                       </div>
                     );
@@ -207,7 +207,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
         </div>
 
         {pRef.bio && (
-          <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", padding: "12px", background: "#F8FAFC", borderRadius: "8px", fontStyle: "italic" }}>
+          <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", padding: "12px", background: theme.surfaceAlt, borderRadius: "8px", fontStyle: "italic" }}>
             &ldquo;{pRef.bio}&rdquo;
           </p>
         )}

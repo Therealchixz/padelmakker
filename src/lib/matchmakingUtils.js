@@ -2,10 +2,11 @@
  * Matchmaking scoring v1
  *
  * Vægte:
- *   35% skill  — ELO-forskel
- *   25% tid    — overlappende tilgængelighed
- *   25% geo    — afstand (km) eller regions-match
- *   15% intent — fælles spilleintention
+ *   32% skill     — ELO-forskel
+ *   23% tid       — overlappende tilgængelighed
+ *   22% geo       — afstand (km) eller regions-match
+ *   13% intent    — fælles spilleintention
+ *   10% courtSide — komplementær bane-side
  *
  * Hard filters (fjernes før scoring):
  *   - is_banned

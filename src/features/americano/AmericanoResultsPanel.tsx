@@ -12,14 +12,14 @@ import {
 const font = "'Inter', sans-serif"
 
 const c = {
-  line: '#E8ECF1',
-  muted: '#94A3B8',
-  text: '#0F172A',
-  softBg: '#F8FAFC',
-  avatarBg: '#E2E8F0',
-  avatarText: '#64748B',
-  accent: '#2563EB',
-} as const
+  line: 'var(--pm-border)',
+  muted: 'var(--pm-text-light)',
+  text: 'var(--pm-text)',
+  softBg: 'var(--pm-surface-alt)',
+  avatarBg: 'var(--pm-border)',
+  avatarText: 'var(--pm-text-light)',
+  accent: 'var(--pm-accent)',
+}
 
 function initialsFromName(name: string): string {
   const p = name.trim().split(/\s+/).filter(Boolean)
@@ -611,7 +611,7 @@ export function AmericanoResultsPanel({
                         height: 40,
                         borderRadius: '50%',
                         border: `2px solid ${c.accent}`,
-                        background: '#fff',
+                        background: 'var(--pm-surface)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -733,9 +733,9 @@ export function AmericanoResultsPanel({
             fontWeight: 600,
             padding: '8px 14px',
             borderRadius: 8,
-            border: '1px solid #D5DDE8',
-            background: '#fff',
-            color: '#3E4C63',
+            border: '1px solid var(--pm-border)',
+            background: 'var(--pm-surface)',
+            color: 'var(--pm-text-mid)',
             cursor: saving ? 'wait' : 'pointer',
           }}
         >

@@ -6,10 +6,10 @@ import { X } from 'lucide-react';
 import { statsFromEloHistoryRows } from '../lib/eloHistoryUtils';
 
 const americanoOutcomeColors = {
-  win: { bg: '#ECFDF5', border: '#A7F3D0', text: '#059669' },
-  loss: { bg: '#FEF2F2', border: '#FECACA', text: '#DC2626' },
-  tie: { bg: '#F1F5F9', border: '#E2E8F0', text: '#475569' },
-  neutral: { bg: '#EFF6FF', border: '#DBEAFE', text: '#1D4ED8' }
+  win:     { bg: theme.greenBg,  border: theme.green,  text: theme.green },
+  loss:    { bg: theme.redBg,    border: theme.red,    text: theme.red },
+  tie:     { bg: theme.surfaceAlt, border: theme.border, text: theme.textMid },
+  neutral: { bg: theme.accentBg,   border: theme.border, text: theme.accent },
 };
 
 interface PlayerStatsModalProps {
@@ -102,7 +102,7 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
   const cell = (label: string, value: string | number, opts: CellStyleOpts) => (
     <div key={label} style={{ textAlign: 'center', padding: '10px 6px', background: opts.bg, borderRadius: 8, border: `1px solid ${opts.border}` }}>
       <div style={{ fontSize: 16, fontWeight: 800, color: opts.text, fontFamily: font }}>{value}</div>
-      <div style={{ fontSize: 9, fontWeight: 700, color: '#64748B', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
+      <div style={{ fontSize: 9, fontWeight: 700, color: theme.textLight, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
     </div>
   );
 
@@ -128,7 +128,8 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: '#fff',
+          background: theme.surface,
+          border: `1px solid ${theme.border}`,
           borderRadius: 16,
           padding: 24,
           maxWidth: 380,
@@ -137,7 +138,7 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
           position: "relative"
         }}
       >
-        <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", color: "#64748B", cursor: "pointer" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", color: theme.textLight, cursor: "pointer" }}>
           <X size={20} />
         </button>
 
@@ -146,37 +147,37 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
             avatar={row?.avatar || '🎾'}
             size={56}
             emojiSize="28px"
-            style={{ background: '#F1F5F9' }}
+            style={{ background: theme.surfaceAlt }}
           />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: theme.text, letterSpacing: '-0.02em', overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {loading ? '…' : title}
             </div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>Spillerprofil</div>
+            <div style={{ fontSize: 12, color: theme.textLight, marginTop: 4 }}>Spillerprofil</div>
           </div>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 24, color: '#64748B', fontSize: 14 }}>Henter statistik…</div>
+          <div style={{ textAlign: 'center', padding: 24, color: theme.textLight, fontSize: 14 }}>Henter statistik…</div>
         ) : fetchErr ? (
           <div style={{ fontSize: 14, color: theme.red, textAlign: "center", padding: 24 }}>Kunne ikke hente profil.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Padel Stats */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Padel Ranking</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Padel Ranking</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                {cell('ELO', elo, { bg: '#F0F9FF', border: '#BAE6FD', text: '#0369A1' })}
-                {cell('Kampe', padelGames, { bg: '#F1F5F9', border: '#E2E8F0', text: '#475569' })}
-                {cell('Sejre', padelWins, { bg: '#ECFDF5', border: '#A7F3D0', text: '#059669' })}
+                {cell('ELO', elo, { bg: theme.surfaceAlt, border: theme.border, text: theme.accent })}
+                {cell('Kampe', padelGames, { bg: theme.surfaceAlt, border: theme.border, text: theme.textMid })}
+                {cell('Sejre', padelWins, { bg: theme.surfaceAlt, border: theme.border, text: theme.green })}
               </div>
             </div>
 
             {/* Americano Stats */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Americano</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Americano</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
-                {cell('Turneringer', amPlayed, { bg: '#F5F3FF', border: '#DDD6FE', text: '#7C3AED' })}
+                {cell('Turneringer', amPlayed, { bg: theme.surfaceAlt, border: theme.border, text: theme.purple })}
                 {cell('Runder vundet', amW, { ...americanoOutcomeColors.win })}
                 {cell('Uafgjort', amD, { ...americanoOutcomeColors.tie })}
                 {cell('Runder tabt', amL, { ...americanoOutcomeColors.loss })}
@@ -188,7 +189,7 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
         <button
           type="button"
           onClick={onClose}
-          style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: '#F1F5F9', color: '#475569', fontWeight: 600, fontSize: 14, cursor: 'pointer', marginTop: 24 }}
+          style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: theme.surfaceAlt, color: theme.textMid, fontWeight: 600, fontSize: 14, cursor: 'pointer', marginTop: 24 }}
         >
           Luk
         </button>
