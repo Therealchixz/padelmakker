@@ -72,16 +72,6 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  // Auto-expire seeking_match after 24h regardless of login activity
-  useEffect(() => {
-    if (!user?.seeking_match || !user?.seeking_match_at) return;
-    const age = Date.now() - new Date(user.seeking_match_at).getTime();
-    if (age >= 24 * 60 * 60 * 1000) {
-      updateProfile({ seeking_match: false, seeking_match_at: null }).catch(() => {});
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.seeking_match, user?.seeking_match_at]);
-
   const [pendingAvatarFile, setPendingAvatarFile]   = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
   const [avatarUploading, setAvatarUploading]       = useState(false);

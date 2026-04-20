@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+
+const SEEK_TTL_MS = 24 * 60 * 60 * 1000;
+const isSeekingActive = (p) =>
+  p.seeking_match === true &&
+  p.seeking_match_at != null &&
+  Date.now() - new Date(p.seeking_match_at).getTime() < SEEK_TTL_MS;
 import { useNavigate } from 'react-router-dom';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
@@ -89,7 +95,7 @@ function SuggestionCard({ suggestion, onView, onInvite }) {
             {p.intent_now && INTENT_LABELS[p.intent_now] && (
               <span style={tag('#F0FDF4', '#15803D')}>{INTENT_LABELS[p.intent_now]}</span>
             )}
-            {p.seeking_match && (
+            {isSeekingActive(p) && (
               <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>
             )}
           </div>
@@ -209,7 +215,7 @@ export function MakkereTab({ user, showToast }) {
     if (filterStyle !== 'all' && p.play_style !== filterStyle) return false;
     if (filterIntent !== 'all' && p.intent_now !== filterIntent) return false;
     if (filterCourtSide !== 'all' && p.court_side !== filterCourtSide) return false;
-    if (filterSeeking && !p.seeking_match) return false;
+    if (filterSeeking && !isSeekingActive(p)) return false;
     if (filterFav && !favorites.has(String(p.id))) return false;
     return true;
   });
@@ -385,7 +391,7 @@ export function MakkereTab({ user, showToast }) {
                     <span style={tag(theme.blueBg, theme.blue)}>{p.play_style || '?'}</span>
                     {p.court_side && <span style={tag(theme.blueBg, theme.blue)}>{p.court_side}</span>}
                     <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>
-                    {p.seeking_match && <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>}
+                    {isSeekingActive(p) && <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>}
                   </div>
                   {p.bio && <p style={{ fontSize: '12px', color: theme.textMid, marginTop: '8px', lineHeight: 1.5 }}>{p.bio}</p>}
                 </div>

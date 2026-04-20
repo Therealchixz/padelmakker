@@ -208,6 +208,21 @@ export function AuthProvider({ children }) {
         }
 
         setProfile(p)
+
+        // Auto-expire seeking_match after 24h from activation
+        if (p?.seeking_match && p?.seeking_match_at) {
+          const age = Date.now() - new Date(p.seeking_match_at).getTime();
+          if (age >= 24 * 60 * 60 * 1000) {
+            supabase.from('profiles')
+              .update({ seeking_match: false, seeking_match_at: null })
+              .eq('id', p.id)
+              .then(({ data }) => {
+                if (data?.[0]) setProfile(normalizeProfileRow(data[0]));
+              })
+              .catch(() => {});
+          }
+        }
+
         /**
          * Pending storage-upload kan tage lang tid. TOKEN_REFRESHED udløser ofte et nyt loadProfile
          * med et nyt profileReqId — må ikke afvise setProfile når upload først færdiggøres bagefter
