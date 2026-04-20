@@ -1112,7 +1112,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               </button>
             </div>
           )}
-          {isCreator && status === "open" && mp.length < 4 && (
+          {isCreator && status === "open" && mp.length === 3 && (
             <button
               onClick={() => toggleSeekingPlayer(m)}
               disabled={busyId === m.id + '-seek'}
