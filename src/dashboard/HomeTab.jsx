@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { DateTime } from 'luxon';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, heading, btn } from '../lib/platformTheme';
@@ -25,6 +25,7 @@ export function HomeTab({ user, setTab }) {
   const wins = histStats?.wins ?? (profileFresh?.games_won || 0);
   const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
 
+  const fetchIdRef = useRef(0);
   const [feed, setFeed] = useState([]);
   const [americanoFeed, setAmericanoFeed] = useState([]);
   const [ligaFeed, setLigaFeed] = useState([]);
@@ -85,6 +86,7 @@ export function HomeTab({ user, setTab }) {
   const enabledTypes = new Set(FEED_FILTERS.filter(f => activeFilters.has(f.id)).flatMap(f => f.types));
 
   const fetchFeed = useCallback(async () => {
+    const fetchId = ++fetchIdRef.current;
     setFeedLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -114,9 +116,9 @@ export function HomeTab({ user, setTab }) {
           .select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration')
           .order('created_at', { ascending: false }).limit(5),
         supabase.from('profiles')
-          .select('id, full_name, name, avatar, level, area, intent_now, last_active_at')
-          .eq('seeking_match', true).gt('last_active_at', since24h)
-          .order('last_active_at', { ascending: false, nullsFirst: false }).limit(5),
+          .select('id, full_name, name, avatar, level, area, intent_now, seeking_match_at')
+          .eq('seeking_match', true).gt('seeking_match_at', since24h)
+          .order('seeking_match_at', { ascending: false, nullsFirst: false }).limit(5),
         supabase.from('leagues')
           .select('id, name, status, created_at').in('status', ['registration', 'active'])
           .order('created_at', { ascending: false }).limit(5),
@@ -279,7 +281,7 @@ export function HomeTab({ user, setTab }) {
       // Søger makker
       const seekingFeed_ = seeking
         .filter(p => String(p.id) !== String(user.id)).slice(0, 3)
-        .map(p => ({ type: 'seeking_player', userId: p.id, name: p.full_name || p.name || 'En spiller', avatar: p.avatar || '🎾', level: p.level, area: p.area, intent: p.intent_now, created_at: p.last_active_at }));
+        .map(p => ({ type: 'seeking_player', userId: p.id, name: p.full_name || p.name || 'En spiller', avatar: p.avatar || '🎾', level: p.level, area: p.area, intent: p.intent_now, created_at: p.seeking_match_at }));
 
       // Nye/aktive ligaer
       const lgTeamCounts = {};
@@ -287,6 +289,7 @@ export function HomeTab({ user, setTab }) {
       const leagueNewFeed_ = newLiga.map(l => ({ type: 'league_new', leagueId: l.id, leagueName: l.name, status: l.status, teamCount: lgTeamCounts[l.id] || 0, created_at: l.created_at }));
 
       // Sæt al state på én gang (React 18 batcher disse i async-kontekst)
+      if (fetchIdRef.current !== fetchId) return;
       setFeed(groupedFeed);
       setAmericanoFeed(completedAmFeed);
       setLigaFeed(completedLgFeed);
@@ -296,9 +299,9 @@ export function HomeTab({ user, setTab }) {
       setSeekingFeed(seekingFeed_);
       setLeagueNewFeed(leagueNewFeed_);
     } catch (e) {
-      console.warn('Feed error:', e);
+      if (fetchIdRef.current === fetchId) console.warn('Feed error:', e);
     } finally {
-      setFeedLoading(false);
+      if (fetchIdRef.current === fetchId) setFeedLoading(false);
     }
   }, [user.id]);
 
@@ -439,7 +442,7 @@ export function HomeTab({ user, setTab }) {
                         display: "flex", alignItems: "center", gap: "10px",
                         background: theme.warmBg,
                         borderRadius: "8px", padding: "8px 12px",
-                        border: "1.5px solid " + theme.warm,
+                        border: "1px solid " + theme.border,
                         position: "relative"
                       }}
                     >
@@ -451,7 +454,7 @@ export function HomeTab({ user, setTab }) {
                           avatar={row.avatar}
                           size={38}
                           emojiSize="24px"
-                          style={{ background: theme.warmBg, border: "1.5px solid " + theme.warm }}
+                          style={{ background: theme.warmBg, border: "1px solid " + theme.border }}
                         />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -482,7 +485,7 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'liga_completed') {
                   const c = row.champion;
                   return (
-                    <div key={`liga-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.blue }}>
+                    <div key={`liga-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
                       {/* Overlapping avatars for winning team */}
                       <div style={{ display: "flex", position: "relative", width: "46px", height: "34px", flexShrink: 0 }}>
                         <AvatarCircle avatar={c.player1_avatar} size={30} emojiSize="15px" style={{ background: theme.accentBg, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
@@ -506,9 +509,9 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'open_match') {
                   const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                   return (
-                    <div key={`open-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.greenBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.green }}>
+                    <div key={`open-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.greenBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
                       <div onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: theme.greenBg, border: "1.5px solid " + theme.green }} />
+                        <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: theme.greenBg, border: "1px solid " + theme.border }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -524,8 +527,8 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'americano_registration') {
                   const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                   return (
-                    <div key={`amreg-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.warmBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.warm }}>
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.warmBg, border: "1.5px solid " + theme.warm, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
+                    <div key={`amreg-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.warmBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.warmBg, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>
                         <div style={{ fontSize: "11px", color: theme.warm, marginTop: "1px" }}>
@@ -539,9 +542,9 @@ export function HomeTab({ user, setTab }) {
 
                 if (row.type === 'elo_milestone') {
                   return (
-                    <div key={`milestone-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.purpleBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.purple }}>
+                    <div key={`milestone-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.purpleBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.purpleBg, border: "1.5px solid " + theme.purple }} />
+                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.purpleBg, border: "1px solid " + theme.border }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -557,9 +560,9 @@ export function HomeTab({ user, setTab }) {
                   const levelStr = row.level ? levelLabel(row.level) : null;
                   const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                   return (
-                    <div key={`seek-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.blue }}>
+                    <div key={`seek-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.accentBg, border: "1.5px solid " + theme.blue }} />
+                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.accentBg, border: "1px solid " + theme.border }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -575,8 +578,8 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'league_new') {
                   const isReg = row.status === 'registration';
                   return (
-                    <div key={`lnew-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1.5px solid " + theme.blue }}>
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.accentBg, border: "1.5px solid " + theme.blue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
+                    <div key={`lnew-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.accentBg, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.leagueName}</div>
                         <div style={{ fontSize: "11px", color: theme.accent, marginTop: "1px" }}>

@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const [{ data: inMatch }, { data: isCreator }] = await Promise.all([
+      const [{ data: callerInMatch }, { data: isCreator }, { data: targetInMatch }] = await Promise.all([
         adminClient
           .from("match_players")
           .select("id")
@@ -110,8 +110,16 @@ Deno.serve(async (req: Request) => {
           .eq("id", matchId)
           .eq("creator_id", callerId)
           .maybeSingle(),
+        adminClient
+          .from("match_players")
+          .select("id")
+          .eq("match_id", matchId)
+          .eq("user_id", targetUserId)
+          .maybeSingle(),
       ]);
-      if (!inMatch && !isCreator) {
+      const callerAuthorized = !!(callerInMatch || isCreator);
+      const targetIsInMatch = !!targetInMatch;
+      if (!callerAuthorized || !targetIsInMatch) {
         return new Response(JSON.stringify({ error: "Forbidden: ingen adgang til denne match-notifikation" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

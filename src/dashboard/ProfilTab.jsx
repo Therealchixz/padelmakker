@@ -118,9 +118,10 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
         birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
         birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
         // Matchmaking
-        seeking_match:  form.seeking_match,
-        intent_now:     form.intent_now || null,
-        travel_willing: form.travel_willing,
+        seeking_match:     form.seeking_match,
+        seeking_match_at:  form.seeking_match && !user.seeking_match ? new Date().toISOString() : form.seeking_match ? user.seeking_match_at : null,
+        intent_now:        form.intent_now || null,
+        travel_willing:    form.travel_willing,
       });
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       setPendingAvatarFile(null);
@@ -212,16 +213,17 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
           {/* Søger kamp — standalone toggle der gemmer øjeblikkeligt */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: user.seeking_match ? theme.warmBg : theme.surfaceAlt, border: '1px solid ' + (user.seeking_match ? theme.warm : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: theme.surfaceAlt, border: '1px solid ' + (user.seeking_match ? theme.accent : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>⚡ Søger kamp nu</div>
-              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Vises i andres feed. Forsvinder automatisk hvis du ikke har været aktiv i 24 timer.</div>
+              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Vises i andres feed. Slukker automatisk 24 timer efter du aktiverede det.</div>
             </div>
             <button
               onClick={async () => {
                 try {
-                  await updateProfile({ seeking_match: !user.seeking_match });
-                  showToast(user.seeking_match ? 'Du søger ikke længere kamp.' : 'Du søger nu kamp! ⚡');
+                  const enabling = !user.seeking_match;
+                  await updateProfile({ seeking_match: enabling, seeking_match_at: enabling ? new Date().toISOString() : null });
+                  showToast(enabling ? 'Du søger nu kamp! ⚡' : 'Du søger ikke længere kamp.');
                 } catch { showToast('Kunne ikke gemme. Prøv igen.'); }
               }}
               style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: user.seeking_match ? theme.accent : theme.border, position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}

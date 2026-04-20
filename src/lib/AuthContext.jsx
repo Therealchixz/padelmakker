@@ -160,6 +160,8 @@ export function AuthProvider({ children }) {
   const profileReqId = useRef(0)
   /** Til pending-avatar merge: undgå at sætte profil efter logout når core-load timeout gav prev=null */
   const activeUserIdRef = useRef('')
+  /** Forhindrer dobbelt signOut() fra loadProfile + realtime-lytter */
+  const signingOutRef = useRef(false)
 
   /**
    * Opdater last_active_at for brugeren — fire-and-forget.
@@ -197,6 +199,8 @@ export function AuthProvider({ children }) {
 
         // Tjek for ban-status
         if (p?.is_banned) {
+          if (signingOutRef.current) return
+          signingOutRef.current = true
           const reasonMsg = p.ban_reason ? `\n\nBegrundelse: ${p.ban_reason}` : '';
           alert(`Din konto er blevet udelukket af en administrator.${reasonMsg}`);
           signOut();
@@ -204,6 +208,21 @@ export function AuthProvider({ children }) {
         }
 
         setProfile(p)
+
+        // Auto-expire seeking_match after 24h from activation
+        if (p?.seeking_match && p?.seeking_match_at) {
+          const age = Date.now() - new Date(p.seeking_match_at).getTime();
+          if (age >= 24 * 60 * 60 * 1000) {
+            supabase.from('profiles')
+              .update({ seeking_match: false, seeking_match_at: null })
+              .eq('id', p.id)
+              .then(({ data }) => {
+                if (data?.[0]) setProfile(normalizeProfileRow(data[0]));
+              })
+              .catch(() => {});
+          }
+        }
+
         /**
          * Pending storage-upload kan tage lang tid. TOKEN_REFRESHED udløser ofte et nyt loadProfile
          * med et nyt profileReqId — må ikke afvise setProfile når upload først færdiggøres bagefter
@@ -278,6 +297,8 @@ export function AuthProvider({ children }) {
           { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
           (payload) => {
             if (payload.new?.is_banned) {
+              if (signingOutRef.current) return
+              signingOutRef.current = true
               const reason = payload.new.ban_reason ? `\n\nBegrundelse: ${payload.new.ban_reason}` : ''
               alert(`Din konto er blevet udelukket af en administrator.${reason}`)
               signOut()
@@ -390,6 +411,7 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     profileReqId.current += 1
+    signingOutRef.current = false
     await supabase.auth.signOut()
     setSession(null)
     setUser(null)

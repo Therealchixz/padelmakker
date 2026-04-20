@@ -239,7 +239,7 @@ export function validateNameWord(raw, fieldLabel) {
   if (lettersOnly.length >= 9) {
     const vowels = lettersOnly.match(VOWEL_RE) || []
     const ratio = vowels.length / lettersOnly.length
-    if (ratio < 0.22) {
+    if (ratio < 0.18) {
       return {
         valid: false,
         message: `${label} ligner ikke et rigtigt navn (for få vokaler).`,
@@ -284,7 +284,7 @@ export function validateMultiPartNameField(raw, fieldLabel) {
   if (lettersJoined.length >= 12) {
     const vowels = lettersJoined.match(VOWEL_RE) || []
     const ratio = vowels.length / lettersJoined.length
-    if (ratio < 0.2) {
+    if (ratio < 0.18) {
       return {
         valid: false,
         message: `${label} ligner ikke et rigtigt navn (for få vokaler i alt).`,
@@ -369,7 +369,7 @@ export function validateDisplayName(raw) {
     if (lettersOnly.length >= 9) {
       const vowels = lettersOnly.match(VOWEL_RE) || []
       const ratio = vowels.length / lettersOnly.length
-      if (ratio < 0.22) {
+      if (ratio < 0.18) {
         return {
           valid: false,
           message:

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabase';
 
 /** Hent alle samtaler for userId — én per samtalepartner, sorteret nyeste først. */
@@ -79,11 +79,17 @@ export async function fetchUnreadMessageCount(userId) {
  */
 export function useUnreadMessageCount(userId) {
   const [count, setCount] = useState(0);
+  const debounceTimer = useRef(null);
 
   const refresh = useCallback(async () => {
     const n = await fetchUnreadMessageCount(userId);
     setCount(n);
   }, [userId]);
+
+  const debouncedRefresh = useCallback(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(refresh, 300);
+  }, [refresh]);
 
   useEffect(() => {
     refresh();
@@ -94,17 +100,20 @@ export function useUnreadMessageCount(userId) {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${userId}` },
-        () => refresh()
+        () => debouncedRefresh()
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'messages', filter: `receiver_id=eq.${userId}` },
-        () => refresh()
+        () => debouncedRefresh()
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [userId, refresh]);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      supabase.removeChannel(channel);
+    };
+  }, [userId, refresh, debouncedRefresh]);
 
   return count;
 }
