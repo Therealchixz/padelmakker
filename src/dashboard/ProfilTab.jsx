@@ -213,7 +213,7 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
           {/* Søger kamp — standalone toggle der gemmer øjeblikkeligt */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: user.seeking_match ? theme.warmBg : theme.surfaceAlt, border: '1px solid ' + (user.seeking_match ? theme.warm : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: theme.surfaceAlt, border: '1px solid ' + (user.seeking_match ? theme.accent : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>⚡ Søger kamp nu</div>
               <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Vises i andres feed. Slukker automatisk 24 timer efter du aktiverede det.</div>
