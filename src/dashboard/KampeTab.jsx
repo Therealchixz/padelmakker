@@ -84,6 +84,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [teamSelectMatch, setTeamSelectMatch] = useState(null);
   const [resultMatch, setResultMatch] = useState(null);
   const [viewPlayer, setViewPlayer]   = useState(null);
+  const [expandedAdminActions, setExpandedAdminActions] = useState({});
   const [profilesById, setProfilesById] = useState({});
   const [completedLimit, setCompletedLimit] = useState(5);
   const [viewTab, setViewTab]         = useState(() => {
@@ -779,6 +780,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const isClosed = (m.match_type || "open") === "closed";
     const myRequest = (joinRequests[m.id] || []).find(r => r.user_id === user.id);
     const pendingRequests = (joinRequests[m.id] || []).filter(r => r.status === "pending");
+    const hasAdminActions = isAdmin && (
+      ((isCreator || isAdmin) && (status === "open" || status === "full")) ||
+      (status === "in_progress" && (isPlayerInMatch || isAdmin) && !mr) ||
+      (mr && !mr.confirmed && (isPlayerInMatch || isAdmin)) ||
+      ((isCreator || isAdmin) && status !== "completed" && status !== "in_progress")
+    );
+    const adminActionsOpen = !!expandedAdminActions[m.id];
 
     const statusLabel = {
       open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", bg: left > 0 ? theme.accentBg : theme.warmBg, color: left > 0 ? theme.accent : theme.warm },
@@ -1045,7 +1053,23 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           {joined && status !== "completed" && (
             <div style={{ textAlign: "center", fontSize: "13px", color: theme.accent, fontWeight: 600 }}>✅ Tilmeldt</div>
           )}
-          {(isCreator || isAdmin) && (status === "open" || status === "full") && (
+          {hasAdminActions && (
+            <button
+              onClick={() => setExpandedAdminActions(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
+              style={{
+                ...btn(false),
+                width: "100%",
+                justifyContent: "center",
+                fontSize: "12px",
+                color: theme.warm,
+                borderColor: theme.warm + "55",
+                background: theme.warmBg,
+              }}
+            >
+              {adminActionsOpen ? "Skjul admin-værktøjer ▲" : "Vis admin-værktøjer ▼"}
+            </button>
+          )}
+          {(isCreator || isAdmin) && (status === "open" || status === "full") && (!isAdmin || adminActionsOpen) && (
             <button 
               onClick={() => startMatch(m.id)} 
               disabled={busy || (!isFull && !isAdmin)} 
@@ -1062,7 +1086,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               {isFull ? "🎾 Start kamp" : isAdmin ? "⚡ Gennemtving start (Admin)" : "🎾 Venter på spillere (2 mod 2)"}
             </button>
           )}
-          {status === "in_progress" && (isPlayerInMatch || isAdmin) && !mr && (
+          {status === "in_progress" && (isPlayerInMatch || isAdmin) && !mr && (!isAdmin || adminActionsOpen) && (
             <button 
               onClick={() => setResultMatch(m.id)} 
               disabled={busy} 
@@ -1078,7 +1102,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               📊 Indrapportér resultat {isAdmin && !isPlayerInMatch && "(Admin)"}
             </button>
           )}
-          {mr && !mr.confirmed && (isPlayerInMatch || isAdmin) && (
+          {mr && !mr.confirmed && (isPlayerInMatch || isAdmin) && (!isAdmin || adminActionsOpen) && (
             <div style={{ display: "flex", gap: "8px" }}>
               {(isAdmin || mr.submitted_by !== user.id) && (
                 <button 
@@ -1139,7 +1163,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <UserMinus size={14} /> Afmeld mig
             </button>
           )}
-          {(isCreator || isAdmin) && status !== "completed" && status !== "in_progress" && (
+          {(isCreator || isAdmin) && status !== "completed" && status !== "in_progress" && (!isAdmin || adminActionsOpen) && (
             <button onClick={() => deleteMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}>
               <Trash2 size={14} /> {isAdmin ? "Slet kamp (Admin)" : "Slet kamp"}
             </button>
