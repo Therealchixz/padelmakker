@@ -75,6 +75,7 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   const [pendingAvatarFile, setPendingAvatarFile]   = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
   const [avatarUploading, setAvatarUploading]       = useState(false);
+  const [overviewMode, setOverviewMode] = useState("2v2");
   const overviewRef = useRef(null);
   const performanceRef = useRef(null);
   const relationsRef = useRef(null);
@@ -139,18 +140,27 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   };
 
   const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
-  const topOverviewCards = [
+  const americanoPlayed = Number(user.americano_played) || 0;
+  const americanoWins = Number(user.americano_wins) || 0;
+  const americanoDraws = Number(user.americano_draws) || 0;
+  const americanoLosses = Number(user.americano_losses) || 0;
+  const americanoRounds = americanoWins + americanoDraws + americanoLosses;
+  const americanoWinPct = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : 0;
+  const twoVTwoOverviewCards = [
     { label: "ELO", value: elo, color: theme.accent },
     { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
     { label: "Kampe", value: games, color: theme.blue },
     { label: "Sejre", value: wins, color: theme.warm },
-    { label: "Turneringer", value: Number(user.americano_played) || 0, color: theme.text },
-    { label: "Runder vundet", value: Number(user.americano_wins) || 0, color: americanoOutcomeColors.win.text },
   ];
-  const extendedCards = [
-    { label: "Runder uafgjort", value: Number(user.americano_draws) || 0, color: americanoOutcomeColors.tie.text, bg: americanoOutcomeColors.tie.bg, border: americanoOutcomeColors.tie.border },
-    { label: "Runder tabt", value: Number(user.americano_losses) || 0, color: americanoOutcomeColors.loss.text, bg: americanoOutcomeColors.loss.bg, border: americanoOutcomeColors.loss.border },
+  const americanoOverviewCards = [
+    { label: "Turneringer", value: americanoPlayed, color: theme.text },
+    { label: "Runder i alt", value: americanoRounds, color: theme.blue },
+    { label: "Runder vundet", value: americanoWins, color: americanoOutcomeColors.win.text },
+    { label: "Runder uafgjort", value: americanoDraws, color: americanoOutcomeColors.tie.text },
+    { label: "Runder tabt", value: americanoLosses, color: americanoOutcomeColors.loss.text },
+    { label: "Win %", value: americanoRounds > 0 ? americanoWinPct + "%" : "—", color: theme.accent },
   ];
+  const activeOverviewCards = overviewMode === "americano" ? americanoOverviewCards : twoVTwoOverviewCards;
   const jumpToSection = (ref) => {
     if (!ref?.current) return;
     ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -266,19 +276,22 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
           <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Overblik
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px", marginBottom: "10px" }}>
-            {topOverviewCards.map((s, i) => (
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
+            <button onClick={() => setOverviewMode("2v2")} style={{ ...btn(overviewMode === "2v2"), padding: "5px 10px", fontSize: "11px" }}>
+              2v2
+            </button>
+            <button onClick={() => setOverviewMode("americano")} style={{ ...btn(overviewMode === "americano"), padding: "5px 10px", fontSize: "11px" }}>
+              Americano
+            </button>
+            <span style={{ fontSize: "11px", color: theme.textLight, display: "inline-flex", alignItems: "center", paddingLeft: "2px" }}>
+              {overviewMode === "americano" ? "Viser kun Americano-data" : "Viser kun 2v2-data"}
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px", marginBottom: "20px" }}>
+            {activeOverviewCards.map((s, i) => (
               <div key={i} style={{ textAlign: "center", padding: "12px 6px", background: theme.surfaceAlt, borderRadius: "8px", border: "1px solid " + theme.border }}>
                 <div style={{ fontSize: "18px", fontWeight: 800, color: s.color }}>{s.value}</div>
                 <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "8px", marginBottom: "20px" }}>
-            {extendedCards.map((s, i) => (
-              <div key={i} style={{ textAlign: "center", padding: "10px 6px", background: s.bg, borderRadius: "8px", border: "1px solid " + s.border, opacity: 0.88 }}>
-                <div style={{ fontSize: "15px", fontWeight: 800, color: s.color }}>{s.value}</div>
-                <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</div>
               </div>
             ))}
           </div>
