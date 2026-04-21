@@ -215,8 +215,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
     { id: "ranking",  label: "Ranking",      icon: <Trophy        size={15} /> },
     { id: "liga",     label: "Liga",         icon: <Medal         size={15} />, badge: pendingLigaInvites > 0 ? pendingLigaInvites : null },
     { id: "beskeder", label: "Beskeder",     icon: <MessageCircle size={15} />, badge: unreadMessages > 0 ? unreadMessages : null },
-    { id: "profil",   label: "Profil",       icon: <Settings      size={15} /> },
   ];
+  // Profil vises i konto-dropdown på desktop, men beholdes i mobilens "Mere"-menu.
+  if (isMobileView) allTabs.push({ id: "profil", label: "Profil", icon: <Settings size={15} /> });
   if (isAdmin) allTabs.push({ id: "admin", label: "Admin", icon: <ShieldCheck size={15} /> });
 
   const primaryTabs = allTabs.filter(t => PRIMARY_TAB_IDS.includes(t.id));
