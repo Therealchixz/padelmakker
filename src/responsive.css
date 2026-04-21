@@ -903,6 +903,12 @@ button,
   color: var(--pm-text-light);
 }
 
+.pm-kampe-search-input:disabled {
+  background: var(--pm-surface-alt);
+  color: var(--pm-text-light);
+  cursor: not-allowed;
+}
+
 @media (max-width: 720px) {
   .pm-kampe-controls-bottom {
     grid-template-columns: 1fr;
