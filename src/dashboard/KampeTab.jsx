@@ -1280,17 +1280,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     fontSize: "12px",
   });
 
-  const controlsLocked = kampeFormat === "liga";
-  const scopeBtnStyle = (active) =>
-    controlsLocked
-      ? {
-          ...segmentBtnStyle(active),
-          opacity: 0.55,
-          cursor: "not-allowed",
-          boxShadow: "none",
-        }
-      : segmentBtnStyle(active);
-
   return (
     <div>
       <div className="pm-kampe-head" style={{ marginBottom: "10px", minHeight: "44px" }}>
@@ -1342,7 +1331,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
         </div>
 
-        {(
+        {kampeFormat !== "liga" && (
           <>
             <div className="pm-kampe-controls-divider" />
             <div className="pm-kampe-controls-bottom">
@@ -1356,14 +1345,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     type="button"
                     role="tab"
                     aria-selected={kampeScope === t.id}
-                    disabled={controlsLocked}
                     onClick={() => {
-                      if (controlsLocked) return;
                       setKampeScope(t.id);
                       mergeKampeSessionPrefs(user.id, { scope: t.id });
                       setSearchQuery("");
                     }}
-                    style={scopeBtnStyle(kampeScope === t.id)}
+                    style={segmentBtnStyle(kampeScope === t.id)}
                   >
                     {t.label}
                   </button>
@@ -1376,9 +1363,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={controlsLocked ? "Liga har egne filtre i modulet" : "Søg spiller, bane eller beskrivelse..."}
+                  placeholder="Søg spiller, bane eller beskrivelse..."
                   className="pm-kampe-search-input"
-                  disabled={controlsLocked}
                 />
               </div>
             </div>
