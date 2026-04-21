@@ -419,7 +419,18 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
 
           {/* Bracket */}
           <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            <div style={{ background: theme.surface, borderRadius: '14px', border: '1px solid ' + theme.border, padding: '20px 20px 24px', boxShadow: theme.shadow }}>
+            <div
+              style={{
+                width: 'max-content',
+                minWidth: '100%',
+                boxSizing: 'border-box',
+                background: theme.surface,
+                borderRadius: '14px',
+                border: '1px solid ' + theme.border,
+                padding: '20px 20px 24px',
+                boxShadow: theme.shadow,
+              }}
+            >
               <div
                 ref={bracketRef}
                 style={{
