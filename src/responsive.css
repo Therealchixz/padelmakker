@@ -204,6 +204,27 @@ button,
   flex-wrap: wrap;
 }
 
+.pm-landing-footer-legal {
+  width: 100%;
+  border-top: 1px solid var(--pm-border);
+  padding-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 18px;
+}
+
+.pm-landing-footer-legal a {
+  color: var(--pm-text-mid);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pm-landing-footer-legal a:hover {
+  color: var(--pm-accent);
+}
+
 @media (max-width: 540px) {
   .pm-landing-nav {
     flex-direction: column;

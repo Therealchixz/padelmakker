@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
 import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon } from 'lucide-react';
-import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { LandingTourVideo } from '../components/LandingTourVideo';
 import { useDarkMode } from '../lib/useDarkMode';
 
@@ -335,8 +334,10 @@ export function LandingPage() {
             </Link>
           </span>
         </div>
-        <div style={{ width: "100%", borderTop: "1px solid " + theme.border, paddingTop: "20px" }}>
-          <PublicLegalFooter />
+        <div className="pm-landing-footer-legal">
+          <Link to="/privatlivspolitik">Privatlivspolitik</Link>
+          <Link to="/handelsbetingelser">Handelsbetingelser</Link>
+          <Link to="/cookies">Cookies</Link>
         </div>
       </footer>
     </div>
