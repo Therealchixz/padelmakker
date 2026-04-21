@@ -120,6 +120,7 @@ export function AmericanoTab({
   const [rows, setRows] = useState<AmericanoTournament[]>([])
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [createOpenInternal, setCreateOpenInternal] = useState(false)
   const createControlled = typeof createOpen === 'boolean'
   const showCreate = createControlled ? createOpen : createOpenInternal
@@ -144,6 +145,7 @@ export function AmericanoTab({
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError('')
     try {
       if (!profileId) {
         setCourts([])
@@ -163,15 +165,9 @@ export function AmericanoTab({
           name: c.name || 'Bane',
         }))
       )
-      let tournamentList: AmericanoTournament[] = []
-      if (trRes.error) {
-        console.warn('americano_tournaments:', trRes.error.message)
-        setRows([])
-        setParticipantsByTournament({})
-      } else {
-        tournamentList = (trRes.data || []) as AmericanoTournament[]
-        setRows(tournamentList)
-      }
+      if (trRes.error) throw trRes.error
+      const tournamentList: AmericanoTournament[] = (trRes.data || []) as AmericanoTournament[]
+      setRows(tournamentList)
       if (!myRes.error && myRes.data) {
         setJoinedIds(new Set(myRes.data.map((r: { tournament_id: string }) => r.tournament_id)))
       } else {
@@ -215,12 +211,14 @@ export function AmericanoTab({
       }
     } catch (e) {
       console.warn(e)
+      setLoadError('Kunne ikke hente Americano-data lige nu.')
+      showToast('Kunne ikke hente Americano-data. Tjek din forbindelse og prøv igen.')
       setRows([])
       setParticipantsByTournament({})
     } finally {
       setLoading(false)
     }
-  }, [profileId])
+  }, [profileId, showToast])
 
   useEffect(() => {
     load()
@@ -449,16 +447,35 @@ export function AmericanoTab({
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: 40, color: 'var(--pm-text-light)', fontSize: 14, fontFamily: font }}>
-        Indlæser Americano…
+      <div className="pm-state-card pm-state-card--loading" style={{ fontFamily: font }}>
+        <div className="pm-spinner pm-state-spinner" />
+        <div className="pm-state-title">Indlæser Americano…</div>
+        <div className="pm-state-copy">Vi henter turneringer og deltagere.</div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="pm-state-card pm-state-card--error" style={{ fontFamily: font }}>
+        <div className="pm-state-icon">⚠️</div>
+        <div className="pm-state-title">Kunne ikke hente Americano</div>
+        <div className="pm-state-copy">{loadError}</div>
+        <div className="pm-state-actions">
+          <button type="button" onClick={() => void load()} style={{ ...btn(true), fontSize: 13 }}>
+            Prøv igen
+          </button>
+        </div>
       </div>
     )
   }
 
   if (!profileId) {
     return (
-      <div style={{ textAlign: 'center', padding: 40, color: 'var(--pm-text-light)', fontSize: 14, fontFamily: font }}>
-        Du skal være logget ind for at bruge Americano.
+      <div className="pm-state-card pm-state-card--warning" style={{ fontFamily: font }}>
+        <div className="pm-state-icon">🔒</div>
+        <div className="pm-state-title">Du skal være logget ind</div>
+        <div className="pm-state-copy">Log ind for at bruge Americano-modulet.</div>
       </div>
     )
   }
@@ -569,14 +586,20 @@ export function AmericanoTab({
       />
 
       {rows.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--pm-text-light)', fontSize: 14 }}>
-          Ingen Americano-turneringer endnu.
+        <div className="pm-state-card pm-state-card--empty">
+          <div className="pm-state-icon">🏟️</div>
+          <div className="pm-state-title">Ingen Americano-turneringer endnu</div>
+          <div className="pm-state-copy">Opret en turnering for at komme i gang.</div>
         </div>
       ) : visibleRows.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--pm-text-light)', fontSize: 14 }}>
-          {americanoView === 'open' && 'Ingen åbne Americano-turneringer.'}
-          {americanoView === 'playing' && 'Ingen Americano i gang.'}
-          {americanoView === 'completed' && 'Ingen afsluttede Americano endnu.'}
+        <div className="pm-state-card pm-state-card--empty">
+          <div className="pm-state-icon">📭</div>
+          <div className="pm-state-title">
+            {americanoView === 'open' && 'Ingen åbne Americano-turneringer'}
+            {americanoView === 'playing' && 'Ingen Americano i gang'}
+            {americanoView === 'completed' && 'Ingen afsluttede Americano endnu'}
+          </div>
+          <div className="pm-state-copy">Prøv en anden statusfane, eller opret en ny turnering.</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

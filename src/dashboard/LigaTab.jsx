@@ -678,6 +678,7 @@ export function LigaTab({
   const [myTeamByLeague, setMyTeamByLeague] = useState({});
   const [pendingInvites, setPendingInvites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [busyId, setBusyId] = useState(null);
   const [openStandings, setOpenStandings] = useState(new Set());
   const [openManageTools, setOpenManageTools] = useState({});
@@ -702,11 +703,14 @@ export function LigaTab({
   const load = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
+    setLoadError('');
     try {
       const [lgRes, teamsRes] = await Promise.all([
         supabase.from('leagues').select('*').order('created_at', { ascending: false }),
         supabase.from('league_teams').select('*').or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`),
       ]);
+      if (lgRes.error) throw lgRes.error;
+      if (teamsRes.error) throw teamsRes.error;
       const lgList = lgRes.data || [];
       setLeagues(lgList);
 
@@ -726,6 +730,8 @@ export function LigaTab({
         supabase.from('league_teams').select('*').in('league_id', ids),
         supabase.from('league_matches').select('*').in('league_id', ids),
       ]);
+      if (allTeamsRes.error) throw allTeamsRes.error;
+      if (matchRes.error) throw matchRes.error;
       const tMap = {};
       const allMap = {};
       for (const t of (allTeamsRes.data || [])) {
@@ -743,10 +749,14 @@ export function LigaTab({
         mMap[m.league_id].push(m);
       }
       setMatchesByLeague(mMap);
+    } catch (e) {
+      console.error(e);
+      setLoadError('Kunne ikke hente liga-data lige nu.');
+      showToast('Kunne ikke hente liga-data. Tjek din forbindelse og prøv igen.');
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, showToast]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -1148,18 +1158,33 @@ export function LigaTab({
       />
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>Indlæser…</div>
+        <div className="pm-state-card pm-state-card--loading">
+          <div className="pm-spinner pm-state-spinner" />
+          <div className="pm-state-title">Indlæser ligaer…</div>
+          <div className="pm-state-copy">Vi henter sæsoner, hold og stilling.</div>
+        </div>
+      ) : loadError ? (
+        <div className="pm-state-card pm-state-card--error">
+          <div className="pm-state-icon">⚠️</div>
+          <div className="pm-state-title">Kunne ikke hente ligaer</div>
+          <div className="pm-state-copy">{loadError}</div>
+          <div className="pm-state-actions">
+            <button type="button" onClick={() => void load()} style={{ ...btn(true), fontSize: '13px' }}>
+              Prøv igen
+            </button>
+          </div>
+        </div>
       ) : visibleLeagues.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '52px 20px', color: theme.textLight }}>
+        <div className="pm-state-card pm-state-card--empty" style={{ padding: '52px 20px' }}>
           <Trophy size={44} color={theme.border} style={{ display: 'block', margin: '0 auto 14px' }} />
-          <div style={{ fontSize: '15px', fontWeight: 700, color: theme.text, marginBottom: '6px' }}>
+          <div className="pm-state-title">
             {view === 'registration' ? 'Ingen åbne ligaer' : view === 'active' ? 'Ingen aktive ligaer' : 'Ingen afsluttede ligaer'}
           </div>
           {isAdmin && view === 'registration' ? (
-            <div style={{ fontSize: '13px', color: theme.textLight }}>Opret en ny liga via knappen ovenfor.</div>
+            <div className="pm-state-copy">Opret en ny liga via knappen ovenfor.</div>
           ) : !isAdmin && view === 'registration' ? (
             <div style={{ marginTop: '14px' }}>
-              <div style={{ fontSize: '13px', color: theme.textMid, marginBottom: '14px', lineHeight: 1.5 }}>
+              <div className="pm-state-copy" style={{ marginBottom: '14px' }}>
                 Der er ingen åbne ligaer i øjeblikket.<br />
                 Kontakt en admin for at få oprettet en ny liga.
               </div>

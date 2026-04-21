@@ -127,6 +127,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [matchPlayers, setMatchPlayers] = useState({});
   const [matchResults, setMatchResults] = useState({});
   const [loadingMatches, setLoadingMatches] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [creating, setCreating]       = useState(false);
   const [busyId, setBusyId]           = useState(null);
   /** ELO fra elo_history pr. user_id — samme som profil; virker på tværs af profiler når RLS skjuler andres profiles.elo_rating */
@@ -199,6 +200,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   }, [kampeRatedRows]);
 
   const loadData = useCallback(async () => {
+    setLoadingMatches(true);
+    setLoadError("");
     try {
       const uid = user.id;
       const [cd, profiles, openPoolRes, createdRes, myMpRes] = await Promise.all([
@@ -308,6 +311,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       }
     } catch (e) {
       console.error(e);
+      setLoadError("Kunne ikke hente kampe lige nu.");
       showToast('Kunne ikke hente data. Tjek din forbindelse og prøv igen.');
     } finally {
       setLoadingMatches(false);
@@ -1356,12 +1360,37 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         />
       )}
 
-      {loadingMatches && kampeFormat !== "liga" ? (
-        <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>
-      ) : kampeFormat === "liga" ? null : (
+      {kampeFormat === "liga" ? null : (
       <>
+      {kampeFormat === "padel" && loadingMatches && (
+        <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: "14px" }}>
+          <div className="pm-spinner pm-state-spinner" />
+          <div className="pm-state-title">Indlæser kampe…</div>
+          <div className="pm-state-copy">Vi henter de nyeste 2v2-kampe.</div>
+        </div>
+      )}
+
+      {kampeFormat === "padel" && !loadingMatches && loadError && (
+        <div className="pm-state-card pm-state-card--error" style={{ marginBottom: "14px" }}>
+          <div className="pm-state-icon">⚠️</div>
+          <div className="pm-state-title">Kunne ikke hente kampe</div>
+          <div className="pm-state-copy">{loadError}</div>
+          <div className="pm-state-actions">
+            <button type="button" onClick={() => void loadData()} style={{ ...btn(true), fontSize: "13px" }}>
+              Prøv igen
+            </button>
+          </div>
+        </div>
+      )}
+
       {kampeFormat === "americano" && (
-        <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser Americano…</div>}>
+        <Suspense fallback={
+          <div className="pm-state-card pm-state-card--loading">
+            <div className="pm-spinner pm-state-spinner" />
+            <div className="pm-state-title">Indlæser Americano…</div>
+            <div className="pm-state-copy">Vi henter turneringer og deltagere.</div>
+          </div>
+        }>
         <AmericanoTab
           profile={user}
           showToast={showToast}
@@ -1382,7 +1411,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         </Suspense>
       )}
 
-      {kampeFormat === "padel" && (
+      {kampeFormat === "padel" && !loadingMatches && !loadError && (
       <>
       <PillTabs
         tabs={padelViewTabs}
@@ -1538,27 +1567,27 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         )}
 
         {viewTab === "open" && openMatches.length === 0 && (
-          <div className="pm-ui-card-soft pm-kampe-empty-state">
-            <div style={{ fontSize: "32px", marginBottom: "12px" }}>⚔️</div>
-            <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen åbne kampe</div>
-            <div style={{ fontSize: "13px", lineHeight: 1.5, marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med!</div>
+          <div className="pm-state-card pm-state-card--empty">
+            <div className="pm-state-icon">⚔️</div>
+            <div className="pm-state-title">Ingen åbne kampe</div>
+            <div className="pm-state-copy" style={{ marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med.</div>
             <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}>
               <Plus size={14} /> Opret kamp
             </button>
           </div>
         )}
         {viewTab === "active" && activeMatches.length === 0 && (
-          <div className="pm-ui-card-soft pm-kampe-empty-state">
-            <div style={{ fontSize: "32px", marginBottom: "12px" }}>🎾</div>
-            <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen aktive kampe</div>
-            <div style={{ fontSize: "13px", lineHeight: 1.5 }}>Tilmeld dig en åben kamp for at komme i gang.</div>
+          <div className="pm-state-card pm-state-card--empty">
+            <div className="pm-state-icon">🎾</div>
+            <div className="pm-state-title">Ingen aktive kampe</div>
+            <div className="pm-state-copy">Tilmeld dig en åben kamp for at komme i gang.</div>
           </div>
         )}
         {viewTab === "completed" && completedMatches.length === 0 && (
-          <div className="pm-ui-card-soft pm-kampe-empty-state">
-            <div style={{ fontSize: "32px", marginBottom: "12px" }}>📊</div>
-            <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen afsluttede kampe endnu</div>
-            <div style={{ fontSize: "13px", lineHeight: 1.5 }}>Spil din første kamp og se dit resultat her.</div>
+          <div className="pm-state-card pm-state-card--empty">
+            <div className="pm-state-icon">📊</div>
+            <div className="pm-state-title">Ingen afsluttede kampe endnu</div>
+            <div className="pm-state-copy">Spil din første kamp og se dit resultat her.</div>
           </div>
         )}
       </div>

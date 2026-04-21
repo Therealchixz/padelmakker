@@ -1007,6 +1007,66 @@ button,
   color: var(--pm-text-light);
 }
 
+.pm-state-card {
+  text-align: center;
+  padding: 40px 20px;
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius-md);
+  background: var(--pm-surface-alt);
+  color: var(--pm-text-light);
+}
+
+.pm-state-card--loading {
+  background: var(--pm-surface-alt);
+  border-color: var(--pm-border);
+}
+
+.pm-state-card--empty {
+  background: var(--pm-surface-alt);
+  border-color: var(--pm-border);
+}
+
+.pm-state-card--error {
+  background: var(--pm-danger-bg);
+  border-color: color-mix(in srgb, var(--pm-danger-border) 75%, var(--pm-border));
+}
+
+.pm-state-card--warning {
+  background: var(--pm-warning-bg);
+  border-color: color-mix(in srgb, var(--pm-warning-border) 75%, var(--pm-border));
+}
+
+.pm-state-spinner {
+  margin: 0 auto 12px;
+}
+
+.pm-state-icon {
+  font-size: 30px;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.pm-state-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pm-text);
+  margin-bottom: 6px;
+}
+
+.pm-state-copy {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pm-text-mid);
+}
+
+.pm-state-actions {
+  margin-top: 14px;
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .pm-kampe-empty-state {
   text-align: center;
   padding: 48px 20px;
