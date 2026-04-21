@@ -1262,60 +1262,115 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     );
   };
 
-  const formatTabBtnStyle = (active) => ({
-    ...btn(active),
-    padding: "8px 16px",
+  const segmentBtnStyle = (active) => ({
+    ...btn(false),
+    padding: "8px 14px",
     fontSize: "13px",
     borderRadius: "999px",
+    background: active ? theme.accent : theme.surfaceAlt,
+    color: active ? "#fff" : theme.textMid,
+    borderColor: active ? theme.accent : theme.border,
+    boxShadow: active ? "0 2px 8px rgba(29, 78, 216, 0.28)" : "none",
+    fontWeight: active ? 700 : 600,
   });
 
   const listTabBtnStyle = (active) => ({
-    ...btn(active),
+    ...segmentBtnStyle(active),
     padding: "7px 14px",
     fontSize: "12px",
-    borderRadius: "999px",
   });
 
   return (
     <div>
-      <div className="pm-kampe-head" style={{ marginBottom: "12px", minHeight: "44px" }}>
+      <div className="pm-kampe-head" style={{ marginBottom: "10px", minHeight: "44px" }}>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), lineHeight: 1.2 }}>Kampe</h2>
-        <div className="pm-kampe-head-actions" style={{ minHeight: "40px" }}>
-          {!loadingMatches && kampeFormat === "padel" && (
-            <button type="button" onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
-              {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
-            </button>
-          )}
-          {!loadingMatches && kampeFormat === "americano" && (
-            <button type="button" onClick={() => setShowAmericanoCreate(!showAmericanoCreate)} style={btn(true)}>
-              {showAmericanoCreate ? "Annullér" : <><Plus size={15} /> Opret turnering</>}
-            </button>
-          )}
-          {!loadingMatches && kampeFormat === "liga" && user?.role === "admin" && (
-            <button type="button" onClick={() => setShowLigaCreate(v => !v)} style={btn(true)}>
-              {showLigaCreate ? "Annullér" : <><Plus size={15} /> Opret liga</>}
-            </button>
-          )}
+      </div>
+
+      <div className="pm-ui-card pm-kampe-controls" style={{ marginBottom: "18px" }}>
+        <div className="pm-kampe-controls-top">
+          <div className="pm-kampe-segment" role="tablist" aria-label="Kampe format">
+            {[
+              { id: "padel", label: "2v2-kampe" },
+              { id: "americano", label: "Americano" },
+              { id: "liga", label: "Liga" },
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                role="tab"
+                aria-selected={kampeFormat === f.id}
+                onClick={() => {
+                  setKampeFormat(f.id);
+                  setShowCreate(false);
+                  setShowAmericanoCreate(false);
+                  setShowLigaCreate(false);
+                }}
+                style={segmentBtnStyle(kampeFormat === f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="pm-kampe-controls-action">
+            {!loadingMatches && kampeFormat === "padel" && (
+              <button type="button" onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
+                {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
+              </button>
+            )}
+            {!loadingMatches && kampeFormat === "americano" && (
+              <button type="button" onClick={() => setShowAmericanoCreate(!showAmericanoCreate)} style={btn(true)}>
+                {showAmericanoCreate ? "Annullér" : <><Plus size={15} /> Opret turnering</>}
+              </button>
+            )}
+            {!loadingMatches && kampeFormat === "liga" && user?.role === "admin" && (
+              <button type="button" onClick={() => setShowLigaCreate((v) => !v)} style={btn(true)}>
+                {showLigaCreate ? "Annullér" : <><Plus size={15} /> Opret liga</>}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
-        {[
-          { id: "padel",    label: "2v2-kampe" },
-          { id: "americano", label: "Americano" },
-          { id: "liga",     label: "🏆 Liga" },
-        ].map(f => (
-          <button
-            key={f.id}
-            type="button"
-            onClick={() => { setKampeFormat(f.id); setShowCreate(false); setShowAmericanoCreate(false); setShowLigaCreate(false); }}
-            style={formatTabBtnStyle(kampeFormat === f.id)}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+        {kampeFormat !== "liga" && (
+          <>
+            <div className="pm-kampe-controls-divider" />
+            <div className="pm-kampe-controls-bottom">
+              <div className="pm-kampe-segment" role="tablist" aria-label="Kampe scope">
+                {[
+                  { id: "alle", label: "Alle kampe" },
+                  { id: "mine", label: "Mine kampe" },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={kampeScope === t.id}
+                    onClick={() => {
+                      setKampeScope(t.id);
+                      mergeKampeSessionPrefs(user.id, { scope: t.id });
+                      setSearchQuery("");
+                    }}
+                    style={segmentBtnStyle(kampeScope === t.id)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
 
+              <div className="pm-kampe-search-wrap">
+                <Search size={16} className="pm-kampe-search-icon" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Søg spiller, bane eller beskrivelse..."
+                  className="pm-kampe-search-input"
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
       {kampeFormat === "liga" && (
         <LigaTabEmbed user={user} showToast={showToast} createOpen={showLigaCreate} onCreateOpenChange={setShowLigaCreate} />
       )}
@@ -1324,59 +1379,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser kampe...</div>
       ) : kampeFormat === "liga" ? null : (
       <>
-      {/* Scope tabs: Mine kampe / Alle kampe */}
-      <div style={{ display: "flex", marginBottom: "12px", borderRadius: "8px", overflow: "hidden", border: "1px solid " + theme.border }}>
-        {[
-          { id: "alle", label: "Alle kampe" },
-          { id: "mine", label: "Mine kampe" },
-        ].map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => {
-              setKampeScope(t.id);
-              mergeKampeSessionPrefs(user.id, { scope: t.id });
-              setSearchQuery("");
-            }}
-            style={{
-              flex: 1,
-              padding: "10px 16px",
-              fontSize: "13px",
-              fontWeight: kampeScope === t.id ? 700 : 500,
-              background: kampeScope === t.id ? theme.accent : theme.surface,
-              color: kampeScope === t.id ? "#fff" : theme.textMid,
-              border: "none",
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Search field - always visible */}
-      <div style={{ position: "relative", marginBottom: "12px" }}>
-        <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: theme.textLight }} />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          placeholder="Søg spiller, bane eller beskrivelse…"
-          style={{
-            width: "100%",
-            padding: "10px 12px 10px 36px",
-            borderRadius: "8px",
-            border: "1px solid " + theme.border,
-            fontSize: "13px",
-            fontFamily: "inherit",
-            background: theme.surface,
-            outline: "none",
-            boxSizing: "border-box",
-          }}
-        />
-      </div>
-
       {kampeFormat === "americano" && (
         <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser Americano…</div>}>
         <AmericanoTab
