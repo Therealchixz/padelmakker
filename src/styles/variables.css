@@ -27,7 +27,8 @@
   --pm-shadow:      0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
   --pm-shadow-lg:   0 8px 32px rgba(0,0,0,0.12);
   --pm-radius:      10px;
-  --pm-font:        'Inter', sans-serif;
+  --pm-font:        'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --pm-font-display:'Sora', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* ── Dark mode overrides ── */
@@ -86,6 +87,7 @@ textarea:focus {
 html, body {
   background: var(--pm-bg);
   color: var(--pm-text);
+  font-family: var(--pm-font);
 }
 
 input, select, textarea {

@@ -1,6 +1,7 @@
 /** Design tokens (mirrors variables.css) + shared inline-style helpers */
 
-export const font = "'Inter', sans-serif";
+export const font = "var(--pm-font)";
+export const displayFont = "var(--pm-font-display)";
 
 export const theme = {
   bg:          'var(--pm-bg)',
@@ -84,7 +85,7 @@ export const labelStyle = {
 };
 
 export const heading = (size = '24px') => ({
-  fontFamily: font,
+  fontFamily: displayFont,
   fontSize: size,
   fontWeight: 800,
   letterSpacing: '-0.03em',
