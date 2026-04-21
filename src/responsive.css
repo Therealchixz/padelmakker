@@ -733,6 +733,25 @@ button,
   color: #fff;
 }
 
+/* Shared pill tabs */
+.pm-pill-tab:focus-visible {
+  outline: none;
+  border-color: var(--pm-accent) !important;
+  box-shadow: var(--pm-focus-ring) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pm-pill-tab:not(:disabled):not([aria-selected="true"]):hover {
+    border-color: color-mix(in srgb, var(--pm-accent) 25%, var(--pm-border)) !important;
+    background: color-mix(in srgb, var(--pm-accent-bg) 45%, var(--pm-surface-alt)) !important;
+    filter: saturate(1.03);
+  }
+}
+
+.pm-pill-tab:not(:disabled):active {
+  filter: saturate(0.96);
+}
+
 .pm-home-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr));

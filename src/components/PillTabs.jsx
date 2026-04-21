@@ -28,6 +28,8 @@ export function PillTabs({
   className,
   style,
 }) {
+  const cx = (...parts) => parts.filter(Boolean).join(' ');
+
   return (
     <div
       className={className}
@@ -43,6 +45,7 @@ export function PillTabs({
       {(tabs || []).map((tab) => (
         <button
           key={tab.id}
+          className={cx('pm-pill-tab', value === tab.id && 'pm-pill-tab-active')}
           type="button"
           role="tab"
           aria-selected={value === tab.id}

@@ -85,10 +85,7 @@
 /* ── Focus ring ── */
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible,
-button:focus-visible,
-[role="button"]:focus-visible,
-a:focus-visible {
+textarea:focus-visible {
   border-color: var(--pm-accent) !important;
   box-shadow: var(--pm-focus-ring) !important;
   outline: none;
@@ -96,11 +93,21 @@ a:focus-visible {
 
 [data-theme="dark"] input:focus-visible,
 [data-theme="dark"] select:focus-visible,
-[data-theme="dark"] textarea:focus-visible,
+[data-theme="dark"] textarea:focus-visible {
+  box-shadow: var(--pm-focus-ring-dark) !important;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline: none;
+  box-shadow: var(--pm-focus-ring);
+}
+
 [data-theme="dark"] button:focus-visible,
 [data-theme="dark"] [role="button"]:focus-visible,
 [data-theme="dark"] a:focus-visible {
-  box-shadow: var(--pm-focus-ring-dark) !important;
+  box-shadow: var(--pm-focus-ring-dark);
 }
 
 /* ── Base colors for html/body ── */
@@ -137,17 +144,6 @@ a {
     box-shadow var(--pm-transition-ui),
     filter var(--pm-transition-ui),
     opacity var(--pm-transition-ui);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  button:not(:disabled):hover {
-    box-shadow: var(--pm-shadow-btn);
-    filter: saturate(1.04);
-  }
-}
-
-button:not(:disabled):active {
-  filter: saturate(0.96);
 }
 
 /* ── Loading spinner ── */
