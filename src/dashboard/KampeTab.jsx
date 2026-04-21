@@ -22,6 +22,7 @@ import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
+import { TabbedFilterCard } from '../components/TabbedFilterCard';
 import {
   getMatchVenueOptions,
   courtIdFromVenueSelection,
@@ -1291,6 +1292,25 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     mergeKampeSessionPrefs(user.id, { scope: nextScope });
     setSearchQuery("");
   };
+  const formatAction = !loadingMatches && kampeFormat === "padel"
+    ? (
+      <button type="button" onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
+        {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
+      </button>
+    )
+    : !loadingMatches && kampeFormat === "americano"
+      ? (
+        <button type="button" onClick={() => setShowAmericanoCreate(!showAmericanoCreate)} style={btn(true)}>
+          {showAmericanoCreate ? "Annullér" : <><Plus size={15} /> Opret turnering</>}
+        </button>
+      )
+      : !loadingMatches && kampeFormat === "liga" && user?.role === "admin"
+        ? (
+          <button type="button" onClick={() => setShowLigaCreate((v) => !v)} style={btn(true)}>
+            {showLigaCreate ? "Annullér" : <><Plus size={15} /> Opret liga</>}
+          </button>
+        )
+        : null;
 
   return (
     <div>
@@ -1298,42 +1318,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), lineHeight: 1.2 }}>Kampe</h2>
       </div>
 
-      <div className="pm-ui-card pm-kampe-controls" style={{ marginBottom: "18px" }}>
-        <div className="pm-kampe-controls-top">
-          <PillTabs
-            tabs={formatTabs}
-            value={kampeFormat}
-            onChange={(nextFormat) => {
-              setKampeFormat(nextFormat);
-              setShowCreate(false);
-              setShowAmericanoCreate(false);
-              setShowLigaCreate(false);
-            }}
-            ariaLabel="Kampe format"
-            className="pm-kampe-segment"
-          />
-
-          <div className="pm-kampe-controls-action">
-            {!loadingMatches && kampeFormat === "padel" && (
-              <button type="button" onClick={() => setShowCreate(!showCreate)} style={btn(true)}>
-                {showCreate ? "Annullér" : <><Plus size={15} /> Opret kamp</>}
-              </button>
-            )}
-            {!loadingMatches && kampeFormat === "americano" && (
-              <button type="button" onClick={() => setShowAmericanoCreate(!showAmericanoCreate)} style={btn(true)}>
-                {showAmericanoCreate ? "Annullér" : <><Plus size={15} /> Opret turnering</>}
-              </button>
-            )}
-            {!loadingMatches && kampeFormat === "liga" && user?.role === "admin" && (
-              <button type="button" onClick={() => setShowLigaCreate((v) => !v)} style={btn(true)}>
-                {showLigaCreate ? "Annullér" : <><Plus size={15} /> Opret liga</>}
-              </button>
-            )}
-          </div>
-        </div>
-
-        <>
-          <div className="pm-kampe-controls-divider" />
+      <TabbedFilterCard
+        tabs={formatTabs}
+        value={kampeFormat}
+        onTabChange={(nextFormat) => {
+          setKampeFormat(nextFormat);
+          setShowCreate(false);
+          setShowAmericanoCreate(false);
+          setShowLigaCreate(false);
+        }}
+        tabAriaLabel="Kampe format"
+        action={formatAction}
+        bottom={(
           <ScopeSearchControls
             tabs={scopeTabs}
             value={kampeScope}
@@ -1348,8 +1344,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             searchInputClassName="pm-kampe-search-input"
             searchIconClassName="pm-kampe-search-icon"
           />
-        </>
-      </div>
+        )}
+        cardStyle={{ marginBottom: "18px" }}
+      />
       {kampeFormat === "liga" && (
         <LigaTabEmbed
           user={user}
