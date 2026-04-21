@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoMatchRow, AmericanoTournament } from './types'
@@ -46,7 +46,7 @@ type Props = {
   tournament: AmericanoTournament
   participants: PartMin[]
   currentUserId: string
-  /** Kun én afsluttet turnering åben ad gangen (styres af AmericanoTab) */
+  /** Kun Ã©n afsluttet turnering Ã¥ben ad gangen (styres af AmericanoTab) */
   summaryOpen: boolean
   onSummaryToggle: () => void
 }
@@ -116,7 +116,7 @@ export function AmericanoCompletedSummary({
   const summaryReady = matches !== undefined
   const ctaTitle = open ? 'Skjul fuld stilling og resultater' : 'Se fuld stilling og resultater'
   const ctaCopy = !summaryReady
-    ? 'Vi beregner placering og kampresultater…'
+    ? 'Vi beregner placering og kampresultaterâ€¦'
     : `Samlet point + alle kampe (${reportedMatches}/${sortedMatches.length} registreret)`
 
   return (
@@ -159,7 +159,7 @@ export function AmericanoCompletedSummary({
               Din placering
             </div>
             <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--pm-text)', marginTop: 2 }}>
-              {summaryReady ? (myPlacement ? `#${myPlacement}` : '—') : '…'}
+              {summaryReady ? (myPlacement ? `#${myPlacement}` : 'â€”') : 'â€¦'}
             </div>
           </div>
           <div
@@ -174,7 +174,7 @@ export function AmericanoCompletedSummary({
               Dine point
             </div>
             <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--pm-text)', marginTop: 2 }}>
-              {summaryReady ? (myPoints != null ? myPoints : '—') : '…'}
+              {summaryReady ? (myPoints != null ? myPoints : 'â€”') : 'â€¦'}
             </div>
           </div>
           <div
@@ -189,7 +189,7 @@ export function AmericanoCompletedSummary({
               Vinder
             </div>
             <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--pm-text)', marginTop: 4, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {summaryReady ? winner?.name || '—' : '…'}
+              {summaryReady ? winner?.name || 'â€”' : 'â€¦'}
             </div>
           </div>
         </div>
@@ -234,7 +234,7 @@ export function AmericanoCompletedSummary({
       {open && (
         <div style={{ padding: '0 12px 14px', borderTop: '1px solid #E2E8F0' }}>
           {loading && (
-            <div style={{ fontSize: 12, color: 'var(--pm-text-light)', paddingTop: 12 }}>Henter resultater…</div>
+            <div style={{ fontSize: 12, color: 'var(--pm-text-light)', paddingTop: 12 }}>Henter resultaterâ€¦</div>
           )}
           {fetchErr && !loading && (
             <div style={{ fontSize: 12, color: '#B45309', paddingTop: 12 }}>{fetchErr}</div>
@@ -265,7 +265,7 @@ export function AmericanoCompletedSummary({
                         {isMe ? (
                           <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
                         ) : null}
-                        {' — '}
+                        {' â€” '}
                         <strong style={{ color: 'var(--pm-text)' }}>{row.points}</strong> point
                       </li>
                     )
@@ -297,36 +297,129 @@ export function AmericanoCompletedSummary({
                     const palKey =
                       vOut === 'win' ? 'win' : vOut === 'loss' ? 'loss' : vOut === 'tie' ? 'tie' : 'neutral'
                     const mpal = americanoOutcomeColors[palKey]
+                    const meOnA =
+                      userIdByPartId.get(m.team_a_p1) === String(currentUserId) ||
+                      userIdByPartId.get(m.team_a_p2) === String(currentUserId)
+                    const meOnB =
+                      userIdByPartId.get(m.team_b_p1) === String(currentUserId) ||
+                      userIdByPartId.get(m.team_b_p2) === String(currentUserId)
+                    const teamAWin = ok && a > b
+                    const teamBWin = ok && b > a
+                    const tieMatch = ok && a === b
                     return (
                       <div
                         key={m.id}
                         style={{
                           padding: '10px 12px',
-                          background: mpal.bg,
+                          background: 'var(--pm-surface)',
                           borderRadius: 8,
-                          border: `1px solid ${mpal.border}`,
+                          border: '1px solid var(--pm-border)',
+                          borderLeft: `4px solid ${mpal.border}`,
                           fontSize: 12,
-                          color: mpal.text,
+                          color: 'var(--pm-text)',
                         }}
                       >
-                        <div style={{ fontWeight: 700, color: mpal.text, marginBottom: 8, lineHeight: 1.35 }}>
-                          #{i + 1} · Runde {m.round_number} - {statusLabel}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: 'var(--pm-text-light)',
+                                letterSpacing: '0.04em',
+                                textTransform: 'uppercase',
+                                background: 'var(--pm-surface-alt)',
+                                border: '1px solid var(--pm-border)',
+                                borderRadius: 999,
+                                padding: '2px 8px',
+                              }}
+                            >
+                              Runde {m.round_number}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: mpal.text,
+                                background: mpal.bg,
+                                border: `1px solid ${mpal.border}`,
+                                borderRadius: 999,
+                                padding: '2px 8px',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {statusLabel}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: 10, color: 'var(--pm-text-light)', fontWeight: 700 }}>#{i + 1}</span>
                         </div>
-                        <div style={{ lineHeight: 1.5 }}>
-                          <span style={{ fontWeight: 600 }}>{n1}</span> &{' '}
-                          <span style={{ fontWeight: 600 }}>{n2}</span>
-                          <span style={{ margin: '0 6px', opacity: 0.75 }}>mod</span>
-                          <span style={{ fontWeight: 600 }}>{n3}</span> &{' '}
-                          <span style={{ fontWeight: 600 }}>{n4}</span>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr auto',
+                              alignItems: 'center',
+                              gap: 8,
+                              borderRadius: 8,
+                              padding: '6px 8px',
+                              background: teamAWin || tieMatch ? mpal.bg : 'var(--pm-surface-alt)',
+                              border: `1px solid ${teamAWin || tieMatch ? mpal.border : 'var(--pm-border)'}`,
+                            }}
+                          >
+                            <div style={{ minWidth: 0, lineHeight: 1.35 }}>
+                              <span style={{ fontWeight: 700 }}>{n1}</span> & <span style={{ fontWeight: 700 }}>{n2}</span>
+                              {meOnA ? <span style={{ color: 'var(--pm-accent)', fontWeight: 700 }}> (jeres hold)</span> : null}
+                            </div>
+                            <span
+                              style={{
+                                minWidth: 30,
+                                textAlign: 'center',
+                                fontSize: 14,
+                                fontWeight: 800,
+                                color: teamAWin || tieMatch ? mpal.text : 'var(--pm-text-mid)',
+                              }}
+                            >
+                              {ok ? a : '-'}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: 10, color: 'var(--pm-text-light)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            mod
+                          </div>
+
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr auto',
+                              alignItems: 'center',
+                              gap: 8,
+                              borderRadius: 8,
+                              padding: '6px 8px',
+                              background: teamBWin || tieMatch ? mpal.bg : 'var(--pm-surface-alt)',
+                              border: `1px solid ${teamBWin || tieMatch ? mpal.border : 'var(--pm-border)'}`,
+                            }}
+                          >
+                            <div style={{ minWidth: 0, lineHeight: 1.35 }}>
+                              <span style={{ fontWeight: 700 }}>{n3}</span> & <span style={{ fontWeight: 700 }}>{n4}</span>
+                              {meOnB ? <span style={{ color: 'var(--pm-accent)', fontWeight: 700 }}> (jeres hold)</span> : null}
+                            </div>
+                            <span
+                              style={{
+                                minWidth: 30,
+                                textAlign: 'center',
+                                fontSize: 14,
+                                fontWeight: 800,
+                                color: teamBWin || tieMatch ? mpal.text : 'var(--pm-text-mid)',
+                              }}
+                            >
+                              {ok ? b : '-'}
+                            </span>
+                          </div>
                         </div>
-                        <div style={{ marginTop: 6, fontWeight: 700, color: mpal.text, fontSize: 13 }}>
-                          {ok ? (
-                            <>
-                              {a} — {b}
-                            </>
-                          ) : (
-                            <span style={{ opacity: 0.65, fontWeight: 600 }}>Ikke registreret</span>
-                          )}
+
+                        <div style={{ marginTop: 8, fontSize: 11, color: 'var(--pm-text-light)' }}>
+                          {ok ? 'Slutresultat registreret' : 'Resultat ikke registreret'}
                         </div>
                       </div>
                     )
