@@ -710,6 +710,23 @@ button,
   gap: 4px;
 }
 
+.pm-ui-btn-chip:focus-visible {
+  outline: none;
+  border-color: var(--pm-accent);
+  box-shadow: var(--pm-focus-ring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pm-ui-btn-chip:not(:disabled):hover {
+    border-color: color-mix(in srgb, var(--pm-accent) 25%, var(--pm-border));
+    background: color-mix(in srgb, var(--pm-accent-bg) 45%, var(--pm-surface-alt));
+  }
+}
+
+.pm-ui-btn-chip:not(:disabled):active {
+  filter: saturate(0.94);
+}
+
 .pm-ui-btn-chip-active {
   border-color: var(--pm-accent);
   background: var(--pm-accent);
@@ -790,6 +807,12 @@ button,
     box-shadow: var(--pm-shadow-lg);
     border-color: color-mix(in srgb, var(--pm-accent) 30%, var(--pm-border));
   }
+}
+
+.pm-ui-card-interactive:focus-visible {
+  outline: none;
+  border-color: var(--pm-accent);
+  box-shadow: var(--pm-focus-ring), var(--pm-shadow-lg);
 }
 
 .pm-baner-filters {
