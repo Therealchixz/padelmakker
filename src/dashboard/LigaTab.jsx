@@ -368,7 +368,8 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
   return (
     <div style={{ marginBottom: '10px' }}>
       <button onClick={() => setOpen(o => !o)}
-        style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', width: '100%', justifyContent: 'space-between' }}>
+        className="pm-accordion-trigger"
+        style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
         <span>🏟️ Swiss-turneringsplan</span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
@@ -1512,26 +1513,27 @@ export function LigaTab({
                 {(league.status === 'active' || league.status === 'completed') && teams.length > 0 && (
                   <div style={{ marginBottom: '10px' }}>
                     <button onClick={() => toggleStandings(league.id)}
-                      style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', width: '100%', justifyContent: 'space-between' }}>
+                      className="pm-accordion-trigger"
+                      style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
                       <span>🏅 Holdrangliste</span>
                       {standingsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </button>
                     {standingsOpen && (
-                      <div style={{ marginTop: '8px', border: '1px solid ' + theme.border, borderRadius: '8px', overflow: 'hidden' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 44px 36px 36px 44px', background: theme.surfaceAlt, borderBottom: '1px solid ' + theme.border }}>
+                      <div className="pm-data-table">
+                        <div className="pm-data-table-head">
                           {['#', 'Hold', 'Pts', 'W', 'L', 'Diff'].map(h => (
-                            <div key={h} style={{ padding: '7px 8px', fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', textAlign: h === 'Hold' ? 'left' : 'center' }}>{h}</div>
+                            <div key={h} className="pm-data-table-cell-head" style={{ textAlign: h === 'Hold' ? 'left' : 'center' }}>{h}</div>
                           ))}
                         </div>
                         {standings.map((t, i) => {
                           const isMyTeam = myTeam?.id === t.id;
                           const diffColor = t.gameDiff > 0 ? '#16A34A' : t.gameDiff < 0 ? '#DC2626' : theme.textLight;
                           return (
-                            <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '28px 1fr 44px 36px 36px 44px', borderTop: i > 0 ? '1px solid ' + theme.border : 'none', background: isMyTeam ? theme.accentBg : 'transparent' }}>
-                              <div style={{ padding: '10px 8px', fontSize: '12px', fontWeight: 700, color: i < 3 ? theme.warm : theme.textLight, textAlign: 'center' }}>
+                            <div key={t.id} className={`pm-data-table-row${isMyTeam ? ' pm-data-table-row--highlight' : ''}`}>
+                              <div className="pm-data-table-cell" style={{ fontWeight: 700, color: i < 3 ? theme.warm : theme.textLight, textAlign: 'center' }}>
                                 {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                               </div>
-                              <div style={{ padding: '10px 8px', minWidth: 0 }}>
+                              <div className="pm-data-table-cell" style={{ minWidth: 0 }}>
                                 <div style={{ fontSize: '13px', fontWeight: isMyTeam ? 700 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {t.name}{isMyTeam ? ' (jer)' : ''}
                                 </div>
@@ -1547,10 +1549,10 @@ export function LigaTab({
                                   </span>
                                 </div>
                               </div>
-                              <div style={{ padding: '10px 4px', fontSize: '13px', fontWeight: 700, color: theme.accent, textAlign: 'center' }}>{t.points}</div>
-                              <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: '#16A34A', textAlign: 'center' }}>{t.wins}</div>
-                              <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: '#DC2626', textAlign: 'center' }}>{t.losses}</div>
-                              <div style={{ padding: '10px 4px', fontSize: '12px', fontWeight: 600, color: diffColor, textAlign: 'center' }}>{t.gameDiff > 0 ? '+' : ''}{t.gameDiff}</div>
+                              <div className="pm-data-table-cell" style={{ fontSize: '13px', fontWeight: 700, color: theme.accent, textAlign: 'center' }}>{t.points}</div>
+                              <div className="pm-data-table-cell" style={{ fontWeight: 600, color: '#16A34A', textAlign: 'center' }}>{t.wins}</div>
+                              <div className="pm-data-table-cell" style={{ fontWeight: 600, color: '#DC2626', textAlign: 'center' }}>{t.losses}</div>
+                              <div className="pm-data-table-cell" style={{ fontWeight: 600, color: diffColor, textAlign: 'center' }}>{t.gameDiff > 0 ? '+' : ''}{t.gameDiff}</div>
                             </div>
                           );
                         })}

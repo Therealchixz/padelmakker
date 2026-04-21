@@ -9,13 +9,12 @@ import {
   userIsOnCourtInAmericanoMatch,
 } from './americanoOutcomeColors'
 
-const font = "'Inter', sans-serif"
+const font = 'var(--pm-font)'
 
 const c = {
   line: 'var(--pm-border)',
   muted: 'var(--pm-text-light)',
   text: 'var(--pm-text)',
-  softBg: 'var(--pm-surface-alt)',
   avatarBg: 'var(--pm-border)',
   avatarText: 'var(--pm-text-light)',
   accent: 'var(--pm-accent)',
@@ -475,26 +474,28 @@ export function AmericanoResultsPanel({
           </>
         )}
       </p>
-      <div
-        style={{
-          background: c.softBg,
-          borderRadius: 10,
-          padding: '14px 16px',
-          marginBottom: 8,
-          border: `1px solid ${c.line}`,
-          fontFamily: font,
-        }}
-      >
+      <div className="pm-card-subpanel" style={{ padding: '14px 16px', marginBottom: 8, fontFamily: font }}>
         <div style={{ fontWeight: 700, marginBottom: 10, color: c.text, fontSize: 12 }}>Stilling (sum af kampoint)</div>
-        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.65, fontSize: 13, color: '#334155' }}>
-          {leaderboard.map((row) => (
-            <li key={row.id}>
-              <span style={{ color: c.text }}>{row.name}</span>{' '}
-              <span style={{ color: c.muted, fontWeight: 500 }}>—</span>{' '}
-              <strong style={{ color: c.text }}>{row.points}</strong> point
-            </li>
+        <div className="pm-data-table" style={{ ['--pm-table-cols']: '30px 1fr 64px' }}>
+          <div className="pm-data-table-head">
+            <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>#</div>
+            <div className="pm-data-table-cell-head">Spiller</div>
+            <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>Point</div>
+          </div>
+          {leaderboard.map((row, idx) => (
+            <div key={row.id} className="pm-data-table-row">
+              <div className="pm-data-table-cell" style={{ textAlign: 'center', color: idx < 3 ? '#D97706' : c.muted, fontWeight: 700 }}>
+                {idx + 1}
+              </div>
+              <div className="pm-data-table-cell" style={{ fontSize: 13, fontWeight: 600 }}>
+                {row.name}
+              </div>
+              <div className="pm-data-table-cell" style={{ textAlign: 'center', fontWeight: 700, color: c.text }}>
+                {row.points}
+              </div>
+            </div>
           ))}
-        </ol>
+        </div>
         {leaderboard.length === 0 && <div style={{ fontSize: 12, color: c.muted }}>Ingen spillere endnu.</div>}
       </div>
 

@@ -797,6 +797,53 @@ button,
   border-color: color-mix(in srgb, var(--pm-green) 26%, var(--pm-border));
 }
 
+.pm-accordion-trigger {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.pm-data-table {
+  margin-top: 8px;
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius-sm);
+  overflow: hidden;
+  background: var(--pm-surface);
+}
+
+.pm-data-table-head,
+.pm-data-table-row {
+  display: grid;
+  grid-template-columns: var(--pm-table-cols, 28px 1fr 44px 36px 36px 44px);
+}
+
+.pm-data-table-head {
+  background: var(--pm-surface-alt);
+  border-bottom: 1px solid var(--pm-border);
+}
+
+.pm-data-table-row + .pm-data-table-row {
+  border-top: 1px solid var(--pm-border);
+}
+
+.pm-data-table-cell-head {
+  padding: 7px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--pm-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pm-data-table-cell {
+  padding: 10px 8px;
+  font-size: 12px;
+  color: var(--pm-text);
+}
+
+.pm-data-table-row--highlight {
+  background: var(--pm-accent-bg);
+}
+
 .pm-ui-card-soft {
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border);
@@ -1079,6 +1126,14 @@ button,
 
   .pm-card-row-item {
     padding: 8px 10px;
+  }
+
+  .pm-data-table-cell-head {
+    padding: 6px 7px;
+  }
+
+  .pm-data-table-cell {
+    padding: 9px 7px;
   }
 
   .pm-kampe-controls-bottom {
