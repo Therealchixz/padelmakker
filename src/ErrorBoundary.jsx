@@ -1,4 +1,5 @@
 import React from "react";
+import * as Sentry from "@sentry/react";
 
 function debugMode() {
   try {
@@ -24,6 +25,11 @@ export class ErrorBoundary extends React.Component {
 
   componentDidCatch(err, info) {
     console.error("PadelMakker render error:", err, info?.componentStack);
+    Sentry.captureException(err, {
+      extra: {
+        componentStack: info?.componentStack || "",
+      },
+    });
   }
 
   render() {
