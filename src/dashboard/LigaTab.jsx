@@ -996,17 +996,15 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
       )}
 
       {/* Scope selector: Mine / Alle */}
-      <div style={{ display: 'flex', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid ' + theme.border }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
         {[
           { id: 'alle', label: 'Alle ligaer' },
           { id: 'mine', label: 'Mine ligaer' },
         ].map(t => (
           <button key={t.id} onClick={() => { setScope(t.id); setSearch(''); }} style={{
-            flex: 1, padding: '10px 16px', fontSize: '13px',
-            fontWeight: scope === t.id ? 700 : 500,
-            background: scope === t.id ? theme.accent : theme.surface,
-            color: scope === t.id ? '#fff' : theme.textMid,
-            border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+            ...btn(scope === t.id),
+            padding: '8px 16px',
+            fontSize: '13px',
           }}>
             {t.label}
           </button>
