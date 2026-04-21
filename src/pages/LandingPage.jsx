@@ -151,6 +151,12 @@ export function LandingPage() {
             <Link to="/hjaelp" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 12px", color: theme.text, fontWeight: 600, fontSize: "15px", textDecoration: "none", borderRadius: "8px" }}>
               <LifeBuoy size={18} color={theme.accent} /> Hjælp
             </Link>
+            <Link to="/om" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 12px", color: theme.text, fontWeight: 600, fontSize: "15px", textDecoration: "none", borderRadius: "8px" }}>
+              Om PadelMakker
+            </Link>
+            <Link to="/faq" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 12px", color: theme.text, fontWeight: 600, fontSize: "15px", textDecoration: "none", borderRadius: "8px" }}>
+              FAQ
+            </Link>
             <Link to="/app" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 12px", color: theme.text, fontWeight: 600, fontSize: "15px", textDecoration: "none", borderRadius: "8px" }}>
               <Smartphone size={18} color={theme.accent} /> App
             </Link>
@@ -324,6 +330,7 @@ export function LandingPage() {
           <span style={{ fontWeight: 500 }}>© 2026 PadelMakker &nbsp;·&nbsp; CVR-nr. 46403193</span>
         </div>
         <div className="pm-landing-footer-links">
+            <p className="pm-landing-footer-links-title">Kontakt</p>
             <a href="mailto:kontakt@padelmakker.dk" className="pm-landing-footer-primary-link">
               <Mail size={14} aria-hidden />
               kontakt@padelmakker.dk
@@ -336,6 +343,7 @@ export function LandingPage() {
               <Smartphone size={14} aria-hidden />
               Installér app
             </Link>
+            <p className="pm-landing-footer-links-title pm-landing-footer-links-title-secondary">Udforsk</p>
             <div className="pm-landing-footer-link-list-secondary">
             <Link to="/om" className="pm-landing-footer-secondary-link">
               Om PadelMakker
