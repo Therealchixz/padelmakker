@@ -192,6 +192,10 @@ button,
   flex-wrap: wrap;
 }
 
+.pm-landing-theme-btn {
+  display: inline-flex;
+}
+
 .pm-landing-footer {
   display: flex;
   justify-content: space-between;
@@ -677,6 +681,11 @@ button,
 
   /* Skjul secondary links i selve navbar */
   .pm-landing-nav-secondary {
+    display: none !important;
+  }
+
+  /* Tema-knappen ligger i hamburger-menuen på mobil */
+  .pm-landing-theme-btn {
     display: none !important;
   }
 
