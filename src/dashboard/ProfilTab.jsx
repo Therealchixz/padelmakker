@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
@@ -75,6 +75,10 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   const [pendingAvatarFile, setPendingAvatarFile]   = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
   const [avatarUploading, setAvatarUploading]       = useState(false);
+  const overviewRef = useRef(null);
+  const performanceRef = useRef(null);
+  const relationsRef = useRef(null);
+  const actionsRef = useRef(null);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => {
     const cur = normalizeStringArrayField(f.availability);
@@ -135,15 +139,37 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   };
 
   const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
+  const topOverviewCards = [
+    { label: "ELO", value: elo, color: theme.accent },
+    { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
+    { label: "Kampe", value: games, color: theme.blue },
+    { label: "Sejre", value: wins, color: theme.warm },
+    { label: "Turneringer", value: Number(user.americano_played) || 0, color: theme.text },
+    { label: "Runder vundet", value: Number(user.americano_wins) || 0, color: americanoOutcomeColors.win.text },
+  ];
+  const extendedCards = [
+    { label: "Runder uafgjort", value: Number(user.americano_draws) || 0, color: americanoOutcomeColors.tie.text, bg: americanoOutcomeColors.tie.bg, border: americanoOutcomeColors.tie.border },
+    { label: "Runder tabt", value: Number(user.americano_losses) || 0, color: americanoOutcomeColors.loss.text, bg: americanoOutcomeColors.loss.bg, border: americanoOutcomeColors.loss.border },
+  ];
+  const jumpToSection = (ref) => {
+    if (!ref?.current) return;
+    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div>
       {!editing ? (
       <div>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
+          <button onClick={() => jumpToSection(overviewRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Overblik</button>
+          <button onClick={() => jumpToSection(performanceRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Performance</button>
+          <button onClick={() => jumpToSection(relationsRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Relationer</button>
+          <button onClick={() => jumpToSection(actionsRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Handlinger</button>
+        </div>
 
         {/* Profile card */}
-        <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
+        <div ref={overviewRef} style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
           <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", marginBottom: "20px" }}>
             <AvatarCircle
               avatar={user.avatar}
@@ -237,36 +263,24 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
             <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px", marginBottom: "20px" }}>Indlæser statistik…</div>
           ) : (
           <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "12px" }}>
-            {[
-              { label: "ELO", value: elo, color: theme.accent },
-              { label: "Kampe", value: games, color: theme.blue },
-              { label: "Sejre", value: wins, color: theme.warm },
-              { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
-            ].map((s, i) => (
-              <div key={i} style={{ textAlign: "center", padding: "12px 4px", background: theme.surfaceAlt, borderRadius: "8px" }}>
+          <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Overblik
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px", marginBottom: "10px" }}>
+            {topOverviewCards.map((s, i) => (
+              <div key={i} style={{ textAlign: "center", padding: "12px 6px", background: theme.surfaceAlt, borderRadius: "8px", border: "1px solid " + theme.border }}>
                 <div style={{ fontSize: "18px", fontWeight: 800, color: s.color }}>{s.value}</div>
                 <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
               </div>
             ))}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
-            <div style={{ textAlign: "center", padding: "10px 4px", background: theme.surfaceAlt, borderRadius: "8px", border: "1px solid " + theme.border }}>
-              <div style={{ fontSize: "16px", fontWeight: 800, color: theme.text }}>{Number(user.americano_played) || 0}</div>
-              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Turneringer</div>
-            </div>
-            <div style={{ textAlign: "center", padding: "10px 4px", background: americanoOutcomeColors.win.bg, borderRadius: "8px", border: "1px solid " + americanoOutcomeColors.win.border }}>
-              <div style={{ fontSize: "16px", fontWeight: 800, color: americanoOutcomeColors.win.text }}>{Number(user.americano_wins) || 0}</div>
-              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Runder vundet</div>
-            </div>
-            <div style={{ textAlign: "center", padding: "10px 4px", background: americanoOutcomeColors.tie.bg, borderRadius: "8px", border: "1px solid " + americanoOutcomeColors.tie.border }}>
-              <div style={{ fontSize: "16px", fontWeight: 800, color: americanoOutcomeColors.tie.text }}>{Number(user.americano_draws) || 0}</div>
-              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Runder uafgjort</div>
-            </div>
-            <div style={{ textAlign: "center", padding: "10px 4px", background: americanoOutcomeColors.loss.bg, borderRadius: "8px", border: "1px solid " + americanoOutcomeColors.loss.border }}>
-              <div style={{ fontSize: "16px", fontWeight: 800, color: americanoOutcomeColors.loss.text }}>{Number(user.americano_losses) || 0}</div>
-              <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Runder tabt</div>
-            </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "8px", marginBottom: "20px" }}>
+            {extendedCards.map((s, i) => (
+              <div key={i} style={{ textAlign: "center", padding: "10px 6px", background: s.bg, borderRadius: "8px", border: "1px solid " + s.border, opacity: 0.88 }}>
+                <div style={{ fontSize: "15px", fontWeight: 800, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</div>
+              </div>
+            ))}
           </div>
           </>
           )}
@@ -304,6 +318,9 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
 
         </div>
 
+        <div ref={performanceRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          Performance
+        </div>
         {/* ELO over tid */}
         <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
           <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -337,7 +354,7 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
           const fmtMonth = (m) => { const [y, mo] = m.split("-"); return monthNames[parseInt(mo, 10) - 1] + " " + y; };
 
           return (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginBottom: "16px" }}>
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Sejrsstreak</div>
                 <div style={{ fontSize: "28px", fontWeight: 800, color: theme.warm, letterSpacing: "-0.03em" }}>{currentStreak > 0 ? `🔥 ${currentStreak}` : "0"}</div>
@@ -362,7 +379,7 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
 
         {/* Peak ELO + Seneste form */}
         {!statsLoading && ratedRows.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginBottom: "10px" }}>
             {peakElo && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
@@ -387,6 +404,11 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
           </div>
         )}
 
+        {(!statsLoading && !partnerOpponentLoading && partnerOpponentStats && (partnerOpponentStats.partners.length > 0 || partnerOpponentStats.opponents.length > 0)) && (
+          <div ref={relationsRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Relationer
+          </div>
+        )}
         {/* Bedste makker + Hårdeste modstandere */}
         {!statsLoading && !partnerOpponentLoading && partnerOpponentStats && (
           <>
@@ -436,8 +458,11 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
           </>
         )}
 
+        <div ref={actionsRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          Handlinger
+        </div>
         {/* Quick links */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px" }}>
           <button onClick={() => { mergeKampeSessionPrefs(user.id, { view: "completed" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
             <Swords size={18} color={theme.accent} />
             <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine kampe</div>
