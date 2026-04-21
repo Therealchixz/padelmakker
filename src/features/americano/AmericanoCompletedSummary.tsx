@@ -46,7 +46,7 @@ type Props = {
   tournament: AmericanoTournament
   participants: PartMin[]
   currentUserId: string
-  /** Kun Ã©n afsluttet turnering Ã¥ben ad gangen (styres af AmericanoTab) */
+  /** Kun en afsluttet turnering aben ad gangen (styres af AmericanoTab) */
   summaryOpen: boolean
   onSummaryToggle: () => void
 }
@@ -116,7 +116,7 @@ export function AmericanoCompletedSummary({
   const summaryReady = matches !== undefined
   const ctaTitle = open ? 'Skjul fuld stilling og resultater' : 'Se fuld stilling og resultater'
   const ctaCopy = !summaryReady
-    ? 'Vi beregner placering og kampresultaterâ€¦'
+    ? 'Vi beregner placering og kampresultater...'
     : `Samlet point + alle kampe (${reportedMatches}/${sortedMatches.length} registreret)`
 
   return (
@@ -159,7 +159,7 @@ export function AmericanoCompletedSummary({
               Din placering
             </div>
             <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--pm-text)', marginTop: 2 }}>
-              {summaryReady ? (myPlacement ? `#${myPlacement}` : 'â€”') : 'â€¦'}
+              {summaryReady ? (myPlacement ? `#${myPlacement}` : '-') : '...'}
             </div>
           </div>
           <div
@@ -174,7 +174,7 @@ export function AmericanoCompletedSummary({
               Dine point
             </div>
             <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--pm-text)', marginTop: 2 }}>
-              {summaryReady ? (myPoints != null ? myPoints : 'â€”') : 'â€¦'}
+              {summaryReady ? (myPoints != null ? myPoints : '-') : '...'}
             </div>
           </div>
           <div
@@ -189,7 +189,7 @@ export function AmericanoCompletedSummary({
               Vinder
             </div>
             <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--pm-text)', marginTop: 4, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {summaryReady ? winner?.name || 'â€”' : 'â€¦'}
+              {summaryReady ? winner?.name || '-' : '...'}
             </div>
           </div>
         </div>
@@ -234,7 +234,7 @@ export function AmericanoCompletedSummary({
       {open && (
         <div style={{ padding: '0 12px 14px', borderTop: '1px solid #E2E8F0' }}>
           {loading && (
-            <div style={{ fontSize: 12, color: 'var(--pm-text-light)', paddingTop: 12 }}>Henter resultaterâ€¦</div>
+            <div style={{ fontSize: 12, color: 'var(--pm-text-light)', paddingTop: 12 }}>Henter resultater...</div>
           )}
           {fetchErr && !loading && (
             <div style={{ fontSize: 12, color: '#B45309', paddingTop: 12 }}>{fetchErr}</div>
@@ -265,7 +265,7 @@ export function AmericanoCompletedSummary({
                         {isMe ? (
                           <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
                         ) : null}
-                        {' â€” '}
+                        {' - '}
                         <strong style={{ color: 'var(--pm-text)' }}>{row.points}</strong> point
                       </li>
                     )
