@@ -420,29 +420,31 @@ export function HomeTab({ user, setTab }) {
         </div>
       ) : (feed.length > 0 || americanoFeed.length > 0 || ligaFeed.length > 0 || openMatchFeed.length > 0 || americanoRegFeed.length > 0 || milestoneFeed.length > 0 || seekingFeed.length > 0 || leagueNewFeed.length > 0) && (
         <div style={{ marginBottom: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+          <div className="pm-feed-filters-header">
             <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Seneste aktivitet
             </div>
-            <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <button
-                onClick={enableAllFilters}
-                className={allActive ? "pm-ui-btn-chip pm-ui-btn-chip-active" : "pm-ui-btn-chip"}
-              >
-                Alle
-              </button>
-              {FEED_FILTERS.map(f => {
-                const on = activeFilters.has(f.id);
-                return (
-                  <button
-                    key={f.id}
-                    onClick={() => toggleFilter(f.id)}
-                    className={on ? "pm-ui-btn-chip pm-ui-btn-chip-active" : "pm-ui-btn-chip"}
-                  >
-                    <span>{f.icon}</span>{f.label}
-                  </button>
-                );
-              })}
+            <div className="pm-feed-filters-scroll">
+              <div className="pm-feed-filters-row">
+                <button
+                  onClick={enableAllFilters}
+                  className={allActive ? "pm-ui-btn-chip pm-feed-filter-chip pm-ui-btn-chip-active" : "pm-ui-btn-chip pm-feed-filter-chip"}
+                >
+                  Alle
+                </button>
+                {FEED_FILTERS.map(f => {
+                  const on = activeFilters.has(f.id);
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => toggleFilter(f.id)}
+                      className={on ? "pm-ui-btn-chip pm-feed-filter-chip pm-ui-btn-chip-active" : "pm-ui-btn-chip pm-feed-filter-chip"}
+                    >
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>

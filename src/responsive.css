@@ -1010,6 +1010,53 @@ button,
   color: #fff;
 }
 
+.pm-feed-filters-header {
+  margin-bottom: 10px;
+}
+
+.pm-feed-filters-scroll {
+  margin-top: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pm-feed-filters-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.pm-feed-filters-row {
+  display: inline-flex;
+  gap: 6px;
+  min-width: max-content;
+  padding-bottom: 1px;
+}
+
+.pm-feed-filter-chip {
+  white-space: nowrap;
+  font-size: 11px;
+  padding: 4px 11px;
+}
+
+@media (min-width: 900px) {
+  .pm-feed-filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .pm-feed-filters-scroll {
+    margin-top: 0;
+    overflow: visible;
+  }
+
+  .pm-feed-filters-row {
+    min-width: 0;
+  }
+}
+
 /* Shared pill tabs */
 .pm-pill-tab:focus-visible {
   outline: none;
