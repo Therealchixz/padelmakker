@@ -1279,6 +1279,23 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     padding: "7px 14px",
     fontSize: "12px",
   });
+  const scopeTabs = kampeFormat === "liga"
+    ? [
+        { id: "alle", label: "Alle ligaer" },
+        { id: "mine", label: "Mine ligaer" },
+      ]
+    : [
+        { id: "alle", label: "Alle kampe" },
+        { id: "mine", label: "Mine kampe" },
+      ];
+  const searchPlaceholder = kampeFormat === "liga"
+    ? "Søg liga..."
+    : "Søg spiller, bane eller beskrivelse...";
+  const onScopeChange = (nextScope) => {
+    setKampeScope(nextScope);
+    mergeKampeSessionPrefs(user.id, { scope: nextScope });
+    setSearchQuery("");
+  };
 
   return (
     <div>
@@ -1331,48 +1348,49 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
         </div>
 
-        {kampeFormat !== "liga" && (
-          <>
-            <div className="pm-kampe-controls-divider" />
-            <div className="pm-kampe-controls-bottom">
-              <div className="pm-kampe-segment" role="tablist" aria-label="Kampe scope">
-                {[
-                  { id: "alle", label: "Alle kampe" },
-                  { id: "mine", label: "Mine kampe" },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={kampeScope === t.id}
-                    onClick={() => {
-                      setKampeScope(t.id);
-                      mergeKampeSessionPrefs(user.id, { scope: t.id });
-                      setSearchQuery("");
-                    }}
-                    style={segmentBtnStyle(kampeScope === t.id)}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="pm-kampe-search-wrap">
-                <Search size={16} className="pm-kampe-search-icon" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Søg spiller, bane eller beskrivelse..."
-                  className="pm-kampe-search-input"
-                />
-              </div>
+        <>
+          <div className="pm-kampe-controls-divider" />
+          <div className="pm-kampe-controls-bottom">
+            <div className="pm-kampe-segment" role="tablist" aria-label={kampeFormat === "liga" ? "Liga scope" : "Kampe scope"}>
+              {scopeTabs.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={kampeScope === t.id}
+                  onClick={() => onScopeChange(t.id)}
+                  style={segmentBtnStyle(kampeScope === t.id)}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
-          </>
-        )}
+
+            <div className="pm-kampe-search-wrap">
+              <Search size={16} className="pm-kampe-search-icon" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={searchPlaceholder}
+                className="pm-kampe-search-input"
+              />
+            </div>
+          </div>
+        </>
       </div>
       {kampeFormat === "liga" && (
-        <LigaTabEmbed user={user} showToast={showToast} createOpen={showLigaCreate} onCreateOpenChange={setShowLigaCreate} />
+        <LigaTabEmbed
+          user={user}
+          showToast={showToast}
+          createOpen={showLigaCreate}
+          onCreateOpenChange={setShowLigaCreate}
+          embedInKampe
+          scope={kampeScope}
+          onScopeChange={onScopeChange}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+        />
       )}
 
       {loadingMatches && kampeFormat !== "liga" ? (

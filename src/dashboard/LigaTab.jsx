@@ -651,12 +651,26 @@ function PartnerSearch({ userId, onSelect }) {
   );
 }
 
-export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateOpenChange }) {
+export function LigaTab({
+  user,
+  showToast,
+  createOpen: createOpenProp,
+  onCreateOpenChange,
+  embedInKampe = false,
+  scope: scopeProp,
+  onScopeChange,
+  searchQuery: searchQueryProp,
+  onSearchQueryChange,
+}) {
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
   const [view, setView] = useState('registration');
-  const [scope, setScope] = useState('alle');
-  const [search, setSearch] = useState('');
+  const [scopeLocal, setScopeLocal] = useState('alle');
+  const [searchLocal, setSearchLocal] = useState('');
+  const scope = scopeProp ?? scopeLocal;
+  const search = searchQueryProp ?? searchLocal;
+  const setScope = onScopeChange ?? setScopeLocal;
+  const setSearch = onSearchQueryChange ?? setSearchLocal;
   const [viewPlayer, setViewPlayer] = useState(null);
   const [leagues, setLeagues] = useState([]);
   const [teamsByLeague, setTeamsByLeague] = useState({});
@@ -995,6 +1009,8 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
         />
       )}
 
+      {!embedInKampe && (
+        <>
       {/* Scope selector: Mine / Alle */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
         {[
@@ -1022,6 +1038,9 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
           style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '8px', border: '1px solid ' + theme.border, fontSize: '13px', fontFamily: 'inherit', background: theme.surface, outline: 'none', boxSizing: 'border-box' }}
         />
       </div>
+
+        </>
+      )}
 
       {/* Admin: opret-formular */}
       {isAdmin && createOpen && (
