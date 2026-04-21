@@ -1331,7 +1331,7 @@ export function LigaTab({
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {regTeams.map(t => (
-                          <div key={t.id} className={`pm-card-row-item ${t.status === 'pending' ? '' : 'pm-card-row-item--green'}`.trim()}>
+                          <div key={t.id} className={`pm-card-row-item ${t.status === 'pending' ? 'pm-card-row-item--neutral' : 'pm-card-row-item--green'}`}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
                               <div style={{ fontSize: '11px', color: theme.text, display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>

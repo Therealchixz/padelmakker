@@ -787,6 +787,11 @@ button,
   border-color: color-mix(in srgb, var(--pm-accent) 26%, var(--pm-border));
 }
 
+.pm-card-row-item--neutral {
+  background: var(--pm-surface-alt);
+  border-color: var(--pm-border);
+}
+
 .pm-card-row-item--warm {
   background: var(--pm-warm-bg);
   border-color: color-mix(in srgb, var(--pm-warm) 26%, var(--pm-border));
