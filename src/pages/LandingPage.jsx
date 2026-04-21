@@ -332,6 +332,12 @@ export function LandingPage() {
             <Link to="/app" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
               Installér app
             </Link>
+            <Link to="/om" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+              Om PadelMakker
+            </Link>
+            <Link to="/faq" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+              FAQ
+            </Link>
           </span>
         </div>
         <div className="pm-landing-footer-legal">
