@@ -15,7 +15,7 @@ import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, f
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
-import { Clock, MapPin, Plus, UserMinus, Trash2, Zap } from 'lucide-react';
+import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -1137,17 +1137,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           {hasAdminActions && (
             <button
               onClick={() => setExpandedAdminActions(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
+              className="pm-accordion-trigger"
               style={{
                 ...btn(false),
-                width: "100%",
-                justifyContent: "center",
+                padding: "7px 12px",
                 fontSize: "12px",
                 color: theme.warm,
                 borderColor: theme.warm + "55",
                 background: theme.warmBg,
               }}
             >
-              {adminActionsOpen ? "Skjul admin-værktøjer ▲" : "Vis admin-værktøjer ▼"}
+              <span>{adminActionsOpen ? "Skjul admin-værktøjer" : "Vis admin-værktøjer"}</span>
+              {adminActionsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           )}
           {(isCreator || isAdmin) && (status === "open" || status === "full") && (!isAdmin || adminActionsOpen) && (

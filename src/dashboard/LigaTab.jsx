@@ -1582,7 +1582,15 @@ export function LigaTab({
                   <button
                     onClick={() => toggleManageTools(league.id)}
                     className="pm-accordion-trigger"
-                    style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', marginBottom: '10px' }}
+                    style={{
+                      ...btn(false),
+                      padding: '7px 12px',
+                      fontSize: '12px',
+                      marginBottom: '10px',
+                      color: theme.warm,
+                      borderColor: theme.warm + '55',
+                      background: theme.warmBg,
+                    }}
                   >
                     <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
                     {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}

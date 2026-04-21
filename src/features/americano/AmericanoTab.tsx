@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ChevronDown, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
 import { Court } from '../../api/base44Client'
@@ -11,7 +11,7 @@ import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import { PillTabs } from '../../components/PillTabs'
-import { btn } from '../../lib/platformTheme'
+import { btn, theme } from '../../lib/platformTheme'
 
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
@@ -912,13 +912,17 @@ export function AmericanoTab({
                       })
                     }
                     className="pm-accordion-trigger"
-                    style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}
+                    style={{
+                      ...btn(false),
+                      padding: '7px 12px',
+                      fontSize: '12px',
+                      color: theme.warm,
+                      borderColor: theme.warm + '55',
+                      background: theme.warmBg,
+                    }}
                   >
                     <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
-                    <ChevronDown
-                      size={14}
-                      style={{ transform: manageToolsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.18s ease' }}
-                    />
+                    {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
                   {manageToolsOpen && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
