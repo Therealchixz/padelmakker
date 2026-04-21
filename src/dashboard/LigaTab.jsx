@@ -1265,7 +1265,7 @@ export function LigaTab({
                 {league.status === 'registration' && (
                   <div style={{ marginBottom: '12px' }}>
                     {joined ? (
-                      <div className={`pm-card-subpanel ${myTeam.status === 'pending' ? 'pm-card-subpanel--warm' : 'pm-card-subpanel--green'}`} style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <div className={`pm-card-subpanel ${myTeam.status === 'pending' ? '' : 'pm-card-subpanel--green'}`.trim()} style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                         <div>
                           <div style={{ fontSize: '13px', fontWeight: 700, color: myTeam.status === 'pending' ? theme.warm : theme.green, marginBottom: '4px' }}>
                             {myTeam.status === 'pending' ? '⏳ Afventer godkendelse' : '✓'} {myTeam.name}
@@ -1331,7 +1331,7 @@ export function LigaTab({
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {regTeams.map(t => (
-                          <div key={t.id} className={`pm-card-row-item ${t.status === 'pending' ? 'pm-card-row-item--warm' : 'pm-card-row-item--green'}`}>
+                          <div key={t.id} className={`pm-card-row-item ${t.status === 'pending' ? '' : 'pm-card-row-item--green'}`.trim()}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
                               <div style={{ fontSize: '11px', color: theme.text, display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>
