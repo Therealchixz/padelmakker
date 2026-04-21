@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
-import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown } from 'lucide-react';
+import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
 import { HomeTab } from './HomeTab';
 import { MakkereTab } from './MakkereTab';
@@ -150,6 +150,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const [dark, setDark] = useDarkMode();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [morePos, setMorePos] = useState(null);
   const moreBtnRef = useRef(null);
   const moreDropRef = useRef(null);
@@ -173,6 +174,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
     if (["hjem", "profil", "ranking", "kampe", "makkere", "admin"].includes(tab)) refreshProfileQuiet();
   }, [tab, refreshProfileQuiet]);
 
+  useEffect(() => {
+    setMoreOpen(false);
+    setMobileMoreOpen(false);
+  }, [tab]);
+
   const allTabs = [
     { id: "hjem",     label: "Hjem",        icon: <Home          size={15} /> },
     { id: "makkere",  label: "Find Makker",  icon: <Users         size={15} /> },
@@ -189,6 +195,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const moreTabs    = allTabs.filter(t => !PRIMARY_TAB_IDS.includes(t.id));
   const moreIsActive = moreTabs.some(t => t.id === tab);
   const moreBadge = moreTabs.reduce((s, t) => s + (t.badge || 0), 0);
+  const mobilePrimaryTabs = allTabs.filter(t => ["hjem", "kampe", "baner", "profil"].includes(t.id));
+  const mobileMoreTabs = allTabs.filter(t => !["hjem", "kampe", "baner", "profil"].includes(t.id));
+  const mobileMoreIsActive = mobileMoreTabs.some(t => t.id === tab);
+  const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
 
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", paddingBottom: "env(safe-area-inset-bottom)" }}>
@@ -201,7 +211,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           <span className="pm-dash-name">{displayName}</span>
           <div className="pm-dash-header-actions">
             <NotificationBell />
-            <button type="button" onClick={onLogout} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px", flexShrink: 0 }}>
+            <button className="pm-dash-logout-btn" type="button" onClick={onLogout} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px", flexShrink: 0 }}>
               <LogOut size={13} /> Log ud
             </button>
           </div>
@@ -278,6 +288,106 @@ export function DashboardPage({ user, onLogout, showToast }) {
         {tab === "profil"   && <ProfilTab  user={user} showToast={showToast} setTab={setTab} dark={dark} onDarkModeChange={setDark} />}
         {tab === "admin"    && isAdmin && <AdminTab />}
       </div>
+
+      {mobileMoreOpen && (
+        <button
+          type="button"
+          aria-label="Luk menu"
+          className="pm-mobile-more-backdrop"
+          onClick={() => setMobileMoreOpen(false)}
+        />
+      )}
+      {mobileMoreOpen && (
+        <div className="pm-mobile-more-sheet">
+          {mobileMoreTabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className="pm-mobile-more-row"
+              onClick={() => {
+                setTab(t.id);
+                setMobileMoreOpen(false);
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: "10px", position: "relative" }}>
+                {t.icon}
+                {t.label}
+                {t.badge && (
+                  <span style={{ background: theme.red, color: "#fff", borderRadius: "10px", fontSize: "10px", fontWeight: 800, padding: "1px 6px", lineHeight: 1.3 }}>
+                    {t.badge > 9 ? "9+" : t.badge}
+                  </span>
+                )}
+              </span>
+            </button>
+          ))}
+          <button
+            type="button"
+            className="pm-mobile-more-row pm-mobile-more-logout"
+            onClick={() => {
+              setMobileMoreOpen(false);
+              onLogout();
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <LogOut size={16} />
+              Log ud
+            </span>
+          </button>
+        </div>
+      )}
+
+      <nav className="pm-mobile-bottom-nav" aria-label="Mobil navigation">
+        {mobilePrimaryTabs.map((t) => {
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className="pm-mobile-bottom-btn"
+              aria-label={t.label}
+              title={t.label}
+            >
+              <span className="pm-mobile-bottom-icon-wrap" style={{ color: active ? theme.accent : theme.textMid }}>
+                {t.icon}
+                {t.badge && (
+                  <span className="pm-mobile-bottom-badge">
+                    {t.badge > 9 ? "9+" : t.badge}
+                  </span>
+                )}
+              </span>
+              <span
+                className="pm-mobile-bottom-label"
+                style={{ color: active ? theme.accent : theme.textMid, fontWeight: active ? 700 : 500 }}
+              >
+                {t.label}
+              </span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setMobileMoreOpen((open) => !open)}
+          className="pm-mobile-bottom-btn"
+          aria-label="Mere"
+          title="Mere"
+        >
+          <span className="pm-mobile-bottom-icon-wrap">
+            <Menu size={18} color={mobileMoreIsActive || mobileMoreOpen ? theme.accent : theme.textMid} />
+            {mobileMoreBadge > 0 && (
+              <span className="pm-mobile-bottom-badge">
+                {mobileMoreBadge > 9 ? "9+" : mobileMoreBadge}
+              </span>
+            )}
+          </span>
+          <span
+            className="pm-mobile-bottom-label"
+            style={{ color: mobileMoreIsActive || mobileMoreOpen ? theme.accent : theme.textMid, fontWeight: mobileMoreIsActive || mobileMoreOpen ? 700 : 500 }}
+          >
+            Mere
+          </span>
+        </button>
+      </nav>
     </div>
   );
 }

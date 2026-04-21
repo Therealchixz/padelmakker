@@ -338,6 +338,140 @@ button,
   box-sizing: border-box;
 }
 
+.pm-mobile-bottom-nav,
+.pm-mobile-more-backdrop,
+.pm-mobile-more-sheet {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .pm-dash-header {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .pm-dash-user .pm-dash-name,
+  .pm-dash-logout-btn {
+    display: none !important;
+  }
+
+  .pm-tab-strip {
+    display: none;
+  }
+
+  .pm-dash-main {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .pm-mobile-bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 46;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--pm-border, #d7e3f4);
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 30px rgba(2, 6, 23, 0.08);
+  }
+
+  .pm-mobile-bottom-btn {
+    background: transparent;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-family: inherit;
+    padding: 4px 2px;
+    min-width: 0;
+    cursor: pointer;
+  }
+
+  .pm-mobile-bottom-icon-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pm-text-mid, #64748b);
+  }
+
+  .pm-mobile-bottom-label {
+    font-size: 11px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .pm-mobile-bottom-badge {
+    position: absolute;
+    top: -6px;
+    right: -9px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 5px;
+    line-height: 1.2;
+  }
+
+  .pm-mobile-more-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 44;
+    border: none;
+    margin: 0;
+    padding: 0;
+    background: rgba(2, 6, 23, 0.2);
+  }
+
+  .pm-mobile-more-sheet {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    z-index: 45;
+    background: #fff;
+    border: 1px solid var(--pm-border, #d7e3f4);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 14px 38px rgba(2, 6, 23, 0.16);
+  }
+
+  .pm-mobile-more-row {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--pm-border, #d7e3f4);
+    background: transparent;
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pm-text, #0f172a);
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .pm-mobile-more-row:last-child {
+    border-bottom: none;
+  }
+
+  .pm-mobile-more-logout {
+    color: #b91c1c;
+  }
+}
+
 /* Hjem — hurtige handlinger */
 .pm-home-grid {
   display: grid;
