@@ -680,14 +680,14 @@ button,
 .pm-ui-card {
   background: var(--pm-surface);
   border: 1px solid var(--pm-border);
-  border-radius: 12px;
+  border-radius: var(--pm-radius-lg);
   box-shadow: var(--pm-shadow);
 }
 
 .pm-ui-card-soft {
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border);
-  border-radius: 10px;
+  border-radius: var(--pm-radius-md);
 }
 
 .pm-ui-card-interactive {
@@ -719,7 +719,7 @@ button,
 .pm-home-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr));
-  gap: 12px;
+  gap: var(--pm-space-2);
 }
 
 .pm-home-action-card {
@@ -736,12 +736,12 @@ button,
 .pm-home-action-card-icon {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-md);
   background: var(--pm-accent-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--pm-space-2);
 }
 
 .pm-home-action-card-title {
@@ -836,34 +836,34 @@ button,
 }
 
 .pm-kampe-controls {
-  padding: 12px;
+  padding: var(--pm-space-2);
 }
 
 .pm-kampe-controls-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--pm-space-2);
   flex-wrap: wrap;
 }
 
 .pm-kampe-controls-divider {
   height: 1px;
   background: var(--pm-border);
-  margin: 10px 0;
+  margin: var(--pm-space-2) 0;
 }
 
 .pm-kampe-controls-bottom {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
+  gap: var(--pm-space-2);
   align-items: center;
 }
 
 .pm-kampe-segment {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--pm-space-1);
 }
 
 .pm-kampe-controls-action {
@@ -888,9 +888,9 @@ button,
 
 .pm-kampe-search-input {
   width: 100%;
-  height: 38px;
+  height: var(--pm-control-h);
   padding: 9px 12px 9px 36px;
-  border-radius: 10px;
+  border-radius: var(--pm-radius-md);
   border: 1px solid var(--pm-border);
   font-size: 13px;
   color: var(--pm-text);

@@ -1,8 +1,8 @@
 import { btn, theme } from '../lib/platformTheme';
 
 const SIZE_PRESETS = {
-  sm: { padding: '7px 14px', fontSize: '12px' },
-  md: { padding: '8px 14px', fontSize: '13px' },
+  sm: { padding: 'calc(var(--pm-space-1) - 1px) var(--pm-space-3)', fontSize: '12px' },
+  md: { padding: 'var(--pm-space-1) var(--pm-space-3)', fontSize: '13px' },
 };
 
 export function pillTabButtonStyle(active, size = 'md') {
@@ -33,7 +33,7 @@ export function PillTabs({
       className={className}
       style={{
         display: 'flex',
-        gap: 8,
+        gap: 'var(--pm-space-1)',
         flexWrap: 'wrap',
         ...style,
       }}

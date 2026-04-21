@@ -26,7 +26,7 @@ export function ScopeSearchControls({
     : {
         display: 'grid',
         gridTemplateColumns: 'auto minmax(0, 1fr)',
-        gap: 10,
+        gap: 'var(--pm-space-2)',
         alignItems: 'center',
       };
 
@@ -72,9 +72,9 @@ export function ScopeSearchControls({
           className={searchInputClassName}
           style={{
             width: '100%',
-            height: 38,
+            height: 'var(--pm-control-h)',
             padding: '9px 12px 9px 36px',
-            borderRadius: 10,
+            borderRadius: 'var(--pm-radius-md)',
             border: '1px solid var(--pm-border)',
             fontSize: 13,
             color: 'var(--pm-text)',
