@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp } from 'lucide-react';
 import { LandingTourVideo } from '../components/LandingTourVideo';
 import { useDarkMode } from '../lib/useDarkMode';
 
@@ -119,7 +119,7 @@ export function LandingPage() {
               className="pm-landing-theme-btn"
               onClick={toggleTheme}
               aria-pressed={dark}
-              title={dark ? "Skift til lys tilstand" : "Skift til mork tilstand"}
+              title={dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
               style={{
                 ...btn(false),
                 background: "transparent",
@@ -131,7 +131,7 @@ export function LandingPage() {
               }}
             >
               {dark ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
-              <span>{dark ? "Lys" : "Mork"}</span>
+              <span>{dark ? "Lys" : "Mørk"}</span>
             </button>
             <button onClick={() => navigate("/login")} style={{ ...btn(false), borderColor: "transparent", background: "transparent" }}>Log ind</button>
             <button onClick={() => navigate("/opret")} style={{ ...btn(true), borderRadius: "8px" }}>Kom i gang</button>
@@ -152,10 +152,10 @@ export function LandingPage() {
               <LifeBuoy size={18} color={theme.accent} /> Hjælp
             </Link>
             <Link to="/om" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 12px", color: theme.text, fontWeight: 600, fontSize: "15px", textDecoration: "none", borderRadius: "8px" }}>
-              Om PadelMakker
+              <Info size={18} color={theme.accent} /> Om PadelMakker
             </Link>
             <Link to="/faq" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 12px", color: theme.text, fontWeight: 600, fontSize: "15px", textDecoration: "none", borderRadius: "8px" }}>
-              FAQ
+              <CircleHelp size={18} color={theme.accent} /> FAQ
             </Link>
             <Link to="/app" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 12px", color: theme.text, fontWeight: 600, fontSize: "15px", textDecoration: "none", borderRadius: "8px" }}>
               <Smartphone size={18} color={theme.accent} /> App
@@ -183,7 +183,7 @@ export function LandingPage() {
               }}
             >
               {dark ? <Sun size={18} color={theme.accent} /> : <Moon size={18} color={theme.accent} />}
-              {dark ? "Skift til lys tilstand" : "Skift til mork tilstand"}
+              {dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
             </button>
           </div>
         </>
