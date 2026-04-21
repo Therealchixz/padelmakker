@@ -6,6 +6,7 @@ import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search } from 'lucid
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
+import { TabbedFilterCard } from '../components/TabbedFilterCard';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
 
@@ -1004,6 +1005,7 @@ export function LigaTab({
     { id: 'alle', label: 'Alle ligaer' },
     { id: 'mine', label: 'Mine ligaer' },
   ];
+  const leagueTopTabs = [{ id: 'liga', label: 'Liga' }];
   const leagueStatusCount = {
     registration: leagues.filter(l => l.status === 'registration').length,
     active: leagues.filter(l => l.status === 'active').length,
@@ -1026,27 +1028,37 @@ export function LigaTab({
       )}
 
       {!embedInKampe && (
-        <>
-          <ScopeSearchControls
-            tabs={leagueScopeTabs}
-            value={scope}
-            onTabChange={(nextScope) => {
-              setScope(nextScope);
-              setSearch('');
-            }}
-            searchValue={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Søg liga..."
-            tabAriaLabel="Liga scope"
-            className="pm-kampe-controls-bottom"
-            tabsClassName="pm-kampe-segment"
-            searchWrapClassName="pm-kampe-search-wrap"
-            searchInputClassName="pm-kampe-search-input"
-            searchIconClassName="pm-kampe-search-icon"
-            style={{ marginBottom: '12px' }}
-          />
-
-        </>
+        <TabbedFilterCard
+          tabs={leagueTopTabs}
+          value="liga"
+          onTabChange={() => {}}
+          tabAriaLabel="Liga format"
+          action={isAdmin ? (
+            <button type="button" onClick={() => setCreateOpen((v) => !v)} style={btn(true)}>
+              {createOpen ? 'Annullér' : <><Plus size={15} /> Opret liga</>}
+            </button>
+          ) : null}
+          bottom={(
+            <ScopeSearchControls
+              tabs={leagueScopeTabs}
+              value={scope}
+              onTabChange={(nextScope) => {
+                setScope(nextScope);
+                setSearch('');
+              }}
+              searchValue={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Søg liga..."
+              tabAriaLabel="Liga scope"
+              className="pm-kampe-controls-bottom"
+              tabsClassName="pm-kampe-segment"
+              searchWrapClassName="pm-kampe-search-wrap"
+              searchInputClassName="pm-kampe-search-input"
+              searchIconClassName="pm-kampe-search-icon"
+            />
+          )}
+          cardStyle={{ marginBottom: '12px' }}
+        />
       )}
 
       {/* Admin: opret-formular */}
