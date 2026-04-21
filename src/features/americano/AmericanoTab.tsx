@@ -135,8 +135,8 @@ export function AmericanoTab({
   const [participantsByTournament, setParticipantsByTournament] = useState<
     Record<string, ParticipantListRow[]>
   >({})
-  /** Under "I gang": deltagerlisten er sammenklappet som standard for at spare plads */
-  const [playingParticipantsOpen, setPlayingParticipantsOpen] = useState<Set<string>>(() => new Set())
+  /** Under "I gang" + "Afsluttede": deltagerlisten er sammenklappet som standard for at spare plads */
+  const [participantListsOpen, setParticipantListsOpen] = useState<Set<string>>(() => new Set())
   const [openManageTools, setOpenManageTools] = useState<Set<string>>(() => new Set())
   const [participantSnippets, setParticipantSnippets] = useState<Record<string, ProfileSnippet>>({})
   const [participantStatsPick, setParticipantStatsPick] = useState<{ userId: string; name: string } | null>(
@@ -624,16 +624,23 @@ export function AmericanoTab({
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t.name}</div>
               <div className="pm-card-meta-row" style={{ marginBottom: 6 }}>
                 <span className={`pm-status-badge pm-status-badge--${statusMeta.tone}`}>{statusMeta.label}</span>
-                <span className="pm-status-badge pm-status-badge--blue">
-                  {partCount}/{slotsConfigured} spillere
-                </span>
+                {t.status !== 'completed' && (
+                  <span className="pm-status-badge pm-status-badge--blue">
+                    {partCount}/{slotsConfigured} spillere
+                  </span>
+                )}
                 <span className="pm-status-badge">
                   {t.points_per_match} point{Number(t.opponent_passes) === 2 ? ' · lang' : ''}
                 </span>
               </div>
               <div style={{ fontSize: 12, color: 'var(--pm-text-mid)' }}>
-                {formatMatchDateDa(t.tournament_date)} · {formatTimeSlotDa(t.time_slot)} · {t.player_slots}{' '}
-                spillere
+                {formatMatchDateDa(t.tournament_date)} · {formatTimeSlotDa(t.time_slot)}
+                {t.status !== 'completed' ? (
+                  <>
+                    {' · '}
+                    {t.player_slots} spillere
+                  </>
+                ) : null}
               </div>
               {t.description && (
                 <div style={{ fontSize: 12, color: 'var(--pm-text-light)', marginTop: 8, fontStyle: 'italic' }}>{t.description}</div>
@@ -641,10 +648,10 @@ export function AmericanoTab({
               {(() => {
                 const parts = participantsByTournament[t.id] || []
                 const maxSlots = t.player_slots
-                const playingCollapsed = t.status === 'playing'
-                const listOpen = !playingCollapsed || playingParticipantsOpen.has(t.id)
-                const togglePlayingParticipants = () => {
-                  setPlayingParticipantsOpen((prev) => {
+                const participantsCollapsible = t.status === 'playing' || t.status === 'completed'
+                const listOpen = !participantsCollapsible || participantListsOpen.has(t.id)
+                const toggleParticipants = () => {
+                  setParticipantListsOpen((prev) => {
                     const next = new Set(prev)
                     if (next.has(t.id)) next.delete(t.id)
                     else next.add(t.id)
@@ -653,16 +660,16 @@ export function AmericanoTab({
                 }
                 return (
                   <div
-                    className="pm-card-subpanel"
-                    style={{
-                      marginTop: 12,
-                      padding: playingCollapsed && !listOpen ? '8px 12px' : '10px 12px',
-                    }}
-                  >
-                    {playingCollapsed ? (
+                      className="pm-card-subpanel"
+                      style={{
+                        marginTop: 12,
+                        padding: participantsCollapsible && !listOpen ? '8px 12px' : '10px 12px',
+                      }}
+                    >
+                    {participantsCollapsible ? (
                       <button
                         type="button"
-                        onClick={togglePlayingParticipants}
+                        onClick={toggleParticipants}
                         aria-expanded={listOpen}
                         aria-label={listOpen ? 'Skjul deltagerliste' : 'Vis deltagerliste'}
                         style={{
@@ -702,13 +709,13 @@ export function AmericanoTab({
                     )}
                     {listOpen &&
                       (parts.length === 0 ? (
-                        <div className="pm-data-empty-note" style={{ marginTop: playingCollapsed ? 10 : 0 }}>
+                        <div className="pm-data-empty-note" style={{ marginTop: participantsCollapsible ? 10 : 0 }}>
                           Ingen tilmeldt endnu — vær den første.
                         </div>
                       ) : t.status === 'playing' ? (
                         <div
                           style={{
-                            marginTop: playingCollapsed ? 10 : 0,
+                            marginTop: participantsCollapsible ? 10 : 0,
                             display: 'flex',
                             flexDirection: 'column',
                             gap: 8,
@@ -757,7 +764,7 @@ export function AmericanoTab({
                       ) : t.status === 'registration' ? (
                         <div
                           style={{
-                            marginTop: playingCollapsed ? 10 : 0,
+                            marginTop: participantsCollapsible ? 10 : 0,
                             display: 'flex',
                             flexDirection: 'column',
                             gap: 8,
@@ -832,7 +839,7 @@ export function AmericanoTab({
                       ) : (
                         <ul
                           style={{
-                            margin: playingCollapsed ? '10px 0 0' : 0,
+                            margin: participantsCollapsible ? '10px 0 0' : 0,
                             paddingLeft: 18,
                             fontSize: 12,
                             color: 'var(--pm-text-mid)',

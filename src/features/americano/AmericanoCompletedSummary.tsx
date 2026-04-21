@@ -68,7 +68,7 @@ export function AmericanoCompletedSummary({
   participants.forEach((p) => userIdByPartId.set(p.id, p.user_id))
 
   useEffect(() => {
-    if (!open || matches !== undefined) return
+    if (matches !== undefined) return
     let cancelled = false
     ;(async () => {
       setLoading(true)
@@ -95,7 +95,7 @@ export function AmericanoCompletedSummary({
     return () => {
       cancelled = true
     }
-  }, [open, matches, tournament.id])
+  }, [matches, tournament.id])
 
   const mlist = matches ?? []
   const leaderboard = matches !== undefined ? buildLeaderboardTotals(participants, mlist, P) : []
@@ -103,6 +103,21 @@ export function AmericanoCompletedSummary({
     if (a.round_number !== b.round_number) return a.round_number - b.round_number
     return a.court_index - b.court_index
   })
+  const currentParticipant = participants.find((p) => String(p.user_id) === String(currentUserId))
+  const myPlacementIndex = currentParticipant
+    ? leaderboard.findIndex((row) => row.id === currentParticipant.id)
+    : -1
+  const myPlacement = myPlacementIndex >= 0 ? myPlacementIndex + 1 : null
+  const myPoints = myPlacementIndex >= 0 ? leaderboard[myPlacementIndex]?.points ?? null : null
+  const winner = leaderboard[0]
+  const reportedMatches = sortedMatches.filter(
+    (m) => m.team_a_score != null && m.team_b_score != null && isValidScore(m.team_a_score, m.team_b_score, P)
+  ).length
+  const summaryReady = matches !== undefined
+  const ctaTitle = open ? 'Skjul fuld stilling og resultater' : 'Se fuld stilling og resultater'
+  const ctaCopy = !summaryReady
+    ? 'Vi beregner placering og kampresultater…'
+    : `Samlet point + alle kampe (${reportedMatches}/${sortedMatches.length} registreret)`
 
   return (
     <div
@@ -115,6 +130,71 @@ export function AmericanoCompletedSummary({
         fontFamily: font,
       }}
     >
+      <div
+        style={{
+          padding: '10px 12px 8px',
+          borderBottom: '1px solid var(--pm-border)',
+          background: 'color-mix(in srgb, var(--pm-accent-bg) 55%, var(--pm-surface-alt))',
+        }}
+      >
+        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>
+          Turneringsresume
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 6,
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--pm-surface)',
+              border: '1px solid var(--pm-border)',
+              borderRadius: 8,
+              padding: '7px 8px',
+            }}
+          >
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Din placering
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--pm-text)', marginTop: 2 }}>
+              {summaryReady ? (myPlacement ? `#${myPlacement}` : '—') : '…'}
+            </div>
+          </div>
+          <div
+            style={{
+              background: 'var(--pm-surface)',
+              border: '1px solid var(--pm-border)',
+              borderRadius: 8,
+              padding: '7px 8px',
+            }}
+          >
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Dine point
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--pm-text)', marginTop: 2 }}>
+              {summaryReady ? (myPoints != null ? myPoints : '—') : '…'}
+            </div>
+          </div>
+          <div
+            style={{
+              background: 'var(--pm-surface)',
+              border: '1px solid var(--pm-border)',
+              borderRadius: 8,
+              padding: '7px 8px',
+            }}
+          >
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Vinder
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--pm-text)', marginTop: 4, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {summaryReady ? winner?.name || '—' : '…'}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <button
         type="button"
         onClick={onSummaryToggle}
@@ -133,11 +213,9 @@ export function AmericanoCompletedSummary({
         }}
       >
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--pm-text)' }}>Resultater og stilling</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--pm-accent)' }}>{ctaTitle}</div>
           <div style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 2 }}>
-            {matches === undefined
-              ? 'Tryk for at se samlet stilling og alle kampresultater'
-              : `Samlet point + alle kampe (${sortedMatches.length} ${sortedMatches.length === 1 ? 'kamp' : 'kampe'})`}
+            {ctaCopy}
           </div>
         </div>
         <ChevronDown
