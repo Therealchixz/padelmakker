@@ -298,7 +298,7 @@ export function AdminTab() {
             <div style={{ background: theme.surface, borderRadius: "12px", border: "1px solid " + theme.border, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ textAlign: "left", background: "#F8FAFC", borderBottom: "1px solid " + theme.border }}>
+                  <tr style={{ textAlign: "left", background: theme.surfaceAlt, borderBottom: "1px solid " + theme.border }}>
                     <th style={thStyle()} onClick={() => requestSort('full_name')}>
                       <div style={{ display: "flex", alignItems: "center" }}>SPILLER <SortIcon columnKey="full_name" /></div>
                     </th>
@@ -326,7 +326,7 @@ export function AdminTab() {
                       <td style={{ padding: "12px", fontSize: "14px", fontWeight: 700 }}>{u.elo_rating || 1000}</td>
                       <td style={{ padding: "12px" }}>
                         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                          <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : "#F1F5F9", color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
+                          <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : theme.surfaceAlt, border: "1px solid " + theme.border, color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
                             {u.role}
                           </span>
                           {u.is_banned && (
@@ -369,7 +369,7 @@ export function AdminTab() {
                   
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", gap: "6px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : "#F1F5F9", color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : theme.surfaceAlt, border: "1px solid " + theme.border, color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
                         {u.role}
                       </span>
                       {u.is_banned && (
@@ -519,7 +519,7 @@ export function AdminTab() {
                   flexDirection: isMobile ? "column" : "row",
                   alignItems: isMobile ? "stretch" : "center", 
                   gap: isMobile ? "8px" : "12px", 
-                  background: "#F8FAFC", 
+                  background: theme.surfaceAlt, 
                   padding: "12px", 
                   borderRadius: "10px",
                   border: "1px solid " + theme.border + "40"
@@ -558,8 +558,8 @@ export function AdminTab() {
       {/* Edit User Modal */}
       {editingUser && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(4px)" }}>
-          <div style={{ background: "#fff", borderRadius: "16px", padding: "24px", maxWidth: "450px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.18)", position: "relative", maxHeight: "90vh", overflowY: "auto" }}>
-            <button onClick={() => setEditingUser(null)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", color: "#64748B", cursor: "pointer" }}>
+          <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "16px", padding: "24px", maxWidth: "450px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.18)", position: "relative", maxHeight: "90vh", overflowY: "auto" }}>
+            <button onClick={() => setEditingUser(null)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", color: theme.textLight, cursor: "pointer" }}>
               <X size={20} />
             </button>
             <h3 style={{ ...heading("18px"), marginBottom: "20px" }}>Rediger Spiller</h3>
@@ -589,7 +589,7 @@ export function AdminTab() {
               <div style={{
                 fontSize: "12px",
                 color: theme.textMid,
-                background: "#F8FAFC",
+                background: theme.surfaceAlt,
                 border: "1px solid " + theme.border,
                 borderRadius: "10px",
                 padding: "10px 12px"
@@ -666,7 +666,7 @@ export function AdminTab() {
                 />
               </div>
               
-              <div style={{ marginTop: "8px", padding: "12px", background: editingUser.is_banned ? "#FEF2F2" : "#F8FAFC", borderRadius: "10px", border: "1px solid " + (editingUser.is_banned ? "#FCA5A5" : theme.border) }}>
+              <div style={{ marginTop: "8px", padding: "12px", background: editingUser.is_banned ? theme.redBg : theme.surfaceAlt, borderRadius: "10px", border: "1px solid " + (editingUser.is_banned ? "#FCA5A5" : theme.border) }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ fontSize: "13px", fontWeight: 700, color: editingUser.is_banned ? theme.red : theme.text }}>
@@ -692,7 +692,7 @@ export function AdminTab() {
                       value={editingUser.ban_reason || ''} 
                       onChange={(e) => setEditingUser({ ...editingUser, ban_reason: e.target.value })}
                       placeholder="Skriv hvorfor spilleren er udelukket..."
-                      style={{ ...inputStyle, minHeight: "50px", fontSize: "12px", background: "#fff", borderColor: theme.red + "40" }}
+                      style={{ ...inputStyle, minHeight: "50px", fontSize: "12px", background: theme.surface, borderColor: theme.red + "40" }}
                     />
                   </div>
                 )}

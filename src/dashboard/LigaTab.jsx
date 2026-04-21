@@ -968,18 +968,6 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
     finally { setBusyId(null); }
   };
 
-  const deleteLeague = async (league) => {
-    if (!window.confirm(`Slet "${league.name}"? Dette kan ikke fortrydes.`)) return;
-    setBusyId(league.id + '-delete');
-    try {
-      const { error } = await supabase.from('leagues').delete().eq('id', league.id);
-      if (error) throw error;
-      showToast('Liga slettet.');
-      await load();
-    } catch (e) { showToast('Fejl: ' + e.message); }
-    finally { setBusyId(null); }
-  };
-
   const toggleStandings = (id) => setOpenStandings(s => {
     const n = new Set(s);
     if (n.has(id)) n.delete(id);
@@ -1578,10 +1566,6 @@ export function LigaTab({ user, showToast, createOpen: createOpenProp, onCreateO
                         </>
                       );
                     })()}
-                    <button onClick={() => deleteLeague(league)} disabled={busy}
-                      style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', color: '#DC2626', borderColor: '#FCA5A5' }}>
-                      Slet
-                    </button>
                   </div>
                 )}
               </div>
