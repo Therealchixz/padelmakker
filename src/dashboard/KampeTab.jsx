@@ -936,7 +936,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                         </div>
                         {canKick && (
                           <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy}
-                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
+                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
                             ×
                           </button>
                         )}
@@ -983,7 +983,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                         </div>
                         {canKick && (
                           <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy}
-                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: "#DC2626", color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
+                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
                             ×
                           </button>
                         )}
@@ -1016,11 +1016,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const myTeam = t1.some(p => p.user_id === user.id) ? "team1" : t2.some(p => p.user_id === user.id) ? "team2" : null;
           const iWon = mr.confirmed && myTeam === mr.match_winner;
           const iLost = mr.confirmed && myTeam && myTeam !== mr.match_winner;
-          const bgColor = !mr.confirmed ? theme.warmBg : iWon ? theme.greenBg : iLost ? theme.redBg : "#F1F5F9";
-          const borderColor = !mr.confirmed ? theme.warm : iWon ? theme.green : iLost ? theme.red : theme.border;
-          const textColor = !mr.confirmed ? theme.warm : iWon ? theme.green : iLost ? theme.red : theme.textMid;
+          const toneClass = !mr.confirmed
+            ? "pm-feedback-panel--warning"
+            : iWon
+              ? "pm-feedback-panel--success"
+              : iLost
+                ? "pm-feedback-panel--danger"
+                : "pm-feedback-panel--info";
+          const textColor = !mr.confirmed ? theme.warm : iWon ? theme.green : iLost ? theme.red : theme.blue;
           return (
-            <div style={{ padding: "14px", background: bgColor, borderRadius: "8px", marginBottom: "12px", textAlign: "center", border: "1.5px solid " + borderColor + "40" }}>
+            <div className={`pm-feedback-panel ${toneClass}`} style={{ marginBottom: "12px", padding: "14px" }}>
               <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "0.05em", color: textColor }}>{mr.score_display || "—"}</div>
               <div style={{ fontSize: "12px", color: textColor, marginTop: "5px", fontWeight: 600 }}>
                 {!mr.confirmed ? "⏳ Venter på bekræftelse" : iWon ? "🏆 Du vandt!" : iLost ? "😞 Du tabte" : `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt`}
@@ -1058,7 +1063,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             if (myRequest.status === "pending") {
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <div className="pm-card-subpanel pm-card-subpanel--warm" style={{ textAlign: "center", fontSize: "13px", color: "#B45309", fontWeight: 600, padding: "8px" }}>
+                  <div className="pm-feedback-panel pm-feedback-panel--warning" style={{ fontSize: "13px", fontWeight: 600, padding: "8px" }}>
                     ⏳ Anmodning afventer godkendelse
                   </div>
                   <button
@@ -1076,7 +1081,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <button
                   onClick={() => setTeamSelectMatch(m.id)}
                   disabled={busy}
-                  style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: "#16A34A", borderColor: "#16A34A" }}
+                  style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.green, borderColor: theme.green }}
                 >
                   ✅ Godkendt — Vælg hold og tilmeld
                 </button>
@@ -1084,7 +1089,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             }
             if (myRequest.status === "rejected") {
               return (
-                <div className="pm-card-subpanel pm-card-subpanel--red" style={{ textAlign: "center", fontSize: "13px", color: theme.red, fontWeight: 600, padding: "8px" }}>
+                <div className="pm-feedback-panel pm-feedback-panel--danger" style={{ fontSize: "13px", fontWeight: 600, padding: "8px" }}>
                   ❌ Din anmodning er ikke godkendt
                 </div>
               );
@@ -1227,9 +1232,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 width: "100%",
                 justifyContent: "center",
                 fontSize: "13px",
-                background: m.seeking_player ? '#FEF3C7' : theme.surface,
-                color: m.seeking_player ? '#B45309' : theme.textMid,
-                borderColor: m.seeking_player ? '#FCD34D' : theme.border,
+                background: m.seeking_player ? theme.warmBg : theme.surface,
+                color: m.seeking_player ? theme.warm : theme.textMid,
+                borderColor: m.seeking_player ? "var(--pm-warning-border)" : theme.border,
               }}
             >
               <Zap size={14} />

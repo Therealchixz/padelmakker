@@ -740,6 +740,55 @@ button,
   border-color: var(--pm-border);
 }
 
+.pm-feedback-panel {
+  padding: 12px;
+  border-radius: var(--pm-radius-sm);
+  border: 1px solid var(--pm-border);
+  text-align: center;
+}
+
+.pm-feedback-panel--info {
+  background: var(--pm-info-bg);
+  color: var(--pm-info);
+  border-color: color-mix(in srgb, var(--pm-info-border) 72%, var(--pm-border));
+}
+
+.pm-feedback-panel--success {
+  background: var(--pm-success-bg);
+  color: var(--pm-success);
+  border-color: color-mix(in srgb, var(--pm-success-border) 72%, var(--pm-border));
+}
+
+.pm-feedback-panel--warning {
+  background: var(--pm-warning-bg);
+  color: var(--pm-warning);
+  border-color: color-mix(in srgb, var(--pm-warning-border) 72%, var(--pm-border));
+}
+
+.pm-feedback-panel--danger {
+  background: var(--pm-danger-bg);
+  color: var(--pm-danger);
+  border-color: color-mix(in srgb, var(--pm-danger-border) 72%, var(--pm-border));
+}
+
+.pm-feedback-inline-note {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.pm-feedback-inline-note--info {
+  color: var(--pm-info);
+}
+
+.pm-feedback-inline-note--warning {
+  color: var(--pm-warning);
+}
+
+.pm-feedback-inline-note--danger {
+  color: var(--pm-danger);
+}
+
 .pm-card-primary-cta {
   min-height: var(--pm-control-h);
   justify-content: center;

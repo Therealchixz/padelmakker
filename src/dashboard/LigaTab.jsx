@@ -377,7 +377,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
         <div style={{ marginTop: '12px' }}>
           {/* Legend */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '12px' }}>
-            {[['win', 'Vinder', '#16A34A', false], ['lose', 'Taber', '#EF4444', false], ['pending', 'Afventer', '#CBD5E1', true]].map(([kind, label, color, dashed]) => (
+            {[['win', 'Vinder', theme.green, false], ['lose', 'Taber', theme.red, false], ['pending', 'Afventer', theme.border, true]].map(([kind, label, color, dashed]) => (
               <div key={kind} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: theme.textMid }}>
                 <svg width="18" height="8" style={{ flexShrink: 0 }}>
                   <line x1="0" y1="4" x2="18" y2="4" stroke={color} strokeWidth="2"
@@ -432,7 +432,7 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
                   {orderedConnectors.map((c, i) => {
                     const dim = highlightTeam && c.tid !== highlightTeam;
                     const isHi = highlightTeam === c.tid;
-                    const stroke = c.kind === 'win' ? '#16A34A' : c.kind === 'lose' ? '#EF4444' : '#CBD5E1';
+                    const stroke = c.kind === 'win' ? theme.green : c.kind === 'lose' ? theme.red : theme.border;
                     return (
                       <g key={i} style={{ opacity: dim ? 0.1 : 1 }}>
                         <path d={c.path} fill="none" stroke={stroke} strokeWidth={isHi ? 3 : 2}
@@ -1113,7 +1113,7 @@ export function LigaTab({
             const league = leagues.find(l => l.id === invite.league_id);
             const busy = busyId === invite.id + '-accept' || busyId === invite.id + '-decline';
             return (
-              <div key={invite.id} style={{ background: theme.warmBg, borderRadius: theme.radius, padding: '14px 16px', border: '1px solid ' + theme.warm, marginBottom: '8px' }}>
+              <div key={invite.id} className="pm-feedback-panel pm-feedback-panel--warning" style={{ borderRadius: theme.radius, padding: '14px 16px', marginBottom: '8px', textAlign: 'left' }}>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: theme.warm, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                   ⚡ Holdinvitation
                 </div>
@@ -1123,11 +1123,11 @@ export function LigaTab({
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={() => acceptInvite(invite)} disabled={busy}
-                    style={{ ...btn(true), padding: '7px 14px', fontSize: '13px', background: '#16A34A', borderColor: '#16A34A' }}>
+                    style={{ ...btn(true), padding: '7px 14px', fontSize: '13px', background: theme.green, borderColor: theme.green }}>
                     {busyId === invite.id + '-accept' ? 'Accepterer…' : '✓ Acceptér'}
                   </button>
                   <button onClick={() => declineInvite(invite)} disabled={busy}
-                    style={{ ...btn(false), padding: '7px 14px', fontSize: '13px', color: '#DC2626', borderColor: '#FCA5A5' }}>
+                    style={{ ...btn(false), padding: '7px 14px', fontSize: '13px', color: theme.red, borderColor: 'var(--pm-danger-border)' }}>
                     Afvis
                   </button>
                 </div>
@@ -1282,7 +1282,7 @@ export function LigaTab({
                             <span style={{ color: theme.textLight }}>+</span>
                             <AvatarCircle avatar={myTeam.player2_avatar} size={20} emojiSize="10px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
                             {myTeam.player2_name}
-                            {myTeam.status === 'pending' && <span style={{ color: '#92400E', fontSize: '11px' }}>(venter på {myTeam.player2_name})</span>}
+                            {myTeam.status === 'pending' && <span className="pm-feedback-inline-note pm-feedback-inline-note--warning" style={{ fontSize: '11px' }}>(venter på {myTeam.player2_name})</span>}
                           </div>
                         </div>
                         <button onClick={() => leaveLeague(league.id)} disabled={busy} style={{ ...btn(false), padding: '6px 12px', fontSize: '12px' }}>Afmeld hold</button>
@@ -1359,7 +1359,7 @@ export function LigaTab({
                               <button
                                 onClick={() => kickTeam(t)}
                                 disabled={busyId === t.id + '-kick'}
-                                style={{ ...btn(false), padding: '3px 9px', fontSize: '11px', color: '#DC2626', borderColor: '#FCA5A5', flexShrink: 0 }}
+                                style={{ ...btn(false), padding: '3px 9px', fontSize: '11px', color: theme.red, borderColor: 'var(--pm-danger-border)', flexShrink: 0 }}
                               >
                                 Fjern
                               </button>
@@ -1436,7 +1436,7 @@ export function LigaTab({
                               </div>
                               <div style={{ display: 'flex', gap: '8px' }}>
                                 <button onClick={() => reportResult(myMatch, confirmPending.winnerId, confirmPending.score)} disabled={busyId === myMatch.id}
-                                  style={{ ...btn(true), padding: '9px 16px', fontSize: '13px', background: '#16A34A', borderColor: '#16A34A' }}>
+                                  style={{ ...btn(true), padding: '9px 16px', fontSize: '13px', background: theme.green, borderColor: theme.green }}>
                                   {busyId === myMatch.id ? 'Gemmer…' : '✓ Bekræft'}
                                 </button>
                                 <button onClick={() => setConfirmPending(null)} style={{ ...btn(false), padding: '8px 14px', fontSize: '13px' }}>
@@ -1533,7 +1533,7 @@ export function LigaTab({
                         </div>
                         {standings.map((t, i) => {
                           const isMyTeam = myTeam?.id === t.id;
-                          const diffColor = t.gameDiff > 0 ? '#16A34A' : t.gameDiff < 0 ? '#DC2626' : theme.textLight;
+                          const diffColor = t.gameDiff > 0 ? theme.green : t.gameDiff < 0 ? theme.red : theme.textLight;
                           return (
                             <div key={t.id} className={`pm-data-table-row${isMyTeam ? ' pm-data-table-row--highlight' : ''}`}>
                               <div className="pm-data-table-cell" style={{ fontWeight: 700, color: i < 3 ? theme.warm : theme.textLight, textAlign: 'center' }}>
@@ -1556,8 +1556,8 @@ export function LigaTab({
                                 </div>
                               </div>
                               <div className="pm-data-table-cell" style={{ fontSize: '13px', fontWeight: 700, color: theme.accent, textAlign: 'center' }}>{t.points}</div>
-                              <div className="pm-data-table-cell" style={{ fontWeight: 600, color: '#16A34A', textAlign: 'center' }}>{t.wins}</div>
-                              <div className="pm-data-table-cell" style={{ fontWeight: 600, color: '#DC2626', textAlign: 'center' }}>{t.losses}</div>
+                              <div className="pm-data-table-cell" style={{ fontWeight: 600, color: theme.green, textAlign: 'center' }}>{t.wins}</div>
+                              <div className="pm-data-table-cell" style={{ fontWeight: 600, color: theme.red, textAlign: 'center' }}>{t.losses}</div>
                               <div className="pm-data-table-cell" style={{ fontWeight: 600, color: diffColor, textAlign: 'center' }}>{t.gameDiff > 0 ? '+' : ''}{t.gameDiff}</div>
                             </div>
                           );
@@ -1602,7 +1602,7 @@ export function LigaTab({
                   <div style={{ borderTop: '1px solid ' + theme.border, paddingTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {league.status === 'registration' && (
                       <button onClick={() => startLeague(league)} disabled={busy}
-                        style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: '#D97706', borderColor: '#D97706' }}>
+                        style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: theme.warm, borderColor: theme.warm }}>
                         <Play size={13} /> Start liga
                       </button>
                     )}
@@ -1612,7 +1612,7 @@ export function LigaTab({
                         <>
                           <button onClick={() => nextRound(league)} disabled={busy || pendingCount > 0}
                             title={pendingCount > 0 ? `${pendingCount} kamp${pendingCount > 1 ? 'e' : ''} mangler resultat` : ''}
-                            style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: pendingCount > 0 ? '#9CA3AF' : '#D97706', borderColor: pendingCount > 0 ? '#9CA3AF' : '#D97706', opacity: pendingCount > 0 ? 0.7 : 1 }}>
+                            style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: pendingCount > 0 ? theme.textLight : theme.warm, borderColor: pendingCount > 0 ? theme.textLight : theme.warm, opacity: pendingCount > 0 ? 0.7 : 1 }}>
                             ⏭ Næste runde{pendingCount > 0 ? ` (${pendingCount} afventer)` : ''}
                           </button>
                           <button onClick={() => completeLeague(league)} disabled={busy}

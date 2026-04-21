@@ -19,7 +19,7 @@ import { PlayerStatsModal } from '../../components/PlayerStatsModal'
 const font = 'var(--pm-font)'
 
 /** Renderer emoji eller profilbillede-URL korrekt i en cirkel */
-function AvatarInCircle({ av, size = 36, fontSize = 18, bg = '#E2E8F0' }: { av: string; size?: number; fontSize?: number; bg?: string }) {
+function AvatarInCircle({ av, size = 36, fontSize = 18, bg = 'var(--pm-border)' }: { av: string; size?: number; fontSize?: number; bg?: string }) {
   return (
     <div
       style={{
@@ -660,7 +660,7 @@ export function AmericanoTab({
                         </span>
                         <ChevronDown
                           size={18}
-                          color="#64748B"
+                          color={theme.textMid}
                           strokeWidth={2}
                           style={{
                             flexShrink: 0,
@@ -728,7 +728,7 @@ export function AmericanoTab({
                                 >
                                   {label}
                                   {isMe ? (
-                                    <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
+                                    <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
                                   ) : null}
                                 </span>
                               </button>
@@ -780,7 +780,7 @@ export function AmericanoTab({
                                   >
                                     {label}
                                     {isMe ? (
-                                      <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
+                                      <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
                                     ) : null}
                                   </span>
                                 </button>
@@ -794,9 +794,9 @@ export function AmericanoTab({
                                       flexShrink: 0,
                                       padding: '6px 8px',
                                       borderRadius: 8,
-                                      border: '1px solid #FCA5A5',
-                                      background: '#FEF2F2',
-                                      color: '#DC2626',
+                                      border: '1px solid var(--pm-danger-border)',
+                                      background: theme.redBg,
+                                      color: theme.red,
                                       cursor: kickBusy ? 'wait' : 'pointer',
                                       display: 'flex',
                                       alignItems: 'center',
@@ -824,7 +824,7 @@ export function AmericanoTab({
                             <li key={p.id}>
                               {p.display_name}
                               {String(p.user_id) === String(profileId) ? (
-                                <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
+                                <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
                               ) : null}
                             </li>
                           ))}
@@ -867,13 +867,13 @@ export function AmericanoTab({
                   </button>
                 )}
                 {t.status === 'registration' && joined && (
-                  <span style={{ fontSize: 12, color: '#1D4ED8', fontWeight: 600, alignSelf: 'center' }}>Du er tilmeldt</span>
+                  <span className="pm-feedback-inline-note pm-feedback-inline-note--info" style={{ alignSelf: 'center' }}>Du er tilmeldt</span>
                 )}
               </div>
               {canManageTournament && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                   {!tournamentFull && (
-                    <div style={{ fontSize: 12, color: '#B45309', fontWeight: 600 }}>
+                    <div className="pm-feedback-inline-note pm-feedback-inline-note--warning">
                       Vent med at starte: {partCount}/{slotsConfigured} tilmeldt — alle {slotsConfigured} skal være med.
                     </div>
                   )}
@@ -892,9 +892,9 @@ export function AmericanoTab({
                       ...btn(true),
                       fontSize: 13,
                       padding: '8px 14px',
-                      background: tournamentFull ? '#D97706' : '#E5E7EB',
-                      borderColor: tournamentFull ? '#D97706' : '#E5E7EB',
-                      color: tournamentFull ? '#fff' : '#9CA3AF',
+                      background: tournamentFull ? theme.warm : theme.border,
+                      borderColor: tournamentFull ? theme.warm : theme.border,
+                      color: tournamentFull ? '#fff' : theme.textLight,
                       cursor: busyId === t.id ? 'wait' : tournamentFull ? 'pointer' : 'not-allowed',
                     }}
                   >
@@ -935,8 +935,8 @@ export function AmericanoTab({
                             ...btn(false),
                             fontSize: 13,
                             padding: '8px 14px',
-                            borderColor: '#D97706',
-                            color: '#B45309',
+                            borderColor: theme.warm,
+                            color: theme.warm,
                             cursor: busyId === t.id ? 'wait' : 'pointer',
                           }}
                         >
@@ -949,14 +949,14 @@ export function AmericanoTab({
                         disabled={busyId === t.id}
                         onClick={() => deleteTournament(t)}
                         style={{
-                          ...btn(false),
-                          fontSize: 13,
-                          padding: '8px 14px',
-                          border: '1px solid #FCA5A5',
-                          color: '#B91C1C',
-                          cursor: busyId === t.id ? 'wait' : 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
+                            ...btn(false),
+                            fontSize: 13,
+                            padding: '8px 14px',
+                            border: '1px solid var(--pm-danger-border)',
+                            color: theme.red,
+                            cursor: busyId === t.id ? 'wait' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
                           gap: 6,
                         }}
                       >
