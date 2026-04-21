@@ -112,19 +112,22 @@ const SWISS_RULES = [
 function SwissRulesBox({ collapsible = false }) {
   const [open, setOpen] = useState(!collapsible);
   return (
-    <div style={{ background: theme.accentBg, borderRadius: '10px', border: '1px solid ' + theme.border, overflow: 'hidden' }}>
-      <button
-        type="button"
-        onClick={() => collapsible && setOpen(o => !o)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 14px', background: 'none', border: 'none', cursor: collapsible ? 'pointer' : 'default', textAlign: 'left' }}
-      >
-        <span style={{ fontSize: '12px', fontWeight: 700, color: theme.accent }}>ℹ️ Sådan fungerer Swiss-ligaen</span>
-        {collapsible && <span style={{ fontSize: '12px', color: theme.accent }}>{open ? '▲' : '▼'}</span>}
-      </button>
+    <div className="pm-help-box">
+      <div className="pm-help-box-header">
+        <button
+          type="button"
+          onClick={() => collapsible && setOpen(o => !o)}
+          className="pm-help-box-toggle"
+          style={{ cursor: collapsible ? 'pointer' : 'default' }}
+        >
+          <span className="pm-help-box-title">ℹ️ Sådan fungerer Swiss-ligaen</span>
+          {collapsible && <span className="pm-help-box-chevron">{open ? '▲' : '▼'}</span>}
+        </button>
+      </div>
       {open && (
-        <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div className="pm-help-box-content">
           {SWISS_RULES.map((r, i) => (
-            <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '12px', color: theme.textMid, lineHeight: 1.5 }}>
+            <div key={i} className="pm-help-box-item">
               <span style={{ flexShrink: 0 }}>{r.icon}</span>
               <span>{r.text}</span>
             </div>

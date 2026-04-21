@@ -789,6 +789,69 @@ button,
   color: var(--pm-danger);
 }
 
+.pm-help-box {
+  background: var(--pm-info-bg);
+  border: 1px solid color-mix(in srgb, var(--pm-info-border) 72%, var(--pm-border));
+  border-radius: var(--pm-radius-md);
+  padding: 10px 12px;
+}
+
+.pm-help-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pm-help-box-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+
+.pm-help-box-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-info);
+}
+
+.pm-help-box-chevron {
+  font-size: 12px;
+  color: var(--pm-info);
+  flex-shrink: 0;
+}
+
+.pm-help-box-content {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pm-help-box-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 12px;
+  color: var(--pm-text-mid);
+  line-height: 1.5;
+}
+
+.pm-help-box-copy {
+  font-size: 12px;
+  color: var(--pm-text-mid);
+  line-height: 1.55;
+}
+
 .pm-card-primary-cta {
   min-height: var(--pm-control-h);
   justify-content: center;

@@ -461,19 +461,21 @@ export function AmericanoResultsPanel({
       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: c.text, fontFamily: font }}>
         Resultater (ingen ELO)
       </div>
-      <p style={{ fontSize: 11, color: c.muted, margin: '0 0 14px', lineHeight: 1.55, fontFamily: font }}>
-        {isCreator ? (
-          <>
-            <strong style={{ color: '#475569' }}>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
-            <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Uafgjort tæller ikke som V/T på profilen.
-          </>
-        ) : (
-          <>
-            <strong style={{ color: '#475569' }}>Format {P} point:</strong> Her ser du stilling og alle kampe. Kun{' '}
-            <strong>opretteren</strong> kan indtaste og rette resultater.
-          </>
-        )}
-      </p>
+      <div className="pm-help-box" style={{ marginBottom: 14 }}>
+        <div className="pm-help-box-copy" style={{ fontFamily: font }}>
+          {isCreator ? (
+            <>
+              <strong>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
+              <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Uafgjort tæller ikke som V/T på profilen.
+            </>
+          ) : (
+            <>
+              <strong>Format {P} point:</strong> Her ser du stilling og alle kampe. Kun{' '}
+              <strong>opretteren</strong> kan indtaste og rette resultater.
+            </>
+          )}
+        </div>
+      </div>
       <div className="pm-card-subpanel" style={{ padding: '14px 16px', marginBottom: 8, fontFamily: font }}>
         <div style={{ fontWeight: 700, marginBottom: 10, color: c.text, fontSize: 12 }}>Stilling (sum af kampoint)</div>
         <div className="pm-data-table" style={{ ['--pm-table-cols']: '30px 1fr 64px' }}>
