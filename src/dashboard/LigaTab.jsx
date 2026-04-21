@@ -1207,7 +1207,7 @@ export function LigaTab({
                 {league.status === 'completed' && standings.length > 0 && (() => {
                   const w = standings[0];
                   return (
-                    <div style={{ marginBottom: '14px', padding: '14px 16px', background: theme.warmBg, borderRadius: '10px', border: '1.5px solid ' + theme.warm, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="pm-card-subpanel pm-card-subpanel--warm" style={{ marginBottom: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ fontSize: '28px', lineHeight: 1 }}>🏆</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '10px', fontWeight: 700, color: theme.warm, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Vinder</div>
@@ -1264,7 +1264,7 @@ export function LigaTab({
                 {league.status === 'registration' && (
                   <div style={{ marginBottom: '12px' }}>
                     {joined ? (
-                      <div style={{ background: myTeam.status === 'pending' ? theme.warmBg : theme.greenBg, borderRadius: '10px', padding: '12px 14px', border: '1px solid ' + (myTeam.status === 'pending' ? theme.warm : theme.green), display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <div className={`pm-card-subpanel ${myTeam.status === 'pending' ? 'pm-card-subpanel--warm' : 'pm-card-subpanel--green'}`} style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                         <div>
                           <div style={{ fontSize: '13px', fontWeight: 700, color: myTeam.status === 'pending' ? theme.warm : theme.green, marginBottom: '4px' }}>
                             {myTeam.status === 'pending' ? '⏳ Afventer godkendelse' : '✓'} {myTeam.name}
@@ -1281,7 +1281,7 @@ export function LigaTab({
                         <button onClick={() => leaveLeague(league.id)} disabled={busy} style={{ ...btn(false), padding: '6px 12px', fontSize: '12px' }}>Afmeld hold</button>
                       </div>
                     ) : showTeamForm ? (
-                      <div style={{ background: theme.surfaceAlt, borderRadius: '10px', padding: '14px', border: '1px solid ' + theme.border }}>
+                      <div className="pm-card-subpanel" style={{ padding: '14px' }}>
                         <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>Tilmeld hold</div>
                         <label style={labelStyle}>Holdnavn</label>
                         <input
@@ -1293,7 +1293,7 @@ export function LigaTab({
                         <label style={labelStyle}>Din makker</label>
                         <PartnerSearch userId={user.id} onSelect={setSelectedPartner} />
                         {selectedPartner && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', padding: '8px 10px', background: theme.accentBg, borderRadius: '8px' }}>
+                          <div className="pm-card-row-item pm-card-row-item--accent" style={{ marginTop: '8px' }}>
                             <AvatarCircle avatar={selectedPartner.avatar} size={24} emojiSize="12px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
                             <span style={{ fontSize: '13px', fontWeight: 600 }}>{selectedPartner.full_name || selectedPartner.name}</span>
                             <span style={{ fontSize: '11px', color: theme.textLight }}>ELO {Math.round(Number(selectedPartner.elo_rating) || 1000)}</span>
@@ -1330,7 +1330,7 @@ export function LigaTab({
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {regTeams.map(t => (
-                          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', background: t.status === 'pending' ? theme.warmBg : theme.greenBg, border: '1px solid ' + (t.status === 'pending' ? theme.warm : theme.green) }}>
+                          <div key={t.id} className={`pm-card-row-item ${t.status === 'pending' ? 'pm-card-row-item--warm' : 'pm-card-row-item--green'}`}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
                               <div style={{ fontSize: '11px', color: theme.text, display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>
@@ -1346,7 +1346,7 @@ export function LigaTab({
                               </div>
                             </div>
                             {t.status === 'pending' && (
-                              <span style={{ fontSize: '10px', fontWeight: 700, color: theme.warm, background: theme.warmBg, padding: '2px 7px', borderRadius: '10px', flexShrink: 0 }}>Afventer</span>
+                              <span className="pm-status-badge pm-status-badge--warm" style={{ flexShrink: 0 }}>Afventer</span>
                             )}
                             {canManageTeams && (t.player1_id !== user.id && t.player2_id !== user.id) && (
                               <button
@@ -1366,7 +1366,7 @@ export function LigaTab({
 
                 {/* Min kamp denne runde */}
                 {league.status === 'active' && joined && myMatch && (
-                  <div style={{ background: theme.accentBg, borderRadius: '10px', padding: '14px', marginBottom: '12px', border: '1px solid ' + theme.accent + '30' }}>
+                  <div className="pm-card-subpanel pm-card-subpanel--accent" style={{ padding: '14px', marginBottom: '12px' }}>
                     <div style={{ fontSize: '11px', fontWeight: 700, color: theme.accent, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
                       Jeres kamp — runde {league.current_round}
                     </div>

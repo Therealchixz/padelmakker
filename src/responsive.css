@@ -745,6 +745,58 @@ button,
   justify-content: center;
 }
 
+.pm-card-subpanel {
+  background: var(--pm-surface-alt);
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius-md);
+  padding: var(--pm-space-2);
+}
+
+.pm-card-subpanel--accent {
+  background: var(--pm-accent-bg);
+  border-color: color-mix(in srgb, var(--pm-accent) 26%, var(--pm-border));
+}
+
+.pm-card-subpanel--warm {
+  background: var(--pm-warm-bg);
+  border-color: color-mix(in srgb, var(--pm-warm) 26%, var(--pm-border));
+}
+
+.pm-card-subpanel--green {
+  background: var(--pm-green-bg);
+  border-color: color-mix(in srgb, var(--pm-green) 26%, var(--pm-border));
+}
+
+.pm-card-subpanel--red {
+  background: var(--pm-red-bg);
+  border-color: color-mix(in srgb, var(--pm-red) 26%, var(--pm-border));
+}
+
+.pm-card-row-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--pm-radius-sm);
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+}
+
+.pm-card-row-item--accent {
+  background: var(--pm-accent-bg);
+  border-color: color-mix(in srgb, var(--pm-accent) 26%, var(--pm-border));
+}
+
+.pm-card-row-item--warm {
+  background: var(--pm-warm-bg);
+  border-color: color-mix(in srgb, var(--pm-warm) 26%, var(--pm-border));
+}
+
+.pm-card-row-item--green {
+  background: var(--pm-green-bg);
+  border-color: color-mix(in srgb, var(--pm-green) 26%, var(--pm-border));
+}
+
 .pm-ui-card-soft {
   background: var(--pm-surface-alt);
   border: 1px solid var(--pm-border);
@@ -1019,6 +1071,14 @@ button,
 
   .pm-card-primary-cta {
     width: 100%;
+  }
+
+  .pm-card-subpanel {
+    padding: 10px;
+  }
+
+  .pm-card-row-item {
+    padding: 8px 10px;
   }
 
   .pm-kampe-controls-bottom {

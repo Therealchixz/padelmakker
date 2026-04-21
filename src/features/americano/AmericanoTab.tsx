@@ -625,12 +625,10 @@ export function AmericanoTab({
                 }
                 return (
                   <div
+                    className="pm-card-subpanel"
                     style={{
                       marginTop: 12,
                       padding: playingCollapsed && !listOpen ? '8px 12px' : '10px 12px',
-                      background: 'var(--pm-surface-alt)',
-                      borderRadius: 8,
-                      border: '1px solid var(--pm-border)',
                     }}
                   >
                     {playingCollapsed ? (
@@ -654,7 +652,7 @@ export function AmericanoTab({
                           textAlign: 'left',
                         }}
                       >
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#0B1120' }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--pm-text)' }}>
                           Deltagere ({parts.length}/{maxSlots})
                         </span>
                         <ChevronDown
@@ -706,14 +704,8 @@ export function AmericanoTab({
                                 onClick={() =>
                                   setParticipantStatsPick({ userId: p.user_id, name: p.display_name })
                                 }
+                                className="pm-card-row-item"
                                 style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 10,
-                                  padding: '8px 10px',
-                                  borderRadius: 8,
-                                  border: '1px solid var(--pm-border)',
-                                  background: 'var(--pm-surface)',
                                   cursor: 'pointer',
                                   textAlign: 'left',
                                   fontFamily: font,
@@ -764,14 +756,8 @@ export function AmericanoTab({
                                     setParticipantStatsPick({ userId: p.user_id, name: p.display_name })
                                   }
                                   title="Se Americano-statistik"
+                                  className="pm-card-row-item"
                                   style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    padding: '8px 10px',
-                                    borderRadius: 8,
-                                    border: '1px solid var(--pm-border)',
-                                    background: 'var(--pm-surface)',
                                     cursor: 'pointer',
                                     textAlign: 'left',
                                     fontFamily: font,

@@ -917,7 +917,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const t1Avg = avgElo(t1);
           const t2Avg = avgElo(t2);
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", padding: "12px", background: theme.surfaceAlt, borderRadius: "8px" }}>
+            <div className="pm-card-subpanel" style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
               {/* Team 1 */}
               <div style={{ flex: 1, textAlign: "center" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>Hold 1</div>
@@ -1058,7 +1058,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             if (myRequest.status === "pending") {
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <div style={{ textAlign: "center", fontSize: "13px", color: "#B45309", fontWeight: 600, background: "#FEF3C7", borderRadius: "8px", padding: "8px" }}>
+                  <div className="pm-card-subpanel pm-card-subpanel--warm" style={{ textAlign: "center", fontSize: "13px", color: "#B45309", fontWeight: 600, padding: "8px" }}>
                     ⏳ Anmodning afventer godkendelse
                   </div>
                   <button
@@ -1084,7 +1084,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             }
             if (myRequest.status === "rejected") {
               return (
-                <div style={{ textAlign: "center", fontSize: "13px", color: theme.red, fontWeight: 600, background: theme.redBg, borderRadius: "8px", padding: "8px" }}>
+                <div className="pm-card-subpanel pm-card-subpanel--red" style={{ textAlign: "center", fontSize: "13px", color: theme.red, fontWeight: 600, padding: "8px" }}>
                   ❌ Din anmodning er ikke godkendt
                 </div>
               );
@@ -1093,13 +1093,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
           {/* ---- Creator: pending join requests (closed match) ---- */}
           {isCreator && isClosed && pendingRequests.length > 0 && (
-            <div style={{ background: theme.surfaceAlt, borderRadius: "8px", padding: "12px", border: "1px solid " + theme.border }}>
+            <div className="pm-card-subpanel">
               <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
                 🔒 Tilmeldingsanmodninger ({pendingRequests.length})
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {pendingRequests.map(req => (
-                  <div key={req.id} style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "space-between" }}>
+                  <div key={req.id} className="pm-card-row-item" style={{ justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600 }}>
                       <AvatarCircle
                         avatar={profilesById[String(req.user_id)]?.avatar || req.user_emoji || "🎾"}
