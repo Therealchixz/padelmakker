@@ -17,6 +17,7 @@ import { isAvatarUrl } from '../../lib/avatarUpload'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
 
 const font = 'var(--pm-font)'
+const AMERICANO_HELP_STORAGE_KEY = 'pm_americano_help_open_v1'
 
 /** Renderer emoji eller profilbillede-URL korrekt i en cirkel */
 function AvatarInCircle({ av, size = 36, fontSize = 18, bg = 'var(--pm-border)' }: { av: string; size?: number; fontSize?: number; bg?: string }) {
@@ -142,6 +143,23 @@ export function AmericanoTab({
   const [participantStatsPick, setParticipantStatsPick] = useState<{ userId: string; name: string } | null>(
     null
   )
+  const [americanoHelpOpen, setAmericanoHelpOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(AMERICANO_HELP_STORAGE_KEY)
+      if (saved === null) return false
+      return saved === '1' || saved.toLowerCase() === 'true'
+    } catch {
+      return false
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(AMERICANO_HELP_STORAGE_KEY, americanoHelpOpen ? '1' : '0')
+    } catch {
+      // ignore storage issues (private mode, quota, etc.)
+    }
+  }, [americanoHelpOpen])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -567,11 +585,39 @@ export function AmericanoTab({
       )}
 
       <div className="pm-help-box" style={{ marginBottom: 16 }}>
-        <div className="pm-help-box-copy">
-          <strong>Americano bruger ikke ELO.</strong> Kampe tæller kun i separat V/T på profilen (som i apps som Padelboard — turnering og stilling for sig selv).
-          Makkere og modstandere roterer hver runde. Valget 16/24/32 er <strong>spilformat på banen</strong> (typisk først til det tal); når kampen er slut, indtastes den{' '}
-          <strong>slutstilling</strong> der summerer til formatet (fx 10–6 eller 8–8 ved 16 point) — hvert rally tæller ét point til holdet; det andet hold udfyldes automatisk hvis du kun skriver ét tal.
-        </div>
+        <button
+          type="button"
+          onClick={() => setAmericanoHelpOpen((v) => !v)}
+          aria-expanded={americanoHelpOpen}
+          style={{
+            width: '100%',
+            border: 'none',
+            background: 'transparent',
+            padding: 0,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            textAlign: 'left',
+          }}
+        >
+          <span className="pm-help-box-title">Sådan fungerer Americano</span>
+          <span className="pm-help-box-chevron">
+            {americanoHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </span>
+        </button>
+        {americanoHelpOpen ? (
+          <div className="pm-help-box-copy" style={{ marginTop: 8 }}>
+            <strong>Americano bruger ikke ELO.</strong> Kampe tæller kun i separat V/T på profilen (som i apps som Padelboard - turnering og stilling for sig selv).
+            Makkere og modstandere roterer hver runde. Valget 16/24/32 er <strong>spilformat på banen</strong> (typisk først til det tal); når kampen er slut, indtastes den{' '}
+            <strong>slutstilling</strong> der summerer til formatet (fx 10-6 eller 8-8 ved 16 point) - hvert rally tæller ét point til holdet; det andet hold udfyldes automatisk hvis du kun skriver ét tal.
+          </div>
+        ) : (
+          <div className="pm-help-box-copy" style={{ marginTop: 8 }}>
+            Kort fortalt: Americano har roterende makkere/modstandere og separat stilling. Tryk for at se hele forklaringen.
+          </div>
+        )}
       </div>
 
       <PillTabs
