@@ -676,10 +676,91 @@ button,
 }
 
 /* Hjem — hurtige handlinger */
+/* Shared UI */
+.pm-ui-card {
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 12px;
+  box-shadow: var(--pm-shadow);
+}
+
+.pm-ui-card-soft {
+  background: var(--pm-surface-alt);
+  border: 1px solid var(--pm-border);
+  border-radius: 10px;
+}
+
+.pm-ui-card-interactive {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.pm-ui-btn-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface-alt);
+  color: var(--pm-text-mid);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pm-ui-btn-chip-active {
+  border-color: var(--pm-accent);
+  background: var(--pm-accent);
+  color: #fff;
+}
+
 .pm-home-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr));
   gap: 12px;
+}
+
+.pm-home-action-card {
+  width: 100%;
+  padding: clamp(16px, 3.5vw, 20px);
+  text-align: left;
+  font-family: inherit;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.pm-home-action-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--pm-accent-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.pm-home-action-card-title {
+  font-size: clamp(13px, 3.5vw, 14px);
+  font-weight: 700;
+  color: var(--pm-text);
+  letter-spacing: -0.01em;
+  margin-bottom: 3px;
+}
+
+.pm-home-action-card-desc {
+  font-size: 12px;
+  color: var(--pm-text-light);
+}
+
+.pm-kampe-empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--pm-text-light);
 }
 
 /* Makker-kort — knapper */
@@ -703,6 +784,14 @@ button,
 }
 
 /* Baner — filtre */
+@media (hover: hover) and (pointer: fine) {
+  .pm-ui-card-interactive:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--pm-shadow-lg);
+    border-color: color-mix(in srgb, var(--pm-accent) 30%, var(--pm-border));
+  }
+}
+
 .pm-baner-filters {
   display: flex;
   gap: 8px;

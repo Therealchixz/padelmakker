@@ -862,7 +862,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }[status] || { text: status, bg: "#F1F5F9", color: theme.textLight };
 
     return (
-      <div id={"pm-match-" + m.id} key={m.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, scrollMarginTop: "88px" }}>
+      <div id={"pm-match-" + m.id} key={m.id} className="pm-ui-card" style={{ padding: "20px", scrollMarginTop: "88px" }}>
         {/* Header */}
         <div className="pm-kampe-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
           <div className="pm-kampe-card-meta">
@@ -1262,6 +1262,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     );
   };
 
+  const formatTabBtnStyle = (active) => ({
+    ...btn(active),
+    padding: "8px 16px",
+    fontSize: "13px",
+    borderRadius: "999px",
+  });
+
+  const listTabBtnStyle = (active) => ({
+    ...btn(active),
+    padding: "7px 14px",
+    fontSize: "12px",
+    borderRadius: "999px",
+  });
+
   return (
     <div>
       <div className="pm-kampe-head" style={{ marginBottom: "12px", minHeight: "44px" }}>
@@ -1295,7 +1309,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             key={f.id}
             type="button"
             onClick={() => { setKampeFormat(f.id); setShowCreate(false); setShowAmericanoCreate(false); setShowLigaCreate(false); }}
-            style={{ ...btn(kampeFormat === f.id), padding: "8px 16px", fontSize: "13px" }}
+            style={formatTabBtnStyle(kampeFormat === f.id)}
           >
             {f.label}
           </button>
@@ -1393,7 +1407,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           { id: "active", label: `I gang (${activeMatches.length})` },
           { id: "completed", label: `Afsluttede (${completedMatches.length})` },
         ].map((t) => (
-          <button key={t.id} type="button" onClick={() => setViewTab(t.id)} style={{ ...btn(viewTab === t.id), padding: "7px 14px", fontSize: "12px" }}>
+          <button key={t.id} type="button" onClick={() => setViewTab(t.id)} style={listTabBtnStyle(viewTab === t.id)}>
             {t.label}
           </button>
         ))}
@@ -1401,7 +1415,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {/* Create match form */}
       {showCreate && (
-        <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "clamp(16px,3vw,20px)", boxShadow: theme.shadow, marginBottom: "20px", border: "1px solid " + theme.border }}>
+        <div className="pm-ui-card" style={{ padding: "clamp(16px,3vw,20px)", marginBottom: "20px" }}>
           <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px" }}>Opret ny kamp</h3>
           <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px" }}>Din ELO <strong>{myElo}</strong> — du sættes automatisk på Hold 1.</p>
           <div className="pm-form-2col">
@@ -1544,7 +1558,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         )}
 
         {viewTab === "open" && openMatches.length === 0 && (
-          <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}>
+          <div className="pm-ui-card-soft pm-kampe-empty-state">
             <div style={{ fontSize: "32px", marginBottom: "12px" }}>⚔️</div>
             <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen åbne kampe</div>
             <div style={{ fontSize: "13px", lineHeight: 1.5, marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med!</div>
@@ -1554,14 +1568,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
         )}
         {viewTab === "active" && activeMatches.length === 0 && (
-          <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}>
+          <div className="pm-ui-card-soft pm-kampe-empty-state">
             <div style={{ fontSize: "32px", marginBottom: "12px" }}>🎾</div>
             <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen aktive kampe</div>
             <div style={{ fontSize: "13px", lineHeight: 1.5 }}>Tilmeld dig en åben kamp for at komme i gang.</div>
           </div>
         )}
         {viewTab === "completed" && completedMatches.length === 0 && (
-          <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}>
+          <div className="pm-ui-card-soft pm-kampe-empty-state">
             <div style={{ fontSize: "32px", marginBottom: "12px" }}>📊</div>
             <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>Ingen afsluttede kampe endnu</div>
             <div style={{ fontSize: "13px", lineHeight: 1.5 }}>Spil din første kamp og se dit resultat her.</div>

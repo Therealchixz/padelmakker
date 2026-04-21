@@ -345,6 +345,28 @@ export function HomeTab({ user, setTab }) {
     { icon: <Trophy  size={20} color={theme.accent} />, title: "Se ranking",     desc: "Din placering",      tab: "ranking" },
   ];
 
+  const activityRowBaseStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    borderRadius: "10px",
+    padding: "10px 12px",
+    border: "1px solid " + theme.border,
+    boxShadow: "0 1px 4px rgba(2, 6, 23, 0.04)",
+  };
+
+  const activityActionBtnStyle = (tone) => ({
+    ...btn(false),
+    padding: "4px 9px",
+    fontSize: "10px",
+    height: "auto",
+    borderRadius: "999px",
+    borderColor: tone + "55",
+    color: tone,
+    background: theme.surface,
+    flexShrink: 0,
+  });
+
   return (
     <div>
       <h2 style={{ ...heading("clamp(22px,5vw,26px)"), marginBottom: "4px" }}>Hej {firstName}! 👋</h2>
@@ -361,7 +383,7 @@ export function HomeTab({ user, setTab }) {
           { label: "Sejre", value: wins,  color: theme.warm },
           { label: "Win %", value: games > 0 ? Math.round((wins / games) * 100) + "%" : "—", color: theme.accent },
         ].map((s, i) => (
-          <div key={i} style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px 16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, textAlign: "center" }}>
+          <div key={i} className="pm-ui-card" style={{ padding: "18px 16px", textAlign: "center" }}>
             <div style={{ fontSize: "26px", fontWeight: 800, color: s.color, fontFamily: font, letterSpacing: "-0.03em" }}>{s.value}</div>
             <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.label}</div>
           </div>
@@ -403,24 +425,20 @@ export function HomeTab({ user, setTab }) {
               Seneste aktivitet
             </div>
             <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <button onClick={enableAllFilters} style={{
-                padding: "2px 8px", borderRadius: "20px", fontSize: "10px", fontWeight: allActive ? 700 : 500,
-                border: "1px solid " + (allActive ? theme.accent : theme.border),
-                background: allActive ? theme.accent : theme.surfaceAlt,
-                color: allActive ? "#fff" : theme.textMid,
-                cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
-              }}>Alle</button>
+              <button
+                onClick={enableAllFilters}
+                className={allActive ? "pm-ui-btn-chip pm-ui-btn-chip-active" : "pm-ui-btn-chip"}
+              >
+                Alle
+              </button>
               {FEED_FILTERS.map(f => {
                 const on = activeFilters.has(f.id);
                 return (
-                  <button key={f.id} onClick={() => toggleFilter(f.id)} style={{
-                    padding: "2px 8px", borderRadius: "20px", fontSize: "10px", fontWeight: on ? 700 : 500,
-                    border: "1px solid " + (on ? theme.accent : theme.border),
-                    background: on ? theme.accent : theme.surfaceAlt,
-                    color: on ? "#fff" : theme.textMid,
-                    cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
-                    display: "flex", alignItems: "center", gap: "3px",
-                  }}>
+                  <button
+                    key={f.id}
+                    onClick={() => toggleFilter(f.id)}
+                    className={on ? "pm-ui-btn-chip pm-ui-btn-chip-active" : "pm-ui-btn-chip"}
+                  >
                     <span>{f.icon}</span>{f.label}
                   </button>
                 );
@@ -439,10 +457,8 @@ export function HomeTab({ user, setTab }) {
                     <div
                       key={`am-${i}`}
                       style={{
-                        display: "flex", alignItems: "center", gap: "10px",
+                        ...activityRowBaseStyle,
                         background: theme.warmBg,
-                        borderRadius: "8px", padding: "8px 12px",
-                        border: "1px solid " + theme.border,
                         position: "relative"
                       }}
                     >
@@ -474,7 +490,7 @@ export function HomeTab({ user, setTab }) {
                       </div>
                       <button 
                         onClick={() => setViewTournament(row)}
-                        style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.warm, color: theme.warm }}
+                        style={activityActionBtnStyle(theme.warm)}
                       >
                         Se resultat
                       </button>
@@ -485,7 +501,7 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'liga_completed') {
                   const c = row.champion;
                   return (
-                    <div key={`liga-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
+                    <div key={`liga-${i}`} style={{ ...activityRowBaseStyle, background: theme.blueBg }}>
                       {/* Overlapping avatars for winning team */}
                       <div style={{ display: "flex", position: "relative", width: "46px", height: "34px", flexShrink: 0 }}>
                         <AvatarCircle avatar={c.player1_avatar} size={30} emojiSize="15px" style={{ background: theme.accentBg, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
@@ -499,7 +515,7 @@ export function HomeTab({ user, setTab }) {
                           &ldquo;{row.leagueName}&rdquo; · {formatTimeAgo(row.created_at)}
                         </div>
                       </div>
-                      <button onClick={() => setViewLeague(row)} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.blue, color: theme.accent, flexShrink: 0 }}>
+                      <button onClick={() => setViewLeague(row)} style={activityActionBtnStyle(theme.accent)}>
                         Se resultat
                       </button>
                     </div>
@@ -509,7 +525,7 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'open_match') {
                   const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                   return (
-                    <div key={`open-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.greenBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
+                    <div key={`open-${i}`} style={{ ...activityRowBaseStyle, background: theme.greenBg }}>
                       <div onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })} style={{ cursor: "pointer" }}>
                         <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: theme.greenBg, border: "1px solid " + theme.border }} />
                       </div>
@@ -519,7 +535,7 @@ export function HomeTab({ user, setTab }) {
                         </div>
                         <div style={{ fontSize: "11px", color: theme.green, marginTop: "1px" }}>{dateStr} · {row.court}</div>
                       </div>
-                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'open' }); setTab('kampe'); }} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.green, color: theme.green, flexShrink: 0 }}>Se kamp</button>
+                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'open' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.green)}>Se kamp</button>
                     </div>
                   );
                 }
@@ -527,7 +543,7 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'americano_registration') {
                   const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                   return (
-                    <div key={`amreg-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.warmBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
+                    <div key={`amreg-${i}`} style={{ ...activityRowBaseStyle, background: theme.warmBg }}>
                       <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.warmBg, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>
@@ -535,14 +551,14 @@ export function HomeTab({ user, setTab }) {
                           Americano · {dateStr}{row.time ? ` · ${row.time}` : ''} · {row.participants}/{row.slots} tilmeldt
                         </div>
                       </div>
-                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.warm, color: theme.warm, flexShrink: 0 }}>Tilmeld</button>
+                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.warm)}>Tilmeld</button>
                     </div>
                   );
                 }
 
                 if (row.type === 'elo_milestone') {
                   return (
-                    <div key={`milestone-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.purpleBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
+                    <div key={`milestone-${i}`} style={{ ...activityRowBaseStyle, background: theme.purpleBg }}>
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
                         <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.purpleBg, border: "1px solid " + theme.border }} />
                       </div>
@@ -560,7 +576,7 @@ export function HomeTab({ user, setTab }) {
                   const levelStr = row.level ? levelLabel(row.level) : null;
                   const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                   return (
-                    <div key={`seek-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
+                    <div key={`seek-${i}`} style={{ ...activityRowBaseStyle, background: theme.blueBg }}>
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
                         <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.accentBg, border: "1px solid " + theme.border }} />
                       </div>
@@ -570,7 +586,7 @@ export function HomeTab({ user, setTab }) {
                         </div>
                         {sub && <div style={{ fontSize: "11px", color: theme.blue, marginTop: "1px" }}>{sub}</div>}
                       </div>
-                      <button onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.blue, color: theme.blue, flexShrink: 0 }}>Se profil</button>
+                      <button onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={activityActionBtnStyle(theme.blue)}>Se profil</button>
                     </div>
                   );
                 }
@@ -578,7 +594,7 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'league_new') {
                   const isReg = row.status === 'registration';
                   return (
-                    <div key={`lnew-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.blueBg, borderRadius: "8px", padding: "8px 12px", border: "1px solid " + theme.border }}>
+                    <div key={`lnew-${i}`} style={{ ...activityRowBaseStyle, background: theme.blueBg }}>
                       <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.accentBg, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.leagueName}</div>
@@ -586,7 +602,7 @@ export function HomeTab({ user, setTab }) {
                           Liga · {isReg ? 'Tilmelding åben' : 'I gang'} · {row.teamCount} hold · {formatTimeAgo(row.created_at)}
                         </div>
                       </div>
-                      <button onClick={() => setTab('liga')} style={{ ...btn(false), padding: "4px 8px", fontSize: "10px", height: "auto", borderColor: theme.blue, color: theme.accent, flexShrink: 0 }}>
+                      <button onClick={() => setTab('liga')} style={activityActionBtnStyle(theme.accent)}>
                         {isReg ? 'Tilmeld' : 'Se liga'}
                       </button>
                     </div>
@@ -597,7 +613,7 @@ export function HomeTab({ user, setTab }) {
                   const winners = row.players.filter(p => p.win);
                   const losers = row.players.filter(p => !p.win);
                   return (
-                    <div key={`match-${i}`} style={{ background: theme.surface, borderRadius: "10px", padding: "8px 14px", border: "1px solid " + theme.border, boxShadow: "0 2px 8px rgba(0,0,0,0.03)", position: "relative", overflow: "hidden" }}>
+                    <div key={`match-${i}`} className="pm-ui-card" style={{ padding: "8px 14px", position: "relative", overflow: "hidden" }}>
                       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: theme.green }} />
                       <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "3px", background: theme.red }} />
                       {/* Venue Header - Centered */}
@@ -660,7 +676,7 @@ export function HomeTab({ user, setTab }) {
                 const won = row.result === "win";
                 const change = Number(row.change) || 0;
                 return (
-                  <div key={`elo-${i}`} style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.surface, borderRadius: "8px", padding: "9px 12px", border: "1px solid " + theme.border }}>
+                  <div key={`elo-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface }}>
                     <AvatarCircle
                       avatar={avatar}
                       size={40}
@@ -683,12 +699,16 @@ export function HomeTab({ user, setTab }) {
       {/* Quick actions */}
       <div className="pm-home-grid">
         {actions.map((a, i) => (
-          <button key={i} onClick={() => setTab(a.tab)} style={{ background: theme.surface, borderRadius: theme.radius, padding: "clamp(16px,3.5vw,20px)", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font, display: "flex", flexDirection: "column", transition: "box-shadow 0.15s" }}>
-            <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: theme.accentBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "12px" }}>
+          <button
+            key={i}
+            onClick={() => setTab(a.tab)}
+            className="pm-ui-card pm-ui-card-interactive pm-home-action-card"
+          >
+            <div className="pm-home-action-card-icon">
               {a.icon}
             </div>
-            <div style={{ fontSize: "clamp(13px,3.5vw,14px)", fontWeight: 700, color: theme.text, letterSpacing: "-0.01em", marginBottom: "3px" }}>{a.title}</div>
-            <div style={{ fontSize: "12px", color: theme.textLight }}>{a.desc}</div>
+            <div className="pm-home-action-card-title">{a.title}</div>
+            <div className="pm-home-action-card-desc">{a.desc}</div>
           </button>
         ))}
       </div>
