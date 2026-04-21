@@ -15,6 +15,41 @@ import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avata
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
 
+const PROFILE_OVERVIEW_MODE_PREFIX = "pm-profile-overview-mode:";
+const PROFILE_OVERVIEW_MODES = new Set(["2v2", "americano", "liga"]);
+
+function readProfileOverviewMode(userId) {
+  if (typeof localStorage === "undefined" || !userId) return null;
+  try {
+    const raw = localStorage.getItem(PROFILE_OVERVIEW_MODE_PREFIX + String(userId));
+    if (!raw || !PROFILE_OVERVIEW_MODES.has(raw)) return null;
+    return raw;
+  } catch {
+    return null;
+  }
+}
+
+function writeProfileOverviewMode(userId, mode) {
+  if (typeof localStorage === "undefined" || !userId || !PROFILE_OVERVIEW_MODES.has(mode)) return;
+  try {
+    localStorage.setItem(PROFILE_OVERVIEW_MODE_PREFIX + String(userId), mode);
+  } catch {
+    // Ignore storage issues in private mode / quota exceeded.
+  }
+}
+
+function formatUpdatedAtDa(value) {
+  if (!value) return "ukendt";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "ukendt";
+  return date.toLocaleString("da-DK", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   const { updateProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
@@ -85,6 +120,11 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
     losses: 0,
     draws: 0,
   });
+  const [overviewLastUpdated, setOverviewLastUpdated] = useState({
+    "2v2": null,
+    americano: null,
+    liga: null,
+  });
   const overviewRef = useRef(null);
   const performanceRef = useRef(null);
   const relationsRef = useRef(null);
@@ -101,8 +141,41 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
 
   useEffect(() => {
     if (!user?.id) {
+      setOverviewMode("2v2");
+      return;
+    }
+    const persistedMode = readProfileOverviewMode(user.id);
+    setOverviewMode(persistedMode || "2v2");
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    writeProfileOverviewMode(user.id, overviewMode);
+  }, [user?.id, overviewMode]);
+
+  useEffect(() => {
+    if (statsLoading || !user?.id) return;
+    const now = new Date();
+    setOverviewLastUpdated((prev) => ({
+      ...prev,
+      "2v2": now,
+      americano: now,
+    }));
+  }, [
+    statsLoading,
+    user?.id,
+    eloSyncKey,
+    user?.americano_played,
+    user?.americano_wins,
+    user?.americano_draws,
+    user?.americano_losses,
+  ]);
+
+  useEffect(() => {
+    if (!user?.id) {
       setLigaStats({ leagues: 0, matches: 0, wins: 0, losses: 0, draws: 0 });
       setLigaLoading(false);
+      setOverviewLastUpdated((prev) => ({ ...prev, liga: null }));
       return;
     }
 
@@ -186,7 +259,10 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
           setLigaStats({ leagues: 0, matches: 0, wins: 0, losses: 0, draws: 0 });
         }
       } finally {
-        if (!cancelled) setLigaLoading(false);
+        if (!cancelled) {
+          setLigaLoading(false);
+          setOverviewLastUpdated((prev) => ({ ...prev, liga: new Date() }));
+        }
       }
     })();
 
@@ -278,6 +354,13 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
       : overviewMode === "liga"
         ? ligaOverviewCards
         : twoVTwoOverviewCards;
+  const activeOverviewSource =
+    overviewMode === "americano"
+      ? "Datakilde: Americano-turneringer"
+      : overviewMode === "liga"
+        ? "Datakilde: Liga-hold og rapporterede ligakampe"
+        : "Datakilde: 2v2 kamphistorik";
+  const activeOverviewUpdatedAt = formatUpdatedAtDa(overviewLastUpdated[overviewMode]);
   const jumpToSection = (ref) => {
     if (!ref?.current) return;
     ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -410,6 +493,9 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
                   ? "Viser kun Liga-data"
                   : "Viser kun 2v2-data"}
             </span>
+          </div>
+          <div style={{ fontSize: "10px", color: theme.textLight, marginBottom: "10px" }}>
+            {activeOverviewSource} · Sidst opdateret: {activeOverviewUpdatedAt}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px", marginBottom: "20px" }}>
             {activeOverviewCards.map((s, i) => (
