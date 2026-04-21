@@ -690,7 +690,7 @@ button,
     cursor: pointer;
     padding: 8px;
     border-radius: 8px;
-    color: #374151;
+    color: var(--pm-text-mid);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
@@ -703,10 +703,10 @@ button,
     left: 0;
     right: 0;
     z-index: 48;
-    background: rgba(255, 255, 255, 0.97);
+    background: var(--pm-surface);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--pm-border);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
     padding: 6px 8px 10px;
     /* top = nav inner-top-pad + brand-row + gap + cta-row + inner-bottom-pad */
