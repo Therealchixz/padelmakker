@@ -680,6 +680,7 @@ export function LigaTab({
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [openStandings, setOpenStandings] = useState(new Set());
+  const [openManageTools, setOpenManageTools] = useState({});
 
   // Create league form (admin) — controlled by parent if props provided
   const [createOpenLocal, setCreateOpenLocal] = useState(false);
@@ -987,6 +988,7 @@ export function LigaTab({
     else n.add(id);
     return n;
   });
+  const toggleManageTools = (id) => setOpenManageTools((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const visibleLeagues = leagues.filter(l => {
     if (l.status !== view) return false;
@@ -1198,6 +1200,10 @@ export function LigaTab({
             const showTeamForm = teamFormLeagueId === league.id;
             const isCreator = league.created_by === user.id;
             const canManageTeams = isAdmin || isCreator;
+            const manageToolsOpen = !!openManageTools[league.id];
+            const showManageToolsToggle =
+              (canManageTeams && league.status === 'registration') ||
+              (isAdmin && league.status === 'active');
             const regTeamCount = (allTeamsByLeague[league.id] || []).length;
             const isFull = league.max_teams && regTeamCount >= league.max_teams;
 
@@ -1349,7 +1355,7 @@ export function LigaTab({
                             {t.status === 'pending' && (
                               <span className="pm-status-badge pm-status-badge--warm" style={{ flexShrink: 0 }}>Afventer</span>
                             )}
-                            {canManageTeams && (t.player1_id !== user.id && t.player2_id !== user.id) && (
+                            {canManageTeams && manageToolsOpen && (t.player1_id !== user.id && t.player2_id !== user.id) && (
                               <button
                                 onClick={() => kickTeam(t)}
                                 disabled={busyId === t.id + '-kick'}
@@ -1572,8 +1578,19 @@ export function LigaTab({
                   />
                 )}
 
+                {showManageToolsToggle && (
+                  <button
+                    onClick={() => toggleManageTools(league.id)}
+                    className="pm-accordion-trigger"
+                    style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', marginBottom: '10px' }}
+                  >
+                    <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
+                    {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                )}
+
                 {/* Admin-panel */}
-                {isAdmin && (
+                {isAdmin && manageToolsOpen && (
                   <div style={{ borderTop: '1px solid ' + theme.border, paddingTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {league.status === 'registration' && (
                       <button onClick={() => startLeague(league)} disabled={busy}

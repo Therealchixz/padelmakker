@@ -136,6 +136,7 @@ export function AmericanoTab({
   >({})
   /** Under "I gang": deltagerlisten er sammenklappet som standard for at spare plads */
   const [playingParticipantsOpen, setPlayingParticipantsOpen] = useState<Set<string>>(() => new Set())
+  const [openManageTools, setOpenManageTools] = useState<Set<string>>(() => new Set())
   const [participantSnippets, setParticipantSnippets] = useState<Record<string, ProfileSnippet>>({})
   const [participantStatsPick, setParticipantStatsPick] = useState<{ userId: string; name: string } | null>(
     null
@@ -585,6 +586,8 @@ export function AmericanoTab({
             const partCount = (participantsByTournament[t.id] || []).length
             const slotsConfigured = Number(t.player_slots)
             const tournamentFull = partCount === slotsConfigured
+            const canManageTournament = (isCreator || isAdmin) && t.status === 'registration'
+            const manageToolsOpen = openManageTools.has(t.id)
             const statusMeta =
               t.status === 'registration'
                 ? { label: 'Tilmelding åben', tone: 'warm' }
@@ -781,7 +784,7 @@ export function AmericanoTab({
                                     ) : null}
                                   </span>
                                 </button>
-                                {(isCreator || isAdmin) && !isMe && (
+                                {canManageTournament && manageToolsOpen && !isMe && (
                                   <button
                                     type="button"
                                     onClick={() => kickParticipant(t.id, p.id)}
@@ -867,7 +870,7 @@ export function AmericanoTab({
                   <span style={{ fontSize: 12, color: '#1D4ED8', fontWeight: 600, alignSelf: 'center' }}>Du er tilmeldt</span>
                 )}
               </div>
-              {(isCreator || isAdmin) && t.status === 'registration' && (
+              {canManageTournament && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                   {!tournamentFull && (
                     <div style={{ fontSize: 12, color: '#B45309', fontWeight: 600 }}>
@@ -897,47 +900,68 @@ export function AmericanoTab({
                   >
                     {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
                   </button>
-                  {isAdmin && !tournamentFull && partCount >= 5 && (
-                    <button
-                      type="button"
-                      disabled={busyId === t.id}
-                      onClick={() => startTournament(t, true)}
-                      className="pm-card-primary-cta"
-                      style={{
-                        ...btn(true),
-                        fontSize: 13,
-                        padding: '8px 14px',
-                        background: '#D97706',
-                        borderColor: '#D97706',
-                        color: '#fff',
-                        cursor: busyId === t.id ? 'wait' : 'pointer',
-                      }}
-                    >
-                      ⚡ Gennemtving start (Admin)
-                    </button>
-                  )}
-                  {isCreator && (
+                  </div>
                   <button
                     type="button"
-                    disabled={busyId === t.id}
-                    onClick={() => deleteTournament(t)}
-                    style={{
-                      ...btn(false),
-                      fontSize: 13,
-                      padding: '8px 14px',
-                      border: '1px solid #FCA5A5',
-                      color: '#B91C1C',
-                      cursor: busyId === t.id ? 'wait' : 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
+                    onClick={() =>
+                      setOpenManageTools((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(t.id)) next.delete(t.id)
+                        else next.add(t.id)
+                        return next
+                      })
+                    }
+                    className="pm-accordion-trigger"
+                    style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}
                   >
-                    <Trash2 size={14} aria-hidden />
-                    Slet turnering
+                    <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
+                    <ChevronDown
+                      size={14}
+                      style={{ transform: manageToolsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.18s ease' }}
+                    />
                   </button>
+                  {manageToolsOpen && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                      {isAdmin && !tournamentFull && partCount >= 5 && (
+                        <button
+                          type="button"
+                          disabled={busyId === t.id}
+                          onClick={() => startTournament(t, true)}
+                          style={{
+                            ...btn(false),
+                            fontSize: 13,
+                            padding: '8px 14px',
+                            borderColor: '#D97706',
+                            color: '#B45309',
+                            cursor: busyId === t.id ? 'wait' : 'pointer',
+                          }}
+                        >
+                          ⚡ Gennemtving start (Admin)
+                        </button>
+                      )}
+                      {isCreator && (
+                      <button
+                        type="button"
+                        disabled={busyId === t.id}
+                        onClick={() => deleteTournament(t)}
+                        style={{
+                          ...btn(false),
+                          fontSize: 13,
+                          padding: '8px 14px',
+                          border: '1px solid #FCA5A5',
+                          color: '#B91C1C',
+                          cursor: busyId === t.id ? 'wait' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <Trash2 size={14} aria-hidden />
+                        Slet turnering
+                      </button>
+                      )}
+                    </div>
                   )}
-                  </div>
                 </div>
               )}
               {joined && t.status === 'playing' && (
