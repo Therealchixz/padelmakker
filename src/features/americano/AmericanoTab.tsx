@@ -10,6 +10,7 @@ import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578
 import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
+import { PillTabs } from '../../components/PillTabs'
 
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
@@ -495,18 +496,11 @@ export function AmericanoTab({
         ? playingAmericanosFiltered
         : completedAmericanosFiltered
 
-  const subTabBtn = (active: boolean) =>
-    ({
-      fontFamily: font,
-      fontSize: 12,
-      fontWeight: 600,
-      padding: '7px 14px',
-      borderRadius: 8,
-      border: active ? 'none' : '1px solid var(--pm-border)',
-      background: active ? 'var(--pm-accent)' : 'var(--pm-surface)',
-      color: active ? '#fff' : 'var(--pm-text-mid)',
-      cursor: 'pointer',
-    }) as const
+  const americanoSubTabs = [
+    { id: 'open' as const, label: `Åbne (${openAmericanos.length})` },
+    { id: 'playing' as const, label: `I gang (${playingAmericanosFiltered.length})` },
+    { id: 'completed' as const, label: `Afsluttede (${completedAmericanosFiltered.length})` },
+  ]
 
   return (
     <div style={{ fontFamily: font }}>
@@ -566,25 +560,18 @@ export function AmericanoTab({
         <strong>slutstilling</strong> der summerer til formatet (fx 10–6 eller 8–8 ved 16 point) — hvert rally tæller ét point til holdet; det andet hold udfyldes automatisk hvis du kun skriver ét tal.
       </p>
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-        {[
-          { id: 'open' as const, label: `Åbne (${openAmericanos.length})` },
-          { id: 'playing' as const, label: `I gang (${playingAmericanosFiltered.length})` },
-          { id: 'completed' as const, label: `Afsluttede (${completedAmericanosFiltered.length})` },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => {
-              setAmericanoView(tab.id)
-              onAmericanoSubTabChange?.(tab.id)
-            }}
-            style={subTabBtn(americanoView === tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <PillTabs
+        tabs={americanoSubTabs}
+        value={americanoView}
+        onChange={(nextTab) => {
+          const nextView = nextTab as AmericanoSubTab
+          setAmericanoView(nextView)
+          onAmericanoSubTabChange?.(nextView)
+        }}
+        ariaLabel="Americano status"
+        size="sm"
+        style={{ marginBottom: 16 }}
+      />
 
       {rows.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--pm-text-light)', fontSize: 14 }}>

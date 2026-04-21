@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { theme, btn, inputStyle, labelStyle, tag } from '../lib/platformTheme';
 import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { PillTabs } from '../components/PillTabs';
+import { ScopeSearchControls } from '../components/ScopeSearchControls';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
 
@@ -998,6 +1000,20 @@ export function LigaTab({
     }
     return true;
   });
+  const leagueScopeTabs = [
+    { id: 'alle', label: 'Alle ligaer' },
+    { id: 'mine', label: 'Mine ligaer' },
+  ];
+  const leagueStatusCount = {
+    registration: leagues.filter(l => l.status === 'registration').length,
+    active: leagues.filter(l => l.status === 'active').length,
+    completed: leagues.filter(l => l.status === 'completed').length,
+  };
+  const leagueStatusTabs = [
+    { id: 'registration', label: `Tilmelding${leagueStatusCount.registration > 0 ? ` (${leagueStatusCount.registration})` : ''}` },
+    { id: 'active', label: `Aktiv sæson${leagueStatusCount.active > 0 ? ` (${leagueStatusCount.active})` : ''}` },
+    { id: 'completed', label: `Afsluttede${leagueStatusCount.completed > 0 ? ` (${leagueStatusCount.completed})` : ''}` },
+  ];
 
   return (
     <div>
@@ -1011,33 +1027,24 @@ export function LigaTab({
 
       {!embedInKampe && (
         <>
-      {/* Scope selector: Mine / Alle */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-        {[
-          { id: 'alle', label: 'Alle ligaer' },
-          { id: 'mine', label: 'Mine ligaer' },
-        ].map(t => (
-          <button key={t.id} onClick={() => { setScope(t.id); setSearch(''); }} style={{
-            ...btn(scope === t.id),
-            padding: '8px 16px',
-            fontSize: '13px',
-          }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Search */}
-      <div style={{ position: 'relative', marginBottom: '12px' }}>
-        <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: theme.textLight }} />
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Søg liga…"
-          style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '8px', border: '1px solid ' + theme.border, fontSize: '13px', fontFamily: 'inherit', background: theme.surface, outline: 'none', boxSizing: 'border-box' }}
-        />
-      </div>
+          <ScopeSearchControls
+            tabs={leagueScopeTabs}
+            value={scope}
+            onTabChange={(nextScope) => {
+              setScope(nextScope);
+              setSearch('');
+            }}
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Søg liga..."
+            tabAriaLabel="Liga scope"
+            className="pm-kampe-controls-bottom"
+            tabsClassName="pm-kampe-segment"
+            searchWrapClassName="pm-kampe-search-wrap"
+            searchInputClassName="pm-kampe-search-input"
+            searchIconClassName="pm-kampe-search-icon"
+            style={{ marginBottom: '12px' }}
+          />
 
         </>
       )}
@@ -1121,20 +1128,14 @@ export function LigaTab({
       )}
 
       {/* Sub-tabs */}
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        {[
-          { id: 'registration', label: 'Tilmelding' },
-          { id: 'active',       label: 'Aktiv sæson' },
-          { id: 'completed',    label: 'Afsluttede' },
-        ].map(v => {
-          const count = leagues.filter(l => l.status === v.id).length;
-          return (
-            <button key={v.id} onClick={() => setView(v.id)} style={{ ...btn(view === v.id), padding: '7px 14px', fontSize: '12px' }}>
-              {v.label}{count > 0 ? ` (${count})` : ''}
-            </button>
-          );
-        })}
-      </div>
+      <PillTabs
+        tabs={leagueStatusTabs}
+        value={view}
+        onChange={(nextView) => setView(nextView)}
+        ariaLabel="Liga status"
+        size="sm"
+        style={{ marginBottom: '16px' }}
+      />
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>Indlæser…</div>

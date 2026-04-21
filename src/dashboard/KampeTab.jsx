@@ -15,11 +15,13 @@ import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, f
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
-import { Clock, MapPin, Plus, UserMinus, Trash2, Search, Zap } from 'lucide-react';
+import { Clock, MapPin, Plus, UserMinus, Trash2, Zap } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { PillTabs } from '../components/PillTabs';
+import { ScopeSearchControls } from '../components/ScopeSearchControls';
 import {
   getMatchVenueOptions,
   courtIdFromVenueSelection,
@@ -1262,23 +1264,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     );
   };
 
-  const segmentBtnStyle = (active) => ({
-    ...btn(false),
-    padding: "8px 14px",
-    fontSize: "13px",
-    borderRadius: "999px",
-    background: active ? theme.accent : theme.surfaceAlt,
-    color: active ? "#fff" : theme.textMid,
-    borderColor: active ? theme.accent : theme.border,
-    boxShadow: active ? "0 2px 8px rgba(29, 78, 216, 0.28)" : "none",
-    fontWeight: active ? 700 : 600,
-  });
-
-  const listTabBtnStyle = (active) => ({
-    ...segmentBtnStyle(active),
-    padding: "7px 14px",
-    fontSize: "12px",
-  });
+  const formatTabs = [
+    { id: "padel", label: "2v2-kampe" },
+    { id: "americano", label: "Americano" },
+    { id: "liga", label: "Liga" },
+  ];
   const scopeTabs = kampeFormat === "liga"
     ? [
         { id: "alle", label: "Alle ligaer" },
@@ -1291,6 +1281,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const searchPlaceholder = kampeFormat === "liga"
     ? "Søg liga..."
     : "Søg spiller, bane eller beskrivelse...";
+  const padelViewTabs = [
+    { id: "open", label: `Åbne (${openMatches.length})` },
+    { id: "active", label: `I gang (${activeMatches.length})` },
+    { id: "completed", label: `Afsluttede (${completedMatches.length})` },
+  ];
   const onScopeChange = (nextScope) => {
     setKampeScope(nextScope);
     mergeKampeSessionPrefs(user.id, { scope: nextScope });
@@ -1305,29 +1300,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       <div className="pm-ui-card pm-kampe-controls" style={{ marginBottom: "18px" }}>
         <div className="pm-kampe-controls-top">
-          <div className="pm-kampe-segment" role="tablist" aria-label="Kampe format">
-            {[
-              { id: "padel", label: "2v2-kampe" },
-              { id: "americano", label: "Americano" },
-              { id: "liga", label: "Liga" },
-            ].map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                role="tab"
-                aria-selected={kampeFormat === f.id}
-                onClick={() => {
-                  setKampeFormat(f.id);
-                  setShowCreate(false);
-                  setShowAmericanoCreate(false);
-                  setShowLigaCreate(false);
-                }}
-                style={segmentBtnStyle(kampeFormat === f.id)}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+          <PillTabs
+            tabs={formatTabs}
+            value={kampeFormat}
+            onChange={(nextFormat) => {
+              setKampeFormat(nextFormat);
+              setShowCreate(false);
+              setShowAmericanoCreate(false);
+              setShowLigaCreate(false);
+            }}
+            ariaLabel="Kampe format"
+            className="pm-kampe-segment"
+          />
 
           <div className="pm-kampe-controls-action">
             {!loadingMatches && kampeFormat === "padel" && (
@@ -1350,33 +1334,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
         <>
           <div className="pm-kampe-controls-divider" />
-          <div className="pm-kampe-controls-bottom">
-            <div className="pm-kampe-segment" role="tablist" aria-label={kampeFormat === "liga" ? "Liga scope" : "Kampe scope"}>
-              {scopeTabs.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={kampeScope === t.id}
-                  onClick={() => onScopeChange(t.id)}
-                  style={segmentBtnStyle(kampeScope === t.id)}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="pm-kampe-search-wrap">
-              <Search size={16} className="pm-kampe-search-icon" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={searchPlaceholder}
-                className="pm-kampe-search-input"
-              />
-            </div>
-          </div>
+          <ScopeSearchControls
+            tabs={scopeTabs}
+            value={kampeScope}
+            onTabChange={onScopeChange}
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder={searchPlaceholder}
+            tabAriaLabel={kampeFormat === "liga" ? "Liga scope" : "Kampe scope"}
+            className="pm-kampe-controls-bottom"
+            tabsClassName="pm-kampe-segment"
+            searchWrapClassName="pm-kampe-search-wrap"
+            searchInputClassName="pm-kampe-search-input"
+            searchIconClassName="pm-kampe-search-icon"
+          />
         </>
       </div>
       {kampeFormat === "liga" && (
@@ -1421,17 +1392,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {kampeFormat === "padel" && (
       <>
-      <div style={{ display: "flex", gap: "6px", marginBottom: "16px", flexWrap: "wrap" }}>
-        {[
-          { id: "open", label: `Åbne (${openMatches.length})` },
-          { id: "active", label: `I gang (${activeMatches.length})` },
-          { id: "completed", label: `Afsluttede (${completedMatches.length})` },
-        ].map((t) => (
-          <button key={t.id} type="button" onClick={() => setViewTab(t.id)} style={listTabBtnStyle(viewTab === t.id)}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <PillTabs
+        tabs={padelViewTabs}
+        value={viewTab}
+        onChange={(nextView) => setViewTab(nextView)}
+        ariaLabel="Kampestatus"
+        size="sm"
+        style={{ marginBottom: "16px" }}
+      />
 
       {/* Create match form */}
       {showCreate && (
