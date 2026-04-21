@@ -198,10 +198,75 @@ button,
 
 .pm-landing-footer {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.pm-landing-footer-topline {
+  display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--pm-text-light);
+  letter-spacing: 0.01em;
+}
+
+.pm-landing-footer-dot {
+  opacity: 0.55;
+}
+
+.pm-landing-footer-links {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.pm-landing-footer-primary-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface-alt);
+  color: var(--pm-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 10px;
+}
+
+.pm-landing-footer-primary-link:hover {
+  border-color: color-mix(in srgb, var(--pm-accent) 35%, var(--pm-border));
+}
+
+.pm-landing-footer-primary-link svg {
+  color: var(--pm-accent);
+  flex-shrink: 0;
+}
+
+.pm-landing-footer-secondary-link {
+  color: var(--pm-text-mid);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 4px 2px;
+}
+
+.pm-landing-footer-secondary-link:hover {
+  color: var(--pm-accent);
+}
+
+.pm-landing-footer-link-list-secondary {
+  grid-column: 1 / -1;
+  display: flex;
   flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+  padding-top: 2px;
 }
 
 .pm-landing-footer-legal {
@@ -240,10 +305,26 @@ button,
     min-width: 0;
   }
 
-  .pm-landing-footer {
-    flex-direction: column;
-    text-align: center;
-    justify-content: center;
+  .pm-landing-footer-links {
+    grid-template-columns: 1fr;
+  }
+
+  .pm-landing-footer-link-list-secondary {
+    justify-content: flex-start;
+    gap: 6px 12px;
+  }
+
+  .pm-landing-footer-topline {
+    flex-wrap: wrap;
+  }
+
+  .pm-landing-footer-dot {
+    display: none;
+  }
+
+  .pm-landing-footer-legal {
+    justify-content: flex-start;
+    gap: 8px 14px;
   }
 }
 

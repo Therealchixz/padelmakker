@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail } from 'lucide-react';
 import { LandingTourVideo } from '../components/LandingTourVideo';
 import { useDarkMode } from '../lib/useDarkMode';
 
@@ -320,25 +320,36 @@ export function LandingPage() {
       </section>
 
       <footer className="pm-landing-footer" style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(24px,6vw,36px) clamp(16px,4vw,24px)", fontSize: "13px", color: theme.textLight, flexDirection: "column", alignItems: "stretch", gap: "20px" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "16px", width: "100%" }}>
+        <div className="pm-landing-footer-topline">
           <span style={{ fontWeight: 500 }}>© 2026 PadelMakker &nbsp;·&nbsp; CVR-nr. 46403193</span>
-          <span style={{ display: "flex", flexWrap: "wrap", gap: "12px 20px", justifyContent: "center" }}>
-            <a href="mailto:kontakt@padelmakker.dk" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+        </div>
+        <div className="pm-landing-footer-links">
+            <a href="mailto:kontakt@padelmakker.dk" className="pm-landing-footer-primary-link">
+              <Mail size={14} aria-hidden />
               kontakt@padelmakker.dk
             </a>
-            <Link to="/hjaelp" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+            <Link to="/hjaelp" className="pm-landing-footer-primary-link">
+              <LifeBuoy size={14} aria-hidden />
               Hjælp og kontakt
             </Link>
-            <Link to="/app" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+            <Link to="/app" className="pm-landing-footer-primary-link">
+              <Smartphone size={14} aria-hidden />
               Installér app
             </Link>
-            <Link to="/om" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+            <div className="pm-landing-footer-link-list-secondary">
+            <Link to="/om" className="pm-landing-footer-secondary-link">
               Om PadelMakker
             </Link>
-            <Link to="/faq" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+            <Link to="/faq" className="pm-landing-footer-secondary-link">
               FAQ
             </Link>
-          </span>
+            <Link to="/events" className="pm-landing-footer-secondary-link">
+              Events
+            </Link>
+            <Link to="/elo" className="pm-landing-footer-secondary-link">
+              ELO
+            </Link>
+            </div>
         </div>
         <div className="pm-landing-footer-legal">
           <Link to="/privatlivspolitik">Privatlivspolitik</Link>
