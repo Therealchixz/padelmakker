@@ -116,12 +116,12 @@ const tabBtnStyle = (active) => ({
   background: "transparent",
   color: active ? theme.accent : theme.textMid,
   border: "none",
-  borderBottom: active ? "2px solid " + theme.accent : "2px solid transparent",
+  borderBottom: active ? "3px solid " + theme.accent : "3px solid transparent",
   marginBottom: "-1px",
-  padding: "6px 9px",
+  padding: "5px 9px 6px",
   borderRadius: 0,
   fontSize: "clamp(11px,2.8vw,12px)",
-  fontWeight: active ? 700 : 500,
+  fontWeight: active ? 800 : 500,
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
@@ -152,8 +152,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [morePos, setMorePos] = useState(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [accountPos, setAccountPos] = useState(null);
+  const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
   const moreBtnRef = useRef(null);
   const moreDropRef = useRef(null);
+  const accountBtnRef = useRef(null);
+  const accountDropRef = useRef(null);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -171,12 +176,35 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [moreOpen]);
 
   useEffect(() => {
+    if (!accountOpen) return;
+    const rect = accountBtnRef.current?.getBoundingClientRect();
+    if (rect) {
+      const left = Math.min(Math.max(8, rect.right - 230), window.innerWidth - 238);
+      setAccountPos({ top: rect.bottom + 6, left });
+    }
+    const handler = (e) => {
+      if (accountBtnRef.current?.contains(e.target) || accountDropRef.current?.contains(e.target)) return;
+      setAccountOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [accountOpen]);
+
+  useEffect(() => {
+    const onResize = () => setIsMobileView(window.innerWidth <= 768);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
     if (["hjem", "profil", "ranking", "kampe", "makkere", "admin"].includes(tab)) refreshProfileQuiet();
   }, [tab, refreshProfileQuiet]);
 
   useEffect(() => {
     setMoreOpen(false);
     setMobileMoreOpen(false);
+    setAccountOpen(false);
   }, [tab]);
 
   const allTabs = [
@@ -199,23 +227,91 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const mobileMoreTabs = allTabs.filter(t => !["hjem", "makkere", "baner", "kampe"].includes(t.id));
   const mobileMoreIsActive = mobileMoreTabs.some(t => t.id === tab);
   const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
+  const userInitial = (displayName || "?").trim().charAt(0).toUpperCase();
 
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", paddingBottom: "env(safe-area-inset-bottom)" }}>
       {/* Header */}
-      <div className="pm-dash-header" style={{ padding: "clamp(10px,2.5vw,14px) clamp(12px,3vw,20px)", paddingTop: "max(clamp(10px,2.5vw,14px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
+      <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ ...heading("clamp(16px,4vw,18px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }}>
-          <img src="/logo-nav.png" alt="PadelMakker" style={{ height: "40px", width: "auto", objectFit: "contain" }} /> PadelMakker
+          <img src="/logo-nav.png" alt="PadelMakker" style={{ height: "34px", width: "auto", objectFit: "contain" }} /> PadelMakker
         </button>
-        <div className="pm-dash-user">
-          <span className="pm-dash-name">{displayName}</span>
-          <div className="pm-dash-header-actions">
-            <NotificationBell />
-            <button className="pm-dash-logout-btn" type="button" onClick={onLogout} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px", flexShrink: 0 }}>
-              <LogOut size={13} /> Log ud
+        <div className="pm-dash-header-actions pm-dash-header-actions-mobile">
+          {isMobileView && <NotificationBell />}
+        </div>
+        <div className="pm-dash-account-desktop">
+          <button
+            ref={accountBtnRef}
+            type="button"
+            onClick={() => setAccountOpen((open) => !open)}
+            style={{
+              ...btn(false),
+              padding: "6px 10px",
+              fontSize: "12px",
+              borderRadius: "999px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              minHeight: "36px",
+            }}
+          >
+            <span style={{ width: "22px", height: "22px", borderRadius: "999px", background: theme.accentBg, color: theme.accent, fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              {userInitial}
+            </span>
+            <span className="pm-dash-account-name">{displayName}</span>
+            <ChevronDown size={14} style={{ transform: accountOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.14s ease" }} />
+          </button>
+        </div>
+        {accountOpen && accountPos && createPortal(
+          <div
+            ref={accountDropRef}
+            style={{
+              position: "fixed",
+              top: accountPos.top,
+              left: accountPos.left,
+              width: "230px",
+              background: theme.surface,
+              border: "1px solid " + theme.border,
+              borderRadius: "12px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.14)",
+              zIndex: 9999,
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ padding: "10px 12px", borderBottom: "1px solid " + theme.border }}>
+              <div style={{ fontSize: "11px", color: theme.textMid, marginBottom: "4px" }}>Logget ind som</div>
+              <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", borderBottom: "1px solid " + theme.border }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: theme.textMid }}>Notifikationer</span>
+              {!isMobileView && <NotificationBell />}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setTab("profil");
+                setAccountOpen(false);
+              }}
+              style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", borderBottom: "1px solid " + theme.border, background: "transparent", color: theme.text, fontWeight: 600, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+            >
+              <Settings size={15} />
+              Min profil
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAccountOpen(false);
+                onLogout();
+              }}
+              style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", background: "transparent", color: "#b91c1c", fontWeight: 700, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+            >
+              <LogOut size={15} />
+              Log ud
             </button>
           </div>
-        </div>
+          ,
+          document.body
+        )}
       </div>
 
       {/* Tab strip */}

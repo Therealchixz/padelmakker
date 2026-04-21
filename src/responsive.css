@@ -355,6 +355,23 @@ button,
   min-width: 0;
 }
 
+.pm-dash-account-desktop {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.pm-dash-account-name {
+  max-width: min(220px, 32vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-dash-header-actions-mobile {
+  display: none;
+}
+
 .pm-dash-user {
   display: flex;
   align-items: center;
@@ -413,8 +430,8 @@ button,
 
 .pm-tab-strip {
   display: flex;
-  gap: clamp(2px, 1.5vw, 6px);
-  padding: 8px clamp(8px, 3vw, 16px);
+  gap: clamp(2px, 1.2vw, 4px);
+  padding: 6px clamp(8px, 3vw, 16px);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
@@ -468,6 +485,15 @@ button,
   .pm-dash-header {
     flex-wrap: nowrap;
     align-items: center;
+  }
+
+  .pm-dash-account-desktop {
+    display: none;
+  }
+
+  .pm-dash-header-actions-mobile {
+    display: flex;
+    margin-left: auto;
   }
 
   .pm-dash-user {
