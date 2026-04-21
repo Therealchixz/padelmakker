@@ -864,16 +864,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return (
       <div id={"pm-match-" + m.id} key={m.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, scrollMarginTop: "88px" }}>
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
-          <div>
-            <div style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+        <div className="pm-kampe-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
+          <div className="pm-kampe-card-meta">
+            <div className="pm-kampe-card-datetime" style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
               <Clock size={15} color={theme.accent} />
-              <span>{formatMatchDateDa(m.date)} · {matchTimeLabel(m)}</span>
+              <span className="pm-kampe-card-time-normalized">{formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}</span>
             </div>
             <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
             {m.description && <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "4px", fontStyle: "italic", lineHeight: 1.4 }}>💬 {m.description}</div>}
           </div>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <div className="pm-kampe-card-tags" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {m.seeking_player && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
                 <Zap size={10} /> Mangler 1 spiller
@@ -904,7 +904,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             )}
             {matchPrefs.min != null && matchPrefs.max != null && (
               <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", background: theme.blueBg, color: theme.blue, border: "1px solid " + theme.blue + "40", borderRadius: "6px", padding: "2px 8px", fontSize: "11px", fontWeight: 700 }}>
-                ELO {matchPrefs.min}–{matchPrefs.max}
+                ELO {matchPrefs.min}-{matchPrefs.max}
               </span>
             )}
             <span style={{ ...tag(statusLabel.bg, statusLabel.color) }}>{statusLabel.text}</span>
