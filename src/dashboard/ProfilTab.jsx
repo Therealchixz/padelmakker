@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../lib/AuthContext';
+import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
@@ -76,6 +77,14 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
   const [avatarUploading, setAvatarUploading]       = useState(false);
   const [overviewMode, setOverviewMode] = useState("2v2");
+  const [ligaLoading, setLigaLoading] = useState(true);
+  const [ligaStats, setLigaStats] = useState({
+    leagues: 0,
+    matches: 0,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+  });
   const overviewRef = useRef(null);
   const performanceRef = useRef(null);
   const relationsRef = useRef(null);
@@ -89,6 +98,100 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
     const cur = normalizeStringArrayField(f.available_days);
     return { ...f, available_days: cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d] };
   });
+
+  useEffect(() => {
+    if (!user?.id) {
+      setLigaStats({ leagues: 0, matches: 0, wins: 0, losses: 0, draws: 0 });
+      setLigaLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLigaLoading(true);
+
+    (async () => {
+      try {
+        const { data: teamRows, error: teamError } = await supabase
+          .from("league_teams")
+          .select("id, league_id")
+          .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`);
+
+        if (teamError) throw teamError;
+
+        const teams = teamRows || [];
+        const teamIds = teams.map((t) => t.id).filter(Boolean);
+        const leagueIds = [...new Set(teams.map((t) => t.league_id).filter(Boolean))];
+
+        if (teamIds.length === 0) {
+          if (!cancelled) {
+            setLigaStats({ leagues: leagueIds.length, matches: 0, wins: 0, losses: 0, draws: 0 });
+            setLigaLoading(false);
+          }
+          return;
+        }
+
+        const [team1Res, team2Res] = await Promise.all([
+          supabase
+            .from("league_matches")
+            .select("id, team1_id, team2_id, winner_id, status")
+            .eq("status", "reported")
+            .in("team1_id", teamIds),
+          supabase
+            .from("league_matches")
+            .select("id, team1_id, team2_id, winner_id, status")
+            .eq("status", "reported")
+            .in("team2_id", teamIds),
+        ]);
+
+        if (team1Res.error) throw team1Res.error;
+        if (team2Res.error) throw team2Res.error;
+
+        const uniqueMatches = new Map();
+        for (const m of [...(team1Res.data || []), ...(team2Res.data || [])]) {
+          uniqueMatches.set(m.id, m);
+        }
+
+        const myTeamIds = new Set(teamIds);
+        let matches = 0;
+        let winsCount = 0;
+        let lossesCount = 0;
+        let drawsCount = 0;
+
+        for (const m of uniqueMatches.values()) {
+          const involved = myTeamIds.has(m.team1_id) || (m.team2_id && myTeamIds.has(m.team2_id));
+          if (!involved) continue;
+          matches += 1;
+
+          if (!m.winner_id) {
+            drawsCount += 1;
+            continue;
+          }
+
+          if (myTeamIds.has(m.winner_id)) winsCount += 1;
+          else lossesCount += 1;
+        }
+
+        if (!cancelled) {
+          setLigaStats({
+            leagues: leagueIds.length,
+            matches,
+            wins: winsCount,
+            losses: lossesCount,
+            draws: drawsCount,
+          });
+        }
+      } catch (error) {
+        console.warn("Liga overview stats fejlede:", error?.message || error);
+        if (!cancelled) {
+          setLigaStats({ leagues: 0, matches: 0, wins: 0, losses: 0, draws: 0 });
+        }
+      } finally {
+        if (!cancelled) setLigaLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const handleSave = async () => {
     const region = canonicalRegionForForm(form.area) || form.area;
@@ -146,6 +249,7 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   const americanoLosses = Number(user.americano_losses) || 0;
   const americanoRounds = americanoWins + americanoDraws + americanoLosses;
   const americanoWinPct = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : 0;
+  const ligaWinPct = ligaStats.matches > 0 ? Math.round((ligaStats.wins / ligaStats.matches) * 100) : 0;
   const twoVTwoOverviewCards = [
     { label: "ELO", value: elo, color: theme.accent },
     { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
@@ -160,7 +264,20 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
     { label: "Runder tabt", value: americanoLosses, color: americanoOutcomeColors.loss.text },
     { label: "Win %", value: americanoRounds > 0 ? americanoWinPct + "%" : "—", color: theme.accent },
   ];
-  const activeOverviewCards = overviewMode === "americano" ? americanoOverviewCards : twoVTwoOverviewCards;
+  const ligaOverviewCards = [
+    { label: "Ligaer", value: ligaStats.leagues, color: theme.text },
+    { label: "Kampe", value: ligaStats.matches, color: theme.blue },
+    { label: "Sejre", value: ligaStats.wins, color: theme.green },
+    { label: "Tab", value: ligaStats.losses, color: theme.red },
+    { label: "Uafgjort", value: ligaStats.draws, color: theme.textLight },
+    { label: "Win %", value: ligaStats.matches > 0 ? ligaWinPct + "%" : "--", color: theme.accent },
+  ];
+  const activeOverviewCards =
+    overviewMode === "americano"
+      ? americanoOverviewCards
+      : overviewMode === "liga"
+        ? ligaOverviewCards
+        : twoVTwoOverviewCards;
   const jumpToSection = (ref) => {
     if (!ref?.current) return;
     ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -269,7 +386,7 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
           </div>
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
-          {statsLoading ? (
+          {statsLoading || (overviewMode === "liga" && ligaLoading) ? (
             <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px", marginBottom: "20px" }}>Indlæser statistik…</div>
           ) : (
           <>
@@ -283,8 +400,15 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
             <button onClick={() => setOverviewMode("americano")} style={{ ...btn(overviewMode === "americano"), padding: "5px 10px", fontSize: "11px" }}>
               Americano
             </button>
+            <button onClick={() => setOverviewMode("liga")} style={{ ...btn(overviewMode === "liga"), padding: "5px 10px", fontSize: "11px" }}>
+              Liga
+            </button>
             <span style={{ fontSize: "11px", color: theme.textLight, display: "inline-flex", alignItems: "center", paddingLeft: "2px" }}>
-              {overviewMode === "americano" ? "Viser kun Americano-data" : "Viser kun 2v2-data"}
+              {overviewMode === "americano"
+                ? "Viser kun Americano-data"
+                : overviewMode === "liga"
+                  ? "Viser kun Liga-data"
+                  : "Viser kun 2v2-data"}
             </span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px", marginBottom: "20px" }}>
