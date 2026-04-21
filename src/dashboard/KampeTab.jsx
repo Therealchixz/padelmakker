@@ -45,6 +45,54 @@ for (let h = 6; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`);
 }
 
+function clampElo(val, fallback = 1000) {
+  const n = Number(val);
+  if (!Number.isFinite(n)) return Math.round(fallback);
+  return Math.max(400, Math.min(3000, Math.round(n)));
+}
+
+function parseMatchLevelRange(raw) {
+  const txt = String(raw || "").trim();
+  if (!txt) return { min: null, max: null, booked: null };
+
+  const eloPart = /elo:(\d{2,4})-(\d{2,4})/i.exec(txt);
+  const bookedPart = /booked:(yes|no)/i.exec(txt);
+  if (eloPart || bookedPart) {
+    const a = eloPart ? clampElo(eloPart[1]) : null;
+    const b = eloPart ? clampElo(eloPart[2]) : null;
+    return {
+      min: a != null && b != null ? Math.min(a, b) : null,
+      max: a != null && b != null ? Math.max(a, b) : null,
+      booked: bookedPart ? bookedPart[1].toLowerCase() === "yes" : null,
+    };
+  }
+
+  const classicRange = /^(\d{2,4})\s*-\s*(\d{2,4})$/.exec(txt);
+  if (classicRange) {
+    const a = clampElo(classicRange[1]);
+    const b = clampElo(classicRange[2]);
+    return { min: Math.min(a, b), max: Math.max(a, b), booked: null };
+  }
+
+  const single = /^(\d{2,4})$/.exec(txt);
+  if (single) {
+    const s = clampElo(single[1]);
+    return { min: s, max: s, booked: null };
+  }
+
+  return { min: null, max: null, booked: null };
+}
+
+function buildMatchLevelRange(levelMin, levelMax, courtBooked, myElo) {
+  const fallback = clampElo(myElo || 1000);
+  const a = clampElo(levelMin, fallback - 100);
+  const b = clampElo(levelMax, fallback + 100);
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
+  const bookedTag = courtBooked ? "yes" : "no";
+  return `elo:${lo}-${hi}|booked:${bookedTag}`;
+}
+
 /** Undgår gigantiske .in() — Supabase/PostgREST har URL-grænser. */
 async function fetchRowsInChunks(table, column, ids, select = '*') {
   if (!ids.length) return [];
@@ -109,6 +157,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     date: new Date().toISOString().split("T")[0],
     time: nearestHalfHour(),
     duration: "120",
+    court_booked: false,
+    level_min: "",
+    level_max: "",
     description: "",
     match_type: "open",
   });
@@ -264,6 +315,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   useEffect(() => { void loadData(); }, [loadData]);
 
   useEffect(() => {
+    if (!showCreate) return;
+    setNewMatch((m) => {
+      if (m.level_min !== "" || m.level_max !== "") return m;
+      return {
+        ...m,
+        level_min: String(clampElo(myElo - 100, myElo)),
+        level_max: String(clampElo(myElo + 100, myElo)),
+      };
+    });
+  }, [showCreate, myElo]);
+
+  useEffect(() => {
     mergeKampeSessionPrefs(user.id, { format: kampeFormat, view: viewTab });
   }, [user.id, kampeFormat, viewTab]);
 
@@ -313,7 +376,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const row = {
         creator_id: user.id, court_id: cid, court_name: cname || '',
         date: newMatch.date, time: fmtClock(newMatch.time), time_end: timeEnd,
-        level_range: String(myElo), status: "open", max_players: 4, current_players: 1,
+        level_range: buildMatchLevelRange(newMatch.level_min, newMatch.level_max, newMatch.court_booked, myElo),
+        status: "open", max_players: 4, current_players: 1,
         description: sanitizeText(newMatch.description.trim()) || null,
         match_type: newMatch.match_type || "open",
       };
@@ -734,7 +798,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const playerNames = mp.map(p => (p.user_name || "").toLowerCase()).join(" ");
     const courtName = (m.court_name || "").toLowerCase();
     const desc = (m.description || "").toLowerCase();
-    return playerNames.includes(q) || courtName.includes(q) || desc.includes(q);
+    const range = (m.level_range || "").toLowerCase();
+    return playerNames.includes(q) || courtName.includes(q) || desc.includes(q) || range.includes(q);
   };
 
   const isMine = kampeScope === "mine";
@@ -767,6 +832,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const renderMatchCard = (m) => {
     const mp = matchPlayers[m.id] || [];
     const mr = matchResults[m.id];
+    const matchPrefs = parseMatchLevelRange(m.level_range);
     const left = (m.max_players || 4) - mp.length;
     const joined = mp.some(p => p.user_id === user.id);
     const isCreator = String(m.creator_id) === String(user.id);
@@ -816,6 +882,29 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             {isClosed && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: theme.surfaceAlt, color: theme.textMid, border: '1px solid ' + theme.border, borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
                 🔒 Lukket
+              </span>
+            )}
+            {matchPrefs.booked != null && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px",
+                  background: matchPrefs.booked ? "#ECFDF5" : "#FEF3C7",
+                  color: matchPrefs.booked ? "#166534" : "#B45309",
+                  border: "1px solid " + (matchPrefs.booked ? "#A7F3D0" : "#FCD34D"),
+                  borderRadius: "6px",
+                  padding: "2px 8px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                }}
+              >
+                {matchPrefs.booked ? "Bane booket" : "Bane ikke booket"}
+              </span>
+            )}
+            {matchPrefs.min != null && matchPrefs.max != null && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", background: theme.blueBg, color: theme.blue, border: "1px solid " + theme.blue + "40", borderRadius: "6px", padding: "2px 8px", fontSize: "11px", fontWeight: 700 }}>
+                ELO {matchPrefs.min}–{matchPrefs.max}
               </span>
             )}
             <span style={{ ...tag(statusLabel.bg, statusLabel.color) }}>{statusLabel.text}</span>
@@ -1344,6 +1433,59 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <option value="150">2½ timer</option>
                 <option value="180">3 timer</option>
               </select></div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={labelStyle}>Har du booket en bane?</label>
+              <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                <button
+                  type="button"
+                  onClick={() => setNewMatch(m => ({ ...m, court_booked: true }))}
+                  style={{ ...btn(newMatch.court_booked === true), flex: 1, fontSize: "13px", justifyContent: "center", padding: "9px 12px" }}
+                >
+                  Ja, booket
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewMatch(m => ({ ...m, court_booked: false }))}
+                  style={{ ...btn(newMatch.court_booked === false), flex: 1, fontSize: "13px", justifyContent: "center", padding: "9px 12px" }}
+                >
+                  Nej, ikke endnu
+                </button>
+              </div>
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={labelStyle}>Hvilket niveau søger du? (ELO)</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "4px" }}>
+                <input
+                  type="number"
+                  min="400"
+                  max="3000"
+                  value={newMatch.level_min}
+                  onChange={e => setNewMatch(m => ({ ...m, level_min: e.target.value }))}
+                  placeholder="Fra"
+                  style={{ ...inputStyle, fontSize: "13px" }}
+                />
+                <input
+                  type="number"
+                  min="400"
+                  max="3000"
+                  value={newMatch.level_max}
+                  onChange={e => setNewMatch(m => ({ ...m, level_max: e.target.value }))}
+                  placeholder="Til"
+                  style={{ ...inputStyle, fontSize: "13px" }}
+                />
+              </div>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "8px" }}>
+                <button type="button" onClick={() => setNewMatch(m => ({ ...m, level_min: String(clampElo(myElo - 100, myElo)), level_max: String(clampElo(myElo + 100, myElo)) }))} style={{ ...btn(false), fontSize: "12px", padding: "6px 10px" }}>
+                  Tæt på mig (±100)
+                </button>
+                <button type="button" onClick={() => setNewMatch(m => ({ ...m, level_min: String(clampElo(myElo - 200, myElo)), level_max: String(clampElo(myElo + 200, myElo)) }))} style={{ ...btn(false), fontSize: "12px", padding: "6px 10px" }}>
+                  Fleksibel (±200)
+                </button>
+                <button type="button" onClick={() => setNewMatch(m => ({ ...m, level_min: String(clampElo(myElo - 350, myElo)), level_max: String(clampElo(myElo + 350, myElo)) }))} style={{ ...btn(false), fontSize: "12px", padding: "6px 10px" }}>
+                  Åben (±350)
+                </button>
+              </div>
+            </div>
           </div>
           <label style={{ ...labelStyle, marginTop: "12px" }}>Beskrivelse (valgfrit)</label>
           <textarea value={newMatch.description} onChange={e => setNewMatch(m => ({ ...m, description: e.target.value }))} placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'" style={{ ...inputStyle, fontSize: "13px", height: "60px", resize: "vertical" }} />
