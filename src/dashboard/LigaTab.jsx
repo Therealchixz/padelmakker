@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { theme, btn, inputStyle, labelStyle, tag } from '../lib/platformTheme';
+import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
 import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PillTabs } from '../components/PillTabs';
@@ -95,11 +95,6 @@ function validatePadelScore(score) {
 
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
 const STATUS_LABELS = { registration: 'Tilmelding åben', active: 'Aktiv', completed: 'Afsluttet' };
-const STATUS_COLORS = {
-  registration: { bg: theme.warmBg,    color: theme.warm },
-  active:       { bg: theme.greenBg,   color: theme.green },
-  completed:    { bg: theme.surfaceAlt, color: theme.textMid },
-};
 
 const SWISS_RULES = [
   { icon: '🎾', text: 'Hvert hold spiller én kamp per runde — ingen eliminering, alle spiller videre.' },
@@ -1187,7 +1182,11 @@ export function LigaTab({
             const joined = !!myTeam;
             const standings = computeStandings(teams, matches);
             const standingsOpen = openStandings.has(league.id);
-            const sc = STATUS_COLORS[league.status] || {};
+            const statusTone = league.status === 'registration'
+              ? 'warm'
+              : league.status === 'active'
+                ? 'green'
+                : 'neutral';
             const busy = busyId === league.id || (typeof busyId === 'string' && busyId.startsWith(league.id + '-'));
 
             const currentRoundMatches = matches.filter(m => m.round_number === league.current_round);
@@ -1202,7 +1201,7 @@ export function LigaTab({
             const isFull = league.max_teams && regTeamCount >= league.max_teams;
 
             return (
-              <div key={league.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: '18px', border: '1px solid ' + theme.border, boxShadow: theme.shadow }}>
+              <div key={league.id} className="pm-ui-card pm-match-surface-card">
 
                 {/* Winner banner for completed leagues */}
                 {league.status === 'completed' && standings.length > 0 && (() => {
@@ -1246,11 +1245,11 @@ export function LigaTab({
                       <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '4px', fontStyle: 'italic' }}>{league.description}</div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: sc.bg, color: sc.color }}>
+                  <div className="pm-card-meta-row" style={{ justifyContent: 'flex-end', flexShrink: 0 }}>
+                    <span className={`pm-status-badge pm-status-badge--${statusTone}`}>
                       {STATUS_LABELS[league.status]}
                     </span>
-                    <span style={tag(theme.blueBg, theme.blue)}>
+                    <span className="pm-status-badge pm-status-badge--blue">
                       <Users size={10} /> {(allTeamsByLeague[league.id] || []).length}{league.max_teams ? `/${league.max_teams}` : ''} hold
                     </span>
                   </div>
@@ -1302,7 +1301,7 @@ export function LigaTab({
                           </div>
                         )}
                         <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                          <button onClick={() => createTeam(league.id)} disabled={busyId === league.id + '-team'} style={{ ...btn(true), fontSize: '13px' }}>
+                          <button onClick={() => createTeam(league.id)} disabled={busyId === league.id + '-team'} className="pm-card-primary-cta" style={{ ...btn(true), fontSize: '13px' }}>
                             {busyId === league.id + '-team' ? 'Tilmelder…' : 'Tilmeld hold'}
                           </button>
                           <button onClick={() => { setTeamFormLeagueId(null); setTeamName(''); setSelectedPartner(null); }} style={{ ...btn(false), fontSize: '13px' }}>Annullér</button>
@@ -1313,7 +1312,7 @@ export function LigaTab({
                         Ligaen er fuld ({league.max_teams}/{league.max_teams} hold).
                       </div>
                     ) : (
-                      <button onClick={() => setTeamFormLeagueId(league.id)} style={{ ...btn(true), padding: '8px 16px', fontSize: '13px' }}>
+                      <button onClick={() => setTeamFormLeagueId(league.id)} className="pm-card-primary-cta" style={{ ...btn(true), padding: '8px 16px', fontSize: '13px' }}>
                         <Plus size={14} /> Tilmeld hold
                       </button>
                     )}

@@ -8,7 +8,7 @@ const AmericanoTab = lazy(() =>
   import('../features/americano/AmericanoTab').then(m => ({ default: m.AmericanoTab }))
 );
 import { LigaTab as LigaTabEmbed } from './LigaTab';
-import { theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
+import { theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
 import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, formatMatchDateDa } from '../lib/matchDisplayUtils';
@@ -858,14 +858,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const adminActionsOpen = !!expandedAdminActions[m.id];
 
     const statusLabel = {
-      open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", bg: left > 0 ? theme.accentBg : theme.warmBg, color: left > 0 ? theme.accent : theme.warm },
-      full: { text: "Klar til start", bg: theme.blueBg, color: theme.blue },
-      in_progress: { text: "I gang", bg: theme.warmBg, color: theme.warm },
-      completed: { text: "Afsluttet", bg: "#F1F5F9", color: theme.textLight },
-    }[status] || { text: status, bg: "#F1F5F9", color: theme.textLight };
+      open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", tone: left > 0 ? "accent" : "warm" },
+      full: { text: "Klar til start", tone: "blue" },
+      in_progress: { text: "I gang", tone: "warm" },
+      completed: { text: "Afsluttet", tone: "neutral" },
+    }[status] || { text: status, tone: "neutral" };
 
     return (
-      <div id={"pm-match-" + m.id} key={m.id} className="pm-ui-card" style={{ padding: "20px", scrollMarginTop: "88px" }}>
+      <div id={"pm-match-" + m.id} key={m.id} className="pm-ui-card pm-match-surface-card" style={{ scrollMarginTop: "88px" }}>
         {/* Header */}
         <div className="pm-kampe-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
           <div className="pm-kampe-card-meta">
@@ -878,39 +878,28 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
           <div className="pm-kampe-card-tags" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {m.seeking_player && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
+              <span className="pm-status-badge pm-status-badge--warm">
                 <Zap size={10} /> Mangler 1 spiller
               </span>
             )}
             {isClosed && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: theme.surfaceAlt, color: theme.textMid, border: '1px solid ' + theme.border, borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}>
+              <span className="pm-status-badge pm-status-badge--neutral">
                 🔒 Lukket
               </span>
             )}
             {matchPrefs.booked != null && (
               <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "3px",
-                  background: matchPrefs.booked ? "#ECFDF5" : "#FEF3C7",
-                  color: matchPrefs.booked ? "#166534" : "#B45309",
-                  border: "1px solid " + (matchPrefs.booked ? "#A7F3D0" : "#FCD34D"),
-                  borderRadius: "6px",
-                  padding: "2px 8px",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                }}
+                className={`pm-status-badge ${matchPrefs.booked ? "pm-status-badge--green" : "pm-status-badge--warm"}`}
               >
                 {matchPrefs.booked ? "Bane booket" : "Bane ikke booket"}
               </span>
             )}
             {matchPrefs.min != null && matchPrefs.max != null && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", background: theme.blueBg, color: theme.blue, border: "1px solid " + theme.blue + "40", borderRadius: "6px", padding: "2px 8px", fontSize: "11px", fontWeight: 700 }}>
+              <span className="pm-status-badge pm-status-badge--blue">
                 ELO {matchPrefs.min}-{matchPrefs.max}
               </span>
             )}
-            <span style={{ ...tag(statusLabel.bg, statusLabel.color) }}>{statusLabel.text}</span>
+            <span className={`pm-status-badge pm-status-badge--${statusLabel.tone}`}>{statusLabel.text}</span>
           </div>
         </div>
 

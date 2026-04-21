@@ -11,11 +11,12 @@ import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import { PillTabs } from '../../components/PillTabs'
+import { btn } from '../../lib/platformTheme'
 
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
 
-const font = "'Inter', sans-serif"
+const font = 'var(--pm-font)'
 
 /** Renderer emoji eller profilbillede-URL korrekt i en cirkel */
 function AvatarInCircle({ av, size = 36, fontSize = 18, bg = '#E2E8F0' }: { av: string; size?: number; fontSize?: number; bg?: string }) {
@@ -522,15 +523,8 @@ export function AmericanoTab({
             type="button"
             onClick={() => setShowCreate(!showCreate)}
             style={{
-              fontFamily: font,
+              ...btn(true),
               fontSize: 14,
-              fontWeight: 600,
-              padding: '10px 18px',
-              borderRadius: 10,
-              border: 'none',
-              background: '#1D4ED8',
-              color: '#fff',
-              cursor: 'pointer',
             }}
           >
             {showCreate ? 'Annullér' : '+ Opret turnering'}
@@ -591,23 +585,27 @@ export function AmericanoTab({
             const partCount = (participantsByTournament[t.id] || []).length
             const slotsConfigured = Number(t.player_slots)
             const tournamentFull = partCount === slotsConfigured
+            const statusMeta =
+              t.status === 'registration'
+                ? { label: 'Tilmelding åben', tone: 'warm' }
+                : t.status === 'playing'
+                  ? { label: 'I gang', tone: 'accent' }
+                  : { label: 'Afsluttet', tone: 'neutral' }
             return (
-            <div
-              key={t.id}
-              style={{
-                background: 'var(--pm-surface)',
-                borderRadius: 12,
-                padding: 18,
-                border: '1px solid var(--pm-border)',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-              }}
-            >
+            <div key={t.id} className="pm-ui-card pm-match-surface-card">
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t.name}</div>
-              <div style={{ fontSize: 12, color: '#3E4C63' }}>
+              <div className="pm-card-meta-row" style={{ marginBottom: 6 }}>
+                <span className={`pm-status-badge pm-status-badge--${statusMeta.tone}`}>{statusMeta.label}</span>
+                <span className="pm-status-badge pm-status-badge--blue">
+                  {partCount}/{slotsConfigured} spillere
+                </span>
+                <span className="pm-status-badge">
+                  {t.points_per_match} point{Number(t.opponent_passes) === 2 ? ' · lang' : ''}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--pm-text-mid)' }}>
                 {formatMatchDateDa(t.tournament_date)} · {formatTimeSlotDa(t.time_slot)} · {t.player_slots}{' '}
-                spillere · {t.points_per_match} point
-                {Number(t.opponent_passes) === 2 ? ' · lang (2× runder)' : ''} ·{' '}
-                <span style={{ textTransform: 'capitalize' }}>{t.status}</span>
+                spillere
               </div>
               {t.description && (
                 <div style={{ fontSize: 12, color: 'var(--pm-text-light)', marginTop: 8, fontStyle: 'italic' }}>{t.description}</div>
@@ -852,15 +850,11 @@ export function AmericanoTab({
                     type="button"
                     disabled={busyId === t.id}
                     onClick={() => joinTournament(t.id, t.player_slots)}
+                    className="pm-card-primary-cta"
                     style={{
-                      fontFamily: font,
+                      ...btn(true),
                       fontSize: 13,
-                      fontWeight: 600,
                       padding: '8px 14px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: '#1D4ED8',
-                      color: '#fff',
                       cursor: busyId === t.id ? 'wait' : 'pointer',
                     }}
                   >
@@ -872,15 +866,11 @@ export function AmericanoTab({
                     type="button"
                     disabled={busyId === t.id}
                     onClick={() => leaveTournament(t.id)}
+                    className="pm-card-primary-cta"
                     style={{
-                      fontFamily: font,
+                      ...btn(false),
                       fontSize: 13,
-                      fontWeight: 600,
                       padding: '8px 14px',
-                      borderRadius: 8,
-                      border: '1px solid var(--pm-border)',
-                      background: 'var(--pm-surface)',
-                      color: 'var(--pm-text-mid)',
                       cursor: busyId === t.id ? 'wait' : 'pointer',
                     }}
                   >
@@ -908,14 +898,13 @@ export function AmericanoTab({
                         : `Kræver ${slotsConfigured} tilmeldte (nu ${partCount})`
                     }
                     onClick={() => startTournament(t)}
+                    className="pm-card-primary-cta"
                     style={{
-                      fontFamily: font,
+                      ...btn(true),
                       fontSize: 13,
-                      fontWeight: 600,
                       padding: '8px 14px',
-                      borderRadius: 8,
-                      border: 'none',
                       background: tournamentFull ? '#D97706' : '#E5E7EB',
+                      borderColor: tournamentFull ? '#D97706' : '#E5E7EB',
                       color: tournamentFull ? '#fff' : '#9CA3AF',
                       cursor: busyId === t.id ? 'wait' : tournamentFull ? 'pointer' : 'not-allowed',
                     }}
@@ -927,14 +916,13 @@ export function AmericanoTab({
                       type="button"
                       disabled={busyId === t.id}
                       onClick={() => startTournament(t, true)}
+                      className="pm-card-primary-cta"
                       style={{
-                        fontFamily: font,
+                        ...btn(true),
                         fontSize: 13,
-                        fontWeight: 600,
                         padding: '8px 14px',
-                        borderRadius: 8,
-                        border: 'none',
                         background: '#D97706',
+                        borderColor: '#D97706',
                         color: '#fff',
                         cursor: busyId === t.id ? 'wait' : 'pointer',
                       }}
@@ -948,13 +936,10 @@ export function AmericanoTab({
                     disabled={busyId === t.id}
                     onClick={() => deleteTournament(t)}
                     style={{
-                      fontFamily: font,
+                      ...btn(false),
                       fontSize: 13,
-                      fontWeight: 600,
                       padding: '8px 14px',
-                      borderRadius: 8,
                       border: '1px solid #FCA5A5',
-                      background: 'var(--pm-surface)',
                       color: '#B91C1C',
                       cursor: busyId === t.id ? 'wait' : 'pointer',
                       display: 'inline-flex',
