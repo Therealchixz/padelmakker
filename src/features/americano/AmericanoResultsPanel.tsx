@@ -496,10 +496,19 @@ export function AmericanoResultsPanel({
             </div>
           ))}
         </div>
-        {leaderboard.length === 0 && <div style={{ fontSize: 12, color: c.muted }}>Ingen spillere endnu.</div>}
+        {leaderboard.length === 0 && (
+          <div className="pm-data-empty-note" style={{ marginTop: 10 }}>
+            Ingen spillere endnu.
+          </div>
+        )}
       </div>
 
       <div style={{ fontFamily: font }}>
+        {matchesDisplay.length === 0 && (
+          <div className="pm-data-empty-note" style={{ marginBottom: 8 }}>
+            Kampplan er ikke genereret endnu.
+          </div>
+        )}
         {matchesDisplay.map((m, displayIdx) => {
           const s = scores[m.id] || { a: '', b: '' }
           const locked = isMatchResultLocked(m) && !unlockedIds.has(m.id)

@@ -471,11 +471,11 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
                       </div>
 
                       {isFuture ? (
-                        <div style={{ border: '2px dashed ' + theme.border, borderRadius: '12px', padding: '20px 12px', textAlign: 'center', color: theme.textLight, fontSize: '11px' }}>
+                        <div className="pm-data-empty-note pm-data-empty-note--dashed" style={{ padding: '20px 12px', fontSize: '11px' }}>
                           Genereres efter<br />runde {rn - 1}
                         </div>
                       ) : roundMatches.length === 0 ? (
-                        <div style={{ border: '1px solid ' + theme.border, borderRadius: '12px', padding: '20px', textAlign: 'center', color: theme.textLight, fontSize: '11px' }}>
+                        <div className="pm-data-empty-note" style={{ padding: '20px', fontSize: '11px' }}>
                           Ingen kampe
                         </div>
                       ) : roundMatches.map(match => {

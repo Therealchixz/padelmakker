@@ -1067,6 +1067,22 @@ button,
   justify-content: center;
 }
 
+.pm-data-empty-note {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius-sm);
+  background: var(--pm-surface);
+  color: var(--pm-text-light);
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.45;
+}
+
+.pm-data-empty-note--dashed {
+  border-style: dashed;
+}
+
 .pm-kampe-empty-state {
   text-align: center;
   padding: 48px 20px;

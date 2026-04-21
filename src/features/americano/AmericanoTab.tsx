@@ -700,13 +700,7 @@ export function AmericanoTab({
                     )}
                     {listOpen &&
                       (parts.length === 0 ? (
-                        <div
-                          style={{
-                            fontSize: 12,
-                            color: 'var(--pm-text-light)',
-                            marginTop: playingCollapsed ? 10 : 0,
-                          }}
-                        >
+                        <div className="pm-data-empty-note" style={{ marginTop: playingCollapsed ? 10 : 0 }}>
                           Ingen tilmeldt endnu — vær den første.
                         </div>
                       ) : t.status === 'playing' ? (
