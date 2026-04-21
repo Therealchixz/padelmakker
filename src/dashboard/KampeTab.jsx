@@ -1016,9 +1016,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const myTeam = t1.some(p => p.user_id === user.id) ? "team1" : t2.some(p => p.user_id === user.id) ? "team2" : null;
           const iWon = mr.confirmed && myTeam === mr.match_winner;
           const iLost = mr.confirmed && myTeam && myTeam !== mr.match_winner;
-          const bgColor = !mr.confirmed ? theme.warmBg : iWon ? theme.accentBg : iLost ? theme.redBg : "#F1F5F9";
-          const borderColor = !mr.confirmed ? theme.warm : iWon ? theme.accent : iLost ? theme.red : theme.border;
-          const textColor = !mr.confirmed ? theme.warm : iWon ? theme.accent : iLost ? theme.red : theme.textMid;
+          const bgColor = !mr.confirmed ? theme.warmBg : iWon ? theme.greenBg : iLost ? theme.redBg : "#F1F5F9";
+          const borderColor = !mr.confirmed ? theme.warm : iWon ? theme.green : iLost ? theme.red : theme.border;
+          const textColor = !mr.confirmed ? theme.warm : iWon ? theme.green : iLost ? theme.red : theme.textMid;
           return (
             <div style={{ padding: "14px", background: bgColor, borderRadius: "8px", marginBottom: "12px", textAlign: "center", border: "1.5px solid " + borderColor + "40" }}>
               <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "0.05em", color: textColor }}>{mr.score_display || "—"}</div>
@@ -1026,7 +1026,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 {!mr.confirmed ? "⏳ Venter på bekræftelse" : iWon ? "🏆 Du vandt!" : iLost ? "😞 Du tabte" : `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt`}
               </div>
               {mr.confirmed && eloChangeByMatchId[String(m.id)] != null && (
-                <div style={{ fontSize: "14px", fontWeight: 800, color: eloChangeByMatchId[String(m.id)] >= 0 ? theme.accent : theme.red, marginTop: "6px", letterSpacing: "-0.01em" }}>
+                <div style={{ fontSize: "14px", fontWeight: 800, color: eloChangeByMatchId[String(m.id)] >= 0 ? theme.green : theme.red, marginTop: "6px", letterSpacing: "-0.01em" }}>
                   {eloChangeByMatchId[String(m.id)] >= 0 ? "+" : ""}{eloChangeByMatchId[String(m.id)]} ELO
                 </div>
               )}
