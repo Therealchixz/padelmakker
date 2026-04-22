@@ -3,22 +3,45 @@ import { supabase } from './supabase';
 
 /** Hent alle samtaler for userId — én per samtalepartner, sorteret nyeste først. */
 export async function fetchConversations(userId) {
-  const { data, error } = await supabase
+  const { data: baseRows, error } = await supabase
     .from('messages')
-    .select('id, sender_id, receiver_id, content, created_at, is_read')
+    .select('id, sender_id, receiver_id, created_at, is_read')
     .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
 
   const convoMap = {};
-  for (const msg of data || []) {
+  const latestMessageIds = [];
+  for (const msg of baseRows || []) {
     const otherId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id;
     if (!convoMap[otherId]) {
-      convoMap[otherId] = { otherId, lastMessage: msg, unread: 0 };
+      convoMap[otherId] = {
+        otherId,
+        lastMessage: { ...msg, content: '' },
+        unread: 0,
+      };
+      latestMessageIds.push(msg.id);
     }
     if (msg.receiver_id === userId && !msg.is_read) {
       convoMap[otherId].unread++;
+    }
+  }
+
+  if (latestMessageIds.length > 0) {
+    const { data: lastMessages } = await supabase
+      .from('messages')
+      .select('id, sender_id, receiver_id, content, created_at, is_read')
+      .in('id', latestMessageIds);
+
+    const lastMessageMap = {};
+    for (const msg of lastMessages || []) {
+      lastMessageMap[msg.id] = msg;
+    }
+
+    for (const convo of Object.values(convoMap)) {
+      const hydrated = lastMessageMap[convo.lastMessage.id];
+      if (hydrated) convo.lastMessage = hydrated;
     }
   }
 
