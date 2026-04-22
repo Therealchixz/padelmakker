@@ -221,11 +221,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
   if (isAdmin) allTabs.push({ id: "admin", label: "Admin", icon: <ShieldCheck size={15} /> });
 
   const primaryTabs = allTabs.filter(t => PRIMARY_TAB_IDS.includes(t.id));
-  const moreTabs    = allTabs.filter(t => !PRIMARY_TAB_IDS.includes(t.id));
+  const moreTabs    = allTabs.filter(t => !PRIMARY_TAB_IDS.includes(t.id) && t.id !== "liga");
   const moreIsActive = moreTabs.some(t => t.id === tab);
   const moreBadge = moreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const mobilePrimaryTabs = allTabs.filter(t => ["hjem", "makkere", "baner", "kampe"].includes(t.id));
-  const mobileMoreTabs = allTabs.filter(t => !["hjem", "makkere", "baner", "kampe"].includes(t.id));
+  const mobileMoreTabs = allTabs.filter(t => !["hjem", "makkere", "baner", "kampe"].includes(t.id) && t.id !== "liga");
   const mobileMoreIsActive = mobileMoreTabs.some(t => t.id === tab);
   const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const userInitial = (displayName || "?").trim().charAt(0).toUpperCase();
