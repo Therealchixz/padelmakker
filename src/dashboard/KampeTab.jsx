@@ -48,6 +48,34 @@ for (let h = 6; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`);
 }
 
+const PADEL_HELP_STORAGE_KEY = 'pm_padel_help_open_v1';
+const PADEL_RULE_SUMMARY = [
+  {
+    icon: '1.',
+    text: 'Kampen spilles som bedst af 3 saet. Et saet vindes typisk 6-0 til 6-4, eller 7-5 / 7-6 ved taette saet.',
+  },
+  {
+    icon: '2.',
+    text: 'Serven slaas under hoftehoejde efter et hop og diagonalt over i modstanderens serverfelt.',
+  },
+  {
+    icon: '3.',
+    text: 'Bolden skal foerst ramme gulvet paa modstanderens side. Derefter maa den ramme glas/hegn og stadig vaere i spil.',
+  },
+  {
+    icon: '4.',
+    text: 'Paa egen side maa bolden kun hoppe en gang, foer du returnerer den.',
+  },
+  {
+    icon: '5.',
+    text: 'Du taber point hvis du rammer nettet, slaar bolden direkte i vaeggen paa modstanderens side eller slaar bolden ud af banen.',
+  },
+  {
+    icon: '6.',
+    text: 'I PadelMakker registreres resultat som saetscore (fx 6-4, 7-5, 7-6), saa begge hold hurtigt kan se kampens udfald.',
+  },
+];
+
 function clampElo(val, fallback = 1000) {
   const n = Number(val);
   if (!Number.isFinite(n)) return Math.round(fallback);
@@ -154,6 +182,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     if (s?.scope === "mine" || s?.scope === "alle") return s.scope;
     return "alle";
   }); // "mine" | "alle"
+  const [padelHelpOpen, setPadelHelpOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PADEL_HELP_STORAGE_KEY);
+      if (saved === null) return false;
+      return saved === '1' || saved.toLowerCase() === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [joinRequests, setJoinRequests] = useState({}); // { [matchId]: [{ id, user_id, user_name, user_emoji, status }] }
   const [newMatch, setNewMatch]       = useState({
@@ -336,6 +373,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   useEffect(() => {
     mergeKampeSessionPrefs(user.id, { format: kampeFormat, view: viewTab });
   }, [user.id, kampeFormat, viewTab]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PADEL_HELP_STORAGE_KEY, padelHelpOpen ? '1' : '0');
+    } catch {
+      // ignore storage errors
+    }
+  }, [padelHelpOpen]);
 
   const persistAmericanoSubTab = useCallback(
     (v) => mergeKampeSessionPrefs(user.id, { americanoView: v }),
@@ -1413,6 +1458,34 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {kampeFormat === "padel" && !loadingMatches && !loadError && (
       <>
+      <div className="pm-help-box" style={{ marginBottom: "14px" }}>
+        <button
+          type="button"
+          onClick={() => setPadelHelpOpen((v) => !v)}
+          aria-expanded={padelHelpOpen}
+          className="pm-help-box-toggle"
+          style={{ cursor: "pointer" }}
+        >
+          <span className="pm-help-box-title">Saadan fungerer 2v2 (padel)</span>
+          <span className="pm-help-box-chevron">
+            {padelHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </span>
+        </button>
+        {padelHelpOpen ? (
+          <div className="pm-help-box-content" style={{ marginTop: "8px" }}>
+            {PADEL_RULE_SUMMARY.map((item) => (
+              <div key={item.icon} className="pm-help-box-item">
+                <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                <span>{item.text}</span>
+              </div>
+            ))}
+            <div className="pm-help-box-copy" style={{ marginTop: "4px" }}>
+              Kilde: Padellife (padel-regler)
+            </div>
+          </div>
+        ) : null}
+      </div>
+
       <PillTabs
         tabs={padelViewTabs}
         value={viewTab}
