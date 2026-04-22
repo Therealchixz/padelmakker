@@ -410,10 +410,64 @@ export function HomeTab({ user, setTab }) {
     verticalAlign: "middle",
   });
 
+  const activityLeadingSlotStyle = {
+    width: "44px",
+    minWidth: "44px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  };
+
+  const activityRightRailStyle = {
+    minWidth: "88px",
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    flexShrink: 0,
+  };
+
+  const activityStatPillStyle = (tone) => ({
+    fontSize: "11px",
+    fontWeight: 700,
+    padding: "4px 8px",
+    borderRadius: "999px",
+    border: "1px solid " + tone + "44",
+    color: tone,
+    background: theme.surfaceAlt,
+    whiteSpace: "nowrap",
+  });
+
   const activityHighlightRowStyle = {
     borderColor: "#BFDBFE",
     boxShadow: "0 6px 18px rgba(37, 99, 235, 0.08)",
   };
+
+  const activityCardStyle = (isHighlight) => ({
+    ...activityRowBaseStyle,
+    background: theme.surface,
+    ...(isHighlight ? activityHighlightRowStyle : null),
+  });
+
+  const activityMetaWithTag = (tone, label, text) => (
+    <>
+      <span style={activityTypeTagStyle(tone)}>{label}</span>
+      {text}
+    </>
+  );
+
+  const renderActivityRowCard = ({ key, isHighlight, leading, title, meta, action, stat }) => (
+    <div key={key} style={activityCardStyle(isHighlight)}>
+      <div style={activityLeadingSlotStyle}>{leading}</div>
+      <div style={activityBodyStyle}>
+        <div style={activityTitleStyle}>{title}</div>
+        <div style={activityMetaStyle}>{meta}</div>
+      </div>
+      <div style={activityRightRailStyle}>
+        {action || stat || null}
+      </div>
+    </div>
+  );
 
   const activityGroupLabel = (iso) => {
     if (!iso) return "Tidligere";
@@ -563,235 +617,166 @@ export function HomeTab({ user, setTab }) {
               const row = entry.row;
               const i = entry.index;
               const isHighlight = entry.isHighlight;
-                if (row.type === 'americano_winner') {
-                  return (
-                    <div
-                      key={`am-${i}`}
-                      style={{
-                        ...activityRowBaseStyle,
-                        background: theme.surface,
-                        position: "relative",
-                        ...(isHighlight ? activityHighlightRowStyle : null),
-                      }}
+
+              if (row.type === 'americano_winner') {
+                const player = { id: row.userId, name: row.name };
+                return renderActivityRowCard({
+                  key: `am-${i}`,
+                  isHighlight,
+                  leading: (
+                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
+                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    </div>
+                  ),
+                  title: (
+                    <>
+                      <span onClick={() => setViewPlayer(player)} style={{ cursor: "pointer", fontWeight: 700 }}>{row.name}</span> vandt Americano
+                    </>
+                  ),
+                  meta: activityMetaWithTag(theme.warm, "Americano", `${row.tournamentName ? `"${row.tournamentName}" · ` : ""}${formatTimeAgo(row.created_at)}`),
+                  action: <button onClick={() => setViewTournament(row)} style={activityActionBtnStyle(theme.warm)}>Se resultat</button>,
+                });
+              }
+
+              if (row.type === 'liga_completed') {
+                const c = row.champion;
+                return renderActivityRowCard({
+                  key: `liga-${i}`,
+                  isHighlight,
+                  leading: (
+                    <div style={{ position: "relative", width: "40px", height: "32px" }}>
+                      <AvatarCircle avatar={c.player1_avatar} size={28} emojiSize="14px" style={{ background: theme.surfaceAlt, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
+                      <AvatarCircle avatar={c.player2_avatar} size={28} emojiSize="14px" style={{ background: theme.surfaceAlt, border: "2px solid " + theme.surface, position: "absolute", left: 14, top: 2, zIndex: 1 }} />
+                    </div>
+                  ),
+                  title: <><span style={{ fontWeight: 700 }}>{c.name}</span> vandt ligaen</>,
+                  meta: activityMetaWithTag(theme.accent, "Liga", `${row.leagueName ? `"${row.leagueName}" · ` : ""}${formatTimeAgo(row.created_at)}`),
+                  action: <button onClick={() => setViewLeague(row)} style={activityActionBtnStyle(theme.accent)}>Se resultat</button>,
+                });
+              }
+
+              if (row.type === 'open_match') {
+                const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
+                const player = { id: row.creatorId, name: row.creatorName };
+                return renderActivityRowCard({
+                  key: `open-${i}`,
+                  isHighlight,
+                  leading: (
+                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
+                      <AvatarCircle avatar={row.creatorAvatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    </div>
+                  ),
+                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.creatorName}</span> søger spillere til <strong>2v2</strong></>,
+                  meta: activityMetaWithTag(theme.green, "2v2", `${dateStr}${row.court ? ` · ${row.court}` : ""}`),
+                  action: <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'open' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.green)}>Se kamp</button>,
+                });
+              }
+
+              if (row.type === 'americano_registration') {
+                const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
+                return renderActivityRowCard({
+                  key: `amreg-${i}`,
+                  isHighlight,
+                  leading: (
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" }}>
+                      🎾
+                    </div>
+                  ),
+                  title: <span style={{ fontWeight: 700 }}>{row.name}</span>,
+                  meta: activityMetaWithTag(theme.warm, "Americano", `${dateStr}${row.time ? ` · ${row.time}` : ""} · ${row.participants}/${row.slots} tilmeldt`),
+                  action: <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.warm)}>Tilmeld</button>,
+                });
+              }
+
+              if (row.type === 'elo_milestone') {
+                const player = { id: row.userId, name: row.name };
+                return renderActivityRowCard({
+                  key: `milestone-${i}`,
+                  isHighlight,
+                  leading: (
+                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
+                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    </div>
+                  ),
+                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> nåede {row.milestone} ELO</>,
+                  meta: activityMetaWithTag(theme.purple, "ELO", formatTimeAgo(row.created_at)),
+                  stat: <span style={activityStatPillStyle(theme.purple)}>{row.milestone}+</span>,
+                });
+              }
+
+              if (row.type === 'seeking_player') {
+                const player = { id: row.userId, name: row.name };
+                const levelStr = row.level ? levelLabel(row.level) : null;
+                const sub = [row.area, levelStr].filter(Boolean).join(' · ');
+                return renderActivityRowCard({
+                  key: `seek-${i}`,
+                  isHighlight,
+                  leading: (
+                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
+                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    </div>
+                  ),
+                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> søger makker</>,
+                  meta: activityMetaWithTag(theme.blue, "Spiller", `${sub ? `${sub} · ` : ""}${formatTimeAgo(row.created_at)}`),
+                  action: <button onClick={() => setViewPlayer(player)} style={activityActionBtnStyle(theme.blue)}>Se profil</button>,
+                });
+              }
+
+              if (row.type === 'league_new') {
+                const isReg = row.status === 'registration';
+                return renderActivityRowCard({
+                  key: `lnew-${i}`,
+                  isHighlight,
+                  leading: (
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" }}>
+                      🏆
+                    </div>
+                  ),
+                  title: <span style={{ fontWeight: 700 }}>{row.leagueName}</span>,
+                  meta: activityMetaWithTag(theme.accent, "Liga", `${isReg ? "Tilmelding åben" : "I gang"} · ${row.teamCount} hold · ${formatTimeAgo(row.created_at)}`),
+                  action: <button onClick={() => setTab('liga')} style={activityActionBtnStyle(theme.accent)}>{isReg ? 'Tilmeld' : 'Se liga'}</button>,
+                });
+              }
+
+              if (row.type === 'match_group') {
+                const winners = row.players.filter((p) => p.win);
+                const losers = row.players.filter((p) => !p.win);
+                const winnerNames = winners.map((p) => p.name.split(' ')[0]).join(' + ');
+                const loserNames = losers.map((p) => p.name.split(' ')[0]).join(' + ');
+                return renderActivityRowCard({
+                  key: `match-${i}`,
+                  isHighlight,
+                  leading: (
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: theme.surfaceAlt, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Swords size={16} color={theme.accent} />
+                    </div>
+                  ),
+                  title: <><strong>{winnerNames}</strong> slog <strong>{loserNames}</strong></>,
+                  meta: activityMetaWithTag(theme.accent, "Kamp", `${row.court} · ${row.score} · ${formatTimeAgo(row.created_at)}`),
+                  action: (
+                    <button
+                      onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'mine' }); setTab('kampe'); }}
+                      style={activityActionBtnStyle(theme.accent)}
                     >
-                      <div 
-                        onClick={() => setViewPlayer({ id: row.userId, name: row.name })}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <AvatarCircle
-                          avatar={row.avatar}
-                          size={38}
-                          emojiSize="24px"
-                          style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }}
-                        />
-                      </div>
-                      <div style={activityBodyStyle}>
-                        <div style={activityTitleStyle}>
-                          <span 
-                            onClick={() => setViewPlayer({ id: row.userId, name: row.name })}
-                            style={{ cursor: "pointer", fontWeight: 700 }}
-                          >
-                            {row.name}
-                          </span> vandt Americano
-                        </div>
-                        {row.tournamentName && (
-                          <div style={activityMetaStyle}>
-                            <span style={activityTypeTagStyle(theme.warm)}>Americano</span>
-                            &ldquo;{row.tournamentName}&rdquo; · {formatTimeAgo(row.created_at)}
-                          </div>
-                        )}
-                      </div>
-                      <button 
-                        onClick={() => setViewTournament(row)}
-                        style={activityActionBtnStyle(theme.warm)}
-                      >
-                        Se resultat
-                      </button>
-                    </div>
-                  );
-                }
+                      Se kamp
+                    </button>
+                  ),
+                });
+              }
 
-                if (row.type === 'liga_completed') {
-                  const c = row.champion;
-                  return (
-                    <div key={`liga-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
-                      {/* Overlapping avatars for winning team */}
-                      <div style={{ display: "flex", position: "relative", width: "46px", height: "34px", flexShrink: 0 }}>
-                        <AvatarCircle avatar={c.player1_avatar} size={30} emojiSize="15px" style={{ background: theme.surfaceAlt, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
-                        <AvatarCircle avatar={c.player2_avatar} size={30} emojiSize="15px" style={{ background: theme.surfaceAlt, border: "2px solid " + theme.surface, position: "absolute", left: 16, top: 2, zIndex: 1 }} />
-                      </div>
-                      <div style={activityBodyStyle}>
-                        <div style={activityTitleStyle}>
-                          <span style={{ fontWeight: 700 }}>{c.name}</span> vandt ligaen 🏆
-                        </div>
-                        <div style={activityMetaStyle}>
-                          <span style={activityTypeTagStyle(theme.accent)}>Liga</span>
-                          &ldquo;{row.leagueName}&rdquo; · {formatTimeAgo(row.created_at)}
-                        </div>
-                      </div>
-                      <button onClick={() => setViewLeague(row)} style={activityActionBtnStyle(theme.accent)}>
-                        Se resultat
-                      </button>
-                    </div>
-                  );
-                }
-
-                if (row.type === 'open_match') {
-                  const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
-                  return (
-                    <div key={`open-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
-                      <div onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
-                      </div>
-                      <div style={activityBodyStyle}>
-                        <div style={activityTitleStyle}>
-                          <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })}>{row.creatorName}</span> søger spillere til <strong>2v2</strong>
-                        </div>
-                        <div style={activityMetaStyle}>
-                          <span style={activityTypeTagStyle(theme.green)}>2v2</span>
-                          {dateStr} · {row.court}
-                        </div>
-                      </div>
-                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'open' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.green)}>Se kamp</button>
-                    </div>
-                  );
-                }
-
-                if (row.type === 'americano_registration') {
-                  const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
-                  return (
-                    <div key={`amreg-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
-                      <div style={activityBodyStyle}>
-                        <div style={{ ...activityTitleStyle, fontWeight: 700 }}>{row.name}</div>
-                        <div style={activityMetaStyle}>
-                          <span style={activityTypeTagStyle(theme.warm)}>Americano</span>
-                          Americano · {dateStr}{row.time ? ` · ${row.time}` : ''} · {row.participants}/{row.slots} tilmeldt
-                        </div>
-                      </div>
-                      <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.warm)}>Tilmeld</button>
-                    </div>
-                  );
-                }
-
-                if (row.type === 'elo_milestone') {
-                  return (
-                    <div key={`milestone-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
-                      <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
-                      </div>
-                      <div style={activityBodyStyle}>
-                        <div style={activityTitleStyle}>
-                          <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.userId, name: row.name })}>{row.name}</span> nåede {row.milestone} ELO 🎯
-                        </div>
-                        <div style={activityMetaStyle}>
-                          <span style={activityTypeTagStyle(theme.purple)}>ELO</span>
-                          {formatTimeAgo(row.created_at)}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (row.type === 'seeking_player') {
-                  const levelStr = row.level ? levelLabel(row.level) : null;
-                  const sub = [row.area, levelStr].filter(Boolean).join(' · ');
-                  return (
-                    <div key={`seek-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
-                      <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
-                        <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
-                      </div>
-                      <div style={activityBodyStyle}>
-                        <div style={activityTitleStyle}>
-                          <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.userId, name: row.name })}>{row.name}</span> søger makker
-                        </div>
-                        {sub && (
-                          <div style={activityMetaStyle}>
-                            <span style={activityTypeTagStyle(theme.blue)}>Spiller</span>
-                            {sub}
-                          </div>
-                        )}
-                      </div>
-                      <button onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={activityActionBtnStyle(theme.blue)}>Se profil</button>
-                    </div>
-                  );
-                }
-
-                if (row.type === 'league_new') {
-                  const isReg = row.status === 'registration';
-                  return (
-                    <div key={`lnew-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
-                      <div style={activityBodyStyle}>
-                        <div style={{ ...activityTitleStyle, fontWeight: 700 }}>{row.leagueName}</div>
-                        <div style={activityMetaStyle}>
-                          <span style={activityTypeTagStyle(theme.accent)}>Liga</span>
-                          Liga · {isReg ? 'Tilmelding åben' : 'I gang'} · {row.teamCount} hold · {formatTimeAgo(row.created_at)}
-                        </div>
-                      </div>
-                      <button onClick={() => setTab('liga')} style={activityActionBtnStyle(theme.accent)}>
-                        {isReg ? 'Tilmeld' : 'Se liga'}
-                      </button>
-                    </div>
-                  );
-                }
-
-                if (row.type === 'match_group') {
-                  const winners = row.players.filter((p) => p.win);
-                  const losers = row.players.filter((p) => !p.win);
-                  const winnerNames = winners.map((p) => p.name.split(' ')[0]).join(' + ');
-                  const loserNames = losers.map((p) => p.name.split(' ')[0]).join(' + ');
-                  return (
-                    <div key={`match-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
-                      <div style={{ width: 38, height: 38, borderRadius: '50%', background: theme.surfaceAlt, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <Swords size={16} color={theme.accent} />
-                      </div>
-                      <div style={activityBodyStyle}>
-                        <div style={activityTitleStyle}>
-                          <strong>{winnerNames}</strong> slog <strong>{loserNames}</strong>
-                        </div>
-                        <div style={activityMetaStyle}>
-                          <span style={activityTypeTagStyle(theme.accent)}>Kamp</span>
-                          {row.court} - {row.score} - {formatTimeAgo(row.created_at)}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'mine' }); setTab('kampe'); }}
-                        style={activityActionBtnStyle(theme.accent)}
-                      >
-                        Se kamp
-                      </button>
-                    </div>
-                  );
-                }
-
-                // Individual ELO row (fallback)
-                const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
-                const avatar = row.profiles?.avatar || "🎾";
-                const won = row.result === "win";
-                const change = Number(row.change) || 0;
-                return (
-                  <div key={`elo-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
-                    <AvatarCircle
-                      avatar={avatar}
-                      size={40}
-                      emojiSize="26px"
-                      style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }}
-                    />
-                    <div style={activityBodyStyle}>
-                      <div style={activityTitleStyle}>
-                        <strong>{name}</strong> {won ? "vandt" : "tabte"}
-                      </div>
-                      <div style={activityMetaStyle}>
-                        <span style={activityTypeTagStyle(theme.accent)}>Kamp</span>
-                        {formatTimeAgo(row.created_at)}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: "12px", fontWeight: 700, flexShrink: 0, color: change >= 0 ? theme.accent : theme.red }}>
-                      {change >= 0 ? "+" : ""}{change} ELO
-                    </span>
-                  </div>
-                );
+              const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
+              const avatar = row.profiles?.avatar || "🎾";
+              const won = row.result === 'win';
+              const change = Number(row.change) || 0;
+              const tone = change >= 0 ? theme.green : theme.red;
+              return renderActivityRowCard({
+                key: `elo-${i}`,
+                isHighlight,
+                leading: <AvatarCircle avatar={avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />,
+                title: <><strong>{name}</strong> {won ? "vandt" : "tabte"}</>,
+                meta: activityMetaWithTag(theme.accent, "Kamp", formatTimeAgo(row.created_at)),
+                stat: <span style={activityStatPillStyle(tone)}>{change >= 0 ? "+" : ""}{change} ELO</span>,
+              });
             })}
           </div>
         </div>
