@@ -267,6 +267,7 @@ export function AmericanoResultsPanel({
   const [scores, setScores] = useState<Record<string, { a: string; b: string }>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [confirmSaveByMatchId, setConfirmSaveByMatchId] = useState<Record<string, boolean>>({})
   /** Midlertidigt ulåst af opretter — nulstilles ved genindlæsning */
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(() => new Set())
 
@@ -306,6 +307,7 @@ export function AmericanoResultsPanel({
       })
       setScores(sc)
       setUnlockedIds(new Set())
+      setConfirmSaveByMatchId({})
     } catch (e) {
       console.warn(e)
     } finally {
@@ -356,6 +358,7 @@ export function AmericanoResultsPanel({
         .eq('id', m.id)
       if (error) throw error
       showToast('Resultat gemt.')
+      setConfirmSaveByMatchId((prev) => ({ ...prev, [m.id]: false }))
       await load()
       onProfileStatsRefresh?.()
       onSaved()
@@ -366,6 +369,37 @@ export function AmericanoResultsPanel({
       setSaving(false)
     }
   }
+
+  const getDraftScore = useCallback(
+    (matchId: string) => {
+      const row = scores[matchId] || { a: '', b: '' }
+      let aStr = row.a.trim()
+      let bStr = row.b.trim()
+      if (aStr === '' && bStr === '') return null
+
+      if (aStr !== '' && bStr === '') {
+        const a = parseInt(aStr, 10)
+        if (!Number.isInteger(a) || a < 0 || a > P) return null
+        bStr = String(P - a)
+      } else if (bStr !== '' && aStr === '') {
+        const b = parseInt(bStr, 10)
+        if (!Number.isInteger(b) || b < 0 || b > P) return null
+        aStr = String(P - b)
+      }
+
+      const a = parseInt(aStr, 10)
+      const b = parseInt(bStr, 10)
+      if (!Number.isInteger(a) || !Number.isInteger(b)) return null
+
+      return {
+        a,
+        b,
+        label: `${a}-${b}`,
+        valid: isValidAmericanoScore(a, b, P),
+      }
+    },
+    [scores, P]
+  )
 
   const handleScoreBlur = (m: AmericanoMatchRow, side: 'a' | 'b') => {
     const row = scores[m.id] || { a: '', b: '' }
@@ -384,14 +418,6 @@ export function AmericanoResultsPanel({
 
     if (newA !== row.a.trim() || newB !== row.b.trim()) {
       setScores((prev) => ({ ...prev, [m.id]: { a: newA, b: newB } }))
-    }
-
-    if (newA !== '' && newB !== '') {
-      const valA = parseInt(newA, 10)
-      const valB = parseInt(newB, 10)
-      if (isValidAmericanoScore(valA, valB, P)) {
-        saveRow({ ...m } as AmericanoMatchRow)
-      }
     }
   }
 
@@ -515,6 +541,11 @@ export function AmericanoResultsPanel({
         {matchesDisplay.map((m, displayIdx) => {
           const s = scores[m.id] || { a: '', b: '' }
           const locked = isMatchResultLocked(m) && !unlockedIds.has(m.id)
+          const draftScore = getDraftScore(m.id)
+          const hasTypedScore = s.a.trim() !== '' || s.b.trim() !== ''
+          const canConfirmSave = Boolean(draftScore?.valid)
+          const scorePreview = draftScore?.label || `${s.a.trim() || '—'}-${s.b.trim() || '—'}`
+          const confirmOpen = Boolean(confirmSaveByMatchId[m.id])
           const n1 = nameByPartId(m.team_a_p1)
           const n2 = nameByPartId(m.team_a_p2)
           const n3 = nameByPartId(m.team_b_p1)
@@ -617,6 +648,7 @@ export function AmericanoResultsPanel({
                       aria-label="Ret resultat"
                       onClick={() => {
                         setUnlockedIds((prev) => new Set(prev).add(m.id))
+                        setConfirmSaveByMatchId((prev) => ({ ...prev, [m.id]: false }))
                         setScores((prev) => ({ ...prev, [m.id]: { a: '', b: '' } }))
                       }}
                       style={{
@@ -638,7 +670,7 @@ export function AmericanoResultsPanel({
                 )}
                 {isCreator && !locked && (
                   <div style={{ fontSize: 10, color: c.muted, fontWeight: 600, fontStyle: 'italic', textAlign: 'right', flexShrink: 0 }}>
-                    Skriv point →<br />auto-gem
+                    Skriv point og<br />tryk gem
                   </div>
                 )}
               </div>
@@ -664,6 +696,7 @@ export function AmericanoResultsPanel({
                         value={s.a}
                         onChange={(e) => {
                           const v = e.target.value.replace(/[^0-9]/g, '')
+                          setConfirmSaveByMatchId((prev) => ({ ...prev, [m.id]: false }))
                           setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: v, b: prev[m.id]?.b ?? '' } }))
                         }}
                         onBlur={() => handleScoreBlur(m, 'a')}
@@ -707,6 +740,7 @@ export function AmericanoResultsPanel({
                         value={s.b}
                         onChange={(e) => {
                           const v = e.target.value.replace(/[^0-9]/g, '')
+                          setConfirmSaveByMatchId((prev) => ({ ...prev, [m.id]: false }))
                           setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: v } }))
                         }}
                         onBlur={() => handleScoreBlur(m, 'b')}
@@ -729,6 +763,91 @@ export function AmericanoResultsPanel({
                     ) : undefined
                   }
                 />
+                {isCreator && !locked && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      paddingTop: 8,
+                      borderTop: `1px dashed ${c.line}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                    }}
+                  >
+                    <div style={{ fontSize: 12, color: c.text, fontWeight: 600 }}>
+                      Indtastet score: <span style={{ color: c.accent, fontWeight: 800 }}>{scorePreview}</span>
+                    </div>
+                    {!confirmOpen && (
+                      <button
+                        type="button"
+                        disabled={saving || !canConfirmSave}
+                        onClick={() => setConfirmSaveByMatchId((prev) => ({ ...prev, [m.id]: true }))}
+                        style={{
+                          fontFamily: font,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          padding: '8px 12px',
+                          borderRadius: 8,
+                          border: '1px solid var(--pm-border)',
+                          background: canConfirmSave ? 'var(--pm-accent)' : 'var(--pm-surface)',
+                          color: canConfirmSave ? '#fff' : c.muted,
+                          cursor: saving || !canConfirmSave ? 'not-allowed' : 'pointer',
+                          alignSelf: 'flex-start',
+                        }}
+                      >
+                        Gem resultat
+                      </button>
+                    )}
+                    {confirmOpen && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: c.text }}>
+                          Er du sikker på {scorePreview}?
+                        </div>
+                        <button
+                          type="button"
+                          disabled={saving || !canConfirmSave}
+                          onClick={() => { void saveRow({ ...m } as AmericanoMatchRow) }}
+                          style={{
+                            fontFamily: font,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            padding: '8px 12px',
+                            borderRadius: 8,
+                            border: '1px solid var(--pm-accent)',
+                            background: 'var(--pm-accent)',
+                            color: '#fff',
+                            cursor: saving || !canConfirmSave ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          Ja, gem {scorePreview}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => setConfirmSaveByMatchId((prev) => ({ ...prev, [m.id]: false }))}
+                          style={{
+                            fontFamily: font,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: '8px 12px',
+                            borderRadius: 8,
+                            border: '1px solid var(--pm-border)',
+                            background: 'var(--pm-surface)',
+                            color: c.text,
+                            cursor: saving ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          Annuller
+                        </button>
+                      </div>
+                    )}
+                    {hasTypedScore && !canConfirmSave && (
+                      <div style={{ fontSize: 11, color: c.muted }}>
+                        Summen skal være præcis {P} point før du kan gemme.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )
