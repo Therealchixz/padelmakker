@@ -274,14 +274,24 @@ export function DashboardPage({ user, onLogout, showToast }) {
     hasPrefetchedTabsRef.current = true;
 
     let cancelled = false;
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const effectiveType = connection?.effectiveType || "";
+    const isConstrainedNetwork =
+      connection?.saveData === true
+      || effectiveType === "slow-2g"
+      || effectiveType === "2g"
+      || effectiveType === "3g";
+
     const warmTabs = () => {
       if (cancelled) return;
-      const loaders = [loadKampeTab, loadBeskedTab, loadLigaTab, loadMakkereTab, loadRankingTab];
+      const loaders = isConstrainedNetwork
+        ? [loadKampeTab, loadBeskedTab]
+        : [loadKampeTab, loadBeskedTab, loadLigaTab, loadMakkereTab, loadRankingTab];
       if (isAdmin) loaders.push(loadAdminTab);
       loaders.forEach((loader, index) => {
         window.setTimeout(() => {
           if (!cancelled) void loader();
-        }, index * 140);
+        }, index * 180);
       });
     };
 
