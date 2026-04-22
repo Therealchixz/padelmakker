@@ -15,7 +15,8 @@ import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, f
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
-import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { fetchMatchMessages, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
+import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -184,6 +185,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [padelHelpOpen, setPadelHelpOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [joinRequests, setJoinRequests] = useState({}); // { [matchId]: [{ id, user_id, user_name, user_emoji, status }] }
+  const [matchChatOpenById, setMatchChatOpenById] = useState({});
+  const [matchChatById, setMatchChatById] = useState({});
+  const [matchChatDraftById, setMatchChatDraftById] = useState({});
+  const [matchChatLoadingById, setMatchChatLoadingById] = useState({});
+  const [matchChatSendingById, setMatchChatSendingById] = useState({});
+  const [matchChatErrorById, setMatchChatErrorById] = useState({});
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
@@ -364,6 +371,35 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   useEffect(() => {
     mergeKampeSessionPrefs(user.id, { format: kampeFormat, view: viewTab });
   }, [user.id, kampeFormat, viewTab]);
+
+  useEffect(() => {
+    if (kampeFormat !== "padel") {
+      setMatchChatOpenById({});
+    }
+  }, [kampeFormat]);
+
+  useEffect(() => {
+    const openMatchIds = Object.keys(matchChatOpenById).filter((matchId) => matchChatOpenById[matchId]);
+    if (openMatchIds.length === 0) return undefined;
+
+    const unsubscribers = openMatchIds.map((matchId) =>
+      subscribeToMatchMessages(matchId, (incoming) => {
+        if (!incoming?.id) return;
+        setMatchChatById((prev) => {
+          const current = prev[matchId] || [];
+          if (current.some((m) => String(m.id) === String(incoming.id))) return prev;
+          const next = [...current, incoming];
+          return { ...prev, [matchId]: next.slice(-120) };
+        });
+      })
+    );
+
+    return () => {
+      unsubscribers.forEach((stop) => {
+        try { stop(); } catch (_) { /* ignore */ }
+      });
+    };
+  }, [matchChatOpenById]);
 
   const persistAmericanoSubTab = useCallback(
     (v) => mergeKampeSessionPrefs(user.id, { americanoView: v }),
@@ -737,6 +773,68 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     finally { setBusyId(null); }
   };
 
+  const loadMatchChat = useCallback(async (matchId) => {
+    setMatchChatLoadingById((prev) => ({ ...prev, [matchId]: true }));
+    setMatchChatErrorById((prev) => ({ ...prev, [matchId]: "" }));
+    try {
+      const rows = await fetchMatchMessages(matchId, 100);
+      setMatchChatById((prev) => ({ ...prev, [matchId]: rows }));
+    } catch (e) {
+      const msg = e?.message || "Kunne ikke hente kamp-chat.";
+      setMatchChatErrorById((prev) => ({ ...prev, [matchId]: msg }));
+    } finally {
+      setMatchChatLoadingById((prev) => ({ ...prev, [matchId]: false }));
+    }
+  }, []);
+
+  const toggleMatchChat = async (matchId) => {
+    const openNow = !!matchChatOpenById[matchId];
+    const nextOpen = !openNow;
+    setMatchChatOpenById((prev) => ({ ...prev, [matchId]: nextOpen }));
+    if (nextOpen && !matchChatById[matchId]) {
+      await loadMatchChat(matchId);
+    }
+  };
+
+  const submitMatchChat = async (matchId) => {
+    const raw = matchChatDraftById[matchId] || "";
+    const content = sanitizeText(raw).trim();
+    if (!content) return;
+
+    setMatchChatSendingById((prev) => ({ ...prev, [matchId]: true }));
+    setMatchChatErrorById((prev) => ({ ...prev, [matchId]: "" }));
+    try {
+      const created = await sendMatchMessage({
+        matchId,
+        senderId: user.id,
+        senderName: myDisplayName,
+        senderAvatar: user.avatar || "🎾",
+        content,
+      });
+      if (created?.id) {
+        setMatchChatById((prev) => {
+          const current = prev[matchId] || [];
+          if (current.some((m) => String(m.id) === String(created.id))) return prev;
+          return { ...prev, [matchId]: [...current, created].slice(-120) };
+        });
+      }
+      setMatchChatDraftById((prev) => ({ ...prev, [matchId]: "" }));
+    } catch (e) {
+      const msg = e?.message || "Kunne ikke sende besked.";
+      setMatchChatErrorById((prev) => ({ ...prev, [matchId]: msg }));
+      showToast(msg);
+    } finally {
+      setMatchChatSendingById((prev) => ({ ...prev, [matchId]: false }));
+    }
+  };
+
+  const formatChatClock = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+  };
+
   const submitResult = async (matchId, result) => {
     setResultMatch(null);
     setBusyId(matchId);
@@ -888,6 +986,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       ((isCreator || isAdmin) && status !== "completed" && status !== "in_progress")
     );
     const adminActionsOpen = !!expandedAdminActions[m.id];
+    const canUseMatchChat = joined || isCreator || isAdmin;
+    const chatOpen = !!matchChatOpenById[m.id];
+    const chatMessages = matchChatById[m.id] || [];
+    const chatDraft = matchChatDraftById[m.id] || "";
+    const chatLoading = !!matchChatLoadingById[m.id];
+    const chatSending = !!matchChatSendingById[m.id];
+    const chatError = matchChatErrorById[m.id] || "";
 
     const statusLabel = {
       open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", tone: left > 0 ? "accent" : "warm" },
@@ -1070,6 +1175,94 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             </div>
           );
         })()}
+
+        {canUseMatchChat && (
+          <>
+            <button
+              onClick={() => { void toggleMatchChat(m.id); }}
+              className="pm-accordion-trigger"
+              style={{
+                ...btn(false),
+                marginBottom: chatOpen ? "8px" : "10px",
+                padding: "8px 12px",
+                fontSize: "12px",
+                color: theme.textMid,
+                borderColor: theme.border,
+                background: theme.surfaceAlt,
+              }}
+            >
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "7px" }}>
+                <MessageCircle size={14} />
+                Match chat {chatMessages.length > 0 ? `(${chatMessages.length})` : ""}
+              </span>
+              {chatOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+
+            {chatOpen && (
+              <div className="pm-card-subpanel pm-match-chat-panel" style={{ marginBottom: "10px" }}>
+                <div className="pm-match-chat-list">
+                  {chatLoading && (
+                    <div className="pm-match-chat-empty">Henter beskeder...</div>
+                  )}
+                  {!chatLoading && chatError && (
+                    <div className="pm-match-chat-empty">{chatError}</div>
+                  )}
+                  {!chatLoading && !chatError && chatMessages.length === 0 && (
+                    <div className="pm-match-chat-empty">Ingen beskeder endnu. Skriv den første besked til kampen.</div>
+                  )}
+                  {!chatLoading && !chatError && chatMessages.map((msg) => {
+                    const mine = String(msg.sender_id) === String(user.id);
+                    const displayName = (msg.sender_name || "Spiller").trim();
+                    return (
+                      <div key={msg.id} className={`pm-match-chat-row ${mine ? "pm-match-chat-row--mine" : ""}`}>
+                        <div className={`pm-match-chat-bubble ${mine ? "pm-match-chat-bubble--mine" : ""}`}>
+                          <div className="pm-match-chat-meta">
+                            <span className="pm-match-chat-author">{mine ? "Dig" : displayName}</span>
+                            <span>{formatChatClock(msg.created_at)}</span>
+                          </div>
+                          <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="pm-match-chat-composer">
+                  <input
+                    value={chatDraft}
+                    onChange={(e) => {
+                      const next = e.target.value.slice(0, 1000);
+                      setMatchChatDraftById((prev) => ({ ...prev, [m.id]: next }));
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        void submitMatchChat(m.id);
+                      }
+                    }}
+                    placeholder="Skriv til holdet..."
+                    className="pm-match-chat-input"
+                    maxLength={1000}
+                  />
+                  <button
+                    onClick={() => { void submitMatchChat(m.id); }}
+                    disabled={chatSending || !chatDraft.trim()}
+                    style={{
+                      ...btn(true),
+                      justifyContent: "center",
+                      minWidth: "92px",
+                      padding: "8px 10px",
+                      fontSize: "12px",
+                      opacity: chatSending || !chatDraft.trim() ? 0.7 : 1,
+                    }}
+                  >
+                    <SendHorizontal size={13} />
+                    {chatSending ? "Sender..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         {/* Actions */}
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

@@ -919,6 +919,97 @@ button,
   justify-content: space-between;
 }
 
+.pm-match-chat-panel {
+  padding: 10px;
+}
+
+.pm-match-chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 230px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.pm-match-chat-empty {
+  font-size: 12px;
+  color: var(--pm-text-light);
+  line-height: 1.45;
+  padding: 4px 2px;
+}
+
+.pm-match-chat-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.pm-match-chat-row--mine {
+  justify-content: flex-end;
+}
+
+.pm-match-chat-bubble {
+  max-width: min(82%, 520px);
+  border-radius: var(--pm-radius-sm);
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 8px 10px;
+}
+
+.pm-match-chat-bubble--mine {
+  background: var(--pm-accent-bg);
+  border-color: color-mix(in srgb, var(--pm-accent) 26%, var(--pm-border));
+}
+
+.pm-match-chat-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--pm-text-light);
+  margin-bottom: 4px;
+}
+
+.pm-match-chat-author {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--pm-text-mid);
+  letter-spacing: 0.01em;
+}
+
+.pm-match-chat-composer {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pm-match-chat-input {
+  flex: 1;
+  min-height: 38px;
+  border-radius: var(--pm-radius-sm);
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-size: 12px;
+  padding: 8px 10px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.pm-match-chat-input::placeholder {
+  color: var(--pm-text-light);
+}
+
+.pm-match-chat-input:focus {
+  border-color: color-mix(in srgb, var(--pm-accent) 40%, var(--pm-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pm-accent) 13%, transparent);
+}
+
 .pm-data-table {
   margin-top: 8px;
   border: 1px solid var(--pm-border);
@@ -1447,6 +1538,14 @@ button,
     padding: 8px 10px;
   }
 
+  .pm-match-chat-list {
+    max-height: 250px;
+  }
+
+  .pm-match-chat-bubble {
+    max-width: 90%;
+  }
+
   .pm-data-table-cell-head {
     padding: 6px 7px;
   }
@@ -1481,6 +1580,15 @@ button,
 @media (max-width: 520px) {
   .pm-form-2col {
     grid-template-columns: 1fr;
+  }
+
+  .pm-match-chat-composer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pm-match-chat-composer > button {
+    width: 100%;
   }
 }
 
