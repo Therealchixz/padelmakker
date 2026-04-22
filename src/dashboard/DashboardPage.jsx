@@ -498,7 +498,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               borderRadius: "12px",
               boxShadow: "0 8px 32px rgba(0,0,0,0.14)",
               zIndex: 9999,
-              overflow: "hidden",
+              overflow: "visible",
             }}
           >
             <div style={{ padding: "10px 12px", borderBottom: "1px solid " + theme.border }}>
