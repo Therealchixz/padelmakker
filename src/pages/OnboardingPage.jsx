@@ -49,6 +49,19 @@ export function OnboardingPage() {
     return true;
   };
 
+  const stepMeta = [
+    { title: "Konto", hint: "Navn, email og adgangskode." },
+    { title: "Niveau", hint: "Spilleniveau og spillestil." },
+    { title: "Område", hint: "Område og tidspunkter du spiller." },
+    { title: "Profil", hint: "Billede, bio og tjek før oprettelse." },
+  ];
+  const totalSteps = stepMeta.length;
+  const activeStepMeta = stepMeta[step];
+  const profilePreviewName = `${form.first_name.trim()} ${form.last_name.trim()}`.trim() || "Dit navn";
+  const profilePreviewLevel = [form.level, form.style, form.court_side].filter(Boolean).join(" - ") || "Niveau ikke valgt endnu";
+  const profilePreviewLocation = [form.city.trim(), form.area].filter(Boolean).join(", ") || "Område ikke valgt endnu";
+  const profilePreviewBio = form.bio.trim() || "Tilføj en kort bio, så andre bedre forstår hvem du er som makker.";
+
   const finish = async () => {
     setSubmitting(true); setErr("");
     try {
@@ -348,19 +361,56 @@ export function OnboardingPage() {
         Billedet gemmes lokalt indtil du er logget ind (også hvis du åbner bekræftelses-link i en ny fane). Upload sker automatisk ved første login.
       </p>
       <label htmlFor="onb-bio" style={labelStyle}>Kort bio</label>
-      <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="F.eks. 'Ny til padel, søger makkere...'" style={{ ...inputStyle, height: "80px", resize: "vertical" }} />
+      <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl kort hvad du søger i en makker" style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "18px" }} />
+      <div style={{ border: "1px solid " + theme.border, borderRadius: "12px", background: theme.surfaceAlt, padding: "14px" }}>
+        <div style={{ fontSize: "11px", letterSpacing: "0.05em", textTransform: "uppercase", color: theme.textLight, fontWeight: 700, marginBottom: "10px" }}>
+          Forhåndsvisning af profil
+        </div>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
+          <div style={{ width: "44px", height: "44px", borderRadius: "50%", border: "1px solid " + theme.border, background: theme.surface, display: "grid", placeItems: "center", overflow: "hidden", flexShrink: 0 }}>
+            {avatarPreviewUrl
+              ? <img src={avatarPreviewUrl} alt="Valgt profilbillede" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : <span style={{ fontSize: "22px", lineHeight: 1 }}>{form.avatar}</span>}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: "16px", fontWeight: 700, color: theme.text, lineHeight: 1.2 }}>{profilePreviewName}</div>
+            <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "3px", lineHeight: 1.35 }}>{profilePreviewLevel}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.5, marginBottom: "6px" }}>
+          {profilePreviewLocation}
+        </div>
+        <div style={{ fontSize: "13px", color: theme.text, lineHeight: 1.5 }}>
+          {profilePreviewBio}
+        </div>
+      </div>
     </div>,
   ];
 
   return (
     <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
       <div className="pm-auth-wide">
-        <div style={{ display: "flex", gap: "6px", marginBottom: "32px" }}>
-          {[0,1,2,3].map(i => (
-            <div key={i} style={{ flex: 1, height: "3px", borderRadius: "3px", background: i <= step ? theme.accent : theme.border, transition: "background 0.3s" }} />
-          ))}
+        <div style={{ marginBottom: "18px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.03em", textTransform: "uppercase", color: theme.textMid }}>
+              Trin {step + 1} af {totalSteps}
+            </span>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: theme.accent }}>
+              {activeStepMeta.title}
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
+            {stepMeta.map((meta, i) => (
+              <div key={meta.title} style={{ flex: 1, height: "4px", borderRadius: "4px", background: i <= step ? theme.accent : theme.border, transition: "background 0.3s" }} />
+            ))}
+          </div>
+          <div style={{ fontSize: "12px", color: theme.textLight, lineHeight: 1.45 }}>
+            {activeStepMeta.hint}
+          </div>
         </div>
-        {steps[step]}
+        <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "14px", padding: "18px", marginBottom: "12px" }}>
+          {steps[step]}
+        </div>
         {err && <p style={{ color: theme.red, fontSize: "13px", marginTop: "12px" }}>{err}</p>}
         <div className="pm-onboarding-actions">
           <button onClick={step > 0 ? () => setStep(s => s - 1) : () => navigate("/")} style={btn(false)}>← Tilbage</button>
