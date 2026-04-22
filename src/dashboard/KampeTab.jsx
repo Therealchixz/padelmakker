@@ -796,7 +796,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
   };
 
-  const submitMatchChat = async (matchId) => {
+  const submitMatchChat = async (matchId, canWrite = false) => {
+    if (!canWrite) {
+      showToast("Kun tilmeldte spillere kan skrive i kamp-chat.");
+      return;
+    }
     const raw = matchChatDraftById[matchId] || "";
     const content = sanitizeText(raw).trim();
     if (!content) return;
@@ -986,7 +990,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       ((isCreator || isAdmin) && status !== "completed" && status !== "in_progress")
     );
     const adminActionsOpen = !!expandedAdminActions[m.id];
-    const canUseMatchChat = joined || isCreator || isAdmin;
+    const canUseMatchChat = joined;
+    const canWriteMatchChat = joined;
     const chatOpen = !!matchChatOpenById[m.id];
     const chatMessages = matchChatById[m.id] || [];
     const chatDraft = matchChatDraftById[m.id] || "";
@@ -1236,16 +1241,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        void submitMatchChat(m.id);
+                        void submitMatchChat(m.id, canWriteMatchChat);
                       }
                     }}
-                    placeholder="Skriv til holdet..."
+                    placeholder={canWriteMatchChat ? "Skriv til holdet..." : "Kun tilmeldte kan skrive"}
                     className="pm-match-chat-input"
                     maxLength={1000}
+                    disabled={!canWriteMatchChat || chatSending}
                   />
                   <button
-                    onClick={() => { void submitMatchChat(m.id); }}
-                    disabled={chatSending || !chatDraft.trim()}
+                    onClick={() => { void submitMatchChat(m.id, canWriteMatchChat); }}
+                    disabled={!canWriteMatchChat || chatSending || !chatDraft.trim()}
                     style={{
                       ...btn(true),
                       justifyContent: "center",
