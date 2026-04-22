@@ -11,6 +11,9 @@ import { PlayerStatsModal } from '../components/PlayerStatsModal';
 import { levelLabel } from '../lib/platformConstants';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 
+const HOME_FEED_CACHE_TTL_MS = 45_000;
+const HOME_FEED_CACHE_BY_USER = new Map();
+
 export function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
   const [viewTournament, setViewTournament] = useState(null);
@@ -92,9 +95,21 @@ export function HomeTab({ user, setTab }) {
     setVisibleFeedCount(FEED_INITIAL_COUNT);
   }, [activeFilters]);
 
-  const fetchFeed = useCallback(async () => {
+  const applyFeedPayload = useCallback((payload) => {
+    if (!payload) return;
+    setFeed(payload.feed || []);
+    setAmericanoFeed(payload.americanoFeed || []);
+    setLigaFeed(payload.ligaFeed || []);
+    setOpenMatchFeed(payload.openMatchFeed || []);
+    setAmericanoRegFeed(payload.americanoRegFeed || []);
+    setMilestoneFeed(payload.milestoneFeed || []);
+    setSeekingFeed(payload.seekingFeed || []);
+    setLeagueNewFeed(payload.leagueNewFeed || []);
+  }, []);
+
+  const fetchFeed = useCallback(async ({ silent = false } = {}) => {
     const fetchId = ++fetchIdRef.current;
-    setFeedLoading(true);
+    if (!silent) setFeedLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
       const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -297,24 +312,38 @@ export function HomeTab({ user, setTab }) {
 
       // Sæt al state på én gang (React 18 batcher disse i async-kontekst)
       if (fetchIdRef.current !== fetchId) return;
-      setFeed(groupedFeed);
-      setAmericanoFeed(completedAmFeed);
-      setLigaFeed(completedLgFeed);
-      setOpenMatchFeed(openMatchFeed_);
-      setAmericanoRegFeed(americanoRegFeed_);
-      setMilestoneFeed(milestoneItems);
-      setSeekingFeed(seekingFeed_);
-      setLeagueNewFeed(leagueNewFeed_);
+      const payload = {
+        feed: groupedFeed,
+        americanoFeed: completedAmFeed,
+        ligaFeed: completedLgFeed,
+        openMatchFeed: openMatchFeed_,
+        americanoRegFeed: americanoRegFeed_,
+        milestoneFeed: milestoneItems,
+        seekingFeed: seekingFeed_,
+        leagueNewFeed: leagueNewFeed_,
+      };
+      applyFeedPayload(payload);
+      HOME_FEED_CACHE_BY_USER.set(String(user.id), { at: Date.now(), payload });
     } catch (e) {
       if (fetchIdRef.current === fetchId) console.warn('Feed error:', e);
     } finally {
-      if (fetchIdRef.current === fetchId) setFeedLoading(false);
+      if (fetchIdRef.current === fetchId && !silent) setFeedLoading(false);
     }
-  }, [user.id]);
+  }, [applyFeedPayload, user.id]);
 
   useEffect(() => {
+    const key = String(user.id);
+    const cached = HOME_FEED_CACHE_BY_USER.get(key);
+    if (cached?.payload) {
+      applyFeedPayload(cached.payload);
+      setFeedLoading(false);
+      if (Date.now() - cached.at > HOME_FEED_CACHE_TTL_MS / 4) {
+        fetchFeed({ silent: true });
+      }
+      return;
+    }
     fetchFeed();
-  }, [fetchFeed]);
+  }, [applyFeedPayload, fetchFeed, user.id]);
 
   /* Genindlæs feed når appen kommer i forgrunden igen */
   useEffect(() => {
@@ -324,7 +353,7 @@ export function HomeTab({ user, setTab }) {
       const now = Date.now();
       if (now - lastFetch < 30000) return; // maks. ét kald pr. 30 sek.
       lastFetch = now;
-      fetchFeed();
+      fetchFeed({ silent: true });
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
