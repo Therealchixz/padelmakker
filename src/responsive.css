@@ -930,7 +930,7 @@ button,
   gap: 8px;
   max-height: 230px;
   overflow-y: auto;
-  padding-right: 2px;
+  padding-right: 10px;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--pm-accent) 46%, var(--pm-border)) color-mix(in srgb, var(--pm-surface-alt) 84%, var(--pm-border));
@@ -985,6 +985,7 @@ button,
 .pm-match-chat-bubble--mine {
   background: var(--pm-accent-bg);
   border-color: color-mix(in srgb, var(--pm-accent) 26%, var(--pm-border));
+  margin-right: 2px;
 }
 
 .pm-match-chat-meta {
