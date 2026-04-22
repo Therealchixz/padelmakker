@@ -74,47 +74,99 @@ function usePendingKampeBadge(userId) {
     if (!userId) { setCount(0); return; }
     let cancelled = false;
     let timer = null;
-    const scheduleRefetch = () => {
+    let intervalId = null;
+    let myCreatedMatchIds = [];
+    let myPlayerMatchIds = [];
+    let shouldRefreshIds = true;
+    let inFlight = false;
+    let rerunAfterFlight = false;
+
+    const isPageVisible = () => (typeof document === "undefined" || document.visibilityState === "visible");
+    const scheduleRefetch = (opts = {}) => {
+      const { refreshIds = false, delay = 350 } = opts;
+      if (refreshIds) shouldRefreshIds = true;
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => { void refetch(); }, 250);
+      timer = setTimeout(() => { void refetch(); }, delay);
     };
-    const refetch = async () => {
+
+    const loadIds = async () => {
       try {
         const [myMatchesRes, myPlayerRes] = await Promise.all([
           supabase.from('matches').select('id').eq('creator_id', userId),
           supabase.from('match_players').select('match_id').eq('user_id', userId),
         ]);
-        const myMatchIds    = (myMatchesRes.data || []).map(m => m.id);
-        const myPlayerMIds  = (myPlayerRes.data  || []).map(p => p.match_id);
+        myCreatedMatchIds = (myMatchesRes.data || []).map(m => m.id);
+        myPlayerMatchIds = [...new Set((myPlayerRes.data || []).map(p => p.match_id))];
+        shouldRefreshIds = false;
+      } catch (e) {
+        console.warn('kampe badge ids:', e);
+      }
+    };
+
+    const loadCounts = async () => {
+      try {
         const [joinRes, resultRes] = await Promise.all([
-          myMatchIds.length > 0
-            ? supabase.from('match_join_requests').select('id', { count: 'exact', head: true }).in('match_id', myMatchIds).eq('status', 'pending')
+          myCreatedMatchIds.length > 0
+            ? supabase.from('match_join_requests').select('id', { count: 'exact', head: true }).in('match_id', myCreatedMatchIds).eq('status', 'pending')
             : { count: 0 },
-          myPlayerMIds.length > 0
-            ? supabase.from('match_results').select('id', { count: 'exact', head: true }).in('match_id', myPlayerMIds).eq('confirmed', false).neq('submitted_by', userId)
+          myPlayerMatchIds.length > 0
+            ? supabase.from('match_results').select('id', { count: 'exact', head: true }).in('match_id', myPlayerMatchIds).eq('confirmed', false).neq('submitted_by', userId)
             : { count: 0 },
         ]);
         if (!cancelled) setCount((joinRes.count || 0) + (resultRes.count || 0));
       } catch (e) {
-        console.warn('kampe badge refetch:', e);
+        console.warn('kampe badge counts:', e);
       }
     };
+
+    const refetch = async () => {
+      if (!isPageVisible()) return;
+      if (inFlight) {
+        rerunAfterFlight = true;
+        return;
+      }
+      inFlight = true;
+      try {
+        if (shouldRefreshIds) await loadIds();
+        await loadCounts();
+      } finally {
+        inFlight = false;
+        if (rerunAfterFlight) {
+          rerunAfterFlight = false;
+          scheduleRefetch({ delay: 120 });
+        }
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (!isPageVisible()) return;
+      scheduleRefetch({ delay: 80 });
+    };
+
     void refetch();
-    const ch1 = supabase.channel('kampe-badge-req-' + userId)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_join_requests', filter: 'status=eq.pending' }, scheduleRefetch)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_join_requests', filter: 'status=eq.pending' }, scheduleRefetch)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'match_join_requests', filter: 'status=eq.pending' }, scheduleRefetch)
+    intervalId = setInterval(() => {
+      if (isPageVisible()) scheduleRefetch({ delay: 50 });
+    }, 15000);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
+    const chMatches = supabase.channel('kampe-badge-matches-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: 'creator_id=eq.' + userId }, () => scheduleRefetch({ refreshIds: true, delay: 120 }))
       .subscribe();
-    const ch2 = supabase.channel('kampe-badge-res-' + userId)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_results', filter: 'confirmed=eq.false' }, scheduleRefetch)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_results', filter: 'confirmed=eq.false' }, scheduleRefetch)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'match_results', filter: 'confirmed=eq.false' }, scheduleRefetch)
+    const chPlayers = supabase.channel('kampe-badge-players-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_players', filter: 'user_id=eq.' + userId }, () => scheduleRefetch({ refreshIds: true, delay: 120 }))
       .subscribe();
+
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
-      supabase.removeChannel(ch1);
-      supabase.removeChannel(ch2);
+      if (intervalId) clearInterval(intervalId);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+      supabase.removeChannel(chMatches);
+      supabase.removeChannel(chPlayers);
     };
   }, [userId]);
   return count;
