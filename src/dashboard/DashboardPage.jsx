@@ -279,83 +279,119 @@ function useUnreadKampeNotificationsCount(userId) {
   useEffect(() => {
     if (!userId) { setCount(0); return; }
     let cancelled = false;
+    let timer = null;
+    let inFlight = false;
+    let rerunAfterFlight = false;
+    let shouldRefreshIds = true;
+    let myMatchIds = [];
+    const RELEVANT_TYPES = ['match_chat', 'match_join', 'match_invite', 'match_full', 'result_submitted', 'result_confirmed'];
 
-    const syncCount = async () => {
+    const isPageVisible = () => (typeof document === 'undefined' || document.visibilityState === 'visible');
+    const scheduleRefetch = (opts = {}) => {
+      const { refreshIds = false, delay = 220 } = opts;
+      if (refreshIds) shouldRefreshIds = true;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { void refetch(); }, delay);
+    };
+
+    const loadIds = async () => {
       try {
+        const [myCreatedRes, myPlayerRes] = await Promise.all([
+          supabase.from('matches').select('id').eq('creator_id', userId),
+          supabase.from('match_players').select('match_id').eq('user_id', userId),
+        ]);
+        const idSet = new Set([
+          ...(myCreatedRes.data || []).map((m) => String(m.id)),
+          ...(myPlayerRes.data || []).map((p) => String(p.match_id)),
+        ]);
+        myMatchIds = [...idSet];
+        shouldRefreshIds = false;
+      } catch (e) {
+        console.warn('kampe notif badge ids:', e);
+      }
+    };
+
+    const loadCount = async () => {
+      try {
+        if (myMatchIds.length === 0) {
+          if (!cancelled) setCount(0);
+          return;
+        }
         const { count: c } = await supabase
           .from('notifications')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', userId)
           .eq('read', false)
-          .not('match_id', 'is', null);
+          .in('type', RELEVANT_TYPES)
+          .in('match_id', myMatchIds);
         if (!cancelled) setCount(c || 0);
       } catch (e) {
-        console.warn('kampe notif badge refetch:', e);
+        console.warn('kampe notif badge counts:', e);
       }
     };
 
-    const applyDeltaFromPayload = (payload) => {
-      if (cancelled) return;
-      const event = payload?.eventType;
-      const next = payload?.new || {};
-      const prev = payload?.old || {};
-      const nextUnreadMatch = next?.read === false && next?.match_id != null;
-      const prevHasReadField = Object.prototype.hasOwnProperty.call(prev, 'read');
-      const prevHasMatchField = Object.prototype.hasOwnProperty.call(prev, 'match_id');
-      const prevUnreadMatch = prev?.read === false && prev?.match_id != null;
-
-      if (event === 'INSERT') {
-        if (nextUnreadMatch) setCount((v) => v + 1);
+    const refetch = async () => {
+      if (!isPageVisible()) return;
+      if (inFlight) {
+        rerunAfterFlight = true;
         return;
       }
-      if (event === 'UPDATE') {
-        if (!prevHasReadField || !prevHasMatchField) {
-          void syncCount();
-          return;
+      inFlight = true;
+      try {
+        if (shouldRefreshIds) await loadIds();
+        await loadCount();
+      } finally {
+        inFlight = false;
+        if (rerunAfterFlight) {
+          rerunAfterFlight = false;
+          scheduleRefetch({ delay: 120 });
         }
-        if (prevUnreadMatch === nextUnreadMatch) return;
-        setCount((v) => Math.max(0, v + (nextUnreadMatch ? 1 : -1)));
-        return;
-      }
-      if (event === 'DELETE' && prevUnreadMatch) {
-        setCount((v) => Math.max(0, v - 1));
       }
     };
 
-    void syncCount();
-    const channel = supabase
-      .channel('kampe-notif-badge-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, applyDeltaFromPayload)
+    const onVisibilityChange = () => {
+      if (!isPageVisible()) return;
+      scheduleRefetch({ delay: 80 });
+    };
+
+    void refetch();
+    const chNotifs = supabase.channel('kampe-notif-badge-notifs-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, () => scheduleRefetch({ delay: 120 }))
+      .subscribe();
+    const chMatches = supabase.channel('kampe-notif-badge-matches-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: 'creator_id=eq.' + userId }, () => scheduleRefetch({ refreshIds: true, delay: 120 }))
+      .subscribe();
+    const chPlayers = supabase.channel('kampe-notif-badge-players-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_players', filter: 'user_id=eq.' + userId }, () => scheduleRefetch({ refreshIds: true, delay: 120 }))
       .subscribe();
 
-    const syncIfVisible = () => {
-      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
-        void syncCount();
-      }
-    };
-    const onVisibilityChange = () => syncIfVisible();
-    const intervalId = setInterval(syncIfVisible, 10000);
+    const intervalId = setInterval(() => {
+      if (isPageVisible()) scheduleRefetch({ delay: 50 });
+    }, 10000);
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', onVisibilityChange);
     }
     if (typeof window !== 'undefined') {
-      window.addEventListener('focus', syncIfVisible);
-      window.addEventListener('pageshow', syncIfVisible);
-      window.addEventListener('online', syncIfVisible);
+      window.addEventListener('focus', onVisibilityChange);
+      window.addEventListener('pageshow', onVisibilityChange);
+      window.addEventListener('online', onVisibilityChange);
     }
 
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
       clearInterval(intervalId);
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', onVisibilityChange);
       }
       if (typeof window !== 'undefined') {
-        window.removeEventListener('focus', syncIfVisible);
-        window.removeEventListener('pageshow', syncIfVisible);
-        window.removeEventListener('online', syncIfVisible);
+        window.removeEventListener('focus', onVisibilityChange);
+        window.removeEventListener('pageshow', onVisibilityChange);
+        window.removeEventListener('online', onVisibilityChange);
       }
-      supabase.removeChannel(channel);
+      supabase.removeChannel(chNotifs);
+      supabase.removeChannel(chMatches);
+      supabase.removeChannel(chPlayers);
     };
   }, [userId]);
 
