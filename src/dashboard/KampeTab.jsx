@@ -520,7 +520,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     return () => {
       unsubscribers.forEach((stop) => {
-        try { stop(); } catch (_) { /* ignore */ }
+        try { stop(); } catch { /* ignore */ }
       });
     };
   }, [matchChatOpenById, scrollMatchChatToBottom]);

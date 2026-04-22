@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const SEEK_TTL_MS = 24 * 60 * 60 * 1000;
 const isSeekingActive = (p) =>
