@@ -68,6 +68,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 768 : false));
   const [mobileChatOffsets, setMobileChatOffsets] = useState({ top: 0 });
   const bottomRef = useRef(null);
+  const messagesPaneRef = useRef(null);
   const inputRef = useRef(null);
   const composeRef = useRef(null);
   const prevMessageCountRef = useRef(0);
@@ -75,6 +76,8 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   const profileRequestsRef = useRef(new Set());
   const markReadTimerRef = useRef(null);
   const composeSearchSeqRef = useRef(0);
+  const shouldStickToBottomRef = useRef(true);
+  const lastScrolledMessageIdRef = useRef(null);
 
   useEffect(() => {
     profilesRef.current = profiles;
@@ -122,6 +125,13 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       void markMessagesRead(user.id, otherId);
     }, delay);
   }, [user?.id]);
+
+  const updateStickToBottom = useCallback(() => {
+    const pane = messagesPaneRef.current;
+    if (!pane) return;
+    const distanceFromBottom = pane.scrollHeight - (pane.scrollTop + pane.clientHeight);
+    shouldStickToBottomRef.current = distanceFromBottom < 96;
+  }, []);
 
   const clearConversationUnread = useCallback((otherId) => {
     setConversations(prev => prev.map((c) => (
@@ -283,6 +293,8 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   useEffect(() => {
     setChatVisibleCount(CHAT_WINDOW_SIZE);
     prevMessageCountRef.current = 0;
+    shouldStickToBottomRef.current = true;
+    lastScrolledMessageIdRef.current = null;
   }, [selectedId]);
 
   useEffect(() => {
@@ -293,9 +305,13 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
     prevMessageCountRef.current = messages.length;
   }, [messages.length, chatVisibleCount]);
 
-  // Scroll til bund ved nye beskeder
+  // Scroll til bund ved nye beskeder når bruger allerede er tæt på bunden
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const lastMessageId = messages[messages.length - 1]?.id;
+    if (!lastMessageId || lastScrolledMessageIdRef.current === lastMessageId) return;
+    if (!shouldStickToBottomRef.current && messages.length > 1) return;
+    bottomRef.current?.scrollIntoView({ behavior: messages.length <= 15 ? 'auto' : 'smooth' });
+    lastScrolledMessageIdRef.current = lastMessageId;
   }, [messages]);
 
   useEffect(() => {
@@ -483,7 +499,10 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
           background: theme.bg,
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-        }}>
+        }}
+        ref={messagesPaneRef}
+        onScroll={updateStickToBottom}
+        >
           {loadingMsgs && (
             <div style={{ textAlign: 'center', color: theme.textLight, fontSize: '13px', padding: '20px' }}>
               Indlæser…
