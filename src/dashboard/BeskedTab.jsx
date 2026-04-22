@@ -156,7 +156,11 @@ export function BeskedTab({ user }) {
       setInputText(text);
     } finally {
       setSending(false);
-      inputRef.current?.focus();
+      if (isMobileView) {
+        inputRef.current?.blur();
+      } else {
+        inputRef.current?.focus();
+      }
     }
   };
 
