@@ -35,12 +35,7 @@ function usePendingLigaInvites(userId) {
   useEffect(() => {
     if (!userId) { setCount(0); return; }
     let cancelled = false;
-    let timer = null;
-    const scheduleFetch = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => { void fetch(); }, 250);
-    };
-    const fetch = async () => {
+    const syncCount = async () => {
       try {
         const { count: c } = await supabase
           .from('league_teams')
@@ -52,16 +47,35 @@ function usePendingLigaInvites(userId) {
         console.warn('liga invites badge:', e);
       }
     };
-    void fetch();
+    const applyDeltaFromPayload = (payload) => {
+      if (cancelled) return;
+      const event = payload?.eventType;
+      const next = payload?.new || {};
+      const prev = payload?.old || {};
+      const nextPending = next?.status === 'pending';
+      const prevPending = prev?.status === 'pending';
+
+      if (event === 'INSERT') {
+        if (nextPending) setCount((v) => v + 1);
+        return;
+      }
+      if (event === 'UPDATE') {
+        if (prevPending === nextPending) return;
+        setCount((v) => Math.max(0, v + (nextPending ? 1 : -1)));
+        return;
+      }
+      if (event === 'DELETE' && prevPending) {
+        setCount((v) => Math.max(0, v - 1));
+      }
+    };
+
+    void syncCount();
     const channel = supabase
       .channel('liga-invites-' + userId)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'league_teams', filter: 'player2_id=eq.' + userId }, scheduleFetch)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'league_teams', filter: 'player2_id=eq.' + userId }, scheduleFetch)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'league_teams', filter: 'player2_id=eq.' + userId }, scheduleFetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'league_teams', filter: 'player2_id=eq.' + userId }, applyDeltaFromPayload)
       .subscribe();
     return () => {
       cancelled = true;
-      if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
   }, [userId]);
@@ -178,9 +192,8 @@ function useUnreadNotificationsCount(userId) {
   useEffect(() => {
     if (!userId) { setCount(0); return; }
     let cancelled = false;
-    let timer = null;
 
-    const refetch = async () => {
+    const syncCount = async () => {
       try {
         const { count: c } = await supabase
           .from('notifications')
@@ -193,22 +206,36 @@ function useUnreadNotificationsCount(userId) {
       }
     };
 
-    const scheduleRefetch = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => { void refetch(); }, 250);
+    const applyDeltaFromPayload = (payload) => {
+      if (cancelled) return;
+      const event = payload?.eventType;
+      const next = payload?.new || {};
+      const prev = payload?.old || {};
+      const nextUnread = next?.read === false;
+      const prevUnread = prev?.read === false;
+
+      if (event === 'INSERT') {
+        if (nextUnread) setCount((v) => v + 1);
+        return;
+      }
+      if (event === 'UPDATE') {
+        if (prevUnread === nextUnread) return;
+        setCount((v) => Math.max(0, v + (nextUnread ? 1 : -1)));
+        return;
+      }
+      if (event === 'DELETE' && prevUnread) {
+        setCount((v) => Math.max(0, v - 1));
+      }
     };
 
-    void refetch();
+    void syncCount();
     const channel = supabase
       .channel('notif-badge-' + userId)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, scheduleRefetch)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, scheduleRefetch)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, scheduleRefetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, applyDeltaFromPayload)
       .subscribe();
 
     return () => {
       cancelled = true;
-      if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
   }, [userId]);
