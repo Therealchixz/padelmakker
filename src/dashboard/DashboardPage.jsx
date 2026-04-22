@@ -290,7 +290,6 @@ function useUnreadKampeNotificationsCount(userId) {
     let rerunAfterFlight = false;
     let shouldRefreshIds = true;
     let myRelatedMatchIds = [];
-    let idFetchFailed = false;
     const RELEVANT_TYPES = ['match_chat', 'match_join', 'match_invite', 'match_full', 'result_submitted', 'result_confirmed'];
 
     const isPageVisible = () => (typeof document === 'undefined' || document.visibilityState === 'visible');
@@ -312,36 +311,27 @@ function useUnreadKampeNotificationsCount(userId) {
           ...(playerRes.data || []).map((p) => String(p.match_id)),
         ]);
         myRelatedMatchIds = [...set];
-        idFetchFailed = false;
-        shouldRefreshIds = false;
       } catch (e) {
         console.warn('kampe notif badge ids:', e);
-        idFetchFailed = true;
+        myRelatedMatchIds = [];
+      } finally {
         shouldRefreshIds = false;
       }
     };
 
     const loadCount = async () => {
       try {
-        let query = supabase
+        if (myRelatedMatchIds.length === 0) {
+          if (!cancelled) setCount(0);
+          return;
+        }
+        const { count: c } = await supabase
           .from('notifications')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', userId)
           .eq('read', false)
           .in('type', RELEVANT_TYPES)
-          .not('match_id', 'is', null);
-
-        // Foretræk kun kampnotifikationer for kampe brugeren faktisk er en del af.
-        // Hvis id-opslag fejler, falder vi tilbage til bredt count (så vi undgår falsk 0).
-        if (!idFetchFailed) {
-          if (myRelatedMatchIds.length === 0) {
-            if (!cancelled) setCount(0);
-            return;
-          }
-          query = query.in('match_id', myRelatedMatchIds);
-        }
-
-        const { count: c } = await query;
+          .in('match_id', myRelatedMatchIds);
         if (!cancelled) setCount(c || 0);
       } catch (e) {
         console.warn('kampe notif badge refetch:', e);
@@ -919,3 +909,4 @@ export function DashboardPage({ user, onLogout, showToast }) {
     </div>
   );
 }
+
