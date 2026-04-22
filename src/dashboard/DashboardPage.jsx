@@ -200,6 +200,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [accountOpen, setAccountOpen] = useState(false);
   const [accountPos, setAccountPos] = useState(null);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
+  const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
   const moreBtnRef = useRef(null);
   const moreDropRef = useRef(null);
   const accountBtnRef = useRef(null);
@@ -252,6 +253,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setAccountOpen(false);
   }, [tab]);
 
+  useEffect(() => {
+    if (tab !== "beskeder") setMobileConversationOpen(false);
+  }, [tab]);
+
   const allTabs = [
     { id: "hjem",     label: "Hjem",        icon: <Home          size={15} /> },
     { id: "makkere",  label: "Find Makker",  icon: <Users         size={15} /> },
@@ -275,8 +280,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const userInitial = (displayName || "?").trim().charAt(0).toUpperCase();
 
+  const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
+
   return (
-    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", paddingBottom: "env(safe-area-inset-bottom)" }}>
+    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ ...heading("clamp(16px,4vw,18px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }}>
@@ -452,7 +459,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         {tab === "kampe"    && <KampeTab   user={user} showToast={showToast} tabActive />}
         {tab === "ranking"  && <RankingTab user={user} />}
         {tab === "liga"     && <LigaTab    user={user} showToast={showToast} />}
-        {tab === "beskeder" && <BeskedTab  user={user} />}
+        {tab === "beskeder" && <BeskedTab  user={user} onMobileConversationStateChange={setMobileConversationOpen} />}
         {tab === "profil"   && <ProfilTab  user={user} showToast={showToast} setTab={setTab} dark={dark} onDarkModeChange={setDark} />}
         {tab === "admin"    && isAdmin && <AdminTab />}
       </div>
@@ -504,6 +511,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         </div>
       )}
 
+      {!hideMobileBottomNav && (
       <nav className="pm-mobile-bottom-nav" aria-label="Mobil navigation">
         {mobilePrimaryTabs.map((t) => {
           const active = tab === t.id;
@@ -556,6 +564,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           </span>
         </button>
       </nav>
+      )}
     </div>
   );
 }

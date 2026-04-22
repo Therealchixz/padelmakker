@@ -25,7 +25,7 @@ function formatTime(dateStr) {
   return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) + ' ' + timeStr;
 }
 
-export function BeskedTab({ user }) {
+export function BeskedTab({ user, onMobileConversationStateChange }) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -206,16 +206,10 @@ export function BeskedTab({ user }) {
   }, [mobileChatActive, updateMobileChatOffsets]);
 
   useEffect(() => {
-    if (!mobileChatActive || typeof document === 'undefined') return undefined;
-    const prevBodyOverflow = document.body.style.overflow;
-    const prevHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prevBodyOverflow;
-      document.documentElement.style.overflow = prevHtmlOverflow;
-    };
-  }, [mobileChatActive]);
+    if (!onMobileConversationStateChange) return undefined;
+    onMobileConversationStateChange(mobileChatActive);
+    return () => onMobileConversationStateChange(false);
+  }, [mobileChatActive, onMobileConversationStateChange]);
 
   // Debounced søgning efter brugere til ny besked
   useEffect(() => {
