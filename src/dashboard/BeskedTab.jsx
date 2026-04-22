@@ -43,9 +43,19 @@ export function BeskedTab({ user }) {
   const [composeQuery, setComposeQuery] = useState('');
   const [composeResults, setComposeResults] = useState([]);
   const [composeSearching, setComposeSearching] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 768 : false));
+  const [mobileChatOffsets, setMobileChatOffsets] = useState({ top: 0, bottom: 0 });
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const composeRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const onResize = () => setIsMobileView(window.innerWidth <= 768);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // Hent profil for en enkelt bruger (til ny samtale via ?med=)
   const ensureProfile = useCallback(async (id) => {
@@ -163,6 +173,46 @@ export function BeskedTab({ user }) {
     setComposeResults([]);
   };
 
+  const updateMobileChatOffsets = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const headerEl = document.querySelector('.pm-dash-header');
+    const bottomNavEl = document.querySelector('.pm-mobile-bottom-nav');
+    const top = headerEl ? Math.max(0, Math.round(headerEl.getBoundingClientRect().bottom)) : 0;
+    const bottom = bottomNavEl ? Math.max(0, Math.round(window.innerHeight - bottomNavEl.getBoundingClientRect().top)) : 0;
+    setMobileChatOffsets((prev) => {
+      if (prev.top === top && prev.bottom === bottom) return prev;
+      return { top, bottom };
+    });
+  }, []);
+
+  const mobileChatActive = Boolean(selectedId && isMobileView);
+
+  useEffect(() => {
+    if (!mobileChatActive || typeof window === 'undefined') return undefined;
+    const handleViewportResize = () => updateMobileChatOffsets();
+    updateMobileChatOffsets();
+    window.addEventListener('resize', handleViewportResize);
+    window.addEventListener('orientationchange', handleViewportResize);
+    window.visualViewport?.addEventListener('resize', handleViewportResize);
+    return () => {
+      window.removeEventListener('resize', handleViewportResize);
+      window.removeEventListener('orientationchange', handleViewportResize);
+      window.visualViewport?.removeEventListener('resize', handleViewportResize);
+    };
+  }, [mobileChatActive, updateMobileChatOffsets]);
+
+  useEffect(() => {
+    if (!mobileChatActive || typeof document === 'undefined') return undefined;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, [mobileChatActive]);
+
   // Debounced søgning efter brugere til ny besked
   useEffect(() => {
     if (!composeOpen) return;
@@ -198,11 +248,28 @@ export function BeskedTab({ user }) {
   // ── Beskedvisning ──────────────────────────────────────────────────────────
   if (selectedId) {
     const otherProfile = profiles[selectedId];
+    const chatShellStyle = mobileChatActive
+      ? {
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          top: `${mobileChatOffsets.top || 64}px`,
+          bottom: `${mobileChatOffsets.bottom || 80}px`,
+          height: 'auto',
+          maxHeight: 'none',
+          background: theme.bg,
+          zIndex: 30,
+        }
+      : {
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100dvh - 130px)',
+          maxHeight: '720px',
+        };
     return (
-      <div style={{
-        display: 'flex', flexDirection: 'column',
-        height: 'calc(100dvh - 130px)', maxHeight: '720px',
-      }}>
+      <div style={chatShellStyle}>
         {/* Topbar */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
@@ -231,6 +298,8 @@ export function BeskedTab({ user }) {
           flex: 1, overflowY: 'auto', padding: '14px 14px 8px',
           display: 'flex', flexDirection: 'column', gap: '6px',
           background: theme.bg,
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
         }}>
           {loadingMsgs && (
             <div style={{ textAlign: 'center', color: theme.textLight, fontSize: '13px', padding: '20px' }}>
