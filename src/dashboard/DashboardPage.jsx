@@ -565,15 +565,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
     setFeedbackSending(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) throw new Error("Du skal være logget ind for at sende en indberetning.");
-
       const response = await fetch(`${supabaseUrl}/functions/v1/report-feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           topic: feedbackTopic.trim() || null,
@@ -582,6 +577,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           routePath: location.pathname + location.search,
           userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
           displayName,
+          userId: user?.id || null,
           userEmail: authUser?.email || user?.email || null,
           submittedAt: new Date().toISOString(),
         }),
@@ -603,7 +599,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     } finally {
       setFeedbackSending(false);
     }
-  }, [feedbackMessage, feedbackTopic, showToast, location.pathname, location.search, displayName, authUser?.email, user?.email]);
+  }, [feedbackMessage, feedbackTopic, showToast, location.pathname, location.search, displayName, authUser?.email, user?.email, user?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;

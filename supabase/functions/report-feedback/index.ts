@@ -6,10 +6,7 @@
 //   FEEDBACK_TO_EMAIL        - modtager (default: kontakt@padelmakker.dk)
 //   FEEDBACK_FROM_EMAIL      - afsender, fx "PadelMakker <kontakt@padelmakker.dk>"
 //   CORS_ALLOWED_ORIGINS     - valgfri kommasepareret liste over tilladte origins
-//   SUPABASE_URL             - automatisk
-//   SUPABASE_SERVICE_ROLE_KEY- automatisk
-
-import { createClient } from "npm:@supabase/supabase-js@2";
+// Denne funktion deployes med --no-verify-jwt, da nogle projekter kører ES256 JWT.
 
 const defaultAllowedOrigins = [
   "https://padelmakker.dk",
@@ -51,9 +48,18 @@ function escapeHtml(input: string) {
 }
 
 Deno.serve(async (req: Request) => {
+  const origin = normalizeOrigin(req.headers.get("origin"));
+  const allowed = allowedOrigins();
   const corsHeaders = corsHeadersForRequest(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (origin && !allowed.includes(origin)) {
+    return new Response(JSON.stringify({ error: "Origin not allowed" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   if (req.method !== "POST") {
@@ -64,40 +70,6 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !serviceRole) {
-      return new Response(JSON.stringify({ error: "Supabase secrets mangler" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const adminClient = createClient(supabaseUrl, serviceRole);
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : "";
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const payload = await req.json();
     const topic = String(payload?.topic || "").trim();
     const message = String(payload?.message || "").trim();
@@ -105,7 +77,8 @@ Deno.serve(async (req: Request) => {
     const routePath = String(payload?.routePath || "").trim();
     const userAgent = String(payload?.userAgent || "").trim();
     const displayName = String(payload?.displayName || "").trim();
-    const userEmail = String(payload?.userEmail || "").trim() || user.email || "";
+    const userEmail = String(payload?.userEmail || "").trim();
+    const userId = String(payload?.userId || "").trim();
     const submittedAt = String(payload?.submittedAt || "").trim() || new Date().toISOString();
 
     if (message.length < 10 || message.length > 3000) {
@@ -132,7 +105,7 @@ Deno.serve(async (req: Request) => {
       `Ny bug/fejl-indberetning\n\n` +
       `Bruger: ${displayName || "(ukendt)"}\n` +
       `Email: ${userEmail || "(ukendt)"}\n` +
-      `User ID: ${user.id}\n` +
+      `User ID: ${userId || "(ukendt)"}\n` +
       `Tid: ${submittedAt}\n` +
       `Side: ${pageUrl || "(ukendt)"}\n` +
       `Route: ${routePath || "(ukendt)"}\n` +
@@ -144,7 +117,7 @@ Deno.serve(async (req: Request) => {
       <h2>Ny bug/fejl-indberetning</h2>
       <p><strong>Bruger:</strong> ${escapeHtml(displayName || "(ukendt)")}</p>
       <p><strong>Email:</strong> ${escapeHtml(userEmail || "(ukendt)")}</p>
-      <p><strong>User ID:</strong> ${escapeHtml(user.id)}</p>
+      <p><strong>User ID:</strong> ${escapeHtml(userId || "(ukendt)")}</p>
       <p><strong>Tid:</strong> ${escapeHtml(submittedAt)}</p>
       <p><strong>Side:</strong> ${escapeHtml(pageUrl || "(ukendt)")}</p>
       <p><strong>Route:</strong> ${escapeHtml(routePath || "(ukendt)")}</p>

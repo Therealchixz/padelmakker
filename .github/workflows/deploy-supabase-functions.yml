@@ -51,6 +51,10 @@ jobs:
             if [ -d "${dir}" ]; then
               fn_name="$(basename "${dir}")"
               echo "Deploying ${fn_name}..."
-              npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}"
+              if [ "${fn_name}" = "report-feedback" ]; then
+                npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}" --no-verify-jwt
+              else
+                npx supabase@latest functions deploy "${fn_name}" --project-ref "${PROJECT_REF}"
+              fi
             fi
           done
