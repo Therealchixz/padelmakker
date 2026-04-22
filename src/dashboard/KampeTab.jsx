@@ -915,8 +915,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     finally { setBusyId(null); }
   };
 
-  const loadMatchChat = useCallback(async (matchId) => {
-    setMatchChatLoadingById((prev) => ({ ...prev, [matchId]: true }));
+  const loadMatchChat = useCallback(async (matchId, options = {}) => {
+    const { showLoading = true } = options;
+    if (showLoading) {
+      setMatchChatLoadingById((prev) => ({ ...prev, [matchId]: true }));
+    }
     setMatchChatErrorById((prev) => ({ ...prev, [matchId]: "" }));
     try {
       const rows = await fetchMatchMessages(matchId, 100);
@@ -925,7 +928,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const msg = e?.message || "Kunne ikke hente kamp-chat.";
       setMatchChatErrorById((prev) => ({ ...prev, [matchId]: msg }));
     } finally {
-      setMatchChatLoadingById((prev) => ({ ...prev, [matchId]: false }));
+      if (showLoading) {
+        setMatchChatLoadingById((prev) => ({ ...prev, [matchId]: false }));
+      }
     }
   }, []);
 
@@ -935,11 +940,48 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     setMatchChatOpenById((prev) => ({ ...prev, [matchId]: nextOpen }));
     if (nextOpen) {
       void markMatchChatNotifsRead(matchId);
-    }
-    if (nextOpen && !matchChatById[matchId]) {
-      await loadMatchChat(matchId);
+      const hasCachedRows = Array.isArray(matchChatById[matchId]) && matchChatById[matchId].length > 0;
+      await loadMatchChat(matchId, { showLoading: !hasCachedRows });
     }
   };
+
+  useEffect(() => {
+    const openMatchIds = Object.keys(matchChatOpenById).filter((matchId) => matchChatOpenById[matchId]);
+    if (!openMatchIds.length) return undefined;
+
+    let cancelled = false;
+    const refreshOpenChats = () => {
+      if (cancelled) return;
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      openMatchIds.forEach((matchId) => {
+        void loadMatchChat(matchId, { showLoading: false });
+      });
+    };
+
+    const onVisibilityChange = () => refreshOpenChats();
+    const intervalId = setInterval(refreshOpenChats, 7000);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", refreshOpenChats);
+      window.addEventListener("pageshow", refreshOpenChats);
+      window.addEventListener("online", refreshOpenChats);
+    }
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", refreshOpenChats);
+        window.removeEventListener("pageshow", refreshOpenChats);
+        window.removeEventListener("online", refreshOpenChats);
+      }
+    };
+  }, [loadMatchChat, matchChatOpenById]);
 
   const notifyMatchChatParticipants = useCallback(async (matchId, messageText) => {
     if (!matchId || !messageText) return;
