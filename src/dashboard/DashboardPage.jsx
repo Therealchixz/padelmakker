@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback, useState, useRef, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
@@ -7,18 +7,19 @@ import { resolveDisplayName } from '../lib/platformUtils';
 import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
 import { HomeTab } from './HomeTab';
-import { MakkereTab } from './MakkereTab';
-import { BanerTab } from './BanerTab';
-import { KampeTab } from './KampeTab';
-import { RankingTab } from './RankingTab';
-import { ProfilTab } from './ProfilTab';
-import { AdminTab } from './AdminTab';
-import { BeskedTab } from './BeskedTab';
-import { LigaTab } from './LigaTab';
 import { ShieldCheck } from 'lucide-react';
 import { useUnreadMessageCount } from '../lib/chatUtils';
 import { useDarkMode } from '../lib/useDarkMode';
 import { supabase } from '../lib/supabase';
+
+const MakkereTabLazy = lazy(() => import('./MakkereTab').then((m) => ({ default: m.MakkereTab })));
+const BanerTabLazy = lazy(() => import('./BanerTab').then((m) => ({ default: m.BanerTab })));
+const KampeTabLazy = lazy(() => import('./KampeTab').then((m) => ({ default: m.KampeTab })));
+const RankingTabLazy = lazy(() => import('./RankingTab').then((m) => ({ default: m.RankingTab })));
+const ProfilTabLazy = lazy(() => import('./ProfilTab').then((m) => ({ default: m.ProfilTab })));
+const AdminTabLazy = lazy(() => import('./AdminTab').then((m) => ({ default: m.AdminTab })));
+const BeskedTabLazy = lazy(() => import('./BeskedTab').then((m) => ({ default: m.BeskedTab })));
+const LigaTabLazy = lazy(() => import('./LigaTab').then((m) => ({ default: m.LigaTab })));
 
 function usePendingLigaInvites(userId) {
   const [count, setCount] = useState(0);
@@ -453,15 +454,34 @@ export function DashboardPage({ user, onLogout, showToast }) {
       </div>
 
       <div className="pm-dash-main">
-        {tab === "hjem"     && <HomeTab    user={user} setTab={setTab} />}
-        {tab === "makkere"  && <MakkereTab user={user} showToast={showToast} />}
-        {tab === "baner"    && <BanerTab />}
-        {tab === "kampe"    && <KampeTab   user={user} showToast={showToast} tabActive />}
-        {tab === "ranking"  && <RankingTab user={user} />}
-        {tab === "liga"     && <LigaTab    user={user} showToast={showToast} />}
-        {tab === "beskeder" && <BeskedTab  user={user} onMobileConversationStateChange={setMobileConversationOpen} />}
-        {tab === "profil"   && <ProfilTab  user={user} showToast={showToast} setTab={setTab} dark={dark} onDarkModeChange={setDark} />}
-        {tab === "admin"    && isAdmin && <AdminTab />}
+        {tab === "hjem" && <HomeTab user={user} setTab={setTab} />}
+        {tab !== "hjem" && (
+          <Suspense
+            fallback={
+              <div
+                style={{
+                  background: theme.surface,
+                  border: "1px solid " + theme.border,
+                  borderRadius: "12px",
+                  padding: "18px",
+                  color: theme.textLight,
+                  fontSize: "13px",
+                }}
+              >
+                Indlæser…
+              </div>
+            }
+          >
+            {tab === "makkere"  && <MakkereTabLazy user={user} showToast={showToast} />}
+            {tab === "baner"    && <BanerTabLazy />}
+            {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive />}
+            {tab === "ranking"  && <RankingTabLazy user={user} />}
+            {tab === "liga"     && <LigaTabLazy user={user} showToast={showToast} />}
+            {tab === "beskeder" && <BeskedTabLazy user={user} onMobileConversationStateChange={setMobileConversationOpen} />}
+            {tab === "profil"   && <ProfilTabLazy user={user} showToast={showToast} setTab={setTab} dark={dark} onDarkModeChange={setDark} />}
+            {tab === "admin"    && isAdmin && <AdminTabLazy />}
+          </Suspense>
+        )}
       </div>
 
       {mobileMoreOpen && (
