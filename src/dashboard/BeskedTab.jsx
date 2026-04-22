@@ -52,25 +52,72 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   const inputRef = useRef(null);
   const composeRef = useRef(null);
   const prevMessageCountRef = useRef(0);
+  const profilesRef = useRef({});
+  const profileRequestsRef = useRef(new Set());
 
   useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const onResize = () => setIsMobileView(window.innerWidth <= 768);
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    profilesRef.current = profiles;
+  }, [profiles]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
+    const media = window.matchMedia('(max-width: 768px)');
+    const onChange = (event) => setIsMobileView(event.matches);
+    setIsMobileView(media.matches);
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', onChange);
+      return () => media.removeEventListener('change', onChange);
+    }
+    media.addListener(onChange);
+    return () => media.removeListener(onChange);
   }, []);
 
   // Hent profil for en enkelt bruger (til ny samtale via ?med=)
   const ensureProfile = useCallback(async (id) => {
-    if (!id || profiles[id]) return;
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, name, avatar')
-      .eq('id', id)
-      .maybeSingle();
-    if (data) setProfiles(prev => ({ ...prev, [data.id]: data }));
-  }, [profiles]);
+    if (!id || profilesRef.current[id] || profileRequestsRef.current.has(id)) return;
+    profileRequestsRef.current.add(id);
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name, name, avatar')
+        .eq('id', id)
+        .maybeSingle();
+      if (data) setProfiles(prev => ({ ...prev, [data.id]: data }));
+    } finally {
+      profileRequestsRef.current.delete(id);
+    }
+  }, []);
+
+  const clearConversationUnread = useCallback((otherId) => {
+    setConversations(prev => prev.map((c) => (
+      c.otherId === otherId && c.unread
+        ? { ...c, unread: 0 }
+        : c
+    )));
+  }, []);
+
+  const upsertConversationFromMessage = useCallback((msg, { incomingRead = false } = {}) => {
+    if (!msg || !user?.id) return;
+    const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+    if (!otherId) return;
+    ensureProfile(otherId);
+    setConversations(prev => {
+      const idx = prev.findIndex(c => c.otherId === otherId);
+      const existing = idx >= 0 ? prev[idx] : null;
+      const prevLastMs = existing?.lastMessage?.created_at ? new Date(existing.lastMessage.created_at).getTime() : 0;
+      const nextLastMs = msg.created_at ? new Date(msg.created_at).getTime() : 0;
+      const lastMessage = nextLastMs >= prevLastMs ? msg : existing?.lastMessage || msg;
+      const isIncomingUnread = msg.receiver_id === user.id && msg.is_read === false;
+      const unread = incomingRead ? 0 : (existing?.unread || 0) + (isIncomingUnread ? 1 : 0);
+      const nextConversation = { otherId, lastMessage, unread };
+      const next = idx >= 0
+        ? prev.map((c, i) => (i === idx ? nextConversation : c))
+        : [nextConversation, ...prev];
+      return next.sort(
+        (a, b) => new Date(b.lastMessage?.created_at || 0).getTime() - new Date(a.lastMessage?.created_at || 0).getTime()
+      );
+    });
+  }, [ensureProfile, user?.id]);
 
   const loadConversations = useCallback(async () => {
     if (!user?.id) return;
@@ -81,14 +128,22 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       const otherIds = convos.map(c => c.otherId);
       if (initWithUser && !otherIds.includes(initWithUser)) otherIds.push(initWithUser);
 
-      if (otherIds.length > 0) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id, full_name, name, avatar')
-          .in('id', otherIds);
-        const map = {};
-        for (const p of data || []) map[p.id] = p;
-        setProfiles(map);
+      const missingIds = otherIds.filter((id) => !profilesRef.current[id] && !profileRequestsRef.current.has(id));
+      if (missingIds.length > 0) {
+        missingIds.forEach((id) => profileRequestsRef.current.add(id));
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('id, full_name, name, avatar')
+            .in('id', missingIds);
+          const map = {};
+          for (const p of data || []) map[p.id] = p;
+          if (Object.keys(map).length > 0) {
+            setProfiles(prev => ({ ...prev, ...map }));
+          }
+        } finally {
+          missingIds.forEach((id) => profileRequestsRef.current.delete(id));
+        }
       }
     } finally {
       setLoadingConvos(false);
@@ -110,8 +165,10 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
     fetchMessages(user.id, selectedId)
       .then(msgs => {
         setMessages(msgs);
-        markMessagesRead(user.id, selectedId);
-        loadConversations();
+        const lastMsg = msgs[msgs.length - 1];
+        if (lastMsg) upsertConversationFromMessage(lastMsg, { incomingRead: true });
+        void markMessagesRead(user.id, selectedId);
+        clearConversationUnread(selectedId);
       })
       .finally(() => setLoadingMsgs(false));
 
@@ -130,17 +187,17 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
             if (prev.find(m => m.id === msg.id)) return prev;
             return [...prev, msg];
           });
+          upsertConversationFromMessage(msg, { incomingRead: msg.receiver_id === user.id });
           if (msg.receiver_id === user.id) {
-            markMessagesRead(user.id, selectedId);
-            loadConversations();
+            void markMessagesRead(user.id, selectedId);
+            clearConversationUnread(selectedId);
           }
         }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, user?.id]);
+  }, [clearConversationUnread, selectedId, upsertConversationFromMessage, user?.id]);
 
   useEffect(() => {
     setChatVisibleCount(CHAT_WINDOW_SIZE);
@@ -168,7 +225,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
     try {
       const msg = await sendMessage(user.id, selectedId, text);
       setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
-      loadConversations();
+      upsertConversationFromMessage(msg);
     } catch {
       setInputText(text);
     } finally {
