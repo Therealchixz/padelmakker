@@ -990,7 +990,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       ((isCreator || isAdmin) && status !== "completed" && status !== "in_progress")
     );
     const adminActionsOpen = !!expandedAdminActions[m.id];
-    const canUseMatchChat = joined;
+    const canUseMatchChat = joined || isAdmin;
     const canWriteMatchChat = joined;
     const chatOpen = !!matchChatOpenById[m.id];
     const chatMessages = matchChatById[m.id] || [];
@@ -1205,6 +1205,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
             {chatOpen && (
               <div className="pm-card-subpanel pm-match-chat-panel" style={{ marginBottom: "10px" }}>
+                {!canWriteMatchChat && isAdmin && (
+                  <div className="pm-match-chat-empty" style={{ marginBottom: "8px" }}>
+                    Admin-visning: Kun tilmeldte spillere kan skrive i chatten.
+                  </div>
+                )}
                 <div className="pm-match-chat-list">
                   {chatLoading && (
                     <div className="pm-match-chat-empty">Henter beskeder...</div>

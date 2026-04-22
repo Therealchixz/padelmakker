@@ -52,6 +52,7 @@ create policy match_messages_select_participants
       where mp.match_id = match_messages.match_id
         and mp.user_id = (select auth.uid())
     )
+    or public.is_admin()
   );
 
 drop policy if exists match_messages_insert_participants on public.match_messages;
