@@ -13,7 +13,7 @@ import {
   copenhagenAddDaysYmd,
 } from '../lib/banerVenues';
 import { filterPastSlotsIfToday } from '../lib/banerPastSlots';
-import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn } from 'lucide-react';
+import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown } from 'lucide-react';
 
 /**
  * @typedef {{ time: string, status: string, ruleHint?: string }} SlotRow
@@ -39,6 +39,7 @@ export function BanerTab() {
   const [matchiDateByVenue, setMatchiDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
   /** Memberlink (kun link-venues): valgt dato til booking-link */
   const [linkDateByVenue, setLinkDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
+  const [showBookingHelp, setShowBookingHelp] = useState(false);
 
   const loadHalbookingVenue = useCallback(async (venueId, dateYmd) => {
     setLoadingVenue((m) => ({ ...m, [venueId]: true }));
@@ -314,12 +315,53 @@ export function BanerTab() {
   return (
     <div>
       <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '12px' }}>Ledige padelbaner</h2>
-      <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '20px' }}>
-        Åbn ét sted ad gangen. <strong>Halbooking</strong>: grøn = direkte til booking, gul = regel (tooltip).{' '}
-        <strong>PadelPadel (Bookli)</strong>: oversigt hentes som på padelpadel.dk — grøn åbner Bookli til login og booking
-        (mødelokaler vises ikke). <strong>MATCHi (Padel99, Skagen)</strong>: oversigt hentes fra matchi.se — grøn åbner facilitetssiden med valgt dato.
-        <strong>Eksterne links</strong> (Aars, Gug): åbner klubbens booking; tider vises på deres side.
-      </p>
+      <div
+        style={{
+          border: '1px solid ' + theme.border,
+          borderRadius: '12px',
+          background: theme.surface,
+          marginBottom: '20px',
+          overflow: 'hidden',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setShowBookingHelp((v) => !v)}
+          style={{
+            width: '100%',
+            border: 'none',
+            background: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            padding: '12px 14px',
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+          aria-expanded={showBookingHelp}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: theme.accent, fontSize: '13px', fontWeight: 700 }}>
+            <Info size={15} />
+            Sådan fungerer banebooking
+          </span>
+          <ChevronDown
+            size={16}
+            color={theme.textLight}
+            style={{ transform: showBookingHelp ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
+          />
+        </button>
+        {showBookingHelp && (
+          <div style={{ borderTop: '1px solid ' + theme.border, padding: '12px 14px 14px' }}>
+            <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.55, margin: 0 }}>
+              Åbn ét sted ad gangen. <strong>Halbooking</strong>: grøn = direkte til booking, gul = regel (tooltip).{' '}
+              <strong>PadelPadel (Bookli)</strong>: oversigt hentes som på padelpadel.dk — grøn åbner Bookli til login og booking
+              (mødelokaler vises ikke). <strong>MATCHi (Padel99, Skagen)</strong>: oversigt hentes fra matchi.se — grøn åbner facilitetssiden med valgt dato.
+              <strong> Eksterne links</strong> (Aars, Gug): åbner klubbens booking; tider vises på deres side.
+            </p>
+          </div>
+        )}
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {BANER_VENUES.map((v) => {
