@@ -11,6 +11,8 @@ import {
   markMessagesRead,
 } from '../lib/chatUtils';
 
+const CHAT_WINDOW_SIZE = 80;
+
 function formatTime(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
@@ -43,11 +45,13 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   const [composeQuery, setComposeQuery] = useState('');
   const [composeResults, setComposeResults] = useState([]);
   const [composeSearching, setComposeSearching] = useState(false);
+  const [chatVisibleCount, setChatVisibleCount] = useState(CHAT_WINDOW_SIZE);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 768 : false));
   const [mobileChatOffsets, setMobileChatOffsets] = useState({ top: 0 });
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const composeRef = useRef(null);
+  const prevMessageCountRef = useRef(0);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -137,6 +141,19 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
     return () => { supabase.removeChannel(channel); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, user?.id]);
+
+  useEffect(() => {
+    setChatVisibleCount(CHAT_WINDOW_SIZE);
+    prevMessageCountRef.current = 0;
+  }, [selectedId]);
+
+  useEffect(() => {
+    const prevCount = prevMessageCountRef.current;
+    if (messages.length > prevCount && prevCount > 0 && chatVisibleCount >= prevCount) {
+      setChatVisibleCount(messages.length);
+    }
+    prevMessageCountRef.current = messages.length;
+  }, [messages.length, chatVisibleCount]);
 
   // Scroll til bund ved nye beskeder
   useEffect(() => {
@@ -244,6 +261,8 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   // ── Beskedvisning ──────────────────────────────────────────────────────────
   if (selectedId) {
     const otherProfile = profiles[selectedId];
+    const hiddenMessageCount = Math.max(0, messages.length - chatVisibleCount);
+    const visibleMessages = hiddenMessageCount > 0 ? messages.slice(-chatVisibleCount) : messages;
     const chatShellStyle = mobileChatActive
       ? {
           display: 'flex',
@@ -307,7 +326,23 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
               Start samtalen med {getName(selectedId)}
             </div>
           )}
-          {messages.map((msg) => {
+          {hiddenMessageCount > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setChatVisibleCount((prev) => Math.min(messages.length, prev + CHAT_WINDOW_SIZE))}
+                style={{
+                  ...btn(false),
+                  fontSize: '12px',
+                  padding: '6px 10px',
+                  borderRadius: '999px',
+                }}
+              >
+                Vis {Math.min(CHAT_WINDOW_SIZE, hiddenMessageCount)} tidligere beskeder
+              </button>
+            </div>
+          )}
+          {visibleMessages.map((msg) => {
             const isMe = msg.sender_id === user.id;
             return (
               <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
