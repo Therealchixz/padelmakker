@@ -350,15 +350,16 @@ export function HomeTab({ user, setTab }) {
     alignItems: "center",
     gap: "10px",
     borderRadius: "10px",
-    padding: "10px 12px",
+    minHeight: "66px",
+    padding: "11px 12px",
     border: "1px solid " + theme.border,
     boxShadow: "0 1px 4px rgba(2, 6, 23, 0.04)",
   };
 
   const activityActionBtnStyle = (tone) => ({
     ...btn(false),
-    padding: "4px 9px",
-    fontSize: "10px",
+    padding: "5px 10px",
+    fontSize: "11px",
     height: "auto",
     borderRadius: "999px",
     borderColor: tone + "55",
@@ -366,6 +367,33 @@ export function HomeTab({ user, setTab }) {
     background: theme.surface,
     flexShrink: 0,
   });
+
+  const activityBodyStyle = {
+    flex: 1,
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    gap: "2px",
+  };
+
+  const activityTitleStyle = {
+    fontSize: "13px",
+    color: theme.text,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    lineHeight: 1.25,
+  };
+
+  const activityMetaStyle = {
+    fontSize: "11px",
+    color: theme.textMid,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    lineHeight: 1.25,
+  };
 
   return (
     <div>
@@ -447,7 +475,7 @@ export function HomeTab({ user, setTab }) {
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {/* Merge and sort all feeds by date */}
             {[...feed, ...americanoFeed, ...ligaFeed, ...openMatchFeed, ...americanoRegFeed, ...milestoneFeed, ...seekingFeed, ...leagueNewFeed]
               .filter(row => enabledTypes.has(row.type))
@@ -475,8 +503,8 @@ export function HomeTab({ user, setTab }) {
                           style={{ background: theme.warmBg, border: "1px solid " + theme.border }}
                         />
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={activityBodyStyle}>
+                        <div style={activityTitleStyle}>
                           <span 
                             onClick={() => setViewPlayer({ id: row.userId, name: row.name })}
                             style={{ cursor: "pointer", fontWeight: 700 }}
@@ -485,7 +513,7 @@ export function HomeTab({ user, setTab }) {
                           </span> vandt Americano
                         </div>
                         {row.tournamentName && (
-                          <div style={{ fontSize: "11px", color: theme.warm, marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <div style={{ ...activityMetaStyle, color: theme.warm }}>
                             &ldquo;{row.tournamentName}&rdquo; · {formatTimeAgo(row.created_at)}
                           </div>
                         )}
@@ -509,11 +537,11 @@ export function HomeTab({ user, setTab }) {
                         <AvatarCircle avatar={c.player1_avatar} size={30} emojiSize="15px" style={{ background: theme.accentBg, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
                         <AvatarCircle avatar={c.player2_avatar} size={30} emojiSize="15px" style={{ background: theme.accentBg, border: "2px solid " + theme.surface, position: "absolute", left: 16, top: 2, zIndex: 1 }} />
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={activityBodyStyle}>
+                        <div style={activityTitleStyle}>
                           <span style={{ fontWeight: 700 }}>{c.name}</span> vandt ligaen 🏆
                         </div>
-                        <div style={{ fontSize: "11px", color: theme.accent, marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div style={{ ...activityMetaStyle, color: theme.accent }}>
                           &ldquo;{row.leagueName}&rdquo; · {formatTimeAgo(row.created_at)}
                         </div>
                       </div>
@@ -531,11 +559,11 @@ export function HomeTab({ user, setTab }) {
                       <div onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })} style={{ cursor: "pointer" }}>
                         <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: theme.greenBg, border: "1px solid " + theme.border }} />
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={activityBodyStyle}>
+                        <div style={activityTitleStyle}>
                           <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })}>{row.creatorName}</span> søger spillere til <strong>2v2</strong>
                         </div>
-                        <div style={{ fontSize: "11px", color: theme.green, marginTop: "1px" }}>{dateStr} · {row.court}</div>
+                        <div style={{ ...activityMetaStyle, color: theme.green }}>{dateStr} · {row.court}</div>
                       </div>
                       <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'open' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.green)}>Se kamp</button>
                     </div>
@@ -547,9 +575,9 @@ export function HomeTab({ user, setTab }) {
                   return (
                     <div key={`amreg-${i}`} style={{ ...activityRowBaseStyle, background: theme.warmBg }}>
                       <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.warmBg, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>
-                        <div style={{ fontSize: "11px", color: theme.warm, marginTop: "1px" }}>
+                      <div style={activityBodyStyle}>
+                        <div style={{ ...activityTitleStyle, fontWeight: 700 }}>{row.name}</div>
+                        <div style={{ ...activityMetaStyle, color: theme.warm }}>
                           Americano · {dateStr}{row.time ? ` · ${row.time}` : ''} · {row.participants}/{row.slots} tilmeldt
                         </div>
                       </div>
@@ -564,11 +592,11 @@ export function HomeTab({ user, setTab }) {
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
                         <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.purpleBg, border: "1px solid " + theme.border }} />
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={activityBodyStyle}>
+                        <div style={activityTitleStyle}>
                           <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.userId, name: row.name })}>{row.name}</span> nåede {row.milestone} ELO 🎯
                         </div>
-                        <div style={{ fontSize: "11px", color: theme.purple, marginTop: "1px" }}>{formatTimeAgo(row.created_at)}</div>
+                        <div style={{ ...activityMetaStyle, color: theme.purple }}>{formatTimeAgo(row.created_at)}</div>
                       </div>
                     </div>
                   );
@@ -582,11 +610,11 @@ export function HomeTab({ user, setTab }) {
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
                         <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.accentBg, border: "1px solid " + theme.border }} />
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={activityBodyStyle}>
+                        <div style={activityTitleStyle}>
                           <span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer({ id: row.userId, name: row.name })}>{row.name}</span> søger makker
                         </div>
-                        {sub && <div style={{ fontSize: "11px", color: theme.blue, marginTop: "1px" }}>{sub}</div>}
+                        {sub && <div style={{ ...activityMetaStyle, color: theme.blue }}>{sub}</div>}
                       </div>
                       <button onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={activityActionBtnStyle(theme.blue)}>Se profil</button>
                     </div>
@@ -598,9 +626,9 @@ export function HomeTab({ user, setTab }) {
                   return (
                     <div key={`lnew-${i}`} style={{ ...activityRowBaseStyle, background: theme.blueBg }}>
                       <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.accentBg, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.leagueName}</div>
-                        <div style={{ fontSize: "11px", color: theme.accent, marginTop: "1px" }}>
+                      <div style={activityBodyStyle}>
+                        <div style={{ ...activityTitleStyle, fontWeight: 700 }}>{row.leagueName}</div>
+                        <div style={{ ...activityMetaStyle, color: theme.accent }}>
                           Liga · {isReg ? 'Tilmelding åben' : 'I gang'} · {row.teamCount} hold · {formatTimeAgo(row.created_at)}
                         </div>
                       </div>
@@ -612,62 +640,29 @@ export function HomeTab({ user, setTab }) {
                 }
 
                 if (row.type === 'match_group') {
-                  const winners = row.players.filter(p => p.win);
-                  const losers = row.players.filter(p => !p.win);
+                  const winners = row.players.filter((p) => p.win);
+                  const losers = row.players.filter((p) => !p.win);
+                  const winnerNames = winners.map((p) => p.name.split(' ')[0]).join(' + ');
+                  const loserNames = losers.map((p) => p.name.split(' ')[0]).join(' + ');
                   return (
-                    <div key={`match-${i}`} className="pm-ui-card" style={{ padding: "8px 14px", position: "relative", overflow: "hidden" }}>
-                      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "3px", background: theme.green }} />
-                      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "3px", background: theme.red }} />
-                      {/* Venue Header - Centered */}
-                      <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>
-                        <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: "4px", background: theme.surfaceAlt, padding: "2px 8px", borderRadius: "14px", border: "1px solid " + theme.border }}>
-                          <MapPin size={9} /> {row.court} · {formatTimeAgo(row.created_at)}
+                    <div key={`match-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface }}>
+                      <div style={{ width: 38, height: 38, borderRadius: '50%', background: theme.surfaceAlt, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Swords size={16} color={theme.accent} />
+                      </div>
+                      <div style={activityBodyStyle}>
+                        <div style={activityTitleStyle}>
+                          <strong>{winnerNames}</strong> slog <strong>{loserNames}</strong>
+                        </div>
+                        <div style={activityMetaStyle}>
+                          {row.court} - {row.score} - {formatTimeAgo(row.created_at)}
                         </div>
                       </div>
-
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        {/* Winners (Left) */}
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-                          {winners.map((p, idx) => (
-                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                              <div onClick={() => setViewPlayer(p)} style={{ cursor: "pointer" }}>
-                                <AvatarCircle avatar={p.avatar} size={32} emojiSize="18px" />
-                              </div>
-                              <div style={{ minWidth: 0 }}>
-                                <div onClick={() => setViewPlayer(p)} style={{ fontSize: "13px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "pointer" }}>{p.name.split(' ')[0]}</div>
-                                <div style={{ fontSize: "10px", color: theme.green, fontWeight: 800 }}>+{p.change} ELO</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Score (Center) */}
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 8px", minWidth: "70px" }}>
-                          <div style={{ fontSize: "20px", fontWeight: 900, color: theme.accent, letterSpacing: "0.02em", whiteSpace: "nowrap" }}>{row.score}</div>
-                          <div style={{ fontSize: "8px", fontWeight: 800, color: theme.textLight, marginTop: "2px", background: theme.surfaceAlt, padding: "1px 6px", borderRadius: "8px", letterSpacing: "0.1em" }}>VS</div>
-                        </div>
-
-                        {/* Losers (Right) */}
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-end" }}>
-                          {losers.map((p, idx) => (
-                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", flexDirection: "row-reverse" }}>
-                              <div onClick={() => setViewPlayer(p)} style={{ cursor: "pointer" }}>
-                                <AvatarCircle avatar={p.avatar} size={32} emojiSize="18px" />
-                              </div>
-                              <div style={{ minWidth: 0, textAlign: "right" }}>
-                                <div onClick={() => setViewPlayer(p)} style={{ fontSize: "13px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "pointer" }}>{p.name.split(' ')[0]}</div>
-                                <div style={{ fontSize: "10px", color: theme.red, fontWeight: 800 }}>{p.change} ELO</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {row.description && (
-                        <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: "1px dashed " + theme.border, fontSize: "11px", color: theme.textMid, fontStyle: "italic", textAlign: "center" }}>
-                          &ldquo;{row.description}&rdquo;
-                        </div>
-                      )}
+                      <button
+                        onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'mine' }); setTab('kampe'); }}
+                        style={activityActionBtnStyle(theme.accent)}
+                      >
+                        Se kamp
+                      </button>
                     </div>
                   );
                 }
@@ -685,9 +680,12 @@ export function HomeTab({ user, setTab }) {
                       emojiSize="26px"
                       style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }}
                     />
-                    <span style={{ fontSize: "13px", color: theme.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      <strong>{name}</strong> {won ? "vandt" : "tabte"}
-                    </span>
+                    <div style={activityBodyStyle}>
+                      <div style={activityTitleStyle}>
+                        <strong>{name}</strong> {won ? "vandt" : "tabte"}
+                      </div>
+                      <div style={activityMetaStyle}>{formatTimeAgo(row.created_at)}</div>
+                    </div>
                     <span style={{ fontSize: "12px", fontWeight: 700, flexShrink: 0, color: change >= 0 ? theme.accent : theme.red }}>
                       {change >= 0 ? "+" : ""}{change} ELO
                     </span>
