@@ -44,6 +44,8 @@ export function HomeTab({ user, setTab }) {
     { id: 'liga',       label: 'Liga',       icon: '🏆', types: ['liga_completed', 'league_new'] },
     { id: 'spillere',   label: 'Spillere',   icon: '⚡', types: ['elo_milestone', 'seeking_player'] },
   ];
+  const FEED_INITIAL_COUNT = 10;
+  const FEED_PAGE_SIZE = 10;
   const FILTER_STORAGE_KEY = `pm_feed_filters_${user.id}`;
   const [activeFilters, setActiveFilters] = useState(() => {
     try {
@@ -75,6 +77,7 @@ export function HomeTab({ user, setTab }) {
     });
   };
   const allActive = activeFilters.size === FEED_FILTERS.length;
+  const [visibleFeedCount, setVisibleFeedCount] = useState(FEED_INITIAL_COUNT);
   const enableAllFilters = () => {
     const all = new Set(FEED_FILTERS.map(f => f.id));
     setActiveFilters(all);
@@ -85,6 +88,9 @@ export function HomeTab({ user, setTab }) {
     }
   };
   const enabledTypes = new Set(FEED_FILTERS.filter(f => activeFilters.has(f.id)).flatMap(f => f.types));
+  useEffect(() => {
+    setVisibleFeedCount(FEED_INITIAL_COUNT);
+  }, [activeFilters]);
 
   const fetchFeed = useCallback(async () => {
     const fetchId = ++fetchIdRef.current;
@@ -512,9 +518,14 @@ export function HomeTab({ user, setTab }) {
   const allFeedRows = [...feed, ...americanoFeed, ...ligaFeed, ...openMatchFeed, ...americanoRegFeed, ...milestoneFeed, ...seekingFeed, ...leagueNewFeed]
     .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
 
-  const feedRows = allFeedRows
-    .filter((row) => enabledTypes.has(row.type))
-    .slice(0, 15);
+  const filteredFeedRows = allFeedRows
+    .filter((row) => enabledTypes.has(row.type));
+
+  const feedRows = filteredFeedRows
+    .slice(0, visibleFeedCount);
+
+  const canShowMore = filteredFeedRows.length > feedRows.length;
+  const canShowLess = feedRows.length > FEED_INITIAL_COUNT;
 
   const feedRenderItems = feedRows.flatMap((row, index) => {
     const label = index === 0 ? "Nyeste" : activityGroupLabel(row.created_at);
@@ -862,6 +873,26 @@ export function HomeTab({ user, setTab }) {
               });
             })}
           </div>
+          {(canShowMore || canShowLess) && (
+            <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+              {canShowMore && (
+                <button
+                  className="pm-ui-btn-chip pm-feed-filter-chip"
+                  onClick={() => setVisibleFeedCount((prev) => Math.min(prev + FEED_PAGE_SIZE, filteredFeedRows.length))}
+                >
+                  Vis flere
+                </button>
+              )}
+              {canShowLess && (
+                <button
+                  className="pm-ui-btn-chip pm-feed-filter-chip"
+                  onClick={() => setVisibleFeedCount(FEED_INITIAL_COUNT)}
+                >
+                  Vis færre
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
