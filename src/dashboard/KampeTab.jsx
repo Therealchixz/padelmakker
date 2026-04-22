@@ -1479,9 +1479,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <span>{item.text}</span>
               </div>
             ))}
-            <div className="pm-help-box-copy" style={{ marginTop: "4px" }}>
-              Kilde: Padellife (padel-regler)
-            </div>
           </div>
         ) : null}
       </div>
