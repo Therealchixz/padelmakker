@@ -244,6 +244,7 @@ function useUnreadNotificationsCount(userId) {
 }
 
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking"];
+const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
 
 const tabBtnStyle = (active) => ({
   background: "transparent",
@@ -291,6 +292,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
   const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
   const hasPrefetchedTabsRef = useRef(false);
+  const lastProfileRefreshAtRef = useRef(0);
   const moreBtnRef = useRef(null);
   const moreDropRef = useRef(null);
   const accountBtnRef = useRef(null);
@@ -340,7 +342,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, []);
 
   useEffect(() => {
-    if (["hjem", "profil", "ranking", "kampe", "makkere", "admin"].includes(tab)) refreshProfileQuiet();
+    if (!["hjem", "profil", "ranking", "kampe", "makkere", "admin"].includes(tab)) return;
+    const now = Date.now();
+    if (lastProfileRefreshAtRef.current && now - lastProfileRefreshAtRef.current < PROFILE_REFRESH_COOLDOWN_MS) return;
+    lastProfileRefreshAtRef.current = now;
+    refreshProfileQuiet();
   }, [tab, refreshProfileQuiet]);
 
   useEffect(() => {
