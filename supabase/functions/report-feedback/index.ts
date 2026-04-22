@@ -13,6 +13,32 @@ const defaultAllowedOrigins = [
   "https://www.padelmakker.dk",
 ];
 
+const feedbackCategoryLabels: Record<string, string> = {
+  "bug": "Bug",
+  "performance": "Performance",
+  "ui": "UI / UX",
+  "match-chat": "Match chat",
+  "notifications": "Notifikationer",
+  "other": "Andet",
+};
+
+const feedbackPriorityLabels: Record<string, string> = {
+  "low": "Lav",
+  "normal": "Normal",
+  "high": "Hoj",
+  "critical": "Kritisk",
+};
+
+function normalizeCategory(value: unknown) {
+  const key = String(value || "").trim().toLowerCase();
+  return feedbackCategoryLabels[key] ? key : "bug";
+}
+
+function normalizePriority(value: unknown) {
+  const key = String(value || "").trim().toLowerCase();
+  return feedbackPriorityLabels[key] ? key : "normal";
+}
+
 function normalizeOrigin(value: string | null) {
   return String(value || "").trim().replace(/\/+$/, "");
 }
@@ -71,6 +97,10 @@ Deno.serve(async (req: Request) => {
 
   try {
     const payload = await req.json();
+    const category = normalizeCategory(payload?.category);
+    const priority = normalizePriority(payload?.priority);
+    const categoryLabel = feedbackCategoryLabels[category];
+    const priorityLabel = feedbackPriorityLabels[priority];
     const topic = String(payload?.topic || "").trim();
     const message = String(payload?.message || "").trim();
     const pageUrl = String(payload?.pageUrl || "").trim();
@@ -99,10 +129,12 @@ Deno.serve(async (req: Request) => {
     const toEmail = Deno.env.get("FEEDBACK_TO_EMAIL") || "kontakt@padelmakker.dk";
     const fromEmail = Deno.env.get("FEEDBACK_FROM_EMAIL") || "PadelMakker <kontakt@padelmakker.dk>";
     const subjectSuffix = topic ? ` - ${topic.slice(0, 120)}` : "";
-    const subject = `PadelMakker feedback${subjectSuffix}`;
+    const subject = `PadelMakker feedback [${priorityLabel}] [${categoryLabel}]${subjectSuffix}`;
 
     const textBody =
       `Ny bug/fejl-indberetning\n\n` +
+      `Kategori: ${categoryLabel}\n` +
+      `Prioritet: ${priorityLabel}\n` +
       `Bruger: ${displayName || "(ukendt)"}\n` +
       `Email: ${userEmail || "(ukendt)"}\n` +
       `User ID: ${userId || "(ukendt)"}\n` +
@@ -115,6 +147,8 @@ Deno.serve(async (req: Request) => {
 
     const htmlBody = `
       <h2>Ny bug/fejl-indberetning</h2>
+      <p><strong>Kategori:</strong> ${escapeHtml(categoryLabel)}</p>
+      <p><strong>Prioritet:</strong> ${escapeHtml(priorityLabel)}</p>
       <p><strong>Bruger:</strong> ${escapeHtml(displayName || "(ukendt)")}</p>
       <p><strong>Email:</strong> ${escapeHtml(userEmail || "(ukendt)")}</p>
       <p><strong>User ID:</strong> ${escapeHtml(userId || "(ukendt)")}</p>
@@ -146,8 +180,18 @@ Deno.serve(async (req: Request) => {
 
     if (!resendResponse.ok) {
       const errText = await resendResponse.text();
-      console.error("report-feedback resend fejl:", errText);
-      return new Response(JSON.stringify({ error: "Kunne ikke sende email" }), {
+      let resendMsg = "";
+      try {
+        const parsed = JSON.parse(errText);
+        resendMsg = String(parsed?.message || parsed?.error || "").trim();
+      } catch {
+        resendMsg = errText.trim();
+      }
+      const safeMsg = resendMsg.replace(/\s+/g, " ").slice(0, 280);
+      console.error("report-feedback resend fejl:", resendResponse.status, safeMsg || errText);
+      return new Response(JSON.stringify({
+        error: safeMsg ? `Kunne ikke sende email: ${safeMsg}` : "Kunne ikke sende email",
+      }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

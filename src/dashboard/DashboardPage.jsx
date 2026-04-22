@@ -30,6 +30,25 @@ const AdminTabLazy = lazy(() => loadAdminTab().then((m) => ({ default: m.AdminTa
 const BeskedTabLazy = lazy(() => loadBeskedTab().then((m) => ({ default: m.BeskedTab })));
 const LigaTabLazy = lazy(() => loadLigaTab().then((m) => ({ default: m.LigaTab })));
 
+const FEEDBACK_DEFAULT_CATEGORY = "bug";
+const FEEDBACK_DEFAULT_PRIORITY = "normal";
+
+const FEEDBACK_CATEGORY_OPTIONS = [
+  { value: "bug", label: "Bug" },
+  { value: "performance", label: "Performance" },
+  { value: "ui", label: "UI / UX" },
+  { value: "match-chat", label: "Match chat" },
+  { value: "notifications", label: "Notifikationer" },
+  { value: "other", label: "Andet" },
+];
+
+const FEEDBACK_PRIORITY_OPTIONS = [
+  { value: "low", label: "Lav" },
+  { value: "normal", label: "Normal" },
+  { value: "high", label: "Hoj" },
+  { value: "critical", label: "Kritisk" },
+];
+
 function usePendingLigaInvites(userId) {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -459,6 +478,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
   const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackCategory, setFeedbackCategory] = useState(FEEDBACK_DEFAULT_CATEGORY);
+  const [feedbackPriority, setFeedbackPriority] = useState(FEEDBACK_DEFAULT_PRIORITY);
   const [feedbackTopic, setFeedbackTopic] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
@@ -547,6 +568,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const openFeedbackModal = useCallback(() => {
     setAccountOpen(false);
     setMobileMoreOpen(false);
+    setFeedbackCategory(FEEDBACK_DEFAULT_CATEGORY);
+    setFeedbackPriority(FEEDBACK_DEFAULT_PRIORITY);
     setFeedbackOpen(true);
   }, []);
 
@@ -571,6 +594,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          category: feedbackCategory,
+          priority: feedbackPriority,
           topic: feedbackTopic.trim() || null,
           message,
           pageUrl: typeof window !== "undefined" ? window.location.href : null,
@@ -590,6 +615,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
       }
 
       setFeedbackOpen(false);
+      setFeedbackCategory(FEEDBACK_DEFAULT_CATEGORY);
+      setFeedbackPriority(FEEDBACK_DEFAULT_PRIORITY);
       setFeedbackTopic("");
       setFeedbackMessage("");
       showToast("Tak! Din indberetning er sendt.");
@@ -599,7 +626,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     } finally {
       setFeedbackSending(false);
     }
-  }, [feedbackMessage, feedbackTopic, showToast, location.pathname, location.search, displayName, authUser?.email, user?.email, user?.id]);
+  }, [feedbackCategory, feedbackPriority, feedbackMessage, feedbackTopic, showToast, location.pathname, location.search, displayName, authUser?.email, user?.email, user?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -920,6 +947,60 @@ export function DashboardPage({ user, onLogout, showToast }) {
               </div>
             </div>
             <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobileView ? "1fr" : "1fr 1fr",
+                  gap: "10px",
+                }}
+              >
+                <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid }}>Kategori</span>
+                  <select
+                    value={feedbackCategory}
+                    onChange={(event) => setFeedbackCategory(event.target.value)}
+                    disabled={feedbackSending}
+                    style={{
+                      width: "100%",
+                      border: "1px solid " + theme.border,
+                      borderRadius: "10px",
+                      padding: "10px 12px",
+                      fontSize: isMobileView ? "16px" : "13px",
+                      fontFamily: font,
+                      color: theme.text,
+                      background: theme.surface,
+                      outline: "none",
+                    }}
+                  >
+                    {FEEDBACK_CATEGORY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid }}>Prioritet</span>
+                  <select
+                    value={feedbackPriority}
+                    onChange={(event) => setFeedbackPriority(event.target.value)}
+                    disabled={feedbackSending}
+                    style={{
+                      width: "100%",
+                      border: "1px solid " + theme.border,
+                      borderRadius: "10px",
+                      padding: "10px 12px",
+                      fontSize: isMobileView ? "16px" : "13px",
+                      fontFamily: font,
+                      color: theme.text,
+                      background: theme.surface,
+                      outline: "none",
+                    }}
+                  >
+                    {FEEDBACK_PRIORITY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <input
                 type="text"
                 value={feedbackTopic}
@@ -931,7 +1012,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   border: "1px solid " + theme.border,
                   borderRadius: "10px",
                   padding: "10px 12px",
-                  fontSize: "13px",
+                  fontSize: isMobileView ? "16px" : "13px",
                   fontFamily: font,
                   color: theme.text,
                   background: theme.surface,
@@ -950,7 +1031,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   border: "1px solid " + theme.border,
                   borderRadius: "10px",
                   padding: "10px 12px",
-                  fontSize: "13px",
+                  fontSize: isMobileView ? "16px" : "13px",
                   lineHeight: 1.5,
                   fontFamily: font,
                   color: theme.text,
