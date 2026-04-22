@@ -931,6 +931,28 @@ button,
   max-height: 230px;
   overflow-y: auto;
   padding-right: 2px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--pm-accent) 46%, var(--pm-border)) color-mix(in srgb, var(--pm-surface-alt) 84%, var(--pm-border));
+}
+
+.pm-match-chat-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.pm-match-chat-list::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--pm-surface-alt) 84%, var(--pm-border));
+  border-radius: 999px;
+}
+
+.pm-match-chat-list::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--pm-accent) 46%, var(--pm-border));
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--pm-surface-alt) 84%, var(--pm-border));
+}
+
+.pm-match-chat-list::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--pm-accent) 62%, var(--pm-border));
 }
 
 .pm-match-chat-empty {
