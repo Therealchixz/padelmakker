@@ -15,6 +15,8 @@ import {
 } from '../lib/pushNotifications';
 
 const DISMISSED_MAX = 400;
+const NOTIF_REFRESH_INTERVAL_MS = 10000;
+const REALTIME_RETRY_DELAY_MS = 1500;
 
 /** Lokalt afviste id'er — så de ikke kommer tilbage ved refresh hvis DELETE fejler stille (0 rækker / RLS). */
 function dismissedStorageKey(userId) {
@@ -52,8 +54,10 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [matchMetaById, setMatchMetaById] = useState({});
+  const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [confirmClear, setConfirmClear] = useState(false);
   const panelRef = useRef(null);
+  const realtimeRetryTimerRef = useRef(null);
 
   // Push notification opt-in state
   const [pushSupported, setPushSupported] = useState(false);
@@ -178,19 +182,35 @@ export function NotificationBell() {
     load();
   }, [load]);
 
-  /* Realtime på notifications kræver at tabellen findes og Realtime er slået til — ellers kan nogle browsere crashe med hvid skærm */
+  /* Realtime på notifications med retry, så mobil ikke kræver app-reopen ved timeout. */
   useEffect(() => {
     if (!userId) return undefined;
+    let cancelled = false;
     const channel = supabase
-      .channel("notifs-" + userId)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: "user_id=eq." + userId }, () => load())
+      .channel(`notifs-${userId}-${realtimeVersion}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: "user_id=eq." + userId }, () => load())
       .subscribe((status) => {
+        if (cancelled) return;
+        if (status === "SUBSCRIBED") {
+          void load();
+          return;
+        }
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          try { supabase.removeChannel(channel); } catch { /* ignore */ }
+          if (realtimeRetryTimerRef.current) clearTimeout(realtimeRetryTimerRef.current);
+          realtimeRetryTimerRef.current = setTimeout(() => {
+            if (!cancelled) setRealtimeVersion((v) => v + 1);
+          }, REALTIME_RETRY_DELAY_MS);
         }
       });
-    return () => { try { supabase.removeChannel(channel); } catch { /* ignore */ } };
-  }, [userId, load]);
+    return () => {
+      cancelled = true;
+      if (realtimeRetryTimerRef.current) {
+        clearTimeout(realtimeRetryTimerRef.current);
+        realtimeRetryTimerRef.current = null;
+      }
+      try { supabase.removeChannel(channel); } catch { /* ignore */ }
+    };
+  }, [userId, load, realtimeVersion]);
 
   // Tjek om push er understøttet og allerede aktiveret
   useEffect(() => {
@@ -199,11 +219,35 @@ export function NotificationBell() {
     isPushSubscribed().then(setPushSubscribed);
   }, [userId]);
 
-  // Genindlæs notifikationer når siden bliver synlig igen (fx skift af tab)
+  // Fallback refresh på mobil: fokus/synlighed/online + let polling mens siden er synlig.
   useEffect(() => {
-    const onVis = () => { if (document.visibilityState === 'visible') load(); };
-    document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
+    const syncIfVisible = () => {
+      if (typeof document === "undefined" || document.visibilityState === "visible") {
+        void load();
+      }
+    };
+    const onVisibilityChange = () => syncIfVisible();
+
+    const intervalId = setInterval(syncIfVisible, NOTIF_REFRESH_INTERVAL_MS);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", syncIfVisible);
+      window.addEventListener("pageshow", syncIfVisible);
+      window.addEventListener("online", syncIfVisible);
+    }
+    return () => {
+      clearInterval(intervalId);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", syncIfVisible);
+        window.removeEventListener("pageshow", syncIfVisible);
+        window.removeEventListener("online", syncIfVisible);
+      }
+    };
   }, [load]);
 
   useEffect(() => {

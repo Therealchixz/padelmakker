@@ -239,8 +239,33 @@ function useUnreadNotificationsCount(userId) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, applyDeltaFromPayload)
       .subscribe();
 
+    const syncIfVisible = () => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        void syncCount();
+      }
+    };
+    const onVisibilityChange = () => syncIfVisible();
+    const intervalId = setInterval(syncIfVisible, 10000);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibilityChange);
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', syncIfVisible);
+      window.addEventListener('pageshow', syncIfVisible);
+      window.addEventListener('online', syncIfVisible);
+    }
+
     return () => {
       cancelled = true;
+      clearInterval(intervalId);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', syncIfVisible);
+        window.removeEventListener('pageshow', syncIfVisible);
+        window.removeEventListener('online', syncIfVisible);
+      }
       supabase.removeChannel(channel);
     };
   }, [userId]);
@@ -303,8 +328,33 @@ function useUnreadKampeNotificationsCount(userId) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, applyDeltaFromPayload)
       .subscribe();
 
+    const syncIfVisible = () => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        void syncCount();
+      }
+    };
+    const onVisibilityChange = () => syncIfVisible();
+    const intervalId = setInterval(syncIfVisible, 10000);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibilityChange);
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', syncIfVisible);
+      window.addEventListener('pageshow', syncIfVisible);
+      window.addEventListener('online', syncIfVisible);
+    }
+
     return () => {
       cancelled = true;
+      clearInterval(intervalId);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', syncIfVisible);
+        window.removeEventListener('pageshow', syncIfVisible);
+        window.removeEventListener('online', syncIfVisible);
+      }
       supabase.removeChannel(channel);
     };
   }, [userId]);
