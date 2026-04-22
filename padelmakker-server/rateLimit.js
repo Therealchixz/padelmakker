@@ -4,6 +4,8 @@
  * Falder tilbage til at tillade requesten hvis Supabase er utilgængeligt.
  */
 
+/* global process */
+
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 

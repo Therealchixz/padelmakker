@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
+import type { CSSProperties } from 'react'
 import { Check, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
@@ -478,7 +479,7 @@ export function AmericanoResultsPanel({
       </div>
       <div className="pm-card-subpanel" style={{ padding: '14px 16px', marginBottom: 8, fontFamily: font }}>
         <div style={{ fontWeight: 700, marginBottom: 10, color: c.text, fontSize: 12 }}>Stilling (sum af kampoint)</div>
-        <div className="pm-data-table" style={{ ['--pm-table-cols']: '30px 1fr 64px' }}>
+        <div className="pm-data-table" style={{ ['--pm-table-cols']: '30px 1fr 64px' } as CSSProperties}>
           <div className="pm-data-table-head">
             <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>#</div>
             <div className="pm-data-table-cell-head">Spiller</div>

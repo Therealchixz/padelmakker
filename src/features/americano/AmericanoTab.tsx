@@ -619,13 +619,13 @@ export function AmericanoTab({
       <PillTabs
         tabs={americanoSubTabs}
         value={americanoView}
-        onChange={(nextTab) => {
-          const nextView = nextTab as AmericanoSubTab
-          setAmericanoView(nextView)
-          onAmericanoSubTabChange?.(nextView)
+        onChange={(nextTab: AmericanoSubTab) => {
+          setAmericanoView(nextTab)
+          onAmericanoSubTabChange?.(nextTab)
         }}
         ariaLabel="Americano status"
         size="sm"
+        className=""
         style={{ marginBottom: 16 }}
       />
 
