@@ -608,10 +608,27 @@ export function AmericanoTab({
           </span>
         </button>
         {americanoHelpOpen ? (
-          <div className="pm-help-box-copy" style={{ marginTop: 8 }}>
-            <strong>Americano bruger ikke ELO.</strong> Kampe tæller kun i separat V/T på profilen (som i apps som Padelboard - turnering og stilling for sig selv).
-            Makkere og modstandere roterer hver runde. Valget 16/24/32 er <strong>spilformat på banen</strong> (typisk først til det tal); når kampen er slut, indtastes den{' '}
-            <strong>slutstilling</strong> der summerer til formatet (fx 10-6 eller 8-8 ved 16 point) - hvert rally tæller ét point til holdet; det andet hold udfyldes automatisk hvis du kun skriver ét tal.
+          <div className="pm-help-box-content" style={{ marginTop: 8 }}>
+            <div className="pm-help-box-item">
+              <span style={{ flexShrink: 0 }}>1.</span>
+              <span><strong>Americano er et af de mest udbredte formater</strong> og er lavet til social, hurtig afvikling med mange kampe.</span>
+            </div>
+            <div className="pm-help-box-item">
+              <span style={{ flexShrink: 0 }}>2.</span>
+              <span>Du har ikke fast makker: der spilles double, og du får <strong>skiftende makkere og modstandere</strong> fra runde til runde.</span>
+            </div>
+            <div className="pm-help-box-item">
+              <span style={{ flexShrink: 0 }}>3.</span>
+              <span>Kampe spilles typisk til et fast antal point (fx 16/24/32) eller på tid. Hvert point tæller i resultatet.</span>
+            </div>
+            <div className="pm-help-box-item">
+              <span style={{ flexShrink: 0 }}>4.</span>
+              <span>Stillingen er <strong>individuel</strong>: dine kamp-point lægges sammen, og spilleren med flest point vinder turneringen.</span>
+            </div>
+            <div className="pm-help-box-item">
+              <span style={{ flexShrink: 0 }}>5.</span>
+              <span>Planlægning: minimum 4 spillere; bedst når antal går op i 4 (4/8/12/16), så rotationen bliver mest fair og enkel.</span>
+            </div>
           </div>
         ) : null}
       </div>
