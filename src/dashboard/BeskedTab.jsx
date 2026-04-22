@@ -14,6 +14,23 @@ import {
 const CHAT_WINDOW_SIZE = 80;
 const CONVO_CACHE_TTL_MS = 30_000;
 const CONVO_CACHE_BY_USER = new Map();
+const MESSAGE_CACHE_TTL_MS = 20_000;
+const MESSAGE_CACHE_MAX_THREADS = 20;
+const MESSAGE_CACHE_BY_THREAD = new Map();
+
+function setMessageThreadCache(threadKey, messages) {
+  if (!threadKey) return;
+  MESSAGE_CACHE_BY_THREAD.set(threadKey, {
+    at: Date.now(),
+    ok: true,
+    messages: messages || [],
+  });
+  while (MESSAGE_CACHE_BY_THREAD.size > MESSAGE_CACHE_MAX_THREADS) {
+    const oldestKey = MESSAGE_CACHE_BY_THREAD.keys().next().value;
+    if (!oldestKey) break;
+    MESSAGE_CACHE_BY_THREAD.delete(oldestKey);
+  }
+}
 
 function formatTime(dateStr) {
   if (!dateStr) return '';
@@ -194,17 +211,33 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   // Indlæs beskeder + real-time subscription når samtale vælges
   useEffect(() => {
     if (!selectedId || !user?.id) { setMessages([]); return; }
+    const threadKey = `${user.id}:${selectedId}`;
+    const cachedThread = MESSAGE_CACHE_BY_THREAD.get(threadKey);
+    const hasCachedThread = cachedThread?.ok === true;
+    const isCacheFresh = hasCachedThread && (Date.now() - cachedThread.at < MESSAGE_CACHE_TTL_MS);
 
-    setLoadingMsgs(true);
-    fetchMessages(user.id, selectedId)
-      .then(msgs => {
-        setMessages(msgs);
-        const lastMsg = msgs[msgs.length - 1];
-        if (lastMsg) upsertConversationFromMessage(lastMsg, { incomingRead: true });
-        scheduleMarkRead(selectedId, 60);
-        clearConversationUnread(selectedId);
-      })
-      .finally(() => setLoadingMsgs(false));
+    if (hasCachedThread) {
+      setMessages(cachedThread.messages || []);
+      setLoadingMsgs(false);
+      scheduleMarkRead(selectedId, 60);
+      clearConversationUnread(selectedId);
+    } else {
+      setLoadingMsgs(true);
+    }
+
+    if (!isCacheFresh) {
+      setLoadingMsgs(true);
+      fetchMessages(user.id, selectedId)
+        .then(msgs => {
+          setMessages(msgs);
+          setMessageThreadCache(threadKey, msgs);
+          const lastMsg = msgs[msgs.length - 1];
+          if (lastMsg) upsertConversationFromMessage(lastMsg, { incomingRead: true });
+          scheduleMarkRead(selectedId, 60);
+          clearConversationUnread(selectedId);
+        })
+        .finally(() => setLoadingMsgs(false));
+    }
 
     const handleIncomingMessage = (payload) => {
       const msg = payload.new;
@@ -264,6 +297,11 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (!selectedId || !user?.id) return;
+    setMessageThreadCache(`${user.id}:${selectedId}`, messages);
+  }, [messages, selectedId, user?.id]);
 
   const handleSend = async () => {
     const text = inputText.trim();
