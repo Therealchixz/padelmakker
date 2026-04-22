@@ -45,7 +45,7 @@ const FEEDBACK_CATEGORY_OPTIONS = [
 const FEEDBACK_PRIORITY_OPTIONS = [
   { value: "low", label: "Lav" },
   { value: "normal", label: "Normal" },
-  { value: "high", label: "Hoj" },
+  { value: "high", label: "Høj" },
   { value: "critical", label: "Kritisk" },
 ];
 

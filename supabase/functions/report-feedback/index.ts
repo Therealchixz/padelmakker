@@ -25,7 +25,7 @@ const feedbackCategoryLabels: Record<string, string> = {
 const feedbackPriorityLabels: Record<string, string> = {
   "low": "Lav",
   "normal": "Normal",
-  "high": "Hoj",
+  "high": "Høj",
   "critical": "Kritisk",
 };
 
