@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { Profile, Court } from '../api/base44Client';
@@ -192,6 +192,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [matchChatSendingById, setMatchChatSendingById] = useState({});
   const [matchChatErrorById, setMatchChatErrorById] = useState({});
   const [matchChatUnreadById, setMatchChatUnreadById] = useState({});
+  const matchChatListRefs = useRef({});
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
@@ -483,6 +484,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
   }, [loadUnreadMatchChatNotifs, user?.id]);
 
+  const scrollMatchChatToBottom = useCallback((matchId, behavior = "auto") => {
+    const key = String(matchId || "");
+    const listEl = matchChatListRefs.current[key];
+    if (!listEl) return;
+    try {
+      listEl.scrollTo({ top: listEl.scrollHeight, behavior });
+    } catch {
+      listEl.scrollTop = listEl.scrollHeight;
+    }
+  }, []);
+
   useEffect(() => {
     const openMatchIds = Object.keys(matchChatOpenById).filter((matchId) => matchChatOpenById[matchId]);
     if (openMatchIds.length === 0) return undefined;
@@ -496,6 +508,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const next = [...current, incoming];
           return { ...prev, [matchId]: next.slice(-120) };
         });
+        if (matchChatOpenById[matchId]) {
+          if (typeof window !== "undefined") {
+            window.requestAnimationFrame(() => scrollMatchChatToBottom(matchId, "smooth"));
+          } else {
+            scrollMatchChatToBottom(matchId);
+          }
+        }
       })
     );
 
@@ -504,7 +523,25 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         try { stop(); } catch (_) { /* ignore */ }
       });
     };
-  }, [matchChatOpenById]);
+  }, [matchChatOpenById, scrollMatchChatToBottom]);
+
+  useEffect(() => {
+    const openMatchIds = Object.keys(matchChatOpenById).filter((matchId) => matchChatOpenById[matchId]);
+    if (!openMatchIds.length) return undefined;
+
+    let rafIds = [];
+    if (typeof window !== "undefined") {
+      rafIds = openMatchIds.map((matchId) => window.requestAnimationFrame(() => scrollMatchChatToBottom(matchId)));
+    } else {
+      openMatchIds.forEach((matchId) => scrollMatchChatToBottom(matchId));
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        rafIds.forEach((id) => window.cancelAnimationFrame(id));
+      }
+    };
+  }, [matchChatOpenById, matchChatById, matchChatLoadingById, scrollMatchChatToBottom]);
 
   const persistAmericanoSubTab = useCallback(
     (v) => mergeKampeSessionPrefs(user.id, { americanoView: v }),
@@ -971,6 +1008,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           if (current.some((m) => String(m.id) === String(created.id))) return prev;
           return { ...prev, [matchId]: [...current, created].slice(-120) };
         });
+        if (typeof window !== "undefined") {
+          window.requestAnimationFrame(() => scrollMatchChatToBottom(matchId, "smooth"));
+        } else {
+          scrollMatchChatToBottom(matchId);
+        }
       }
       void notifyMatchChatParticipants(matchId, content);
       setMatchChatDraftById((prev) => ({ ...prev, [matchId]: "" }));
@@ -1382,7 +1424,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     Admin-visning: Kun tilmeldte spillere kan skrive i chatten.
                   </div>
                 )}
-                <div className="pm-match-chat-list">
+                <div
+                  className="pm-match-chat-list"
+                  ref={(node) => {
+                    const key = String(m.id);
+                    if (node) {
+                      matchChatListRefs.current[key] = node;
+                    } else {
+                      delete matchChatListRefs.current[key];
+                    }
+                  }}
+                >
                   {chatLoading && (
                     <div className="pm-match-chat-empty">Henter beskeder...</div>
                   )}

@@ -996,7 +996,7 @@ button,
   border: 1px solid var(--pm-border);
   background: var(--pm-surface);
   color: var(--pm-text);
-  font-size: 12px;
+  font-size: 14px;
   padding: 8px 10px;
   outline: none;
   box-sizing: border-box;
@@ -1545,6 +1545,12 @@ button,
 
   .pm-match-chat-bubble {
     max-width: 90%;
+  }
+
+  /* iOS Safari zoomer ind ved focus hvis input-font < 16px */
+  .pm-match-chat-input {
+    font-size: 16px;
+    min-height: 42px;
   }
 
   .pm-data-table-cell-head {
