@@ -1151,7 +1151,7 @@ export function LigaTab({
       )}
 
       <div style={{ marginBottom: '14px' }}>
-        <SwissRulesBox collapsible storageKey="pm_liga_rules_open_v1" />
+        <SwissRulesBox collapsible />
       </div>
 
       {/* Ventende invitationer */}

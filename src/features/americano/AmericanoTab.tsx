@@ -17,7 +17,6 @@ import { isAvatarUrl } from '../../lib/avatarUpload'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
 
 const font = 'var(--pm-font)'
-const AMERICANO_HELP_STORAGE_KEY = 'pm_americano_help_open_v1'
 
 /** Renderer emoji eller profilbillede-URL korrekt i en cirkel */
 function AvatarInCircle({ av, size = 36, fontSize = 18, bg = 'var(--pm-border)' }: { av: string; size?: number; fontSize?: number; bg?: string }) {
@@ -143,23 +142,7 @@ export function AmericanoTab({
   const [participantStatsPick, setParticipantStatsPick] = useState<{ userId: string; name: string } | null>(
     null
   )
-  const [americanoHelpOpen, setAmericanoHelpOpen] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem(AMERICANO_HELP_STORAGE_KEY)
-      if (saved === null) return false
-      return saved === '1' || saved.toLowerCase() === 'true'
-    } catch {
-      return false
-    }
-  })
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(AMERICANO_HELP_STORAGE_KEY, americanoHelpOpen ? '1' : '0')
-    } catch {
-      // ignore storage issues (private mode, quota, etc.)
-    }
-  }, [americanoHelpOpen])
+  const [americanoHelpOpen, setAmericanoHelpOpen] = useState<boolean>(false)
 
   const load = useCallback(async () => {
     setLoading(true)

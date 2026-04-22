@@ -48,7 +48,6 @@ for (let h = 6; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`);
 }
 
-const PADEL_HELP_STORAGE_KEY = 'pm_padel_help_open_v1';
 const PADEL_RULE_SUMMARY = [
   {
     icon: '1.',
@@ -182,15 +181,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     if (s?.scope === "mine" || s?.scope === "alle") return s.scope;
     return "alle";
   }); // "mine" | "alle"
-  const [padelHelpOpen, setPadelHelpOpen] = useState(() => {
-    try {
-      const saved = localStorage.getItem(PADEL_HELP_STORAGE_KEY);
-      if (saved === null) return false;
-      return saved === '1' || saved.toLowerCase() === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [padelHelpOpen, setPadelHelpOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [joinRequests, setJoinRequests] = useState({}); // { [matchId]: [{ id, user_id, user_name, user_emoji, status }] }
   const [newMatch, setNewMatch]       = useState({
@@ -373,14 +364,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   useEffect(() => {
     mergeKampeSessionPrefs(user.id, { format: kampeFormat, view: viewTab });
   }, [user.id, kampeFormat, viewTab]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(PADEL_HELP_STORAGE_KEY, padelHelpOpen ? '1' : '0');
-    } catch {
-      // ignore storage errors
-    }
-  }, [padelHelpOpen]);
 
   const persistAmericanoSubTab = useCallback(
     (v) => mergeKampeSessionPrefs(user.id, { americanoView: v }),
@@ -1367,6 +1350,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         value={kampeFormat}
         onTabChange={(nextFormat) => {
           setKampeFormat(nextFormat);
+          setPadelHelpOpen(false);
           setShowCreate(false);
           setShowAmericanoCreate(false);
           setShowLigaCreate(false);
