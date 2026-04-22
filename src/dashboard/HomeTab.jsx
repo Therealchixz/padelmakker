@@ -349,17 +349,20 @@ export function HomeTab({ user, setTab }) {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    borderRadius: "10px",
-    minHeight: "66px",
-    padding: "11px 12px",
+    borderRadius: "12px",
+    minHeight: "74px",
+    padding: "10px 12px",
     border: "1px solid " + theme.border,
     boxShadow: "0 1px 4px rgba(2, 6, 23, 0.04)",
+    background: theme.surface,
   };
 
   const activityActionBtnStyle = (tone) => ({
     ...btn(false),
-    padding: "5px 10px",
-    fontSize: "11px",
+    minWidth: "88px",
+    justifyContent: "center",
+    padding: "6px 11px",
+    fontSize: "12px",
     height: "auto",
     borderRadius: "999px",
     borderColor: tone + "55",
@@ -377,42 +380,59 @@ export function HomeTab({ user, setTab }) {
     gap: "2px",
   };
 
-  const activityTitleStyle = {
-    fontSize: "13px",
-    color: theme.text,
+  const activityMetaRowStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    minHeight: "18px",
+    minWidth: 0,
+  };
+
+  const activityMetaTextStyle = {
+    fontSize: "11px",
+    color: theme.textLight,
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
     lineHeight: 1.25,
   };
 
-  const activityMetaStyle = {
-    fontSize: "11px",
+  const activityTitleStyle = {
+    fontSize: "14px",
+    color: theme.text,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    lineHeight: 1.3,
+  };
+
+  const activitySubtitleStyle = {
+    fontSize: "12px",
     color: theme.textMid,
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
-    lineHeight: 1.25,
+    lineHeight: 1.3,
   };
 
   const activityTypeTagStyle = (tone) => ({
     display: "inline-flex",
     alignItems: "center",
-    padding: "1px 7px",
+    padding: "2px 8px",
     borderRadius: "999px",
     border: "1px solid " + tone + "44",
     background: theme.surfaceAlt,
     color: tone,
     fontSize: "10px",
     fontWeight: 700,
-    letterSpacing: "0.02em",
-    marginRight: "6px",
-    verticalAlign: "middle",
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    flexShrink: 0,
   });
 
   const activityLeadingSlotStyle = {
-    width: "44px",
-    minWidth: "44px",
+    width: "40px",
+    minWidth: "40px",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -420,7 +440,7 @@ export function HomeTab({ user, setTab }) {
   };
 
   const activityRightRailStyle = {
-    minWidth: "88px",
+    minWidth: "94px",
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",
@@ -430,7 +450,7 @@ export function HomeTab({ user, setTab }) {
   const activityStatPillStyle = (tone) => ({
     fontSize: "11px",
     fontWeight: 700,
-    padding: "4px 8px",
+    padding: "5px 8px",
     borderRadius: "999px",
     border: "1px solid " + tone + "44",
     color: tone,
@@ -443,25 +463,33 @@ export function HomeTab({ user, setTab }) {
     boxShadow: "0 6px 18px rgba(37, 99, 235, 0.08)",
   };
 
-  const activityCardStyle = (isHighlight) => ({
+  const activityCardStyle = (isHighlight, tone) => ({
     ...activityRowBaseStyle,
-    background: theme.surface,
+    borderLeft: "3px solid " + (tone || theme.accent),
     ...(isHighlight ? activityHighlightRowStyle : null),
   });
 
-  const activityMetaWithTag = (tone, label, text) => (
-    <>
-      <span style={activityTypeTagStyle(tone)}>{label}</span>
-      {text}
-    </>
-  );
-
-  const renderActivityRowCard = ({ key, isHighlight, leading, title, meta, action, stat }) => (
-    <div key={key} style={activityCardStyle(isHighlight)}>
+  const renderActivityRowCard = ({
+    key,
+    isHighlight,
+    tone,
+    leading,
+    tag,
+    meta,
+    title,
+    subtitle,
+    action,
+    stat,
+  }) => (
+    <div key={key} style={activityCardStyle(isHighlight, tone)}>
       <div style={activityLeadingSlotStyle}>{leading}</div>
       <div style={activityBodyStyle}>
+        <div style={activityMetaRowStyle}>
+          {tag ? <span style={activityTypeTagStyle(tone || theme.accent)}>{tag}</span> : null}
+          {meta ? <span style={activityMetaTextStyle}>{meta}</span> : null}
+        </div>
         <div style={activityTitleStyle}>{title}</div>
-        <div style={activityMetaStyle}>{meta}</div>
+        {subtitle ? <div style={activitySubtitleStyle}>{subtitle}</div> : null}
       </div>
       <div style={activityRightRailStyle}>
         {action || stat || null}
@@ -623,17 +651,20 @@ export function HomeTab({ user, setTab }) {
                 return renderActivityRowCard({
                   key: `am-${i}`,
                   isHighlight,
+                  tone: theme.warm,
                   leading: (
                     <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
                       <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                     </div>
                   ),
+                  tag: "Americano",
+                  meta: formatTimeAgo(row.created_at),
                   title: (
                     <>
                       <span onClick={() => setViewPlayer(player)} style={{ cursor: "pointer", fontWeight: 700 }}>{row.name}</span> vandt Americano
                     </>
                   ),
-                  meta: activityMetaWithTag(theme.warm, "Americano", `${row.tournamentName ? `"${row.tournamentName}" · ` : ""}${formatTimeAgo(row.created_at)}`),
+                  subtitle: row.tournamentName ? `"${row.tournamentName}"` : null,
                   action: <button onClick={() => setViewTournament(row)} style={activityActionBtnStyle(theme.warm)}>Se resultat</button>,
                 });
               }
@@ -643,14 +674,17 @@ export function HomeTab({ user, setTab }) {
                 return renderActivityRowCard({
                   key: `liga-${i}`,
                   isHighlight,
+                  tone: theme.accent,
                   leading: (
                     <div style={{ position: "relative", width: "40px", height: "32px" }}>
                       <AvatarCircle avatar={c.player1_avatar} size={28} emojiSize="14px" style={{ background: theme.surfaceAlt, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
                       <AvatarCircle avatar={c.player2_avatar} size={28} emojiSize="14px" style={{ background: theme.surfaceAlt, border: "2px solid " + theme.surface, position: "absolute", left: 14, top: 2, zIndex: 1 }} />
                     </div>
                   ),
+                  tag: "Liga",
+                  meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700 }}>{c.name}</span> vandt ligaen</>,
-                  meta: activityMetaWithTag(theme.accent, "Liga", `${row.leagueName ? `"${row.leagueName}" · ` : ""}${formatTimeAgo(row.created_at)}`),
+                  subtitle: row.leagueName ? `"${row.leagueName}"` : null,
                   action: <button onClick={() => setViewLeague(row)} style={activityActionBtnStyle(theme.accent)}>Se resultat</button>,
                 });
               }
@@ -661,13 +695,16 @@ export function HomeTab({ user, setTab }) {
                 return renderActivityRowCard({
                   key: `open-${i}`,
                   isHighlight,
+                  tone: theme.green,
                   leading: (
                     <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
                       <AvatarCircle avatar={row.creatorAvatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                     </div>
                   ),
+                  tag: "2v2",
+                  meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.creatorName}</span> søger spillere til <strong>2v2</strong></>,
-                  meta: activityMetaWithTag(theme.green, "2v2", `${dateStr}${row.court ? ` · ${row.court}` : ""}`),
+                  subtitle: `${dateStr}${row.court ? ` · ${row.court}` : ""}`,
                   action: <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'open' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.green)}>Se kamp</button>,
                 });
               }
@@ -677,13 +714,16 @@ export function HomeTab({ user, setTab }) {
                 return renderActivityRowCard({
                   key: `amreg-${i}`,
                   isHighlight,
+                  tone: theme.warm,
                   leading: (
                     <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" }}>
                       🎾
                     </div>
                   ),
+                  tag: "Americano",
+                  meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.name}</span>,
-                  meta: activityMetaWithTag(theme.warm, "Americano", `${dateStr}${row.time ? ` · ${row.time}` : ""} · ${row.participants}/${row.slots} tilmeldt`),
+                  subtitle: `${dateStr}${row.time ? ` · ${row.time}` : ""} · ${row.participants}/${row.slots} tilmeldt`,
                   action: <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.warm)}>Tilmeld</button>,
                 });
               }
@@ -693,13 +733,16 @@ export function HomeTab({ user, setTab }) {
                 return renderActivityRowCard({
                   key: `milestone-${i}`,
                   isHighlight,
+                  tone: theme.purple,
                   leading: (
                     <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
                       <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                     </div>
                   ),
+                  tag: "ELO",
+                  meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> nåede {row.milestone} ELO</>,
-                  meta: activityMetaWithTag(theme.purple, "ELO", formatTimeAgo(row.created_at)),
+                  subtitle: "Ny milepæl",
                   stat: <span style={activityStatPillStyle(theme.purple)}>{row.milestone}+</span>,
                 });
               }
@@ -711,13 +754,16 @@ export function HomeTab({ user, setTab }) {
                 return renderActivityRowCard({
                   key: `seek-${i}`,
                   isHighlight,
+                  tone: theme.blue,
                   leading: (
                     <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
                       <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                     </div>
                   ),
+                  tag: "Spiller",
+                  meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> søger makker</>,
-                  meta: activityMetaWithTag(theme.blue, "Spiller", `${sub ? `${sub} · ` : ""}${formatTimeAgo(row.created_at)}`),
+                  subtitle: sub || "Klar til kamp",
                   action: <button onClick={() => setViewPlayer(player)} style={activityActionBtnStyle(theme.blue)}>Se profil</button>,
                 });
               }
@@ -727,13 +773,16 @@ export function HomeTab({ user, setTab }) {
                 return renderActivityRowCard({
                   key: `lnew-${i}`,
                   isHighlight,
+                  tone: theme.accent,
                   leading: (
                     <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" }}>
                       🏆
                     </div>
                   ),
+                  tag: "Liga",
+                  meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.leagueName}</span>,
-                  meta: activityMetaWithTag(theme.accent, "Liga", `${isReg ? "Tilmelding åben" : "I gang"} · ${row.teamCount} hold · ${formatTimeAgo(row.created_at)}`),
+                  subtitle: `${isReg ? "Tilmelding åben" : "I gang"} · ${row.teamCount} hold`,
                   action: <button onClick={() => setTab('liga')} style={activityActionBtnStyle(theme.accent)}>{isReg ? 'Tilmeld' : 'Se liga'}</button>,
                 });
               }
@@ -746,13 +795,16 @@ export function HomeTab({ user, setTab }) {
                 return renderActivityRowCard({
                   key: `match-${i}`,
                   isHighlight,
+                  tone: theme.accent,
                   leading: (
                     <div style={{ width: 36, height: 36, borderRadius: '50%', background: theme.surfaceAlt, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Swords size={16} color={theme.accent} />
                     </div>
                   ),
+                  tag: "Kamp",
+                  meta: formatTimeAgo(row.created_at),
                   title: <><strong>{winnerNames}</strong> slog <strong>{loserNames}</strong></>,
-                  meta: activityMetaWithTag(theme.accent, "Kamp", `${row.court} · ${row.score} · ${formatTimeAgo(row.created_at)}`),
+                  subtitle: `${row.court} · ${row.score}`,
                   action: (
                     <button
                       onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'mine' }); setTab('kampe'); }}
@@ -763,7 +815,6 @@ export function HomeTab({ user, setTab }) {
                   ),
                 });
               }
-
               const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
               const avatar = row.profiles?.avatar || "🎾";
               const won = row.result === 'win';
@@ -772,9 +823,11 @@ export function HomeTab({ user, setTab }) {
               return renderActivityRowCard({
                 key: `elo-${i}`,
                 isHighlight,
+                tone: theme.accent,
                 leading: <AvatarCircle avatar={avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />,
+                tag: "Kamp",
+                meta: formatTimeAgo(row.created_at),
                 title: <><strong>{name}</strong> {won ? "vandt" : "tabte"}</>,
-                meta: activityMetaWithTag(theme.accent, "Kamp", formatTimeAgo(row.created_at)),
                 stat: <span style={activityStatPillStyle(tone)}>{change >= 0 ? "+" : ""}{change} ELO</span>,
               });
             })}
