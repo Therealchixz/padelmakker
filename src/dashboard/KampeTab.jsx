@@ -16,7 +16,8 @@ import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { fetchMatchMessages, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
-import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal } from 'lucide-react';
+import { DateTime } from 'luxon';
+import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -136,6 +137,72 @@ async function fetchRowsInChunks(table, column, ids, select = '*') {
     rows.push(...(data || []));
   }
   return rows;
+}
+
+const CALENDAR_ZONE = 'Europe/Copenhagen';
+
+function parseMatchDateTime(matchDate, matchTime) {
+  const dateIso = String(matchDate || '').slice(0, 10);
+  const rawTime = String(matchTime || '').trim();
+  const timeMatch = /^(\d{1,2}):(\d{2})/.exec(rawTime);
+  if (!dateIso || !timeMatch) return null;
+
+  const hours = Math.max(0, Math.min(23, Number(timeMatch[1])));
+  const minutes = Math.max(0, Math.min(59, Number(timeMatch[2])));
+  const hh = String(hours).padStart(2, '0');
+  const mm = String(minutes).padStart(2, '0');
+  const dt = DateTime.fromISO(`${dateIso}T${hh}:${mm}:00`, { zone: CALENDAR_ZONE });
+  return dt.isValid ? dt : null;
+}
+
+function calendarWindowForMatch(match) {
+  const start = parseMatchDateTime(match?.date, match?.time);
+  if (!start) return null;
+
+  let end = parseMatchDateTime(match?.date, match?.time_end);
+  if (!end) {
+    const duration = Number(match?.duration);
+    const minutes = Number.isFinite(duration) && duration > 0 ? duration : 120;
+    end = start.plus({ minutes });
+  }
+  if (end <= start) end = end.plus({ days: 1 });
+  return { start, end };
+}
+
+function escapeIcsText(value) {
+  return String(value || '')
+    .replaceAll('\\', '\\\\')
+    .replaceAll(';', '\\;')
+    .replaceAll(',', '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+
+function toIcsUtc(dt) {
+  return dt.toUTC().toFormat("yyyyLLdd'T'HHmmss'Z'");
+}
+
+function buildIcsEvent({ uid, title, description, location, start, end, url }) {
+  const stamp = DateTime.utc().toFormat("yyyyLLdd'T'HHmmss'Z'");
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//PadelMakker//Kampe//DA',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${escapeIcsText(uid)}`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART:${toIcsUtc(start)}`,
+    `DTEND:${toIcsUtc(end)}`,
+    `SUMMARY:${escapeIcsText(title)}`,
+    `LOCATION:${escapeIcsText(location)}`,
+    `DESCRIPTION:${escapeIcsText(description)}`,
+    `URL:${escapeIcsText(url)}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+    '',
+  ];
+  return lines.join('\r\n');
 }
 
 export function KampeTab({ user, showToast, tabActive = true }) {
@@ -1119,6 +1186,75 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
   };
 
+  const addMatchToCalendar = useCallback((match) => {
+    const windowRef = typeof window !== 'undefined' ? window : null;
+    const navigatorRef = typeof navigator !== 'undefined' ? navigator : null;
+    if (!windowRef || !navigatorRef) return;
+
+    const timing = calendarWindowForMatch(match);
+    if (!timing) {
+      showToast('Kunne ikke læse kampens dato eller tid.');
+      return;
+    }
+
+    const roster = matchPlayers[match.id] || [];
+    const players = roster
+      .map((p) => String(p?.user_name || '').trim())
+      .filter(Boolean);
+    const locationName = String(match.court_name || 'Padelbane').trim();
+    const title = `Padelkamp - ${locationName}`;
+    const matchUrl = `${windowRef.location.origin}/dashboard/kampe#pm-match-${match.id}`;
+    const descriptionParts = [
+      match.description ? `Beskrivelse: ${match.description}` : '',
+      players.length ? `Spillere: ${players.join(', ')}` : '',
+      `PadelMakker: ${matchUrl}`,
+    ].filter(Boolean);
+    const description = descriptionParts.join('\n');
+    const uid = `match-${match.id}@padelmakker.dk`;
+    const ics = buildIcsEvent({
+      uid,
+      title,
+      description,
+      location: locationName,
+      start: timing.start,
+      end: timing.end,
+      url: matchUrl,
+    });
+
+    const fileName = `padelmakker-kamp-${String(match.id).replace(/[^a-zA-Z0-9_-]/g, '') || 'event'}.ics`;
+    const userAgent = String(navigatorRef.userAgent || '');
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+    const isAndroid = /Android/i.test(userAgent);
+
+    if (isIOS) {
+      const dataUrl = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+      windowRef.location.assign(dataUrl);
+      showToast('Kalender åbnet. Vælg "Tilføj" for at gemme kampen.');
+      return;
+    }
+
+    if (isAndroid) {
+      const dates = `${toIcsUtc(timing.start)}/${toIcsUtc(timing.end)}`;
+      const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${encodeURIComponent(dates)}&location=${encodeURIComponent(locationName)}&details=${encodeURIComponent(description)}`;
+      const popup = windowRef.open(googleUrl, '_blank', 'noopener,noreferrer');
+      if (!popup) windowRef.location.assign(googleUrl);
+      showToast('Kalender åbnet. Bekræft eventen for at gemme den.');
+      return;
+    }
+
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = windowRef.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    windowRef.setTimeout(() => windowRef.URL.revokeObjectURL(url), 0);
+    showToast('Kalenderfil hentet. Åbn filen for at tilføje kampen.');
+  }, [matchPlayers, showToast]);
+
   const submitResult = async (matchId, result) => {
     setResultMatch(null);
     setBusyId(matchId);
@@ -1588,6 +1724,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
         {/* Actions */}
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {joined && status !== "completed" && (
+            <button
+              type="button"
+              onClick={() => addMatchToCalendar(m)}
+              style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px" }}
+            >
+              <CalendarPlus size={14} /> Tilføj til kalender
+            </button>
+          )}
 
           {/* ---- Open match: direct join ---- */}
           {!isClosed && status === "open" && left > 0 && !joined && (
