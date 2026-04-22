@@ -212,6 +212,7 @@ function useUnreadNotificationsCount(userId) {
       const next = payload?.new || {};
       const prev = payload?.old || {};
       const nextUnread = next?.read === false;
+      const prevHasReadField = Object.prototype.hasOwnProperty.call(prev, 'read');
       const prevUnread = prev?.read === false;
 
       if (event === 'INSERT') {
@@ -219,6 +220,10 @@ function useUnreadNotificationsCount(userId) {
         return;
       }
       if (event === 'UPDATE') {
+        if (!prevHasReadField) {
+          void syncCount();
+          return;
+        }
         if (prevUnread === nextUnread) return;
         setCount((v) => Math.max(0, v + (nextUnread ? 1 : -1)));
         return;
@@ -270,6 +275,8 @@ function useUnreadKampeNotificationsCount(userId) {
       const next = payload?.new || {};
       const prev = payload?.old || {};
       const nextUnreadMatch = next?.read === false && next?.match_id != null;
+      const prevHasReadField = Object.prototype.hasOwnProperty.call(prev, 'read');
+      const prevHasMatchField = Object.prototype.hasOwnProperty.call(prev, 'match_id');
       const prevUnreadMatch = prev?.read === false && prev?.match_id != null;
 
       if (event === 'INSERT') {
@@ -277,6 +284,10 @@ function useUnreadKampeNotificationsCount(userId) {
         return;
       }
       if (event === 'UPDATE') {
+        if (!prevHasReadField || !prevHasMatchField) {
+          void syncCount();
+          return;
+        }
         if (prevUnreadMatch === nextUnreadMatch) return;
         setCount((v) => Math.max(0, v + (nextUnreadMatch ? 1 : -1)));
         return;
