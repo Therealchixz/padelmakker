@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
-import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu } from 'lucide-react';
+import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu, Bug } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
 import { HomeTab } from './HomeTab';
 import { ShieldCheck } from 'lucide-react';
@@ -458,6 +458,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [accountPos, setAccountPos] = useState(null);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
   const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackTopic, setFeedbackTopic] = useState("");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackSending, setFeedbackSending] = useState(false);
   const hasPrefetchedTabsRef = useRef(false);
   const lastProfileRefreshAtRef = useRef(0);
   const moreBtnRef = useRef(null);
@@ -525,6 +529,81 @@ export function DashboardPage({ user, onLogout, showToast }) {
   useEffect(() => {
     if (tab !== "beskeder") setMobileConversationOpen(false);
   }, [tab]);
+
+  useEffect(() => {
+    if (!feedbackOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape" && !feedbackSending) setFeedbackOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [feedbackOpen, feedbackSending]);
+
+  const openFeedbackModal = useCallback(() => {
+    setAccountOpen(false);
+    setMobileMoreOpen(false);
+    setFeedbackOpen(true);
+  }, []);
+
+  const submitFeedbackReport = useCallback(async () => {
+    const message = feedbackMessage.trim();
+    if (message.length < 10) {
+      showToast("Skriv gerne mindst 10 tegn, så vi kan hjælpe bedre.");
+      return;
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) {
+      showToast("Fejl: mangler Supabase-konfiguration.");
+      return;
+    }
+
+    setFeedbackSending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Du skal være logget ind for at sende en indberetning.");
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/report-feedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          topic: feedbackTopic.trim() || null,
+          message,
+          pageUrl: typeof window !== "undefined" ? window.location.href : null,
+          routePath: location.pathname + location.search,
+          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          displayName,
+          userEmail: authUser?.email || user?.email || null,
+          submittedAt: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        let details = "";
+        try { details = await response.text(); } catch { /* ignore */ }
+        throw new Error(details || "Serveren kunne ikke modtage indberetningen.");
+      }
+
+      setFeedbackOpen(false);
+      setFeedbackTopic("");
+      setFeedbackMessage("");
+      showToast("Tak! Din indberetning er sendt.");
+    } catch (error) {
+      const messageText = error instanceof Error ? error.message : "Kunne ikke sende indberetningen.";
+      showToast(messageText);
+    } finally {
+      setFeedbackSending(false);
+    }
+  }, [feedbackMessage, feedbackTopic, showToast, location.pathname, location.search, displayName, authUser?.email, user?.email]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -689,6 +768,14 @@ export function DashboardPage({ user, onLogout, showToast }) {
             </button>
             <button
               type="button"
+              onClick={openFeedbackModal}
+              style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", borderBottom: "1px solid " + theme.border, background: "transparent", color: theme.text, fontWeight: 600, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+            >
+              <Bug size={15} />
+              Rapportér fejl
+            </button>
+            <button
+              type="button"
               onClick={() => {
                 setAccountOpen(false);
                 onLogout();
@@ -800,6 +887,122 @@ export function DashboardPage({ user, onLogout, showToast }) {
         )}
       </div>
 
+      {feedbackOpen && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Rapportér fejl"
+          onMouseDown={() => {
+            if (!feedbackSending) setFeedbackOpen(false);
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.35)",
+            zIndex: 10020,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onMouseDown={(event) => event.stopPropagation()}
+            style={{
+              width: "min(560px, 100%)",
+              background: theme.surface,
+              border: "1px solid " + theme.border,
+              borderRadius: "14px",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.22)",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ padding: "14px 16px", borderBottom: "1px solid " + theme.border }}>
+              <div style={{ fontSize: "17px", fontWeight: 800, color: theme.text }}>Rapportér fejl</div>
+              <div style={{ marginTop: "4px", fontSize: "12px", color: theme.textMid }}>
+                Beskriv bug eller problem — vi sender den direkte til kontakt@padelmakker.dk.
+              </div>
+            </div>
+            <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <input
+                type="text"
+                value={feedbackTopic}
+                onChange={(event) => setFeedbackTopic(event.target.value.slice(0, 120))}
+                placeholder="Kort titel (valgfri)"
+                disabled={feedbackSending}
+                style={{
+                  width: "100%",
+                  border: "1px solid " + theme.border,
+                  borderRadius: "10px",
+                  padding: "10px 12px",
+                  fontSize: "13px",
+                  fontFamily: font,
+                  color: theme.text,
+                  background: theme.surface,
+                  outline: "none",
+                }}
+              />
+              <textarea
+                value={feedbackMessage}
+                onChange={(event) => setFeedbackMessage(event.target.value.slice(0, 3000))}
+                placeholder="Hvad gik galt, og hvordan kan vi genskabe det?"
+                disabled={feedbackSending}
+                rows={6}
+                style={{
+                  width: "100%",
+                  resize: "vertical",
+                  border: "1px solid " + theme.border,
+                  borderRadius: "10px",
+                  padding: "10px 12px",
+                  fontSize: "13px",
+                  lineHeight: 1.5,
+                  fontFamily: font,
+                  color: theme.text,
+                  background: theme.surface,
+                  outline: "none",
+                  minHeight: "140px",
+                }}
+              />
+              <div style={{ fontSize: "11px", color: theme.textLight, textAlign: "right" }}>
+                {feedbackMessage.trim().length}/3000
+              </div>
+            </div>
+            <div style={{ padding: "12px 16px", borderTop: "1px solid " + theme.border, display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+              <button
+                type="button"
+                onClick={() => setFeedbackOpen(false)}
+                disabled={feedbackSending}
+                style={{
+                  ...btn(false),
+                  minHeight: "34px",
+                  fontSize: "12px",
+                  padding: "7px 12px",
+                  opacity: feedbackSending ? 0.6 : 1,
+                }}
+              >
+                Annuller
+              </button>
+              <button
+                type="button"
+                onClick={() => { void submitFeedbackReport(); }}
+                disabled={feedbackSending || feedbackMessage.trim().length < 10}
+                style={{
+                  ...btn(true),
+                  minHeight: "34px",
+                  fontSize: "12px",
+                  padding: "7px 12px",
+                  opacity: (feedbackSending || feedbackMessage.trim().length < 10) ? 0.6 : 1,
+                  cursor: (feedbackSending || feedbackMessage.trim().length < 10) ? "not-allowed" : "pointer",
+                }}
+              >
+                {feedbackSending ? "Sender..." : "Send indberetning"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {mobileMoreOpen && (
         <button
           type="button"
@@ -831,6 +1034,16 @@ export function DashboardPage({ user, onLogout, showToast }) {
               </span>
             </button>
           ))}
+          <button
+            type="button"
+            className="pm-mobile-more-row"
+            onClick={openFeedbackModal}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <Bug size={16} />
+              Rapportér fejl
+            </span>
+          </button>
           <button
             type="button"
             className="pm-mobile-more-row pm-mobile-more-logout"
