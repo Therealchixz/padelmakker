@@ -613,11 +613,7 @@ export function AmericanoTab({
             Makkere og modstandere roterer hver runde. Valget 16/24/32 er <strong>spilformat på banen</strong> (typisk først til det tal); når kampen er slut, indtastes den{' '}
             <strong>slutstilling</strong> der summerer til formatet (fx 10-6 eller 8-8 ved 16 point) - hvert rally tæller ét point til holdet; det andet hold udfyldes automatisk hvis du kun skriver ét tal.
           </div>
-        ) : (
-          <div className="pm-help-box-copy" style={{ marginTop: 8 }}>
-            Kort fortalt: Americano har roterende makkere/modstandere og separat stilling. Tryk for at se hele forklaringen.
-          </div>
-        )}
+        ) : null}
       </div>
 
       <PillTabs

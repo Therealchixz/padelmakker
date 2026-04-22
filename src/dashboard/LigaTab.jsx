@@ -109,8 +109,27 @@ const SWISS_RULES = [
   { icon: '📋', text: 'W = Wins (sejre) · L = Losses (nederlag) · Diff = spilsforskel (games vundet minus games tabt).' },
 ];
 
-function SwissRulesBox({ collapsible = false }) {
-  const [open, setOpen] = useState(!collapsible);
+function SwissRulesBox({ collapsible = false, storageKey = '' }) {
+  const [open, setOpen] = useState(() => {
+    if (!collapsible) return true;
+    if (!storageKey) return false;
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved === null) return false;
+      return saved === '1' || saved.toLowerCase() === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (!collapsible || !storageKey) return;
+    try {
+      localStorage.setItem(storageKey, open ? '1' : '0');
+    } catch {
+      // ignore storage issues (private mode, quota, etc.)
+    }
+  }, [collapsible, storageKey, open]);
   return (
     <div className="pm-help-box">
       <div className="pm-help-box-header">
@@ -120,8 +139,12 @@ function SwissRulesBox({ collapsible = false }) {
           className="pm-help-box-toggle"
           style={{ cursor: collapsible ? 'pointer' : 'default' }}
         >
-          <span className="pm-help-box-title">ℹ️ Sådan fungerer Swiss-ligaen</span>
-          {collapsible && <span className="pm-help-box-chevron">{open ? '▲' : '▼'}</span>}
+          <span className="pm-help-box-title">Sådan fungerer Swiss-ligaen</span>
+          {collapsible && (
+            <span className="pm-help-box-chevron">
+              {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            </span>
+          )}
         </button>
       </div>
       {open && (
@@ -1118,9 +1141,6 @@ export function LigaTab({
             placeholder="Ubegrænset"
             style={{ ...inputStyle, marginBottom: '14px', width: '140px' }}
           />
-          <div style={{ marginBottom: '14px' }}>
-            <SwissRulesBox />
-          </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={createLeague} disabled={busyId === 'create'} style={{ ...btn(true), fontSize: '13px' }}>
               {busyId === 'create' ? 'Opretter…' : 'Opret liga'}
@@ -1129,6 +1149,10 @@ export function LigaTab({
           </div>
         </div>
       )}
+
+      <div style={{ marginBottom: '14px' }}>
+        <SwissRulesBox collapsible storageKey="pm_liga_rules_open_v1" />
+      </div>
 
       {/* Ventende invitationer */}
       {pendingInvites.length > 0 && (
@@ -1299,11 +1323,6 @@ export function LigaTab({
                       <Users size={10} /> {(allTeamsByLeague[league.id] || []).length}{league.max_teams ? `/${league.max_teams}` : ''} hold
                     </span>
                   </div>
-                </div>
-
-                {/* Swiss-regler — sammenklappelig */}
-                <div style={{ marginBottom: '12px' }}>
-                  <SwissRulesBox collapsible />
                 </div>
 
                 {/* Tilmelding */}
