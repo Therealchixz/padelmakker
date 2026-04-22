@@ -44,7 +44,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   const [composeResults, setComposeResults] = useState([]);
   const [composeSearching, setComposeSearching] = useState(false);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 768 : false));
-  const [mobileChatOffsets, setMobileChatOffsets] = useState({ top: 0, bottom: 0 });
+  const [mobileChatOffsets, setMobileChatOffsets] = useState({ top: 0 });
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const composeRef = useRef(null);
@@ -180,12 +180,10 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   const updateMobileChatOffsets = useCallback(() => {
     if (typeof window === 'undefined') return;
     const headerEl = document.querySelector('.pm-dash-header');
-    const bottomNavEl = document.querySelector('.pm-mobile-bottom-nav');
     const top = headerEl ? Math.max(0, Math.round(headerEl.getBoundingClientRect().bottom)) : 0;
-    const bottom = bottomNavEl ? Math.max(0, Math.round(bottomNavEl.getBoundingClientRect().height)) : 0;
     setMobileChatOffsets((prev) => {
-      if (prev.top === top && prev.bottom === bottom) return prev;
-      return { top, bottom };
+      if (prev.top === top) return prev;
+      return { top };
     });
   }, []);
 
@@ -254,7 +252,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
           left: 0,
           right: 0,
           top: `${mobileChatOffsets.top || 64}px`,
-          bottom: `${mobileChatOffsets.bottom || 80}px`,
+          bottom: '0px',
           height: 'auto',
           maxHeight: 'none',
           background: theme.bg,
@@ -341,7 +339,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
           display: 'flex', gap: '8px', padding: '10px 12px',
           borderTop: '1px solid ' + theme.border,
           background: theme.surface, flexShrink: 0,
-          paddingBottom: mobileChatActive ? '10px' : 'max(10px, env(safe-area-inset-bottom))',
+          paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
         }}>
           <textarea
             ref={inputRef}
