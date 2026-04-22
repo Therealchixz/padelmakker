@@ -410,6 +410,38 @@ export function HomeTab({ user, setTab }) {
     verticalAlign: "middle",
   });
 
+  const activityHighlightRowStyle = {
+    borderColor: "#BFDBFE",
+    boxShadow: "0 6px 18px rgba(37, 99, 235, 0.08)",
+  };
+
+  const activityGroupLabel = (iso) => {
+    if (!iso) return "Tidligere";
+    const dt = DateTime.fromISO(iso);
+    if (!dt.isValid) return "Tidligere";
+    const now = DateTime.now();
+    if (dt.hasSame(now, "day")) return "I dag";
+    if (dt.plus({ days: 1 }).hasSame(now, "day")) return "I går";
+    return dt.setLocale("da").toFormat("d. MMM");
+  };
+
+  const feedRows = [...feed, ...americanoFeed, ...ligaFeed, ...openMatchFeed, ...americanoRegFeed, ...milestoneFeed, ...seekingFeed, ...leagueNewFeed]
+    .filter((row) => enabledTypes.has(row.type))
+    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+    .slice(0, 15);
+
+  const feedRenderItems = feedRows.flatMap((row, index) => {
+    const label = index === 0 ? "Nyeste" : activityGroupLabel(row.created_at);
+    const prevLabel = index > 0 ? activityGroupLabel(feedRows[index - 1].created_at) : null;
+    const showLabel = index === 0 || label !== prevLabel;
+    const items = [];
+    if (showLabel) {
+      items.push({ kind: "label", key: `label-${index}-${label}`, label });
+    }
+    items.push({ kind: "row", key: `row-${index}`, row, index, isHighlight: index === 0 });
+    return items;
+  });
+
   return (
     <div>
       <h2 style={{ ...heading("clamp(22px,5vw,26px)"), marginBottom: "4px" }}>Hej {firstName}! 👋</h2>
@@ -461,7 +493,7 @@ export function HomeTab({ user, setTab }) {
             ))}
           </div>
         </div>
-      ) : (feed.length > 0 || americanoFeed.length > 0 || ligaFeed.length > 0 || openMatchFeed.length > 0 || americanoRegFeed.length > 0 || milestoneFeed.length > 0 || seekingFeed.length > 0 || leagueNewFeed.length > 0) && (
+      ) : feedRows.length > 0 && (
         <div style={{ marginBottom: "24px" }}>
           <div className="pm-feed-filters-header">
             <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
@@ -491,12 +523,27 @@ export function HomeTab({ user, setTab }) {
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {/* Merge and sort all feeds by date */}
-            {[...feed, ...americanoFeed, ...ligaFeed, ...openMatchFeed, ...americanoRegFeed, ...milestoneFeed, ...seekingFeed, ...leagueNewFeed]
-              .filter(row => enabledTypes.has(row.type))
-              .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
-              .slice(0, 15)
-              .map((row, i) => {
+            {feedRenderItems.map((entry) => {
+              if (entry.kind === "label") {
+                return (
+                  <div
+                    key={entry.key}
+                    style={{
+                      fontSize: "11px",
+                      color: theme.textLight,
+                      fontWeight: 700,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      marginTop: entry.label === "Nyeste" ? 0 : "4px",
+                    }}
+                  >
+                    {entry.label}
+                  </div>
+                );
+              }
+              const row = entry.row;
+              const i = entry.index;
+              const isHighlight = entry.isHighlight;
                 if (row.type === 'americano_winner') {
                   return (
                     <div
@@ -504,7 +551,8 @@ export function HomeTab({ user, setTab }) {
                       style={{
                         ...activityRowBaseStyle,
                         background: theme.surface,
-                        position: "relative"
+                        position: "relative",
+                        ...(isHighlight ? activityHighlightRowStyle : null),
                       }}
                     >
                       <div 
@@ -547,7 +595,7 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'liga_completed') {
                   const c = row.champion;
                   return (
-                    <div key={`liga-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface }}>
+                    <div key={`liga-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
                       {/* Overlapping avatars for winning team */}
                       <div style={{ display: "flex", position: "relative", width: "46px", height: "34px", flexShrink: 0 }}>
                         <AvatarCircle avatar={c.player1_avatar} size={30} emojiSize="15px" style={{ background: theme.surfaceAlt, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
@@ -572,7 +620,7 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'open_match') {
                   const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                   return (
-                    <div key={`open-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface }}>
+                    <div key={`open-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
                       <div onClick={() => setViewPlayer({ id: row.creatorId, name: row.creatorName })} style={{ cursor: "pointer" }}>
                         <AvatarCircle avatar={row.creatorAvatar} size={38} emojiSize="24px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                       </div>
@@ -593,7 +641,7 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'americano_registration') {
                   const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                   return (
-                    <div key={`amreg-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface }}>
+                    <div key={`amreg-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
                       <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏓</div>
                       <div style={activityBodyStyle}>
                         <div style={{ ...activityTitleStyle, fontWeight: 700 }}>{row.name}</div>
@@ -609,7 +657,7 @@ export function HomeTab({ user, setTab }) {
 
                 if (row.type === 'elo_milestone') {
                   return (
-                    <div key={`milestone-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface }}>
+                    <div key={`milestone-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
                         <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                       </div>
@@ -630,7 +678,7 @@ export function HomeTab({ user, setTab }) {
                   const levelStr = row.level ? levelLabel(row.level) : null;
                   const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                   return (
-                    <div key={`seek-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface }}>
+                    <div key={`seek-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
                       <div onClick={() => setViewPlayer({ id: row.userId, name: row.name })} style={{ cursor: "pointer" }}>
                         <AvatarCircle avatar={row.avatar} size={38} emojiSize="24px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                       </div>
@@ -653,7 +701,7 @@ export function HomeTab({ user, setTab }) {
                 if (row.type === 'league_new') {
                   const isReg = row.status === 'registration';
                   return (
-                    <div key={`lnew-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface }}>
+                    <div key={`lnew-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
                       <div style={{ width: 38, height: 38, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🏆</div>
                       <div style={activityBodyStyle}>
                         <div style={{ ...activityTitleStyle, fontWeight: 700 }}>{row.leagueName}</div>
@@ -675,7 +723,7 @@ export function HomeTab({ user, setTab }) {
                   const winnerNames = winners.map((p) => p.name.split(' ')[0]).join(' + ');
                   const loserNames = losers.map((p) => p.name.split(' ')[0]).join(' + ');
                   return (
-                    <div key={`match-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface }}>
+                    <div key={`match-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
                       <div style={{ width: 38, height: 38, borderRadius: '50%', background: theme.surfaceAlt, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <Swords size={16} color={theme.accent} />
                       </div>
@@ -704,7 +752,7 @@ export function HomeTab({ user, setTab }) {
                 const won = row.result === "win";
                 const change = Number(row.change) || 0;
                 return (
-                  <div key={`elo-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface }}>
+                  <div key={`elo-${i}`} style={{ ...activityRowBaseStyle, background: theme.surface, ...(isHighlight ? activityHighlightRowStyle : null) }}>
                     <AvatarCircle
                       avatar={avatar}
                       size={40}
