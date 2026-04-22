@@ -12,14 +12,23 @@ import { useUnreadMessageCount } from '../lib/chatUtils';
 import { useDarkMode } from '../lib/useDarkMode';
 import { supabase } from '../lib/supabase';
 
-const MakkereTabLazy = lazy(() => import('./MakkereTab').then((m) => ({ default: m.MakkereTab })));
-const BanerTabLazy = lazy(() => import('./BanerTab').then((m) => ({ default: m.BanerTab })));
-const KampeTabLazy = lazy(() => import('./KampeTab').then((m) => ({ default: m.KampeTab })));
-const RankingTabLazy = lazy(() => import('./RankingTab').then((m) => ({ default: m.RankingTab })));
-const ProfilTabLazy = lazy(() => import('./ProfilTab').then((m) => ({ default: m.ProfilTab })));
-const AdminTabLazy = lazy(() => import('./AdminTab').then((m) => ({ default: m.AdminTab })));
-const BeskedTabLazy = lazy(() => import('./BeskedTab').then((m) => ({ default: m.BeskedTab })));
-const LigaTabLazy = lazy(() => import('./LigaTab').then((m) => ({ default: m.LigaTab })));
+const loadMakkereTab = () => import('./MakkereTab');
+const loadBanerTab = () => import('./BanerTab');
+const loadKampeTab = () => import('./KampeTab');
+const loadRankingTab = () => import('./RankingTab');
+const loadProfilTab = () => import('./ProfilTab');
+const loadAdminTab = () => import('./AdminTab');
+const loadBeskedTab = () => import('./BeskedTab');
+const loadLigaTab = () => import('./LigaTab');
+
+const MakkereTabLazy = lazy(() => loadMakkereTab().then((m) => ({ default: m.MakkereTab })));
+const BanerTabLazy = lazy(() => loadBanerTab().then((m) => ({ default: m.BanerTab })));
+const KampeTabLazy = lazy(() => loadKampeTab().then((m) => ({ default: m.KampeTab })));
+const RankingTabLazy = lazy(() => loadRankingTab().then((m) => ({ default: m.RankingTab })));
+const ProfilTabLazy = lazy(() => loadProfilTab().then((m) => ({ default: m.ProfilTab })));
+const AdminTabLazy = lazy(() => loadAdminTab().then((m) => ({ default: m.AdminTab })));
+const BeskedTabLazy = lazy(() => loadBeskedTab().then((m) => ({ default: m.BeskedTab })));
+const LigaTabLazy = lazy(() => loadLigaTab().then((m) => ({ default: m.LigaTab })));
 
 function usePendingLigaInvites(userId) {
   const [count, setCount] = useState(0);
@@ -202,6 +211,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [accountPos, setAccountPos] = useState(null);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
   const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
+  const hasPrefetchedTabsRef = useRef(false);
   const moreBtnRef = useRef(null);
   const moreDropRef = useRef(null);
   const accountBtnRef = useRef(null);
@@ -257,6 +267,38 @@ export function DashboardPage({ user, onLogout, showToast }) {
   useEffect(() => {
     if (tab !== "beskeder") setMobileConversationOpen(false);
   }, [tab]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    if (hasPrefetchedTabsRef.current) return undefined;
+    hasPrefetchedTabsRef.current = true;
+
+    let cancelled = false;
+    const warmTabs = () => {
+      if (cancelled) return;
+      const loaders = [loadKampeTab, loadBeskedTab, loadLigaTab, loadMakkereTab, loadRankingTab];
+      if (isAdmin) loaders.push(loadAdminTab);
+      loaders.forEach((loader, index) => {
+        window.setTimeout(() => {
+          if (!cancelled) void loader();
+        }, index * 140);
+      });
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(warmTabs, { timeout: 1200 });
+      return () => {
+        cancelled = true;
+        if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timeoutId = window.setTimeout(warmTabs, 450);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [isAdmin]);
 
   const allTabs = [
     { id: "hjem",     label: "Hjem",        icon: <Home          size={15} /> },
