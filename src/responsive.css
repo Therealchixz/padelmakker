@@ -602,6 +602,7 @@ button,
     align-items: center;
     justify-content: center;
     color: var(--pm-text-mid, #64748b);
+    transform: translateY(1px);
   }
 
   .pm-mobile-bottom-label {
