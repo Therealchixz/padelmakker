@@ -62,6 +62,48 @@ export function OnboardingPage() {
   const profilePreviewLocation = [form.city.trim(), form.area].filter(Boolean).join(", ") || "Område ikke valgt endnu";
   const profilePreviewBio = form.bio.trim() || "Tilføj en kort bio, så andre bedre forstår hvem du er som makker.";
 
+  const cancelOnboarding = () => {
+    if (submitting) return;
+
+    const hasDraft = Boolean(
+      form.first_name.trim() ||
+      form.last_name.trim() ||
+      form.email.trim() ||
+      form.password ||
+      form.password_confirm ||
+      form.level ||
+      form.style ||
+      form.court_side ||
+      form.area ||
+      form.city.trim() ||
+      form.availability.length > 0 ||
+      form.available_days.length > 0 ||
+      form.bio.trim() ||
+      form.birth_year ||
+      form.birth_month ||
+      form.birth_day ||
+      form.intent_now ||
+      form.seeking_match ||
+      form.travel_willing ||
+      avatarFile ||
+      avatarPreviewUrl
+    );
+
+    if (hasDraft) {
+      const confirmed = window.confirm("Vil du annullere oprettelsen? Dine indtastninger bliver ikke gemt.");
+      if (!confirmed) return;
+    }
+
+    if (avatarPreviewUrl) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+      setAvatarPreviewUrl(null);
+    }
+
+    setAvatarFile(null);
+    setErr("");
+    navigate("/");
+  };
+
   const finish = async () => {
     setSubmitting(true); setErr("");
     try {
@@ -395,9 +437,26 @@ export function OnboardingPage() {
             <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.03em", textTransform: "uppercase", color: theme.textMid }}>
               Trin {step + 1} af {totalSteps}
             </span>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: theme.accent }}>
-              {activeStepMeta.title}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: theme.accent }}>
+                {activeStepMeta.title}
+              </span>
+              <button
+                onClick={cancelOnboarding}
+                type="button"
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: theme.textLight,
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                Annuller
+              </button>
+            </div>
           </div>
           <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
             {stepMeta.map((meta, i) => (
@@ -413,7 +472,7 @@ export function OnboardingPage() {
         </div>
         {err && <p style={{ color: theme.red, fontSize: "13px", marginTop: "12px" }}>{err}</p>}
         <div className="pm-onboarding-actions">
-          <button onClick={step > 0 ? () => setStep(s => s - 1) : () => navigate("/")} style={btn(false)}>← Tilbage</button>
+          <button onClick={step > 0 ? () => setStep(s => s - 1) : cancelOnboarding} style={btn(false)}>{step > 0 ? "← Tilbage" : "Annuller"}</button>
           {step < 3
             ? <button onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.4 }}>Næste <ArrowRight size={15} /></button>
             : <button onClick={finish} disabled={submitting} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
