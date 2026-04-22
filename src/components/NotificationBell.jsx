@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { font, theme } from '../lib/platformTheme';
 import { Bell, CheckCheck, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
+import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import {
   isPushSupported,
   getPushPermission,
@@ -50,6 +51,7 @@ export function NotificationBell() {
   const userId = authUser?.id;
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
+  const [matchMetaById, setMatchMetaById] = useState({});
   const [confirmClear, setConfirmClear] = useState(false);
   const panelRef = useRef(null);
 
@@ -63,6 +65,43 @@ export function NotificationBell() {
   });
 
   const unreadCount = notifs.filter(n => !n.read).length;
+
+  const displayNotifs = useMemo(() => {
+    const rows = [];
+    const groupedByMatchId = new Map();
+
+    for (const n of notifs) {
+      const isMatchChat = n?.type === "match_chat" && n?.match_id != null;
+      if (!isMatchChat) {
+        rows.push(n);
+        continue;
+      }
+
+      const key = String(n.match_id);
+      const existing = groupedByMatchId.get(key);
+      if (!existing) {
+        const group = {
+          id: `match_chat:${key}`,
+          type: "match_chat_group",
+          match_id: key,
+          created_at: n.created_at,
+          notifIds: [n.id],
+          totalCount: 1,
+          unreadCount: n.read ? 0 : 1,
+          read: Boolean(n.read),
+        };
+        groupedByMatchId.set(key, group);
+        rows.push(group);
+      } else {
+        existing.notifIds.push(n.id);
+        existing.totalCount += 1;
+        if (!n.read) existing.unreadCount += 1;
+        existing.read = existing.unreadCount === 0;
+      }
+    }
+
+    return rows;
+  }, [notifs]);
 
   // App-ikon badge (virker på installerede PWA'er — Android og iOS 16.4+)
   useEffect(() => {
@@ -84,6 +123,7 @@ export function NotificationBell() {
   const load = useCallback(async () => {
     if (!userId) {
       setNotifs([]);
+      setMatchMetaById({});
       return;
     }
     try {
@@ -99,10 +139,38 @@ export function NotificationBell() {
         return;
       }
       const dismissed = loadDismissedIds(userId);
-      setNotifs((data || []).filter((n) => !dismissed.has(n.id)));
+      const filtered = (data || []).filter((n) => !dismissed.has(n.id));
+      setNotifs(filtered);
+
+      const matchIds = [...new Set(
+        filtered
+          .filter((n) => n?.type === "match_chat" && n?.match_id != null)
+          .map((n) => String(n.match_id))
+      )];
+
+      if (!matchIds.length) {
+        setMatchMetaById({});
+        return;
+      }
+
+      const { data: matchRows, error: matchError } = await supabase
+        .from("matches")
+        .select("id, date, time, time_end, court_name")
+        .in("id", matchIds);
+      if (matchError) {
+        console.warn("notification match meta load:", matchError.message || matchError);
+        setMatchMetaById({});
+        return;
+      }
+      const nextMeta = {};
+      (matchRows || []).forEach((m) => {
+        nextMeta[String(m.id)] = m;
+      });
+      setMatchMetaById(nextMeta);
     } catch (e) {
       console.warn("notifications load:", e);
       setNotifs([]);
+      setMatchMetaById({});
     }
   }, [userId]);
 
@@ -158,15 +226,21 @@ export function NotificationBell() {
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const deleteOne = async (id) => {
+  const deleteNotificationItem = async (notif) => {
     if (!userId) return;
-    addDismissedIds(userId, [id]);
-    setNotifs((prev) => prev.filter((n) => n.id !== id));
+    const ids = Array.isArray(notif?.notifIds)
+      ? notif.notifIds.filter((id) => typeof id === "string")
+      : [notif?.id].filter((id) => typeof id === "string");
+    if (!ids.length) return;
+
+    addDismissedIds(userId, ids);
+    const idSet = new Set(ids);
+    setNotifs((prev) => prev.filter((n) => !idSet.has(n.id)));
 
     const { data, error } = await supabase
       .from("notifications")
       .delete()
-      .eq("id", id)
+      .in("id", ids)
       .eq("user_id", userId)
       .select("id");
 
@@ -203,9 +277,15 @@ export function NotificationBell() {
 
   const openNotificationMatch = async (n) => {
     if (!n?.match_id || !userId) return;
+    const ids = Array.isArray(n?.notifIds)
+      ? n.notifIds.filter((id) => typeof id === "string")
+      : [n?.id].filter((id) => typeof id === "string");
     try {
-      await supabase.from("notifications").update({ read: true }).eq("id", n.id).eq("user_id", userId);
-      setNotifs((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+      if (ids.length > 0) {
+        await supabase.from("notifications").update({ read: true }).in("id", ids).eq("user_id", userId);
+        const idSet = new Set(ids);
+        setNotifs((prev) => prev.map((x) => (idSet.has(x.id) ? { ...x, read: true } : x)));
+      }
     } catch { /* ignore */ }
     setOpen(false);
     /* ?focus= så KampeTab reagerer også hvis man allerede er på Kampe-fanen */
@@ -222,11 +302,23 @@ export function NotificationBell() {
     return Math.floor(hours / 24) + "d";
   }, []);
 
+  const matchLabel = useCallback((matchId) => {
+    const m = matchMetaById[String(matchId)];
+    if (!m) return "Din kamp";
+    const court = m.court_name && String(m.court_name).trim() !== "" ? String(m.court_name).trim() : "Ukendt bane";
+    const datePart = m.date ? formatMatchDateDa(m.date) : "";
+    const timePart = matchTimeLabel(m);
+    if (datePart && timePart && timePart !== "—") return `${court} · ${datePart} kl. ${timePart}`;
+    if (datePart) return `${court} · ${datePart}`;
+    return court;
+  }, [matchMetaById]);
+
   const typeIcon = (type) => {
     switch (type) {
       case "match_join": return "\u2694\uFE0F";
       case "match_invite": return "\u2694\uFE0F";
       case "match_chat": return "\uD83D\uDCAC";
+      case "match_chat_group": return "\uD83D\uDCAC";
       case "match_full": return "\u2705";
       case "result_submitted": return "\uD83D\uDCCA";
       case "result_confirmed": return "\uD83C\uDFC6";
@@ -377,13 +469,23 @@ export function NotificationBell() {
           )}
 
           <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
-            {notifs.length === 0 ? (
+            {displayNotifs.length === 0 ? (
               <div style={{ padding: "32px 16px", textAlign: "center", color: theme.textLight, fontSize: "13px" }}>
                 <Bell size={24} color={theme.textLight} style={{ marginBottom: "8px" }} />
                 <div>Ingen notifikationer endnu</div>
               </div>
-            ) : notifs.map(n => {
+            ) : displayNotifs.map(n => {
               const hasMatch = Boolean(n.match_id);
+              const isMatchChatGroup = n.type === "match_chat_group";
+              const itemTitle = isMatchChatGroup
+                ? (n.unreadCount > 0 ? "Nye beskeder i kamp-chat" : "Beskeder i kamp-chat")
+                : n.title;
+              const itemBody = isMatchChatGroup ? matchLabel(n.match_id) : n.body;
+              const itemMeta = isMatchChatGroup
+                ? `${n.unreadCount > 0 ? n.unreadCount : n.totalCount} ${
+                    (n.unreadCount > 0 ? n.unreadCount : n.totalCount) === 1 ? "besked" : "beskeder"
+                  }`
+                : "";
               return (
               <div
                 key={n.id}
@@ -402,8 +504,11 @@ export function NotificationBell() {
                 <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
                   <span style={{ fontSize: "18px", flexShrink: 0, marginTop: "1px" }}>{typeIcon(n.type)}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "13px", fontWeight: n.read ? 500 : 700, color: theme.text, marginBottom: "2px" }}>{n.title}</div>
-                    <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.4 }}>{n.body}</div>
+                    <div style={{ fontSize: "13px", fontWeight: n.read ? 500 : 700, color: theme.text, marginBottom: "2px" }}>{itemTitle}</div>
+                    <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.4 }}>{itemBody}</div>
+                    {isMatchChatGroup && (
+                      <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{itemMeta}</div>
+                    )}
                     {hasMatch && (
                       <div style={{ fontSize: "10px", color: theme.accent, marginTop: "6px", fontWeight: 600 }}>Tryk for at gå til kampen →</div>
                     )}
@@ -413,7 +518,7 @@ export function NotificationBell() {
                     {!n.read && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: theme.accent }} />}
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); deleteOne(n.id); }}
+                      onClick={(e) => { e.stopPropagation(); deleteNotificationItem(n); }}
                       title="Slet"
                       aria-label="Slet notifikation"
                       style={{ ...iconBtn, padding: "8px", color: theme.textLight }}
