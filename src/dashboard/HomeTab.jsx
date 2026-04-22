@@ -425,9 +425,11 @@ export function HomeTab({ user, setTab }) {
     return dt.setLocale("da").toFormat("d. MMM");
   };
 
-  const feedRows = [...feed, ...americanoFeed, ...ligaFeed, ...openMatchFeed, ...americanoRegFeed, ...milestoneFeed, ...seekingFeed, ...leagueNewFeed]
+  const allFeedRows = [...feed, ...americanoFeed, ...ligaFeed, ...openMatchFeed, ...americanoRegFeed, ...milestoneFeed, ...seekingFeed, ...leagueNewFeed]
+    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+
+  const feedRows = allFeedRows
     .filter((row) => enabledTypes.has(row.type))
-    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
     .slice(0, 15);
 
   const feedRenderItems = feedRows.flatMap((row, index) => {
@@ -493,7 +495,7 @@ export function HomeTab({ user, setTab }) {
             ))}
           </div>
         </div>
-      ) : feedRows.length > 0 && (
+      ) : (
         <div style={{ marginBottom: "24px" }}>
           <div className="pm-feed-filters-header">
             <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
@@ -523,10 +525,27 @@ export function HomeTab({ user, setTab }) {
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {feedRenderItems.map((entry) => {
-              if (entry.kind === "label") {
-                return (
-                  <div
+            {feedRows.length === 0 ? (
+              <div className="pm-ui-card" style={{ padding: "16px", color: theme.textMid, fontSize: "13px" }}>
+                {allFeedRows.length > 0 ? (
+                  <>
+                    Ingen aktiviteter matcher de valgte filtre lige nu.
+                    <button
+                      onClick={enableAllFilters}
+                      className="pm-ui-btn-chip pm-feed-filter-chip"
+                      style={{ marginLeft: "10px" }}
+                    >
+                      Vis alle filtre
+                    </button>
+                  </>
+                ) : (
+                  "Der er ingen aktivitet endnu."
+                )}
+              </div>
+            ) : feedRenderItems.map((entry) => {
+                if (entry.kind === "label") {
+                  return (
+                    <div
                     key={entry.key}
                     style={{
                       fontSize: "11px",
@@ -773,7 +792,7 @@ export function HomeTab({ user, setTab }) {
                     </span>
                   </div>
                 );
-              })}
+            })}
           </div>
         </div>
       )}
