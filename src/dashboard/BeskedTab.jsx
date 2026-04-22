@@ -56,10 +56,18 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   const prevMessageCountRef = useRef(0);
   const profilesRef = useRef({});
   const profileRequestsRef = useRef(new Set());
+  const markReadTimerRef = useRef(null);
+  const composeSearchSeqRef = useRef(0);
 
   useEffect(() => {
     profilesRef.current = profiles;
   }, [profiles]);
+
+  useEffect(() => {
+    return () => {
+      if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
@@ -89,6 +97,14 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       profileRequestsRef.current.delete(id);
     }
   }, []);
+
+  const scheduleMarkRead = useCallback((otherId, delay = 180) => {
+    if (!otherId || !user?.id) return;
+    if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
+    markReadTimerRef.current = setTimeout(() => {
+      void markMessagesRead(user.id, otherId);
+    }, delay);
+  }, [user?.id]);
 
   const clearConversationUnread = useCallback((otherId) => {
     setConversations(prev => prev.map((c) => (
@@ -185,7 +201,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
         setMessages(msgs);
         const lastMsg = msgs[msgs.length - 1];
         if (lastMsg) upsertConversationFromMessage(lastMsg, { incomingRead: true });
-        void markMessagesRead(user.id, selectedId);
+        scheduleMarkRead(selectedId, 60);
         clearConversationUnread(selectedId);
       })
       .finally(() => setLoadingMsgs(false));
@@ -202,7 +218,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       });
       upsertConversationFromMessage(msg, { incomingRead: msg.receiver_id === user.id });
       if (msg.receiver_id === user.id) {
-        void markMessagesRead(user.id, selectedId);
+        scheduleMarkRead(selectedId, 120);
         clearConversationUnread(selectedId);
       }
     };
@@ -229,7 +245,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       supabase.removeChannel(incomingChannel);
       supabase.removeChannel(outgoingChannel);
     };
-  }, [clearConversationUnread, selectedId, upsertConversationFromMessage, user?.id]);
+  }, [clearConversationUnread, scheduleMarkRead, selectedId, upsertConversationFromMessage, user?.id]);
 
   useEffect(() => {
     setChatVisibleCount(CHAT_WINDOW_SIZE);
@@ -317,24 +333,39 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
 
   // Debounced søgning efter brugere til ny besked
   useEffect(() => {
-    if (!composeOpen) return;
-    if (!composeQuery.trim()) { setComposeResults([]); return; }
+    if (!composeOpen) {
+      setComposeSearching(false);
+      return;
+    }
+    const q = composeQuery.trim();
+    if (!q || q.length < 2) {
+      setComposeSearching(false);
+      setComposeResults([]);
+      return;
+    }
     const timer = setTimeout(async () => {
+      const requestId = ++composeSearchSeqRef.current;
       setComposeSearching(true);
       try {
-        const q = composeQuery.trim();
         const { data } = await supabase
           .from('profiles')
           .select('id, full_name, name, avatar')
           .or(`full_name.ilike.%${q}%,name.ilike.%${q}%`)
           .neq('id', user.id)
           .limit(8);
-        setComposeResults(data || []);
+        if (requestId === composeSearchSeqRef.current) {
+          setComposeResults(data || []);
+        }
       } finally {
-        setComposeSearching(false);
+        if (requestId === composeSearchSeqRef.current) {
+          setComposeSearching(false);
+        }
       }
     }, 280);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      composeSearchSeqRef.current += 1;
+    };
   }, [composeQuery, composeOpen, user.id]);
 
   // Fokusér søgefeltet når compose åbner
