@@ -243,12 +243,70 @@ function useUnreadNotificationsCount(userId) {
   return count;
 }
 
+function useUnreadKampeNotificationsCount(userId) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!userId) { setCount(0); return; }
+    let cancelled = false;
+
+    const syncCount = async () => {
+      try {
+        const { count: c } = await supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('read', false)
+          .not('match_id', 'is', null);
+        if (!cancelled) setCount(c || 0);
+      } catch (e) {
+        console.warn('kampe notif badge refetch:', e);
+      }
+    };
+
+    const applyDeltaFromPayload = (payload) => {
+      if (cancelled) return;
+      const event = payload?.eventType;
+      const next = payload?.new || {};
+      const prev = payload?.old || {};
+      const nextUnreadMatch = next?.read === false && next?.match_id != null;
+      const prevUnreadMatch = prev?.read === false && prev?.match_id != null;
+
+      if (event === 'INSERT') {
+        if (nextUnreadMatch) setCount((v) => v + 1);
+        return;
+      }
+      if (event === 'UPDATE') {
+        if (prevUnreadMatch === nextUnreadMatch) return;
+        setCount((v) => Math.max(0, v + (nextUnreadMatch ? 1 : -1)));
+        return;
+      }
+      if (event === 'DELETE' && prevUnreadMatch) {
+        setCount((v) => Math.max(0, v - 1));
+      }
+    };
+
+    void syncCount();
+    const channel = supabase
+      .channel('kampe-notif-badge-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, applyDeltaFromPayload)
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  return count;
+}
+
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking"];
 const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
 
-const tabBtnStyle = (active) => ({
+const tabBtnStyle = (active, attention = false) => ({
   background: "transparent",
-  color: active ? theme.accent : theme.textMid,
+  color: active ? theme.accent : attention ? theme.red : theme.textMid,
   border: "none",
   borderBottom: active ? "3px solid " + theme.accent : "3px solid transparent",
   marginBottom: "-1px",
@@ -278,6 +336,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const pendingLigaInvites = usePendingLigaInvites(user?.id);
   const pendingKampe = usePendingKampeBadge(user?.id);
   const unreadNotifs = useUnreadNotificationsCount(user?.id);
+  const unreadKampeNotifs = useUnreadKampeNotificationsCount(user?.id);
+  const hasKampeAttention = pendingKampe > 0 || unreadKampeNotifs > 0;
   const pathTab = location.pathname.split("/")[2] || "hjem";
   const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "admin"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
@@ -405,7 +465,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     { id: "hjem",     label: "Hjem",        icon: <Home          size={15} /> },
     { id: "makkere",  label: "Find Makker",  icon: <Users         size={15} /> },
     { id: "baner",    label: "Book Bane",    icon: <MapPin        size={15} /> },
-    { id: "kampe",    label: "Kampe",        icon: <Swords        size={15} />, badge: pendingKampe > 0 ? pendingKampe : null },
+    { id: "kampe",    label: "Kampe",        icon: <Swords        size={15} />, badge: pendingKampe > 0 ? pendingKampe : null, attention: hasKampeAttention },
     { id: "ranking",  label: "Ranking",      icon: <Trophy        size={15} /> },
     { id: "liga",     label: "Liga",         icon: <Medal         size={15} />, badge: pendingLigaInvites > 0 ? pendingLigaInvites : null },
     { id: "beskeder", label: "Beskeder",     icon: <MessageCircle size={15} />, badge: unreadMessages > 0 ? unreadMessages : null },
@@ -539,8 +599,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
       {/* Tab strip */}
       <div className="pm-tab-strip" style={{ background: theme.surface, borderBottom: "1px solid " + theme.border }}>
-        {primaryTabs.map(t => (
-          <button key={t.id} type="button" title={t.label} aria-label={t.label} onClick={() => setTab(t.id)} style={tabBtnStyle(tab === t.id)}>
+        {primaryTabs.map(t => {
+          const active = tab === t.id;
+          const tabAttention = Boolean(t.attention && !active);
+          return (
+          <button key={t.id} type="button" title={t.label} aria-label={t.label} onClick={() => setTab(t.id)} style={tabBtnStyle(active, tabAttention)}>
             <span aria-hidden style={{ display: "flex", position: "relative" }}>
               {t.icon}
               {t.badge && (
@@ -548,10 +611,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   {t.badge > 9 ? "9+" : t.badge}
                 </span>
               )}
+              {!t.badge && tabAttention && (
+                <span style={{ position: "absolute", top: "-3px", right: "-5px", width: "8px", height: "8px", borderRadius: "50%", background: theme.red }} />
+              )}
             </span>
             <span className="pm-tab-label">{t.label}</span>
           </button>
-        ))}
+        );})}
 
         {/* Mere dropdown */}
         <button
@@ -678,6 +744,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
       <nav className="pm-mobile-bottom-nav" aria-label="Mobil navigation">
         {mobilePrimaryTabs.map((t) => {
           const active = tab === t.id;
+          const tabAttention = Boolean(t.attention && !active);
+          const mobileTabColor = active ? theme.accent : tabAttention ? theme.red : theme.textMid;
           return (
             <button
               key={t.id}
@@ -687,17 +755,20 @@ export function DashboardPage({ user, onLogout, showToast }) {
               aria-label={t.label}
               title={t.label}
             >
-              <span className="pm-mobile-bottom-icon-wrap" style={{ color: active ? theme.accent : theme.textMid }}>
+              <span className="pm-mobile-bottom-icon-wrap" style={{ color: mobileTabColor }}>
                 {t.icon}
                 {t.badge && (
                   <span className="pm-mobile-bottom-badge">
                     {t.badge > 9 ? "9+" : t.badge}
                   </span>
                 )}
+                {!t.badge && tabAttention && (
+                  <span style={{ position: "absolute", top: "-3px", right: "-4px", width: "8px", height: "8px", borderRadius: "50%", background: theme.red }} />
+                )}
               </span>
               <span
                 className="pm-mobile-bottom-label"
-                style={{ color: active ? theme.accent : theme.textMid, fontWeight: active ? 700 : 500 }}
+                style={{ color: mobileTabColor, fontWeight: active ? 700 : 500 }}
               >
                 {t.label}
               </span>

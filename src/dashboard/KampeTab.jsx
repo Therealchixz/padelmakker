@@ -796,6 +796,48 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
   };
 
+  const notifyMatchChatParticipants = useCallback(async (matchId, messageText) => {
+    if (!matchId || !messageText) return;
+
+    const collectRecipientIds = (rows) => {
+      const ids = new Set();
+      (rows || []).forEach((row) => {
+        const uid = row?.user_id;
+        if (uid && String(uid) !== String(user.id)) ids.add(uid);
+      });
+      return [...ids];
+    };
+
+    let recipientIds = collectRecipientIds(matchPlayers[matchId] || []);
+    if (recipientIds.length === 0) {
+      const { data, error } = await supabase
+        .from("match_players")
+        .select("user_id")
+        .eq("match_id", matchId);
+      if (!error) {
+        recipientIds = collectRecipientIds(data || []);
+      } else {
+        console.warn("match chat notify recipients:", error.message || error);
+        return;
+      }
+    }
+    if (!recipientIds.length) return;
+
+    const preview = messageText.length > 90 ? `${messageText.slice(0, 87)}...` : messageText;
+    const title = "Ny besked i kamp-chat 💬";
+    const body = `${myDisplayName}: ${preview}`;
+    const results = await Promise.allSettled(
+      recipientIds.map((recipientId) =>
+        createNotification(recipientId, "match_chat", title, body, matchId)
+      )
+    );
+    const hasErrors = results.some((result) => (
+      result.status === "rejected"
+      || (result.status === "fulfilled" && result.value)
+    ));
+    if (hasErrors) console.warn("match chat notification: en eller flere notifikationer fejlede");
+  }, [matchPlayers, myDisplayName, user.id]);
+
   const submitMatchChat = async (matchId, canWrite = false) => {
     if (!canWrite) {
       showToast("Kun tilmeldte spillere kan skrive i kamp-chat.");
@@ -822,6 +864,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           return { ...prev, [matchId]: [...current, created].slice(-120) };
         });
       }
+      void notifyMatchChatParticipants(matchId, content);
       setMatchChatDraftById((prev) => ({ ...prev, [matchId]: "" }));
     } catch (e) {
       const msg = e?.message || "Kunne ikke sende besked.";

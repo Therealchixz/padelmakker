@@ -224,15 +224,17 @@ export function NotificationBell() {
 
   const typeIcon = (type) => {
     switch (type) {
-      case "match_join": return "⚔️";
-      case "match_full": return "✅";
-      case "result_submitted": return "📊";
-      case "result_confirmed": return "🏆";
-      case "elo_change": return "📈";
-      case "match_cancelled": return "❌";
-      case "welcome": return "👋";
-      case "team_invite": return "🎾";
-      default: return "🔔";
+      case "match_join": return "\u2694\uFE0F";
+      case "match_invite": return "\u2694\uFE0F";
+      case "match_chat": return "\uD83D\uDCAC";
+      case "match_full": return "\u2705";
+      case "result_submitted": return "\uD83D\uDCCA";
+      case "result_confirmed": return "\uD83C\uDFC6";
+      case "elo_change": return "\uD83D\uDCC8";
+      case "match_cancelled": return "\u274C";
+      case "welcome": return "\uD83D\uDC4B";
+      case "team_invite": return "\uD83C\uDFBE";
+      default: return "\uD83D\uDD14";
     }
   };
 
