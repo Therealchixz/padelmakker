@@ -110,6 +110,50 @@ function usePendingKampeBadge(userId) {
   return count;
 }
 
+function useUnreadNotificationsCount(userId) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!userId) { setCount(0); return; }
+    let cancelled = false;
+    let timer = null;
+
+    const refetch = async () => {
+      try {
+        const { count: c } = await supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('read', false);
+        if (!cancelled) setCount(c || 0);
+      } catch (e) {
+        console.warn('notif badge refetch:', e);
+      }
+    };
+
+    const scheduleRefetch = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { void refetch(); }, 250);
+    };
+
+    void refetch();
+    const channel = supabase
+      .channel('notif-badge-' + userId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, scheduleRefetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, scheduleRefetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, scheduleRefetch)
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  return count;
+}
+
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking"];
 
 const tabBtnStyle = (active) => ({
@@ -143,6 +187,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const unreadMessages = useUnreadMessageCount(user?.id);
   const pendingLigaInvites = usePendingLigaInvites(user?.id);
   const pendingKampe = usePendingKampeBadge(user?.id);
+  const unreadNotifs = useUnreadNotificationsCount(user?.id);
   const pathTab = location.pathname.split("/")[2] || "hjem";
   const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "admin"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
@@ -254,8 +299,34 @@ export function DashboardPage({ user, onLogout, showToast }) {
               alignItems: "center",
               gap: "8px",
               minHeight: "36px",
+              position: "relative",
             }}
           >
+            {unreadNotifs > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "-4px",
+                  right: "-4px",
+                  minWidth: "18px",
+                  height: "18px",
+                  padding: "0 5px",
+                  borderRadius: "999px",
+                  background: theme.red,
+                  color: "#fff",
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: 1,
+                  boxSizing: "border-box",
+                  border: "2px solid " + theme.surface,
+                }}
+              >
+                {unreadNotifs > 9 ? "9+" : unreadNotifs}
+              </span>
+            )}
             <span style={{ width: "22px", height: "22px", borderRadius: "999px", background: theme.accentBg, color: theme.accent, fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
               {userInitial}
             </span>
