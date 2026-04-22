@@ -667,7 +667,7 @@ export function HomeTab({ user, setTab }) {
                     </>
                   ),
                   subtitle: row.tournamentName ? `"${row.tournamentName}"` : null,
-                  action: <button onClick={() => setViewTournament(row)} style={activityActionBtnStyle(theme.warm)}>Se resultat</button>,
+                  action: <button onClick={() => setViewTournament(row)} style={activityActionBtnStyle(theme.warm)}>Se detaljer</button>,
                 });
               }
 
@@ -687,7 +687,7 @@ export function HomeTab({ user, setTab }) {
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700 }}>{c.name}</span> vandt ligaen</>,
                   subtitle: row.leagueName ? `"${row.leagueName}"` : null,
-                  action: <button onClick={() => setViewLeague(row)} style={activityActionBtnStyle(theme.accent)}>Se resultat</button>,
+                  action: <button onClick={() => setViewLeague(row)} style={activityActionBtnStyle(theme.accent)}>Se detaljer</button>,
                 });
               }
 
@@ -722,7 +722,7 @@ export function HomeTab({ user, setTab }) {
                       }
                       style={activityActionBtnStyle(theme.green)}
                     >
-                      Se kamp
+                      Se detaljer
                     </button>
                   ),
                 });
@@ -783,7 +783,7 @@ export function HomeTab({ user, setTab }) {
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> søger makker</>,
                   subtitle: sub || "Klar til kamp",
-                  action: <button onClick={() => setViewPlayer(player)} style={activityActionBtnStyle(theme.blue)}>Se profil</button>,
+                  action: <button onClick={() => setViewPlayer(player)} style={activityActionBtnStyle(theme.blue)}>Se detaljer</button>,
                 });
               }
 
@@ -802,7 +802,7 @@ export function HomeTab({ user, setTab }) {
                   meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.leagueName}</span>,
                   subtitle: `${isReg ? "Tilmelding åben" : "I gang"} · ${row.teamCount} hold`,
-                  action: <button onClick={() => setTab('liga')} style={activityActionBtnStyle(theme.accent)}>{isReg ? 'Tilmeld' : 'Se liga'}</button>,
+                  action: <button onClick={() => setTab('liga')} style={activityActionBtnStyle(theme.accent)}>{isReg ? 'Tilmeld' : 'Se detaljer'}</button>,
                 });
               }
 
@@ -840,7 +840,7 @@ export function HomeTab({ user, setTab }) {
                       }
                       style={activityActionBtnStyle(theme.accent)}
                     >
-                      Se kamp
+                      Se detaljer
                     </button>
                   ),
                 });
