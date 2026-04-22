@@ -304,9 +304,9 @@ function useUnreadKampeNotificationsCount(userId) {
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking"];
 const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
 
-const tabBtnStyle = (active, attention = false) => ({
+const tabBtnStyle = (active) => ({
   background: "transparent",
-  color: active ? theme.accent : attention ? theme.red : theme.textMid,
+  color: active ? theme.accent : theme.textMid,
   border: "none",
   borderBottom: active ? "3px solid " + theme.accent : "3px solid transparent",
   marginBottom: "-1px",
@@ -603,7 +603,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           const active = tab === t.id;
           const tabAttention = Boolean(t.attention && !active);
           return (
-          <button key={t.id} type="button" title={t.label} aria-label={t.label} onClick={() => setTab(t.id)} style={tabBtnStyle(active, tabAttention)}>
+          <button key={t.id} type="button" title={t.label} aria-label={t.label} onClick={() => setTab(t.id)} style={tabBtnStyle(active)}>
             <span aria-hidden style={{ display: "flex", position: "relative" }}>
               {t.icon}
               {t.badge && (
@@ -745,7 +745,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         {mobilePrimaryTabs.map((t) => {
           const active = tab === t.id;
           const tabAttention = Boolean(t.attention && !active);
-          const mobileTabColor = active ? theme.accent : tabAttention ? theme.red : theme.textMid;
+          const mobileTabColor = active ? theme.accent : theme.textMid;
           return (
             <button
               key={t.id}

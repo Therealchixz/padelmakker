@@ -191,6 +191,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [matchChatLoadingById, setMatchChatLoadingById] = useState({});
   const [matchChatSendingById, setMatchChatSendingById] = useState({});
   const [matchChatErrorById, setMatchChatErrorById] = useState({});
+  const [matchChatUnreadById, setMatchChatUnreadById] = useState({});
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
     date: new Date().toISOString().split("T")[0],
@@ -377,6 +378,110 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       setMatchChatOpenById({});
     }
   }, [kampeFormat]);
+
+  useEffect(() => {
+    setMatchChatOpenById({});
+  }, [viewTab, kampeScope]);
+
+  useEffect(() => {
+    const closeChatPanels = () => setMatchChatOpenById({});
+    const onVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        closeChatPanels();
+      }
+    };
+    const onBlur = () => closeChatPanels();
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("blur", onBlur);
+    }
+
+    return () => {
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+      if (typeof window !== "undefined") {
+        window.removeEventListener("blur", onBlur);
+      }
+    };
+  }, []);
+
+  const loadUnreadMatchChatNotifs = useCallback(async () => {
+    if (!user?.id) {
+      setMatchChatUnreadById({});
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, match_id")
+        .eq("user_id", user.id)
+        .eq("type", "match_chat")
+        .eq("read", false)
+        .not("match_id", "is", null)
+        .limit(500);
+      if (error) throw error;
+      const grouped = {};
+      (data || []).forEach((row) => {
+        const matchId = row?.match_id ? String(row.match_id) : "";
+        if (!matchId) return;
+        grouped[matchId] = (grouped[matchId] || 0) + 1;
+      });
+      setMatchChatUnreadById(grouped);
+    } catch (e) {
+      console.warn("match chat unread notifications:", e?.message || e);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    void loadUnreadMatchChatNotifs();
+  }, [loadUnreadMatchChatNotifs]);
+
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    const channel = supabase
+      .channel("match-chat-unread-" + user.id)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: "user_id=eq." + user.id },
+        (payload) => {
+          const next = payload?.new || {};
+          const prev = payload?.old || {};
+          const touchedMatchChat = next?.type === "match_chat" || prev?.type === "match_chat";
+          if (!touchedMatchChat) return;
+          void loadUnreadMatchChatNotifs();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadUnreadMatchChatNotifs, user?.id]);
+
+  const markMatchChatNotifsRead = useCallback(async (matchId) => {
+    const key = String(matchId || "");
+    if (!key || !user?.id) return;
+    setMatchChatUnreadById((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", user.id)
+      .eq("type", "match_chat")
+      .eq("match_id", key)
+      .eq("read", false);
+    if (error) {
+      console.warn("mark match chat notifications read:", error.message || error);
+      void loadUnreadMatchChatNotifs();
+    }
+  }, [loadUnreadMatchChatNotifs, user?.id]);
 
   useEffect(() => {
     const openMatchIds = Object.keys(matchChatOpenById).filter((matchId) => matchChatOpenById[matchId]);
@@ -791,6 +896,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const openNow = !!matchChatOpenById[matchId];
     const nextOpen = !openNow;
     setMatchChatOpenById((prev) => ({ ...prev, [matchId]: nextOpen }));
+    if (nextOpen) {
+      void markMatchChatNotifsRead(matchId);
+    }
     if (nextOpen && !matchChatById[matchId]) {
       await loadMatchChat(matchId);
     }
@@ -1041,6 +1149,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const chatLoading = !!matchChatLoadingById[m.id];
     const chatSending = !!matchChatSendingById[m.id];
     const chatError = matchChatErrorById[m.id] || "";
+    const unreadChatCount = matchChatUnreadById[String(m.id)] || 0;
 
     const statusLabel = {
       open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", tone: left > 0 ? "accent" : "warm" },
@@ -1242,6 +1351,26 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <span style={{ display: "inline-flex", alignItems: "center", gap: "7px" }}>
                 <MessageCircle size={14} />
                 Match chat {chatMessages.length > 0 ? `(${chatMessages.length})` : ""}
+                {unreadChatCount > 0 && (
+                  <span
+                    style={{
+                      background: theme.red,
+                      color: "#fff",
+                      borderRadius: "999px",
+                      minWidth: "16px",
+                      height: "16px",
+                      padding: "0 5px",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {unreadChatCount > 9 ? "9+" : unreadChatCount}
+                  </span>
+                )}
               </span>
               {chatOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
