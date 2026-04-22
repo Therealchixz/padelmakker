@@ -12,6 +12,8 @@ import {
 } from '../lib/chatUtils';
 
 const CHAT_WINDOW_SIZE = 80;
+const CONVO_CACHE_TTL_MS = 30_000;
+const CONVO_CACHE_BY_USER = new Map();
 
 function formatTime(dateStr) {
   if (!dateStr) return '';
@@ -121,6 +123,16 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
 
   const loadConversations = useCallback(async () => {
     if (!user?.id) return;
+    const cacheKey = String(user.id);
+    const cached = CONVO_CACHE_BY_USER.get(cacheKey);
+    if (cached?.ok) {
+      setConversations(cached.conversations);
+      if (cached.profiles && Object.keys(cached.profiles).length > 0) {
+        setProfiles(prev => ({ ...cached.profiles, ...prev }));
+      }
+      setLoadingConvos(false);
+      if (Date.now() - cached.at < CONVO_CACHE_TTL_MS) return;
+    }
     try {
       const convos = await fetchConversations(user.id);
       setConversations(convos);
@@ -145,6 +157,12 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
           missingIds.forEach((id) => profileRequestsRef.current.delete(id));
         }
       }
+      CONVO_CACHE_BY_USER.set(cacheKey, {
+        at: Date.now(),
+        ok: true,
+        conversations: convos,
+        profiles: profilesRef.current,
+      });
     } finally {
       setLoadingConvos(false);
     }
@@ -309,6 +327,16 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   useEffect(() => {
     if (composeOpen) setTimeout(() => composeRef.current?.focus(), 50);
   }, [composeOpen]);
+
+  useEffect(() => {
+    if (!user?.id || loadingConvos) return;
+    CONVO_CACHE_BY_USER.set(String(user.id), {
+      at: Date.now(),
+      ok: true,
+      conversations,
+      profiles,
+    });
+  }, [conversations, loadingConvos, profiles, user?.id]);
 
   const getName = (id) => {
     const p = profiles[id];
