@@ -484,6 +484,51 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
   }, [loadUnreadMatchChatNotifs, user?.id]);
 
+  const markNonChatKampeNotifsReadOnVisit = useCallback(async () => {
+    if (!user?.id) return;
+    const NON_CHAT_TYPES = ["match_join", "match_invite", "match_full", "result_submitted", "result_confirmed"];
+    try {
+      const [createdRes, playerRes] = await Promise.all([
+        supabase.from("matches").select("id").eq("creator_id", user.id),
+        supabase.from("match_players").select("match_id").eq("user_id", user.id).limit(2000),
+      ]);
+      const relatedIds = [...new Set([
+        ...((createdRes.data || []).map((row) => String(row.id))),
+        ...((playerRes.data || []).map((row) => String(row.match_id))),
+      ])];
+      if (!relatedIds.length) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("pm-notifications-sync"));
+        }
+        return;
+      }
+
+      const chunkSize = 100;
+      for (let i = 0; i < relatedIds.length; i += chunkSize) {
+        const ids = relatedIds.slice(i, i + chunkSize);
+        const { error } = await supabase
+          .from("notifications")
+          .update({ read: true })
+          .eq("user_id", user.id)
+          .eq("read", false)
+          .in("type", NON_CHAT_TYPES)
+          .in("match_id", ids);
+        if (error) throw error;
+      }
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("pm-notifications-sync"));
+      }
+    } catch (e) {
+      console.warn("mark non-chat kampe notifications read:", e?.message || e);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!tabActive) return;
+    void markNonChatKampeNotifsReadOnVisit();
+  }, [markNonChatKampeNotifsReadOnVisit, tabActive]);
+
   const scrollMatchChatToBottom = useCallback((matchId, behavior = "auto") => {
     const key = String(matchId || "");
     const listEl = matchChatListRefs.current[key];
