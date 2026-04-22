@@ -248,10 +248,16 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [accountOpen]);
 
   useEffect(() => {
-    const onResize = () => setIsMobileView(window.innerWidth <= 768);
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const media = window.matchMedia("(max-width: 768px)");
+    const onChange = (event) => setIsMobileView(event.matches);
+    setIsMobileView(media.matches);
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", onChange);
+      return () => media.removeEventListener("change", onChange);
+    }
+    media.addListener(onChange);
+    return () => media.removeListener(onChange);
   }, []);
 
   useEffect(() => {
