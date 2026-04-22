@@ -7,12 +7,12 @@ export function TabbedFilterCard({
   tabAriaLabel,
   action,
   bottom,
-  cardClassName = 'pm-ui-card pm-kampe-controls',
+  cardClassName = 'pm-ui-card pm-kampe-controls pm-filter-card',
   cardStyle,
-  topClassName = 'pm-kampe-controls-top',
-  tabsClassName = 'pm-kampe-segment',
-  actionClassName = 'pm-kampe-controls-action',
-  dividerClassName = 'pm-kampe-controls-divider',
+  topClassName = 'pm-kampe-controls-top pm-filter-card-top',
+  tabsClassName = 'pm-kampe-segment pm-filter-card-tabs',
+  actionClassName = 'pm-kampe-controls-action pm-filter-card-action',
+  dividerClassName = 'pm-kampe-controls-divider pm-filter-card-divider',
 }) {
   return (
     <div className={cardClassName} style={cardStyle}>
