@@ -13,6 +13,9 @@ concurrency:
   group: supabase-functions-deploy-main
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -33,7 +36,7 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
         run: |
           if [ -z "${SUPABASE_ACCESS_TOKEN}" ]; then
-            echo "::error::Missing GitHub secret SUPABASE_ACCESS_TOKEN"
+            echo "::error::Missing GitHub secret SUPABASE_ACCESS_TOKEN (Settings -> Secrets and variables -> Actions)"
             exit 1
           fi
 
