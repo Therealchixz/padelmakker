@@ -13,6 +13,12 @@ import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 
 const HOME_FEED_CACHE_TTL_MS = 45_000;
 const HOME_FEED_CACHE_BY_USER = new Map();
+const HOME_FEED_FILTERS = [
+  { id: 'kampe', label: 'Kampe', icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
+  { id: 'americano', label: 'Americano', icon: '🎾', types: ['americano_winner', 'americano_registration'] },
+  { id: 'liga', label: 'Liga', icon: '🏆', types: ['liga_completed', 'league_new'] },
+  { id: 'spillere', label: 'Spillere', icon: '⚡', types: ['elo_milestone', 'seeking_player'] },
+];
 
 export function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
@@ -41,12 +47,6 @@ export function HomeTab({ user, setTab }) {
   const [viewLeague, setViewLeague] = useState(null);
   const [viewMatch, setViewMatch] = useState(null);
 
-  const FEED_FILTERS = [
-    { id: 'kampe',      label: 'Kampe',      icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
-    { id: 'americano',  label: 'Americano',  icon: '🎾', types: ['americano_winner', 'americano_registration'] },
-    { id: 'liga',       label: 'Liga',       icon: '🏆', types: ['liga_completed', 'league_new'] },
-    { id: 'spillere',   label: 'Spillere',   icon: '⚡', types: ['elo_milestone', 'seeking_player'] },
-  ];
   const FEED_INITIAL_COUNT = 10;
   const FEED_PAGE_SIZE = 10;
   const FILTER_STORAGE_KEY = `pm_feed_filters_${user.id}`;
@@ -60,7 +60,7 @@ export function HomeTab({ user, setTab }) {
     } catch (e) {
       console.warn('[home-feed] Kunne ikke læse gemte feed-filtre:', e);
     }
-    return new Set(FEED_FILTERS.map(f => f.id));
+    return new Set(HOME_FEED_FILTERS.map(f => f.id));
   });
   const toggleFilter = (id) => {
     setActiveFilters(prev => {
@@ -79,10 +79,10 @@ export function HomeTab({ user, setTab }) {
       return next;
     });
   };
-  const allActive = activeFilters.size === FEED_FILTERS.length;
+  const allActive = activeFilters.size === HOME_FEED_FILTERS.length;
   const [visibleFeedCount, setVisibleFeedCount] = useState(FEED_INITIAL_COUNT);
   const enableAllFilters = () => {
-    const all = new Set(FEED_FILTERS.map(f => f.id));
+    const all = new Set(HOME_FEED_FILTERS.map(f => f.id));
     setActiveFilters(all);
     try {
       localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...all]));
@@ -90,7 +90,10 @@ export function HomeTab({ user, setTab }) {
       console.warn('[home-feed] Kunne ikke gemme feed-filtre:', e);
     }
   };
-  const enabledTypes = new Set(FEED_FILTERS.filter(f => activeFilters.has(f.id)).flatMap(f => f.types));
+  const enabledTypes = useMemo(
+    () => new Set(HOME_FEED_FILTERS.filter(f => activeFilters.has(f.id)).flatMap(f => f.types)),
+    [activeFilters]
+  );
   useEffect(() => {
     setVisibleFeedCount(FEED_INITIAL_COUNT);
   }, [activeFilters]);
@@ -534,7 +537,7 @@ export function HomeTab({ user, setTab }) {
     </div>
   );
 
-  const activityGroupLabel = (iso) => {
+  const activityGroupLabel = useCallback((iso) => {
     if (!iso) return "Tidligere";
     const dt = DateTime.fromISO(iso);
     if (!dt.isValid) return "Tidligere";
@@ -542,31 +545,41 @@ export function HomeTab({ user, setTab }) {
     if (dt.hasSame(now, "day")) return "I dag";
     if (dt.plus({ days: 1 }).hasSame(now, "day")) return "I går";
     return dt.setLocale("da").toFormat("d. MMM");
-  };
+  }, []);
 
-  const allFeedRows = [...feed, ...americanoFeed, ...ligaFeed, ...openMatchFeed, ...americanoRegFeed, ...milestoneFeed, ...seekingFeed, ...leagueNewFeed]
-    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+  const allFeedRows = useMemo(
+    () => [...feed, ...americanoFeed, ...ligaFeed, ...openMatchFeed, ...americanoRegFeed, ...milestoneFeed, ...seekingFeed, ...leagueNewFeed]
+      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()),
+    [feed, americanoFeed, ligaFeed, openMatchFeed, americanoRegFeed, milestoneFeed, seekingFeed, leagueNewFeed]
+  );
 
-  const filteredFeedRows = allFeedRows
-    .filter((row) => enabledTypes.has(row.type));
+  const filteredFeedRows = useMemo(
+    () => allFeedRows.filter((row) => enabledTypes.has(row.type)),
+    [allFeedRows, enabledTypes]
+  );
 
-  const feedRows = filteredFeedRows
-    .slice(0, visibleFeedCount);
+  const feedRows = useMemo(
+    () => filteredFeedRows.slice(0, visibleFeedCount),
+    [filteredFeedRows, visibleFeedCount]
+  );
 
   const canShowMore = filteredFeedRows.length > feedRows.length;
   const canShowLess = feedRows.length > FEED_INITIAL_COUNT;
 
-  const feedRenderItems = feedRows.flatMap((row, index) => {
-    const label = index === 0 ? "Nyeste" : activityGroupLabel(row.created_at);
-    const prevLabel = index > 0 ? activityGroupLabel(feedRows[index - 1].created_at) : null;
-    const showLabel = index === 0 || label !== prevLabel;
-    const items = [];
-    if (showLabel) {
-      items.push({ kind: "label", key: `label-${index}-${label}`, label });
-    }
-    items.push({ kind: "row", key: `row-${index}`, row, index, isHighlight: index === 0 });
-    return items;
-  });
+  const feedRenderItems = useMemo(
+    () => feedRows.flatMap((row, index) => {
+      const label = index === 0 ? "Nyeste" : activityGroupLabel(row.created_at);
+      const prevLabel = index > 0 ? activityGroupLabel(feedRows[index - 1].created_at) : null;
+      const showLabel = index === 0 || label !== prevLabel;
+      const items = [];
+      if (showLabel) {
+        items.push({ kind: "label", key: `label-${index}-${label}`, label });
+      }
+      items.push({ kind: "row", key: `row-${index}`, row, index, isHighlight: index === 0 });
+      return items;
+    }),
+    [feedRows, activityGroupLabel]
+  );
 
   return (
     <div>
@@ -633,7 +646,7 @@ export function HomeTab({ user, setTab }) {
                 >
                   Alle
                 </button>
-                {FEED_FILTERS.map(f => {
+                {HOME_FEED_FILTERS.map(f => {
                   const on = activeFilters.has(f.id);
                   return (
                     <button
