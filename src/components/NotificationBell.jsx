@@ -268,6 +268,7 @@ export function NotificationBell() {
     if (!unread.length) return;
     await supabase.from("notifications").update({ read: true }).in("id", unread);
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));
+    emitNotificationsSync();
   };
 
   const deleteNotificationItem = async (notif) => {
@@ -280,6 +281,7 @@ export function NotificationBell() {
     addDismissedIds(userId, ids);
     const idSet = new Set(ids);
     setNotifs((prev) => prev.filter((n) => !idSet.has(n.id)));
+    emitNotificationsSync();
 
     const { data, error } = await supabase
       .from("notifications")
@@ -302,6 +304,7 @@ export function NotificationBell() {
     const ids = notifs.map((n) => n.id);
     addDismissedIds(userId, ids);
     setNotifs([]);
+    emitNotificationsSync();
 
     const { data, error } = await supabase
       .from("notifications")
@@ -329,6 +332,7 @@ export function NotificationBell() {
         await supabase.from("notifications").update({ read: true }).in("id", ids).eq("user_id", userId);
         const idSet = new Set(ids);
         setNotifs((prev) => prev.map((x) => (idSet.has(x.id) ? { ...x, read: true } : x)));
+        emitNotificationsSync();
       }
     } catch { /* ignore */ }
     setOpen(false);
@@ -426,6 +430,12 @@ export function NotificationBell() {
     justifyContent: "center",
     flexShrink: 0,
     WebkitTapHighlightColor: "transparent",
+  };
+
+  const emitNotificationsSync = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("pm-notifications-sync"));
+    }
   };
 
   return (

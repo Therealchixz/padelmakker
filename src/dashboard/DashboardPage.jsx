@@ -228,8 +228,12 @@ function useUnreadNotificationsCount(userId) {
         setCount((v) => Math.max(0, v + (nextUnread ? 1 : -1)));
         return;
       }
-      if (event === 'DELETE' && prevUnread) {
-        setCount((v) => Math.max(0, v - 1));
+      if (event === 'DELETE') {
+        if (!prevHasReadField) {
+          void syncCount();
+          return;
+        }
+        if (prevUnread) setCount((v) => Math.max(0, v - 1));
       }
     };
 
@@ -253,6 +257,7 @@ function useUnreadNotificationsCount(userId) {
       window.addEventListener('focus', syncIfVisible);
       window.addEventListener('pageshow', syncIfVisible);
       window.addEventListener('online', syncIfVisible);
+      window.addEventListener('pm-notifications-sync', syncIfVisible);
     }
 
     return () => {
@@ -265,6 +270,7 @@ function useUnreadNotificationsCount(userId) {
         window.removeEventListener('focus', syncIfVisible);
         window.removeEventListener('pageshow', syncIfVisible);
         window.removeEventListener('online', syncIfVisible);
+        window.removeEventListener('pm-notifications-sync', syncIfVisible);
       }
       supabase.removeChannel(channel);
     };
@@ -282,23 +288,60 @@ function useUnreadKampeNotificationsCount(userId) {
     let timer = null;
     let inFlight = false;
     let rerunAfterFlight = false;
+    let shouldRefreshIds = true;
+    let myRelatedMatchIds = [];
+    let idFetchFailed = false;
     const RELEVANT_TYPES = ['match_chat', 'match_join', 'match_invite', 'match_full', 'result_submitted', 'result_confirmed'];
 
     const isPageVisible = () => (typeof document === 'undefined' || document.visibilityState === 'visible');
-    const scheduleRefetch = (delay = 220) => {
+    const scheduleRefetch = (opts = {}) => {
+      const { delay = 220, refreshIds = false } = opts;
+      if (refreshIds) shouldRefreshIds = true;
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => { void refetch(); }, delay);
     };
 
+    const loadRelatedMatchIds = async () => {
+      try {
+        const [createdRes, playerRes] = await Promise.all([
+          supabase.from('matches').select('id').eq('creator_id', userId),
+          supabase.from('match_players').select('match_id').eq('user_id', userId),
+        ]);
+        const set = new Set([
+          ...(createdRes.data || []).map((m) => String(m.id)),
+          ...(playerRes.data || []).map((p) => String(p.match_id)),
+        ]);
+        myRelatedMatchIds = [...set];
+        idFetchFailed = false;
+        shouldRefreshIds = false;
+      } catch (e) {
+        console.warn('kampe notif badge ids:', e);
+        idFetchFailed = true;
+        shouldRefreshIds = false;
+      }
+    };
+
     const loadCount = async () => {
       try {
-        const { count: c } = await supabase
+        let query = supabase
           .from('notifications')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', userId)
           .eq('read', false)
           .in('type', RELEVANT_TYPES)
           .not('match_id', 'is', null);
+
+        // Foretræk kun kampnotifikationer for kampe brugeren faktisk er en del af.
+        // Hvis id-opslag fejler, falder vi tilbage til bredt count (så vi undgår falsk 0).
+        if (!idFetchFailed) {
+          if (myRelatedMatchIds.length === 0) {
+            if (!cancelled) setCount(0);
+            return;
+          }
+          query = query.in('match_id', myRelatedMatchIds);
+        }
+
+        const { count: c } = await query;
         if (!cancelled) setCount(c || 0);
       } catch (e) {
         console.warn('kampe notif badge refetch:', e);
@@ -313,28 +356,35 @@ function useUnreadKampeNotificationsCount(userId) {
       }
       inFlight = true;
       try {
+        if (shouldRefreshIds) await loadRelatedMatchIds();
         await loadCount();
       } finally {
         inFlight = false;
         if (rerunAfterFlight) {
           rerunAfterFlight = false;
-          scheduleRefetch(120);
+          scheduleRefetch({ delay: 120 });
         }
       }
     };
 
     const onVisibilityChange = () => {
       if (!isPageVisible()) return;
-      scheduleRefetch(80);
+      scheduleRefetch({ delay: 80, refreshIds: true });
     };
 
     void refetch();
-    const chNotifs = supabase.channel('kampe-notif-badge-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, () => scheduleRefetch(120))
+    const chNotifs = supabase.channel('kampe-notif-badge-notifs-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, () => scheduleRefetch({ delay: 120 }))
+      .subscribe();
+    const chMatches = supabase.channel('kampe-notif-badge-matches-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: 'creator_id=eq.' + userId }, () => scheduleRefetch({ refreshIds: true, delay: 120 }))
+      .subscribe();
+    const chPlayers = supabase.channel('kampe-notif-badge-players-' + userId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_players', filter: 'user_id=eq.' + userId }, () => scheduleRefetch({ refreshIds: true, delay: 120 }))
       .subscribe();
 
     const intervalId = setInterval(() => {
-      if (isPageVisible()) scheduleRefetch(50);
+      if (isPageVisible()) scheduleRefetch({ delay: 50, refreshIds: true });
     }, 10000);
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', onVisibilityChange);
@@ -343,6 +393,7 @@ function useUnreadKampeNotificationsCount(userId) {
       window.addEventListener('focus', onVisibilityChange);
       window.addEventListener('pageshow', onVisibilityChange);
       window.addEventListener('online', onVisibilityChange);
+      window.addEventListener('pm-notifications-sync', onVisibilityChange);
     }
 
     return () => {
@@ -356,8 +407,11 @@ function useUnreadKampeNotificationsCount(userId) {
         window.removeEventListener('focus', onVisibilityChange);
         window.removeEventListener('pageshow', onVisibilityChange);
         window.removeEventListener('online', onVisibilityChange);
+        window.removeEventListener('pm-notifications-sync', onVisibilityChange);
       }
       supabase.removeChannel(chNotifs);
+      supabase.removeChannel(chMatches);
+      supabase.removeChannel(chPlayers);
     };
   }, [userId]);
 
