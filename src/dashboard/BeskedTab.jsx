@@ -178,7 +178,7 @@ export function BeskedTab({ user }) {
     const headerEl = document.querySelector('.pm-dash-header');
     const bottomNavEl = document.querySelector('.pm-mobile-bottom-nav');
     const top = headerEl ? Math.max(0, Math.round(headerEl.getBoundingClientRect().bottom)) : 0;
-    const bottom = bottomNavEl ? Math.max(0, Math.round(window.innerHeight - bottomNavEl.getBoundingClientRect().top)) : 0;
+    const bottom = bottomNavEl ? Math.max(0, Math.round(bottomNavEl.getBoundingClientRect().height)) : 0;
     setMobileChatOffsets((prev) => {
       if (prev.top === top && prev.bottom === bottom) return prev;
       return { top, bottom };
@@ -343,7 +343,7 @@ export function BeskedTab({ user }) {
           display: 'flex', gap: '8px', padding: '10px 12px',
           borderTop: '1px solid ' + theme.border,
           background: theme.surface, flexShrink: 0,
-          paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
+          paddingBottom: mobileChatActive ? '10px' : 'max(10px, env(safe-area-inset-bottom))',
         }}>
           <textarea
             ref={inputRef}
