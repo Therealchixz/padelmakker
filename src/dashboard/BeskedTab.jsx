@@ -190,31 +190,45 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       })
       .finally(() => setLoadingMsgs(false));
 
-    const channel = supabase
-      .channel(`chat-${[user.id, selectedId].sort().join('-')}`)
+    const handleIncomingMessage = (payload) => {
+      const msg = payload.new;
+      const relevant =
+        (msg.sender_id === user.id && msg.receiver_id === selectedId) ||
+        (msg.sender_id === selectedId && msg.receiver_id === user.id);
+      if (!relevant) return;
+      setMessages(prev => {
+        if (prev.find(m => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+      upsertConversationFromMessage(msg, { incomingRead: msg.receiver_id === user.id });
+      if (msg.receiver_id === user.id) {
+        void markMessagesRead(user.id, selectedId);
+        clearConversationUnread(selectedId);
+      }
+    };
+
+    const incomingChannel = supabase
+      .channel(`chat-in-${user.id}-${selectedId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          const msg = payload.new;
-          const relevant =
-            (msg.sender_id === user.id && msg.receiver_id === selectedId) ||
-            (msg.sender_id === selectedId && msg.receiver_id === user.id);
-          if (!relevant) return;
-          setMessages(prev => {
-            if (prev.find(m => m.id === msg.id)) return prev;
-            return [...prev, msg];
-          });
-          upsertConversationFromMessage(msg, { incomingRead: msg.receiver_id === user.id });
-          if (msg.receiver_id === user.id) {
-            void markMessagesRead(user.id, selectedId);
-            clearConversationUnread(selectedId);
-          }
-        }
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` },
+        handleIncomingMessage
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    const outgoingChannel = supabase
+      .channel(`chat-out-${user.id}-${selectedId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `sender_id=eq.${user.id}` },
+        handleIncomingMessage
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(incomingChannel);
+      supabase.removeChannel(outgoingChannel);
+    };
   }, [clearConversationUnread, selectedId, upsertConversationFromMessage, user?.id]);
 
   useEffect(() => {
