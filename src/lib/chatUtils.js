@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
 
 /** Hent alle samtaler for userId — én per samtalepartner, sorteret nyeste først. */
@@ -79,41 +79,59 @@ export async function fetchUnreadMessageCount(userId) {
  */
 export function useUnreadMessageCount(userId) {
   const [count, setCount] = useState(0);
-  const debounceTimer = useRef(null);
-
-  const refresh = useCallback(async () => {
-    const n = await fetchUnreadMessageCount(userId);
-    setCount(n);
-  }, [userId]);
-
-  const debouncedRefresh = useCallback(() => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(refresh, 300);
-  }, [refresh]);
 
   useEffect(() => {
-    refresh();
-    if (!userId) return;
+    if (!userId) {
+      setCount(0);
+      return;
+    }
+
+    let cancelled = false;
+    const syncCount = async () => {
+      const n = await fetchUnreadMessageCount(userId);
+      if (!cancelled) setCount(n);
+    };
+
+    const applyDeltaFromPayload = (payload) => {
+      if (cancelled) return;
+      const event = payload?.eventType;
+      const next = payload?.new || {};
+      const prev = payload?.old || {};
+      const nextUnread = next?.receiver_id === userId && next?.is_read === false;
+      const prevHasReadField = Object.prototype.hasOwnProperty.call(prev, 'is_read');
+      const prevUnread = prev?.receiver_id === userId && prev?.is_read === false;
+
+      if (event === 'INSERT') {
+        if (nextUnread) setCount((v) => v + 1);
+        return;
+      }
+
+      if (event === 'UPDATE') {
+        if (!prevHasReadField) {
+          void syncCount();
+          return;
+        }
+        if (prevUnread === nextUnread) return;
+        setCount((v) => Math.max(0, v + (nextUnread ? 1 : -1)));
+      }
+    };
+
+    void syncCount();
 
     const channel = supabase
       .channel(`msg-unread-${userId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${userId}` },
-        () => debouncedRefresh()
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `receiver_id=eq.${userId}` },
-        () => debouncedRefresh()
+        { event: '*', schema: 'public', table: 'messages', filter: `receiver_id=eq.${userId}` },
+        applyDeltaFromPayload
       )
       .subscribe();
 
     return () => {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [userId, refresh, debouncedRefresh]);
+  }, [userId]);
 
   return count;
 }
