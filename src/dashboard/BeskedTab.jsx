@@ -354,7 +354,7 @@ export function BeskedTab({ user }) {
             rows={1}
             style={{
               ...inputStyle, flex: 1, resize: 'none',
-              padding: '10px 12px', fontSize: '14px', lineHeight: 1.4,
+              padding: '10px 12px', fontSize: isMobileView ? '16px' : '14px', lineHeight: 1.4,
               maxHeight: '100px', overflowY: 'auto',
             }}
           />
