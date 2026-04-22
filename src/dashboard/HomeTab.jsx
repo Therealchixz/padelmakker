@@ -390,8 +390,9 @@ export function HomeTab({ user, setTab }) {
   };
 
   const activityMetaTextStyle = {
-    fontSize: "11px",
-    color: theme.textLight,
+    fontSize: "12px",
+    color: theme.textMid,
+    fontWeight: 600,
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -408,12 +409,12 @@ export function HomeTab({ user, setTab }) {
   };
 
   const activitySubtitleStyle = {
-    fontSize: "12px",
+    fontSize: "13px",
     color: theme.textMid,
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
-    lineHeight: 1.3,
+    lineHeight: 1.35,
   };
 
   const activityTypeTagStyle = (tone) => ({
@@ -631,10 +632,10 @@ export function HomeTab({ user, setTab }) {
                     <div
                     key={entry.key}
                     style={{
-                      fontSize: "11px",
-                      color: theme.textLight,
+                      fontSize: "12px",
+                      color: theme.textMid,
                       fontWeight: 700,
-                      letterSpacing: "0.06em",
+                      letterSpacing: "0.05em",
                       textTransform: "uppercase",
                       marginTop: entry.label === "Nyeste" ? 0 : "4px",
                     }}
