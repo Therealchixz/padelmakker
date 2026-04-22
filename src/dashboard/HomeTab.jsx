@@ -36,6 +36,7 @@ export function HomeTab({ user, setTab }) {
   const [leagueNewFeed, setLeagueNewFeed] = useState([]);
   const [feedLoading, setFeedLoading] = useState(true);
   const [viewLeague, setViewLeague] = useState(null);
+  const [viewMatch, setViewMatch] = useState(null);
 
   const FEED_FILTERS = [
     { id: 'kampe',      label: 'Kampe',      icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
@@ -705,7 +706,24 @@ export function HomeTab({ user, setTab }) {
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.creatorName}</span> søger spillere til <strong>2v2</strong></>,
                   subtitle: `${dateStr}${row.court ? ` · ${row.court}` : ""}`,
-                  action: <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'open' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.green)}>Se kamp</button>,
+                  action: (
+                    <button
+                      onClick={() =>
+                        setViewMatch({
+                          kind: "open",
+                          title: `${row.creatorName} søger spillere`,
+                          createdAt: row.created_at,
+                          date: row.date,
+                          court: row.court,
+                          creatorName: row.creatorName,
+                          creatorAvatar: row.creatorAvatar,
+                        })
+                      }
+                      style={activityActionBtnStyle(theme.green)}
+                    >
+                      Se kamp
+                    </button>
+                  ),
                 });
               }
 
@@ -807,7 +825,18 @@ export function HomeTab({ user, setTab }) {
                   subtitle: `${row.court} · ${row.score}`,
                   action: (
                     <button
-                      onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'padel', view: 'mine' }); setTab('kampe'); }}
+                      onClick={() =>
+                        setViewMatch({
+                          kind: "result",
+                          title: `${winnerNames} slog ${loserNames}`,
+                          createdAt: row.created_at,
+                          court: row.court,
+                          score: row.score,
+                          description: row.description,
+                          winners,
+                          losers,
+                        })
+                      }
                       style={activityActionBtnStyle(theme.accent)}
                     >
                       Se kamp
@@ -889,6 +918,105 @@ export function HomeTab({ user, setTab }) {
             
             <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
               <button onClick={() => setViewTournament(null)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewMatch && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} onClick={() => setViewMatch(null)}>
+          <div style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "460px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                  {viewMatch.kind === "result" ? "Kampresultat" : "Åben kamp"}
+                </div>
+                <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {viewMatch.title}
+                </h3>
+              </div>
+              <button onClick={() => setViewMatch(null)} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} /></button>
+            </div>
+
+            <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {viewMatch.court ? (
+                  <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.textMid, background: theme.surfaceAlt }}>
+                    {viewMatch.court}
+                  </span>
+                ) : null}
+                {viewMatch.score ? (
+                  <span style={{ fontSize: "11px", border: "1px solid " + theme.blue + "33", borderRadius: "999px", padding: "4px 10px", color: theme.accent, background: theme.accentBg }}>
+                    Resultat: {viewMatch.score}
+                  </span>
+                ) : null}
+                {viewMatch.date ? (
+                  <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.textMid, background: theme.surfaceAlt }}>
+                    {DateTime.fromISO(viewMatch.date).setLocale("da").toFormat("EEE d. MMM")}
+                  </span>
+                ) : null}
+                {viewMatch.createdAt ? (
+                  <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.textMid, background: theme.surfaceAlt }}>
+                    {formatTimeAgo(viewMatch.createdAt)}
+                  </span>
+                ) : null}
+              </div>
+
+              {viewMatch.kind === "result" ? (
+                <>
+                  <div className="pm-ui-card" style={{ padding: "12px" }}>
+                    <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Vindere</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {(viewMatch.winners || []).map((p, idx) => (
+                        <div key={`w-${idx}`} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <AvatarCircle avatar={p.avatar} size={30} emojiSize="15px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                          <div style={{ flex: 1, minWidth: 0, fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                          <div style={{ fontSize: "12px", fontWeight: 700, color: Number(p.change) >= 0 ? theme.green : theme.red }}>
+                            {Number(p.change) >= 0 ? "+" : ""}{Number(p.change) || 0} ELO
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pm-ui-card" style={{ padding: "12px" }}>
+                    <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Tabere</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {(viewMatch.losers || []).map((p, idx) => (
+                        <div key={`l-${idx}`} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <AvatarCircle avatar={p.avatar} size={30} emojiSize="15px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                          <div style={{ flex: 1, minWidth: 0, fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                          <div style={{ fontSize: "12px", fontWeight: 700, color: Number(p.change) >= 0 ? theme.green : theme.red }}>
+                            {Number(p.change) >= 0 ? "+" : ""}{Number(p.change) || 0} ELO
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {viewMatch.description ? (
+                    <div style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.45 }}>
+                      {viewMatch.description}
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className="pm-ui-card" style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <AvatarCircle avatar={viewMatch.creatorAvatar || "🎾"} size={34} emojiSize="18px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {viewMatch.creatorName || "Spiller"}
+                    </div>
+                    <div style={{ fontSize: "12px", color: theme.textMid }}>
+                      Søger spillere til en åben 2v2 kamp
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
+              <button onClick={() => setViewMatch(null)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
             </div>
           </div>
         </div>
