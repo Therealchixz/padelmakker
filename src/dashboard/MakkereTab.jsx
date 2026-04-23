@@ -244,8 +244,7 @@ export function MakkereTab({ user, showToast }) {
       .map((item) => item?.profile?.id)
       .filter(Boolean);
     if (candidateIds.length === 0) return;
-    const changed = recordSuggestionExposure(user.id, candidateIds);
-    if (changed) setTelemetryVersion((prev) => prev + 1);
+    recordSuggestionExposure(user.id, candidateIds);
   }, [user?.id, visibleSuggestions]);
 
   useEffect(() => {
