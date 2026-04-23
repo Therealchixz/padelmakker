@@ -4,7 +4,7 @@ import { createNotification } from '../lib/notifications';
 import { theme, btn } from '../lib/platformTheme';
 import { formatMatchDateDa, fmtClock } from '../lib/matchDisplayUtils';
 
-export function InviteToMatchModal({ invitee, currentUser, showToast, onClose }) {
+export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, onInviteSent }) {
   const [matches, setMatches] = useState([]);
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,48 +31,65 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose })
           .order('tournament_date', { ascending: true })
           .limit(20),
       ]);
+
       setMatches(matchRes.data || []);
       setTournaments(tourRes.data || []);
       setLoading(false);
     }
-    load();
+
+    void load();
   }, [currentUser.id]);
 
   const handleInviteMatch = async (match) => {
     const key = `match-${match.id}`;
     setSending(key);
+
     const dateStr = formatMatchDateDa(match.date);
     const timeStr = fmtClock(match.time);
-    const desc = match.description ? ` — "${match.description}"` : '';
+    const desc = match.description ? ` - "${match.description}"` : '';
 
-    await createNotification(
+    const notifyError = await createNotification(
       invitee.id,
       'match_invite',
-      `${senderName} inviterer dig til padel! 🎾`,
-      `Du er inviteret til en kamp ${dateStr} kl. ${timeStr}${desc}. Gå til Kampe for at tilmelde dig.`,
+      `${senderName} inviterer dig til padel!`,
+      `Du er inviteret til en kamp ${dateStr} kl. ${timeStr}${desc}. Gaa til Kampe for at tilmelde dig.`,
       match.id
     );
 
-    showToast(`Invitation sendt til ${inviteeName}! 🎾`);
+    if (notifyError) {
+      showToast('Kunne ikke sende invitation lige nu. Proev igen.');
+      setSending(null);
+      return;
+    }
+
+    onInviteSent?.({ candidateId: invitee.id, matchId: match.id });
+    showToast(`Invitation sendt til ${inviteeName}!`);
     onClose();
   };
 
-  const handleInviteTournament = async (t) => {
-    const key = `americano-${t.id}`;
+  const handleInviteTournament = async (tournament) => {
+    const key = `americano-${tournament.id}`;
     setSending(key);
-    const dateStr = formatMatchDateDa(t.tournament_date);
-    const timeStr = fmtClock(t.time_slot);
-    const desc = t.description ? ` — "${t.description}"` : '';
 
-    await createNotification(
+    const dateStr = formatMatchDateDa(tournament.tournament_date);
+    const timeStr = fmtClock(tournament.time_slot);
+    const desc = tournament.description ? ` - "${tournament.description}"` : '';
+
+    const notifyError = await createNotification(
       invitee.id,
       'match_invite',
-      `${senderName} inviterer dig til Americano! 🏆`,
-      `Du er inviteret til "${t.name}" ${dateStr} kl. ${timeStr}${desc}. Gå til Kampe → Americano for at tilmelde dig.`,
-      t.id
+      `${senderName} inviterer dig til Americano!`,
+      `Du er inviteret til "${tournament.name}" ${dateStr} kl. ${timeStr}${desc}. Gaa til Kampe -> Americano for at tilmelde dig.`,
+      tournament.id
     );
 
-    showToast(`Invitation sendt til ${inviteeName}! 🏆`);
+    if (notifyError) {
+      showToast('Kunne ikke sende invitation lige nu. Proev igen.');
+      setSending(null);
+      return;
+    }
+
+    showToast(`Invitation sendt til ${inviteeName}!`);
     onClose();
   };
 
@@ -80,49 +97,75 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose })
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '16px',
+      }}
       onClick={onClose}
     >
       <div
-        style={{ background: theme.surface, borderRadius: '14px', padding: '24px', maxWidth: '420px', width: '100%', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', border: '1px solid ' + theme.border }}
-        onClick={e => e.stopPropagation()}
+        style={{
+          background: theme.surface,
+          borderRadius: '14px',
+          padding: '24px',
+          maxWidth: '420px',
+          width: '100%',
+          maxHeight: '80vh',
+          overflowY: 'auto',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+          border: '1px solid ' + theme.border,
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '4px' }}>
-          Invitér {inviteeName}
+          Inviter {inviteeName}
         </h3>
         <p style={{ fontSize: '13px', color: theme.textMid, marginBottom: '20px', lineHeight: 1.5 }}>
-          Vælg hvilken af dine kampe eller turneringer du vil invitere dem til:
+          Vaelg hvilken af dine kampe eller turneringer du vil invitere dem til:
         </p>
 
         {loading ? (
           <p style={{ color: theme.textLight, fontSize: '14px', textAlign: 'center', padding: '20px' }}>
-            Henter dine kampe…
+            Henter dine kampe...
           </p>
         ) : !hasAnything ? (
           <div style={{ textAlign: 'center', padding: '28px 16px', color: theme.textLight }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>🎾</div>
             <p style={{ fontSize: '14px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
-              Ingen åbne kampe
+              Ingen aabne kampe
             </p>
             <p style={{ fontSize: '13px', lineHeight: 1.5 }}>
-              {
-                'Opret en kamp eller Americano-turnering under fanen "Kampe" — så kan du invitere spillere til den.'
-              }
+              Opret en kamp eller Americano-turnering under fanen "Kampe", saa kan du invitere spillere til den.
             </p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
             {matches.length > 0 && (
               <>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: theme.textLight,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    marginBottom: '2px',
+                  }}
+                >
                   Padel-kampe
                 </div>
-                {matches.map(m => {
-                  const key = `match-${m.id}`;
+                {matches.map((match) => {
+                  const key = `match-${match.id}`;
                   return (
                     <button
-                      key={m.id}
-                      onClick={() => handleInviteMatch(m)}
+                      key={match.id}
+                      onClick={() => handleInviteMatch(match)}
                       disabled={sending === key}
                       style={{
                         ...btn(false),
@@ -135,13 +178,13 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose })
                       }}
                     >
                       <span style={{ fontSize: '14px', fontWeight: 700, color: theme.text }}>
-                        {formatMatchDateDa(m.date)} kl. {fmtClock(m.time)}
+                        {formatMatchDateDa(match.date)} kl. {fmtClock(match.time)}
                       </span>
-                      {m.description && (
-                        <span style={{ fontSize: '12px', color: theme.textMid }}>{m.description}</span>
+                      {match.description && (
+                        <span style={{ fontSize: '12px', color: theme.textMid }}>{match.description}</span>
                       )}
                       {sending === key && (
-                        <span style={{ fontSize: '11px', color: theme.accent }}>Sender invitation…</span>
+                        <span style={{ fontSize: '11px', color: theme.accent }}>Sender invitation...</span>
                       )}
                     </button>
                   );
@@ -151,15 +194,25 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose })
 
             {tournaments.length > 0 && (
               <>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: matches.length > 0 ? '10px' : '0', marginBottom: '2px' }}>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: theme.textLight,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    marginTop: matches.length > 0 ? '10px' : '0',
+                    marginBottom: '2px',
+                  }}
+                >
                   Americano-turneringer
                 </div>
-                {tournaments.map(t => {
-                  const key = `americano-${t.id}`;
+                {tournaments.map((tournament) => {
+                  const key = `americano-${tournament.id}`;
                   return (
                     <button
-                      key={t.id}
-                      onClick={() => handleInviteTournament(t)}
+                      key={tournament.id}
+                      onClick={() => handleInviteTournament(tournament)}
                       disabled={sending === key}
                       style={{
                         ...btn(false),
@@ -172,16 +225,16 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose })
                       }}
                     >
                       <span style={{ fontSize: '14px', fontWeight: 700, color: theme.text }}>
-                        {t.name}
+                        {tournament.name}
                       </span>
                       <span style={{ fontSize: '12px', color: theme.textMid }}>
-                        {formatMatchDateDa(t.tournament_date)} kl. {fmtClock(t.time_slot)}
+                        {formatMatchDateDa(tournament.tournament_date)} kl. {fmtClock(tournament.time_slot)}
                       </span>
-                      {t.description && (
-                        <span style={{ fontSize: '12px', color: theme.textMid }}>{t.description}</span>
+                      {tournament.description && (
+                        <span style={{ fontSize: '12px', color: theme.textMid }}>{tournament.description}</span>
                       )}
                       {sending === key && (
-                        <span style={{ fontSize: '11px', color: theme.accent }}>Sender invitation…</span>
+                        <span style={{ fontSize: '11px', color: theme.accent }}>Sender invitation...</span>
                       )}
                     </button>
                   );

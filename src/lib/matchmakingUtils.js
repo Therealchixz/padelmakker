@@ -1,67 +1,118 @@
 /**
- * Matchmaking scoring v1
+ * Matchmaking scoring v2
  *
- * Vægte:
- *   32% skill     — ELO-forskel
- *   23% tid       — overlappende tilgængelighed
- *   22% geo       — afstand (km) eller regions-match
- *   13% intent    — fælles spilleintention
- *   10% courtSide — komplementær bane-side
- *
- * Hard filters (fjernes før scoring):
- *   - is_banned
- *   - last_active_at > 14 dage siden (eller null på nye installationer)
- *   - samme bruger som den der søger
+ * Fokus:
+ * - Reciprocal score (begge parter skal passe sammen)
+ * - Hard filters for tydelig mismatch
+ * - Recency/aktivitet boost
+ * - Lokal fairness via exposure penalty (samme profiler vises ikke konstant)
  */
 
 const INACTIVE_DAYS = 14;
+const SEEKING_FRESH_HOURS = 24;
 
-// ----- Skill score (35%) -----
+const DIRECTIONAL_WEIGHTS = {
+  skill: 0.32,
+  time: 0.23,
+  geo: 0.22,
+  intent: 0.13,
+  courtSide: 0.1,
+};
 
-/**
- * Returnerer 0–1 baseret på ELO-forskel.
- * Perfekt match = 0 forskel → 1.0
- * ±100 → ~0.75, ±200 → ~0.50, ±400+ → 0
- */
-function skillScore(myElo, theirElo) {
-  const diff = Math.abs((myElo || 1000) - (theirElo || 1000));
-  return Math.max(0, 1 - diff / 400);
+const DEFAULTS = {
+  maxEloDiff: 260,
+  requireTimeOverlap: true,
+};
+
+function clamp01(v) {
+  if (!Number.isFinite(v)) return 0;
+  return Math.max(0, Math.min(1, v));
 }
 
-// ----- Tid / tilgængelighed score (25%) -----
+function toNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
 
-/** Jaccard-overlap for to arrays. Ingen data → neutral 0.5. */
+function normalizeText(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  return raw
+    .replace(/Ã¦/g, 'ae')
+    .replace(/Ã¸/g, 'o')
+    .replace(/Ã¥/g, 'a')
+    .replace(/æ/g, 'ae')
+    .replace(/ø/g, 'o')
+    .replace(/å/g, 'a')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function normalizedList(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((v) => normalizeText(v))
+    .filter(Boolean);
+}
+
 function jaccardOverlap(a, b) {
-  if (!a.length || !b.length) return 0.5;
-  const intersection = a.filter((x) => b.includes(x));
+  if (!a.length || !b.length) return 0;
+  const bSet = new Set(b);
+  const intersectionCount = a.filter((x) => bSet.has(x)).length;
   const union = new Set([...a, ...b]);
-  return intersection.length / union.size;
+  if (!union.size) return 0;
+  return intersectionCount / union.size;
 }
 
-/**
- * Kombineret tidsscore:
- *   60% vægt → ugedage (available_days: ['mon','tue',...])
- *   40% vægt → tidspunkter (availability: ['Aftener','Weekender',...])
- * Mangler begge felter → neutral 0.5.
- */
-function timeScore(myProfile, theirProfile) {
-  const myDays    = Array.isArray(myProfile.available_days)    ? myProfile.available_days    : [];
-  const theirDays = Array.isArray(theirProfile.available_days) ? theirProfile.available_days : [];
-  const myAvail    = Array.isArray(myProfile.availability)    ? myProfile.availability    : [];
-  const theirAvail = Array.isArray(theirProfile.availability) ? theirProfile.availability : [];
+function overlapCount(a, b) {
+  if (!a.length || !b.length) return 0;
+  const bSet = new Set(b);
+  return a.filter((x) => bSet.has(x)).length;
+}
 
-  const hasDays  = myDays.length > 0 && theirDays.length > 0;
+function resolveElo(profile, eloByUserId = {}) {
+  const key = String(profile?.id || '');
+  const fromMap = toNumber(eloByUserId[key], NaN);
+  if (Number.isFinite(fromMap)) return Math.round(fromMap);
+  return Math.round(toNumber(profile?.elo_rating, 1000));
+}
+
+function skillScore(myElo, theirElo) {
+  const diff = Math.abs(toNumber(myElo, 1000) - toNumber(theirElo, 1000));
+  return clamp01(1 - diff / 400);
+}
+
+function timeScore(myProfile, theirProfile) {
+  const myDays = normalizedList(myProfile?.available_days);
+  const theirDays = normalizedList(theirProfile?.available_days);
+  const myAvail = normalizedList(myProfile?.availability);
+  const theirAvail = normalizedList(theirProfile?.availability);
+
+  const hasDays = myDays.length > 0 && theirDays.length > 0;
   const hasAvail = myAvail.length > 0 && theirAvail.length > 0;
 
   if (!hasDays && !hasAvail) return 0.5;
-  if (hasDays && !hasAvail)  return jaccardOverlap(myDays, theirDays);
-  if (!hasDays && hasAvail)  return jaccardOverlap(myAvail, theirAvail);
+  if (hasDays && !hasAvail) return jaccardOverlap(myDays, theirDays);
+  if (!hasDays && hasAvail) return jaccardOverlap(myAvail, theirAvail);
 
-  // Begge felter udfyldt — vægtet kombination
   return 0.6 * jaccardOverlap(myDays, theirDays) + 0.4 * jaccardOverlap(myAvail, theirAvail);
 }
 
-// ----- Geo score (25%) -----
+function hasTimeOverlapSignal(myProfile, theirProfile) {
+  const myDays = normalizedList(myProfile?.available_days);
+  const theirDays = normalizedList(theirProfile?.available_days);
+  const myAvail = normalizedList(myProfile?.availability);
+  const theirAvail = normalizedList(theirProfile?.availability);
+
+  const daysComparable = myDays.length > 0 && theirDays.length > 0;
+  const availComparable = myAvail.length > 0 && theirAvail.length > 0;
+  const daysOverlap = overlapCount(myDays, theirDays);
+  const availOverlap = overlapCount(myAvail, theirAvail);
+
+  const hasComparable = daysComparable || availComparable;
+  const hasOverlap = (!daysComparable || daysOverlap > 0) && (!availComparable || availOverlap > 0);
+
+  return { hasComparable, hasOverlap, daysOverlap, availOverlap };
+}
 
 function haversineKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -75,24 +126,19 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/**
- * Returnerer 0–1 baseret på afstand.
- * < 10 km → 1.0, 10–30 km → 0.75, 30–60 km → 0.4, > 60 km → 0.1
- * Hvis koordinater mangler: faldt tilbage på region-match (0.6 match / 0.2 forskellig)
- */
 function geoScore(myProfile, theirProfile) {
   const hasCoords =
-    myProfile.latitude != null &&
-    myProfile.longitude != null &&
-    theirProfile.latitude != null &&
-    theirProfile.longitude != null;
+    myProfile?.latitude != null &&
+    myProfile?.longitude != null &&
+    theirProfile?.latitude != null &&
+    theirProfile?.longitude != null;
 
   if (hasCoords) {
     const km = haversineKm(
-      myProfile.latitude,
-      myProfile.longitude,
-      theirProfile.latitude,
-      theirProfile.longitude
+      toNumber(myProfile.latitude),
+      toNumber(myProfile.longitude),
+      toNumber(theirProfile.latitude),
+      toNumber(theirProfile.longitude)
     );
     if (km <= 10) return 1.0;
     if (km <= 30) return 0.75;
@@ -100,138 +146,244 @@ function geoScore(myProfile, theirProfile) {
     return Math.max(0.05, 0.1 - (km - 60) / 200);
   }
 
-  // Fallback: region
-  if (!myProfile.area || !theirProfile.area) return 0.4;
-  return myProfile.area === theirProfile.area ? 0.6 : 0.15;
+  const myArea = normalizeText(myProfile?.area);
+  const theirArea = normalizeText(theirProfile?.area);
+  if (!myArea || !theirArea) return 0.4;
+  return myArea === theirArea ? 0.6 : 0.15;
 }
 
-// ----- Court side score (10%) -----
+function normalizeCourtSide(value) {
+  const v = normalizeText(value);
+  if (!v) return '';
+  if (v.includes('venstre')) return 'venstre';
+  if (v.includes('hojre')) return 'hojre';
+  if (v.includes('begge')) return 'begge';
+  return v;
+}
 
-/**
- * Komplementære sider = god match (1.0), samme side = svag match (0.35),
- * "Begge sider" eller uudfyldt = neutral (0.6).
- */
 function courtSideScore(mySide, theirSide) {
-  if (!mySide || !theirSide) return 0.6;
-  if (mySide === 'Begge sider' || theirSide === 'Begge sider') return 0.6;
+  const mine = normalizeCourtSide(mySide);
+  const theirs = normalizeCourtSide(theirSide);
+
+  if (!mine || !theirs) return 0.6;
+  if (mine === 'begge' || theirs === 'begge') return 0.6;
   const complementary =
-    (mySide === 'Venstre side' && theirSide === 'Højre side') ||
-    (mySide === 'Højre side' && theirSide === 'Venstre side');
+    (mine === 'venstre' && theirs === 'hojre') ||
+    (mine === 'hojre' && theirs === 'venstre');
   return complementary ? 1.0 : 0.35;
 }
 
-// ----- Intent score (13%) -----
+function normalizeIntent(value) {
+  const v = normalizeText(value).replace(/\s+/g, '_');
+  if (!v) return '';
+  if (v.includes('konkurrence')) return 'konkurrence';
+  if (v.includes('traening')) return 'traening';
+  if (v.includes('hygge')) return 'hygge';
+  if (v.includes('fast_makker')) return 'fast_makker';
+  if (v.includes('turnering')) return 'turnering';
+  return v;
+}
 
-/**
- * Kompatibilitetsmatrix for intent_now.
- * Returnerer 0–1.
- */
 const INTENT_COMPAT = {
-  konkurrence: { konkurrence: 1.0, træning: 0.6, hygge: 0.2, fast_makker: 0.5, turnering: 0.8 },
-  træning:     { konkurrence: 0.6, træning: 1.0, hygge: 0.5, fast_makker: 0.7, turnering: 0.5 },
-  hygge:       { konkurrence: 0.2, træning: 0.5, hygge: 1.0, fast_makker: 0.8, turnering: 0.3 },
-  fast_makker: { konkurrence: 0.5, træning: 0.7, hygge: 0.8, fast_makker: 1.0, turnering: 0.4 },
-  turnering:   { konkurrence: 0.8, træning: 0.5, hygge: 0.3, fast_makker: 0.4, turnering: 1.0 },
+  konkurrence: { konkurrence: 1.0, traening: 0.6, hygge: 0.2, fast_makker: 0.5, turnering: 0.8 },
+  traening: { konkurrence: 0.6, traening: 1.0, hygge: 0.5, fast_makker: 0.7, turnering: 0.5 },
+  hygge: { konkurrence: 0.2, traening: 0.5, hygge: 1.0, fast_makker: 0.8, turnering: 0.3 },
+  fast_makker: { konkurrence: 0.5, traening: 0.7, hygge: 0.8, fast_makker: 1.0, turnering: 0.4 },
+  turnering: { konkurrence: 0.8, traening: 0.5, hygge: 0.3, fast_makker: 0.4, turnering: 1.0 },
 };
 
 function intentScore(myIntent, theirIntent) {
-  if (!myIntent || !theirIntent) return 0.5; // neutral hvis uudfyldt
-  const row = INTENT_COMPAT[myIntent];
+  const mine = normalizeIntent(myIntent);
+  const theirs = normalizeIntent(theirIntent);
+  if (!mine || !theirs) return 0.5;
+  const row = INTENT_COMPAT[mine];
   if (!row) return 0.5;
-  return row[theirIntent] ?? 0.5;
+  return row[theirs] ?? 0.5;
 }
 
-// ----- Hard filter -----
+function lastActiveScore(profile) {
+  if (!profile?.last_active_at) return 0.65;
+  const ageMs = Date.now() - new Date(profile.last_active_at).getTime();
+  if (!Number.isFinite(ageMs) || ageMs < 0) return 0.65;
+  const maxMs = INACTIVE_DAYS * 24 * 60 * 60 * 1000;
+  return clamp01(1 - ageMs / maxMs);
+}
+
+function seekingRecencyScore(profile) {
+  if (!profile?.seeking_match || !profile?.seeking_match_at) return 0;
+  const ageMs = Date.now() - new Date(profile.seeking_match_at).getTime();
+  if (!Number.isFinite(ageMs) || ageMs < 0) return 0;
+  const maxMs = SEEKING_FRESH_HOURS * 60 * 60 * 1000;
+  return clamp01(1 - ageMs / maxMs);
+}
 
 function isActive(profile) {
-  if (!profile.last_active_at) return true; // ny installation: antag aktiv
-  const lastActive = new Date(profile.last_active_at);
-  const cutoff = new Date(Date.now() - INACTIVE_DAYS * 24 * 60 * 60 * 1000);
-  return lastActive >= cutoff;
+  return lastActiveScore(profile) > 0;
 }
 
-// ----- Samlet scoring -----
-
-const WEIGHTS = {
-  skill:     0.32,
-  time:      0.23,
-  geo:       0.22,
-  intent:    0.13,
-  courtSide: 0.10,
-};
-
-/**
- * Beregn matchmaking-score (0–100) for én kandidat.
- * @param {object} myProfile  - den indloggede brugers profil
- * @param {object} candidate  - en anden spillers profil
- * @returns {{ total: number, breakdown: object }}
- */
-export function scoreCandidate(myProfile, candidate) {
-  const myElo   = Math.round(Number(myProfile.elo_rating) || 1000);
-  const theirElo = Math.round(Number(candidate.elo_rating) || 1000);
-
-  const scores = {
-    skill:     skillScore(myElo, theirElo),
-    time:      timeScore(myProfile, candidate),
-    geo:       geoScore(myProfile, candidate),
-    intent:    intentScore(myProfile.intent_now, candidate.intent_now),
-    courtSide: courtSideScore(myProfile.court_side, candidate.court_side),
+function directionalScore(fromProfile, toProfile, fromElo, toElo) {
+  const components = {
+    skill: skillScore(fromElo, toElo),
+    time: timeScore(fromProfile, toProfile),
+    geo: geoScore(fromProfile, toProfile),
+    intent: intentScore(fromProfile?.intent_now, toProfile?.intent_now),
+    courtSide: courtSideScore(fromProfile?.court_side, toProfile?.court_side),
   };
 
-  const total = Math.round(
-    (scores.skill     * WEIGHTS.skill     +
-     scores.time      * WEIGHTS.time      +
-     scores.geo       * WEIGHTS.geo       +
-     scores.intent    * WEIGHTS.intent    +
-     scores.courtSide * WEIGHTS.courtSide) * 100
-  );
+  const weighted =
+    components.skill * DIRECTIONAL_WEIGHTS.skill +
+    components.time * DIRECTIONAL_WEIGHTS.time +
+    components.geo * DIRECTIONAL_WEIGHTS.geo +
+    components.intent * DIRECTIONAL_WEIGHTS.intent +
+    components.courtSide * DIRECTIONAL_WEIGHTS.courtSide;
 
-  return { total, breakdown: scores };
+  return { total01: clamp01(weighted), components };
+}
+
+function inviteAcceptanceAdjustment(stats) {
+  if (!stats || !Number.isFinite(stats.sent) || stats.sent <= 0) return 0;
+  const sent = Math.max(0, Number(stats.sent));
+  const rate = clamp01(Number(stats.acceptanceRate));
+  const confidence = clamp01(sent / 5);
+  const centered = (rate - 0.5) * 2; // -1..1
+  return centered * 0.05 * confidence;
+}
+
+function exposurePenalty(count) {
+  const n = Math.max(0, Number(count) || 0);
+  if (n <= 0) return 0;
+  return Math.min(0.09, Math.log2(1 + n) * 0.02);
+}
+
+function passesHardFilters(myProfile, candidate, myElo, candidateElo, opts) {
+  if (candidate?.id === myProfile?.id) return false;
+  if (candidate?.is_banned) return false;
+  if (!isActive(candidate)) return false;
+
+  const maxEloDiff = Number.isFinite(opts?.maxEloDiff) ? Number(opts.maxEloDiff) : DEFAULTS.maxEloDiff;
+  if (Math.abs(myElo - candidateElo) > maxEloDiff) return false;
+
+  const requireTimeOverlap = opts?.requireTimeOverlap !== false;
+  if (requireTimeOverlap) {
+    const overlap = hasTimeOverlapSignal(myProfile, candidate);
+    if (overlap.hasComparable && !overlap.hasOverlap) return false;
+  }
+
+  return true;
 }
 
 /**
- * Filtrer og sorter en liste af spillere efter matchmaking-score.
- * Returnerer de bedste `limit` kandidater.
- *
- * @param {object}   myProfile   - den indloggede brugers profil
- * @param {object[]} candidates  - alle andre spillere (råt fra DB)
- * @param {object}   opts
- * @param {number}   [opts.limit=10]         - maks antal forslag
- * @param {boolean}  [opts.seekingOnly=false] - vis kun seeking_match=true spillere
- * @returns {{ profile: object, score: number, breakdown: object }[]}
+ * Beregn matchmaking-score (0-100) for en kandidat.
+ */
+export function scoreCandidate(myProfile, candidate, opts = {}) {
+  const eloByUserId = opts.eloByUserId || {};
+  const inviteStatsByUserId = opts.inviteStatsByUserId || {};
+  const exposureCountByUserId = opts.exposureCountByUserId || {};
+
+  const myElo = resolveElo(myProfile, eloByUserId);
+  const candidateElo = resolveElo(candidate, eloByUserId);
+
+  const forward = directionalScore(myProfile, candidate, myElo, candidateElo);
+  const reverse = directionalScore(candidate, myProfile, candidateElo, myElo);
+  const reciprocalCore = Math.sqrt(forward.total01 * reverse.total01);
+
+  const activity = lastActiveScore(candidate);
+  const seekingRecency = seekingRecencyScore(candidate);
+  const inviteStats = inviteStatsByUserId[String(candidate?.id || '')] || null;
+  const inviteAdj = inviteAcceptanceAdjustment(inviteStats);
+  const exposureCount = Number(exposureCountByUserId[String(candidate?.id || '')] || 0);
+  const exposurePenaltyValue = exposurePenalty(exposureCount);
+
+  let total01 = reciprocalCore;
+  total01 += activity * 0.08;
+  total01 += seekingRecency * 0.07;
+  total01 += inviteAdj;
+  total01 -= exposurePenaltyValue;
+  total01 = clamp01(total01);
+
+  const breakdown = {
+    reciprocal: reciprocalCore,
+    skill: (forward.components.skill + reverse.components.skill) / 2,
+    time: (forward.components.time + reverse.components.time) / 2,
+    geo: (forward.components.geo + reverse.components.geo) / 2,
+    intent: (forward.components.intent + reverse.components.intent) / 2,
+    courtSide: (forward.components.courtSide + reverse.components.courtSide) / 2,
+    activity,
+    seekingRecency,
+    inviteAcceptanceAdjustment: inviteAdj,
+    exposurePenalty: exposurePenaltyValue,
+    exposureCount,
+    inviteSentCount: Number(inviteStats?.sent || 0),
+    inviteAcceptanceRate: Number.isFinite(inviteStats?.acceptanceRate)
+      ? inviteStats.acceptanceRate
+      : 0.5,
+  };
+
+  return {
+    total: Math.round(total01 * 100),
+    breakdown,
+    resolvedElo: candidateElo,
+  };
+}
+
+/**
+ * Filtrer og sorter spillere efter matchmaking-score.
  */
 export function getMatchSuggestions(myProfile, candidates, opts = {}) {
-  const { limit = 10, seekingOnly = false } = opts;
+  const {
+    limit = 10,
+    seekingOnly = false,
+    eloByUserId = {},
+    inviteStatsByUserId = {},
+    exposureCountByUserId = {},
+  } = opts;
 
-  const filtered = candidates.filter((c) => {
-    if (c.id === myProfile.id) return false;
-    if (c.is_banned) return false;
-    if (!isActive(c)) return false;
-    if (seekingOnly && !c.seeking_match) return false;
-    return true;
+  const myElo = resolveElo(myProfile, eloByUserId);
+
+  const filtered = candidates.filter((candidate) => {
+    if (seekingOnly && !candidate?.seeking_match) return false;
+    const candidateElo = resolveElo(candidate, eloByUserId);
+    return passesHardFilters(myProfile, candidate, myElo, candidateElo, opts);
   });
 
   return filtered
-    .map((c) => {
-      const { total, breakdown } = scoreCandidate(myProfile, c);
-      return { profile: c, score: total, breakdown };
+    .map((candidate) => {
+      const score = scoreCandidate(myProfile, candidate, {
+        ...opts,
+        eloByUserId,
+        inviteStatsByUserId,
+        exposureCountByUserId,
+      });
+      return {
+        profile: candidate,
+        score: score.total,
+        breakdown: score.breakdown,
+        resolvedElo: score.resolvedElo,
+      };
     })
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      const aExposure = Number(a.breakdown?.exposureCount || 0);
+      const bExposure = Number(b.breakdown?.exposureCount || 0);
+      if (aExposure !== bExposure) return aExposure - bExposure;
+      return String(a.profile?.id || '').localeCompare(String(b.profile?.id || ''));
+    })
     .slice(0, limit);
 }
 
 /**
- * Læsbar forklaring på hvorfor en spiller er foreslået.
- * Bruges som subtitle i UI.
+ * Laesbar forklaring paa hvorfor en spiller er foreslaaet.
  */
 export function matchReason(breakdown, candidate) {
   const reasons = [];
-  if (breakdown.skill >= 0.8)      reasons.push('Tæt ELO-niveau');
-  if (breakdown.geo   >= 0.75)     reasons.push('Tæt på dig');
-  if (breakdown.time  >= 0.75)     reasons.push('Samme spilledage');
-  if (breakdown.intent >= 0.8)     reasons.push('Samme intention');
-  if (breakdown.courtSide >= 0.95) reasons.push('Komplementær side');
-  if (candidate.seeking_match)     reasons.push('Søger kamp nu');
-  if (reasons.length === 0)        reasons.push('God match');
+  if ((breakdown?.reciprocal || 0) >= 0.75) reasons.push('Gensidig match');
+  if ((breakdown?.skill || 0) >= 0.8) reasons.push('Taet ELO-niveau');
+  if ((breakdown?.time || 0) >= 0.75) reasons.push('Samme spilledage');
+  if ((breakdown?.intent || 0) >= 0.8) reasons.push('Samme intention');
+  if ((breakdown?.courtSide || 0) >= 0.95) reasons.push('Komplementaer side');
+  if ((breakdown?.activity || 0) >= 0.75) reasons.push('Aktiv spiller');
+  if ((breakdown?.seekingRecency || 0) >= 0.7 || candidate?.seeking_match) reasons.push('Soger kamp nu');
+  if ((breakdown?.inviteAcceptanceAdjustment || 0) >= 0.02) reasons.push('God respons-rate');
+  if (reasons.length === 0) reasons.push('God match');
   return reasons.join(' · ');
 }

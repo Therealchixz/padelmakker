@@ -1,10 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-
-const SEEK_TTL_MS = 24 * 60 * 60 * 1000;
-const isSeekingActive = (p) =>
-  p.seeking_match === true &&
-  p.seeking_match_at != null &&
-  Date.now() - new Date(p.seeking_match_at).getTime() < SEEK_TTL_MS;
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
@@ -17,7 +11,21 @@ import { levelLabel } from '../lib/platformConstants';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { supabase } from '../lib/supabase';
 import { getMatchSuggestions, matchReason } from '../lib/matchmakingUtils';
+import {
+  getMatchmakingSignalMaps,
+  getPendingInviteChecks,
+  markInvitesAccepted,
+  recordInviteSent,
+  recordSuggestionExposure,
+} from '../lib/matchmakingTelemetry';
+
+const SEEK_TTL_MS = 24 * 60 * 60 * 1000;
+const isSeekingActive = (p) =>
+  p.seeking_match === true &&
+  p.seeking_match_at != null &&
+  Date.now() - new Date(p.seeking_match_at).getTime() < SEEK_TTL_MS;
 
 function favoritesKeyForUser(userId) {
   return userId != null && String(userId).trim() !== ''
@@ -55,7 +63,7 @@ function matchQuality(score) {
 }
 
 function SuggestionCard({ suggestion, onView, onInvite }) {
-  const { profile: p, score, breakdown } = suggestion;
+  const { profile: p, score, breakdown, resolvedElo } = suggestion;
   const reason = matchReason(breakdown, p);
   const quality = matchQuality(score);
 
@@ -86,7 +94,7 @@ function SuggestionCard({ suggestion, onView, onInvite }) {
           </span>
 
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={tag(theme.accentBg, theme.accent)}>ELO {Math.round(Number(p.elo_rating) || 1000)}</span>
+            <span style={tag(theme.accentBg, theme.accent)}>ELO {Math.round(Number(resolvedElo) || Number(p.elo_rating) || 1000)}</span>
             {(p.city || p.area) && (
               <span style={{ ...tag(theme.blueBg, theme.blue), display: 'flex', alignItems: 'center', gap: '2px' }}>
                 <MapPin size={8} />{p.city || p.area.replace('Region ', '')}
@@ -153,6 +161,7 @@ export function MakkereTab({ user, showToast }) {
   const [inviteTarget, setInviteTarget] = useState(null);
   const [favorites, setFavorites]     = useState(() => readFavoritesSet(user?.id));
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
+  const [telemetryVersion, setTelemetryVersion] = useState(0);
 
   const myElo = eloOf(user);
 
@@ -192,18 +201,98 @@ export function MakkereTab({ user, showToast }) {
     loadPlayers();
   }, [loadPlayers]);
 
-  const displayElo = (p) => {
-    const s = statsById[String(p.id)];
-    return s != null ? s.elo : eloOf(p);
-  };
-  const displayGames = (p) => {
-    const s = statsById[String(p.id)];
-    return s != null ? s.games : (p.games_played || 0);
-  };
+  const displayElo = useCallback((player) => {
+    const stats = statsById[String(player.id)];
+    return stats != null ? stats.elo : eloOf(player);
+  }, [statsById]);
 
-  // Matchmaking-forslag (beregnes client-side på allerede-hentede spillere)
-  const suggestions = getMatchSuggestions(user, players, { limit: 10 });
-  const visibleSuggestions = showAllSuggestions ? suggestions : suggestions.slice(0, 3);
+  const displayGames = useCallback((player) => {
+    const stats = statsById[String(player.id)];
+    return stats != null ? stats.games : (player.games_played || 0);
+  }, [statsById]);
+
+  const eloByUserId = useMemo(() => {
+    const map = {};
+    players.forEach((player) => {
+      map[String(player.id)] = displayElo(player);
+    });
+    map[String(user.id)] = Number.isFinite(Number(myElo)) ? Number(myElo) : 1000;
+    return map;
+  }, [players, displayElo, user.id, myElo]);
+
+  const { exposureCountByUserId, inviteStatsByUserId } = useMemo(
+    () => getMatchmakingSignalMaps(user.id),
+    [user.id, telemetryVersion]
+  );
+
+  // Matchmaking-forslag (beregnes client-side paa allerede-hentede spillere)
+  const suggestions = useMemo(() => getMatchSuggestions(user, players, {
+    limit: 10,
+    eloByUserId,
+    inviteStatsByUserId,
+    exposureCountByUserId,
+  }), [user, players, eloByUserId, inviteStatsByUserId, exposureCountByUserId]);
+
+  const visibleSuggestions = useMemo(
+    () => (showAllSuggestions ? suggestions : suggestions.slice(0, 3)),
+    [showAllSuggestions, suggestions]
+  );
+
+  useEffect(() => {
+    if (!user?.id || visibleSuggestions.length === 0) return;
+    const candidateIds = visibleSuggestions
+      .map((item) => item?.profile?.id)
+      .filter(Boolean);
+    if (candidateIds.length === 0) return;
+    const changed = recordSuggestionExposure(user.id, candidateIds);
+    if (changed) setTelemetryVersion((prev) => prev + 1);
+  }, [user?.id, visibleSuggestions]);
+
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let disposed = false;
+
+    const syncAcceptedInvites = async () => {
+      const pendingPairs = getPendingInviteChecks(user.id);
+      if (!pendingPairs.length) return;
+
+      const matchIds = [...new Set(pendingPairs.map((pair) => String(pair.matchId || '')).filter(Boolean))];
+      const candidateIds = [...new Set(pendingPairs.map((pair) => String(pair.candidateId || '')).filter(Boolean))];
+      if (!matchIds.length || !candidateIds.length) return;
+
+      const { data, error } = await supabase
+        .from('match_players')
+        .select('match_id, user_id')
+        .in('match_id', matchIds)
+        .in('user_id', candidateIds)
+        .limit(5000);
+
+      if (error) {
+        console.warn('syncAcceptedInvites:', error.message || error);
+        return;
+      }
+
+      const joinedPairs = new Set(
+        (data || []).map((row) => `${String(row.match_id)}:${String(row.user_id)}`)
+      );
+      const acceptedPairs = pendingPairs.filter((pair) =>
+        joinedPairs.has(`${String(pair.matchId)}:${String(pair.candidateId)}`)
+      );
+
+      const changed = markInvitesAccepted(user.id, acceptedPairs);
+      if (changed && !disposed) setTelemetryVersion((prev) => prev + 1);
+    };
+
+    void syncAcceptedInvites();
+    const timerId = window.setInterval(() => {
+      void syncAcceptedInvites();
+    }, 60000);
+
+    return () => {
+      disposed = true;
+      window.clearInterval(timerId);
+    };
+  }, [user?.id]);
 
   // Filtrer til browse-listen
   const filtered = players.filter(p => {
@@ -231,6 +320,10 @@ export function MakkereTab({ user, showToast }) {
   const paginated = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   const handleFilterChange = (fn) => { fn(); setPage(0); };
+  const handleInviteSent = useCallback(({ candidateId, matchId }) => {
+    const changed = recordInviteSent(user.id, { candidateId, matchId });
+    if (changed) setTelemetryVersion((prev) => prev + 1);
+  }, [user.id]);
 
   if (loading) return (
     <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>
@@ -460,6 +553,7 @@ export function MakkereTab({ user, showToast }) {
           invitee={inviteTarget}
           currentUser={user}
           showToast={showToast}
+          onInviteSent={handleInviteSent}
           onClose={() => setInviteTarget(null)}
         />
       )}
