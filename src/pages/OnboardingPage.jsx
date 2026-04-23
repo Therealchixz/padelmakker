@@ -454,7 +454,17 @@ export function OnboardingPage() {
   ];
 
   return (
-    <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
+    <div
+      className="pm-root"
+      style={{
+        fontFamily: font,
+        background: theme.bg,
+        minHeight: "100dvh",
+        color: theme.text,
+        paddingTop: "max(28px, calc(env(safe-area-inset-top, 0px) + 22px))",
+        paddingBottom: "max(96px, env(safe-area-inset-bottom))",
+      }}
+    >
       <div className="pm-auth-wide">
         <div style={{ marginBottom: "18px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
