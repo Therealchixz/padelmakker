@@ -367,7 +367,7 @@ export function ProfilTab({ user, showToast, setTab, dark, onDarkModeChange }) {
   };
 
   return (
-    <div>
+    <div data-tour="profile-main">
       {!editing ? (
       <div>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>

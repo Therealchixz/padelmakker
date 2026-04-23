@@ -579,6 +579,14 @@ export function DashboardPage({ user, onLogout, showToast }) {
       );
     }
 
+    base.push({
+      id: 'profile',
+      tab: 'profil',
+      selector: '[data-tour="profile-main"]',
+      title: 'Din profil',
+      description: 'Her opdaterer du profil, følger ELO-udvikling og styrer dine personlige præferencer. Det er dit vigtigste udgangspunkt i appen.',
+    });
+
     return base;
   }, [isMobileView, tabTourSelector]);
 
