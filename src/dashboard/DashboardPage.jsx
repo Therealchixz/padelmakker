@@ -557,8 +557,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     if (isMobileView) {
       base.push({
         id: 'mobile-more',
-        selector: '[data-tour="mobile-more-sheet"]',
-        openMobileMore: true,
+        selector: '[data-tour="mobile-tab-mere"]',
         title: 'Mere-menu',
         description: 'Under “Mere” finder du bl.a. Profil, Ranking, Beskeder og øvrige funktioner.',
       });
@@ -718,11 +717,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
   useEffect(() => {
     if (!tourOpen) return;
     const step = tourSteps[tourStepIndex];
-    const shouldOpenAccountMenu = Boolean(!isMobileView && step?.openAccountMenu);
-    const shouldOpenMobileMore = Boolean(isMobileView && step?.openMobileMore);
+    const shouldOpenAccountMenu = Boolean(step?.openAccountMenu);
     setAccountOpen((isOpen) => (isOpen === shouldOpenAccountMenu ? isOpen : shouldOpenAccountMenu));
-    setMobileMoreOpen((isOpen) => (isOpen === shouldOpenMobileMore ? isOpen : shouldOpenMobileMore));
-  }, [tourOpen, tourStepIndex, tourSteps, isMobileView]);
+  }, [tourOpen, tourStepIndex, tourSteps]);
 
   useEffect(() => {
     if (!tourOpen) return;
@@ -1367,7 +1364,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         />
       )}
       {mobileMoreOpen && (
-        <div className="pm-mobile-more-sheet" data-tour="mobile-more-sheet">
+        <div className="pm-mobile-more-sheet">
           {mobileMoreTabs.map((t) => (
             <button
               key={t.id}
