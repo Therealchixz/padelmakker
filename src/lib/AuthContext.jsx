@@ -350,12 +350,15 @@ export function AuthProvider({ children }) {
     activeUserIdRef.current = user?.id != null ? String(user.id) : ''
   }, [user?.id])
 
-  const signUp = async (email, password, metadata = {}) => {
+  const signUp = async (email, password, metadata = {}, captchaToken = '') => {
     if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')
+    const token = typeof captchaToken === 'string' ? captchaToken.trim() : ''
+    const options = { data: metadata }
+    if (token) options.captchaToken = token
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: metadata },
+      options,
     })
     if (error) throw error
     if (data.user) {
@@ -396,9 +399,12 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  const signIn = async (email, password) => {
+  const signIn = async (email, password, captchaToken = '') => {
     if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const token = typeof captchaToken === 'string' ? captchaToken.trim() : ''
+    const payload = { email, password }
+    if (token) payload.options = { captchaToken: token }
+    const { data, error } = await supabase.auth.signInWithPassword(payload)
     if (error) throw error
     if (data.user) {
       setSession(data.session)

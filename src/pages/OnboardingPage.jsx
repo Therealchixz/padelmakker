@@ -11,13 +11,18 @@ import { isValidSignupEmail } from '../lib/validationHelpers';
 import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
 
 import { AvatarPicker } from '../components/AvatarPicker';
+import { TurnstileWidget } from '../components/TurnstileWidget';
 import { ArrowRight } from 'lucide-react';
 
 export function OnboardingPage() {
   const { signUp, signOut } = useAuth();
   const navigate = useNavigate();
+  const turnstileSiteKey = String(import.meta.env.VITE_TURNSTILE_SITE_KEY || "").trim();
+  const turnstileEnabled = turnstileSiteKey.length > 0;
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
   const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
   const [avatarFile, setAvatarFile]         = useState(null);
@@ -105,6 +110,11 @@ export function OnboardingPage() {
   };
 
   const finish = async () => {
+    if (turnstileEnabled && !captchaToken) {
+      setErr("Bekræft venligst, at du ikke er en robot.");
+      return;
+    }
+
     setSubmitting(true); setErr("");
     try {
       const nameCheck = validateFirstLastName(form.first_name, form.last_name);
@@ -149,7 +159,7 @@ export function OnboardingPage() {
         seeking_match: form.seeking_match,
         travel_willing: form.travel_willing,
         onboarding_completed: true,
-      });
+      }, turnstileEnabled ? captchaToken : "");
 
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       /* Altid til login: undgå at blive på /opret eller auto-dashboard når der opstår en session */
@@ -157,6 +167,7 @@ export function OnboardingPage() {
       navigate('/opret/bekraeft-email', { replace: true, state: { email: form.email.trim() } });
     } catch (e) {
       setErr(e.message || "Kunne ikke oprette profil.");
+      if (turnstileEnabled) setCaptchaResetNonce((n) => n + 1);
     } finally {
       setSubmitting(false);
     }
@@ -426,6 +437,19 @@ export function OnboardingPage() {
           {profilePreviewBio}
         </div>
       </div>
+      {turnstileEnabled && (
+        <div style={{ marginTop: "16px" }}>
+          <div style={{ ...labelStyle, marginBottom: "8px" }}>Sikkerhedscheck</div>
+          <TurnstileWidget
+            siteKey={turnstileSiteKey}
+            onTokenChange={setCaptchaToken}
+            resetNonce={captchaResetNonce}
+          />
+          <p style={{ marginTop: "8px", fontSize: "12px", color: theme.textLight, lineHeight: 1.45 }}>
+            Bekræft at du ikke er en robot, før du opretter profilen.
+          </p>
+        </div>
+      )}
     </div>,
   ];
 
@@ -475,7 +499,7 @@ export function OnboardingPage() {
           <button onClick={step > 0 ? () => setStep(s => s - 1) : cancelOnboarding} style={btn(false)}>{step > 0 ? "← Tilbage" : "Annuller"}</button>
           {step < 3
             ? <button onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.4 }}>Næste <ArrowRight size={15} /></button>
-            : <button onClick={finish} disabled={submitting} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
+            : <button onClick={finish} disabled={submitting || (turnstileEnabled && !captchaToken)} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
           }
         </div>
         <PublicLegalFooter />
