@@ -51,7 +51,7 @@ export function TurnstileWidget({ siteKey, onTokenChange, resetNonce = 0 }) {
         if (!active || !mountRef.current || !window.turnstile) return;
         widgetIdRef.current = window.turnstile.render(mountRef.current, {
           sitekey: siteKey,
-          theme: 'auto',
+          theme: 'light',
           callback: (token) => {
             if (active) onTokenChange(token || '');
           },
