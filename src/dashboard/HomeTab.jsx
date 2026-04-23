@@ -944,6 +944,7 @@ export function HomeTab({ user, setTab }) {
           <button
             key={i}
             onClick={() => setTab(a.tab)}
+            data-tour={`quick-action-${a.tab}`}
             className="pm-ui-card pm-ui-card-interactive pm-home-action-card"
           >
             <div className="pm-home-action-card-icon">

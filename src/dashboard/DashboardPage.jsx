@@ -1,10 +1,10 @@
-import { useEffect, useCallback, useState, useRef, lazy, Suspense } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
-import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu, Bug } from 'lucide-react';
+import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu, Bug, Compass } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
 import { HomeTab } from './HomeTab';
 import { ShieldCheck } from 'lucide-react';
@@ -12,6 +12,7 @@ import { useUnreadMessageCount } from '../lib/chatUtils';
 import { useDarkMode } from '../lib/useDarkMode';
 import { supabase } from '../lib/supabase';
 import { AdminPinGate } from '../components/AdminPinGate';
+import { GuidedTourOverlay } from '../components/GuidedTourOverlay';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -430,6 +431,7 @@ function useUnreadKampeNotificationsCount(userId) {
 
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking"];
 const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
+const TOUR_VERSION = 1;
 
 const tabBtnStyle = (active) => ({
   background: "transparent",
@@ -484,14 +486,119 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [feedbackTopic, setFeedbackTopic] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
   const [adminPinUnlocked, setAdminPinUnlocked] = useState(false);
   const hasPrefetchedTabsRef = useRef(false);
   const lastProfileRefreshAtRef = useRef(0);
   const wasInAdminTabRef = useRef(false);
+  const hasAutoStartedTourRef = useRef(false);
   const moreBtnRef = useRef(null);
   const moreDropRef = useRef(null);
   const accountBtnRef = useRef(null);
   const accountDropRef = useRef(null);
+  const tourStorageKey = user?.id ? `pm_dash_tour_v${TOUR_VERSION}_done_${user.id}` : null;
+
+  const tabTourSelector = useCallback((tabId) => {
+    return isMobileView ? `[data-tour="mobile-tab-${tabId}"]` : `[data-tour="tab-${tabId}"]`;
+  }, [isMobileView]);
+
+  const tourSteps = useMemo(() => {
+    const base = [
+      {
+        id: 'intro',
+        title: 'Velkommen til PadelMakker',
+        description: 'Denne korte guide viser de vigtigste funktioner, så du hurtigt kan finde makkere, tilmelde dig kampe og følge din udvikling.',
+      },
+      {
+        id: 'home',
+        tab: 'hjem',
+        selector: tabTourSelector('hjem'),
+        title: 'Hjem-overblik',
+        description: 'Her får du et samlet overblik over aktivitet, forslag og det vigtigste der sker lige nu.',
+      },
+      {
+        id: 'quick-action',
+        tab: 'hjem',
+        selector: '[data-tour="quick-action-kampe"]',
+        title: 'Hurtig handling',
+        description: 'De store kort på forsiden er genveje. Tryk fx på “Åbne kampe” for at hoppe direkte til kamp-flowet.',
+      },
+      {
+        id: 'makkere',
+        tab: 'makkere',
+        selector: tabTourSelector('makkere'),
+        title: 'Find makker',
+        description: 'Her finder du spillere, der matcher niveau og område, så du hurtigere får sat en kamp op.',
+      },
+      {
+        id: 'kampe',
+        tab: 'kampe',
+        selector: tabTourSelector('kampe'),
+        title: 'Kampe',
+        description: 'I Kampe opretter du nye kampe, tilmelder dig eksisterende, og håndterer resultater og bekræftelser.',
+      },
+    ];
+
+    if (isMobileView) {
+      base.push({
+        id: 'mobile-more',
+        selector: '[data-tour="mobile-tab-mere"]',
+        title: 'Mere-menu',
+        description: 'Under “Mere” finder du bl.a. Profil, Ranking, Beskeder og øvrige funktioner.',
+      });
+    } else {
+      base.push(
+        {
+          id: 'ranking',
+          tab: 'ranking',
+          selector: '[data-tour="tab-ranking"]',
+          title: 'Ranking',
+          description: 'Her kan du følge ELO, placering og udvikling over tid.',
+        },
+        {
+          id: 'account',
+          selector: '[data-tour="account-menu-btn"]',
+          title: 'Konto & hjælp',
+          description: 'Her åbner du profilmenuen, finder hjælpepunkter og kan starte guiden igen senere.',
+        }
+      );
+    }
+
+    return base;
+  }, [isMobileView, tabTourSelector]);
+
+  const persistTourCompleted = useCallback(() => {
+    if (!tourStorageKey) return;
+    try {
+      localStorage.setItem(tourStorageKey, '1');
+    } catch {
+      // ignore storage errors
+    }
+  }, [tourStorageKey]);
+
+  const startTour = useCallback(() => {
+    setMoreOpen(false);
+    setMobileMoreOpen(false);
+    setAccountOpen(false);
+    setTourStepIndex(0);
+    setTourOpen(true);
+  }, []);
+
+  const closeTour = useCallback((withToastMessage) => {
+    persistTourCompleted();
+    setTourOpen(false);
+    setTourStepIndex(0);
+    if (withToastMessage) showToast(withToastMessage);
+  }, [persistTourCompleted, showToast]);
+
+  const handleTourBack = useCallback(() => {
+    setTourStepIndex((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const handleTourNext = useCallback(() => {
+    setTourStepIndex((prev) => Math.min(tourSteps.length - 1, prev + 1));
+  }, [tourSteps.length]);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -549,6 +656,46 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setMobileMoreOpen(false);
     setAccountOpen(false);
   }, [tab]);
+
+  useEffect(() => {
+    hasAutoStartedTourRef.current = false;
+  }, [tourStorageKey]);
+
+  useEffect(() => {
+    if (!tourStorageKey) return undefined;
+    if (hasAutoStartedTourRef.current) return undefined;
+    hasAutoStartedTourRef.current = true;
+
+    let alreadyCompleted = false;
+    try {
+      alreadyCompleted = localStorage.getItem(tourStorageKey) === '1';
+    } catch {
+      alreadyCompleted = false;
+    }
+    if (alreadyCompleted) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setTourStepIndex(0);
+      setTourOpen(true);
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [tourStorageKey]);
+
+  useEffect(() => {
+    if (!tourOpen) return;
+    const step = tourSteps[tourStepIndex];
+    if (!step) return;
+
+    if (step.tab && tab !== step.tab) {
+      setTab(step.tab);
+      return;
+    }
+
+    const target = step.selector ? document.querySelector(step.selector) : null;
+    if (target && typeof target.scrollIntoView === 'function') {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+  }, [tourOpen, tourStepIndex, tourSteps, tab, setTab]);
 
   useEffect(() => {
     if (tab !== "beskeder") setMobileConversationOpen(false);
@@ -747,6 +894,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           <button
             ref={accountBtnRef}
             type="button"
+            data-tour="account-menu-btn"
             onClick={() => setAccountOpen((open) => !open)}
             style={{
               ...btn(false),
@@ -829,6 +977,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
             </button>
             <button
               type="button"
+              onClick={() => {
+                setAccountOpen(false);
+                startTour();
+              }}
+              style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", borderBottom: "1px solid " + theme.border, background: "transparent", color: theme.text, fontWeight: 600, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+            >
+              <Compass size={15} />
+              Start guide
+            </button>
+            <button
+              type="button"
               onClick={openFeedbackModal}
               style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", borderBottom: "1px solid " + theme.border, background: "transparent", color: theme.text, fontWeight: 600, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
             >
@@ -858,7 +1017,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           const active = tab === t.id;
           const tabAttention = Boolean(t.attention && !active);
           return (
-          <button key={t.id} type="button" title={t.label} aria-label={t.label} onClick={() => setTab(t.id)} style={tabBtnStyle(active)}>
+          <button key={t.id} type="button" title={t.label} aria-label={t.label} data-tour={`tab-${t.id}`} onClick={() => setTab(t.id)} style={tabBtnStyle(active)}>
             <span aria-hidden style={{ display: "flex", position: "relative" }}>
               {t.icon}
               {t.badge && (
@@ -878,6 +1037,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         <button
           ref={moreBtnRef}
           type="button"
+          data-tour="tab-mere"
           onClick={() => setMoreOpen(o => !o)}
           style={{ ...tabBtnStyle(moreIsActive), gap: "3px" }}
         >
@@ -969,6 +1129,16 @@ export function DashboardPage({ user, onLogout, showToast }) {
           onUnlocked={() => setAdminPinUnlocked(true)}
         />
       )}
+
+      <GuidedTourOverlay
+        open={tourOpen}
+        steps={tourSteps}
+        stepIndex={tourStepIndex}
+        onBack={handleTourBack}
+        onNext={handleTourNext}
+        onSkip={() => closeTour("Guiden er lukket. Du kan starte den igen i menuen.")}
+        onFinish={() => closeTour("Guide gennemført. God fornøjelse!")}
+      />
 
       {feedbackOpen && createPortal(
         <div
@@ -1183,6 +1353,19 @@ export function DashboardPage({ user, onLogout, showToast }) {
           </button>
           <button
             type="button"
+            className="pm-mobile-more-row"
+            onClick={() => {
+              setMobileMoreOpen(false);
+              startTour();
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <Compass size={16} />
+              Start guide
+            </span>
+          </button>
+          <button
+            type="button"
             className="pm-mobile-more-row pm-mobile-more-logout"
             onClick={() => {
               setMobileMoreOpen(false);
@@ -1207,6 +1390,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             <button
               key={t.id}
               type="button"
+              data-tour={`mobile-tab-${t.id}`}
               onClick={() => setTab(t.id)}
               className="pm-mobile-bottom-btn"
               aria-label={t.label}
@@ -1234,6 +1418,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         })}
         <button
           type="button"
+          data-tour="mobile-tab-mere"
           onClick={() => setMobileMoreOpen((open) => !open)}
           className="pm-mobile-bottom-btn"
           aria-label="Mere"
