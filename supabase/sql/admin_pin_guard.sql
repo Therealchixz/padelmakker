@@ -251,3 +251,6 @@ GRANT EXECUTE ON FUNCTION public.admin_pin_status() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_setup_pin(text, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_verify_pin(text, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_clear_pin_session() TO authenticated;
+
+-- Tving PostgREST til at genindlæse schema cache (hjælper mod PGRST202 lige efter nye funktioner).
+NOTIFY pgrst, 'reload schema';

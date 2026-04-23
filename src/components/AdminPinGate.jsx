@@ -36,6 +36,18 @@ export function AdminPinGate({ userId, showToast, onUnlocked }) {
 
   const mode = useMemo(() => (hasPin ? 'verify' : 'setup'), [hasPin]);
 
+  const toFriendlyError = (err, fallbackText) => {
+    const msg = String(err?.message || '');
+    const code = String(err?.code || '');
+    const missingRpc = code === 'PGRST202'
+      || msg.includes('schema cache')
+      || msg.includes('Could not find the function public.admin_pin_status');
+    if (missingRpc) {
+      return 'Admin PIN er ikke aktiveret i databasen endnu. Kør SQL-scriptet "supabase/sql/admin_pin_guard.sql" i Supabase SQL Editor, og prøv igen.';
+    }
+    return msg || fallbackText;
+  };
+
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
@@ -59,7 +71,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked }) {
         setHasPin(status.has_pin === true);
       } catch (err) {
         if (cancelled) return;
-        const message = err?.message || 'Kunne ikke tjekke admin-kode.';
+        const message = toFriendlyError(err, 'Kunne ikke tjekke admin-kode.');
         setErrorText(message);
       } finally {
         if (!cancelled) setLoading(false);
@@ -95,7 +107,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked }) {
       onUnlocked?.(data?.verified_until || null);
       showToast?.('Admin-kode oprettet.');
     } catch (err) {
-      const message = err?.message || 'Kunne ikke oprette admin-kode.';
+      const message = toFriendlyError(err, 'Kunne ikke oprette admin-kode.');
       setErrorText(message);
     } finally {
       setBusy(false);
@@ -132,7 +144,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked }) {
       onUnlocked?.(data?.verified_until || null);
       showToast?.('Admin-adgang godkendt.');
     } catch (err) {
-      const message = err?.message || 'Kunne ikke verificere admin-kode.';
+      const message = toFriendlyError(err, 'Kunne ikke verificere admin-kode.');
       setErrorText(message);
     } finally {
       setBusy(false);
