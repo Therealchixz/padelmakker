@@ -61,13 +61,8 @@ export function AdminPinGate({ userId, showToast, onUnlocked }) {
         if (error) throw error;
 
         const status = data || {};
-        const verified = status.is_verified === true;
         if (cancelled) return;
-
-        if (verified) {
-          onUnlocked?.(status.verified_until || null);
-          return;
-        }
+        // Sikkerhedskrav: Der skal altid tastes kode ved adgang til admin-fanen.
         setHasPin(status.has_pin === true);
       } catch (err) {
         if (cancelled) return;

@@ -487,6 +487,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [adminPinUnlocked, setAdminPinUnlocked] = useState(false);
   const hasPrefetchedTabsRef = useRef(false);
   const lastProfileRefreshAtRef = useRef(0);
+  const wasInAdminTabRef = useRef(false);
   const moreBtnRef = useRef(null);
   const moreDropRef = useRef(null);
   const accountBtnRef = useRef(null);
@@ -561,6 +562,19 @@ export function DashboardPage({ user, onLogout, showToast }) {
     if (tab === "admin" && isAdmin) {
       setAdminPinUnlocked(false);
     }
+  }, [tab, isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      wasInAdminTabRef.current = false;
+      return;
+    }
+    const inAdminTab = tab === "admin";
+    if (wasInAdminTabRef.current && !inAdminTab) {
+      setAdminPinUnlocked(false);
+      void supabase.rpc("admin_clear_pin_session").catch(() => {});
+    }
+    wasInAdminTabRef.current = inAdminTab;
   }, [tab, isAdmin]);
 
   useEffect(() => {
