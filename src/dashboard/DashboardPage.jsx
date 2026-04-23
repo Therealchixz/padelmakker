@@ -525,11 +525,25 @@ export function DashboardPage({ user, onLogout, showToast }) {
         description: 'De store kort på forsiden er genveje. Tryk fx på “Åbne kampe” for at hoppe direkte til kamp-flowet.',
       },
       {
+        id: 'latest-activity',
+        tab: 'hjem',
+        selector: '[data-tour="home-latest-activity"]',
+        title: 'Seneste aktivitet',
+        description: 'Her kan nye brugere hurtigt se hvad der rører sig: nye kampe, ELO-ændringer og relevante events i fællesskabet.',
+      },
+      {
         id: 'makkere',
         tab: 'makkere',
         selector: tabTourSelector('makkere'),
         title: 'Find makker',
         description: 'Her finder du spillere, der matcher niveau og område, så du hurtigere får sat en kamp op.',
+      },
+      {
+        id: 'baner-booking',
+        tab: 'baner',
+        selector: tabTourSelector('baner'),
+        title: 'Baner & booking',
+        description: 'Du booker ikke direkte i PadelMakker. Her finder du baner og åbner deres bookingsystem via booking-linket.',
       },
       {
         id: 'kampe',

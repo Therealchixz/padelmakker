@@ -622,7 +622,7 @@ export function HomeTab({ user, setTab }) {
 
       {/* Aktivitetsfeed */}
       {feedLoading ? (
-        <div style={{ marginBottom: "24px" }}>
+        <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
           <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
             Seneste aktivitet
           </div>
@@ -633,7 +633,7 @@ export function HomeTab({ user, setTab }) {
           </div>
         </div>
       ) : (
-        <div style={{ marginBottom: "24px" }}>
+        <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
           <div className="pm-feed-filters-header">
             <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Seneste aktivitet
