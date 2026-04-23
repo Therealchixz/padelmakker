@@ -11,6 +11,7 @@ import { ShieldCheck } from 'lucide-react';
 import { useUnreadMessageCount } from '../lib/chatUtils';
 import { useDarkMode } from '../lib/useDarkMode';
 import { supabase } from '../lib/supabase';
+import { AdminPinGate } from '../components/AdminPinGate';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -483,6 +484,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [feedbackTopic, setFeedbackTopic] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
+  const [adminPinUnlocked, setAdminPinUnlocked] = useState(false);
   const hasPrefetchedTabsRef = useRef(false);
   const lastProfileRefreshAtRef = useRef(0);
   const moreBtnRef = useRef(null);
@@ -550,6 +552,16 @@ export function DashboardPage({ user, onLogout, showToast }) {
   useEffect(() => {
     if (tab !== "beskeder") setMobileConversationOpen(false);
   }, [tab]);
+
+  useEffect(() => {
+    setAdminPinUnlocked(false);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (tab === "admin" && isAdmin) {
+      setAdminPinUnlocked(false);
+    }
+  }, [tab, isAdmin]);
 
   useEffect(() => {
     if (!feedbackOpen) return undefined;
@@ -905,10 +917,32 @@ export function DashboardPage({ user, onLogout, showToast }) {
             {tab === "liga"     && <LigaTabLazy user={user} showToast={showToast} />}
             {tab === "beskeder" && <BeskedTabLazy user={user} onMobileConversationStateChange={setMobileConversationOpen} />}
             {tab === "profil"   && <ProfilTabLazy user={user} showToast={showToast} setTab={setTab} dark={dark} onDarkModeChange={setDark} />}
-            {tab === "admin"    && isAdmin && <AdminTabLazy />}
+            {tab === "admin"    && isAdmin && adminPinUnlocked && <AdminTabLazy />}
+            {tab === "admin"    && isAdmin && !adminPinUnlocked && (
+              <div
+                style={{
+                  background: theme.surface,
+                  border: "1px solid " + theme.border,
+                  borderRadius: "12px",
+                  padding: "18px",
+                  color: theme.textLight,
+                  fontSize: "13px",
+                }}
+              >
+                Admin-adgang er låst. Indtast din 6-cifrede kode for at fortsætte.
+              </div>
+            )}
           </Suspense>
         )}
       </div>
+
+      {tab === "admin" && isAdmin && !adminPinUnlocked && (
+        <AdminPinGate
+          userId={user?.id}
+          showToast={showToast}
+          onUnlocked={() => setAdminPinUnlocked(true)}
+        />
+      )}
 
       {feedbackOpen && createPortal(
         <div
