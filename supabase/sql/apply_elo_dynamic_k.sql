@@ -21,6 +21,8 @@ SET search_path = public
 SET row_security = off
 AS $function$
 DECLARE
+  v_uid uuid := auth.uid();
+  v_can_apply boolean := false;
   v_mr match_results%ROWTYPE;
   v_match matches%ROWTYPE;
   v_t1_avg REAL;
@@ -49,12 +51,30 @@ DECLARE
   v_t1_changes INTEGER[] := ARRAY[]::INTEGER[];
   v_t2_changes INTEGER[] := ARRAY[]::INTEGER[];
 BEGIN
+  IF v_uid IS NULL THEN
+    RETURN jsonb_build_object('error', 'Authentication required');
+  END IF;
+
   SELECT * INTO v_mr FROM match_results WHERE id = p_match_result_id;
   IF NOT FOUND THEN
     RETURN jsonb_build_object('error', 'Match result not found');
   END IF;
   IF v_mr.confirmed IS NOT TRUE THEN
     RETURN jsonb_build_object('error', 'Match result not confirmed yet');
+  END IF;
+
+  SELECT
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1
+      FROM public.match_players mp
+      WHERE mp.match_id = v_mr.match_id
+        AND mp.user_id = v_uid
+    )
+  INTO v_can_apply;
+
+  IF NOT v_can_apply THEN
+    RETURN jsonb_build_object('error', 'Not authorized to apply ELO for this match');
   END IF;
 
   -- Låser rækken under denne transaktion, så vi ikke kan ramme en race-condition
@@ -125,6 +145,9 @@ BEGIN
     WHEN v_margin <= 14 THEN 1.24
     ELSE 1.35
   END;
+
+  -- Tillad kontrollerede system-opdateringer af beskyttede profile-felter.
+  PERFORM set_config('app.bypass_profile_protection', 'on', true);
 
   FOR v_player IN
     SELECT mp.user_id, mp.team, p.elo_rating, p.games_played, p.games_won
@@ -201,3 +224,6 @@ BEGIN
   );
 END;
 $function$;
+
+REVOKE ALL ON FUNCTION public.apply_elo_for_match(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.apply_elo_for_match(uuid) TO authenticated;

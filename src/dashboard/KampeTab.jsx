@@ -1306,7 +1306,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       // Calculate ELO
       const mp = matchPlayers[matchId] || [];
-      await calculateAndApplyElo(matchId, showToast);
+      await calculateAndApplyElo(matchId, showToast, { matchResultId: mr.id });
       refreshProfile();
       await reloadKampeEloBundle();
       // Notify all players about ELO update

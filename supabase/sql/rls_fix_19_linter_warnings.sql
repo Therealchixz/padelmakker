@@ -129,11 +129,30 @@ CREATE POLICY match_results_update_by_participant
   ON public.match_results
   FOR UPDATE TO authenticated
   USING (
-    submitted_by = (select auth.uid())
+    (
+      confirmed IS NOT TRUE
+      AND submitted_by <> (select auth.uid())
+      AND EXISTS (
+        SELECT 1
+        FROM public.match_players mp
+        WHERE mp.match_id = match_results.match_id
+          AND mp.user_id = (select auth.uid())
+      )
+    )
     OR public.is_admin()
   )
   WITH CHECK (
-    submitted_by = (select auth.uid())
+    (
+      confirmed IS TRUE
+      AND confirmed_by = (select auth.uid())
+      AND submitted_by <> (select auth.uid())
+      AND EXISTS (
+        SELECT 1
+        FROM public.match_players mp
+        WHERE mp.match_id = match_results.match_id
+          AND mp.user_id = (select auth.uid())
+      )
+    )
     OR public.is_admin()
   );
 

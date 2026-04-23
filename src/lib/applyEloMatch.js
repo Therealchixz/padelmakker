@@ -8,25 +8,32 @@ function formatTeamChanges(arr) {
 /**
  * Efter bekræftet resultat: kald DB-RPC der opdaterer elo_history + profiler.
  */
-export async function calculateAndApplyElo(matchId, showToast) {
+export async function calculateAndApplyElo(matchId, showToast, options = {}) {
   try {
-    const { data: mr, error: mrErr } = await supabase
-      .from('match_results')
-      .select('id')
-      .eq('match_id', matchId)
-      .eq('confirmed', true)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    let matchResultId = options?.matchResultId || null;
 
-    if (mrErr || !mr) {
-      console.error('ELO: Kunne ikke finde bekræftet resultat:', mrErr);
-      if (showToast) showToast('ELO fejl: Resultat ikke fundet.');
-      return;
+    // Foretræk explicit ID fra confirm-flow; fallback bevarer gammel adfærd.
+    if (!matchResultId) {
+      const { data: mr, error: mrErr } = await supabase
+        .from('match_results')
+        .select('id')
+        .eq('match_id', matchId)
+        .eq('confirmed', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (mrErr || !mr) {
+        console.error('ELO: Kunne ikke finde bekræftet resultat:', mrErr);
+        if (showToast) showToast('ELO fejl: Resultat ikke fundet.');
+        return;
+      }
+
+      matchResultId = mr.id;
     }
 
     const { data, error } = await supabase.rpc('apply_elo_for_match', {
-      p_match_result_id: mr.id,
+      p_match_result_id: matchResultId,
     });
 
     if (error) {
