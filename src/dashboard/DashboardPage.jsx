@@ -579,11 +579,18 @@ export function DashboardPage({ user, onLogout, showToast }) {
           description: 'Her kan du følge ELO, placering og udvikling over tid.',
         },
         {
-          id: 'profile-menu',
-          selector: '[data-tour="account-menu-profile-btn"]',
+          id: 'account-menu',
+          selector: '[data-tour="account-menu-dropdown"]',
           openAccountMenu: true,
-          title: 'Profil i menuen',
-          description: 'Her åbner du din profil fra menuen. Når guiden slutter, sender vi dig direkte til profilfanen.',
+          title: 'Konto-menu',
+          description: 'Dropdown-menuen samler de vigtigste hurtige handlinger: Min profil, Start guide, Rapportér fejl og Log ud.',
+        },
+        {
+          id: 'profile',
+          tab: 'profil',
+          selector: '[data-tour="profile-main"]',
+          title: 'Din profil',
+          description: 'Her opdaterer du profil, følger ELO-udvikling og styrer dine personlige præferencer. Det er dit vigtigste udgangspunkt i appen.',
         }
       );
     }
@@ -976,6 +983,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         {accountOpen && accountPos && createPortal(
           <div
             ref={accountDropRef}
+            data-tour="account-menu-dropdown"
             style={{
               position: "fixed",
               top: accountPos.top,
@@ -1172,8 +1180,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
         onNext={handleTourNext}
         onSkip={() => closeTour("Guiden er lukket. Du kan starte den igen i menuen.")}
         onFinish={() => {
-          setTab("profil");
-          closeTour("Guide gennemført. Du er nu klar til at bruge din profil.");
+          closeTour("Guide gennemført. God fornøjelse!");
+          setTab("hjem");
         }}
       />
 
