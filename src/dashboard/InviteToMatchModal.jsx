@@ -141,7 +141,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
               Ingen aabne kampe
             </p>
             <p style={{ fontSize: '13px', lineHeight: 1.5 }}>
-              Opret en kamp eller Americano-turnering under fanen "Kampe", saa kan du invitere spillere til den.
+              Opret en kamp eller Americano-turnering under fanen &quot;Kampe&quot;, saa kan du invitere spillere til den.
             </p>
           </div>
         ) : (

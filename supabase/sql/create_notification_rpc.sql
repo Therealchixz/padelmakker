@@ -83,6 +83,19 @@ BEGIN
     RAISE EXCEPTION 'Manglende match_id for notifikation til anden bruger';
   END IF;
 
+  -- Målbruger skal også være relateret til samme kamp (creator eller deltager).
+  IF NOT EXISTS (
+    SELECT 1 FROM public.match_players mp
+    WHERE mp.match_id = p_match_id
+      AND mp.user_id = p_user_id
+  ) AND NOT EXISTS (
+    SELECT 1 FROM public.matches m
+    WHERE m.id = p_match_id
+      AND m.creator_id = p_user_id
+  ) THEN
+    RAISE EXCEPTION 'Modtager er ikke relateret til denne kamp';
+  END IF;
+
   IF EXISTS (
     SELECT 1 FROM public.match_players mp
     WHERE mp.match_id = p_match_id AND mp.user_id = (SELECT auth.uid())

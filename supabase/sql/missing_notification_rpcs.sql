@@ -43,6 +43,17 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Kalderen skal have en gyldig pending anmodning til kampen.
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.match_join_requests r
+    WHERE r.match_id = p_match_id
+      AND r.user_id = v_caller
+      AND r.status = 'pending'
+  ) THEN
+    RAISE EXCEPTION 'Ingen gyldig pending anmodning for denne kamp';
+  END IF;
+
   INSERT INTO public.notifications (user_id, type, title, body, match_id, read)
   VALUES (v_creator, 'match_invite', p_title, p_body, p_match_id, false);
 END;

@@ -795,7 +795,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       // Notify creator BEFORE delete (while still in match_players so RPC check passes)
       const isCreator = match && String(match.creator_id) === String(user.id);
       if (!isCreator && match?.creator_id) {
-        createNotification(match.creator_id, 'match_cancelled', 'Spiller afmeldt ❌', `${myDisplayName} er afmeldt kampen.`, matchId);
+        await createNotification(match.creator_id, 'match_cancelled', 'Spiller afmeldt ❌', `${myDisplayName} er afmeldt kampen.`, matchId);
       }
       const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
       if (error) throw error;

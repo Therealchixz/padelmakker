@@ -221,7 +221,10 @@ export function MakkereTab({ user, showToast }) {
   }, [players, displayElo, user.id, myElo]);
 
   const { exposureCountByUserId, inviteStatsByUserId } = useMemo(
-    () => getMatchmakingSignalMaps(user.id),
+    () => {
+      void telemetryVersion;
+      return getMatchmakingSignalMaps(user.id);
+    },
     [user.id, telemetryVersion]
   );
 

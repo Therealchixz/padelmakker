@@ -14,11 +14,40 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_is_admin boolean := false;
+  v_pin_verified boolean := false;
 BEGIN
-  RETURN EXISTS (
+  IF v_uid IS NULL THEN
+    RETURN false;
+  END IF;
+
+  SELECT EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role = 'admin'
-  );
+    WHERE id = v_uid AND role = 'admin'
+  ) INTO v_is_admin;
+
+  IF NOT v_is_admin THEN
+    RETURN false;
+  END IF;
+
+  -- Hvis PIN-tabeller ikke findes endnu, behandles admin som ikke-verificeret.
+  IF to_regclass('public.admin_pin_sessions') IS NULL THEN
+    RETURN false;
+  END IF;
+
+  EXECUTE '
+    SELECT EXISTS (
+      SELECT 1
+      FROM public.admin_pin_sessions s
+      WHERE s.user_id = $1
+        AND s.verified_until > now()
+    )'
+  INTO v_pin_verified
+  USING v_uid;
+
+  RETURN COALESCE(v_pin_verified, false);
 END;
 $$;
 

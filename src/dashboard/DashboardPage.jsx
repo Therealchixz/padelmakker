@@ -620,10 +620,16 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
     setFeedbackSending(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Du skal vaere logget ind for at sende indberetning.");
+      }
+
       const response = await fetch(`${supabaseUrl}/functions/v1/report-feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           category: feedbackCategory,

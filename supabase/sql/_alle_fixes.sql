@@ -237,6 +237,10 @@ BEGIN
     INSERT INTO public.notifications (user_id,type,title,body,match_id,read) VALUES (p_user_id,p_type,p_title,p_body,p_match_id,false); RETURN;
   END IF;
   IF p_match_id IS NULL THEN RAISE EXCEPTION 'Manglende match_id for notifikation til anden bruger'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.match_players mp WHERE mp.match_id=p_match_id AND mp.user_id=p_user_id)
+    AND NOT EXISTS(SELECT 1 FROM public.matches m WHERE m.id=p_match_id AND m.creator_id=p_user_id) THEN
+    RAISE EXCEPTION 'Modtager er ikke relateret til denne kamp';
+  END IF;
   IF EXISTS(SELECT 1 FROM public.match_players mp WHERE mp.match_id=p_match_id AND mp.user_id=(SELECT auth.uid()))
     OR EXISTS(SELECT 1 FROM public.matches m WHERE m.id=p_match_id AND m.creator_id=(SELECT auth.uid())) THEN
     INSERT INTO public.notifications (user_id,type,title,body,match_id,read) VALUES (p_user_id,p_type,p_title,p_body,p_match_id,false); RETURN;
