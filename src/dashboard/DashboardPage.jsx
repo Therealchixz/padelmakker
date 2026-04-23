@@ -561,6 +561,14 @@ export function DashboardPage({ user, onLogout, showToast }) {
         title: 'Mere-menu',
         description: 'Under “Mere” finder du bl.a. Profil, Ranking, Beskeder og øvrige funktioner.',
       });
+
+      base.push({
+        id: 'profile',
+        tab: 'profil',
+        selector: '[data-tour="profile-main"]',
+        title: 'Din profil',
+        description: 'Her opdaterer du profil, følger ELO-udvikling og styrer dine personlige præferencer. Det er dit vigtigste udgangspunkt i appen.',
+      });
     } else {
       base.push(
         {
@@ -571,21 +579,14 @@ export function DashboardPage({ user, onLogout, showToast }) {
           description: 'Her kan du følge ELO, placering og udvikling over tid.',
         },
         {
-          id: 'account',
-          selector: '[data-tour="account-menu-btn"]',
-          title: 'Konto & hjælp',
-          description: 'Her åbner du profilmenuen, finder hjælpepunkter og kan starte guiden igen senere.',
+          id: 'profile-menu',
+          selector: '[data-tour="account-menu-profile-btn"]',
+          openAccountMenu: true,
+          title: 'Profil i menuen',
+          description: 'Her åbner du din profil fra menuen. Når guiden slutter, sender vi dig direkte til profilfanen.',
         }
       );
     }
-
-    base.push({
-      id: 'profile',
-      tab: 'profil',
-      selector: '[data-tour="profile-main"]',
-      title: 'Din profil',
-      description: 'Her opdaterer du profil, følger ELO-udvikling og styrer dine personlige præferencer. Det er dit vigtigste udgangspunkt i appen.',
-    });
 
     return base;
   }, [isMobileView, tabTourSelector]);
@@ -611,6 +612,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
     persistTourCompleted();
     setTourOpen(false);
     setTourStepIndex(0);
+    setMoreOpen(false);
+    setMobileMoreOpen(false);
+    setAccountOpen(false);
     if (withToastMessage) showToast(withToastMessage);
   }, [persistTourCompleted, showToast]);
 
@@ -702,6 +706,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
     }, 900);
     return () => window.clearTimeout(timer);
   }, [tourStorageKey]);
+
+  useEffect(() => {
+    if (!tourOpen) return;
+    const step = tourSteps[tourStepIndex];
+    const shouldOpenAccountMenu = Boolean(step?.openAccountMenu);
+    setAccountOpen((isOpen) => (isOpen === shouldOpenAccountMenu ? isOpen : shouldOpenAccountMenu));
+  }, [tourOpen, tourStepIndex, tourSteps]);
 
   useEffect(() => {
     if (!tourOpen) return;
@@ -988,6 +999,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             </div>
             <button
               type="button"
+              data-tour="account-menu-profile-btn"
               onClick={() => {
                 setTab("profil");
                 setAccountOpen(false);
@@ -1160,8 +1172,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
         onNext={handleTourNext}
         onSkip={() => closeTour("Guiden er lukket. Du kan starte den igen i menuen.")}
         onFinish={() => {
-          closeTour("Guide gennemført. God fornøjelse!");
-          setTab("hjem");
+          setTab("profil");
+          closeTour("Guide gennemført. Du er nu klar til at bruge din profil.");
         }}
       />
 
