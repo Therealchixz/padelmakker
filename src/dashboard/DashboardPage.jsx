@@ -572,7 +572,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
     const inAdminTab = tab === "admin";
     if (wasInAdminTabRef.current && !inAdminTab) {
       setAdminPinUnlocked(false);
-      void supabase.rpc("admin_clear_pin_session").catch(() => {});
+      void (async () => {
+        try {
+          await supabase.rpc("admin_clear_pin_session");
+        } catch {
+          // Best effort cleanup; PIN prompt vises stadig næste gang.
+        }
+      })();
     }
     wasInAdminTabRef.current = inAdminTab;
   }, [tab, isAdmin]);
