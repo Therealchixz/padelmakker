@@ -111,7 +111,7 @@ BEGIN
   END IF;
 
   INSERT INTO public.admin_pin_settings AS s (user_id, pin_hash, failed_attempts, lock_until, updated_at)
-  VALUES (v_uid, crypt(p_pin, gen_salt('bf', 10)), 0, NULL, now())
+  VALUES (v_uid, extensions.crypt(p_pin, extensions.gen_salt('bf', 10)), 0, NULL, now())
   ON CONFLICT (user_id) DO UPDATE
     SET pin_hash = EXCLUDED.pin_hash,
         failed_attempts = 0,
@@ -188,7 +188,7 @@ BEGIN
     );
   END IF;
 
-  IF crypt(p_pin, v_setting.pin_hash) <> v_setting.pin_hash THEN
+  IF extensions.crypt(p_pin, v_setting.pin_hash) <> v_setting.pin_hash THEN
     v_attempts := COALESCE(v_setting.failed_attempts, 0) + 1;
     UPDATE public.admin_pin_settings s
       SET failed_attempts = v_attempts,
