@@ -1151,7 +1151,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
         onBack={handleTourBack}
         onNext={handleTourNext}
         onSkip={() => closeTour("Guiden er lukket. Du kan starte den igen i menuen.")}
-        onFinish={() => closeTour("Guide gennemført. God fornøjelse!")}
+        onFinish={() => {
+          closeTour("Guide gennemført. God fornøjelse!");
+          setTab("hjem");
+        }}
       />
 
       {feedbackOpen && createPortal(
