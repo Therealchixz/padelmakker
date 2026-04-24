@@ -770,10 +770,39 @@ export function DashboardPage({ user, onLogout, showToast }) {
     wasInAdminTabRef.current = inAdminTab;
   }, [tab, isAdmin]);
 
+  const openFeedbackModal = useCallback(() => {
+    setAccountOpen(false);
+    setMobileMoreOpen(false);
+    setFeedbackCategory(FEEDBACK_DEFAULT_CATEGORY);
+    setFeedbackPriority(FEEDBACK_DEFAULT_PRIORITY);
+    setFeedbackTopic("");
+    setFeedbackMessage("");
+    setFeedbackOpen(true);
+  }, []);
+
+  const closeFeedbackModal = useCallback((options = {}) => {
+    const force = options.force === true;
+    if (feedbackSending && !force) return false;
+    const hasDraft = feedbackTopic.trim().length > 0 || feedbackMessage.trim().length > 0;
+    if (!force && hasDraft) {
+      const confirmed = window.confirm("Du har tekst du ikke har sendt. Vil du lukke?");
+      if (!confirmed) return false;
+    }
+    setFeedbackOpen(false);
+    setFeedbackCategory(FEEDBACK_DEFAULT_CATEGORY);
+    setFeedbackPriority(FEEDBACK_DEFAULT_PRIORITY);
+    setFeedbackTopic("");
+    setFeedbackMessage("");
+    return true;
+  }, [feedbackMessage, feedbackSending, feedbackTopic]);
+
   useEffect(() => {
     if (!feedbackOpen) return undefined;
     const onKeyDown = (event) => {
-      if (event.key === "Escape" && !feedbackSending) setFeedbackOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeFeedbackModal();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     const prevOverflow = document.body.style.overflow;
@@ -782,15 +811,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prevOverflow;
     };
-  }, [feedbackOpen, feedbackSending]);
-
-  const openFeedbackModal = useCallback(() => {
-    setAccountOpen(false);
-    setMobileMoreOpen(false);
-    setFeedbackCategory(FEEDBACK_DEFAULT_CATEGORY);
-    setFeedbackPriority(FEEDBACK_DEFAULT_PRIORITY);
-    setFeedbackOpen(true);
-  }, []);
+  }, [closeFeedbackModal, feedbackOpen]);
 
   const submitFeedbackReport = useCallback(async () => {
     const message = feedbackMessage.trim();
@@ -839,11 +860,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         throw new Error(details || "Serveren kunne ikke modtage indberetningen.");
       }
 
-      setFeedbackOpen(false);
-      setFeedbackCategory(FEEDBACK_DEFAULT_CATEGORY);
-      setFeedbackPriority(FEEDBACK_DEFAULT_PRIORITY);
-      setFeedbackTopic("");
-      setFeedbackMessage("");
+      closeFeedbackModal({ force: true });
       showToast("Tak! Din indberetning er sendt.");
     } catch (error) {
       const messageText = error instanceof Error ? error.message : "Kunne ikke sende indberetningen.";
@@ -851,7 +868,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     } finally {
       setFeedbackSending(false);
     }
-  }, [feedbackCategory, feedbackPriority, feedbackMessage, feedbackTopic, showToast, location.pathname, location.search, displayName, authUser?.email, user?.email, user?.id]);
+  }, [closeFeedbackModal, feedbackCategory, feedbackPriority, feedbackMessage, feedbackTopic, showToast, location.pathname, location.search, displayName, authUser?.email, user?.email, user?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -1190,9 +1207,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           role="dialog"
           aria-modal="true"
           aria-label="Rapportér fejl"
-          onMouseDown={() => {
-            if (!feedbackSending) setFeedbackOpen(false);
-          }}
+          onClick={closeFeedbackModal}
           style={{
             position: "fixed",
             inset: 0,
@@ -1205,7 +1220,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           }}
         >
           <div
-            onMouseDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
             style={{
               width: "min(560px, 100%)",
               background: theme.surface,
@@ -1322,7 +1337,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             <div style={{ padding: "12px 16px", borderTop: "1px solid " + theme.border, display: "flex", justifyContent: "flex-end", gap: "8px" }}>
               <button
                 type="button"
-                onClick={() => setFeedbackOpen(false)}
+                onClick={closeFeedbackModal}
                 disabled={feedbackSending}
                 style={{
                   ...btn(false),

@@ -46,6 +46,71 @@ export function HomeTab({ user, setTab }) {
   const [feedLoading, setFeedLoading] = useState(true);
   const [viewLeague, setViewLeague] = useState(null);
   const [viewMatch, setViewMatch] = useState(null);
+  const tournamentModalRef = useRef(null);
+  const matchModalRef = useRef(null);
+  const leagueModalRef = useRef(null);
+  const closeViewTournament = useCallback(() => setViewTournament(null), []);
+  const closeViewMatch = useCallback(() => setViewMatch(null), []);
+  const closeViewLeague = useCallback(() => setViewLeague(null), []);
+
+  useEffect(() => {
+    const modalKey = viewTournament ? "tournament" : viewMatch ? "match" : viewLeague ? "league" : null;
+    if (!modalKey) return undefined;
+
+    const modalEl =
+      modalKey === "tournament" ? tournamentModalRef.current
+        : modalKey === "match" ? matchModalRef.current
+          : leagueModalRef.current;
+    if (!modalEl) return undefined;
+
+    const closeActiveModal =
+      modalKey === "tournament" ? closeViewTournament
+        : modalKey === "match" ? closeViewMatch
+          : closeViewLeague;
+
+    const selector = [
+      'button:not([disabled])',
+      'a[href]',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+    const focusable = Array.from(modalEl.querySelectorAll(selector));
+    const firstFocusable = focusable[0] || modalEl;
+    const lastFocusable = focusable[focusable.length - 1] || modalEl;
+    window.requestAnimationFrame(() => {
+      if (typeof firstFocusable.focus === "function") firstFocusable.focus();
+    });
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeActiveModal();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      if (!focusable.length) {
+        event.preventDefault();
+        return;
+      }
+      const active = document.activeElement;
+      if (event.shiftKey) {
+        if (active === firstFocusable || active === modalEl) {
+          event.preventDefault();
+          lastFocusable.focus();
+        }
+        return;
+      }
+      if (active === lastFocusable) {
+        event.preventDefault();
+        firstFocusable.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [closeViewLeague, closeViewMatch, closeViewTournament, viewLeague, viewMatch, viewTournament]);
 
   const FEED_INITIAL_COUNT = 10;
   const FEED_PAGE_SIZE = 10;
@@ -958,14 +1023,25 @@ export function HomeTab({ user, setTab }) {
 
       {/* Modals */}
       {viewTournament && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} onClick={() => setViewTournament(null)}>
-          <div style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "400px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Americano resultatdetaljer"
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
+          onClick={closeViewTournament}
+        >
+          <div
+            ref={tournamentModalRef}
+            tabIndex={-1}
+            style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "400px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
+            onClick={e => e.stopPropagation()}
+          >
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Americano Resultat</div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewTournament.tournamentName}</h3>
               </div>
-              <button onClick={() => setViewTournament(null)} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} /></button>
+              <button type="button" aria-label="Luk turneringsdetaljer" onClick={closeViewTournament} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} aria-hidden="true" /></button>
             </div>
             
             <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -992,15 +1068,26 @@ export function HomeTab({ user, setTab }) {
             </div>
             
             <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
-              <button onClick={() => setViewTournament(null)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
+              <button type="button" onClick={closeViewTournament} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
             </div>
           </div>
         </div>
       )}
 
       {viewMatch && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} onClick={() => setViewMatch(null)}>
-          <div style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "460px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Kampdetaljer"
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
+          onClick={closeViewMatch}
+        >
+          <div
+            ref={matchModalRef}
+            tabIndex={-1}
+            style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "460px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
+            onClick={e => e.stopPropagation()}
+          >
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
@@ -1010,7 +1097,7 @@ export function HomeTab({ user, setTab }) {
                   {viewMatch.title}
                 </h3>
               </div>
-              <button onClick={() => setViewMatch(null)} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} /></button>
+              <button type="button" aria-label="Luk kampdetaljer" onClick={closeViewMatch} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} aria-hidden="true" /></button>
             </div>
 
             <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -1091,7 +1178,7 @@ export function HomeTab({ user, setTab }) {
             </div>
 
             <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
-              <button onClick={() => setViewMatch(null)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
+              <button type="button" onClick={closeViewMatch} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
             </div>
           </div>
         </div>
@@ -1106,14 +1193,25 @@ export function HomeTab({ user, setTab }) {
       )}
 
       {viewLeague && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} onClick={() => setViewLeague(null)}>
-          <div style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "400px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Ligastilling detaljer"
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
+          onClick={closeViewLeague}
+        >
+          <div
+            ref={leagueModalRef}
+            tabIndex={-1}
+            style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "400px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
+            onClick={e => e.stopPropagation()}
+          >
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <div style={{ fontSize: "10px", color: theme.blue, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Ligaresultat</div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewLeague.leagueName}</h3>
               </div>
-              <button onClick={() => setViewLeague(null)} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} /></button>
+              <button type="button" aria-label="Luk ligastilling detaljer" onClick={closeViewLeague} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} aria-hidden="true" /></button>
             </div>
             <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
               {viewLeague.standings.map((t, idx) => {
@@ -1141,7 +1239,7 @@ export function HomeTab({ user, setTab }) {
               })}
             </div>
             <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
-              <button onClick={() => setViewLeague(null)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
+              <button type="button" onClick={closeViewLeague} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
             </div>
           </div>
         </div>
