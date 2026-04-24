@@ -489,6 +489,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [adminPinUnlocked, setAdminPinUnlocked] = useState(false);
   const hasPrefetchedTabsRef = useRef(false);
   const lastProfileRefreshAtRef = useRef(0);
+  const lastNonAdminTabRef = useRef(tab !== "admin" ? tab : "hjem");
   const wasInAdminTabRef = useRef(false);
   const hasAutoStartedTourRef = useRef(false);
   const accountBtnRef = useRef(null);
@@ -717,6 +718,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   useEffect(() => {
     if (tab !== "beskeder") setMobileConversationOpen(false);
+  }, [tab]);
+
+  useEffect(() => {
+    if (tab === "admin") return;
+    lastNonAdminTabRef.current = tab;
   }, [tab]);
 
   useEffect(() => {
@@ -1132,7 +1138,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           userId={user?.id}
           showToast={showToast}
           onUnlocked={() => setAdminPinUnlocked(true)}
-          onCancel={() => setTab("hjem")}
+          onCancel={() => setTab(lastNonAdminTabRef.current || "hjem")}
         />
       )}
 
