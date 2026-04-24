@@ -429,7 +429,7 @@ function useUnreadKampeNotificationsCount(userId) {
   return count;
 }
 
-const PRIMARY_TAB_IDS = ["hjem", "makkere", "kampe", "beskeder", "ranking"];
+const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder"];
 const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
 const TOUR_VERSION = 1;
 
@@ -473,9 +473,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const setTab = useCallback((t) => navigate("/dashboard/" + t), [navigate]);
 
   const [dark, setDark] = useDarkMode();
-  const [moreOpen, setMoreOpen] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
-  const [morePos, setMorePos] = useState(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [accountPos, setAccountPos] = useState(null);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
@@ -493,8 +491,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const lastProfileRefreshAtRef = useRef(0);
   const wasInAdminTabRef = useRef(false);
   const hasAutoStartedTourRef = useRef(false);
-  const moreBtnRef = useRef(null);
-  const moreDropRef = useRef(null);
   const accountBtnRef = useRef(null);
   const accountDropRef = useRef(null);
   const tourStorageKey = user?.id ? `pm_dash_tour_v${TOUR_VERSION}_done_${user.id}` : null;
@@ -608,7 +604,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [tourStorageKey]);
 
   const startTour = useCallback(() => {
-    setMoreOpen(false);
     setMobileMoreOpen(false);
     setAccountOpen(false);
     setTourStepIndex(0);
@@ -619,7 +614,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
     persistTourCompleted();
     setTourOpen(false);
     setTourStepIndex(0);
-    setMoreOpen(false);
     setMobileMoreOpen(false);
     setAccountOpen(false);
     if (withToastMessage) showToast(withToastMessage);
@@ -632,21 +626,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const handleTourNext = useCallback(() => {
     setTourStepIndex((prev) => Math.min(tourSteps.length - 1, prev + 1));
   }, [tourSteps.length]);
-
-  useEffect(() => {
-    if (!moreOpen) return;
-    const rect = moreBtnRef.current?.getBoundingClientRect();
-    if (rect) {
-      const left = Math.min(rect.left, window.innerWidth - 170);
-      setMorePos({ top: rect.bottom + 4, left });
-    }
-    const handler = (e) => {
-      if (moreBtnRef.current?.contains(e.target) || moreDropRef.current?.contains(e.target)) return;
-      setMoreOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [moreOpen]);
 
   useEffect(() => {
     if (!accountOpen) return;
@@ -685,7 +664,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [tab, refreshProfileQuiet]);
 
   useEffect(() => {
-    setMoreOpen(false);
     setMobileMoreOpen(false);
     setAccountOpen(false);
   }, [tab]);
@@ -923,12 +901,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
   ];
   // Profil vises i konto-dropdown på desktop, men beholdes i mobilens "Mere"-menu.
   if (isMobileView) allTabs.push({ id: "profil", label: "Profil", icon: <Settings size={15} /> });
-  if (isAdmin) allTabs.push({ id: "admin", label: "Admin", icon: <ShieldCheck size={15} /> });
+  if (isAdmin && isMobileView) allTabs.push({ id: "admin", label: "Admin", icon: <ShieldCheck size={15} /> });
 
   const primaryTabs = allTabs.filter(t => PRIMARY_TAB_IDS.includes(t.id));
-  const moreTabs    = allTabs.filter(t => !PRIMARY_TAB_IDS.includes(t.id) && t.id !== "liga");
-  const moreIsActive = moreTabs.some(t => t.id === tab);
-  const moreBadge = moreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const mobilePrimaryTabs = allTabs.filter(t => ["hjem", "makkere", "baner", "kampe"].includes(t.id));
   const mobileMoreTabs = allTabs.filter(t => !["hjem", "makkere", "baner", "kampe"].includes(t.id) && t.id !== "liga");
   const mobileMoreIsActive = mobileMoreTabs.some(t => t.id === tab);
@@ -1018,6 +993,19 @@ export function DashboardPage({ user, onLogout, showToast }) {
               <div style={{ fontSize: "11px", color: theme.textMid, marginBottom: "4px" }}>Logget ind som</div>
               <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
             </div>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTab("admin");
+                  setAccountOpen(false);
+                }}
+                style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", borderBottom: "1px solid " + theme.border, background: "transparent", color: theme.text, fontWeight: 600, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+              >
+                <ShieldCheck size={15} />
+                Admin
+              </button>
+            )}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", borderBottom: "1px solid " + theme.border }}>
               <span style={{ fontSize: "13px", fontWeight: 600, color: theme.textMid }}>Notifikationer</span>
               {!isMobileView && <NotificationBell />}
@@ -1092,48 +1080,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
           </button>
         );})}
 
-        {/* Mere dropdown */}
-        <button
-          ref={moreBtnRef}
-          type="button"
-          data-tour="tab-mere"
-          onClick={() => setMoreOpen(o => !o)}
-          style={{ ...tabBtnStyle(moreIsActive), gap: "3px" }}
-        >
-          <span aria-hidden style={{ display: "flex", position: "relative" }}>
-            <ChevronDown size={15} style={{ transition: "transform 0.15s", transform: moreOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
-            {moreBadge > 0 && (
-              <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.red, color: theme.onAccent, borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
-                {moreBadge > 9 ? "9+" : moreBadge}
-              </span>
-            )}
-          </span>
-          <span className="pm-tab-label">Mere</span>
-        </button>
-
-        {moreOpen && morePos && createPortal(
-          <div ref={moreDropRef} style={{ position: "fixed", top: morePos.top, left: morePos.left, background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", boxShadow: theme.menuShadow, zIndex: 9999, minWidth: "165px", overflow: "hidden" }}>
-            {moreTabs.map((t, i) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => { setTab(t.id); setMoreOpen(false); }}
-                style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "11px 16px", background: tab === t.id ? theme.accentBg : "transparent", color: tab === t.id ? theme.accent : theme.text, border: "none", borderBottom: i < moreTabs.length - 1 ? "1px solid " + theme.border : "none", fontSize: "13px", fontWeight: tab === t.id ? 700 : 500, cursor: "pointer", fontFamily: font, textAlign: "left" }}
-              >
-                <span style={{ display: "flex", position: "relative" }}>
-                  {t.icon}
-                  {t.badge && (
-                    <span style={{ position: "absolute", top: "-4px", right: "-6px", background: theme.red, color: theme.onAccent, borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
-                      {t.badge > 9 ? "9+" : t.badge}
-                    </span>
-                  )}
-                </span>
-                {t.label}
-              </button>
-            ))}
-          </div>,
-          document.body
-        )}
       </div>
 
       <div className="pm-dash-main">
