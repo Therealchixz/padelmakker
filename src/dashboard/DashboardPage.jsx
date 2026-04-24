@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
-import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu, Bug, Compass } from 'lucide-react';
+import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu, Bug, Compass, Sun, Moon } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
 import { HomeTab } from './HomeTab';
 import { ShieldCheck } from 'lucide-react';
@@ -1086,6 +1086,59 @@ export function DashboardPage({ user, onLogout, showToast }) {
           </button>
         );})}
 
+        {!isMobileView && (
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", paddingLeft: "8px", flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={() => setDark((d) => !d)}
+              title={dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
+              aria-label={dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
+              style={{
+                width: 60,
+                height: 30,
+                borderRadius: 15,
+                border: "none",
+                cursor: "pointer",
+                flexShrink: 0,
+                background: dark ? "#1e293b" : "#e5e7eb",
+                position: "relative",
+                transition: "background 0.25s",
+                boxShadow: dark ? "inset 0 2px 5px rgba(0,0,0,0.6)" : "inset 0 2px 4px rgba(0,0,0,0.12)",
+                padding: 0,
+              }}
+            >
+              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? "#475569" : "#f59e0b", transition: "color 0.25s" }}>
+                <Sun size={13} />
+              </span>
+              <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? "#94a3b8" : "#9ca3af", transition: "color 0.25s" }}>
+                <Moon size={13} />
+              </span>
+              <div
+                style={{
+                  position: "absolute",
+                  top: 3,
+                  left: dark ? 31 : 3,
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  background: dark ? "#334155" : "#ffffff",
+                  transition: "left 0.25s",
+                  boxShadow: dark ? "0 1px 5px rgba(0,0,0,0.7)" : "0 1px 4px rgba(0,0,0,0.2)",
+                  zIndex: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {dark
+                  ? <Moon size={13} style={{ color: "#e2e8f0" }} />
+                  : <Sun size={13} style={{ color: "#f59e0b" }} />
+                }
+              </div>
+            </button>
+          </div>
+        )}
+
       </div>
 
       <div className="pm-dash-main">
@@ -1113,7 +1166,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             {tab === "ranking"  && <RankingTabLazy user={user} />}
             {tab === "liga"     && <LigaTabLazy user={user} showToast={showToast} />}
             {tab === "beskeder" && <BeskedTabLazy user={user} onMobileConversationStateChange={setMobileConversationOpen} />}
-            {tab === "profil"   && <ProfilTabLazy user={user} showToast={showToast} setTab={setTab} dark={dark} onDarkModeChange={setDark} />}
+            {tab === "profil"   && <ProfilTabLazy user={user} showToast={showToast} setTab={setTab} />}
             {tab === "admin"    && isAdmin && adminPinUnlocked && <AdminTabLazy />}
             {tab === "admin"    && isAdmin && !adminPinUnlocked && (
               <div
