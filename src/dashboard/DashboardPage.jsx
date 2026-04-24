@@ -1132,6 +1132,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           userId={user?.id}
           showToast={showToast}
           onUnlocked={() => setAdminPinUnlocked(true)}
+          onCancel={() => setTab("hjem")}
         />
       )}
 

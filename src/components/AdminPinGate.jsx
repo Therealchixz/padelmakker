@@ -25,7 +25,7 @@ function formatDaTime(value) {
   }).format(date);
 }
 
-export function AdminPinGate({ userId, showToast, onUnlocked }) {
+export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
   const [loading, setLoading] = useState(true);
   const [hasPin, setHasPin] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -76,6 +76,17 @@ export function AdminPinGate({ userId, showToast, onUnlocked }) {
     void loadStatus();
     return () => { cancelled = true; };
   }, [userId, onUnlocked]);
+
+  useEffect(() => {
+    if (!onCancel) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape' || busy) return;
+      event.preventDefault();
+      onCancel();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [busy, onCancel]);
 
   const handleSetup = async () => {
     setErrorText('');
@@ -283,6 +294,21 @@ export function AdminPinGate({ userId, showToast, onUnlocked }) {
             gap: '8px',
           }}
         >
+          <button
+            type="button"
+            onClick={() => onCancel?.()}
+            disabled={loading || busy}
+            style={{
+              ...btn(false),
+              minHeight: '36px',
+              fontSize: '12px',
+              padding: '8px 12px',
+              opacity: loading || busy ? 0.65 : 1,
+              cursor: loading || busy ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Annuller
+          </button>
           <button
             type="button"
             onClick={() => {
