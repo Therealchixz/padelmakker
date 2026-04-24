@@ -220,7 +220,7 @@ export function AmericanoCompletedSummary({
         </div>
         <ChevronDown
           size={18}
-          color="#64748B"
+          color="var(--pm-text-light)"
           strokeWidth={2}
           style={{
             flexShrink: 0,
@@ -232,12 +232,12 @@ export function AmericanoCompletedSummary({
       </button>
 
       {open && (
-        <div style={{ padding: '0 12px 14px', borderTop: '1px solid #E2E8F0' }}>
+        <div style={{ padding: '0 12px 14px', borderTop: '1px solid var(--pm-border)' }}>
           {loading && (
             <div style={{ fontSize: 12, color: 'var(--pm-text-light)', paddingTop: 12 }}>Henter resultater...</div>
           )}
           {fetchErr && !loading && (
-            <div style={{ fontSize: 12, color: '#B45309', paddingTop: 12 }}>{fetchErr}</div>
+            <div style={{ fontSize: 12, color: 'var(--pm-warning)', paddingTop: 12 }}>{fetchErr}</div>
           )}
           {!loading && matches !== undefined && (
             <>
@@ -262,9 +262,7 @@ export function AmericanoCompletedSummary({
                     return (
                       <li key={row.id}>
                         <span style={{ color: 'var(--pm-text)', fontWeight: idx === 0 ? 700 : 500 }}>{row.name}</span>
-                        {isMe ? (
-                          <span style={{ color: '#1D4ED8', fontWeight: 600 }}> (dig)</span>
-                        ) : null}
+                        {isMe ? <span style={{ color: 'var(--pm-accent)', fontWeight: 600 }}> (dig)</span> : null}
                         {' - '}
                         <strong style={{ color: 'var(--pm-text)' }}>{row.points}</strong> point
                       </li>
@@ -306,6 +304,8 @@ export function AmericanoCompletedSummary({
                     const teamAWin = ok && a > b
                     const teamBWin = ok && b > a
                     const tieMatch = ok && a === b
+                    const teamAHighlighted = Boolean(teamAWin || tieMatch)
+                    const teamBHighlighted = Boolean(teamBWin || tieMatch)
                     return (
                       <div
                         key={m.id}
@@ -363,11 +363,11 @@ export function AmericanoCompletedSummary({
                               gap: 8,
                               borderRadius: 8,
                               padding: '6px 8px',
-                              background: teamAWin || tieMatch ? mpal.bg : 'var(--pm-surface-alt)',
-                              border: `1px solid ${teamAWin || tieMatch ? mpal.border : 'var(--pm-border)'}`,
+                              background: teamAHighlighted ? mpal.bg : 'var(--pm-surface-alt)',
+                              border: `1px solid ${teamAHighlighted ? mpal.border : 'var(--pm-border)'}`,
                             }}
                           >
-                            <div style={{ minWidth: 0, lineHeight: 1.35 }}>
+                            <div style={{ minWidth: 0, lineHeight: 1.35, color: teamAHighlighted ? mpal.text : 'var(--pm-text)' }}>
                               <span style={{ fontWeight: 700 }}>{n1}</span> & <span style={{ fontWeight: 700 }}>{n2}</span>
                               {meOnA ? <span style={{ color: 'var(--pm-accent)', fontWeight: 700 }}> (jeres hold)</span> : null}
                             </div>
@@ -377,7 +377,7 @@ export function AmericanoCompletedSummary({
                                 textAlign: 'center',
                                 fontSize: 14,
                                 fontWeight: 800,
-                                color: teamAWin || tieMatch ? mpal.text : 'var(--pm-text-mid)',
+                                color: teamAHighlighted ? mpal.text : 'var(--pm-text-mid)',
                               }}
                             >
                               {ok ? a : '-'}
@@ -396,11 +396,11 @@ export function AmericanoCompletedSummary({
                               gap: 8,
                               borderRadius: 8,
                               padding: '6px 8px',
-                              background: teamBWin || tieMatch ? mpal.bg : 'var(--pm-surface-alt)',
-                              border: `1px solid ${teamBWin || tieMatch ? mpal.border : 'var(--pm-border)'}`,
+                              background: teamBHighlighted ? mpal.bg : 'var(--pm-surface-alt)',
+                              border: `1px solid ${teamBHighlighted ? mpal.border : 'var(--pm-border)'}`,
                             }}
                           >
-                            <div style={{ minWidth: 0, lineHeight: 1.35 }}>
+                            <div style={{ minWidth: 0, lineHeight: 1.35, color: teamBHighlighted ? mpal.text : 'var(--pm-text)' }}>
                               <span style={{ fontWeight: 700 }}>{n3}</span> & <span style={{ fontWeight: 700 }}>{n4}</span>
                               {meOnB ? <span style={{ color: 'var(--pm-accent)', fontWeight: 700 }}> (jeres hold)</span> : null}
                             </div>
@@ -410,7 +410,7 @@ export function AmericanoCompletedSummary({
                                 textAlign: 'center',
                                 fontSize: 14,
                                 fontWeight: 800,
-                                color: teamBWin || tieMatch ? mpal.text : 'var(--pm-text-mid)',
+                                color: teamBHighlighted ? mpal.text : 'var(--pm-text-mid)',
                               }}
                             >
                               {ok ? b : '-'}

@@ -84,6 +84,7 @@ function TeamBlock({
   pid2,
   score,
   outcome,
+  baseTextColor,
   showCheckForUser,
   userIdByPartId,
   currentUserId,
@@ -96,6 +97,7 @@ function TeamBlock({
   pid2: string
   score: number | null
   outcome: TeamOutcome
+  baseTextColor?: string
   showCheckForUser: boolean
   userIdByPartId: Map<string, string>
   currentUserId: string
@@ -103,8 +105,9 @@ function TeamBlock({
   teamLabel?: string
 }) {
   const scoreStr = score != null && !Number.isNaN(score) ? String(score) : '—'
-  const nameColor = outcome === 'loss' ? c.muted : c.text
-  const scoreColor = outcome === 'loss' ? c.muted : c.text
+  const resolvedBaseTextColor = baseTextColor || c.text
+  const nameColor = outcome === 'loss' ? 'var(--pm-text-mid)' : resolvedBaseTextColor
+  const scoreColor = outcome === 'loss' ? 'var(--pm-text-mid)' : resolvedBaseTextColor
   const scoreSize = outcome === 'tie' ? 24 : 26
   const scoreWeight = outcome === 'loss' ? 700 : 800
   return (
@@ -567,11 +570,12 @@ export function AmericanoResultsPanel({
             viewerOutcome === 'win' ? 'win' : viewerOutcome === 'loss' ? 'loss' : viewerOutcome === 'tie' ? 'tie' : 'neutral'
           const matchPal = americanoOutcomeColors[palKey]
           const isActiveRound = m.round_number === activeRoundNumber
-              const isPastRound = activeRoundNumber !== null && m.round_number < activeRoundNumber
-              const isFirstInActiveRound = isActiveRound && displayIdx === matchesDisplay.findIndex(x => x.round_number === activeRoundNumber)
-              
-              let containerOpacity = isPastRound ? 0.6 : 1
-              if (locked && !isActiveRound) containerOpacity = 0.65 
+          const isPastRound = activeRoundNumber !== null && m.round_number < activeRoundNumber
+          const isFirstInActiveRound =
+            isActiveRound && displayIdx === matchesDisplay.findIndex((x) => x.round_number === activeRoundNumber)
+
+          let containerOpacity = isPastRound ? 0.9 : 1
+          if (locked && !isActiveRound) containerOpacity = Math.min(containerOpacity, 0.92)
 
           return (
             <div
@@ -581,27 +585,29 @@ export function AmericanoResultsPanel({
                 marginBottom: 14,
                 padding: isActiveRound ? '14px 14px 6px' : '12px 12px 4px',
                 borderRadius: 10,
-                background: isActiveRound ? '#FFFBEB' : matchPal.bg,
-                border: isActiveRound ? `2px solid #F59E0B` : `1px solid ${matchPal.border}`,
-                boxShadow: isActiveRound ? '0 4px 14px rgba(245, 158, 11, 0.15)' : 'none',
+                background: isActiveRound ? 'var(--pm-warning-bg)' : matchPal.bg,
+                border: isActiveRound ? '2px solid var(--pm-warning-border)' : `1px solid ${matchPal.border}`,
+                boxShadow: isActiveRound ? '0 4px 14px color-mix(in srgb, var(--pm-warning) 24%, transparent)' : 'none',
                 opacity: containerOpacity,
                 transition: 'opacity 0.2s',
               }}
             >
               {isActiveRound && (
-                <div style={{
-                  background: onCourt ? '#10B981' : '#E2E8F0',
-                  color: onCourt ? '#fff' : '#475569',
-                  padding: '6px 12px',
-                  borderRadius: '6px 6px 0 0',
-                  margin: '-14px -14px 10px -14px',
-                  fontSize: 13,
-                  fontWeight: 800,
-                  textAlign: 'center',
-                  letterSpacing: '0.02em',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                }}>
-                  {onCourt ? '🎾 DU SPILLER NU (Bane ' + (m.court_index+1) + ')' : '☕ DU SIDDER OVER I DENNE RUNDE'}
+                <div
+                  style={{
+                    background: onCourt ? 'var(--pm-success)' : 'var(--pm-surface-alt)',
+                    color: onCourt ? 'var(--pm-on-accent)' : 'var(--pm-text-mid)',
+                    padding: '6px 12px',
+                    borderRadius: '6px 6px 0 0',
+                    margin: '-14px -14px 10px -14px',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    textAlign: 'center',
+                    letterSpacing: '0.02em',
+                    borderBottom: '1px solid var(--pm-border)',
+                  }}
+                >
+                  {onCourt ? '🎾 DU SPILLER NU (Bane ' + (m.court_index + 1) + ')' : '☕ DU SIDDER OVER I DENNE RUNDE'}
                 </div>
               )}
               <div
@@ -677,6 +683,7 @@ export function AmericanoResultsPanel({
                   pid2={m.team_a_p2}
                   score={displayA}
                   outcome={outcomeA}
+                  baseTextColor={matchPal.text}
                   showCheckForUser
                   userIdByPartId={userIdByPartId}
                   currentUserId={currentUserId}
@@ -720,6 +727,7 @@ export function AmericanoResultsPanel({
                   pid2={m.team_b_p2}
                   score={displayB}
                   outcome={outcomeB}
+                  baseTextColor={matchPal.text}
                   showCheckForUser
                   userIdByPartId={userIdByPartId}
                   currentUserId={currentUserId}
