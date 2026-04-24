@@ -1410,6 +1410,21 @@ export function DashboardPage({ user, onLogout, showToast }) {
           <button
             type="button"
             className="pm-mobile-more-row"
+            onClick={() => setDark((d) => !d)}
+            aria-pressed={dark}
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {dark ? <Moon size={16} /> : <Sun size={16} />}
+              Mørk tilstand
+            </span>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: dark ? theme.accent : theme.textMid }}>
+              {dark ? "Til" : "Fra"}
+            </span>
+          </button>
+          <button
+            type="button"
+            className="pm-mobile-more-row"
             onClick={openFeedbackModal}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
