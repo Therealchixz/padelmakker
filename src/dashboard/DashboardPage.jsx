@@ -429,7 +429,7 @@ function useUnreadKampeNotificationsCount(userId) {
   return count;
 }
 
-const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking"];
+const PRIMARY_TAB_IDS = ["hjem", "makkere", "kampe", "beskeder", "ranking"];
 const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
 const TOUR_VERSION = 1;
 
@@ -976,7 +976,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   padding: "0 5px",
                   borderRadius: "999px",
                   background: theme.red,
-                  color: "#fff",
+                  color: theme.onAccent,
                   fontSize: "10px",
                   fontWeight: 800,
                   display: "inline-flex",
@@ -1009,7 +1009,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               background: theme.surface,
               border: "1px solid " + theme.border,
               borderRadius: "12px",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.14)",
+              boxShadow: theme.menuShadow,
               zIndex: 9999,
               overflow: "visible",
             }}
@@ -1059,7 +1059,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 setAccountOpen(false);
                 onLogout();
               }}
-              style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", background: "transparent", color: "#b91c1c", fontWeight: 700, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+              style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", background: "transparent", color: theme.dangerStrong, fontWeight: 700, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
             >
               <LogOut size={15} />
               Log ud
@@ -1080,7 +1080,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             <span aria-hidden style={{ display: "flex", position: "relative" }}>
               {t.icon}
               {t.badge && (
-                <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.red, color: "#fff", borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
+                <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.red, color: theme.onAccent, borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
                   {t.badge > 9 ? "9+" : t.badge}
                 </span>
               )}
@@ -1103,7 +1103,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           <span aria-hidden style={{ display: "flex", position: "relative" }}>
             <ChevronDown size={15} style={{ transition: "transform 0.15s", transform: moreOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
             {moreBadge > 0 && (
-              <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.red, color: "#fff", borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
+              <span style={{ position: "absolute", top: "-5px", right: "-6px", background: theme.red, color: theme.onAccent, borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
                 {moreBadge > 9 ? "9+" : moreBadge}
               </span>
             )}
@@ -1112,7 +1112,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         </button>
 
         {moreOpen && morePos && createPortal(
-          <div ref={moreDropRef} style={{ position: "fixed", top: morePos.top, left: morePos.left, background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", boxShadow: "0 8px 32px rgba(0,0,0,0.14)", zIndex: 9999, minWidth: "165px", overflow: "hidden" }}>
+          <div ref={moreDropRef} style={{ position: "fixed", top: morePos.top, left: morePos.left, background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", boxShadow: theme.menuShadow, zIndex: 9999, minWidth: "165px", overflow: "hidden" }}>
             {moreTabs.map((t, i) => (
               <button
                 key={t.id}
@@ -1123,7 +1123,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 <span style={{ display: "flex", position: "relative" }}>
                   {t.icon}
                   {t.badge && (
-                    <span style={{ position: "absolute", top: "-4px", right: "-6px", background: theme.red, color: "#fff", borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
+                    <span style={{ position: "absolute", top: "-4px", right: "-6px", background: theme.red, color: theme.onAccent, borderRadius: "10px", fontSize: "9px", fontWeight: 800, padding: "1px 4px", lineHeight: 1.2 }}>
                       {t.badge > 9 ? "9+" : t.badge}
                     </span>
                   )}
@@ -1211,7 +1211,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0, 0, 0, 0.35)",
+            background: theme.overlay,
             zIndex: 10020,
             display: "flex",
             alignItems: "center",
@@ -1226,7 +1226,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               background: theme.surface,
               border: "1px solid " + theme.border,
               borderRadius: "14px",
-              boxShadow: "0 12px 40px rgba(0,0,0,0.22)",
+              boxShadow: theme.modalShadow,
               overflow: "hidden",
             }}
           >
@@ -1394,7 +1394,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 {t.icon}
                 {t.label}
                 {t.badge && (
-                  <span style={{ background: theme.red, color: "#fff", borderRadius: "10px", fontSize: "10px", fontWeight: 800, padding: "1px 6px", lineHeight: 1.3 }}>
+                  <span style={{ background: theme.red, color: theme.onAccent, borderRadius: "10px", fontSize: "10px", fontWeight: 800, padding: "1px 6px", lineHeight: 1.3 }}>
                     {t.badge > 9 ? "9+" : t.badge}
                   </span>
                 )}

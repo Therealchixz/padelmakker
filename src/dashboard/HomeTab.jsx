@@ -7,6 +7,7 @@ import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryU
 import { supabase } from '../lib/supabase';
 import { Users, MapPin, Swords, Trophy, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { AppModal } from '../components/AppModal';
 import { PlayerStatsModal } from '../components/PlayerStatsModal';
 import { levelLabel } from '../lib/platformConstants';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
@@ -46,71 +47,9 @@ export function HomeTab({ user, setTab }) {
   const [feedLoading, setFeedLoading] = useState(true);
   const [viewLeague, setViewLeague] = useState(null);
   const [viewMatch, setViewMatch] = useState(null);
-  const tournamentModalRef = useRef(null);
-  const matchModalRef = useRef(null);
-  const leagueModalRef = useRef(null);
   const closeViewTournament = useCallback(() => setViewTournament(null), []);
   const closeViewMatch = useCallback(() => setViewMatch(null), []);
   const closeViewLeague = useCallback(() => setViewLeague(null), []);
-
-  useEffect(() => {
-    const modalKey = viewTournament ? "tournament" : viewMatch ? "match" : viewLeague ? "league" : null;
-    if (!modalKey) return undefined;
-
-    const modalEl =
-      modalKey === "tournament" ? tournamentModalRef.current
-        : modalKey === "match" ? matchModalRef.current
-          : leagueModalRef.current;
-    if (!modalEl) return undefined;
-
-    const closeActiveModal =
-      modalKey === "tournament" ? closeViewTournament
-        : modalKey === "match" ? closeViewMatch
-          : closeViewLeague;
-
-    const selector = [
-      'button:not([disabled])',
-      'a[href]',
-      'input:not([disabled])',
-      'select:not([disabled])',
-      'textarea:not([disabled])',
-      '[tabindex]:not([tabindex="-1"])',
-    ].join(',');
-    const focusable = Array.from(modalEl.querySelectorAll(selector));
-    const firstFocusable = focusable[0] || modalEl;
-    const lastFocusable = focusable[focusable.length - 1] || modalEl;
-    window.requestAnimationFrame(() => {
-      if (typeof firstFocusable.focus === "function") firstFocusable.focus();
-    });
-
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeActiveModal();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      if (!focusable.length) {
-        event.preventDefault();
-        return;
-      }
-      const active = document.activeElement;
-      if (event.shiftKey) {
-        if (active === firstFocusable || active === modalEl) {
-          event.preventDefault();
-          lastFocusable.focus();
-        }
-        return;
-      }
-      if (active === lastFocusable) {
-        event.preventDefault();
-        firstFocusable.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [closeViewLeague, closeViewMatch, closeViewTournament, viewLeague, viewMatch, viewTournament]);
 
   const FEED_INITIAL_COUNT = 10;
   const FEED_PAGE_SIZE = 10;
@@ -457,7 +396,7 @@ export function HomeTab({ user, setTab }) {
     minHeight: "74px",
     padding: "10px 12px",
     border: "1px solid " + theme.border,
-    boxShadow: "0 1px 4px rgba(2, 6, 23, 0.04)",
+    boxShadow: theme.shadowSoft,
     background: theme.surface,
   };
 
@@ -564,8 +503,8 @@ export function HomeTab({ user, setTab }) {
   });
 
   const activityHighlightRowStyle = {
-    borderColor: "#BFDBFE",
-    boxShadow: "0 6px 18px rgba(37, 99, 235, 0.08)",
+    borderColor: theme.infoBorder,
+    boxShadow: theme.shadowAccent,
   };
 
   const activityCardStyle = (isHighlight, tone) => ({
@@ -669,13 +608,13 @@ export function HomeTab({ user, setTab }) {
         ))}
       </div>
 
-      <div style={{ background: "linear-gradient(135deg, #1E3A5F, #1D4ED8)", borderRadius: theme.radius, padding: "clamp(18px,4vw,24px)", marginBottom: "24px", color: "#fff", boxShadow: theme.shadow }}>
+      <div style={{ background: theme.brandGradient, borderRadius: theme.radius, padding: "clamp(18px,4vw,24px)", marginBottom: "24px", color: theme.onAccent, boxShadow: theme.shadow }}>
         <div style={{ fontSize: "10px", opacity: 0.65, marginBottom: "8px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Din ELO-rating</div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
           <span style={{ fontFamily: font, fontSize: "clamp(40px,10vw,52px)", fontWeight: 800, lineHeight: 1, letterSpacing: "-0.04em" }}>{elo}</span>
           <span style={{ fontSize: "13px", opacity: 0.65, maxWidth: "200px", lineHeight: 1.5 }}>Jo højere ELO, jo stærkere matcher du ift. andre spillere.</span>
         </div>
-        <div style={{ marginTop: "18px", background: "rgba(255,255,255,0.15)", borderRadius: "6px", height: "6px", overflow: "hidden" }}>
+        <div style={{ marginTop: "18px", background: theme.eloProgressTrack, borderRadius: "6px", height: "6px", overflow: "hidden" }}>
           <div style={{ width: eloBarPct + "%", height: "100%", background: theme.warm, borderRadius: "6px", transition: "width 0.4s ease" }} />
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px", fontSize: "10px", opacity: 0.55, letterSpacing: "0.04em" }}>
@@ -1022,20 +961,15 @@ export function HomeTab({ user, setTab }) {
       </div>
 
       {/* Modals */}
-      {viewTournament && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Americano resultatdetaljer"
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
-          onClick={closeViewTournament}
-        >
-          <div
-            ref={tournamentModalRef}
-            tabIndex={-1}
-            style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "400px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-            onClick={e => e.stopPropagation()}
-          >
+      <AppModal
+        open={Boolean(viewTournament)}
+        ariaLabel="Americano resultatdetaljer"
+        onClose={closeViewTournament}
+        maxWidth="400px"
+        zIndex={1000}
+      >
+        {viewTournament ? (
+          <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Americano Resultat</div>
@@ -1070,24 +1004,19 @@ export function HomeTab({ user, setTab }) {
             <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
               <button type="button" onClick={closeViewTournament} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        ) : null}
+      </AppModal>
 
-      {viewMatch && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Kampdetaljer"
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
-          onClick={closeViewMatch}
-        >
-          <div
-            ref={matchModalRef}
-            tabIndex={-1}
-            style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "460px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-            onClick={e => e.stopPropagation()}
-          >
+      <AppModal
+        open={Boolean(viewMatch)}
+        ariaLabel="Kampdetaljer"
+        onClose={closeViewMatch}
+        maxWidth="460px"
+        zIndex={1000}
+      >
+        {viewMatch ? (
+          <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
@@ -1180,9 +1109,9 @@ export function HomeTab({ user, setTab }) {
             <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
               <button type="button" onClick={closeViewMatch} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        ) : null}
+      </AppModal>
 
       {viewPlayer && (
         <PlayerStatsModal
@@ -1192,20 +1121,15 @@ export function HomeTab({ user, setTab }) {
         />
       )}
 
-      {viewLeague && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Ligastilling detaljer"
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
-          onClick={closeViewLeague}
-        >
-          <div
-            ref={leagueModalRef}
-            tabIndex={-1}
-            style={{ background: theme.surface, borderRadius: theme.radius, width: "100%", maxWidth: "400px", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}
-            onClick={e => e.stopPropagation()}
-          >
+      <AppModal
+        open={Boolean(viewLeague)}
+        ariaLabel="Ligastilling detaljer"
+        onClose={closeViewLeague}
+        maxWidth="400px"
+        zIndex={1000}
+      >
+        {viewLeague ? (
+          <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <div style={{ fontSize: "10px", color: theme.blue, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Ligaresultat</div>
@@ -1241,9 +1165,9 @@ export function HomeTab({ user, setTab }) {
             <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
               <button type="button" onClick={closeViewLeague} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        ) : null}
+      </AppModal>
     </div>
   );
 }
