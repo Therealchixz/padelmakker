@@ -520,6 +520,32 @@ button,
   box-sizing: border-box;
 }
 
+.pm-profile-header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.pm-profile-header-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.pm-profile-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pm-profile-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .pm-mobile-bottom-nav,
 .pm-mobile-more-backdrop,
 .pm-mobile-more-sheet {
@@ -560,6 +586,24 @@ button,
 
   .pm-tab-strip {
     display: none;
+  }
+
+  .pm-profile-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pm-profile-header-copy,
+  .pm-profile-header-top {
+    width: 100%;
+  }
+
+  .pm-profile-actions {
+    align-items: flex-start;
+  }
+
+  .pm-profile-name {
+    font-size: 18px !important;
   }
 
   .pm-dash-main {
