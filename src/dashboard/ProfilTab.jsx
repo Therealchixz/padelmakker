@@ -379,7 +379,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         </div>
 
         {/* Profile card */}
-        <div ref={overviewRef} style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
+        <div ref={overviewRef} className="pm-profile-card" style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
           <div className="pm-profile-header" style={{ marginBottom: "20px" }}>
             <AvatarCircle
               avatar={user.avatar}

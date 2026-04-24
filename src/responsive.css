@@ -593,17 +593,26 @@ button,
     gap: 12px;
   }
 
+  .pm-profile-card {
+    position: relative;
+  }
+
   .pm-profile-header-copy,
   .pm-profile-header-top {
     width: 100%;
   }
 
   .pm-profile-actions {
-    align-items: flex-start;
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    align-items: flex-end;
+    z-index: 2;
   }
 
   .pm-profile-name {
     font-size: 18px !important;
+    max-width: calc(100% - 152px);
   }
 
   .pm-dash-main {
