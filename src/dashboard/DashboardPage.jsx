@@ -455,6 +455,22 @@ const tabBtnStyle = (active) => ({
   position: "relative",
 });
 
+const accountMenuRowBtnStyle = ({ isDanger = false, isLast = false } = {}) => ({
+  ...btn(false, { size: 'sm', fontWeight: isDanger ? 700 : 600 }),
+  width: "100%",
+  justifyContent: "flex-start",
+  border: "none",
+  borderBottom: isLast ? "none" : "1px solid " + theme.border,
+  borderRadius: 0,
+  background: "transparent",
+  boxShadow: "none",
+  color: isDanger ? theme.dangerStrong : theme.text,
+  fontSize: "13px",
+  padding: "11px 12px",
+  textAlign: "left",
+  fontFamily: font,
+});
+
 export function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser, refreshProfileQuiet } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
@@ -935,10 +951,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
             data-tour="account-menu-btn"
             onClick={() => setAccountOpen((open) => !open)}
             style={{
-              ...btn(false),
+              ...btn(false, { size: 'sm', radius: 'pill', fontWeight: 600 }),
               padding: "6px 10px",
               fontSize: "12px",
-              borderRadius: "999px",
               display: "inline-flex",
               alignItems: "center",
               gap: "8px",
@@ -1006,7 +1021,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   setTab("admin");
                   setAccountOpen(false);
                 }}
-                style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", borderBottom: "1px solid " + theme.border, background: "transparent", color: theme.text, fontWeight: 600, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+                style={accountMenuRowBtnStyle()}
               >
                 <ShieldCheck size={15} />
                 Admin
@@ -1023,7 +1038,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 setTab("profil");
                 setAccountOpen(false);
               }}
-              style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", borderBottom: "1px solid " + theme.border, background: "transparent", color: theme.text, fontWeight: 600, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+              style={accountMenuRowBtnStyle()}
             >
               <Settings size={15} />
               Min profil
@@ -1034,7 +1049,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 setAccountOpen(false);
                 startTour();
               }}
-              style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", borderBottom: "1px solid " + theme.border, background: "transparent", color: theme.text, fontWeight: 600, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+              style={accountMenuRowBtnStyle()}
             >
               <Compass size={15} />
               Start guide
@@ -1042,7 +1057,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             <button
               type="button"
               onClick={openFeedbackModal}
-              style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", borderBottom: "1px solid " + theme.border, background: "transparent", color: theme.text, fontWeight: 600, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+              style={accountMenuRowBtnStyle()}
             >
               <Bug size={15} />
               Rapportér fejl
@@ -1053,7 +1068,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 setAccountOpen(false);
                 onLogout();
               }}
-              style={{ display: "flex", alignItems: "center", gap: "9px", width: "100%", padding: "11px 12px", border: "none", background: "transparent", color: theme.dangerStrong, fontWeight: 700, fontSize: "13px", cursor: "pointer", textAlign: "left", fontFamily: font }}
+              style={accountMenuRowBtnStyle({ isDanger: true, isLast: true })}
             >
               <LogOut size={15} />
               Log ud
@@ -1100,17 +1115,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 border: "none",
                 cursor: "pointer",
                 flexShrink: 0,
-                background: dark ? "#1e293b" : "#e5e7eb",
+                background: dark ? theme.surfaceAlt : theme.border,
                 position: "relative",
                 transition: "background 0.25s",
                 boxShadow: dark ? "inset 0 2px 5px rgba(0,0,0,0.6)" : "inset 0 2px 4px rgba(0,0,0,0.12)",
                 padding: 0,
               }}
             >
-              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? "#475569" : "#f59e0b", transition: "color 0.25s" }}>
+              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? theme.textLight : theme.warm, transition: "color 0.25s" }}>
                 <Sun size={13} />
               </span>
-              <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? "#94a3b8" : "#9ca3af", transition: "color 0.25s" }}>
+              <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? theme.textMid : theme.textLight, transition: "color 0.25s" }}>
                 <Moon size={13} />
               </span>
               <div
@@ -1121,7 +1136,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   width: 24,
                   height: 24,
                   borderRadius: "50%",
-                  background: dark ? "#334155" : "#ffffff",
+                  background: dark ? theme.surface : theme.onAccent,
                   transition: "left 0.25s",
                   boxShadow: dark ? "0 1px 5px rgba(0,0,0,0.7)" : "0 1px 4px rgba(0,0,0,0.2)",
                   zIndex: 2,
@@ -1131,8 +1146,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 }}
               >
                 {dark
-                  ? <Moon size={13} style={{ color: "#e2e8f0" }} />
-                  : <Sun size={13} style={{ color: "#f59e0b" }} />
+                  ? <Moon size={13} style={{ color: theme.text }} />
+                  : <Sun size={13} style={{ color: theme.warm }} />
                 }
               </div>
             </button>
@@ -1472,9 +1487,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
               key={t.id}
               type="button"
               data-tour={`mobile-tab-${t.id}`}
+              data-active={active ? "true" : "false"}
               onClick={() => setTab(t.id)}
               className="pm-mobile-bottom-btn"
               aria-label={t.label}
+              aria-current={active ? "page" : undefined}
               title={t.label}
             >
               <span className="pm-mobile-bottom-icon-wrap" style={{ color: mobileTabColor }}>
@@ -1500,6 +1517,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         <button
           type="button"
           data-tour="mobile-tab-mere"
+          data-active={mobileMoreIsActive || mobileMoreOpen ? "true" : "false"}
           onClick={() => setMobileMoreOpen((open) => !open)}
           className="pm-mobile-bottom-btn"
           aria-label="Mere"

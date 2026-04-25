@@ -305,7 +305,7 @@ export function OnboardingPage() {
       </div>
 
       {/* Intention — 2×2 gitter */}
-      <div style={labelStyle}>Hvad søger du primært? <span style={{ fontWeight: 400, color: "#8494A7" }}>(valgfri)</span></div>
+      <div style={labelStyle}>Hvad søger du primært? <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
         {INTENTS.map(i => {
           const active = form.intent_now === i.value;
@@ -334,7 +334,7 @@ export function OnboardingPage() {
           <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "8px 14px", fontSize: "13px" }}>{r}</button>
         ))}
       </div>
-      <label htmlFor="onb-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: "#8494A7" }}>(valgfri)</span></label>
+      <label htmlFor="onb-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
       <input
         id="onb-city"
         value={form.city}
@@ -362,8 +362,8 @@ export function OnboardingPage() {
                 fontWeight: 700,
                 borderRadius: "8px",
                 border: "1.5px solid " + (active ? theme.accent : theme.border),
-                background: active ? theme.accent : "#fff",
-                color: active ? "#fff" : theme.textMid,
+                background: active ? theme.accent : theme.surface,
+                color: active ? theme.onAccent : theme.textMid,
                 cursor: "pointer",
                 transition: "all 0.12s",
                 minWidth: 0,
@@ -374,7 +374,7 @@ export function OnboardingPage() {
           );
         })}
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#F8FAFC", borderRadius: "10px", padding: "14px 16px", border: "1px solid " + theme.border }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: theme.surfaceAlt, borderRadius: "10px", padding: "14px 16px", border: "1px solid " + theme.border }}>
         <div>
           <div style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>Søger kamp aktivt</div>
           <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "2px" }}>Vis mig i foreslåede makkere for andre</div>
@@ -383,7 +383,7 @@ export function OnboardingPage() {
           onClick={() => set("seeking_match", !form.seeking_match)}
           style={{ width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer", background: form.seeking_match ? theme.accent : theme.border, position: "relative", transition: "background 0.2s", flexShrink: 0 }}
         >
-          <div style={{ position: "absolute", top: "3px", left: form.seeking_match ? "23px" : "3px", width: "18px", height: "18px", borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+          <div style={{ position: "absolute", top: "3px", left: form.seeking_match ? "23px" : "3px", width: "18px", height: "18px", borderRadius: "50%", background: theme.surface, transition: "left 0.2s", boxShadow: theme.shadowSoft }} />
         </button>
       </div>
     </div>,
