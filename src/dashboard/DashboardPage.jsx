@@ -52,90 +52,218 @@ const FEEDBACK_PRIORITY_OPTIONS = [
   { value: "critical", label: "Kritisk" },
 ];
 
-function usePendingLigaInvites(userId) {
+function useRealtimeCount(userId, createController) {
   const [count, setCount] = useState(0);
+
   useEffect(() => {
-    if (!userId) { setCount(0); return; }
-    let cancelled = false;
-    const syncCount = async () => {
-      try {
-        const { count: c } = await supabase
-          .from('league_teams')
-          .select('id', { count: 'exact', head: true })
-          .eq('player2_id', userId)
-          .eq('status', 'pending');
-        if (!cancelled) setCount(c || 0);
-      } catch (e) {
-        console.warn('liga invites badge:', e);
-      }
-    };
-    const applyDeltaFromPayload = (payload) => {
-      if (cancelled) return;
-      const event = payload?.eventType;
-      const next = payload?.new || {};
-      const prev = payload?.old || {};
-      const nextPending = next?.status === 'pending';
-      const prevPending = prev?.status === 'pending';
+    if (!userId) {
+      setCount(0);
+      return;
+    }
 
-      if (event === 'INSERT') {
-        if (nextPending) setCount((v) => v + 1);
-        return;
-      }
-      if (event === 'UPDATE') {
-        if (prevPending === nextPending) return;
-        setCount((v) => Math.max(0, v + (nextPending ? 1 : -1)));
-        return;
-      }
-      if (event === 'DELETE' && prevPending) {
-        setCount((v) => Math.max(0, v - 1));
-      }
-    };
-
-    void syncCount();
-    const channel = supabase
-      .channel('liga-invites-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'league_teams', filter: 'player2_id=eq.' + userId }, applyDeltaFromPayload)
-      .subscribe();
-    return () => {
-      cancelled = true;
-      supabase.removeChannel(channel);
-    };
-  }, [userId]);
-  return count;
-}
-
-function usePendingKampeBadge(userId) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!userId) { setCount(0); return; }
     let cancelled = false;
     let timer = null;
     let intervalId = null;
+    let inFlight = false;
+    let rerunAfterFlight = false;
+    const channels = [];
+    const removeFns = [];
+
+    const setCountSafe = (next) => {
+      if (cancelled) return;
+      setCount((prev) => (typeof next === "function" ? next(prev) : next));
+    };
+
+    const isPageVisible = () => (typeof document === "undefined" || document.visibilityState === "visible");
+
+    const api = {
+      userId,
+      setCountSafe,
+      isPageVisible,
+      scheduleRefetch: () => {},
+    };
+
+    const controller = createController(api) || {};
+    const skipWhenHidden = controller.skipWhenHidden !== false;
+    const rerunDelay = controller.rerunDelay ?? 120;
+    const refetchImpl = controller.refetch || (async () => {});
+
+    const refetch = async () => {
+      if (skipWhenHidden && !isPageVisible()) return;
+      if (inFlight) {
+        rerunAfterFlight = true;
+        return;
+      }
+      inFlight = true;
+      try {
+        await refetchImpl(api);
+      } finally {
+        inFlight = false;
+        if (rerunAfterFlight) {
+          rerunAfterFlight = false;
+          api.scheduleRefetch({ delay: rerunDelay });
+        }
+      }
+    };
+
+    api.scheduleRefetch = ({ delay = 120 } = {}) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        void refetch();
+      }, delay);
+    };
+
+    if (controller.runOnMount !== false) {
+      void refetch();
+    }
+
+    if (Array.isArray(controller.subscriptions)) {
+      controller.subscriptions.forEach((sub) => {
+        const channel = supabase
+          .channel(sub.name)
+          .on(
+            "postgres_changes",
+            {
+              event: sub.event || "*",
+              schema: sub.schema || "public",
+              table: sub.table,
+              ...(sub.filter ? { filter: sub.filter } : {}),
+            },
+            (payload) => {
+              if (typeof sub.onEvent === "function") {
+                sub.onEvent({ payload, api });
+                return;
+              }
+              api.scheduleRefetch(sub.schedule || {});
+            }
+          )
+          .subscribe();
+        channels.push(channel);
+      });
+    }
+
+    if (controller.intervalMs) {
+      intervalId = setInterval(() => {
+        if (typeof controller.onInterval === "function") {
+          controller.onInterval(api);
+          return;
+        }
+        api.scheduleRefetch({ delay: 50 });
+      }, controller.intervalMs);
+    }
+
+    if (controller.listenVisibility && typeof document !== "undefined") {
+      const onVisibilityChange = () => {
+        if (typeof controller.onVisibility === "function") {
+          controller.onVisibility(api);
+          return;
+        }
+        if (!isPageVisible()) return;
+        api.scheduleRefetch({ delay: 80 });
+      };
+      document.addEventListener("visibilitychange", onVisibilityChange);
+      removeFns.push(() => document.removeEventListener("visibilitychange", onVisibilityChange));
+    }
+
+    if (Array.isArray(controller.windowEvents) && controller.windowEvents.length > 0 && typeof window !== "undefined") {
+      const onWindowEvent = () => {
+        if (typeof controller.onWindowEvent === "function") {
+          controller.onWindowEvent(api);
+          return;
+        }
+        if (!isPageVisible()) return;
+        api.scheduleRefetch({ delay: 80 });
+      };
+      controller.windowEvents.forEach((eventName) => {
+        window.addEventListener(eventName, onWindowEvent);
+      });
+      removeFns.push(() => {
+        controller.windowEvents.forEach((eventName) => {
+          window.removeEventListener(eventName, onWindowEvent);
+        });
+      });
+    }
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      if (intervalId) clearInterval(intervalId);
+      removeFns.forEach((fn) => fn());
+      channels.forEach((channel) => {
+        supabase.removeChannel(channel);
+      });
+      if (typeof controller.cleanup === "function") {
+        controller.cleanup();
+      }
+    };
+  }, [userId, createController]);
+
+  return count;
+}
+
+function usePendingLigaInvites(userId) {
+  const createController = useCallback((api) => ({
+    refetch: async () => {
+      try {
+        const { count: c } = await supabase
+          .from("league_teams")
+          .select("id", { count: "exact", head: true })
+          .eq("player2_id", api.userId)
+          .eq("status", "pending");
+        api.setCountSafe(c || 0);
+      } catch (e) {
+        console.warn("liga invites badge:", e);
+      }
+    },
+    subscriptions: [
+      {
+        name: "liga-invites-" + api.userId,
+        table: "league_teams",
+        filter: "player2_id=eq." + api.userId,
+        onEvent: ({ payload, api: runtime }) => {
+          const event = payload?.eventType;
+          const next = payload?.new || {};
+          const prev = payload?.old || {};
+          const nextPending = next?.status === "pending";
+          const prevPending = prev?.status === "pending";
+
+          if (event === "INSERT") {
+            if (nextPending) runtime.setCountSafe((v) => v + 1);
+            return;
+          }
+          if (event === "UPDATE") {
+            if (prevPending === nextPending) return;
+            runtime.setCountSafe((v) => Math.max(0, v + (nextPending ? 1 : -1)));
+            return;
+          }
+          if (event === "DELETE" && prevPending) {
+            runtime.setCountSafe((v) => Math.max(0, v - 1));
+          }
+        },
+      },
+    ],
+  }), []);
+
+  return useRealtimeCount(userId, createController);
+}
+
+function usePendingKampeBadge(userId) {
+  const createController = useCallback((api) => {
     let myCreatedMatchIds = [];
     let myPlayerMatchIds = [];
     let shouldRefreshIds = true;
-    let inFlight = false;
-    let rerunAfterFlight = false;
-
-    const isPageVisible = () => (typeof document === "undefined" || document.visibilityState === "visible");
-    const scheduleRefetch = (opts = {}) => {
-      const { refreshIds = false, delay = 350 } = opts;
-      if (refreshIds) shouldRefreshIds = true;
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => { void refetch(); }, delay);
-    };
 
     const loadIds = async () => {
       try {
         const [myMatchesRes, myPlayerRes] = await Promise.all([
-          supabase.from('matches').select('id').eq('creator_id', userId),
-          supabase.from('match_players').select('match_id').eq('user_id', userId),
+          supabase.from("matches").select("id").eq("creator_id", api.userId),
+          supabase.from("match_players").select("match_id").eq("user_id", api.userId),
         ]);
-        myCreatedMatchIds = (myMatchesRes.data || []).map(m => m.id);
-        myPlayerMatchIds = [...new Set((myPlayerRes.data || []).map(p => p.match_id))];
+        myCreatedMatchIds = (myMatchesRes.data || []).map((m) => m.id);
+        myPlayerMatchIds = [...new Set((myPlayerRes.data || []).map((p) => p.match_id))];
         shouldRefreshIds = false;
       } catch (e) {
-        console.warn('kampe badge ids:', e);
+        console.warn("kampe badge ids:", e);
       }
     };
 
@@ -143,190 +271,142 @@ function usePendingKampeBadge(userId) {
       try {
         const [joinRes, resultRes] = await Promise.all([
           myCreatedMatchIds.length > 0
-            ? supabase.from('match_join_requests').select('id', { count: 'exact', head: true }).in('match_id', myCreatedMatchIds).eq('status', 'pending')
+            ? supabase.from("match_join_requests").select("id", { count: "exact", head: true }).in("match_id", myCreatedMatchIds).eq("status", "pending")
             : { count: 0 },
           myPlayerMatchIds.length > 0
-            ? supabase.from('match_results').select('id', { count: 'exact', head: true }).in('match_id', myPlayerMatchIds).eq('confirmed', false).neq('submitted_by', userId)
+            ? supabase.from("match_results").select("id", { count: "exact", head: true }).in("match_id", myPlayerMatchIds).eq("confirmed", false).neq("submitted_by", api.userId)
             : { count: 0 },
         ]);
-        if (!cancelled) setCount((joinRes.count || 0) + (resultRes.count || 0));
+        api.setCountSafe((joinRes.count || 0) + (resultRes.count || 0));
       } catch (e) {
-        console.warn('kampe badge counts:', e);
+        console.warn("kampe badge counts:", e);
       }
     };
 
-    const refetch = async () => {
-      if (!isPageVisible()) return;
-      if (inFlight) {
-        rerunAfterFlight = true;
-        return;
-      }
-      inFlight = true;
-      try {
+    return {
+      refetch: async () => {
         if (shouldRefreshIds) await loadIds();
         await loadCounts();
-      } finally {
-        inFlight = false;
-        if (rerunAfterFlight) {
-          rerunAfterFlight = false;
-          scheduleRefetch({ delay: 120 });
-        }
-      }
+      },
+      subscriptions: [
+        {
+          name: "kampe-badge-matches-" + api.userId,
+          table: "matches",
+          filter: "creator_id=eq." + api.userId,
+          onEvent: ({ api: runtime }) => {
+            shouldRefreshIds = true;
+            runtime.scheduleRefetch({ delay: 120 });
+          },
+        },
+        {
+          name: "kampe-badge-players-" + api.userId,
+          table: "match_players",
+          filter: "user_id=eq." + api.userId,
+          onEvent: ({ api: runtime }) => {
+            shouldRefreshIds = true;
+            runtime.scheduleRefetch({ delay: 120 });
+          },
+        },
+      ],
+      intervalMs: 15000,
+      onInterval: (runtime) => {
+        if (runtime.isPageVisible()) runtime.scheduleRefetch({ delay: 50 });
+      },
+      listenVisibility: true,
+      onVisibility: (runtime) => {
+        if (!runtime.isPageVisible()) return;
+        runtime.scheduleRefetch({ delay: 80 });
+      },
     };
+  }, []);
 
-    const onVisibilityChange = () => {
-      if (!isPageVisible()) return;
-      scheduleRefetch({ delay: 80 });
-    };
-
-    void refetch();
-    intervalId = setInterval(() => {
-      if (isPageVisible()) scheduleRefetch({ delay: 50 });
-    }, 15000);
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", onVisibilityChange);
-    }
-
-    const chMatches = supabase.channel('kampe-badge-matches-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: 'creator_id=eq.' + userId }, () => scheduleRefetch({ refreshIds: true, delay: 120 }))
-      .subscribe();
-    const chPlayers = supabase.channel('kampe-badge-players-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_players', filter: 'user_id=eq.' + userId }, () => scheduleRefetch({ refreshIds: true, delay: 120 }))
-      .subscribe();
-
-    return () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-      if (intervalId) clearInterval(intervalId);
-      if (typeof document !== "undefined") {
-        document.removeEventListener("visibilitychange", onVisibilityChange);
-      }
-      supabase.removeChannel(chMatches);
-      supabase.removeChannel(chPlayers);
-    };
-  }, [userId]);
-  return count;
+  return useRealtimeCount(userId, createController);
 }
 
 function useUnreadNotificationsCount(userId) {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    if (!userId) { setCount(0); return; }
-    let cancelled = false;
-
+  const createController = useCallback((api) => {
     const syncCount = async () => {
       try {
         const { count: c } = await supabase
-          .from('notifications')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .eq('read', false);
-        if (!cancelled) setCount(c || 0);
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", api.userId)
+          .eq("read", false);
+        api.setCountSafe(c || 0);
       } catch (e) {
-        console.warn('notif badge refetch:', e);
+        console.warn("notif badge refetch:", e);
       }
     };
 
-    const applyDeltaFromPayload = (payload) => {
-      if (cancelled) return;
-      const event = payload?.eventType;
-      const next = payload?.new || {};
-      const prev = payload?.old || {};
-      const nextUnread = next?.read === false;
-      const prevHasReadField = Object.prototype.hasOwnProperty.call(prev, 'read');
-      const prevUnread = prev?.read === false;
+    return {
+      refetch: syncCount,
+      subscriptions: [
+        {
+          name: "notif-badge-" + api.userId,
+          table: "notifications",
+          filter: "user_id=eq." + api.userId,
+          onEvent: ({ payload, api: runtime }) => {
+            const event = payload?.eventType;
+            const next = payload?.new || {};
+            const prev = payload?.old || {};
+            const nextUnread = next?.read === false;
+            const prevHasReadField = Object.prototype.hasOwnProperty.call(prev, "read");
+            const prevUnread = prev?.read === false;
 
-      if (event === 'INSERT') {
-        if (nextUnread) setCount((v) => v + 1);
-        return;
-      }
-      if (event === 'UPDATE') {
-        if (!prevHasReadField) {
-          void syncCount();
-          return;
-        }
-        if (prevUnread === nextUnread) return;
-        setCount((v) => Math.max(0, v + (nextUnread ? 1 : -1)));
-        return;
-      }
-      if (event === 'DELETE') {
-        if (!prevHasReadField) {
-          void syncCount();
-          return;
-        }
-        if (prevUnread) setCount((v) => Math.max(0, v - 1));
-      }
+            if (event === "INSERT") {
+              if (nextUnread) runtime.setCountSafe((v) => v + 1);
+              return;
+            }
+            if (event === "UPDATE") {
+              if (!prevHasReadField) {
+                runtime.scheduleRefetch({ delay: 80 });
+                return;
+              }
+              if (prevUnread === nextUnread) return;
+              runtime.setCountSafe((v) => Math.max(0, v + (nextUnread ? 1 : -1)));
+              return;
+            }
+            if (event === "DELETE") {
+              if (!prevHasReadField) {
+                runtime.scheduleRefetch({ delay: 80 });
+                return;
+              }
+              if (prevUnread) runtime.setCountSafe((v) => Math.max(0, v - 1));
+            }
+          },
+        },
+      ],
+      intervalMs: 10000,
+      onInterval: (runtime) => {
+        if (runtime.isPageVisible()) runtime.scheduleRefetch({ delay: 50 });
+      },
+      listenVisibility: true,
+      onVisibility: (runtime) => {
+        if (!runtime.isPageVisible()) return;
+        runtime.scheduleRefetch({ delay: 80 });
+      },
+      windowEvents: ["focus", "pageshow", "online", "pm-notifications-sync"],
+      onWindowEvent: (runtime) => {
+        if (!runtime.isPageVisible()) return;
+        runtime.scheduleRefetch({ delay: 80 });
+      },
     };
+  }, []);
 
-    void syncCount();
-    const channel = supabase
-      .channel('notif-badge-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, applyDeltaFromPayload)
-      .subscribe();
-
-    const syncIfVisible = () => {
-      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
-        void syncCount();
-      }
-    };
-    const onVisibilityChange = () => syncIfVisible();
-    const intervalId = setInterval(syncIfVisible, 10000);
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', onVisibilityChange);
-    }
-    if (typeof window !== 'undefined') {
-      window.addEventListener('focus', syncIfVisible);
-      window.addEventListener('pageshow', syncIfVisible);
-      window.addEventListener('online', syncIfVisible);
-      window.addEventListener('pm-notifications-sync', syncIfVisible);
-    }
-
-    return () => {
-      cancelled = true;
-      clearInterval(intervalId);
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', onVisibilityChange);
-      }
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('focus', syncIfVisible);
-        window.removeEventListener('pageshow', syncIfVisible);
-        window.removeEventListener('online', syncIfVisible);
-        window.removeEventListener('pm-notifications-sync', syncIfVisible);
-      }
-      supabase.removeChannel(channel);
-    };
-  }, [userId]);
-
-  return count;
+  return useRealtimeCount(userId, createController);
 }
 
 function useUnreadKampeNotificationsCount(userId) {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    if (!userId) { setCount(0); return; }
-    let cancelled = false;
-    let timer = null;
-    let inFlight = false;
-    let rerunAfterFlight = false;
+  const createController = useCallback((api) => {
     let shouldRefreshIds = true;
     let myRelatedMatchIds = [];
-    const RELEVANT_TYPES = ['match_chat', 'match_join', 'match_invite', 'match_full', 'result_submitted', 'result_confirmed'];
-
-    const isPageVisible = () => (typeof document === 'undefined' || document.visibilityState === 'visible');
-    const scheduleRefetch = (opts = {}) => {
-      const { delay = 220, refreshIds = false } = opts;
-      if (refreshIds) shouldRefreshIds = true;
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => { void refetch(); }, delay);
-    };
+    const RELEVANT_TYPES = ["match_chat", "match_join", "match_invite", "match_full", "result_submitted", "result_confirmed"];
 
     const loadRelatedMatchIds = async () => {
       try {
         const [createdRes, playerRes] = await Promise.all([
-          supabase.from('matches').select('id').eq('creator_id', userId),
-          supabase.from('match_players').select('match_id').eq('user_id', userId),
+          supabase.from("matches").select("id").eq("creator_id", api.userId),
+          supabase.from("match_players").select("match_id").eq("user_id", api.userId),
         ]);
         const set = new Set([
           ...(createdRes.data || []).map((m) => String(m.id)),
@@ -334,7 +414,7 @@ function useUnreadKampeNotificationsCount(userId) {
         ]);
         myRelatedMatchIds = [...set];
       } catch (e) {
-        console.warn('kampe notif badge ids:', e);
+        console.warn("kampe notif badge ids:", e);
         myRelatedMatchIds = [];
       } finally {
         shouldRefreshIds = false;
@@ -344,90 +424,77 @@ function useUnreadKampeNotificationsCount(userId) {
     const loadCount = async () => {
       try {
         if (myRelatedMatchIds.length === 0) {
-          if (!cancelled) setCount(0);
+          api.setCountSafe(0);
           return;
         }
         const { count: c } = await supabase
-          .from('notifications')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .eq('read', false)
-          .in('type', RELEVANT_TYPES)
-          .in('match_id', myRelatedMatchIds);
-        if (!cancelled) setCount(c || 0);
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", api.userId)
+          .eq("read", false)
+          .in("type", RELEVANT_TYPES)
+          .in("match_id", myRelatedMatchIds);
+        api.setCountSafe(c || 0);
       } catch (e) {
-        console.warn('kampe notif badge refetch:', e);
+        console.warn("kampe notif badge refetch:", e);
       }
     };
 
-    const refetch = async () => {
-      if (!isPageVisible()) return;
-      if (inFlight) {
-        rerunAfterFlight = true;
-        return;
-      }
-      inFlight = true;
-      try {
+    return {
+      refetch: async () => {
         if (shouldRefreshIds) await loadRelatedMatchIds();
         await loadCount();
-      } finally {
-        inFlight = false;
-        if (rerunAfterFlight) {
-          rerunAfterFlight = false;
-          scheduleRefetch({ delay: 120 });
-        }
-      }
+      },
+      subscriptions: [
+        {
+          name: "kampe-notif-badge-notifs-" + api.userId,
+          table: "notifications",
+          filter: "user_id=eq." + api.userId,
+          onEvent: ({ api: runtime }) => {
+            runtime.scheduleRefetch({ delay: 120 });
+          },
+        },
+        {
+          name: "kampe-notif-badge-matches-" + api.userId,
+          table: "matches",
+          filter: "creator_id=eq." + api.userId,
+          onEvent: ({ api: runtime }) => {
+            shouldRefreshIds = true;
+            runtime.scheduleRefetch({ delay: 120 });
+          },
+        },
+        {
+          name: "kampe-notif-badge-players-" + api.userId,
+          table: "match_players",
+          filter: "user_id=eq." + api.userId,
+          onEvent: ({ api: runtime }) => {
+            shouldRefreshIds = true;
+            runtime.scheduleRefetch({ delay: 120 });
+          },
+        },
+      ],
+      intervalMs: 10000,
+      onInterval: (runtime) => {
+        if (!runtime.isPageVisible()) return;
+        shouldRefreshIds = true;
+        runtime.scheduleRefetch({ delay: 50 });
+      },
+      listenVisibility: true,
+      onVisibility: (runtime) => {
+        if (!runtime.isPageVisible()) return;
+        shouldRefreshIds = true;
+        runtime.scheduleRefetch({ delay: 80 });
+      },
+      windowEvents: ["focus", "pageshow", "online", "pm-notifications-sync"],
+      onWindowEvent: (runtime) => {
+        if (!runtime.isPageVisible()) return;
+        shouldRefreshIds = true;
+        runtime.scheduleRefetch({ delay: 80 });
+      },
     };
+  }, []);
 
-    const onVisibilityChange = () => {
-      if (!isPageVisible()) return;
-      scheduleRefetch({ delay: 80, refreshIds: true });
-    };
-
-    void refetch();
-    const chNotifs = supabase.channel('kampe-notif-badge-notifs-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + userId }, () => scheduleRefetch({ delay: 120 }))
-      .subscribe();
-    const chMatches = supabase.channel('kampe-notif-badge-matches-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: 'creator_id=eq.' + userId }, () => scheduleRefetch({ refreshIds: true, delay: 120 }))
-      .subscribe();
-    const chPlayers = supabase.channel('kampe-notif-badge-players-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_players', filter: 'user_id=eq.' + userId }, () => scheduleRefetch({ refreshIds: true, delay: 120 }))
-      .subscribe();
-
-    const intervalId = setInterval(() => {
-      if (isPageVisible()) scheduleRefetch({ delay: 50, refreshIds: true });
-    }, 10000);
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', onVisibilityChange);
-    }
-    if (typeof window !== 'undefined') {
-      window.addEventListener('focus', onVisibilityChange);
-      window.addEventListener('pageshow', onVisibilityChange);
-      window.addEventListener('online', onVisibilityChange);
-      window.addEventListener('pm-notifications-sync', onVisibilityChange);
-    }
-
-    return () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-      clearInterval(intervalId);
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', onVisibilityChange);
-      }
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('focus', onVisibilityChange);
-        window.removeEventListener('pageshow', onVisibilityChange);
-        window.removeEventListener('online', onVisibilityChange);
-        window.removeEventListener('pm-notifications-sync', onVisibilityChange);
-      }
-      supabase.removeChannel(chNotifs);
-      supabase.removeChannel(chMatches);
-      supabase.removeChannel(chPlayers);
-    };
-  }, [userId]);
-
-  return count;
+  return useRealtimeCount(userId, createController);
 }
 
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder"];
