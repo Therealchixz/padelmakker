@@ -4,7 +4,7 @@ import { isAvatarUrl } from '../lib/avatarUpload';
  * Viser avatar som enten et rundt billede (URL) eller emoji i en cirkel.
  * Brug `style` til at sætte border, background mv. fra den kaldende komponent.
  */
-export function AvatarCircle({ avatar, size = 48, emojiSize = '22px', style = {} }) {
+export function AvatarCircle({ avatar, size = 48, emojiSize = '22px', alt = '', style = {} }) {
   return (
     <div
       style={{
@@ -20,7 +20,7 @@ export function AvatarCircle({ avatar, size = 48, emojiSize = '22px', style = {}
       }}
     >
       {isAvatarUrl(avatar)
-        ? <img src={avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ? <img src={avatar} alt={alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         : <span style={{ fontSize: emojiSize }}>{avatar || '🎾'}</span>
       }
     </div>

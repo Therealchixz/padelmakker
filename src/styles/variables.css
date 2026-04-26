@@ -74,8 +74,8 @@
   --pm-space-4:     20px;
   --pm-control-h:   38px;
   --pm-transition-ui: 0.18s ease;
-  --pm-focus-ring: 0 0 0 3px rgba(29, 78, 216, 0.15);
-  --pm-focus-ring-dark: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  --pm-focus-ring: 0 0 0 3px rgba(29, 78, 216, 0.35);
+  --pm-focus-ring-dark: 0 0 0 3px rgba(96, 165, 250, 0.32);
   --pm-font:        'Inter', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   --pm-font-display:'Inter', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }

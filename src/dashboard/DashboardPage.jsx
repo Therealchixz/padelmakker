@@ -11,6 +11,7 @@ import { ShieldCheck } from 'lucide-react';
 import { useUnreadMessageCount } from '../lib/chatUtils';
 import { useDarkMode } from '../lib/useDarkMode';
 import { supabase } from '../lib/supabase';
+import { PROFILE_REFRESH_COOLDOWN_MS } from '../lib/platformConstants';
 import { AdminPinGate } from '../components/AdminPinGate';
 import { GuidedTourOverlay } from '../components/GuidedTourOverlay';
 
@@ -430,7 +431,6 @@ function useUnreadKampeNotificationsCount(userId) {
 }
 
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder"];
-const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
 const TOUR_VERSION = 1;
 
 const tabBtnStyle = (active) => ({

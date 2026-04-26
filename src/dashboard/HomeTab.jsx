@@ -9,10 +9,9 @@ import { Users, MapPin, Swords, Trophy, Percent, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
 import { PlayerStatsModal } from '../components/PlayerStatsModal';
-import { levelLabel } from '../lib/platformConstants';
+import { HOME_FEED_CACHE_TTL_MS, levelLabel } from '../lib/platformConstants';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 
-const HOME_FEED_CACHE_TTL_MS = 45_000;
 const HOME_FEED_CACHE_BY_USER = new Map();
 const HOME_FEED_FILTERS = [
   { id: 'kampe', label: 'Kampe', icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },

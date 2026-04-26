@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
-import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS, COURT_SIDES } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS, COURT_SIDES, SEEK_TTL_MS } from '../lib/platformConstants';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin, Zap, SlidersHorizontal } from 'lucide-react';
@@ -21,7 +21,6 @@ import {
   recordSuggestionExposure,
 } from '../lib/matchmakingTelemetry';
 
-const SEEK_TTL_MS = 24 * 60 * 60 * 1000;
 const isSeekingActive = (p) =>
   p.seeking_match === true &&
   p.seeking_match_at != null &&

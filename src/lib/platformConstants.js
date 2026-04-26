@@ -79,3 +79,8 @@ export const INTENTS = [
 ];
 
 export const INTENT_LABELS = Object.fromEntries(INTENTS.map((i) => [i.value, i.label]));
+
+// Shared UI/data refresh timings
+export const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
+export const HOME_FEED_CACHE_TTL_MS = 45_000;
+export const SEEK_TTL_MS = 24 * 60 * 60 * 1000;
