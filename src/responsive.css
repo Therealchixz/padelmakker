@@ -94,6 +94,16 @@ body {
 /* ─── Landing page hero: foto-baggrund med mørkt overlay ─── */
 .pm-hero-gradient {
   background-image: url('/hero-bg.jpg');
+  background-image: -webkit-image-set(
+    url('/hero-bg.avif') type('image/avif'),
+    url('/hero-bg.webp') type('image/webp'),
+    url('/hero-bg.jpg') type('image/jpeg')
+  );
+  background-image: image-set(
+    url('/hero-bg.avif') type('image/avif'),
+    url('/hero-bg.webp') type('image/webp'),
+    url('/hero-bg.jpg') type('image/jpeg')
+  );
   background-size: cover;
   background-position: center top;
   position: relative;
@@ -474,6 +484,7 @@ button,
 }
 
 .pm-tab-strip {
+  position: relative;
   display: flex;
   gap: clamp(2px, 1.2vw, 4px);
   padding: 6px clamp(8px, 3vw, 16px);
@@ -494,6 +505,37 @@ button,
 .pm-tab-strip::-webkit-scrollbar-thumb {
   background: rgba(29, 78, 216, 0.2);
   border-radius: 10px;
+}
+
+.pm-tab-strip-btn {
+  position: relative;
+}
+
+.pm-tab-strip-btn::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  right: 50%;
+  bottom: -1px;
+  height: 3px;
+  background: var(--pm-accent);
+  border-radius: 3px 3px 0 0;
+  opacity: 0;
+  transition:
+    left 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    right 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.14s ease;
+}
+
+.pm-tab-strip-btn[data-active="true"]::after {
+  left: 8px;
+  right: 8px;
+  opacity: 1;
+}
+
+.pm-tab-strip-btn:not([data-active="true"]):hover {
+  color: var(--pm-text) !important;
+  background: color-mix(in srgb, var(--pm-surface-alt) 84%, var(--pm-surface)) !important;
 }
 
 /* Meget smal skærm: kun ikoner i faner (tekst i title/aria-label) */
@@ -768,6 +810,56 @@ button,
   border: 1px solid var(--pm-border);
   border-radius: var(--pm-radius-lg);
   box-shadow: var(--pm-shadow);
+}
+
+.pm-home-stat-card {
+  padding: 16px 14px;
+  transition: transform 180ms ease, box-shadow 220ms ease;
+}
+
+.pm-home-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--pm-shadow-soft);
+}
+
+.pm-home-stat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pm-home-stat-label {
+  font-size: 10px;
+  color: var(--pm-text-light);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pm-home-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+}
+
+.pm-home-stat-value {
+  font-family: var(--pm-font-display);
+  font-size: clamp(24px, 5vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.pm-home-stat-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--pm-text-light);
+  line-height: 1.35;
 }
 
 .pm-match-surface-card {

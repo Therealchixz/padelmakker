@@ -5,7 +5,7 @@ import { font, theme, heading, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
-import { Users, MapPin, Swords, Trophy, X } from 'lucide-react';
+import { Users, MapPin, Swords, Trophy, Percent, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
 import { PlayerStatsModal } from '../components/PlayerStatsModal';
@@ -33,6 +33,7 @@ export function HomeTab({ user, setTab }) {
   const elo = histStats?.elo ?? Math.round(Number(profileFresh?.elo_rating) || 1000);
   const games = histStats?.games ?? (profileFresh?.games_played || 0);
   const wins = histStats?.wins ?? (profileFresh?.games_won || 0);
+  const winRate = games > 0 ? Math.round((wins / games) * 100) : null;
   const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
 
   const fetchIdRef = useRef(0);
@@ -585,6 +586,36 @@ export function HomeTab({ user, setTab }) {
     [feedRows, activityGroupLabel]
   );
 
+  const statCards = [
+    {
+      key: "games",
+      label: "Kampe",
+      hint: "Spillet i alt",
+      value: String(games),
+      color: theme.blue,
+      tint: theme.blueBg,
+      icon: <Swords size={15} />,
+    },
+    {
+      key: "wins",
+      label: "Sejre",
+      hint: "Vundne kampe",
+      value: String(wins),
+      color: theme.warm,
+      tint: theme.warmBg,
+      icon: <Trophy size={15} />,
+    },
+    {
+      key: "winrate",
+      label: "Win %",
+      hint: games > 0 ? "Baseret på dine kampe" : "Spil din første kamp",
+      value: winRate === null ? "—" : `${winRate}%`,
+      color: theme.accent,
+      tint: theme.accentBg,
+      icon: <Percent size={15} />,
+    },
+  ];
+
   return (
     <div>
       <h2 style={{ ...heading("clamp(22px,5vw,26px)"), marginBottom: "4px" }}>Hej {firstName}! 👋</h2>
@@ -596,14 +627,30 @@ export function HomeTab({ user, setTab }) {
       ) : (
         <>
       <div className="pm-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,110px),1fr))", gap: "10px", marginBottom: "24px" }}>
-        {[
-          { label: "Kampe", value: games, color: theme.blue },
-          { label: "Sejre", value: wins,  color: theme.warm },
-          { label: "Win %", value: games > 0 ? Math.round((wins / games) * 100) + "%" : "—", color: theme.accent },
-        ].map((s, i) => (
-          <div key={i} className="pm-ui-card" style={{ padding: "18px 16px", textAlign: "center" }}>
-            <div style={{ fontSize: "26px", fontWeight: 800, color: s.color, fontFamily: font, letterSpacing: "-0.03em" }}>{s.value}</div>
-            <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.label}</div>
+        {statCards.map((s) => (
+          <div
+            key={s.key}
+            className="pm-ui-card pm-home-stat-card"
+            style={{
+              background: `linear-gradient(180deg, ${s.tint}, ${theme.surface})`,
+              borderColor: `color-mix(in srgb, ${s.color} 22%, ${theme.border})`,
+            }}
+          >
+            <div className="pm-home-stat-head">
+              <div className="pm-home-stat-label">{s.label}</div>
+              <div
+                className="pm-home-stat-icon"
+                style={{
+                  color: s.color,
+                  background: `color-mix(in srgb, ${s.color} 16%, ${theme.surface})`,
+                }}
+                aria-hidden
+              >
+                {s.icon}
+              </div>
+            </div>
+            <div className="pm-home-stat-value" style={{ color: s.color }}>{s.value}</div>
+            <div className="pm-home-stat-hint">{s.hint}</div>
           </div>
         ))}
       </div>

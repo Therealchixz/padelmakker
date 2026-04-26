@@ -437,10 +437,8 @@ const tabBtnStyle = (active) => ({
   background: "transparent",
   color: active ? theme.accent : theme.textMid,
   border: "none",
-  borderBottom: active ? "3px solid " + theme.accent : "3px solid transparent",
   marginBottom: "-1px",
-  padding: "5px 9px 6px",
-  borderRadius: 0,
+  padding: "8px 10px 11px",
   fontSize: "clamp(11px,2.8vw,12px)",
   fontWeight: active ? 800 : 500,
   cursor: "pointer",
@@ -450,7 +448,7 @@ const tabBtnStyle = (active) => ({
   whiteSpace: "nowrap",
   fontFamily: font,
   flexShrink: 0,
-  transition: "color 0.12s, border-color 0.12s",
+  transition: "color 0.18s ease, background-color 0.18s ease",
   letterSpacing: "-0.01em",
   position: "relative",
 });
@@ -1085,7 +1083,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           const active = tab === t.id;
           const tabAttention = Boolean(t.attention && !active);
           return (
-          <button key={t.id} type="button" title={t.label} aria-label={t.label} data-tour={`tab-${t.id}`} onClick={() => setTab(t.id)} style={tabBtnStyle(active)}>
+          <button key={t.id} type="button" className="pm-tab-strip-btn" data-active={active ? "true" : "false"} title={t.label} aria-label={t.label} data-tour={`tab-${t.id}`} onClick={() => setTab(t.id)} style={tabBtnStyle(active)} aria-current={active ? "page" : undefined}>
             <span aria-hidden style={{ display: "flex", position: "relative" }}>
               {t.icon}
               {t.badge && (
