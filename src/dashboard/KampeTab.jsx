@@ -1392,11 +1392,43 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     try {
       const mr = matchResults[matchId];
       if (!mr) return;
-      await supabase.from("match_results").delete().eq("id", mr.id);
+      const { error: deleteError } = await supabase
+        .from("match_results")
+        .delete()
+        .eq("id", mr.id);
+      if (deleteError) throw deleteError;
+
       // Notify the submitter (if someone else rejected)
       if (mr.submitted_by && mr.submitted_by !== user.id) {
-        createNotification(mr.submitted_by, 'result_submitted', 'Resultat afvist ❌', `Dit indberettede resultat er blevet afvist. Indrapportér igen.`, matchId);
+        createNotification(
+          mr.submitted_by,
+          'result_submitted',
+          'Resultat afvist ❌',
+          `${myDisplayName} har afvist dit indberettede resultat. Indrapportér igen.`,
+          matchId,
+        );
       }
+
+      // Notify admins (excluding the rejecter)
+      try {
+        const { data: admins } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("role", "admin")
+          .neq("id", user.id);
+        (admins || []).forEach((a) => {
+          createNotification(
+            a.id,
+            'result_submitted',
+            'Resultat afvist ❌',
+            `${myDisplayName} har afvist et indberettet resultat. Kampen venter på et nyt resultat.`,
+            matchId,
+          );
+        });
+      } catch (e) {
+        console.warn("notify admins on reject:", e?.message || e);
+      }
+
       showToast("Resultat afvist. Indrapportér igen.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
