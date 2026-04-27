@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS } from '../lib/platformConstants';
@@ -17,6 +18,7 @@ import { ArrowRight } from 'lucide-react';
 export function OnboardingPage() {
   const { signUp, signOut } = useAuth();
   const navigate = useNavigate();
+  const ask = useConfirm();
   const turnstileSiteKey = String(import.meta.env.VITE_TURNSTILE_SITE_KEY || "").trim();
   const turnstileEnabled = turnstileSiteKey.length > 0;
   const [step, setStep]           = useState(0);
@@ -67,7 +69,7 @@ export function OnboardingPage() {
   const profilePreviewLocation = [form.city.trim(), form.area].filter(Boolean).join(", ") || "Område ikke valgt endnu";
   const profilePreviewBio = form.bio.trim() || "Tilføj en kort bio, så andre bedre forstår hvem du er som makker.";
 
-  const cancelOnboarding = () => {
+  const cancelOnboarding = async () => {
     if (submitting) return;
 
     const hasDraft = Boolean(
@@ -95,7 +97,12 @@ export function OnboardingPage() {
     );
 
     if (hasDraft) {
-      const confirmed = window.confirm("Vil du annullere oprettelsen? Dine indtastninger bliver ikke gemt.");
+      const confirmed = await ask({
+        message: "Vil du annullere oprettelsen? Dine indtastninger bliver ikke gemt.",
+        confirmLabel: "Ja, annuller",
+        cancelLabel: "Bliv her",
+        danger: true,
+      });
       if (!confirmed) return;
     }
 

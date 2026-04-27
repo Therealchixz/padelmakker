@@ -49,10 +49,34 @@ export async function checkRateLimit(key, maxReqs = 30, windowMs = 60_000) {
 
 /**
  * Hent klientens IP fra Vercel-headers eller socket.
+ *
+ * Foretrækker headers som Vercel's edge sætter selv (kan ikke spoofes af klienten)
+ * fremfor x-forwarded-for, hvor klienten kan sende egen værdi der ender forrest
+ * i kæden i nogle deployment-konfigurationer.
+ *
  * @param {import('http').IncomingMessage} req
  */
 export function getClientIp(req) {
+  // x-vercel-forwarded-for er Vercel-edge-set og kan ikke spoofes
+  const vercelForwarded = req.headers['x-vercel-forwarded-for'];
+  if (vercelForwarded) {
+    const first = String(vercelForwarded).split(',')[0].trim();
+    if (first) return first;
+  }
+
+  // x-real-ip er typisk sat af Vercel på direkte requests
+  const realIp = req.headers['x-real-ip'];
+  if (realIp) {
+    const trimmed = String(realIp).trim();
+    if (trimmed) return trimmed;
+  }
+
+  // Fallback: x-forwarded-for (mindre pålidelig, kan indeholde klient-værdier)
   const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) return String(forwarded).split(',')[0].trim();
+  if (forwarded) {
+    const first = String(forwarded).split(',')[0].trim();
+    if (first) return first;
+  }
+
   return req.socket?.remoteAddress || 'unknown';
 }

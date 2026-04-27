@@ -83,8 +83,11 @@ CREATE POLICY "Ingen kan slette profiler"
 DROP POLICY IF EXISTS matches_admin_all                       ON public.matches;
 DROP POLICY IF EXISTS matches_update_by_creator_or_participant ON public.matches;
 
--- UPDATE: opretter + deltagere kan opdatere deres egne kampe; kun opretter i WITH CHECK
---         (deltagere må ikke ændre creator_id, status til completed, osv.)
+-- UPDATE: opretter + deltagere kan opdatere deres egne kampe.
+--         WITH CHECK spejler USING, så deltagere kan sætte status til
+--         'in_progress' når de starter kampen.  (Tidligere udelod WITH CHECK
+--         deltager-leddet, hvilket blokerede både deltagere OG admins uden
+--         gyldig PIN-session — is_admin() returnerer false uden verificeret PIN.)
 CREATE POLICY matches_update_by_creator_or_participant
   ON public.matches
   FOR UPDATE
@@ -100,6 +103,11 @@ CREATE POLICY matches_update_by_creator_or_participant
   )
   WITH CHECK (
     creator_id = (SELECT auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM public.match_players mp
+      WHERE mp.match_id = matches.id
+        AND mp.user_id  = (SELECT auth.uid())
+    )
     OR public.is_admin()
   );
 

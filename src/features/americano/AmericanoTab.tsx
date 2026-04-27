@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
+import { useConfirm } from '../../lib/ConfirmDialogProvider'
 import { Court } from '../../api/base44Client'
 import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
 import { AmericanoCompletedSummary } from './AmericanoCompletedSummary'
@@ -105,6 +106,7 @@ export function AmericanoTab({
   searchQuery = '',
 }: Props) {
   const { user: authUser, refreshProfileQuiet } = useAuth()
+  const ask = useConfirm()
   const authEmail =
     authUser && typeof authUser === 'object' && 'email' in authUser
       ? String((authUser as { email?: string }).email || '')
@@ -287,7 +289,11 @@ export function AmericanoTab({
       return
     }
     if (forceAsAdmin) {
-      if (!window.confirm(`Gennemtving start af "${t.name}" som admin? Turneringen er ikke fyldt endnu.`)) return
+      const ok = await ask({
+        message: `Gennemtving start af "${t.name}" som admin? Turneringen er ikke fyldt endnu.`,
+        confirmLabel: 'Ja, start',
+      })
+      if (!ok) return
     }
     setBusyId(t.id)
     try {
@@ -431,7 +437,12 @@ export function AmericanoTab({
       showToast('Du kan kun slette turneringer der endnu ikke er startet.')
       return
     }
-    if (!window.confirm('Slette denne Americano-turnering? Alle tilmeldinger fjernes.')) return
+    const okDelete = await ask({
+      message: 'Slette denne Americano-turnering? Alle tilmeldinger fjernes.',
+      confirmLabel: 'Ja, slet',
+      danger: true,
+    })
+    if (!okDelete) return
     setBusyId(t.id)
     try {
       const { error } = await supabase.from('americano_tournaments').delete().eq('id', t.id)

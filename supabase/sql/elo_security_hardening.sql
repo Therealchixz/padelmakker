@@ -72,8 +72,21 @@ LANGUAGE plpgsql
 SET search_path = public
 AS $$
 DECLARE
-  v_uid uuid := auth.uid();
+  v_uid            uuid := auth.uid();
   v_is_participant boolean := false;
+  v_old_jsonb      jsonb;
+  v_new_jsonb      jsonb;
+  v_field          text;
+  v_protected_fields constant text[] := ARRAY[
+    'match_id','submitted_by',
+    'team1_player1_id','team1_player2_id',
+    'team2_player1_id','team2_player2_id',
+    'set1_team1','set1_team2','set1_tb1','set1_tb2',
+    'set2_team1','set2_team2','set2_tb1','set2_tb2',
+    'set3_team1','set3_team2','set3_tb1','set3_tb2',
+    'sets_won_team1','sets_won_team2',
+    'match_winner','score_display'
+  ];
 BEGIN
   IF TG_OP <> 'UPDATE' THEN
     RETURN NEW;
@@ -111,32 +124,19 @@ BEGIN
     RAISE EXCEPTION 'Submitter cannot self-confirm result';
   END IF;
 
-  IF
-    NEW.match_id IS DISTINCT FROM OLD.match_id
-    OR NEW.submitted_by IS DISTINCT FROM OLD.submitted_by
-    OR NEW.team1_player1_id IS DISTINCT FROM OLD.team1_player1_id
-    OR NEW.team1_player2_id IS DISTINCT FROM OLD.team1_player2_id
-    OR NEW.team2_player1_id IS DISTINCT FROM OLD.team2_player1_id
-    OR NEW.team2_player2_id IS DISTINCT FROM OLD.team2_player2_id
-    OR NEW.set1_team1 IS DISTINCT FROM OLD.set1_team1
-    OR NEW.set1_team2 IS DISTINCT FROM OLD.set1_team2
-    OR NEW.set1_tb1 IS DISTINCT FROM OLD.set1_tb1
-    OR NEW.set1_tb2 IS DISTINCT FROM OLD.set1_tb2
-    OR NEW.set2_team1 IS DISTINCT FROM OLD.set2_team1
-    OR NEW.set2_team2 IS DISTINCT FROM OLD.set2_team2
-    OR NEW.set2_tb1 IS DISTINCT FROM OLD.set2_tb1
-    OR NEW.set2_tb2 IS DISTINCT FROM OLD.set2_tb2
-    OR NEW.set3_team1 IS DISTINCT FROM OLD.set3_team1
-    OR NEW.set3_team2 IS DISTINCT FROM OLD.set3_team2
-    OR NEW.set3_tb1 IS DISTINCT FROM OLD.set3_tb1
-    OR NEW.set3_tb2 IS DISTINCT FROM OLD.set3_tb2
-    OR NEW.sets_won_team1 IS DISTINCT FROM OLD.sets_won_team1
-    OR NEW.sets_won_team2 IS DISTINCT FROM OLD.sets_won_team2
-    OR NEW.match_winner IS DISTINCT FROM OLD.match_winner
-    OR NEW.score_display IS DISTINCT FROM OLD.score_display
-  THEN
-    RAISE EXCEPTION 'Only confirmation fields can be updated';
-  END IF;
+  -- Vi sammenligner via jsonb så manglende kolonner (fx _tb hvis de aldrig
+  -- blev tilføjet til den live tabel) ikke giver "record has no field"-fejl.
+  v_old_jsonb := to_jsonb(OLD);
+  v_new_jsonb := to_jsonb(NEW);
+
+  FOREACH v_field IN ARRAY v_protected_fields LOOP
+    IF NOT (v_old_jsonb ? v_field) THEN
+      CONTINUE;
+    END IF;
+    IF (v_old_jsonb -> v_field) IS DISTINCT FROM (v_new_jsonb -> v_field) THEN
+      RAISE EXCEPTION 'Only confirmation fields can be updated (changed: %)', v_field;
+    END IF;
+  END LOOP;
 
   IF NEW.confirmed IS NOT TRUE THEN
     RAISE EXCEPTION 'Result must be confirmed in this update';
