@@ -1960,6 +1960,8 @@ button,
 
   /* Mobil: samme princip - målte nav-højde + lille luft til hero-indhold */
   .pm-landing-hero {
+    box-sizing: border-box;
+    min-height: calc(100dvh + 32px);
     padding-top: calc(var(--pm-landing-nav-h, 180px) + clamp(24px, 7vw, 36px));
   }
 }

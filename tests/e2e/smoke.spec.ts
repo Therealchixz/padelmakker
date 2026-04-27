@@ -26,6 +26,17 @@ test.describe('Public smoke flows', () => {
     )
   })
 
+  test('mobile landing keeps stats below the first screen', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+
+    const firstStat = page.getByText('200+').first()
+    await expect(firstStat).toBeVisible()
+
+    const box = await firstStat.boundingBox()
+    expect(box?.y).toBeGreaterThan(844)
+  })
+
   test('login page and forgot-password mode render', async ({ page }) => {
     await page.goto('/login')
 
