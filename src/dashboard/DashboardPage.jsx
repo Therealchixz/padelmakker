@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase';
 import { PROFILE_REFRESH_COOLDOWN_MS } from '../lib/platformConstants';
 import { AdminPinGate } from '../components/AdminPinGate';
 import { GuidedTourOverlay } from '../components/GuidedTourOverlay';
+import { PendingResultConfirmModal } from '../components/PendingResultConfirmModal';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -1294,6 +1295,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
           setTab("hjem");
         }}
       />
+
+      <PendingResultConfirmModal user={user} />
 
       {feedbackOpen && createPortal(
         <div
