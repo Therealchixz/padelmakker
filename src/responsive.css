@@ -110,6 +110,22 @@ body {
   overflow: hidden;
 }
 
+@media (max-width: 540px) {
+  .pm-hero-gradient {
+    background-image: url('/hero-bg-mobile.webp');
+    background-image: -webkit-image-set(
+      url('/hero-bg-mobile.avif') type('image/avif'),
+      url('/hero-bg-mobile.webp') type('image/webp'),
+      url('/hero-bg.jpg') type('image/jpeg')
+    );
+    background-image: image-set(
+      url('/hero-bg-mobile.avif') type('image/avif'),
+      url('/hero-bg-mobile.webp') type('image/webp'),
+      url('/hero-bg.jpg') type('image/jpeg')
+    );
+  }
+}
+
 .pm-hero-gradient::before {
   content: '';
   position: absolute;

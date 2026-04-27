@@ -50,6 +50,10 @@ test.describe('Public smoke flows', () => {
       'as',
       'style'
     )
+    await expect(page.locator('link[rel="preload"][href="/hero-bg-mobile.avif"]')).toHaveAttribute(
+      'media',
+      '(max-width: 540px)'
+    )
   })
 
   test('login page and forgot-password mode render', async ({ page }) => {
