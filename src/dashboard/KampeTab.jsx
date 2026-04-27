@@ -625,15 +625,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const markMatchNotifsRead = useCallback(async (matchId) => {
     const key = String(matchId || "");
     if (!key || !user?.id) return;
-    let hadUnread = false;
     setMatchUnreadById((prev) => {
       if (!prev[key]) return prev;
-      hadUnread = true;
       const next = { ...prev };
       delete next[key];
       return next;
     });
-    if (!hadUnread) return;
     const { error } = await supabase
       .from("notifications")
       .update({ read: true })
