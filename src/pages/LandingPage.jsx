@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, CheckCircle2 } from 'lucide-react';
 import { LandingTourVideo } from '../components/LandingTourVideo';
 import { useDarkMode } from '../lib/useDarkMode';
 
@@ -58,11 +58,13 @@ export function LandingPage() {
   }, []);
 
   const steps = [
-    { step: "01", icon: <UserPlus  size={24} color={theme.onAccent} />, title: "Opret profil", desc: "Angiv dit niveau, spillestil, region og hvilke ugedage du typisk spiller — det tager under et minut." },
-    { step: "02", icon: <Users     size={24} color={theme.onAccent} />, title: "Find makker",  desc: "Se spillere nær dig på dit niveau med overlappende spilledage, og invitér dem til en kamp." },
-    { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Book bane",    desc: "Find ledige baner med priser og tider — book direkte i appen." },
-    { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Rank op",     desc: "Spil kampe, optjen ELO-point og klatr op ad ranglisten." },
+    { step: "01", icon: <UserPlus  size={24} color={theme.onAccent} />, title: "Opret profil", desc: "Vælg niveau, region, spillestil og dine foretrukne spilledage — så kan andre finde dig rigtigt." },
+    { step: "02", icon: <Users     size={24} color={theme.onAccent} />, title: "Find makker",  desc: "Se padelspillere nær dig på samme niveau, og invitér dem til en kamp uden Facebook-tråde." },
+    { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Book bane",    desc: "Få overblik over ledige tider hos udvalgte centre, og hop videre til booking når tidspunktet passer." },
+    { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din ELO", desc: "Registrér resultater, følg udviklingen og find mere jævnbyrdige kampe næste gang." },
   ];
+
+  const heroProofs = ["Gratis profil", "Match på niveau", "ELO-ranking"];
 
   const features = [
     { icon: <Trophy size={22} color={theme.accent} />, title: "ELO-ranking", desc: "Avanceret ranking-system der matcher dig med jævnbyrdige spillere baseret på niveau, region og spilledage." },
@@ -306,21 +308,29 @@ export function LandingPage() {
                 <rect x="7" y="0" width="3" height="13" fill="white"/>
                 <rect x="0" y="5" width="18" height="3" fill="white"/>
               </svg>
-              Danmarks padel-platform
+              Dansk padel-platform
             </div>
             <h1 className="pm-reveal pm-delay-1" style={{ fontFamily: font, fontSize: "clamp(40px,8vw,76px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#fff", marginBottom: "24px" }}>
-              Find makker.<br />Book bane.<br /><span style={{ color: "#93C5FD" }}>Spil padel.</span>
+              Find makker<br />på dit niveau.<br /><span style={{ color: "#93C5FD" }}>Spil mere padel.</span>
             </h1>
             <p className="pm-reveal pm-delay-2" style={{ fontSize: "clamp(16px,3.8vw,19px)", color: "rgba(255,255,255,0.80)", maxWidth: "480px", margin: "0 auto clamp(36px,7vw,48px)", lineHeight: 1.65 }}>
-              Stop med at søge i Facebook-grupper. PadelMakker matcher dig med spillere på dit niveau — gratis.
+              Find padelspillere på dit niveau, opret kampe og se ledige baner i Danmark. PadelMakker gør det nemmere at komme fra lyst til kamp.
             </p>
             <div className="pm-reveal pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-              <button onClick={() => navigate("/opret")} style={heroPrimaryBtnStyle}>
+              <button onClick={() => navigate("/opret")} style={heroPrimaryBtnStyle} aria-label="Opret gratis profil på PadelMakker">
                 Opret gratis profil <ArrowRight size={17} />
               </button>
               <button onClick={() => navigate("/login")} style={heroSecondaryBtnStyle}>
                 Log ind
               </button>
+            </div>
+            <div className="pm-landing-proof-row pm-reveal pm-delay-4">
+              {heroProofs.map((item) => (
+                <span key={item}>
+                  <CheckCircle2 size={15} aria-hidden />
+                  {item}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -346,6 +356,9 @@ export function LandingPage() {
         <div className="pm-reveal" style={landingSectionIntroStyle}>
           <p style={landingSectionKickerStyle}>Sådan virker det</p>
           <h2 style={landingSectionHeadingStyle}>Fra profil til bane på minutter</h2>
+          <p style={{ fontSize: "15px", color: theme.textMid, lineHeight: 1.7, maxWidth: "620px", margin: "14px auto 0" }}>
+            Opret profil, find makker, book bane og følg din ELO — fire enkle skridt fra idéen om en kamp til en mere aktiv padel-hverdag.
+          </p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,230px),1fr))", gap: "16px" }}>
           {steps.map((s, i) => (
@@ -390,9 +403,9 @@ export function LandingPage() {
               Klar til at spille?
             </h2>
             <p style={{ fontSize: "clamp(15px,3.5vw,17px)", color: "rgba(255,255,255,0.75)", maxWidth: "420px", margin: "0 auto 32px", lineHeight: 1.6 }}>
-              Opret din profil på under et minut og find din første makker i dag.
+              Opret din gratis profil, find spillere på dit niveau og gør det lettere at få næste kamp i kalenderen.
             </p>
-            <button onClick={() => navigate("/opret")} style={ctaPrimaryBtnStyle}>
+            <button onClick={() => navigate("/opret")} style={ctaPrimaryBtnStyle} aria-label="Opret gratis profil og kom i gang">
               Kom i gang — det er gratis <ArrowRight size={17} />
             </button>
           </div>

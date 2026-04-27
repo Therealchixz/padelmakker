@@ -3,12 +3,12 @@ import { useLocation } from 'react-router-dom'
 import { absoluteUrl } from '../lib/siteMeta'
 
 const DEFAULT_DESC =
-  'Find padel-makkere, book baner og track din ELO-ranking. Danmarks padel-platform — gratis profil.'
+  'Find padelspillere på dit niveau, opret kampe, se ledige baner og følg din ELO-ranking. PadelMakker er en dansk padel-platform med gratis profil.'
 
 /** @type {Record<string, { title: string; description?: string }>} */
 const ROUTE_META = {
   '/': {
-    title: 'PadelMakker — Find makker. Book bane. Spil padel.',
+    title: 'PadelMakker | Find padelmakker på dit niveau',
     description: DEFAULT_DESC,
   },
   '/login': {
@@ -93,6 +93,17 @@ function setCanonical(href) {
   el.setAttribute('href', href)
 }
 
+function setJsonLd(id, data) {
+  let el = document.getElementById(id)
+  if (!el) {
+    el = document.createElement('script')
+    el.id = id
+    el.type = 'application/ld+json'
+    document.head.appendChild(el)
+  }
+  el.textContent = JSON.stringify(data)
+}
+
 /**
  * Opdaterer &lt;title&gt;, meta description, canonical og grundlæggende Open Graph pr. route (SPA).
  */
@@ -111,9 +122,25 @@ export function DocumentHead() {
     setMetaByProperty('og:url', url)
     setMetaByProperty('og:type', 'website')
     setMetaByProperty('og:locale', 'da_DK')
+    setMetaByProperty('og:site_name', 'PadelMakker')
     const ogImage = absoluteUrl('/icon-512.png')
     setMetaByProperty('og:image', ogImage)
     setMetaByName('twitter:card', 'summary_large_image')
+    setMetaByName('twitter:title', meta.title)
+    setMetaByName('twitter:description', description)
+    setJsonLd('pm-structured-data', {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'PadelMakker',
+      url: absoluteUrl('/'),
+      inLanguage: 'da-DK',
+      description: DEFAULT_DESC,
+      potentialAction: {
+        '@type': 'RegisterAction',
+        target: absoluteUrl('/opret'),
+        name: 'Opret gratis profil',
+      },
+    })
   }, [pathname, meta.title, description, url])
 
   return null

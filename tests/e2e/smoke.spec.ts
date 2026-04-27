@@ -8,6 +8,24 @@ test.describe('Public smoke flows', () => {
     await expect(page.getByRole('button', { name: /Kom i gang|Opret gratis profil/i }).first()).toBeVisible()
   })
 
+  test('landing page communicates value proposition and SEO metadata', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page).toHaveTitle(/Find padelmakker på dit niveau/i)
+    await expect(page.getByText(/Find padelspillere på dit niveau/i)).toBeVisible()
+    await expect(page.getByText(/Opret profil, find makker, book bane og følg din ELO/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: /Opret gratis profil/i }).first()).toBeVisible()
+
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      'content',
+      /Find padelspillere på dit niveau/
+    )
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+      'content',
+      /Find padelmakker på dit niveau/
+    )
+  })
+
   test('login page and forgot-password mode render', async ({ page }) => {
     await page.goto('/login')
 
