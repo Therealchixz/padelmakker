@@ -61,6 +61,33 @@ const KAMPE_NON_CHAT_NOTIF_TYPES = [
   "seeking_player",
 ];
 
+function TabBadge({ count }) {
+  if (!count) return null;
+  return (
+    <span
+      aria-label={`${count} ulæste notifikationer`}
+      style={{
+        background: theme.red,
+        color: theme.onAccent,
+        borderRadius: "999px",
+        minWidth: "16px",
+        height: "16px",
+        padding: "0 5px",
+        fontSize: "10px",
+        fontWeight: 700,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        lineHeight: 1,
+        marginLeft: "6px",
+        verticalAlign: "middle",
+      }}
+    >
+      {count > 9 ? "9+" : count}
+    </span>
+  );
+}
+
 const PADEL_RULE_SUMMARY = [
   {
     icon: '1.',
@@ -2076,8 +2103,34 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     );
   };
 
+  const padelUnreadCounts = useMemo(() => {
+    const counts = { open: 0, active: 0, completed: 0, total: 0 };
+    if (!matches.length) return counts;
+    const matchById = new Map(matches.map((m) => [String(m.id), m]));
+    const merged = new Map();
+    Object.entries(matchUnreadById).forEach(([id, c]) => {
+      merged.set(id, (merged.get(id) || 0) + (Number(c) || 0));
+    });
+    Object.entries(matchChatUnreadById).forEach(([id, c]) => {
+      merged.set(id, (merged.get(id) || 0) + (Number(c) || 0));
+    });
+    for (const [id, count] of merged) {
+      const match = matchById.get(id);
+      if (!match) continue;
+      const status = getStatus(match);
+      let bucket = null;
+      if (status === "open" || status === "full") bucket = "open";
+      else if (status === "in_progress") bucket = "active";
+      else if (status === "completed") bucket = "completed";
+      if (!bucket) continue;
+      counts[bucket] += count;
+      counts.total += count;
+    }
+    return counts;
+  }, [getStatus, matchChatUnreadById, matchUnreadById, matches]);
+
   const formatTabs = [
-    { id: "padel", label: "2v2-kampe" },
+    { id: "padel", label: <>2v2-kampe<TabBadge count={padelUnreadCounts.total} /></> },
     { id: "americano", label: "Americano" },
     { id: "liga", label: "Liga" },
   ];
@@ -2094,9 +2147,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     ? "Søg liga..."
     : "Søg spiller, bane eller beskrivelse...";
   const padelViewTabs = [
-    { id: "open", label: `Åbne (${openMatches.length})` },
-    { id: "active", label: `I gang (${activeMatches.length})` },
-    { id: "completed", label: `Afsluttede (${completedMatches.length})` },
+    { id: "open", label: <>Åbne ({openMatches.length})<TabBadge count={padelUnreadCounts.open} /></> },
+    { id: "active", label: <>I gang ({activeMatches.length})<TabBadge count={padelUnreadCounts.active} /></> },
+    { id: "completed", label: <>Afsluttede ({completedMatches.length})<TabBadge count={padelUnreadCounts.completed} /></> },
   ];
   const onScopeChange = (nextScope) => {
     setKampeScope(nextScope);
