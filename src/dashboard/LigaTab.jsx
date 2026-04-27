@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
 import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
@@ -700,6 +701,7 @@ export function LigaTab({
 }) {
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
+  const ask = useConfirm();
   const [view, setView] = useState('registration');
   const [scopeLocal, setScopeLocal] = useState('alle');
   const [searchLocal, setSearchLocal] = useState('');
@@ -855,7 +857,12 @@ export function LigaTab({
   };
 
   const declineInvite = async (team) => {
-    if (!window.confirm(`Afvis invitation til holdet "${team.name}"?`)) return;
+    const ok = await ask({
+      message: `Afvis invitation til holdet "${team.name}"?`,
+      confirmLabel: 'Ja, afvis',
+      danger: true,
+    });
+    if (!ok) return;
     setBusyId(team.id + '-decline');
     try {
       const { error } = await supabase.from('league_teams').delete().eq('id', team.id);
@@ -869,7 +876,12 @@ export function LigaTab({
   const leaveLeague = async (leagueId) => {
     const myTeam = myTeamByLeague[leagueId];
     if (!myTeam) return;
-    if (!window.confirm('Afmeld dit hold fra ligaen?')) return;
+    const ok = await ask({
+      message: 'Afmeld dit hold fra ligaen?',
+      confirmLabel: 'Ja, afmeld',
+      danger: true,
+    });
+    if (!ok) return;
     setBusyId(leagueId + '-leave');
     try {
       const { error } = await supabase.from('league_teams').delete().eq('id', myTeam.id);
@@ -881,7 +893,12 @@ export function LigaTab({
   };
 
   const kickTeam = async (team) => {
-    if (!window.confirm(`Smid "${team.name}" ud af ligaen?`)) return;
+    const ok = await ask({
+      message: `Smid "${team.name}" ud af ligaen?`,
+      confirmLabel: 'Ja, smid ud',
+      danger: true,
+    });
+    if (!ok) return;
     setBusyId(team.id + '-kick');
     try {
       const { error } = await supabase.from('league_teams').delete().eq('id', team.id);
@@ -941,7 +958,11 @@ export function LigaTab({
   const startLeague = async (league) => {
     const teams = teamsByLeague[league.id] || [];
     if (teams.length < 2) { showToast('Mindst 2 hold kræves for at starte.'); return; }
-    if (!window.confirm(`Start "${league.name}" og generér runde 1?`)) return;
+    const ok = await ask({
+      message: `Start "${league.name}" og generér runde 1?`,
+      confirmLabel: 'Ja, start',
+    });
+    if (!ok) return;
     setBusyId(league.id + '-start');
     try {
       // Use the larger of log2 (Swiss minimum) and teams-1 (full round-robin for small groups)
@@ -978,9 +999,11 @@ export function LigaTab({
     }
     const totalRounds = league.total_rounds;
     if (totalRounds && league.current_round >= totalRounds) {
-      if (window.confirm(`Alle ${totalRounds} planlagte runder er spillet! Afslut ligaen nu?`)) {
-        await completeLeague(league);
-      }
+      const ok = await ask({
+        message: `Alle ${totalRounds} planlagte runder er spillet! Afslut ligaen nu?`,
+        confirmLabel: 'Ja, afslut',
+      });
+      if (ok) await completeLeague(league, { skipConfirm: true });
       return;
     }
     const round = league.current_round + 1;
@@ -990,13 +1013,19 @@ export function LigaTab({
     const previewPairings = generatePairings(previewStandings, allMatches);
     const hasRealMatches = previewPairings.some(p => p.team2_id !== null);
     if (!hasRealMatches) {
-      if (window.confirm('Alle hold har allerede spillet mod hinanden — der er ingen gyldige parringer tilbage.\n\nVil du afslutte ligaen og låse ranglisten?')) {
-        await completeLeague(league);
-      }
+      const ok = await ask({
+        message: 'Alle hold har allerede spillet mod hinanden — der er ingen gyldige parringer tilbage.\n\nVil du afslutte ligaen og låse ranglisten?',
+        confirmLabel: 'Ja, afslut',
+      });
+      if (ok) await completeLeague(league, { skipConfirm: true });
       return;
     }
 
-    if (!window.confirm(`Generér runde ${round}${totalRounds ? ` af ${totalRounds}` : ''}?`)) return;
+    const okGen = await ask({
+      message: `Generér runde ${round}${totalRounds ? ` af ${totalRounds}` : ''}?`,
+      confirmLabel: 'Ja, generér',
+    });
+    if (!okGen) return;
     setBusyId(league.id + '-next');
     try {
       const standings = computeStandings(teams, allMatches);
@@ -1017,8 +1046,15 @@ export function LigaTab({
     finally { setBusyId(null); }
   };
 
-  const completeLeague = async (league) => {
-    if (!window.confirm(`Afslut "${league.name}"? Ranglisten låses.`)) return;
+  const completeLeague = async (league, opts = {}) => {
+    if (!opts.skipConfirm) {
+      const ok = await ask({
+        message: `Afslut "${league.name}"? Ranglisten låses.`,
+        confirmLabel: 'Ja, afslut',
+        danger: true,
+      });
+      if (!ok) return;
+    }
     setBusyId(league.id + '-complete');
     try {
       const { error } = await supabase.from('leagues').update({ status: 'completed' }).eq('id', league.id);

@@ -2,6 +2,7 @@ import { useEffect, useCallback, useState, useRef, useMemo, lazy, Suspense } fro
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu, Bug, Compass, Sun, Moon } from 'lucide-react';
@@ -538,6 +539,7 @@ const accountMenuRowBtnStyle = ({ isDanger = false, isLast = false } = {}) => ({
 
 export function DashboardPage({ user, onLogout, showToast }) {
   const { user: authUser, refreshProfileQuiet } = useAuth();
+  const ask = useConfirm();
   const displayName = resolveDisplayName(user, authUser);
   const navigate = useNavigate();
   const location = useLocation();
@@ -845,12 +847,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setFeedbackOpen(true);
   }, []);
 
-  const closeFeedbackModal = useCallback((options = {}) => {
+  const closeFeedbackModal = useCallback(async (options = {}) => {
     const force = options.force === true;
     if (feedbackSending && !force) return false;
     const hasDraft = feedbackTopic.trim().length > 0 || feedbackMessage.trim().length > 0;
     if (!force && hasDraft) {
-      const confirmed = window.confirm("Du har tekst du ikke har sendt. Vil du lukke?");
+      const confirmed = await ask({
+        message: "Du har tekst du ikke har sendt. Vil du lukke?",
+        confirmLabel: "Ja, luk",
+        cancelLabel: "Bliv her",
+        danger: true,
+      });
       if (!confirmed) return false;
     }
     setFeedbackOpen(false);
@@ -859,7 +866,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setFeedbackTopic("");
     setFeedbackMessage("");
     return true;
-  }, [feedbackMessage, feedbackSending, feedbackTopic]);
+  }, [ask, feedbackMessage, feedbackSending, feedbackTopic]);
 
   useEffect(() => {
     if (!feedbackOpen) return undefined;

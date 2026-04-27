@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
 import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
@@ -13,6 +14,7 @@ import {
 } from '../lib/platformConstants';
 
 export function AdminTab() {
+  const ask = useConfirm();
   const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' or 'matches'
   const [matchSubTab, setMatchSubTab] = useState('2v2'); // '2v2' | 'americano' | 'liga'
   const [_loading, setLoading] = useState(true);
@@ -80,16 +82,26 @@ export function AdminTab() {
   };
 
   const deleteAmericano = async (id, name) => {
-    if (!window.confirm(`Slet turneringen "${name}"? Dette kan ikke fortrydes.`)) return;
+    const ok = await ask({
+      message: `Slet turneringen "${name}"? Dette kan ikke fortrydes.`,
+      confirmLabel: 'Ja, slet',
+      danger: true,
+    });
+    if (!ok) return;
     const { error } = await supabase.from('americano_tournaments').delete().eq('id', id);
-    if (error) alert('Fejl: ' + error.message);
+    if (error) await ask({ message: 'Fejl: ' + error.message, notice: true });
     else fetchAmericano();
   };
 
   const deleteLiga = async (id, name) => {
-    if (!window.confirm(`Slet ligaen "${name}"? Hold og kampe slettes også. Dette kan ikke fortrydes.`)) return;
+    const ok = await ask({
+      message: `Slet ligaen "${name}"? Hold og kampe slettes også. Dette kan ikke fortrydes.`,
+      confirmLabel: 'Ja, slet',
+      danger: true,
+    });
+    if (!ok) return;
     const { error } = await supabase.from('leagues').delete().eq('id', id);
-    if (error) alert('Fejl: ' + error.message);
+    if (error) await ask({ message: 'Fejl: ' + error.message, notice: true });
     else fetchLiga();
   };
 
@@ -106,27 +118,37 @@ export function AdminTab() {
         ? `Er du sikker på, at du vil fjerne admin-rettigheder fra ${user.full_name}?`
         : `Vil du give admin-rettigheder til ${user.full_name}?`;
     
-    if (!window.confirm(confirmMsg)) return;
+    const ok = await ask({
+      message: confirmMsg,
+      confirmLabel: user.role === 'admin' ? 'Ja, fjern admin' : 'Ja, gør til admin',
+      danger: user.role === 'admin',
+    });
+    if (!ok) return;
 
     const { error } = await supabase
       .from('profiles')
       .update({ role: newRole })
       .eq('id', user.id);
-    
+
     if (!error) fetchUsers();
   };
 
   const deleteMatch = async (matchId) => {
-    if (!window.confirm('Er du helt sikker på at du vil slette denne kamp? Dette kan ikke fortrydes og vil påvirke ELO.')) return;
-    
+    const ok = await ask({
+      message: 'Er du helt sikker på at du vil slette denne kamp? Dette kan ikke fortrydes og vil påvirke ELO.',
+      confirmLabel: 'Ja, slet kamp',
+      danger: true,
+    });
+    if (!ok) return;
+
     const { error } = await supabase
       .from('matches')
       .delete()
       .eq('id', matchId);
-    
+
     if (error) {
       console.error('Delete error:', error);
-      alert('Kunne ikke slette kampen: ' + error.message);
+      await ask({ message: 'Kunne ikke slette kampen: ' + error.message, notice: true });
     } else {
       fetchMatches();
     }
@@ -165,7 +187,7 @@ export function AdminTab() {
       setEditingUser(null);
       setTimeout(() => fetchUsers(), 300);
     } catch (err) {
-      alert('Fejl ved opdatering: ' + (err.message || 'Ukendt fejl'));
+      await ask({ message: 'Fejl ved opdatering: ' + (err.message || 'Ukendt fejl'), notice: true });
     }
   };
 

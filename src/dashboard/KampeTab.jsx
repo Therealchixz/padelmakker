@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { Profile, Court } from '../api/base44Client';
 import { supabase } from '../lib/supabase';
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
@@ -209,6 +210,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user: authUser, refreshProfile } = useAuth();
+  const ask = useConfirm();
   const isAdmin = user?.role === 'admin';
   const myDisplayName                 = resolveDisplayName(user, authUser);
   const eloSyncKeyKampe = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
@@ -905,7 +907,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const kickPlayer = async (matchId, targetUserId, targetName = "spilleren") => {
     const label = String(targetName || "spilleren").trim();
     const actor = isAdmin ? "admin" : "kampopretter";
-    if (!window.confirm(`Er du sikker på, at du vil smide ${label} ud af kampen som ${actor}?`)) return;
+    const ok = await ask({
+      message: `Er du sikker på, at du vil smide ${label} ud af kampen som ${actor}?`,
+      confirmLabel: "Ja, smid ud",
+      danger: true,
+    });
+    if (!ok) return;
 
     setBusyId(matchId + '-kick-' + targetUserId);
     try {
@@ -934,9 +941,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
 
     if (!isFull && isAdmin) {
-      if (!window.confirm("Kampen er ikke fuld endnu. Vil du gennemtvinge start som admin?")) return;
+      const ok = await ask({
+        message: "Kampen er ikke fuld endnu. Vil du gennemtvinge start som admin?",
+        confirmLabel: "Ja, start nu",
+      });
+      if (!ok) return;
     } else if (isAdmin && !matchPlayers[matchId]?.some(p => p.user_id === user.id)) {
-      if (!window.confirm("Vil du starte denne kamp som admin?")) return;
+      const ok = await ask({
+        message: "Vil du starte denne kamp som admin?",
+        confirmLabel: "Ja, start",
+      });
+      if (!ok) return;
     }
 
     setBusyId(matchId);
@@ -968,7 +983,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       ? `Slet denne kamp? ${others.length} andre spillere bliver også afmeldt.`
       : "Slet denne kamp?";
 
-    if (!window.confirm(msg)) return;
+    const ok = await ask({
+      message: msg,
+      confirmLabel: "Ja, slet",
+      danger: true,
+    });
+    if (!ok) return;
     setBusyId(matchId);
     try {
       const mpBefore = matchPlayers[matchId] || [];
