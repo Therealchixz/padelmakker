@@ -91,56 +91,6 @@ body {
   }
 }
 
-.pm-landing-proof-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.pm-landing-cta-note {
-  margin: 10px 0 0;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.pm-landing-proof-row span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 7px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 13px;
-  font-weight: 700;
-  backdrop-filter: blur(5px);
-}
-
-.pm-landing-proof-row svg {
-  color: #bbf7d0;
-  flex-shrink: 0;
-}
-
-@media (max-width: 420px) {
-  .pm-landing-proof-row {
-    align-items: stretch;
-    flex-direction: column;
-    max-width: 260px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .pm-landing-proof-row span {
-    justify-content: center;
-  }
-}
-
 /* ─── Landing page hero: foto-baggrund med mørkt overlay ─── */
 .pm-hero-gradient {
   background-image: url('/hero-bg.jpg');

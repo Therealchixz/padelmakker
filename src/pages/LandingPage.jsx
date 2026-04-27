@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, CheckCircle2 } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp } from 'lucide-react';
 import { LandingTourVideo } from '../components/LandingTourVideo';
 import { useDarkMode } from '../lib/useDarkMode';
 
@@ -63,8 +63,6 @@ export function LandingPage() {
     { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Book bane",    desc: "Få overblik over ledige tider hos udvalgte centre, og hop videre til booking når tidspunktet passer." },
     { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din ELO", desc: "Registrér resultater, følg udviklingen og find mere jævnbyrdige kampe næste gang." },
   ];
-
-  const heroProofs = ["Gratis profil", "Match på niveau", "ELO-ranking"];
 
   const features = [
     { icon: <Trophy size={22} color={theme.accent} />, title: "ELO-ranking", desc: "Avanceret ranking-system der matcher dig med jævnbyrdige spillere baseret på niveau, region og spilledage." },
@@ -302,14 +300,6 @@ export function LandingPage() {
           }}
         >
           <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-            <div className="pm-reveal" style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: "12px", fontWeight: 600, padding: "6px 16px", borderRadius: "20px", marginBottom: "28px", border: "1px solid rgba(255,255,255,0.25)", letterSpacing: "0.03em", backdropFilter: "blur(4px)" }}>
-              <svg width="18" height="13" viewBox="0 0 18 13" xmlns="http://www.w3.org/2000/svg" aria-hidden style={{ borderRadius: "2px", flexShrink: 0 }}>
-                <rect width="18" height="13" fill="#C60C30"/>
-                <rect x="7" y="0" width="3" height="13" fill="white"/>
-                <rect x="0" y="5" width="18" height="3" fill="white"/>
-              </svg>
-              Dansk padel-platform
-            </div>
             <h1 className="pm-reveal pm-delay-1" style={{ fontFamily: font, fontSize: "clamp(40px,8vw,76px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#fff", marginBottom: "24px" }}>
               Find makker<br />på dit niveau.<br /><span style={{ color: "#93C5FD" }}>Spil mere padel.</span>
             </h1>
@@ -323,17 +313,6 @@ export function LandingPage() {
               <button onClick={() => navigate("/login")} style={heroSecondaryBtnStyle}>
                 Log ind
               </button>
-            </div>
-            <p className="pm-landing-cta-note pm-reveal pm-delay-4">
-              Gratis. Tager under 1 minut.
-            </p>
-            <div className="pm-landing-proof-row pm-reveal pm-delay-4">
-              {heroProofs.map((item) => (
-                <span key={item}>
-                  <CheckCircle2 size={15} aria-hidden />
-                  {item}
-                </span>
-              ))}
             </div>
           </div>
         </div>
