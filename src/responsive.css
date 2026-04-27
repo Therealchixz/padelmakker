@@ -1964,5 +1964,11 @@ button,
     min-height: calc(100dvh + 32px);
     padding-top: calc(var(--pm-landing-nav-h, 180px) + clamp(24px, 7vw, 36px));
   }
+
+  .pm-landing-hero > div:first-child {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
