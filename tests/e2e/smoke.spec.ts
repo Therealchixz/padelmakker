@@ -37,6 +37,17 @@ test.describe('Public smoke flows', () => {
     expect(box?.y).toBeGreaterThan(844)
   })
 
+  test('landing page exposes critical resource hints', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(page.locator('link[rel="preconnect"][href="https://fonts.googleapis.com"]')).toHaveCount(1)
+    await expect(page.locator('link[rel="preconnect"][href="https://fonts.gstatic.com"]')).toHaveAttribute(
+      'crossorigin',
+      ''
+    )
+    await expect(page.locator('link[rel="preload"][href="/hero-bg.avif"]')).toHaveAttribute('as', 'image')
+  })
+
   test('login page and forgot-password mode render', async ({ page }) => {
     await page.goto('/login')
 
