@@ -16,7 +16,7 @@ function debugMode() {
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { err: null };
+    this.state = { err: null, eventId: null };
   }
 
   static getDerivedStateFromError(err) {
@@ -25,17 +25,19 @@ export class ErrorBoundary extends React.Component {
 
   componentDidCatch(err, info) {
     console.error("PadelMakker render error:", err, info?.componentStack);
-    Sentry.captureException(err, {
+    const eventId = Sentry.captureException(err, {
       extra: {
         componentStack: info?.componentStack || "",
       },
     });
+    if (eventId) this.setState({ eventId });
   }
 
   render() {
     if (this.state.err) {
       const showDetail = debugMode();
       const msg = this.state.err?.message || String(this.state.err);
+      const eventId = this.state.eventId;
       return (
         <div
           style={{
@@ -78,6 +80,11 @@ export class ErrorBoundary extends React.Component {
           {!showDetail && (
             <p style={{ fontSize: 12, color: "#94A3B8", marginBottom: 16 }}>
               (Til udviklere: åbn siden med <code>?debug=1</code> for fejlbesked)
+            </p>
+          )}
+          {eventId && (
+            <p style={{ fontSize: 11, color: "#94A3B8", marginBottom: 16 }}>
+              Reference: <code style={{ userSelect: "all" }}>{eventId}</code>
             </p>
           )}
           <button

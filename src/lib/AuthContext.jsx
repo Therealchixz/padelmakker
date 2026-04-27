@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured } from './supabase'
 import { normalizeProfileRow, buildOnboardingProfileRowPatch } from './profileUtils'
 import { applyPendingAvatar } from './avatarUpload'
 import { DEFAULT_REGION } from './platformConstants'
+import { BanNoticeModal } from '../components/BanNoticeModal'
 
 const AuthContext = createContext(null)
 
@@ -157,6 +158,7 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [banNotice, setBanNotice] = useState(null)
   const profileReqId = useRef(0)
   /** Til pending-avatar merge: undgå at sætte profil efter logout når core-load timeout gav prev=null */
   const activeUserIdRef = useRef('')
@@ -165,10 +167,11 @@ export function AuthProvider({ children }) {
 
   /**
    * Opdater last_active_at for brugeren — fire-and-forget.
-   * Skal defineres FØR useEffect der bruger den i dependency array.
+   * Læser aktivt user-id via ref, så funktionen er stabil og ikke trigger
+   * re-mount af effekter som har den i dependency array.
    */
   const touchLastActive = useCallback(async (userId) => {
-    const uid = userId || user?.id
+    const uid = userId || activeUserIdRef.current
     if (!uid) return
     try {
       await supabase
@@ -178,7 +181,7 @@ export function AuthProvider({ children }) {
     } catch {
       /* ignorer — kritisk ikke for UX */
     }
-  }, [user?.id])
+  }, [])
 
   const loadProfile = useCallback((userRow, opts = {}) => {
     const quiet = opts.quiet === true
@@ -197,13 +200,11 @@ export function AuthProvider({ children }) {
       .then((p) => {
         if (profileReqId.current !== id) return;
 
-        // Tjek for ban-status
+        // Tjek for ban-status — vis modal i stedet for blokerende alert()
         if (p?.is_banned) {
           if (signingOutRef.current) return
           signingOutRef.current = true
-          const reasonMsg = p.ban_reason ? `\n\nBegrundelse: ${p.ban_reason}` : '';
-          alert(`Din konto er blevet udelukket af en administrator.${reasonMsg}`);
-          signOut();
+          setBanNotice({ reason: p.ban_reason || '' })
           return;
         }
 
@@ -250,13 +251,18 @@ export function AuthProvider({ children }) {
       })
   }, [])
 
+  /**
+   * Init + auth-state-listener: kører kun én gang ved mount.
+   * Tidligere lå ban-realtime-subscription i samme effekt med user?.id i deps,
+   * hvilket re-initialiserede session/listener/visibilitychange ved hvert auth-skift.
+   */
   useEffect(() => {
     if (!isSupabaseConfigured) {
       console.error(
         'Supabase mangler: sæt VITE_SUPABASE_URL og VITE_SUPABASE_ANON_KEY (fx i Vercel / .env.local)'
       )
       setLoading(false)
-      return
+      return undefined
     }
 
     let cancelled = false
@@ -286,27 +292,6 @@ export function AuthProvider({ children }) {
     }
 
     init()
-    
-    // Realtids-overvågning af ban-status
-    let realtimeSub = null
-    if (user?.id) {
-      realtimeSub = supabase
-        .channel(`profile-status-${user.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
-          (payload) => {
-            if (payload.new?.is_banned) {
-              if (signingOutRef.current) return
-              signingOutRef.current = true
-              const reason = payload.new.ban_reason ? `\n\nBegrundelse: ${payload.new.ban_reason}` : ''
-              alert(`Din konto er blevet udelukket af en administrator.${reason}`)
-              signOut()
-            }
-          }
-        )
-        .subscribe()
-    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, s) => {
@@ -341,10 +326,35 @@ export function AuthProvider({ children }) {
     return () => {
       cancelled = true
       subscription.unsubscribe()
-      if (realtimeSub) supabase.removeChannel(realtimeSub)
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  }, [loadProfile, touchLastActive, user?.id])
+  }, [loadProfile, touchLastActive])
+
+  /**
+   * Realtids-overvågning af ban-status — kører kun når user?.id ændres.
+   * Bruger setBanNotice (i stedet for alert) for ikke at blokere UI-tråden.
+   */
+  useEffect(() => {
+    if (!user?.id) return undefined
+    const channel = supabase
+      .channel(`profile-status-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        (payload) => {
+          if (payload.new?.is_banned) {
+            if (signingOutRef.current) return
+            signingOutRef.current = true
+            setBanNotice({ reason: payload.new.ban_reason || '' })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      try { supabase.removeChannel(channel) } catch { /* ignore */ }
+    }
+  }, [user?.id])
 
   useEffect(() => {
     activeUserIdRef.current = user?.id != null ? String(user.id) : ''
@@ -504,6 +514,15 @@ export function AuthProvider({ children }) {
       }}
     >
       {children}
+      {banNotice && (
+        <BanNoticeModal
+          reason={banNotice.reason}
+          onAcknowledge={async () => {
+            setBanNotice(null)
+            try { await signOut() } catch { /* ignorer — vi prøver at logge ud */ }
+          }}
+        />
+      )}
     </AuthContext.Provider>
   )
 }
