@@ -1906,7 +1906,7 @@ button,
 /* Landing: hero-sektionens top-padding skal clearse den faste navbar */
 .pm-landing-hero {
   /* Brug målt nav-højde i stedet for faste "magiske" offsets. */
-  padding-top: calc(var(--pm-landing-nav-h, 120px) + clamp(16px, 4vw, 28px));
+  padding-top: calc(var(--pm-landing-nav-h, 120px) + clamp(44px, 7vw, 72px));
 }
 
 @media (max-width: 540px) {
@@ -1960,7 +1960,7 @@ button,
 
   /* Mobil: samme princip - målte nav-højde + lille luft til hero-indhold */
   .pm-landing-hero {
-    padding-top: calc(var(--pm-landing-nav-h, 180px) + clamp(14px, 5vw, 24px));
+    padding-top: calc(var(--pm-landing-nav-h, 180px) + clamp(24px, 7vw, 36px));
   }
 }
 
