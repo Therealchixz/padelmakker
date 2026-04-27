@@ -738,8 +738,8 @@ button,
     position: absolute;
     top: -7px;
     right: -10px;
-    background: #ef4444;
-    color: #fff;
+    background: var(--pm-danger);
+    color: var(--pm-on-accent);
     border: 2px solid var(--pm-surface);
     border-radius: 999px;
     min-width: 18px;
@@ -799,7 +799,7 @@ button,
   }
 
   .pm-mobile-more-logout {
-    color: #b91c1c;
+    color: var(--pm-red);
   }
 }
 

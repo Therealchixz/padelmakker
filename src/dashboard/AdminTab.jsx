@@ -422,7 +422,7 @@ export function AdminTab() {
               {americanoTournaments.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen turneringer fundet.</div>}
               {americanoTournaments.map(t => {
                 const statusLabel = t.status === 'completed' ? 'Afsluttet' : t.status === 'active' ? 'Aktiv' : 'Åben';
-                const statusColor = t.status === 'completed' ? theme.accent : t.status === 'active' ? '#16A34A' : theme.textMid;
+                const statusColor = t.status === 'completed' ? theme.accent : t.status === 'active' ? theme.green : theme.textMid;
                 return (
                   <div key={t.id} style={{ background: theme.surface, padding: "14px 16px", borderRadius: "12px", border: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -450,7 +450,7 @@ export function AdminTab() {
               {ligaLeagues.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen ligaer fundet.</div>}
               {ligaLeagues.map(l => {
                 const statusLabel = l.status === 'completed' ? 'Afsluttet' : l.status === 'active' ? 'Aktiv' : 'Tilmelding';
-                const statusColor = l.status === 'completed' ? theme.textMid : l.status === 'active' ? '#16A34A' : '#D97706';
+                const statusColor = l.status === 'completed' ? theme.textMid : l.status === 'active' ? theme.green : theme.warm;
                 return (
                   <div key={l.id} style={{ background: theme.surface, padding: "14px 16px", borderRadius: "12px", border: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>

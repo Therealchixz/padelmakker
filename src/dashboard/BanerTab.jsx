@@ -22,6 +22,86 @@ import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn, Info, Ch
 
 /** @typedef {{ courts: CourtRow[], dateLabel: string, fetchedAt: string, openBookingPath?: string, date?: string }} VenueLoadState */
 
+const SLOT_CHIP_BASE = {
+  padding: '10px 14px',
+  borderRadius: '6px',
+  fontSize: '12px',
+  fontWeight: 600,
+};
+
+const SLOT_STYLES = {
+  free: {
+    ...SLOT_CHIP_BASE,
+    background: theme.greenBg,
+    color: theme.green,
+    border: '1px solid ' + theme.green,
+    textDecoration: 'none',
+  },
+  booked: {
+    ...SLOT_CHIP_BASE,
+    background: theme.redBg,
+    color: theme.red,
+    border: '1px solid ' + theme.red,
+  },
+  blockedRule: {
+    ...SLOT_CHIP_BASE,
+    background: theme.warmBg,
+    color: theme.warm,
+    border: '1px solid ' + theme.warm,
+    cursor: 'help',
+  },
+  neutral: {
+    ...SLOT_CHIP_BASE,
+    background: theme.surfaceAlt,
+    color: theme.textLight,
+    border: '1px solid ' + theme.border,
+    fontWeight: 500,
+  },
+};
+
+function DateNavigator({ dateYmd, todayYmd, loading = false, onChangeDate }) {
+  const navButtonStyle = (primary = false) => ({
+    ...btn(primary),
+    fontSize: '12px',
+    padding: primary ? '8px 12px' : '8px 10px',
+    opacity: loading ? 0.65 : 1,
+    cursor: loading ? 'not-allowed' : 'pointer',
+  });
+
+  const changeByDays = (days) => {
+    onChangeDate(copenhagenAddDaysYmd(dateYmd, days));
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '8px',
+        alignItems: 'center',
+        marginBottom: '12px',
+      }}
+      className="pm-baner-date-nav"
+    >
+      <button type="button" disabled={loading} onClick={() => changeByDays(-7)} style={navButtonStyle(false)} title="En uge tilbage">
+        {'<< 1 uge'}
+      </button>
+      <button type="button" disabled={loading} onClick={() => changeByDays(-1)} style={navButtonStyle(false)} title="En dag tilbage">
+        {'< 1 dag'}
+      </button>
+      <button type="button" disabled={loading} onClick={() => onChangeDate(todayYmd)} style={navButtonStyle(dateYmd === todayYmd)}>
+        I dag
+      </button>
+      <button type="button" disabled={loading} onClick={() => changeByDays(1)} style={navButtonStyle(false)} title="En dag frem">
+        {'1 dag >'}
+      </button>
+      <button type="button" disabled={loading} onClick={() => changeByDays(7)} style={navButtonStyle(false)} title="En uge frem">
+        {'1 uge >>'}
+      </button>
+    </div>
+  );
+}
+
 export function BanerTab() {
   const detailRefs = useRef(/** @type {Record<string, HTMLDetailsElement | null>} */ ({}));
 
@@ -196,16 +276,7 @@ export function BanerTab() {
           target="_blank"
           rel="noopener noreferrer"
           title="Åbner MATCHi med valgt dato — vælg bane og book der"
-          style={{
-            background: 'rgba(34, 197, 94, 0.15)',
-            color: '#15803d',
-            border: '1px solid rgba(34, 197, 94, 0.45)',
-            padding: '10px 14px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontWeight: 600,
-            textDecoration: 'none',
-          }}
+          style={SLOT_STYLES.free}
         >
           {s.time} · Ledig
         </a>
@@ -219,16 +290,7 @@ export function BanerTab() {
           target="_blank"
           rel="noopener noreferrer"
           title="Åbner Bookli — log ind og vælg bane og tid"
-          style={{
-            background: 'rgba(34, 197, 94, 0.15)',
-            color: '#15803d',
-            border: '1px solid rgba(34, 197, 94, 0.45)',
-            padding: '10px 14px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontWeight: 600,
-            textDecoration: 'none',
-          }}
+          style={SLOT_STYLES.free}
         >
           {s.time} · Ledig
         </a>
@@ -242,16 +304,7 @@ export function BanerTab() {
           target="_blank"
           rel="noopener noreferrer"
           title="Book på Halbooking"
-          style={{
-            background: 'rgba(34, 197, 94, 0.15)',
-            color: '#15803d',
-            border: '1px solid rgba(34, 197, 94, 0.45)',
-            padding: '10px 14px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontWeight: 600,
-            textDecoration: 'none',
-          }}
+          style={SLOT_STYLES.free}
         >
           {s.time} · Ledig
         </a>
@@ -261,15 +314,7 @@ export function BanerTab() {
       return (
         <span
           key={s.time}
-          style={{
-            background: 'rgba(239, 68, 68, 0.12)',
-            color: '#b91c1c',
-            border: '1px solid rgba(239, 68, 68, 0.35)',
-            padding: '10px 14px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontWeight: 600,
-          }}
+          style={SLOT_STYLES.booked}
         >
           {s.time} · Optaget
         </span>
@@ -280,16 +325,7 @@ export function BanerTab() {
         <span
           key={s.time}
           title={s.ruleHint || 'Kan ikke bookes (klubbens regel)'}
-          style={{
-            background: 'rgba(245, 158, 11, 0.18)',
-            color: '#b45309',
-            border: '1px solid rgba(245, 158, 11, 0.5)',
-            padding: '10px 14px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontWeight: 600,
-            cursor: 'help',
-          }}
+          style={SLOT_STYLES.blockedRule}
         >
           {s.time} · Ikke bookbar
         </span>
@@ -298,14 +334,7 @@ export function BanerTab() {
     return (
       <span
         key={s.time}
-        style={{
-          background: theme.border + '55',
-          color: theme.textLight,
-          border: '1px solid ' + theme.border,
-          padding: '10px 14px',
-          borderRadius: '6px',
-          fontSize: '12px',
-        }}
+        style={SLOT_STYLES.neutral}
       >
         {s.time}
       </span>
@@ -451,68 +480,13 @@ export function BanerTab() {
                     >
                       {v.title} — {linkDate}
                     </p>
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '8px',
-                        alignItems: 'center',
-                        marginBottom: '12px',
+                    <DateNavigator
+                      dateYmd={linkDate}
+                      todayYmd={todayYmd}
+                      onChangeDate={(next) => {
+                        setLinkDateByVenue((m) => ({ ...m, [v.id]: next }));
                       }}
-                      className="pm-baner-date-nav"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(linkDate, -7);
-                          setLinkDateByVenue((m) => ({ ...m, [v.id]: next }));
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px' }}
-                        title="Én uge tilbage"
-                      >
-                        ≪ 1 uge
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(linkDate, -1);
-                          setLinkDateByVenue((m) => ({ ...m, [v.id]: next }));
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px' }}
-                        title="Én dag tilbage"
-                      >
-                        ‹ 1 dag
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setLinkDateByVenue((m) => ({ ...m, [v.id]: todayYmd }))}
-                        style={{ ...btn(linkDate === todayYmd), fontSize: '12px', padding: '8px 12px' }}
-                      >
-                        I dag
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(linkDate, 1);
-                          setLinkDateByVenue((m) => ({ ...m, [v.id]: next }));
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px' }}
-                        title="Én dag frem"
-                      >
-                        1 dag ›
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(linkDate, 7);
-                          setLinkDateByVenue((m) => ({ ...m, [v.id]: next }));
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px' }}
-                        title="Én uge frem"
-                      >
-                        1 uge ≫
-                      </button>
-                    </div>
+                    />
                     <div
                       style={{
                         display: 'flex',
@@ -573,80 +547,15 @@ export function BanerTab() {
                     >
                       {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${matchiDate}`}
                     </p>
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '8px',
-                        alignItems: 'center',
-                        marginBottom: '12px',
+                    <DateNavigator
+                      dateYmd={matchiDate}
+                      todayYmd={todayYmd}
+                      loading={loading}
+                      onChangeDate={(next) => {
+                        setMatchiDateByVenue((m) => ({ ...m, [v.id]: next }));
+                        loadMatchiVenue(v.id, next);
                       }}
-                      className="pm-baner-date-nav"
-                    >
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(matchiDate, -7);
-                          setMatchiDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadMatchiVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én uge tilbage"
-                      >
-                        ≪ 1 uge
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(matchiDate, -1);
-                          setMatchiDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadMatchiVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én dag tilbage"
-                      >
-                        ‹ 1 dag
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          setMatchiDateByVenue((m) => ({ ...m, [v.id]: todayYmd }));
-                          loadMatchiVenue(v.id, todayYmd);
-                        }}
-                        style={{ ...btn(matchiDate === todayYmd), fontSize: '12px', padding: '8px 12px', opacity: loading ? 0.65 : 1 }}
-                      >
-                        I dag
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(matchiDate, 1);
-                          setMatchiDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadMatchiVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én dag frem"
-                      >
-                        1 dag ›
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(matchiDate, 7);
-                          setMatchiDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadMatchiVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én uge frem"
-                      >
-                        1 uge ≫
-                      </button>
-                    </div>
+                    />
                     <div
                       style={{
                         display: 'flex',
@@ -778,80 +687,15 @@ export function BanerTab() {
                     >
                       {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${bookliDate}`}
                     </p>
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '8px',
-                        alignItems: 'center',
-                        marginBottom: '12px',
+                    <DateNavigator
+                      dateYmd={bookliDate}
+                      todayYmd={todayYmd}
+                      loading={loading}
+                      onChangeDate={(next) => {
+                        setBookliDateByVenue((m) => ({ ...m, [v.id]: next }));
+                        loadBookliVenue(v.id, next);
                       }}
-                      className="pm-baner-date-nav"
-                    >
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(bookliDate, -7);
-                          setBookliDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadBookliVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én uge tilbage"
-                      >
-                        ≪ 1 uge
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(bookliDate, -1);
-                          setBookliDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadBookliVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én dag tilbage"
-                      >
-                        ‹ 1 dag
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          setBookliDateByVenue((m) => ({ ...m, [v.id]: todayYmd }));
-                          loadBookliVenue(v.id, todayYmd);
-                        }}
-                        style={{ ...btn(bookliDate === todayYmd), fontSize: '12px', padding: '8px 12px', opacity: loading ? 0.65 : 1 }}
-                      >
-                        I dag
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(bookliDate, 1);
-                          setBookliDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadBookliVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én dag frem"
-                      >
-                        1 dag ›
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(bookliDate, 7);
-                          setBookliDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadBookliVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én uge frem"
-                      >
-                        1 uge ≫
-                      </button>
-                    </div>
+                    />
                     <div
                       style={{
                         display: 'flex',
@@ -997,80 +841,15 @@ export function BanerTab() {
                         {v.title} — {loaded.dateLabel}
                       </p>
                     )}
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '8px',
-                        alignItems: 'center',
-                        marginBottom: '12px',
+                    <DateNavigator
+                      dateYmd={halbookingDate}
+                      todayYmd={todayYmd}
+                      loading={loading}
+                      onChangeDate={(next) => {
+                        setHalbookingDateByVenue((m) => ({ ...m, [v.id]: next }));
+                        loadHalbookingVenue(v.id, next);
                       }}
-                      className="pm-baner-date-nav"
-                    >
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(halbookingDate, -7);
-                          setHalbookingDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadHalbookingVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én uge tilbage"
-                      >
-                        ≪ 1 uge
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(halbookingDate, -1);
-                          setHalbookingDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadHalbookingVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én dag tilbage"
-                      >
-                        ‹ 1 dag
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          setHalbookingDateByVenue((m) => ({ ...m, [v.id]: todayYmd }));
-                          loadHalbookingVenue(v.id, todayYmd);
-                        }}
-                        style={{ ...btn(halbookingDate === todayYmd), fontSize: '12px', padding: '8px 12px', opacity: loading ? 0.65 : 1 }}
-                      >
-                        I dag
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(halbookingDate, 1);
-                          setHalbookingDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadHalbookingVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én dag frem"
-                      >
-                        1 dag ›
-                      </button>
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          const next = copenhagenAddDaysYmd(halbookingDate, 7);
-                          setHalbookingDateByVenue((m) => ({ ...m, [v.id]: next }));
-                          loadHalbookingVenue(v.id, next);
-                        }}
-                        style={{ ...btn(false), fontSize: '12px', padding: '8px 10px', opacity: loading ? 0.65 : 1 }}
-                        title="Én uge frem"
-                      >
-                        1 uge ≫
-                      </button>
-                    </div>
+                    />
                     <div
                       style={{
                         display: 'flex',

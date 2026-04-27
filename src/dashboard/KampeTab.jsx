@@ -1335,66 +1335,123 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     finally { setBusyId(null); }
   };
 
-  const getStatus = (m) => (m.status ?? "open").toString().toLowerCase();
-  const sortJoinedFirst = (list) => [...list].sort((a, b) => {
-    const aJ = (matchPlayers[a.id] || []).some(p => p.user_id === user.id) ? 1 : 0;
-    const bJ = (matchPlayers[b.id] || []).some(p => p.user_id === user.id) ? 1 : 0;
-    if (bJ !== aJ) return bJ - aJ;
-    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-  });
-
-  // Search filter helper
-  const matchesSearch = (m) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    const mp = matchPlayers[m.id] || [];
-    const playerNames = mp.map(p => (p.user_name || "").toLowerCase()).join(" ");
-    const courtName = (m.court_name || "").toLowerCase();
-    const desc = (m.description || "").toLowerCase();
-    const range = (m.level_range || "").toLowerCase();
-    return playerNames.includes(q) || courtName.includes(q) || desc.includes(q) || range.includes(q);
-  };
-
+  const getStatus = useCallback((m) => (m.status ?? "open").toString().toLowerCase(), []);
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const isMine = kampeScope === "mine";
-  const amInMatch = (m) => (matchPlayers[m.id] || []).some(p => p.user_id === user.id);
-  const amCreator = (m) => String(m.creator_id) === String(user.id);
 
-  const openMatches = sortJoinedFirst(matches.filter(m => {
-    const s = getStatus(m); if (s !== "open" && s !== "full") return false;
-    if ((matchPlayers[m.id] || []).length === 0) return false;
-    // Mine kampe → kun kampe jeg har oprettet
-    if (isMine && !amCreator(m)) return false;
-    if (!matchesSearch(m)) return false;
-    return true;
-  }));
-  const activeMatches = matches.filter(m => {
-    if (getStatus(m) !== "in_progress") return false;
-    if (isMine && !amInMatch(m)) return false;
-    if (!matchesSearch(m)) return false;
-    return true;
-  });
-  const completedMatches = matches
-    .filter(m => {
-      if (getStatus(m) !== "completed") return false;
-      if (isMine && !amInMatch(m)) return false;
+  const joinedMatchIds = useMemo(() => {
+    const ids = new Set();
+    for (const [matchId, players] of Object.entries(matchPlayers || {})) {
+      if ((players || []).some((p) => String(p.user_id) === myUidStr)) {
+        ids.add(String(matchId));
+      }
+    }
+    return ids;
+  }, [matchPlayers, myUidStr]);
+
+  const matchSearchIndex = useMemo(() => {
+    const index = {};
+    for (const m of matches) {
+      const mp = matchPlayers[m.id] || [];
+      const playerNames = mp.map((p) => (p.user_name || "").toLowerCase()).join(" ");
+      const courtName = (m.court_name || "").toLowerCase();
+      const desc = (m.description || "").toLowerCase();
+      const range = (m.level_range || "").toLowerCase();
+      index[String(m.id)] = `${playerNames} ${courtName} ${desc} ${range}`;
+    }
+    return index;
+  }, [matches, matchPlayers]);
+
+  const matchesSearch = useCallback((m) => {
+    if (!normalizedSearchQuery) return true;
+    return (matchSearchIndex[String(m.id)] || "").includes(normalizedSearchQuery);
+  }, [matchSearchIndex, normalizedSearchQuery]);
+
+  const openMatches = useMemo(() => {
+    const filtered = matches.filter((m) => {
+      const status = getStatus(m);
+      if (status !== "open" && status !== "full") return false;
+      if ((matchPlayers[m.id] || []).length === 0) return false;
+      if (isMine && String(m.creator_id) !== myUidStr) return false;
+      if (!matchesSearch(m)) return false;
+      return true;
+    });
+    return filtered.sort((a, b) => {
+      const aJoined = joinedMatchIds.has(String(a.id)) ? 1 : 0;
+      const bJoined = joinedMatchIds.has(String(b.id)) ? 1 : 0;
+      if (bJoined !== aJoined) return bJoined - aJoined;
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+  }, [getStatus, isMine, joinedMatchIds, matchPlayers, matches, matchesSearch, myUidStr]);
+
+  const activeMatches = useMemo(() => (
+    matches.filter((m) => {
+      if (getStatus(m) !== "in_progress") return false;
+      if (isMine && !joinedMatchIds.has(String(m.id))) return false;
       if (!matchesSearch(m)) return false;
       return true;
     })
-    .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults));
+  ), [getStatus, isMine, joinedMatchIds, matches, matchesSearch]);
+
+  const completedMatches = useMemo(() => (
+    matches
+      .filter((m) => {
+        if (getStatus(m) !== "completed") return false;
+        if (isMine && !joinedMatchIds.has(String(m.id))) return false;
+        if (!matchesSearch(m)) return false;
+        return true;
+      })
+      .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults))
+  ), [getStatus, isMine, joinedMatchIds, matches, matchesSearch, matchResults]);
+
+  const matchTeamStatsById = useMemo(() => {
+    const stats = {};
+    const resolvePlayerElo = (player) => {
+      const uid = String(player.user_id);
+      const fromHist = eloFromHistoryByUserId[uid];
+      if (fromHist != null) return fromHist;
+      if (uid === myUidStr) return myElo;
+      return eloByUserId[uid] ?? 1000;
+    };
+
+    for (const [matchId, playersRaw] of Object.entries(matchPlayers || {})) {
+      const players = playersRaw || [];
+      const t1 = players.filter((p) => matchPlayerTeam(p) === 1);
+      const t2 = players.filter((p) => matchPlayerTeam(p) === 2);
+      const playerEloByUserId = {};
+      for (const p of players) {
+        playerEloByUserId[String(p.user_id)] = resolvePlayerElo(p);
+      }
+      const avgElo = (team) => (
+        team.length > 0
+          ? Math.round(team.reduce((sum, p) => sum + (playerEloByUserId[String(p.user_id)] ?? 1000), 0) / team.length)
+          : null
+      );
+      stats[String(matchId)] = {
+        t1,
+        t2,
+        t1Avg: avgElo(t1),
+        t2Avg: avgElo(t2),
+        playerEloByUserId,
+      };
+    }
+    return stats;
+  }, [eloByUserId, eloFromHistoryByUserId, matchPlayers, myElo, myUidStr]);
 
   const renderMatchCard = (m) => {
     const mp = matchPlayers[m.id] || [];
+    const teamStats = matchTeamStatsById[String(m.id)] || { t1: [], t2: [], t1Avg: null, t2Avg: null, playerEloByUserId: {} };
     const mr = matchResults[m.id];
     const matchPrefs = parseMatchLevelRange(m.level_range);
     const left = (m.max_players || 4) - mp.length;
-    const joined = mp.some(p => p.user_id === user.id);
+    const joined = joinedMatchIds.has(String(m.id));
     const isCreator = String(m.creator_id) === String(user.id);
     const busy = busyId === m.id;
     const status = getStatus(m);
-    const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
-    const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
+    const t1 = teamStats.t1;
+    const t2 = teamStats.t2;
     const isFull = t1.length >= 2 && t2.length >= 2;
-    const isPlayerInMatch = mp.some(p => p.user_id === user.id);
+    const isPlayerInMatch = joined;
     const myTeam = t1.some(p => p.user_id === user.id) ? 1 : t2.some(p => p.user_id === user.id) ? 2 : null;
     const isClosed = (m.match_type || "open") === "closed";
     const myRequest = (joinRequests[m.id] || []).find(r => r.user_id === user.id);
@@ -1464,17 +1521,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
         {/* Teams display */}
         {(() => {
-          const myUid = String(user.id);
-          const playerElo = (p) => {
-            const uid = String(p.user_id);
-            const fromHist = eloFromHistoryByUserId[uid];
-            if (fromHist != null) return fromHist;
-            if (uid === myUid) return myElo;
-            return eloByUserId[uid] ?? 1000;
-          };
-          const avgElo = (team) => team.length > 0 ? Math.round(team.reduce((s, p) => s + playerElo(p), 0) / team.length) : null;
-          const t1Avg = avgElo(t1);
-          const t2Avg = avgElo(t2);
+          const playerElo = (p) => teamStats.playerEloByUserId[String(p.user_id)] ?? 1000;
+          const t1Avg = teamStats.t1Avg;
+          const t2Avg = teamStats.t2Avg;
           return (
             <div className="pm-card-subpanel" style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
               {/* Team 1 */}
@@ -1488,14 +1537,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
                     return (
                       <div key={p.id || p.user_id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                        <div onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
+                        <button type="button" onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} aria-label={"Åbn profil for " + (p.user_name || "spiller")} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", border: "none", background: "transparent", padding: 0 }}>
                           <AvatarCircle avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: "1.5px solid " + theme.accent + "40" }} />
                           <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
                           <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700 }}>{playerElo(p)}</span>
-                        </div>
+                        </button>
                         {canKick && (
-                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy}
-                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
+                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy} aria-label={"Fjern " + (p.user_name || "spiller") + " fra kampen"} style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: theme.onAccent, fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
                             ×
                           </button>
                         )}
@@ -1535,14 +1583,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
                     return (
                       <div key={p.id || p.user_id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                        <div onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
+                        <button type="button" onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} aria-label={"Åbn profil for " + (p.user_name || "spiller")} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", border: "none", background: "transparent", padding: 0 }}>
                           <AvatarCircle avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.blueBg, border: "1.5px solid " + theme.blue + "40" }} />
                           <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
                           <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700 }}>{playerElo(p)}</span>
-                        </div>
+                        </button>
                         {canKick && (
-                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy}
-                            style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: "#fff", fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
+                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy} aria-label={"Fjern " + (p.user_name || "spiller") + " fra kampen"} style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: theme.onAccent, fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
                             ×
                           </button>
                         )}
@@ -1620,7 +1667,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   <span
                     style={{
                       background: theme.red,
-                      color: "#fff",
+                      color: theme.onAccent,
                       borderRadius: "999px",
                       minWidth: "16px",
                       height: "16px",
@@ -1810,7 +1857,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                       <button
                         onClick={() => approveJoinRequest(m.id, req.id, req.user_id, req.user_name, req.user_emoji)}
                         disabled={busyId === m.id + '-approve-' + req.id}
-                        style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 700, background: theme.accent, color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}
+                        style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 700, background: theme.accent, color: theme.onAccent, border: "none", borderRadius: "6px", cursor: "pointer" }}
                       >
                         {busyId === m.id + '-approve-' + req.id ? "..." : "✓ Godkend"}
                       </button>
@@ -2236,7 +2283,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               style={{
                 flex: 1, padding: "10px 12px", fontSize: "13px", fontWeight: newMatch.match_type === "open" ? 700 : 500,
                 background: newMatch.match_type === "open" ? theme.accent : theme.surface,
-                color: newMatch.match_type === "open" ? "#fff" : theme.textMid,
+                color: newMatch.match_type === "open" ? theme.onAccent : theme.textMid,
                 border: "none", cursor: "pointer", transition: "all 0.15s",
               }}
             >
@@ -2247,8 +2294,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               onClick={() => setNewMatch(m => ({ ...m, match_type: "closed" }))}
               style={{
                 flex: 1, padding: "10px 12px", fontSize: "13px", fontWeight: newMatch.match_type === "closed" ? 700 : 500,
-                background: newMatch.match_type === "closed" ? "#475569" : theme.surface,
-                color: newMatch.match_type === "closed" ? "#fff" : theme.textMid,
+                background: newMatch.match_type === "closed" ? theme.textMid : theme.surface,
+                color: newMatch.match_type === "closed" ? theme.onAccent : theme.textMid,
                 border: "none", borderLeft: "1px solid " + theme.border, cursor: "pointer", transition: "all 0.15s",
               }}
             >

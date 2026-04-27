@@ -679,7 +679,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
                   display: 'flex', gap: '12px', alignItems: 'center',
                   padding: '14px 16px', cursor: 'pointer',
                   borderTop: idx > 0 ? '1px solid ' + theme.border : 'none',
-                  background: hasUnread ? '#EFF6FF' : theme.surface,
+                  background: hasUnread ? theme.accentBg : theme.surface,
                 }}
               >
                 <div style={{ position: 'relative', flexShrink: 0 }}>
