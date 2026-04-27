@@ -46,6 +46,10 @@ test.describe('Public smoke flows', () => {
       ''
     )
     await expect(page.locator('link[rel="preload"][href="/hero-bg.avif"]')).toHaveAttribute('as', 'image')
+    await expect(page.locator('link[data-critical-font="inter"][href*="fonts.googleapis.com"]')).toHaveAttribute(
+      'as',
+      'style'
+    )
   })
 
   test('login page and forgot-password mode render', async ({ page }) => {
