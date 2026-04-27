@@ -5,7 +5,8 @@ test.describe('Public smoke flows', () => {
     await page.goto('/')
 
     await expect(page.getByRole('heading', { name: /Find makker/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /Kom i gang|Opret gratis profil/i }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /Opret gratis profil/i }).first()).toBeVisible()
+    await expect(page.getByText(/Gratis\. Tager under 1 minut\./i)).toBeVisible()
   })
 
   test('landing page communicates value proposition and SEO metadata', async ({ page }) => {

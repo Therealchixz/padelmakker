@@ -233,7 +233,7 @@ export function LandingPage() {
               <span>{dark ? "Lys" : "Mørk"}</span>
             </button>
             <button onClick={() => navigate("/login")} style={navSecondaryBtnStyle}>Log ind</button>
-            <button onClick={() => navigate("/opret")} style={navPrimaryBtnStyle}>Kom i gang</button>
+            <button onClick={() => navigate("/opret")} style={navPrimaryBtnStyle}>Opret gratis profil</button>
           </div>
         </div>
       </nav>
@@ -324,6 +324,9 @@ export function LandingPage() {
                 Log ind
               </button>
             </div>
+            <p className="pm-landing-cta-note pm-reveal pm-delay-4">
+              Gratis. Tager under 1 minut.
+            </p>
             <div className="pm-landing-proof-row pm-reveal pm-delay-4">
               {heroProofs.map((item) => (
                 <span key={item}>
