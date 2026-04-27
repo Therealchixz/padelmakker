@@ -51,6 +51,16 @@ for (let h = 6; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`);
 }
 
+const KAMPE_NON_CHAT_NOTIF_TYPES = [
+  "match_join",
+  "match_invite",
+  "match_full",
+  "match_cancelled",
+  "result_submitted",
+  "result_confirmed",
+  "seeking_player",
+];
+
 const PADEL_RULE_SUMMARY = [
   {
     icon: '1.',
@@ -261,6 +271,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [matchChatSendingById, setMatchChatSendingById] = useState({});
   const [matchChatErrorById, setMatchChatErrorById] = useState({});
   const [matchChatUnreadById, setMatchChatUnreadById] = useState({});
+  const [matchUnreadById, setMatchUnreadById] = useState({});
   const matchChatListRefs = useRef({});
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
@@ -506,30 +517,61 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
   }, [user?.id]);
 
+  const loadMatchUnreadCounts = useCallback(async () => {
+    if (!user?.id) {
+      setMatchUnreadById({});
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, match_id")
+        .eq("user_id", user.id)
+        .eq("read", false)
+        .in("type", KAMPE_NON_CHAT_NOTIF_TYPES)
+        .not("match_id", "is", null)
+        .limit(500);
+      if (error) throw error;
+      const grouped = {};
+      (data || []).forEach((row) => {
+        const matchId = row?.match_id ? String(row.match_id) : "";
+        if (!matchId) return;
+        grouped[matchId] = (grouped[matchId] || 0) + 1;
+      });
+      setMatchUnreadById(grouped);
+    } catch (e) {
+      console.warn("match unread notifications:", e?.message || e);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     void loadUnreadMatchChatNotifs();
-  }, [loadUnreadMatchChatNotifs]);
+    void loadMatchUnreadCounts();
+  }, [loadUnreadMatchChatNotifs, loadMatchUnreadCounts]);
 
   useEffect(() => {
     if (!user?.id) return undefined;
     const channel = supabase
-      .channel("match-chat-unread-" + user.id)
+      .channel("match-notif-badges-" + user.id)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: "user_id=eq." + user.id },
         (payload) => {
           const next = payload?.new || {};
           const prev = payload?.old || {};
-          const touchedMatchChat = next?.type === "match_chat" || prev?.type === "match_chat";
-          if (!touchedMatchChat) return;
-          void loadUnreadMatchChatNotifs();
+          const type = next?.type || prev?.type;
+          if (type === "match_chat") {
+            void loadUnreadMatchChatNotifs();
+          } else if (type && KAMPE_NON_CHAT_NOTIF_TYPES.includes(type)) {
+            void loadMatchUnreadCounts();
+          }
         }
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadUnreadMatchChatNotifs, user?.id]);
+  }, [loadUnreadMatchChatNotifs, loadMatchUnreadCounts, user?.id]);
 
   const markMatchChatNotifsRead = useCallback(async (matchId) => {
     const key = String(matchId || "");
@@ -553,50 +595,32 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
   }, [loadUnreadMatchChatNotifs, user?.id]);
 
-  const markNonChatKampeNotifsReadOnVisit = useCallback(async () => {
-    if (!user?.id) return;
-    const NON_CHAT_TYPES = ["match_join", "match_invite", "match_full", "result_submitted", "result_confirmed"];
-    try {
-      const [createdRes, playerRes] = await Promise.all([
-        supabase.from("matches").select("id").eq("creator_id", user.id),
-        supabase.from("match_players").select("match_id").eq("user_id", user.id).limit(2000),
-      ]);
-      const relatedIds = [...new Set([
-        ...((createdRes.data || []).map((row) => String(row.id))),
-        ...((playerRes.data || []).map((row) => String(row.match_id))),
-      ])];
-      if (!relatedIds.length) {
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("pm-notifications-sync"));
-        }
-        return;
-      }
-
-      const chunkSize = 100;
-      for (let i = 0; i < relatedIds.length; i += chunkSize) {
-        const ids = relatedIds.slice(i, i + chunkSize);
-        const { error } = await supabase
-          .from("notifications")
-          .update({ read: true })
-          .eq("user_id", user.id)
-          .eq("read", false)
-          .in("type", NON_CHAT_TYPES)
-          .in("match_id", ids);
-        if (error) throw error;
-      }
-
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("pm-notifications-sync"));
-      }
-    } catch (e) {
-      console.warn("mark non-chat kampe notifications read:", e?.message || e);
+  const markMatchNotifsRead = useCallback(async (matchId) => {
+    const key = String(matchId || "");
+    if (!key || !user?.id) return;
+    let hadUnread = false;
+    setMatchUnreadById((prev) => {
+      if (!prev[key]) return prev;
+      hadUnread = true;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    if (!hadUnread) return;
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", user.id)
+      .in("type", KAMPE_NON_CHAT_NOTIF_TYPES)
+      .eq("match_id", key)
+      .eq("read", false);
+    if (error) {
+      console.warn("mark match notifications read:", error.message || error);
+      void loadMatchUnreadCounts();
+    } else if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("pm-notifications-sync"));
     }
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!tabActive) return;
-    void markNonChatKampeNotifsReadOnVisit();
-  }, [markNonChatKampeNotifsReadOnVisit, tabActive]);
+  }, [loadMatchUnreadCounts, user?.id]);
 
   const scrollMatchChatToBottom = useCallback((matchId, behavior = "auto") => {
     const key = String(matchId || "");
@@ -1492,6 +1516,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const chatSending = !!matchChatSendingById[m.id];
     const chatError = matchChatErrorById[m.id] || "";
     const unreadChatCount = matchChatUnreadById[String(m.id)] || 0;
+    const unreadMatchCount = matchUnreadById[String(m.id)] || 0;
 
     const statusLabel = {
       open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", tone: left > 0 ? "accent" : "warm" },
@@ -1501,13 +1526,45 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }[status] || { text: status, tone: "neutral" };
 
     return (
-      <div id={"pm-match-" + m.id} key={m.id} className="pm-ui-card pm-match-surface-card" style={{ scrollMarginTop: "88px" }}>
+      <div
+        id={"pm-match-" + m.id}
+        key={m.id}
+        className="pm-ui-card pm-match-surface-card"
+        style={{
+          scrollMarginTop: "88px",
+          position: "relative",
+          boxShadow: unreadMatchCount > 0 ? "0 0 0 2px " + theme.red + "55, 0 8px 24px rgba(0,0,0,0.06)" : undefined,
+        }}
+        onClick={unreadMatchCount > 0 ? () => { void markMatchNotifsRead(m.id); } : undefined}
+      >
         {/* Header */}
         <div className="pm-kampe-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
           <div className="pm-kampe-card-meta">
             <div className="pm-kampe-card-datetime" style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
               <Clock size={15} color={theme.accent} />
               <span className="pm-kampe-card-time-normalized">{formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}</span>
+              {unreadMatchCount > 0 && (
+                <span
+                  aria-label={`${unreadMatchCount} ulæste notifikationer for denne kamp`}
+                  title="Ulæste notifikationer for denne kamp"
+                  style={{
+                    background: theme.red,
+                    color: theme.onAccent,
+                    borderRadius: "999px",
+                    minWidth: "18px",
+                    height: "18px",
+                    padding: "0 6px",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    lineHeight: 1,
+                  }}
+                >
+                  {unreadMatchCount > 9 ? "9+" : unreadMatchCount}
+                </span>
+              )}
             </div>
             <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
             {m.description && <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "4px", fontStyle: "italic", lineHeight: 1.4 }}>💬 {m.description}</div>}
