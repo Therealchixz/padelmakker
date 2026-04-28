@@ -19,7 +19,7 @@ import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPl
 import { fetchMatchMessages, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
 import { formatMatchResultScore } from '../lib/matchResultScore';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
-import { confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
+import { canConfirmPadelMatchResult, confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
 import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
 import { groupUnreadNotificationsByMatchId, groupRelevantUnreadNotificationsByMatchId, removeUnreadForMatch, shouldRefreshKampeUnreadForNotificationType } from '../lib/kampeNotificationBadges';
 import { buildMatchCardState } from '../lib/matchCardState';
@@ -1338,6 +1338,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         result: mr,
         players: mp,
         confirmedBy: user.id,
+        isAdmin,
         showToast,
       });
       if (!confirmation.ok) {
@@ -1983,7 +1984,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           )}
           {mr && !mr.confirmed && (isPlayerInMatch || isAdmin) && (!isAdmin || adminActionsOpen) && (
             <div style={{ display: "flex", gap: "8px" }}>
-              {(isAdmin || mr.submitted_by !== user.id) && (
+              {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok && (
                 <button 
                   onClick={() => confirmResult(m.id)} 
                   disabled={busy} 

@@ -4,6 +4,41 @@ function safePlayers(players) {
   return Array.isArray(players) ? players.filter((player) => player?.user_id) : [];
 }
 
+function playerTeamForUser(players, userId) {
+  const player = safePlayers(players).find((row) => String(row.user_id) === String(userId));
+  const team = Number(player?.team);
+  return Number.isFinite(team) ? team : null;
+}
+
+export function canConfirmPadelMatchResult({
+  result,
+  players,
+  confirmedBy,
+  isAdmin = false,
+}) {
+  if (isAdmin) return { ok: true };
+  if (!result?.submitted_by || !confirmedBy) {
+    return { ok: false, reason: 'Resultatet skal bekræftes af en spiller fra modstanderholdet.' };
+  }
+  if (String(result.submitted_by) === String(confirmedBy)) {
+    return { ok: false, reason: 'Resultatet skal bekræftes af en anden spiller fra modstanderholdet.' };
+  }
+
+  const submitterTeam = playerTeamForUser(players, result.submitted_by);
+  const confirmerTeam = playerTeamForUser(players, confirmedBy);
+  if (!confirmerTeam) {
+    return { ok: false, reason: 'Resultatet skal bekræftes af en spiller fra modstanderholdet.' };
+  }
+  if (!submitterTeam) {
+    return { ok: true };
+  }
+  if (submitterTeam === confirmerTeam) {
+    return { ok: false, reason: 'Resultatet skal bekræftes af en spiller fra modstanderholdet.' };
+  }
+
+  return { ok: true };
+}
+
 export async function confirmPadelMatchResult({
   supabaseClient,
   calculateAndApplyEloFn,
@@ -12,11 +47,20 @@ export async function confirmPadelMatchResult({
   result,
   players,
   confirmedBy,
+  isAdmin = false,
   showToast,
 }) {
   if (!result?.id) {
     return { ok: false, reason: 'Resultat ikke fundet.' };
   }
+
+  const confirmationAccess = canConfirmPadelMatchResult({
+    result,
+    players,
+    confirmedBy,
+    isAdmin,
+  });
+  if (!confirmationAccess.ok) return confirmationAccess;
 
   const { error } = await supabaseClient
     .from('match_results')
