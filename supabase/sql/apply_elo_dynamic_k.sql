@@ -48,6 +48,9 @@ DECLARE
   v_margin INTEGER;
   v_margin_mult REAL;
   v_count_p INTEGER;
+  v_distinct_players INTEGER;
+  v_t1_count INTEGER;
+  v_t2_count INTEGER;
   v_t1_changes INTEGER[] := ARRAY[]::INTEGER[];
   v_t2_changes INTEGER[] := ARRAY[]::INTEGER[];
 BEGIN
@@ -87,15 +90,20 @@ BEGIN
     RETURN jsonb_build_object('error', 'ELO already calculated for this match');
   END IF;
 
-  -- Tjek antal spillere - ELO beregnes kun ved 2 mod 2 (4 spillere i alt)
-  SELECT COUNT(*) INTO v_count_p FROM match_players WHERE match_id = v_mr.match_id;
-  IF v_count_p < 4 THEN
-    -- Vi afslutter kampen alligevel, da den er indsendt
-    UPDATE matches SET status = 'completed', completed_at = now() WHERE id = v_mr.match_id;
+  -- ELO beregnes kun ved ren 2v2: 4 unikke spillere, praecis 2 paa hvert hold.
+  SELECT
+    COUNT(*)::int,
+    COUNT(DISTINCT user_id)::int,
+    COUNT(*) FILTER (WHERE team = 1)::int,
+    COUNT(*) FILTER (WHERE team = 2)::int
+  INTO v_count_p, v_distinct_players, v_t1_count, v_t2_count
+  FROM match_players
+  WHERE match_id = v_mr.match_id;
+
+  IF v_count_p <> 4 OR v_distinct_players <> 4 OR v_t1_count <> 2 OR v_t2_count <> 2 THEN
     RETURN jsonb_build_object(
-      'success', true, 
-      'players_updated', 0, 
-      'message', 'Kamp afsluttet uden ELO-ændringer (kræver 4 spillere)'
+      'error',
+      'ELO requires exactly 2 unique players on each team'
     );
   END IF;
 

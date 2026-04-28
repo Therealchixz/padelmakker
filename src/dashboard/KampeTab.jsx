@@ -17,6 +17,7 @@ import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { fetchMatchMessages, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
+import { validateMatchRosterForElo, validateSubmittedPadelResult } from '../lib/padelResultGuards';
 import { DateTime } from 'luxon';
 import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
@@ -1387,6 +1388,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const mp = matchPlayers[matchId] || [];
       const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
       const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
+      const rosterCheck = validateMatchRosterForElo(mp, matchPlayerTeam);
+      if (!rosterCheck.ok) {
+        showToast(rosterCheck.reason || "Kampen har ikke en gyldig 2v2-holdopsætning.");
+        return;
+      }
+
+      const resultCheck = validateSubmittedPadelResult(result);
+      if (!resultCheck.ok) {
+        showToast(resultCheck.reason || "Resultatet er ikke gyldigt.");
+        return;
+      }
 
       const scoreDisplay = result.sets
         .filter(s => s.gamesTeam1 > 0 || s.gamesTeam2 > 0)
@@ -1431,14 +1443,27 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       // Calculate ELO
       const mp = matchPlayers[matchId] || [];
-      await calculateAndApplyElo(matchId, showToast, { matchResultId: mr.id });
+      const eloResult = await calculateAndApplyElo(matchId, showToast, { matchResultId: mr.id });
+      if (!eloResult?.success) {
+        await loadData();
+        return;
+      }
+
       refreshProfile();
       await reloadKampeEloBundle();
       // Notify all players about ELO update
+      const playersUpdated = Number(eloResult.data?.players_updated) || 0;
       mp.forEach(p => {
-        createNotification(p.user_id, "result_confirmed", "Resultat bekræftet! 🏆", `Kampen er afsluttet (${mr.score_display || "—"}). Personlig ELO er opdateret.`, matchId);
+        createNotification(
+          p.user_id,
+          "result_confirmed",
+          "Resultat bekræftet!",
+          playersUpdated > 0
+            ? `Kampen er afsluttet (${mr.score_display || "—"}). Personlig ELO er opdateret.`
+            : `Kampen er afsluttet (${mr.score_display || "—"}), men ELO blev ikke ændret.`,
+          matchId
+        );
       });
-      showToast("Resultat bekræftet! Personlig ELO opdateret 🏆");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }

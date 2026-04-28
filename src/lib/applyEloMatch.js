@@ -26,7 +26,7 @@ export async function calculateAndApplyElo(matchId, showToast, options = {}) {
       if (mrErr || !mr) {
         console.error('ELO: Kunne ikke finde bekræftet resultat:', mrErr);
         if (showToast) showToast('ELO fejl: Resultat ikke fundet.');
-        return;
+        return { success: false, error: 'Resultat ikke fundet.' };
       }
 
       matchResultId = mr.id;
@@ -39,13 +39,13 @@ export async function calculateAndApplyElo(matchId, showToast, options = {}) {
     if (error) {
       console.error('ELO rpc error:', error);
       if (showToast) showToast('ELO fejl: ' + error.message);
-      return;
+      return { success: false, error: error.message };
     }
 
     if (data?.error) {
       console.error('ELO function error:', data.error);
       if (showToast) showToast('ELO fejl: ' + data.error);
-      return;
+      return { success: false, error: data.error };
     }
 
     if (data?.success) {
@@ -72,9 +72,13 @@ export async function calculateAndApplyElo(matchId, showToast, options = {}) {
           showToast(`ELO opdateret for ${n} spillere!${marginHint} 🏆`);
         }
       }
+      return { success: true, data };
     }
+
+    return { success: false, error: 'Ukendt ELO-svar fra databasen.' };
   } catch (e) {
     console.error('ELO exception:', e);
     if (showToast) showToast('ELO fejl: ' + (e.message || 'Ukendt fejl'));
+    return { success: false, error: e.message || 'Ukendt fejl' };
   }
 }
