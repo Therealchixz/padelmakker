@@ -23,6 +23,7 @@ import { confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolveP
 import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
 import { groupUnreadNotificationsByMatchId, removeUnreadForMatch, shouldRefreshKampeUnreadForNotificationType } from '../lib/kampeNotificationBadges';
 import { buildMatchCardState } from '../lib/matchCardState';
+import { buildKampeMatchLists } from '../lib/matchListFilters';
 import { DateTime } from 'luxon';
 import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
@@ -1438,7 +1439,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   };
 
   const getStatus = useCallback((m) => (m.status ?? "open").toString().toLowerCase(), []);
-  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const isMine = kampeScope === "mine";
 
   const joinedMatchIds = useMemo(() => {
@@ -1451,60 +1451,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return ids;
   }, [matchPlayers, myUidStr]);
 
-  const matchSearchIndex = useMemo(() => {
-    const index = {};
-    for (const m of matches) {
-      const mp = matchPlayers[m.id] || [];
-      const playerNames = mp.map((p) => (p.user_name || "").toLowerCase()).join(" ");
-      const courtName = (m.court_name || "").toLowerCase();
-      const desc = (m.description || "").toLowerCase();
-      const range = (m.level_range || "").toLowerCase();
-      index[String(m.id)] = `${playerNames} ${courtName} ${desc} ${range}`;
-    }
-    return index;
-  }, [matches, matchPlayers]);
-
-  const matchesSearch = useCallback((m) => {
-    if (!normalizedSearchQuery) return true;
-    return (matchSearchIndex[String(m.id)] || "").includes(normalizedSearchQuery);
-  }, [matchSearchIndex, normalizedSearchQuery]);
-
-  const openMatches = useMemo(() => {
-    const filtered = matches.filter((m) => {
-      const status = getStatus(m);
-      if (status !== "open" && status !== "full") return false;
-      if ((matchPlayers[m.id] || []).length === 0) return false;
-      if (isMine && String(m.creator_id) !== myUidStr) return false;
-      if (!matchesSearch(m)) return false;
-      return true;
-    });
-    return filtered.sort((a, b) => {
-      const aJoined = joinedMatchIds.has(String(a.id)) ? 1 : 0;
-      const bJoined = joinedMatchIds.has(String(b.id)) ? 1 : 0;
-      if (bJoined !== aJoined) return bJoined - aJoined;
-      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-    });
-  }, [getStatus, isMine, joinedMatchIds, matchPlayers, matches, matchesSearch, myUidStr]);
-
-  const activeMatches = useMemo(() => (
-    matches.filter((m) => {
-      if (getStatus(m) !== "in_progress") return false;
-      if (isMine && !joinedMatchIds.has(String(m.id))) return false;
-      if (!matchesSearch(m)) return false;
-      return true;
-    })
-  ), [getStatus, isMine, joinedMatchIds, matches, matchesSearch]);
-
-  const completedMatches = useMemo(() => (
-    matches
-      .filter((m) => {
-        if (getStatus(m) !== "completed") return false;
-        if (isMine && !joinedMatchIds.has(String(m.id))) return false;
-        if (!matchesSearch(m)) return false;
-        return true;
-      })
-      .sort((a, b) => matchCompletedSortMs(b, matchResults) - matchCompletedSortMs(a, matchResults))
-  ), [getStatus, isMine, joinedMatchIds, matches, matchesSearch, matchResults]);
+  const { openMatches, activeMatches, completedMatches } = useMemo(() => buildKampeMatchLists({
+    matches,
+    matchPlayers,
+    matchResults,
+    joinedMatchIds,
+    isMine,
+    currentUserId: myUidStr,
+    searchQuery,
+    completedSortMs: matchCompletedSortMs,
+  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery]);
 
   const matchTeamStatsById = useMemo(() => {
     const stats = {};
