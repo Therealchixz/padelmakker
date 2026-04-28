@@ -299,6 +299,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [matchChatErrorById, setMatchChatErrorById] = useState({});
   const [matchChatUnreadById, setMatchChatUnreadById] = useState({});
   const [matchUnreadById, setMatchUnreadById] = useState({});
+  const matchUnreadByIdRef = useRef({});
+  useEffect(() => {
+    matchUnreadByIdRef.current = matchUnreadById;
+  }, [matchUnreadById]);
+  const matchCardObserverRef = useRef(null);
+  const matchCardDwellTimersRef = useRef(new Map());
   const matchChatListRefs = useRef({});
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
@@ -625,6 +631,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const markMatchNotifsRead = useCallback(async (matchId) => {
     const key = String(matchId || "");
     if (!key || !user?.id) return;
+    if (!matchUnreadByIdRef.current[key]) return;
     setMatchUnreadById((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
@@ -645,6 +652,56 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       window.dispatchEvent(new Event("pm-notifications-sync"));
     }
   }, [loadMatchUnreadCounts, user?.id]);
+
+  // Auto-mark match notifs as read when the card has been visible for ~1.2s.
+  // Cards below the fold stay unread until the user scrolls them into view,
+  // so it doesn't regress to the old "everything cleared on tab visit"
+  // behaviour. Tap on the card still works as a manual override.
+  useEffect(() => {
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+      return undefined;
+    }
+    const dwellTimers = matchCardDwellTimersRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const matchId = entry.target?.dataset?.matchId;
+          if (!matchId) return;
+          const visible = entry.isIntersecting && entry.intersectionRatio > 0.4;
+          if (visible) {
+            if (dwellTimers.has(matchId)) return;
+            const timer = window.setTimeout(() => {
+              dwellTimers.delete(matchId);
+              if (matchUnreadByIdRef.current[matchId]) {
+                void markMatchNotifsRead(matchId);
+              }
+            }, 1200);
+            dwellTimers.set(matchId, timer);
+          } else {
+            const existing = dwellTimers.get(matchId);
+            if (existing) {
+              clearTimeout(existing);
+              dwellTimers.delete(matchId);
+            }
+          }
+        });
+      },
+      { threshold: [0.4] },
+    );
+    matchCardObserverRef.current = observer;
+    return () => {
+      observer.disconnect();
+      matchCardObserverRef.current = null;
+      dwellTimers.forEach((t) => clearTimeout(t));
+      dwellTimers.clear();
+    };
+  }, [markMatchNotifsRead]);
+
+  const observeMatchCard = useCallback((node) => {
+    if (node && matchCardObserverRef.current) {
+      matchCardObserverRef.current.observe(node);
+    }
+  }, []);
 
   const scrollMatchChatToBottom = useCallback((matchId, behavior = "auto") => {
     const key = String(matchId || "");
@@ -1585,6 +1642,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       <div
         id={"pm-match-" + m.id}
         key={m.id}
+        ref={observeMatchCard}
+        data-match-id={m.id}
         className="pm-ui-card pm-match-surface-card"
         style={{
           scrollMarginTop: "88px",
