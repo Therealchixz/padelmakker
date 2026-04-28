@@ -22,6 +22,7 @@ import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
 import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
 import { groupUnreadNotificationsByMatchId, removeUnreadForMatch, shouldRefreshKampeUnreadForNotificationType } from '../lib/kampeNotificationBadges';
+import { buildMatchCardState } from '../lib/matchCardState';
 import { DateTime } from 'luxon';
 import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
@@ -1544,43 +1545,54 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const teamStats = matchTeamStatsById[String(m.id)] || { t1: [], t2: [], t1Avg: null, t2Avg: null, playerEloByUserId: {} };
     const mr = matchResults[m.id];
     const matchPrefs = parseMatchLevelRange(m.level_range);
-    const left = (m.max_players || 4) - mp.length;
-    const joined = joinedMatchIds.has(String(m.id));
-    const isCreator = String(m.creator_id) === String(user.id);
-    const busy = busyId === m.id;
     const status = getStatus(m);
-    const t1 = teamStats.t1;
-    const t2 = teamStats.t2;
-    const isFull = t1.length >= 2 && t2.length >= 2;
-    const isPlayerInMatch = joined;
-    const myTeam = t1.some(p => p.user_id === user.id) ? 1 : t2.some(p => p.user_id === user.id) ? 2 : null;
-    const isClosed = (m.match_type || "open") === "closed";
-    const myRequest = (joinRequests[m.id] || []).find(r => r.user_id === user.id);
-    const pendingRequests = (joinRequests[m.id] || []).filter(r => r.status === "pending");
-    const hasAdminActions = isAdmin && (
-      ((isCreator || isAdmin) && (status === "open" || status === "full")) ||
-      (status === "in_progress" && (isPlayerInMatch || isAdmin) && !mr) ||
-      (mr && !mr.confirmed && (isPlayerInMatch || isAdmin)) ||
-      ((isCreator || isAdmin) && status !== "completed" && status !== "in_progress")
-    );
-    const adminActionsOpen = !!expandedAdminActions[m.id];
-    const canUseMatchChat = joined || isAdmin;
-    const canWriteMatchChat = joined;
-    const chatOpen = !!matchChatOpenById[m.id];
-    const chatMessages = matchChatById[m.id] || [];
-    const chatDraft = matchChatDraftById[m.id] || "";
-    const chatLoading = !!matchChatLoadingById[m.id];
-    const chatSending = !!matchChatSendingById[m.id];
-    const chatError = matchChatErrorById[m.id] || "";
-    const unreadChatCount = matchChatUnreadById[String(m.id)] || 0;
-    const unreadMatchCount = matchUnreadById[String(m.id)] || 0;
-
-    const statusLabel = {
-      open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", tone: left > 0 ? "accent" : "warm" },
-      full: { text: "Klar til start", tone: "blue" },
-      in_progress: { text: "I gang", tone: "warm" },
-      completed: { text: "Afsluttet", tone: "neutral" },
-    }[status] || { text: status, tone: "neutral" };
+    const {
+      left,
+      joined,
+      isCreator,
+      busy,
+      t1,
+      t2,
+      isFull,
+      isPlayerInMatch,
+      myTeam,
+      isClosed,
+      myRequest,
+      pendingRequests,
+      hasAdminActions,
+      adminActionsOpen,
+      canUseMatchChat,
+      canWriteMatchChat,
+      chatOpen,
+      chatMessages,
+      chatDraft,
+      chatLoading,
+      chatSending,
+      chatError,
+      unreadChatCount,
+      unreadMatchCount,
+      statusLabel,
+    } = buildMatchCardState({
+      match: m,
+      players: mp,
+      teamStats,
+      matchResult: mr,
+      joined: joinedMatchIds.has(String(m.id)),
+      currentUserId: user.id,
+      busyId,
+      status,
+      joinRequests: joinRequests[m.id] || [],
+      isAdmin,
+      adminActionsOpen: !!expandedAdminActions[m.id],
+      chatOpen: !!matchChatOpenById[m.id],
+      chatMessages: matchChatById[m.id] || [],
+      chatDraft: matchChatDraftById[m.id] || "",
+      chatLoading: !!matchChatLoadingById[m.id],
+      chatSending: !!matchChatSendingById[m.id],
+      chatError: matchChatErrorById[m.id] || "",
+      unreadChatCount: matchChatUnreadById[String(m.id)] || 0,
+      unreadMatchCount: matchUnreadById[String(m.id)] || 0,
+    });
 
     return (
       <div
