@@ -24,6 +24,7 @@ import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from 
 import { groupUnreadNotificationsByMatchId, removeUnreadForMatch, shouldRefreshKampeUnreadForNotificationType } from '../lib/kampeNotificationBadges';
 import { buildMatchCardState } from '../lib/matchCardState';
 import { buildKampeMatchLists } from '../lib/matchListFilters';
+import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { DateTime } from 'luxon';
 import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
@@ -158,20 +159,6 @@ function buildMatchLevelRange(levelMin, levelMax, courtBooked, myElo) {
   const hi = Math.max(a, b);
   const bookedTag = courtBooked ? "yes" : "no";
   return `elo:${lo}-${hi}|booked:${bookedTag}`;
-}
-
-/** Undgår gigantiske .in() — Supabase/PostgREST har URL-grænser. */
-async function fetchRowsInChunks(table, column, ids, select = '*') {
-  if (!ids.length) return [];
-  const rows = [];
-  const chunkSize = 100;
-  for (let i = 0; i < ids.length; i += chunkSize) {
-    const slice = ids.slice(i, i + chunkSize);
-    const { data, error } = await supabase.from(table).select(select).in(column, slice);
-    if (error) throw error;
-    rows.push(...(data || []));
-  }
-  return rows;
 }
 
 const CALENDAR_ZONE = 'Europe/Copenhagen';
@@ -393,7 +380,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const allMatchIds = [...idSet];
 
       const allMatches =
-        allMatchIds.length > 0 ? await fetchRowsInChunks("matches", "id", allMatchIds) : [];
+        allMatchIds.length > 0 ? await fetchRowsInChunks(supabase, "matches", "id", allMatchIds) : [];
       setMatches(allMatches);
 
       const vOpts = getMatchVenueOptions(cd || []);
@@ -405,7 +392,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       }
 
       const mpd =
-        allMatchIds.length > 0 ? await fetchRowsInChunks("match_players", "match_id", allMatchIds) : [];
+        allMatchIds.length > 0 ? await fetchRowsInChunks(supabase, "match_players", "match_id", allMatchIds) : [];
       const mm = {};
       (mpd || []).forEach((mp) => {
         if (!mm[mp.match_id]) mm[mp.match_id] = [];
@@ -428,7 +415,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       setMatchPlayers(mm);
 
       const mrd =
-        allMatchIds.length > 0 ? await fetchRowsInChunks("match_results", "match_id", allMatchIds) : [];
+        allMatchIds.length > 0 ? await fetchRowsInChunks(supabase, "match_results", "match_id", allMatchIds) : [];
       const mrMap = {};
       (mrd || []).forEach((mr) => {
         const mid = mr.match_id;
