@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
 import { font, theme } from "./lib/platformTheme";
+import { ConfirmDialogProvider } from "./lib/ConfirmDialogProvider";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -62,44 +63,48 @@ export default function PadelMakker() {
 
   if (resetMode) {
     return (
-      <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text }}>
-        {toast && (
-          <div className="pm-toast" style={{ position: "fixed", top: "max(12px, env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", background: theme.accent, color: "#fff", padding: "11px 22px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, zIndex: 9999, boxShadow: theme.shadowLg }}>
-            {toast}
-          </div>
-        )}
-        <ResetPasswordPage onDone={() => { setResetMode(false); navigate("/dashboard"); showToast("Adgangskode opdateret! ✅"); }} />
-        <CookieNoticeBar />
-      </div>
+      <ConfirmDialogProvider>
+        <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text }}>
+          {toast && (
+            <div className="pm-toast" style={{ position: "fixed", top: "max(12px, env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", background: theme.accent, color: "#fff", padding: "11px 22px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, zIndex: 9999, boxShadow: theme.shadowLg }}>
+              {toast}
+            </div>
+          )}
+          <ResetPasswordPage onDone={() => { setResetMode(false); navigate("/dashboard"); showToast("Adgangskode opdateret! ✅"); }} />
+          <CookieNoticeBar />
+        </div>
+      </ConfirmDialogProvider>
     );
   }
 
   return (
-    <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, position: "relative" }}>
-      {toast && (
-        <div className="pm-toast" style={{ position: "fixed", top: "max(12px, env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", background: theme.accent, color: "#fff", padding: "11px 22px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, zIndex: 9999, boxShadow: theme.shadowLg, letterSpacing: "-0.01em" }}>
-          {toast}
-        </div>
-      )}
-      <Routes>
-        <Route path="/" element={user && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-        <Route path="/login" element={user && profile ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-        <Route path="/opret" element={user && profile ? <Navigate to="/dashboard" replace /> : <OnboardingPage />} />
-        <Route path="/opret/bekraeft-email" element={user && profile ? <Navigate to="/dashboard" replace /> : <SignupEmailSentPage />} />
-        <Route path="/privatlivspolitik" element={<PrivacyPage />} />
-        <Route path="/handelsbetingelser" element={<TermsPage />} />
-        <Route path="/cookies" element={<CookiesPage />} />
-        <Route path="/om" element={<OmPage />} />
-        <Route path="/faq" element={<FaqPage />} />
-        <Route path="/elo" element={<EloExplainerPage />} />
-        <Route path="/events" element={<PublicEventsPage />} />
-        <Route path="/hjaelp" element={<HelpContactPage />} />
-        <Route path="/app" element={<InstallAppPage />} />
-        <Route path="/dashboard" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
-        <Route path="/dashboard/:tab" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-      <CookieNoticeBar />
-    </div>
+    <ConfirmDialogProvider>
+      <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, position: "relative" }}>
+        {toast && (
+          <div className="pm-toast" style={{ position: "fixed", top: "max(12px, env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", background: theme.accent, color: "#fff", padding: "11px 22px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, zIndex: 9999, boxShadow: theme.shadowLg, letterSpacing: "-0.01em" }}>
+            {toast}
+          </div>
+        )}
+        <Routes>
+          <Route path="/" element={user && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+          <Route path="/login" element={user && profile ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+          <Route path="/opret" element={user && profile ? <Navigate to="/dashboard" replace /> : <OnboardingPage />} />
+          <Route path="/opret/bekraeft-email" element={user && profile ? <Navigate to="/dashboard" replace /> : <SignupEmailSentPage />} />
+          <Route path="/privatlivspolitik" element={<PrivacyPage />} />
+          <Route path="/handelsbetingelser" element={<TermsPage />} />
+          <Route path="/cookies" element={<CookiesPage />} />
+          <Route path="/om" element={<OmPage />} />
+          <Route path="/faq" element={<FaqPage />} />
+          <Route path="/elo" element={<EloExplainerPage />} />
+          <Route path="/events" element={<PublicEventsPage />} />
+          <Route path="/hjaelp" element={<HelpContactPage />} />
+          <Route path="/app" element={<InstallAppPage />} />
+          <Route path="/dashboard" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
+          <Route path="/dashboard/:tab" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+        <CookieNoticeBar />
+      </div>
+    </ConfirmDialogProvider>
   );
 }

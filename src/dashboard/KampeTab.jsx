@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { Profile, Court } from '../api/base44Client';
 import { supabase } from '../lib/supabase';
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
@@ -48,6 +49,43 @@ const TIME_OPTIONS = [];
 for (let h = 6; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`);
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`);
+}
+
+const KAMPE_NON_CHAT_NOTIF_TYPES = [
+  "match_join",
+  "match_invite",
+  "match_full",
+  "match_cancelled",
+  "result_submitted",
+  "result_confirmed",
+  "seeking_player",
+];
+
+function TabBadge({ count }) {
+  if (!count) return null;
+  return (
+    <span
+      aria-label={`${count} ulæste notifikationer`}
+      style={{
+        background: theme.red,
+        color: theme.onAccent,
+        borderRadius: "999px",
+        minWidth: "16px",
+        height: "16px",
+        padding: "0 5px",
+        fontSize: "10px",
+        fontWeight: 700,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        lineHeight: 1,
+        marginLeft: "6px",
+        verticalAlign: "middle",
+      }}
+    >
+      {count > 9 ? "9+" : count}
+    </span>
+  );
 }
 
 const PADEL_RULE_SUMMARY = [
@@ -209,6 +247,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user: authUser, refreshProfile } = useAuth();
+  const ask = useConfirm();
   const isAdmin = user?.role === 'admin';
   const myDisplayName                 = resolveDisplayName(user, authUser);
   const eloSyncKeyKampe = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
@@ -259,6 +298,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [matchChatSendingById, setMatchChatSendingById] = useState({});
   const [matchChatErrorById, setMatchChatErrorById] = useState({});
   const [matchChatUnreadById, setMatchChatUnreadById] = useState({});
+  const [matchUnreadById, setMatchUnreadById] = useState({});
   const matchChatListRefs = useRef({});
   const [newMatch, setNewMatch]       = useState({
     court_id: "",
@@ -504,30 +544,61 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
   }, [user?.id]);
 
+  const loadMatchUnreadCounts = useCallback(async () => {
+    if (!user?.id) {
+      setMatchUnreadById({});
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, match_id")
+        .eq("user_id", user.id)
+        .eq("read", false)
+        .in("type", KAMPE_NON_CHAT_NOTIF_TYPES)
+        .not("match_id", "is", null)
+        .limit(500);
+      if (error) throw error;
+      const grouped = {};
+      (data || []).forEach((row) => {
+        const matchId = row?.match_id ? String(row.match_id) : "";
+        if (!matchId) return;
+        grouped[matchId] = (grouped[matchId] || 0) + 1;
+      });
+      setMatchUnreadById(grouped);
+    } catch (e) {
+      console.warn("match unread notifications:", e?.message || e);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     void loadUnreadMatchChatNotifs();
-  }, [loadUnreadMatchChatNotifs]);
+    void loadMatchUnreadCounts();
+  }, [loadUnreadMatchChatNotifs, loadMatchUnreadCounts]);
 
   useEffect(() => {
     if (!user?.id) return undefined;
     const channel = supabase
-      .channel("match-chat-unread-" + user.id)
+      .channel("match-notif-badges-" + user.id)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: "user_id=eq." + user.id },
         (payload) => {
           const next = payload?.new || {};
           const prev = payload?.old || {};
-          const touchedMatchChat = next?.type === "match_chat" || prev?.type === "match_chat";
-          if (!touchedMatchChat) return;
-          void loadUnreadMatchChatNotifs();
+          const type = next?.type || prev?.type;
+          if (type === "match_chat") {
+            void loadUnreadMatchChatNotifs();
+          } else if (type && KAMPE_NON_CHAT_NOTIF_TYPES.includes(type)) {
+            void loadMatchUnreadCounts();
+          }
         }
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadUnreadMatchChatNotifs, user?.id]);
+  }, [loadUnreadMatchChatNotifs, loadMatchUnreadCounts, user?.id]);
 
   const markMatchChatNotifsRead = useCallback(async (matchId) => {
     const key = String(matchId || "");
@@ -551,50 +622,29 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
   }, [loadUnreadMatchChatNotifs, user?.id]);
 
-  const markNonChatKampeNotifsReadOnVisit = useCallback(async () => {
-    if (!user?.id) return;
-    const NON_CHAT_TYPES = ["match_join", "match_invite", "match_full", "result_submitted", "result_confirmed"];
-    try {
-      const [createdRes, playerRes] = await Promise.all([
-        supabase.from("matches").select("id").eq("creator_id", user.id),
-        supabase.from("match_players").select("match_id").eq("user_id", user.id).limit(2000),
-      ]);
-      const relatedIds = [...new Set([
-        ...((createdRes.data || []).map((row) => String(row.id))),
-        ...((playerRes.data || []).map((row) => String(row.match_id))),
-      ])];
-      if (!relatedIds.length) {
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("pm-notifications-sync"));
-        }
-        return;
-      }
-
-      const chunkSize = 100;
-      for (let i = 0; i < relatedIds.length; i += chunkSize) {
-        const ids = relatedIds.slice(i, i + chunkSize);
-        const { error } = await supabase
-          .from("notifications")
-          .update({ read: true })
-          .eq("user_id", user.id)
-          .eq("read", false)
-          .in("type", NON_CHAT_TYPES)
-          .in("match_id", ids);
-        if (error) throw error;
-      }
-
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("pm-notifications-sync"));
-      }
-    } catch (e) {
-      console.warn("mark non-chat kampe notifications read:", e?.message || e);
+  const markMatchNotifsRead = useCallback(async (matchId) => {
+    const key = String(matchId || "");
+    if (!key || !user?.id) return;
+    setMatchUnreadById((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", user.id)
+      .in("type", KAMPE_NON_CHAT_NOTIF_TYPES)
+      .eq("match_id", key)
+      .eq("read", false);
+    if (error) {
+      console.warn("mark match notifications read:", error.message || error);
+      void loadMatchUnreadCounts();
+    } else if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("pm-notifications-sync"));
     }
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!tabActive) return;
-    void markNonChatKampeNotifsReadOnVisit();
-  }, [markNonChatKampeNotifsReadOnVisit, tabActive]);
+  }, [loadMatchUnreadCounts, user?.id]);
 
   const scrollMatchChatToBottom = useCallback((matchId, behavior = "auto") => {
     const key = String(matchId || "");
@@ -905,7 +955,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const kickPlayer = async (matchId, targetUserId, targetName = "spilleren") => {
     const label = String(targetName || "spilleren").trim();
     const actor = isAdmin ? "admin" : "kampopretter";
-    if (!window.confirm(`Er du sikker på, at du vil smide ${label} ud af kampen som ${actor}?`)) return;
+    const ok = await ask({
+      message: `Er du sikker på, at du vil smide ${label} ud af kampen som ${actor}?`,
+      confirmLabel: "Ja, smid ud",
+      danger: true,
+    });
+    if (!ok) return;
 
     setBusyId(matchId + '-kick-' + targetUserId);
     try {
@@ -934,9 +989,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
 
     if (!isFull && isAdmin) {
-      if (!window.confirm("Kampen er ikke fuld endnu. Vil du gennemtvinge start som admin?")) return;
+      const ok = await ask({
+        message: "Kampen er ikke fuld endnu. Vil du gennemtvinge start som admin?",
+        confirmLabel: "Ja, start nu",
+      });
+      if (!ok) return;
     } else if (isAdmin && !matchPlayers[matchId]?.some(p => p.user_id === user.id)) {
-      if (!window.confirm("Vil du starte denne kamp som admin?")) return;
+      const ok = await ask({
+        message: "Vil du starte denne kamp som admin?",
+        confirmLabel: "Ja, start",
+      });
+      if (!ok) return;
     }
 
     setBusyId(matchId);
@@ -968,7 +1031,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       ? `Slet denne kamp? ${others.length} andre spillere bliver også afmeldt.`
       : "Slet denne kamp?";
 
-    if (!window.confirm(msg)) return;
+    const ok = await ask({
+      message: msg,
+      confirmLabel: "Ja, slet",
+      danger: true,
+    });
+    if (!ok) return;
     setBusyId(matchId);
     try {
       const mpBefore = matchPlayers[matchId] || [];
@@ -1324,11 +1392,43 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     try {
       const mr = matchResults[matchId];
       if (!mr) return;
-      await supabase.from("match_results").delete().eq("id", mr.id);
+      const { error: deleteError } = await supabase
+        .from("match_results")
+        .delete()
+        .eq("id", mr.id);
+      if (deleteError) throw deleteError;
+
       // Notify the submitter (if someone else rejected)
       if (mr.submitted_by && mr.submitted_by !== user.id) {
-        createNotification(mr.submitted_by, 'result_submitted', 'Resultat afvist ❌', `Dit indberettede resultat er blevet afvist. Indrapportér igen.`, matchId);
+        createNotification(
+          mr.submitted_by,
+          'result_submitted',
+          'Resultat afvist ❌',
+          `${myDisplayName} har afvist dit indberettede resultat. Indrapportér igen.`,
+          matchId,
+        );
       }
+
+      // Notify admins (excluding the rejecter)
+      try {
+        const { data: admins } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("role", "admin")
+          .neq("id", user.id);
+        (admins || []).forEach((a) => {
+          createNotification(
+            a.id,
+            'result_submitted',
+            'Resultat afvist ❌',
+            `${myDisplayName} har afvist et indberettet resultat. Kampen venter på et nyt resultat.`,
+            matchId,
+          );
+        });
+      } catch (e) {
+        console.warn("notify admins on reject:", e?.message || e);
+      }
+
       showToast("Resultat afvist. Indrapportér igen.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
@@ -1472,6 +1572,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const chatSending = !!matchChatSendingById[m.id];
     const chatError = matchChatErrorById[m.id] || "";
     const unreadChatCount = matchChatUnreadById[String(m.id)] || 0;
+    const unreadMatchCount = matchUnreadById[String(m.id)] || 0;
 
     const statusLabel = {
       open: { text: left > 0 ? `${left} ledig${left > 1 ? "e" : ""}` : "Fuld", tone: left > 0 ? "accent" : "warm" },
@@ -1481,13 +1582,45 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }[status] || { text: status, tone: "neutral" };
 
     return (
-      <div id={"pm-match-" + m.id} key={m.id} className="pm-ui-card pm-match-surface-card" style={{ scrollMarginTop: "88px" }}>
+      <div
+        id={"pm-match-" + m.id}
+        key={m.id}
+        className="pm-ui-card pm-match-surface-card"
+        style={{
+          scrollMarginTop: "88px",
+          position: "relative",
+          boxShadow: unreadMatchCount > 0 ? "0 0 0 2px " + theme.red + "55, 0 8px 24px rgba(0,0,0,0.06)" : undefined,
+        }}
+        onClick={unreadMatchCount > 0 ? () => { void markMatchNotifsRead(m.id); } : undefined}
+      >
         {/* Header */}
         <div className="pm-kampe-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
           <div className="pm-kampe-card-meta">
             <div className="pm-kampe-card-datetime" style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
               <Clock size={15} color={theme.accent} />
               <span className="pm-kampe-card-time-normalized">{formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}</span>
+              {unreadMatchCount > 0 && (
+                <span
+                  aria-label={`${unreadMatchCount} ulæste notifikationer for denne kamp`}
+                  title="Ulæste notifikationer for denne kamp"
+                  style={{
+                    background: theme.red,
+                    color: theme.onAccent,
+                    borderRadius: "999px",
+                    minWidth: "18px",
+                    height: "18px",
+                    padding: "0 6px",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    lineHeight: 1,
+                  }}
+                >
+                  {unreadMatchCount > 9 ? "9+" : unreadMatchCount}
+                </span>
+              )}
             </div>
             <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
             {m.description && <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "4px", fontStyle: "italic", lineHeight: 1.4 }}>💬 {m.description}</div>}
@@ -1999,8 +2132,34 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     );
   };
 
+  const padelUnreadCounts = useMemo(() => {
+    const counts = { open: 0, active: 0, completed: 0, total: 0 };
+    if (!matches.length) return counts;
+    const matchById = new Map(matches.map((m) => [String(m.id), m]));
+    const merged = new Map();
+    Object.entries(matchUnreadById).forEach(([id, c]) => {
+      merged.set(id, (merged.get(id) || 0) + (Number(c) || 0));
+    });
+    Object.entries(matchChatUnreadById).forEach(([id, c]) => {
+      merged.set(id, (merged.get(id) || 0) + (Number(c) || 0));
+    });
+    for (const [id, count] of merged) {
+      const match = matchById.get(id);
+      if (!match) continue;
+      const status = getStatus(match);
+      let bucket = null;
+      if (status === "open" || status === "full") bucket = "open";
+      else if (status === "in_progress") bucket = "active";
+      else if (status === "completed") bucket = "completed";
+      if (!bucket) continue;
+      counts[bucket] += count;
+      counts.total += count;
+    }
+    return counts;
+  }, [getStatus, matchChatUnreadById, matchUnreadById, matches]);
+
   const formatTabs = [
-    { id: "padel", label: "2v2-kampe" },
+    { id: "padel", label: <>2v2-kampe<TabBadge count={padelUnreadCounts.total} /></> },
     { id: "americano", label: "Americano" },
     { id: "liga", label: "Liga" },
   ];
@@ -2017,9 +2176,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     ? "Søg liga..."
     : "Søg spiller, bane eller beskrivelse...";
   const padelViewTabs = [
-    { id: "open", label: `Åbne (${openMatches.length})` },
-    { id: "active", label: `I gang (${activeMatches.length})` },
-    { id: "completed", label: `Afsluttede (${completedMatches.length})` },
+    { id: "open", label: <>Åbne ({openMatches.length})<TabBadge count={padelUnreadCounts.open} /></> },
+    { id: "active", label: <>I gang ({activeMatches.length})<TabBadge count={padelUnreadCounts.active} /></> },
+    { id: "completed", label: <>Afsluttede ({completedMatches.length})<TabBadge count={padelUnreadCounts.completed} /></> },
   ];
   const onScopeChange = (nextScope) => {
     setKampeScope(nextScope);
