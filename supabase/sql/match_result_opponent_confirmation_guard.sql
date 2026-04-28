@@ -1,8 +1,15 @@
 -- =============================================================================
--- Confirmation helpers used by apply_elo_for_match.
--- See match_result_opponent_confirmation_guard.sql for the RLS/trigger guard.
+-- Match result opponent confirmation guard
+--
+-- Run this whole file in Supabase SQL Editor.
+-- It hardens normal padel match results so ELO can only be applied after:
+--   1) a player from the opposing team confirms the submitted result, or
+--   2) a verified admin confirms/handles it.
 -- =============================================================================
 
+-- -----------------------------------------------------------------------------
+-- 1) Shared helper: can this user confirm this submitted result?
+-- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.can_confirm_match_result(
   p_match_id uuid,
   p_submitted_by uuid,
@@ -13,7 +20,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 SET row_security = off
-AS $confirm_guard$
+AS $$
 DECLARE
   v_submitter_team integer;
   v_confirmer_team integer;
@@ -40,13 +47,14 @@ BEGIN
     AND mp.user_id = p_submitted_by
   LIMIT 1;
 
+  -- System-submitted rows are neutral: any match player may confirm them.
   IF v_submitter_team IS NULL THEN
     RETURN true;
   END IF;
 
   RETURN v_submitter_team <> v_confirmer_team;
 END;
-$confirm_guard$;
+$$;
 
 REVOKE ALL ON FUNCTION public.can_confirm_match_result(uuid, uuid, uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.can_confirm_match_result(uuid, uuid, uuid) TO authenticated;
@@ -61,7 +69,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 SET row_security = off
-AS $confirm_guard$
+AS $$
 DECLARE
   v_confirmer_is_admin boolean := false;
 BEGIN
@@ -82,11 +90,122 @@ BEGIN
 
   RETURN public.can_confirm_match_result(p_match_id, p_submitted_by, p_confirmed_by);
 END;
-$confirm_guard$;
+$$;
 
 REVOKE ALL ON FUNCTION public.has_valid_match_result_confirmation(uuid, uuid, uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.has_valid_match_result_confirmation(uuid, uuid, uuid) TO authenticated;
 
+-- -----------------------------------------------------------------------------
+-- 2) RLS: participants may only confirm from the opposing team. Admin still can.
+-- -----------------------------------------------------------------------------
+DROP POLICY IF EXISTS match_results_update_by_participant ON public.match_results;
+CREATE POLICY match_results_update_by_participant
+  ON public.match_results
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_admin()
+    OR (
+      confirmed IS NOT TRUE
+      AND public.can_confirm_match_result(match_id, submitted_by, (SELECT auth.uid()))
+    )
+  )
+  WITH CHECK (
+    public.is_admin()
+    OR (
+      confirmed IS TRUE
+      AND confirmed_by = (SELECT auth.uid())
+      AND public.can_confirm_match_result(match_id, submitted_by, (SELECT auth.uid()))
+    )
+  );
+
+-- -----------------------------------------------------------------------------
+-- 3) Trigger guard: non-admins may only flip confirmation fields, and only from
+--    the opposing team. Score fields remain immutable during confirmation.
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.guard_match_result_confirmation()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  v_uid            uuid := auth.uid();
+  v_old_jsonb      jsonb;
+  v_new_jsonb      jsonb;
+  v_field          text;
+  v_protected_fields constant text[] := ARRAY[
+    'match_id','submitted_by',
+    'team1_player1_id','team1_player2_id',
+    'team2_player1_id','team2_player2_id',
+    'set1_team1','set1_team2','set1_tb1','set1_tb2',
+    'set2_team1','set2_team2','set2_tb1','set2_tb2',
+    'set3_team1','set3_team2','set3_tb1','set3_tb2',
+    'sets_won_team1','sets_won_team2',
+    'match_winner','score_display'
+  ];
+BEGIN
+  IF TG_OP <> 'UPDATE' THEN
+    RETURN NEW;
+  END IF;
+
+  -- Allow direct SQL/system work, e.g. SECURITY DEFINER functions and SQL Editor.
+  IF current_user NOT IN ('anon', 'authenticated') THEN
+    RETURN NEW;
+  END IF;
+
+  IF public.is_admin() THEN
+    RETURN NEW;
+  END IF;
+
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  IF OLD.confirmed IS TRUE THEN
+    RAISE EXCEPTION 'Confirmed result is immutable';
+  END IF;
+
+  IF NOT public.can_confirm_match_result(OLD.match_id, OLD.submitted_by, v_uid) THEN
+    RAISE EXCEPTION 'Result must be confirmed by an opposing team player or admin';
+  END IF;
+
+  v_old_jsonb := to_jsonb(OLD);
+  v_new_jsonb := to_jsonb(NEW);
+
+  FOREACH v_field IN ARRAY v_protected_fields LOOP
+    -- Some live databases may not have every optional tiebreak column yet.
+    IF NOT (v_old_jsonb ? v_field) THEN
+      CONTINUE;
+    END IF;
+
+    IF (v_old_jsonb -> v_field) IS DISTINCT FROM (v_new_jsonb -> v_field) THEN
+      RAISE EXCEPTION 'Only confirmation fields can be updated (changed: %)', v_field;
+    END IF;
+  END LOOP;
+
+  IF NEW.confirmed IS NOT TRUE THEN
+    RAISE EXCEPTION 'Result must be confirmed in this update';
+  END IF;
+
+  IF NEW.confirmed_by IS DISTINCT FROM v_uid THEN
+    RAISE EXCEPTION 'confirmed_by must match current user';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_guard_match_result_confirmation ON public.match_results;
+CREATE TRIGGER trg_guard_match_result_confirmation
+BEFORE UPDATE ON public.match_results
+FOR EACH ROW
+EXECUTE FUNCTION public.guard_match_result_confirmation();
+
+REVOKE ALL ON FUNCTION public.guard_match_result_confirmation() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.guard_match_result_confirmation() TO authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 4) RPC: ELO refuses confirmed rows unless the stored confirmer is valid.
+-- -----------------------------------------------------------------------------
 -- =============================================================================
 -- apply_elo_for_match: individuel ELO mod modstanderholdets snit + K pr. hold + margin
 --
@@ -327,3 +446,17 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.apply_elo_for_match(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.apply_elo_for_match(uuid) TO authenticated;
+
+
+-- Force PostgREST to reload function/policy metadata after the change.
+NOTIFY pgrst, 'reload schema';
+
+-- Verification snippets:
+-- SELECT pg_get_functiondef('public.can_confirm_match_result(uuid, uuid, uuid)'::regprocedure);
+-- SELECT pg_get_functiondef('public.guard_match_result_confirmation()'::regprocedure);
+-- SELECT pg_get_functiondef('public.apply_elo_for_match(uuid)'::regprocedure);
+-- SELECT policyname, cmd, qual, with_check
+-- FROM pg_policies
+-- WHERE schemaname = 'public'
+--   AND tablename = 'match_results'
+--   AND policyname = 'match_results_update_by_participant';
