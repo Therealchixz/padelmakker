@@ -6,6 +6,7 @@ import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
+import { formatMatchResultScore } from '../lib/matchResultScore';
 
 /**
  * Globalt pop-up som tvinger brugeren til at forholde sig til ubekræftede
@@ -52,7 +53,7 @@ export function PendingResultConfirmModal({ user }) {
 
       const { data: results, error: mrErr } = await supabase
         .from('match_results')
-        .select('id, match_id, submitted_by, sets_won_team1, sets_won_team2, score_display, match_winner, created_at')
+        .select('id, match_id, submitted_by, sets_won_team1, sets_won_team2, score_display, match_winner, created_at, set1_team1, set1_team2, set1_tb1, set1_tb2, set2_team1, set2_team2, set2_tb1, set2_tb2, set3_team1, set3_team2, set3_tb1, set3_tb2')
         .in('match_id', matchIds)
         .eq('confirmed', false)
         .neq('submitted_by', userId)
@@ -178,6 +179,7 @@ export function PendingResultConfirmModal({ user }) {
 
   const { result, match, submitterName } = current;
   const totalCount = visible.length;
+  const scoreDisplay = formatMatchResultScore(result);
 
   const handleConfirm = async () => {
     setBusy(true);
@@ -207,7 +209,7 @@ export function PendingResultConfirmModal({ user }) {
             p.user_id,
             'result_confirmed',
             'Resultat bekræftet! 🏆',
-            `Kampen er afsluttet (${result.score_display || '—'}). Personlig ELO er opdateret.`,
+            `Kampen er afsluttet (${scoreDisplay}). Personlig ELO er opdateret.`,
             result.match_id,
           );
         });
@@ -345,7 +347,7 @@ export function PendingResultConfirmModal({ user }) {
             </div>
           )}
           <div style={{ fontSize: '15px', fontWeight: 700, color: theme.accent }}>
-            {result.score_display || '—'}
+            {scoreDisplay}
           </div>
         </div>
 

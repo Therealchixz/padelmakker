@@ -18,6 +18,7 @@ import { createNotification } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { fetchMatchMessages, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
 import { validateMatchRosterForElo, validateSubmittedPadelResult } from '../lib/padelResultGuards';
+import { formatMatchResultScore, formatSubmittedPadelScore } from '../lib/matchResultScore';
 import { DateTime } from 'luxon';
 import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
@@ -1400,10 +1401,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         return;
       }
 
-      const scoreDisplay = result.sets
-        .filter(s => s.gamesTeam1 > 0 || s.gamesTeam2 > 0)
-        .map(s => `${s.gamesTeam1}-${s.gamesTeam2}`)
-        .join(", ");
+      const scoreDisplay = formatSubmittedPadelScore(result.sets);
 
       const { error } = await supabase.from("match_results").insert({
         match_id: matchId,
@@ -1453,14 +1451,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       await reloadKampeEloBundle();
       // Notify all players about ELO update
       const playersUpdated = Number(eloResult.data?.players_updated) || 0;
+      const confirmedScoreDisplay = formatMatchResultScore(mr);
       mp.forEach(p => {
         createNotification(
           p.user_id,
           "result_confirmed",
           "Resultat bekræftet!",
           playersUpdated > 0
-            ? `Kampen er afsluttet (${mr.score_display || "—"}). Personlig ELO er opdateret.`
-            : `Kampen er afsluttet (${mr.score_display || "—"}), men ELO blev ikke ændret.`,
+            ? `Kampen er afsluttet (${confirmedScoreDisplay}). Personlig ELO er opdateret.`
+            : `Kampen er afsluttet (${confirmedScoreDisplay}), men ELO blev ikke ændret.`,
           matchId
         );
       });
@@ -1849,7 +1848,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const textColor = !mr.confirmed ? theme.warm : iWon ? theme.green : iLost ? theme.red : theme.blue;
           return (
             <div className={`pm-feedback-panel ${toneClass}`} style={{ marginBottom: "12px", padding: "14px" }}>
-              <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "0.05em", color: textColor }}>{mr.score_display || "—"}</div>
+              <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "0.05em", color: textColor }}>{formatMatchResultScore(mr)}</div>
               <div style={{ fontSize: "12px", color: textColor, marginTop: "5px", fontWeight: 600 }}>
                 {!mr.confirmed ? "⏳ Venter på bekræftelse" : iWon ? "🏆 Du vandt!" : iLost ? "😞 Du tabte" : `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt`}
               </div>
