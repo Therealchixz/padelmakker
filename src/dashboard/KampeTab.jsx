@@ -21,6 +21,7 @@ import { formatMatchResultScore } from '../lib/matchResultScore';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
 import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
+import { groupUnreadNotificationsByMatchId, removeUnreadForMatch, shouldRefreshKampeUnreadForNotificationType } from '../lib/kampeNotificationBadges';
 import { DateTime } from 'luxon';
 import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
@@ -532,13 +533,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         .not("match_id", "is", null)
         .limit(500);
       if (error) throw error;
-      const grouped = {};
-      (data || []).forEach((row) => {
-        const matchId = row?.match_id ? String(row.match_id) : "";
-        if (!matchId) return;
-        grouped[matchId] = (grouped[matchId] || 0) + 1;
-      });
-      setMatchChatUnreadById(grouped);
+      setMatchChatUnreadById(groupUnreadNotificationsByMatchId(data));
     } catch (e) {
       console.warn("match chat unread notifications:", e?.message || e);
     }
@@ -559,13 +554,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         .not("match_id", "is", null)
         .limit(500);
       if (error) throw error;
-      const grouped = {};
-      (data || []).forEach((row) => {
-        const matchId = row?.match_id ? String(row.match_id) : "";
-        if (!matchId) return;
-        grouped[matchId] = (grouped[matchId] || 0) + 1;
-      });
-      setMatchUnreadById(grouped);
+      setMatchUnreadById(groupUnreadNotificationsByMatchId(data));
     } catch (e) {
       console.warn("match unread notifications:", e?.message || e);
     }
@@ -587,9 +576,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const next = payload?.new || {};
           const prev = payload?.old || {};
           const type = next?.type || prev?.type;
-          if (type === "match_chat") {
+          const refreshTarget = shouldRefreshKampeUnreadForNotificationType(type);
+          if (refreshTarget === "chat") {
             void loadUnreadMatchChatNotifs();
-          } else if (type && KAMPE_NON_CHAT_NOTIF_TYPES.includes(type)) {
+          } else if (refreshTarget === "match") {
             void loadMatchUnreadCounts();
           }
         }
@@ -603,12 +593,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const markMatchChatNotifsRead = useCallback(async (matchId) => {
     const key = String(matchId || "");
     if (!key || !user?.id) return;
-    setMatchChatUnreadById((prev) => {
-      if (!prev[key]) return prev;
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
+    setMatchChatUnreadById((prev) => removeUnreadForMatch(prev, key));
     const { error } = await supabase
       .from("notifications")
       .update({ read: true })
@@ -626,12 +611,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const key = String(matchId || "");
     if (!key || !user?.id) return;
     if (!matchUnreadByIdRef.current[key]) return;
-    setMatchUnreadById((prev) => {
-      if (!prev[key]) return prev;
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
+    setMatchUnreadById((prev) => removeUnreadForMatch(prev, key));
     const { error } = await supabase
       .from("notifications")
       .update({ read: true })
