@@ -17,9 +17,8 @@ import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { fetchMatchMessages, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
-import { validateMatchRosterForElo, validateSubmittedPadelResult } from '../lib/padelResultGuards';
 import { formatMatchResultScore } from '../lib/matchResultScore';
-import { buildMatchResultInsertPayload } from '../lib/matchResultPayload';
+import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
 import { DateTime } from 'luxon';
 import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
@@ -1379,32 +1378,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     setBusyId(matchId);
     try {
       const mp = matchPlayers[matchId] || [];
-      const rosterCheck = validateMatchRosterForElo(mp, matchPlayerTeam);
-      if (!rosterCheck.ok) {
-        showToast(rosterCheck.reason || "Kampen har ikke en gyldig 2v2-holdopsætning.");
-        return;
-      }
-
-      const resultCheck = validateSubmittedPadelResult(result);
-      if (!resultCheck.ok) {
-        showToast(resultCheck.reason || "Resultatet er ikke gyldigt.");
-        return;
-      }
-
-      const payload = buildMatchResultInsertPayload({
+      const submission = await submitPadelMatchResult({
+        supabaseClient: supabase,
+        createNotificationFn: createNotification,
         matchId,
         players: mp,
         submittedBy: user.id,
+        submitterName: myDisplayName,
         result,
+        getTeam: matchPlayerTeam,
       });
-      const scoreDisplay = payload.score_display;
-
-      const { error } = await supabase.from("match_results").insert(payload);
-      if (error) throw error;
-      // Notify other players to confirm the result
-      mp.filter(p => p.user_id !== user.id).forEach(p => {
-        createNotification(p.user_id, "result_submitted", "Resultat indsendt 📊", `${myDisplayName} har indsendt et resultat (${scoreDisplay}). Bekræft venligst.`, matchId);
-      });
+      if (!submission.ok) {
+        showToast(submission.reason || "Resultatet er ikke gyldigt.");
+        return;
+      }
       showToast("Resultat indsendt! Venter på bekræftelse ⏳");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
