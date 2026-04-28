@@ -1598,13 +1598,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     const canSwitch = joined && myTeam === 2 && (status === "open" || status === "full") && busyId !== m.id + '-switch';
                     return (
                       <div key={"t1e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                        <div
+                        <button
+                          type="button"
                           onClick={canSwitch ? () => switchTeam(m.id, 1) : undefined}
+                          disabled={!canSwitch}
+                          aria-label="Skift til Hold 1"
                           title={canSwitch ? "Skift til Hold 1" : undefined}
-                          style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? theme.accent : theme.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? theme.accentBg : "transparent", transition: "all 0.15s" }}
+                          style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? theme.accent : theme.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? theme.accentBg : "transparent", transition: "all 0.15s", padding: 0 }}
                         >
                           <Plus size={10} color={canSwitch ? theme.accent : theme.textLight} />
-                        </div>
+                        </button>
                         {canSwitch && <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700, marginTop: "2px" }}>Skift</span>}
                       </div>
                     );
@@ -1644,13 +1647,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     const canSwitch = joined && myTeam === 1 && (status === "open" || status === "full") && busyId !== m.id + '-switch';
                     return (
                       <div key={"t2e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                        <div
+                        <button
+                          type="button"
                           onClick={canSwitch ? () => switchTeam(m.id, 2) : undefined}
+                          disabled={!canSwitch}
+                          aria-label="Skift til Hold 2"
                           title={canSwitch ? "Skift til Hold 2" : undefined}
-                          style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? theme.blue : theme.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? theme.blueBg : "transparent", transition: "all 0.15s" }}
+                          style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? theme.blue : theme.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? theme.blueBg : "transparent", transition: "all 0.15s", padding: 0 }}
                         >
                           <Plus size={10} color={canSwitch ? theme.blue : theme.textLight} />
-                        </div>
+                        </button>
                         {canSwitch && <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700, marginTop: "2px" }}>Skift</span>}
                       </div>
                     );
