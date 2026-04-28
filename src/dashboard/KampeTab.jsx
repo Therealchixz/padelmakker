@@ -21,7 +21,7 @@ import { formatMatchResultScore } from '../lib/matchResultScore';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
 import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
-import { groupUnreadNotificationsByMatchId, removeUnreadForMatch, shouldRefreshKampeUnreadForNotificationType } from '../lib/kampeNotificationBadges';
+import { groupUnreadNotificationsByMatchId, groupRelevantUnreadNotificationsByMatchId, removeUnreadForMatch, shouldRefreshKampeUnreadForNotificationType } from '../lib/kampeNotificationBadges';
 import { buildMatchCardState } from '../lib/matchCardState';
 import { buildKampeMatchLists } from '../lib/matchListFilters';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
@@ -489,18 +489,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     try {
       const { data, error } = await supabase
         .from("notifications")
-        .select("id, match_id")
+        .select("id, match_id, type")
         .eq("user_id", user.id)
         .eq("read", false)
         .in("type", KAMPE_NON_CHAT_NOTIF_TYPES)
         .not("match_id", "is", null)
         .limit(500);
       if (error) throw error;
-      setMatchUnreadById(groupUnreadNotificationsByMatchId(data));
+      const statusByMatchId = Object.fromEntries(
+        matches.map((match) => [String(match.id), (match.status ?? "open").toString().toLowerCase()])
+      );
+      setMatchUnreadById(groupRelevantUnreadNotificationsByMatchId(data, statusByMatchId));
     } catch (e) {
       console.warn("match unread notifications:", e?.message || e);
     }
-  }, [user?.id]);
+  }, [matches, user?.id]);
 
   useEffect(() => {
     void loadUnreadMatchChatNotifs();

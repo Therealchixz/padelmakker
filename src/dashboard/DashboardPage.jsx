@@ -17,6 +17,8 @@ import { AdminPinGate } from '../components/AdminPinGate';
 import { GuidedTourOverlay } from '../components/GuidedTourOverlay';
 import { PendingResultConfirmModal } from '../components/PendingResultConfirmModal';
 import { KAMPE_NOTIFICATION_TYPES } from '../lib/kampeNotificationTypes';
+import { countRelevantKampeUnreadNotifications } from '../lib/kampeNotificationBadges';
+import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -403,6 +405,7 @@ function useUnreadKampeNotificationsCount(userId) {
   const createController = useCallback((api) => {
     let shouldRefreshIds = true;
     let myRelatedMatchIds = [];
+    let statusByMatchId = {};
     const RELEVANT_TYPES = KAMPE_NOTIFICATION_TYPES;
 
     const loadRelatedMatchIds = async () => {
@@ -416,9 +419,16 @@ function useUnreadKampeNotificationsCount(userId) {
           ...(playerRes.data || []).map((p) => String(p.match_id)),
         ]);
         myRelatedMatchIds = [...set];
+        const matchRows = myRelatedMatchIds.length > 0
+          ? await fetchRowsInChunks(supabase, "matches", "id", myRelatedMatchIds, "id,status")
+          : [];
+        statusByMatchId = Object.fromEntries(
+          (matchRows || []).map((match) => [String(match.id), (match.status ?? "open").toString().toLowerCase()])
+        );
       } catch (e) {
         console.warn("kampe notif badge ids:", e);
         myRelatedMatchIds = [];
+        statusByMatchId = {};
       } finally {
         shouldRefreshIds = false;
       }
@@ -430,14 +440,16 @@ function useUnreadKampeNotificationsCount(userId) {
           api.setCountSafe(0);
           return;
         }
-        const { count: c } = await supabase
+        const { data, error } = await supabase
           .from("notifications")
-          .select("id", { count: "exact", head: true })
+          .select("id,type,match_id")
           .eq("user_id", api.userId)
           .eq("read", false)
           .in("type", RELEVANT_TYPES)
-          .in("match_id", myRelatedMatchIds);
-        api.setCountSafe(c || 0);
+          .in("match_id", myRelatedMatchIds)
+          .limit(500);
+        if (error) throw error;
+        api.setCountSafe(countRelevantKampeUnreadNotifications(data, statusByMatchId));
       } catch (e) {
         console.warn("kampe notif badge refetch:", e);
       }
@@ -454,6 +466,7 @@ function useUnreadKampeNotificationsCount(userId) {
           table: "notifications",
           filter: "user_id=eq." + api.userId,
           onEvent: ({ api: runtime }) => {
+            shouldRefreshIds = true;
             runtime.scheduleRefetch({ delay: 120 });
           },
         },
