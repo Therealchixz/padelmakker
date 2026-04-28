@@ -18,7 +18,9 @@ import { createNotification } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { fetchMatchMessages, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
 import { validateMatchRosterForElo, validateSubmittedPadelResult } from '../lib/padelResultGuards';
-import { formatMatchResultScore, formatSubmittedPadelScore } from '../lib/matchResultScore';
+import { formatMatchResultScore } from '../lib/matchResultScore';
+import { buildMatchResultInsertPayload } from '../lib/matchResultPayload';
+import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
 import { DateTime } from 'luxon';
 import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
@@ -52,16 +54,6 @@ for (let h = 6; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:00`);
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`);
 }
-
-const KAMPE_NON_CHAT_NOTIF_TYPES = [
-  "match_join",
-  "match_invite",
-  "match_full",
-  "match_cancelled",
-  "result_submitted",
-  "result_confirmed",
-  "seeking_player",
-];
 
 function TabBadge({ count }) {
   if (!count) return null;
@@ -1387,8 +1379,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     setBusyId(matchId);
     try {
       const mp = matchPlayers[matchId] || [];
-      const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
-      const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
       const rosterCheck = validateMatchRosterForElo(mp, matchPlayerTeam);
       if (!rosterCheck.ok) {
         showToast(rosterCheck.reason || "Kampen har ikke en gyldig 2v2-holdopsætning.");
@@ -1401,25 +1391,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         return;
       }
 
-      const scoreDisplay = formatSubmittedPadelScore(result.sets);
-
-      const { error } = await supabase.from("match_results").insert({
-        match_id: matchId,
-        team1_player1_id: t1[0]?.user_id, team1_player2_id: t1[1]?.user_id,
-        team2_player1_id: t2[0]?.user_id, team2_player2_id: t2[1]?.user_id,
-        set1_team1: result.sets[0]?.gamesTeam1, set1_team2: result.sets[0]?.gamesTeam2,
-        set1_tb1: result.sets[0]?.tiebreakTeam1, set1_tb2: result.sets[0]?.tiebreakTeam2,
-        set2_team1: result.sets[1]?.gamesTeam1, set2_team2: result.sets[1]?.gamesTeam2,
-        set2_tb1: result.sets[1]?.tiebreakTeam1, set2_tb2: result.sets[1]?.tiebreakTeam2,
-        set3_team1: result.sets[2]?.gamesTeam1, set3_team2: result.sets[2]?.gamesTeam2,
-        set3_tb1: result.sets[2]?.tiebreakTeam1, set3_tb2: result.sets[2]?.tiebreakTeam2,
-        sets_won_team1: result.sets.filter(s => s.gamesTeam1 > s.gamesTeam2).length,
-        sets_won_team2: result.sets.filter(s => s.gamesTeam2 > s.gamesTeam1).length,
-        match_winner: result.winner,
-        score_display: scoreDisplay,
-        submitted_by: user.id,
-        confirmed: false,
+      const payload = buildMatchResultInsertPayload({
+        matchId,
+        players: mp,
+        submittedBy: user.id,
+        result,
       });
+      const scoreDisplay = payload.score_display;
+
+      const { error } = await supabase.from("match_results").insert(payload);
       if (error) throw error;
       // Notify other players to confirm the result
       mp.filter(p => p.user_id !== user.id).forEach(p => {

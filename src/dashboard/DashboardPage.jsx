@@ -16,6 +16,7 @@ import { PROFILE_REFRESH_COOLDOWN_MS } from '../lib/platformConstants';
 import { AdminPinGate } from '../components/AdminPinGate';
 import { GuidedTourOverlay } from '../components/GuidedTourOverlay';
 import { PendingResultConfirmModal } from '../components/PendingResultConfirmModal';
+import { KAMPE_NOTIFICATION_TYPES } from '../lib/kampeNotificationTypes';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -402,7 +403,7 @@ function useUnreadKampeNotificationsCount(userId) {
   const createController = useCallback((api) => {
     let shouldRefreshIds = true;
     let myRelatedMatchIds = [];
-    const RELEVANT_TYPES = ["match_chat", "match_join", "match_invite", "match_full", "result_submitted", "result_confirmed"];
+    const RELEVANT_TYPES = KAMPE_NOTIFICATION_TYPES;
 
     const loadRelatedMatchIds = async () => {
       try {
