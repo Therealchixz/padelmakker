@@ -536,7 +536,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
                 <div style={{
                   maxWidth: '76%',
                   background: isMe ? theme.accent : theme.surfaceAlt,
-                  color: isMe ? '#fff' : theme.text,
+                  color: isMe ? theme.onAccent : theme.text,
                   borderRadius: isMe ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
                   padding: '9px 13px',
                   fontSize: '14px',
@@ -690,7 +690,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
                   {hasUnread && (
                     <span style={{
                       position: 'absolute', top: -2, right: -2,
-                      background: theme.accent, color: '#fff',
+                      background: theme.accent, color: theme.onAccent,
                       borderRadius: '10px', fontSize: '9px', fontWeight: 800,
                       padding: '1px 5px', border: '2px solid ' + theme.surface,
                     }}>

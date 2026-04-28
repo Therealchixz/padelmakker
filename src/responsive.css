@@ -1315,7 +1315,7 @@ button,
 .pm-ui-btn-chip-active {
   border-color: var(--pm-accent);
   background: var(--pm-accent);
-  color: #fff;
+  color: var(--pm-on-accent);
 }
 
 .pm-feed-filters-header {
@@ -1405,7 +1405,7 @@ button,
 .pm-pill-tab-active,
 .pm-pill-tab[aria-selected="true"] {
   background: var(--pm-accent);
-  color: #fff;
+  color: var(--pm-on-accent);
   border-color: var(--pm-accent);
   box-shadow: 0 2px 8px rgba(29, 78, 216, 0.28);
   font-weight: 700;

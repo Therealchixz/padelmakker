@@ -410,7 +410,7 @@ export function AdminTab() {
                       </button>
                       <button 
                         onClick={() => setEditingUser({ ...u })} 
-                        style={{ background: theme.accent, border: "none", borderRadius: "8px", padding: "8px 16px", color: "#fff", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 600 }}
+                        style={{ background: theme.accent, border: "none", borderRadius: "8px", padding: "8px 16px", color: theme.onAccent, display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 600 }}
                       >
                         <Edit2 size={16} /> Rediger
                       </button>
@@ -688,7 +688,7 @@ export function AdminTab() {
                 />
               </div>
               
-              <div style={{ marginTop: "8px", padding: "12px", background: editingUser.is_banned ? theme.redBg : theme.surfaceAlt, borderRadius: "10px", border: "1px solid " + (editingUser.is_banned ? "#FCA5A5" : theme.border) }}>
+              <div style={{ marginTop: "8px", padding: "12px", background: editingUser.is_banned ? theme.redBg : theme.surfaceAlt, borderRadius: "10px", border: "1px solid " + (editingUser.is_banned ? "var(--pm-danger-border)" : theme.border) }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ fontSize: "13px", fontWeight: 700, color: editingUser.is_banned ? theme.red : theme.text }}>
