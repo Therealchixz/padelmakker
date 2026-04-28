@@ -100,16 +100,74 @@ export function PendingResultConfirmModal({ user }) {
     void load();
   }, [load]);
 
-  // Realtime: opdater når et resultat indsendes/ændres/slettes for brugeren.
+  // Realtime: opdater når en relevant notifikation lander til denne bruger
+  // (notifications-tabellen er allerede i supabase_realtime publication og virker
+  // pålideligt; match_results er det typisk ikke). Vi reagerer både på
+  // result_submitted (nyt resultat venter på bekræftelse) og
+  // result_confirmed/match_cancelled (en anden tog stilling, fjern modal).
   useEffect(() => {
     if (!userId) return undefined;
+    const RELEVANT_TYPES = new Set([
+      'result_submitted',
+      'result_confirmed',
+      'match_cancelled',
+    ]);
     const channel = supabase
       .channel('pending-result-modal-' + userId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_results' }, () => {
-        if (reloadRef.current) void reloadRef.current();
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: 'user_id=eq.' + userId,
+        },
+        (payload) => {
+          const type = payload?.new?.type;
+          if (type && RELEVANT_TYPES.has(type)) {
+            if (reloadRef.current) void reloadRef.current();
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'match_results' },
+        () => {
+          if (reloadRef.current) void reloadRef.current();
+        },
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
+  }, [userId]);
+
+  // Fallback: re-load når appen kommer i forgrunden eller får fokus.
+  // Dækker iOS PWA hvor WebSocket dør i baggrunden, og almindelige
+  // tab-skift hvor klienten missede et realtime-event.
+  useEffect(() => {
+    if (!userId) return undefined;
+    const onVisible = () => {
+      if (typeof document === 'undefined') return;
+      if (document.visibilityState === 'visible') {
+        if (reloadRef.current) void reloadRef.current();
+      }
+    };
+    const onFocus = () => {
+      if (reloadRef.current) void reloadRef.current();
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisible);
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', onFocus);
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisible);
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', onFocus);
+      }
+    };
   }, [userId]);
 
   // Aktuelle "ikke-dismissede" pending-rækker
