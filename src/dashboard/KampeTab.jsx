@@ -19,6 +19,7 @@ import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPl
 import { fetchMatchMessages, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
 import { formatMatchResultScore } from '../lib/matchResultScore';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
+import { confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
 import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
 import { DateTime } from 'luxon';
 import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
@@ -1403,33 +1404,28 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     try {
       const mr = matchResults[matchId];
       if (!mr) return;
-      const { error } = await supabase.from("match_results").update({ confirmed: true, confirmed_by: user.id }).eq("id", mr.id);
-      if (error) throw error;
-
-      // Calculate ELO
       const mp = matchPlayers[matchId] || [];
-      const eloResult = await calculateAndApplyElo(matchId, showToast, { matchResultId: mr.id });
-      if (!eloResult?.success) {
+      const confirmation = await confirmPadelMatchResult({
+        supabaseClient: supabase,
+        calculateAndApplyEloFn: calculateAndApplyElo,
+        createNotificationFn: createNotification,
+        matchId,
+        result: mr,
+        players: mp,
+        confirmedBy: user.id,
+        showToast,
+      });
+      if (!confirmation.ok) {
+        showToast(confirmation.reason || "Resultatet kunne ikke bekræftes.");
+        return;
+      }
+      if (!confirmation.eloApplied) {
         await loadData();
         return;
       }
 
       refreshProfile();
       await reloadKampeEloBundle();
-      // Notify all players about ELO update
-      const playersUpdated = Number(eloResult.data?.players_updated) || 0;
-      const confirmedScoreDisplay = formatMatchResultScore(mr);
-      mp.forEach(p => {
-        createNotification(
-          p.user_id,
-          "result_confirmed",
-          "Resultat bekræftet!",
-          playersUpdated > 0
-            ? `Kampen er afsluttet (${confirmedScoreDisplay}). Personlig ELO er opdateret.`
-            : `Kampen er afsluttet (${confirmedScoreDisplay}), men ELO blev ikke ændret.`,
-          matchId
-        );
-      });
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }
@@ -1440,41 +1436,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     try {
       const mr = matchResults[matchId];
       if (!mr) return;
-      const { error: deleteError } = await supabase
-        .from("match_results")
-        .delete()
-        .eq("id", mr.id);
-      if (deleteError) throw deleteError;
-
-      // Notify the submitter (if someone else rejected)
-      if (mr.submitted_by && mr.submitted_by !== user.id) {
-        createNotification(
-          mr.submitted_by,
-          'result_submitted',
-          'Resultat afvist ❌',
-          `${myDisplayName} har afvist dit indberettede resultat. Indrapportér igen.`,
-          matchId,
-        );
-      }
-
-      // Notify admins (excluding the rejecter)
-      try {
-        const { data: admins } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("role", "admin")
-          .neq("id", user.id);
-        (admins || []).forEach((a) => {
-          createNotification(
-            a.id,
-            'result_submitted',
-            'Resultat afvist ❌',
-            `${myDisplayName} har afvist et indberettet resultat. Kampen venter på et nyt resultat.`,
-            matchId,
-          );
-        });
-      } catch (e) {
-        console.warn("notify admins on reject:", e?.message || e);
+      const rejection = await rejectPadelMatchResult({
+        supabaseClient: supabase,
+        createNotificationFn: createNotification,
+        matchId,
+        result: mr,
+        rejectedBy: user.id,
+        rejecterName: myDisplayName,
+        onWarn: (e) => console.warn("notify admins on reject:", e?.message || e),
+      });
+      if (!rejection.ok) {
+        showToast(rejection.reason || "Resultatet kunne ikke afvises.");
+        return;
       }
 
       showToast("Resultat afvist. Indrapportér igen.");
