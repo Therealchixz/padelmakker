@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
@@ -19,6 +19,7 @@ export function OnboardingPage() {
   const { signUp, signOut } = useAuth();
   const navigate = useNavigate();
   const ask = useConfirm();
+  const onboardingTopRef = useRef(null);
   const turnstileSiteKey = String(import.meta.env.VITE_TURNSTILE_SITE_KEY || "").trim();
   const turnstileEnabled = turnstileSiteKey.length > 0;
   const [step, setStep]           = useState(0);
@@ -29,6 +30,10 @@ export function OnboardingPage() {
   const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
+
+  useEffect(() => {
+    onboardingTopRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+  }, [step]);
 
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
@@ -536,6 +541,7 @@ export function OnboardingPage() {
 
   return (
     <div
+      ref={onboardingTopRef}
       className="pm-root"
       style={{
         fontFamily: font,

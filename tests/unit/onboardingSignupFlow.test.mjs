@@ -31,3 +31,13 @@ test('signup confirmation page gives clear next steps and troubleshooting', asyn
   assert.match(confirmationPage, /spam/i);
   assert.match(confirmationPage, /kan du logge ind/i);
 });
+
+test('onboarding returns to the top whenever the user changes step', async () => {
+  const onboardingPage = await readFile(new URL('../../src/pages/OnboardingPage.jsx', import.meta.url), 'utf8');
+
+  assert.match(onboardingPage, /useRef/);
+  assert.match(onboardingPage, /onboardingTopRef/);
+  assert.match(onboardingPage, /scrollIntoView\(\{/);
+  assert.match(onboardingPage, /block: "start"/);
+  assert.match(onboardingPage, /ref=\{onboardingTopRef\}/);
+});
