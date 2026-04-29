@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   canConfirmPadelMatchResult,
   confirmPadelMatchResult,
+  filterConfirmablePendingResults,
   rejectPadelMatchResult,
 } from '../../src/lib/resolvePadelMatchResult.js';
 
@@ -106,6 +107,26 @@ test('canConfirmPadelMatchResult lets a player confirm a neutral admin-submitted
     confirmedBy: 'partner',
     isAdmin: false,
   }), { ok: true });
+});
+
+test('filterConfirmablePendingResults hides same-team pending results from the modal and badge', () => {
+  const results = [
+    { ...resultRow, id: 'same-team-result', submitted_by: 'submitter' },
+    { ...resultRow, id: 'opponent-result', submitted_by: 'confirmer' },
+  ];
+  const playersByMatchId = {
+    'match-1': players,
+  };
+
+  assert.deepEqual(
+    filterConfirmablePendingResults({
+      results,
+      playersByMatchId,
+      userId: 'partner',
+      isAdmin: false,
+    }).map((result) => result.id),
+    ['opponent-result'],
+  );
 });
 
 test('confirmPadelMatchResult rejects same-team confirmation before touching the database', async () => {

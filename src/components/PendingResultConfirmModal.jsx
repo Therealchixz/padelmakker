@@ -7,6 +7,7 @@ import { createNotification } from '../lib/notifications';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import { formatMatchResultScore } from '../lib/matchResultScore';
+import { canConfirmPadelMatchResult, filterConfirmablePendingResults } from '../lib/resolvePadelMatchResult';
 
 /**
  * Globalt pop-up som tvinger brugeren til at forholde sig til ubekræftede
@@ -31,6 +32,7 @@ export function PendingResultConfirmModal({ user }) {
   const reloadRef = useRef(null);
 
   const userId = user?.id;
+  const isAdmin = user?.role === 'admin';
   const myDisplayName = resolveDisplayName(user, user);
 
   const load = useCallback(async () => {
@@ -67,12 +69,15 @@ export function PendingResultConfirmModal({ user }) {
       const submitterIds = [...new Set(results.map((r) => r.submitted_by).filter(Boolean))];
       const matchIdsForResults = [...new Set(results.map((r) => r.match_id).filter(Boolean))];
 
-      const [submittersRes, matchesRes] = await Promise.all([
+      const [submittersRes, matchesRes, playersRes] = await Promise.all([
         submitterIds.length
           ? supabase.from('profiles').select('id, name, full_name').in('id', submitterIds)
           : Promise.resolve({ data: [] }),
         matchIdsForResults.length
           ? supabase.from('matches').select('id, date, time, time_end, court_name').in('id', matchIdsForResults)
+          : Promise.resolve({ data: [] }),
+        matchIdsForResults.length
+          ? supabase.from('match_players').select('match_id, user_id, team').in('match_id', matchIdsForResults)
           : Promise.resolve({ data: [] }),
       ]);
 
@@ -80,12 +85,26 @@ export function PendingResultConfirmModal({ user }) {
       (submittersRes.data || []).forEach((p) => { submitterById[p.id] = p; });
       const matchById = {};
       (matchesRes.data || []).forEach((m) => { matchById[m.id] = m; });
+      const playersByMatchId = {};
+      (playersRes.data || []).forEach((p) => {
+        if (!p.match_id) return;
+        if (!playersByMatchId[p.match_id]) playersByMatchId[p.match_id] = [];
+        playersByMatchId[p.match_id].push(p);
+      });
 
-      const merged = results
+      const confirmableResults = filterConfirmablePendingResults({
+        results,
+        playersByMatchId,
+        userId,
+        isAdmin,
+      });
+
+      const merged = confirmableResults
         .filter((r) => matchById[r.match_id])
         .map((r) => ({
           result: r,
           match: matchById[r.match_id],
+          players: playersByMatchId[r.match_id] || [],
           submitterName: resolveDisplayName(submitterById[r.submitted_by], submitterById[r.submitted_by]) || 'En spiller',
         }));
       setPending(merged);
@@ -93,7 +112,7 @@ export function PendingResultConfirmModal({ user }) {
       console.warn('PendingResultConfirmModal load:', e?.message || e);
       setPending([]);
     }
-  }, [userId]);
+  }, [isAdmin, userId]);
 
   reloadRef.current = load;
 
@@ -185,6 +204,18 @@ export function PendingResultConfirmModal({ user }) {
     setBusy(true);
     setError('');
     try {
+      const confirmationAccess = canConfirmPadelMatchResult({
+        result,
+        players: current.players,
+        confirmedBy: userId,
+        isAdmin,
+      });
+      if (!confirmationAccess.ok) {
+        setError(confirmationAccess.reason || 'Du kan ikke bekræfte dette resultat.');
+        await load();
+        return;
+      }
+
       const { error: updateErr } = await supabase
         .from('match_results')
         .update({ confirmed: true, confirmed_by: userId })
@@ -229,6 +260,18 @@ export function PendingResultConfirmModal({ user }) {
     setBusy(true);
     setError('');
     try {
+      const rejectionAccess = canConfirmPadelMatchResult({
+        result,
+        players: current.players,
+        confirmedBy: userId,
+        isAdmin,
+      });
+      if (!rejectionAccess.ok) {
+        setError(rejectionAccess.reason || 'Du kan ikke afvise dette resultat.');
+        await load();
+        return;
+      }
+
       const { error: deleteErr } = await supabase
         .from('match_results')
         .delete()

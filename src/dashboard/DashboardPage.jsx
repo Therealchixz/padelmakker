@@ -19,6 +19,7 @@ import { PendingResultConfirmModal } from '../components/PendingResultConfirmMod
 import { KAMPE_NOTIFICATION_TYPES } from '../lib/kampeNotificationTypes';
 import { countRelevantKampeUnreadNotifications } from '../lib/kampeNotificationBadges';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
+import { filterConfirmablePendingResults } from '../lib/resolvePadelMatchResult';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -252,7 +253,7 @@ function usePendingLigaInvites(userId) {
   return useRealtimeCount(userId, createController);
 }
 
-function usePendingKampeBadge(userId) {
+function usePendingKampeBadge(userId, isAdmin = false) {
   const createController = useCallback((api) => {
     let myCreatedMatchIds = [];
     let myPlayerMatchIds = [];
@@ -274,15 +275,41 @@ function usePendingKampeBadge(userId) {
 
     const loadCounts = async () => {
       try {
-        const [joinRes, resultRes] = await Promise.all([
+        const [joinRes, resultRowsRes] = await Promise.all([
           myCreatedMatchIds.length > 0
             ? supabase.from("match_join_requests").select("id", { count: "exact", head: true }).in("match_id", myCreatedMatchIds).eq("status", "pending")
             : { count: 0 },
           myPlayerMatchIds.length > 0
-            ? supabase.from("match_results").select("id", { count: "exact", head: true }).in("match_id", myPlayerMatchIds).eq("confirmed", false).neq("submitted_by", api.userId)
-            : { count: 0 },
+            ? supabase.from("match_results").select("id, match_id, submitted_by").in("match_id", myPlayerMatchIds).eq("confirmed", false).neq("submitted_by", api.userId)
+            : { data: [] },
         ]);
-        api.setCountSafe((joinRes.count || 0) + (resultRes.count || 0));
+        const resultRows = resultRowsRes.data || [];
+        const resultMatchIds = [...new Set(resultRows.map((r) => r.match_id).filter(Boolean))];
+        let confirmableResultCount = 0;
+
+        if (resultMatchIds.length > 0) {
+          const { data: playerRows, error: playersErr } = await supabase
+            .from("match_players")
+            .select("match_id, user_id, team")
+            .in("match_id", resultMatchIds);
+          if (playersErr) throw playersErr;
+
+          const playersByMatchId = {};
+          (playerRows || []).forEach((p) => {
+            if (!p.match_id) return;
+            if (!playersByMatchId[p.match_id]) playersByMatchId[p.match_id] = [];
+            playersByMatchId[p.match_id].push(p);
+          });
+
+          confirmableResultCount = filterConfirmablePendingResults({
+            results: resultRows,
+            playersByMatchId,
+            userId: api.userId,
+            isAdmin,
+          }).length;
+        }
+
+        api.setCountSafe((joinRes.count || 0) + confirmableResultCount);
       } catch (e) {
         console.warn("kampe badge counts:", e);
       }
@@ -323,7 +350,7 @@ function usePendingKampeBadge(userId) {
         runtime.scheduleRefetch({ delay: 80 });
       },
     };
-  }, []);
+  }, [isAdmin]);
 
   return useRealtimeCount(userId, createController);
 }
@@ -561,7 +588,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const isAdmin = user?.role === 'admin';
   const unreadMessages = useUnreadMessageCount(user?.id);
   const pendingLigaInvites = usePendingLigaInvites(user?.id);
-  const pendingKampe = usePendingKampeBadge(user?.id);
+  const pendingKampe = usePendingKampeBadge(user?.id, isAdmin);
   const unreadNotifs = useUnreadNotificationsCount(user?.id);
   const unreadKampeNotifs = useUnreadKampeNotificationsCount(user?.id);
   const hasKampeAttention = pendingKampe > 0 || unreadKampeNotifs > 0;

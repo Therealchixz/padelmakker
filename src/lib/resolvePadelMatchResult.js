@@ -39,6 +39,31 @@ export function canConfirmPadelMatchResult({
   return { ok: true };
 }
 
+export function filterConfirmablePendingResults({
+  results,
+  playersByMatchId,
+  userId,
+  isAdmin = false,
+}) {
+  const rows = Array.isArray(results) ? results : [];
+  return rows.filter((result) => {
+    if (!result?.match_id || !userId) return false;
+    if (String(result.submitted_by) === String(userId)) return false;
+
+    const players =
+      playersByMatchId instanceof Map
+        ? playersByMatchId.get(result.match_id)
+        : playersByMatchId?.[result.match_id];
+
+    return canConfirmPadelMatchResult({
+      result,
+      players,
+      confirmedBy: userId,
+      isAdmin,
+    }).ok;
+  });
+}
+
 export async function confirmPadelMatchResult({
   supabaseClient,
   calculateAndApplyEloFn,
