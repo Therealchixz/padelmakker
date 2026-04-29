@@ -58,6 +58,16 @@ export const landingMockupScreens = [
   },
 ];
 
+export const landingMockupCarouselScreens = [
+  ...landingMockupScreens,
+  {
+    ...landingMockupScreens[0],
+    key: `${landingMockupScreens[0].key}-loop`,
+    sourceKey: landingMockupScreens[0].key,
+    isLoopClone: true,
+  },
+];
+
 export function getLandingMockupAriaLabel() {
   return 'Animeret app-eksempel der viser profil, makker-match, bane, kamp og ELO-resultat i PadelMakker.';
 }

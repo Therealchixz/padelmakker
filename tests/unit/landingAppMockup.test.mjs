@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   getLandingMockupAriaLabel,
   landingMockupBrand,
+  landingMockupCarouselScreens,
   landingMockupScreens,
 } from '../../src/lib/landingMockupSteps.js';
 
@@ -22,6 +23,19 @@ test('landing mockup carousel explains the full PadelMakker flow without becomin
     assert.ok(screen.cards.length >= 2, `${screen.key} needs enough content cards`);
     assert.ok(screen.cards.length <= 3, `${screen.key} should stay visually calm`);
   }
+});
+
+test('landing mockup carousel repeats the first screen at the end for a smooth visual loop', () => {
+  assert.equal(landingMockupCarouselScreens.length, landingMockupScreens.length + 1);
+
+  const firstScreen = landingMockupScreens[0];
+  const loopScreen = landingMockupCarouselScreens.at(-1);
+
+  assert.equal(loopScreen.isLoopClone, true);
+  assert.equal(loopScreen.sourceKey, firstScreen.key);
+  assert.equal(loopScreen.title, firstScreen.title);
+  assert.equal(loopScreen.detail, firstScreen.detail);
+  assert.equal(loopScreen.metric, firstScreen.metric);
 });
 
 test('landing mockup has a concise screen reader summary', () => {

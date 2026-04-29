@@ -1,5 +1,10 @@
 import { MapPin, TrendingUp, Users } from 'lucide-react';
-import { getLandingMockupAriaLabel, landingMockupBrand, landingMockupScreens } from '../lib/landingMockupSteps';
+import {
+  getLandingMockupAriaLabel,
+  landingMockupBrand,
+  landingMockupCarouselScreens,
+  landingMockupScreens,
+} from '../lib/landingMockupSteps';
 
 const screenIcons = {
   profile: Users,
@@ -31,40 +36,40 @@ export function AnimatedAppMockup({ className = '' }) {
 
         <div className="pm-app-mockup-carousel">
           <div className="pm-app-mockup-screen-track">
-          {landingMockupScreens.map((screen) => {
-            const Icon = screenIcons[screen.key] ?? Users;
-            return (
-              <section
-                className={`pm-app-mockup-screen pm-app-mockup-screen-${screen.tone}`}
-                key={screen.key}
-              >
-                <div className="pm-app-mockup-screen-hero">
-                  <span className="pm-app-mockup-screen-icon">
-                    <Icon size={20} strokeWidth={2.5} />
-                  </span>
-                  <span className="pm-app-mockup-screen-copy">
-                    <span className="pm-app-mockup-kicker">{screen.eyebrow}</span>
-                    <strong>{screen.title}</strong>
-                    <small>{screen.detail}</small>
-                  </span>
-                  <span className="pm-app-mockup-screen-metric">{screen.metric}</span>
-                </div>
+            {landingMockupCarouselScreens.map((screen) => {
+              const Icon = screenIcons[screen.sourceKey ?? screen.key] ?? Users;
+              return (
+                <section
+                  className={`pm-app-mockup-screen pm-app-mockup-screen-${screen.tone}`}
+                  key={screen.key}
+                >
+                  <div className="pm-app-mockup-screen-hero">
+                    <span className="pm-app-mockup-screen-icon">
+                      <Icon size={20} strokeWidth={2.5} />
+                    </span>
+                    <span className="pm-app-mockup-screen-copy">
+                      <span className="pm-app-mockup-kicker">{screen.eyebrow}</span>
+                      <strong>{screen.title}</strong>
+                      <small>{screen.detail}</small>
+                    </span>
+                    <span className="pm-app-mockup-screen-metric">{screen.metric}</span>
+                  </div>
 
-                <div className="pm-app-mockup-screen-cards">
-                  {screen.cards.map((card, cardIndex) => (
-                    <div className="pm-app-mockup-screen-card" key={card.label}>
-                      <span className="pm-app-mockup-screen-card-dot">{cardIndex + 1}</span>
-                      <span className="pm-app-mockup-screen-card-copy">
-                        <span>{card.label}</span>
-                        <strong>{card.value}</strong>
-                        <small>{card.detail}</small>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+                  <div className="pm-app-mockup-screen-cards">
+                    {screen.cards.map((card, cardIndex) => (
+                      <div className="pm-app-mockup-screen-card" key={card.label}>
+                        <span className="pm-app-mockup-screen-card-dot">{cardIndex + 1}</span>
+                        <span className="pm-app-mockup-screen-card-copy">
+                          <span>{card.label}</span>
+                          <strong>{card.value}</strong>
+                          <small>{card.detail}</small>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         </div>
 
