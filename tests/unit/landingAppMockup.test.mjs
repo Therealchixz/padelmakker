@@ -4,21 +4,23 @@ import assert from 'node:assert/strict';
 import {
   getLandingMockupAriaLabel,
   landingMockupBrand,
-  landingMockupSteps,
+  landingMockupScreens,
 } from '../../src/lib/landingMockupSteps.js';
 
-test('landing mockup explains the full PadelMakker flow without becoming too long', () => {
-  assert.equal(landingMockupSteps.length, 5);
+test('landing mockup carousel explains the full PadelMakker flow without becoming too long', () => {
+  assert.equal(landingMockupScreens.length, 4);
 
-  const stepKeys = landingMockupSteps.map((step) => step.key);
-  assert.deepEqual(stepKeys, ['profile', 'matches', 'court', 'match', 'elo']);
+  const screenKeys = landingMockupScreens.map((screen) => screen.key);
+  assert.deepEqual(screenKeys, ['profile', 'matches', 'booking', 'elo']);
 
-  for (const step of landingMockupSteps) {
-    assert.equal(typeof step.title, 'string');
-    assert.ok(step.title.length >= 6);
-    assert.ok(step.title.length <= 34, `${step.key} title is too long`);
-    assert.ok(step.detail.length <= 52, `${step.key} detail is too long`);
-    assert.ok(step.metric.length <= 18, `${step.key} metric is too long`);
+  for (const screen of landingMockupScreens) {
+    assert.equal(typeof screen.title, 'string');
+    assert.ok(screen.title.length >= 6);
+    assert.ok(screen.title.length <= 34, `${screen.key} title is too long`);
+    assert.ok(screen.detail.length <= 58, `${screen.key} detail is too long`);
+    assert.ok(screen.metric.length <= 18, `${screen.key} metric is too long`);
+    assert.ok(screen.cards.length >= 2, `${screen.key} needs enough content cards`);
+    assert.ok(screen.cards.length <= 3, `${screen.key} should stay visually calm`);
   }
 });
 

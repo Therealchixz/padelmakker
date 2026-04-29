@@ -3,46 +3,58 @@ export const landingMockupBrand = {
   tagline: 'FIND DIN PERFEKTE MAKKER',
 };
 
-export const landingMockupSteps = [
+export const landingMockupScreens = [
   {
     key: 'profile',
-    eyebrow: 'Profil klar',
-    title: 'Niveau 3.5',
-    detail: 'Aarhus · tirsdag/torsdag',
-    metric: 'Klar på 1 min',
+    eyebrow: 'Profil',
+    title: 'Profil klar',
+    detail: 'Niveau 3.5 · Aarhus · tirsdag/torsdag',
+    metric: '1 min',
     tone: 'blue',
+    cards: [
+      { label: 'Niveau', value: '3.5', detail: 'Matcher dig med jævnbyrdige spillere' },
+      { label: 'Område', value: 'Aarhus', detail: 'Finder spillere tæt på dine baner' },
+      { label: 'Spilledage', value: 'Tir / tor', detail: 'Gør det nemt at aftale kamp' },
+    ],
   },
   {
     key: 'matches',
     eyebrow: 'Find makker',
-    title: '3 spillere matcher dig',
-    detail: 'ELO 950-1100 · under 8 km væk',
-    metric: 'Niveau-match',
+    title: '3 relevante makkere',
+    detail: 'Samme niveau · under 8 km væk',
+    metric: 'ELO match',
     tone: 'green',
+    cards: [
+      { label: 'Kevin', value: '1041 ELO', detail: 'Kan spille i aften' },
+      { label: 'Mike', value: '1096 ELO', detail: 'Foretrækker 2v2' },
+      { label: 'Karl', value: '927 ELO', detail: 'Svarer hurtigt' },
+    ],
   },
   {
-    key: 'court',
-    eyebrow: 'Book bane',
-    title: 'Ledig bane fundet',
-    detail: 'Skansen Padel · kl. 19:00',
-    metric: '10+ centre',
+    key: 'booking',
+    eyebrow: 'Opret kamp',
+    title: 'Bane kl. 19:00',
+    detail: 'Skansen Padel · 2v2 · åben tilmelding',
+    metric: '4 pladser',
     tone: 'amber',
-  },
-  {
-    key: 'match',
-    eyebrow: 'Kamp oprettet',
-    title: 'Kevin & Mike vs Karl & Hans',
-    detail: '2v2 · i gang i aften',
-    metric: '4 spillere',
-    tone: 'blue',
+    cards: [
+      { label: 'Bane', value: 'Skansen Padel', detail: '28.04.2026 kl. 19:00' },
+      { label: 'Hold', value: '2v2 kamp', detail: 'Spillere kan tilmelde sig direkte' },
+      { label: 'Status', value: '1 plads ledig', detail: 'Klar når sidste spiller joiner' },
+    ],
   },
   {
     key: 'elo',
     eyebrow: 'Resultat',
     title: 'ELO opdateret',
-    detail: '6-4, 5-7, 6-3 · bekræftet',
+    detail: '6-4, 5-7, 6-3 · bekræftet af modstander',
     metric: '+18 ELO',
     tone: 'green',
+    cards: [
+      { label: 'Resultat', value: '6-4, 5-7, 6-3', detail: 'Begge hold kan se scoren' },
+      { label: 'Bekræftelse', value: 'Modstander OK', detail: 'Fair resultat før ELO ændres' },
+      { label: 'Ny rating', value: '1065 ELO', detail: '+18 efter sejren' },
+    ],
   },
 ];
 

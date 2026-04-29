@@ -1,11 +1,10 @@
-import { CalendarDays, MapPin, Swords, TrendingUp, Users } from 'lucide-react';
-import { getLandingMockupAriaLabel, landingMockupBrand, landingMockupSteps } from '../lib/landingMockupSteps';
+import { MapPin, TrendingUp, Users } from 'lucide-react';
+import { getLandingMockupAriaLabel, landingMockupBrand, landingMockupScreens } from '../lib/landingMockupSteps';
 
-const stepIcons = {
+const screenIcons = {
   profile: Users,
   matches: Users,
-  court: MapPin,
-  match: Swords,
+  booking: MapPin,
   elo: TrendingUp,
 };
 
@@ -30,41 +29,49 @@ export function AnimatedAppMockup({ className = '' }) {
           </span>
         </div>
 
-        <div className="pm-app-mockup-hero-card">
-          <span className="pm-app-mockup-kicker">Din næste kamp</span>
-          <strong>Find makker på dit niveau</strong>
-          <small>Fra profil til bane på få minutter</small>
-        </div>
-
-        <div className="pm-app-mockup-mini-row">
-          <span>
-            <CalendarDays size={14} />
-            I dag
-          </span>
-          <span>ELO 950-1100</span>
-        </div>
-
-        <div className="pm-app-mockup-card-stack">
-          {landingMockupSteps.map((step, index) => {
-            const Icon = stepIcons[step.key] ?? Users;
+        <div className="pm-app-mockup-carousel">
+          <div className="pm-app-mockup-screen-track">
+          {landingMockupScreens.map((screen) => {
+            const Icon = screenIcons[screen.key] ?? Users;
             return (
-              <div
-                className={`pm-app-mockup-step pm-app-mockup-step-${step.tone}`}
-                key={step.key}
-                style={{ '--pm-step-index': index }}
+              <section
+                className={`pm-app-mockup-screen pm-app-mockup-screen-${screen.tone}`}
+                key={screen.key}
               >
-                <span className="pm-app-mockup-step-icon">
-                  <Icon size={17} strokeWidth={2.4} />
-                </span>
-                <span className="pm-app-mockup-step-copy">
-                  <span className="pm-app-mockup-step-eyebrow">{step.eyebrow}</span>
-                  <strong>{step.title}</strong>
-                  <small>{step.detail}</small>
-                </span>
-                <span className="pm-app-mockup-step-metric">{step.metric}</span>
-              </div>
+                <div className="pm-app-mockup-screen-hero">
+                  <span className="pm-app-mockup-screen-icon">
+                    <Icon size={20} strokeWidth={2.5} />
+                  </span>
+                  <span className="pm-app-mockup-screen-copy">
+                    <span className="pm-app-mockup-kicker">{screen.eyebrow}</span>
+                    <strong>{screen.title}</strong>
+                    <small>{screen.detail}</small>
+                  </span>
+                  <span className="pm-app-mockup-screen-metric">{screen.metric}</span>
+                </div>
+
+                <div className="pm-app-mockup-screen-cards">
+                  {screen.cards.map((card, cardIndex) => (
+                    <div className="pm-app-mockup-screen-card" key={card.label}>
+                      <span className="pm-app-mockup-screen-card-dot">{cardIndex + 1}</span>
+                      <span className="pm-app-mockup-screen-card-copy">
+                        <span>{card.label}</span>
+                        <strong>{card.value}</strong>
+                        <small>{card.detail}</small>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
             );
           })}
+          </div>
+        </div>
+
+        <div className="pm-app-mockup-dots">
+          {landingMockupScreens.map((screen, index) => (
+            <span key={screen.key} style={{ '--pm-dot-index': index }} />
+          ))}
         </div>
       </div>
     </figure>
