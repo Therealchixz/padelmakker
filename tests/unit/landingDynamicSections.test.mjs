@@ -29,6 +29,8 @@ test('landing page includes the ELO explainer and scroll-reveal flow styling', a
   assert.match(landingPage, /pm-landing-step-flow/);
   assert.match(css, /\.pm-landing-step-flow\.pm-visible::before/);
   assert.match(css, /\.pm-elo-explainer-card\.pm-visible/);
+  assert.match(css, /\.pm-landing-elo-section[\s\S]*linear-gradient\(180deg,\s*var\(--pm-bg\) 0%/);
+  assert.doesNotMatch(css, /\.pm-landing-elo-section[\s\S]{0,320}border-top:/);
   assert.match(css, /@keyframes pmEloDeltaPop/);
 });
 
