@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { URL } from 'node:url';
 
 import {
   getLandingMockupAriaLabel,
@@ -36,6 +38,17 @@ test('landing mockup carousel repeats the first screen at the end for a smooth v
   assert.equal(loopScreen.title, firstScreen.title);
   assert.equal(loopScreen.detail, firstScreen.detail);
   assert.equal(loopScreen.metric, firstScreen.metric);
+});
+
+test('landing mockup loop clone is only used during the reset transition', async () => {
+  const css = await readFile(new URL('../../src/responsive.css', import.meta.url), 'utf8');
+
+  assert.match(css, /animation:\s*pmMockupSlide 16s/);
+  assert.match(css, /0%,\s*20%\s*{\s*transform:\s*translateX\(0\);/);
+  assert.match(css, /75%,\s*95%\s*{\s*transform:\s*translateX\(-60%\);/);
+  assert.match(css, /100%\s*{\s*transform:\s*translateX\(-80%\);/);
+  assert.match(css, /@keyframes pmMockupDotLoop[\s\S]*95%,\s*100%\s*{\s*width:\s*19px;/);
+  assert.doesNotMatch(css, /80%,\s*100%\s*{\s*transform:\s*translateX\(-80%\);/);
 });
 
 test('landing mockup has a concise screen reader summary', () => {
