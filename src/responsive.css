@@ -635,16 +635,12 @@ body {
 }
 
 .pm-landing-elo-section {
-  position: relative;
   padding: clamp(56px, 12vw, 90px) clamp(16px, 4vw, 24px);
   background:
-    radial-gradient(circle at 18% 30%, color-mix(in srgb, var(--pm-accent) 12%, transparent), transparent 38%),
-    linear-gradient(180deg,
-      var(--pm-bg) 0%,
-      color-mix(in srgb, var(--pm-accent) 5%, var(--pm-bg)) 34%,
-      color-mix(in srgb, var(--pm-surface) 70%, var(--pm-bg)) 68%,
-      var(--pm-bg) 100%
-    );
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--pm-accent) 14%, transparent), transparent 34%),
+    linear-gradient(180deg, var(--pm-surface) 0%, var(--pm-bg) 100%);
+  border-top: 1px solid var(--pm-border);
+  border-bottom: 1px solid var(--pm-border);
 }
 
 .pm-landing-elo-inner {
