@@ -5,6 +5,7 @@ import { URL } from 'node:url';
 
 import {
   formatEloDelta,
+  landingEloAnimationConfig,
   landingEloExplainerSteps,
   landingEloScoreExample,
 } from '../../src/lib/landingEloExplainer.js';
@@ -29,4 +30,15 @@ test('landing page includes the ELO explainer and scroll-reveal flow styling', a
   assert.match(css, /\.pm-landing-step-flow\.pm-visible::before/);
   assert.match(css, /\.pm-elo-explainer-card\.pm-visible/);
   assert.match(css, /@keyframes pmEloDeltaPop/);
+});
+
+test('landing ELO count-up is slow and only replays once per browser session', async () => {
+  const component = await readFile(new URL('../../src/components/LandingEloExplainer.jsx', import.meta.url), 'utf8');
+
+  assert.ok(landingEloAnimationConfig.durationMs >= 2500);
+  assert.ok(landingEloAnimationConfig.durationMs <= 3500);
+  assert.ok(landingEloAnimationConfig.startDelayMs >= 200);
+  assert.match(landingEloAnimationConfig.sessionStorageKey, /landing.*elo/i);
+  assert.match(component, /sessionStorage/);
+  assert.match(component, /landingEloAnimationConfig\.sessionStorageKey/);
 });

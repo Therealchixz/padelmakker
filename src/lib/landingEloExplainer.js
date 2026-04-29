@@ -7,6 +7,12 @@ export const landingEloScoreExample = {
   confirmation: 'Bekræftet af modstanderholdet',
 };
 
+export const landingEloAnimationConfig = {
+  durationMs: 2800,
+  startDelayMs: 300,
+  sessionStorageKey: 'pmLandingEloCountUpSeen',
+};
+
 export const landingEloExplainerSteps = [
   {
     key: 'before',

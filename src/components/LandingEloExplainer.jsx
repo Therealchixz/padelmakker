@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, ShieldCheck, TrendingUp } from 'lucide-react';
-import { formatEloDelta, landingEloExplainerSteps, landingEloScoreExample } from '../lib/landingEloExplainer';
+import {
+  formatEloDelta,
+  landingEloAnimationConfig,
+  landingEloExplainerSteps,
+  landingEloScoreExample,
+} from '../lib/landingEloExplainer';
 import { font, heading } from '../lib/platformTheme';
 
 const stepIcons = {
@@ -11,18 +16,44 @@ const stepIcons = {
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
+function hasSeenEloAnimation() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.sessionStorage.getItem(landingEloAnimationConfig.sessionStorageKey) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function rememberEloAnimation() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(landingEloAnimationConfig.sessionStorageKey, 'true');
+  } catch {
+    // If storage is blocked, the visual still works; it just cannot be remembered.
+  }
+}
+
 export function LandingEloExplainer() {
   const cardRef = useRef(null);
-  const [displayElo, setDisplayElo] = useState(landingEloScoreExample.oldElo);
+  const [displayElo, setDisplayElo] = useState(() => (
+    hasSeenEloAnimation() ? landingEloScoreExample.newElo : landingEloScoreExample.oldElo
+  ));
 
   useEffect(() => {
     const node = cardRef.current;
     if (!node || typeof window === 'undefined') return undefined;
 
+    if (hasSeenEloAnimation()) {
+      setDisplayElo(landingEloScoreExample.newElo);
+      return undefined;
+    }
+
     const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     const prefersReducedMotion = Boolean(motionQuery?.matches);
     if (prefersReducedMotion) {
       setDisplayElo(landingEloScoreExample.newElo);
+      rememberEloAnimation();
       return undefined;
     }
 
@@ -30,10 +61,15 @@ export function LandingEloExplainer() {
     let started = false;
 
     const runCounter = () => {
-      const durationMs = 1150;
-      const startAt = performance.now();
+      const durationMs = landingEloAnimationConfig.durationMs;
+      const startAt = performance.now() + landingEloAnimationConfig.startDelayMs;
 
       const tick = (now) => {
+        if (now < startAt) {
+          frameId = requestAnimationFrame(tick);
+          return;
+        }
+
         const progress = Math.min(1, (now - startAt) / durationMs);
         const eased = easeOutCubic(progress);
         const nextElo = Math.round(
@@ -44,6 +80,9 @@ export function LandingEloExplainer() {
 
         if (progress < 1) {
           frameId = requestAnimationFrame(tick);
+        } else {
+          setDisplayElo(landingEloScoreExample.newElo);
+          rememberEloAnimation();
         }
       };
 
@@ -109,7 +148,7 @@ export function LandingEloExplainer() {
             <div className="pm-elo-player-card pm-elo-player-card--after">
               <span>Efter kampen</span>
               <strong>{landingEloScoreExample.playerName}</strong>
-              <b style={{ fontFamily: font }} aria-live="polite">{displayElo} ELO</b>
+              <b style={{ fontFamily: font }}>{displayElo} ELO</b>
               <em>{formatEloDelta(landingEloScoreExample.delta)}</em>
             </div>
           </div>
