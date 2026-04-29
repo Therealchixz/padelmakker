@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   getLandingMockupAriaLabel,
+  landingMockupLogoSrc,
   landingMockupSteps,
 } from '../../src/lib/landingMockupSteps.js';
 
@@ -29,4 +30,8 @@ test('landing mockup has a concise screen reader summary', () => {
   assert.match(label, /bane/i);
   assert.match(label, /ELO/i);
   assert.ok(label.length <= 180, `aria label should stay concise, got ${label.length} characters`);
+});
+
+test('landing mockup uses the current brand logo asset', () => {
+  assert.equal(landingMockupLogoSrc, '/logo-brand.png');
 });

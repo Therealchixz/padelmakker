@@ -274,6 +274,13 @@ body {
   font-size: 20px;
 }
 
+.pm-app-mockup-brand-logo {
+  width: min(148px, 58%);
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
 .pm-app-mockup-live {
   display: inline-flex;
   align-items: center;

@@ -1,3 +1,5 @@
+export const landingMockupLogoSrc = '/logo-brand.png';
+
 export const landingMockupSteps = [
   {
     key: 'profile',
