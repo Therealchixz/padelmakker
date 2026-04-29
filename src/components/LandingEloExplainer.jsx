@@ -16,44 +16,18 @@ const stepIcons = {
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
-function hasSeenEloAnimation() {
-  if (typeof window === 'undefined') return false;
-  try {
-    return window.sessionStorage.getItem(landingEloAnimationConfig.sessionStorageKey) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function rememberEloAnimation() {
-  if (typeof window === 'undefined') return;
-  try {
-    window.sessionStorage.setItem(landingEloAnimationConfig.sessionStorageKey, 'true');
-  } catch {
-    // If storage is blocked, the visual still works; it just cannot be remembered.
-  }
-}
-
 export function LandingEloExplainer() {
   const cardRef = useRef(null);
-  const [displayElo, setDisplayElo] = useState(() => (
-    hasSeenEloAnimation() ? landingEloScoreExample.newElo : landingEloScoreExample.oldElo
-  ));
+  const [displayElo, setDisplayElo] = useState(landingEloScoreExample.oldElo);
 
   useEffect(() => {
     const node = cardRef.current;
     if (!node || typeof window === 'undefined') return undefined;
 
-    if (hasSeenEloAnimation()) {
-      setDisplayElo(landingEloScoreExample.newElo);
-      return undefined;
-    }
-
     const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     const prefersReducedMotion = Boolean(motionQuery?.matches);
     if (prefersReducedMotion) {
       setDisplayElo(landingEloScoreExample.newElo);
-      rememberEloAnimation();
       return undefined;
     }
 
@@ -82,7 +56,6 @@ export function LandingEloExplainer() {
           frameId = requestAnimationFrame(tick);
         } else {
           setDisplayElo(landingEloScoreExample.newElo);
-          rememberEloAnimation();
         }
       };
 

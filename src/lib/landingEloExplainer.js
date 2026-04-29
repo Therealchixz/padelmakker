@@ -10,7 +10,6 @@ export const landingEloScoreExample = {
 export const landingEloAnimationConfig = {
   durationMs: 2800,
   startDelayMs: 300,
-  sessionStorageKey: 'pmLandingEloCountUpSeen',
 };
 
 export const landingEloExplainerSteps = [

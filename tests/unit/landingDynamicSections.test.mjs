@@ -32,13 +32,12 @@ test('landing page includes the ELO explainer and scroll-reveal flow styling', a
   assert.match(css, /@keyframes pmEloDeltaPop/);
 });
 
-test('landing ELO count-up is slow and only replays once per browser session', async () => {
+test('landing ELO count-up is slow and replays on every fresh page load', async () => {
   const component = await readFile(new URL('../../src/components/LandingEloExplainer.jsx', import.meta.url), 'utf8');
 
   assert.ok(landingEloAnimationConfig.durationMs >= 2500);
   assert.ok(landingEloAnimationConfig.durationMs <= 3500);
   assert.ok(landingEloAnimationConfig.startDelayMs >= 200);
-  assert.match(landingEloAnimationConfig.sessionStorageKey, /landing.*elo/i);
-  assert.match(component, /sessionStorage/);
-  assert.match(component, /landingEloAnimationConfig\.sessionStorageKey/);
+  assert.equal('sessionStorageKey' in landingEloAnimationConfig, false);
+  assert.doesNotMatch(component, /sessionStorage/);
 });
