@@ -598,7 +598,7 @@ body {
   padding: clamp(58px, 12vw, 92px) clamp(16px, 4vw, 24px);
   background:
     radial-gradient(circle at 16% 18%, color-mix(in srgb, var(--pm-accent) 13%, transparent), transparent 34%),
-    radial-gradient(circle at 84% 78%, color-mix(in srgb, var(--pm-cyan) 12%, transparent), transparent 34%),
+    radial-gradient(circle at 84% 78%, color-mix(in srgb, var(--pm-cyan, #0ea5e9) 12%, transparent), transparent 34%),
     linear-gradient(180deg, var(--pm-surface) 0%, var(--pm-bg) 100%);
   border-top: 1px solid var(--pm-border);
   border-bottom: 1px solid var(--pm-border);
@@ -648,7 +648,7 @@ body {
   top: 58px;
   height: 3px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--pm-accent), var(--pm-cyan), color-mix(in srgb, var(--pm-accent) 62%, var(--pm-green)));
+  background: linear-gradient(90deg, var(--pm-accent), var(--pm-cyan, #0ea5e9), color-mix(in srgb, var(--pm-accent) 62%, var(--pm-green)));
   opacity: 0.34;
   z-index: -1;
 }
@@ -674,7 +674,7 @@ body {
 }
 
 .pm-roadmap-card--soon::before {
-  background: var(--pm-cyan);
+  background: var(--pm-cyan, #0ea5e9);
 }
 
 .pm-roadmap-card--later::before {
@@ -708,7 +708,7 @@ body {
 }
 
 .pm-roadmap-card--soon .pm-roadmap-main-icon {
-  background: linear-gradient(135deg, var(--pm-cyan), #2563eb);
+  background: linear-gradient(135deg, var(--pm-cyan, #0ea5e9), #2563eb);
 }
 
 .pm-roadmap-card--later .pm-roadmap-main-icon {

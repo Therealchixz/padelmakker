@@ -45,6 +45,7 @@ test('landing roadmap is placed after how-it-works and avoids date promises', as
   assert.doesNotMatch(roadmapComponent, /20\d{2}|Q[1-4]|kommer næste måned/i);
   assert.match(css, /\.pm-roadmap-section/);
   assert.match(css, /\.pm-roadmap-card/);
+  assert.doesNotMatch(css, /var\(--pm-cyan\)/);
 });
 
 test('landing ELO count-up is slow and replays on every fresh page load', async () => {
