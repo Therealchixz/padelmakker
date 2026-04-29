@@ -48,12 +48,12 @@ export const landingMockupScreens = [
     eyebrow: 'Resultat',
     title: 'ELO opdateret',
     detail: '6-4, 5-7, 6-3 · bekræftet af modstander',
-    metric: '+18 ELO',
+    metric: '+25 ELO',
     tone: 'green',
     cards: [
       { label: 'Resultat', value: '6-4, 5-7, 6-3', detail: 'Begge hold kan se scoren' },
       { label: 'Bekræftelse', value: 'Modstander OK', detail: 'Fair resultat før ELO ændres' },
-      { label: 'Ny rating', value: '1065 ELO', detail: '+18 efter sejren' },
+      { label: 'Ny rating', value: '1065 ELO', detail: '+25 efter sejren' },
     ],
   },
 ];

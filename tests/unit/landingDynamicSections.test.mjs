@@ -16,9 +16,9 @@ test('landing ELO explainer uses a concise match story with a visible rating cha
 
   assert.equal(landingEloScoreExample.playerName, 'Karl');
   assert.equal(landingEloScoreExample.oldElo, 1040);
-  assert.equal(landingEloScoreExample.newElo, 1058);
-  assert.equal(landingEloScoreExample.delta, 18);
-  assert.equal(formatEloDelta(landingEloScoreExample.delta), '+18 ELO');
+  assert.equal(landingEloScoreExample.newElo, 1065);
+  assert.equal(landingEloScoreExample.delta, 25);
+  assert.equal(formatEloDelta(landingEloScoreExample.delta), '+25 ELO');
 });
 
 test('landing page includes the ELO explainer and scroll-reveal flow styling', async () => {

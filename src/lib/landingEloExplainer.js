@@ -1,8 +1,8 @@
 export const landingEloScoreExample = {
   playerName: 'Karl',
   oldElo: 1040,
-  newElo: 1058,
-  delta: 18,
+  newElo: 1065,
+  delta: 25,
   result: 'Vundet 6-4, 5-7, 6-3',
   confirmation: 'Bekræftet af modstanderholdet',
 };

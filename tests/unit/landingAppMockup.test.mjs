@@ -16,6 +16,10 @@ test('landing mockup carousel explains the full PadelMakker flow without becomin
   const screenKeys = landingMockupScreens.map((screen) => screen.key);
   assert.deepEqual(screenKeys, ['profile', 'matches', 'booking', 'elo']);
 
+  const eloScreen = landingMockupScreens.find((screen) => screen.key === 'elo');
+  assert.equal(eloScreen.metric, '+25 ELO');
+  assert.ok(eloScreen.cards.some((card) => card.detail === '+25 efter sejren'));
+
   for (const screen of landingMockupScreens) {
     assert.equal(typeof screen.title, 'string');
     assert.ok(screen.title.length >= 6);
