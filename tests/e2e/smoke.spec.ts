@@ -19,6 +19,30 @@ test.describe('Public smoke flows', () => {
     await expect(page.getByRole('button', { name: 'PadelMakker forsiden' })).toBeVisible()
   })
 
+  test('landing page exposes Google-friendly organization logo structured data', async ({ page }) => {
+    await page.goto('/')
+
+    const structuredData = await page.locator('#pm-structured-data').textContent()
+    const data = JSON.parse(structuredData ?? '{}')
+    const graph = data['@graph'] ?? []
+    const organization = graph.find((entry: { '@type'?: string }) => entry['@type'] === 'Organization')
+
+    expect(data['@context']).toBe('https://schema.org')
+    expect(organization).toMatchObject({
+      '@type': 'Organization',
+      name: 'PadelMakker',
+      url: 'https://www.padelmakker.dk/',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://www.padelmakker.dk/logo-brand.png',
+        contentUrl: 'https://www.padelmakker.dk/logo-brand.png',
+        encodingFormat: 'image/png',
+        width: 680,
+        height: 254,
+      },
+    })
+  })
+
   test('landing page communicates value proposition and SEO metadata', async ({ page }) => {
     await page.goto('/')
 

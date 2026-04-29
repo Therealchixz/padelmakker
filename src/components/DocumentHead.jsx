@@ -5,6 +5,10 @@ import { absoluteUrl } from '../lib/siteMeta'
 const DEFAULT_DESC =
   'Find padelspillere på dit niveau, opret kampe, se ledige baner og følg din ELO-ranking. PadelMakker er en dansk padel-platform med gratis profil.'
 
+const ORGANIZATION_LOGO_PATH = '/logo-brand.png'
+const ORGANIZATION_LOGO_WIDTH = 680
+const ORGANIZATION_LOGO_HEIGHT = 254
+
 /** @type {Record<string, { title: string; description?: string }>} */
 const ROUTE_META = {
   '/': {
@@ -104,6 +108,48 @@ function setJsonLd(id, data) {
   el.textContent = JSON.stringify(data)
 }
 
+function buildStructuredData() {
+  const siteUrl = absoluteUrl('/')
+  const logoUrl = absoluteUrl(ORGANIZATION_LOGO_PATH)
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        name: 'PadelMakker',
+        alternateName: 'Padel Makker',
+        url: siteUrl,
+        logo: {
+          '@type': 'ImageObject',
+          url: logoUrl,
+          contentUrl: logoUrl,
+          encodingFormat: 'image/png',
+          width: ORGANIZATION_LOGO_WIDTH,
+          height: ORGANIZATION_LOGO_HEIGHT,
+        },
+      },
+      {
+        '@type': 'WebSite',
+        name: 'PadelMakker',
+        url: siteUrl,
+        inLanguage: 'da-DK',
+        description: DEFAULT_DESC,
+        publisher: {
+          '@type': 'Organization',
+          name: 'PadelMakker',
+          url: siteUrl,
+        },
+        potentialAction: {
+          '@type': 'RegisterAction',
+          target: absoluteUrl('/opret'),
+          name: 'Opret gratis profil',
+        },
+      },
+    ],
+  }
+}
+
 /**
  * Opdaterer &lt;title&gt;, meta description, canonical og grundlæggende Open Graph pr. route (SPA).
  */
@@ -128,19 +174,7 @@ export function DocumentHead() {
     setMetaByName('twitter:card', 'summary_large_image')
     setMetaByName('twitter:title', meta.title)
     setMetaByName('twitter:description', description)
-    setJsonLd('pm-structured-data', {
-      '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      name: 'PadelMakker',
-      url: absoluteUrl('/'),
-      inLanguage: 'da-DK',
-      description: DEFAULT_DESC,
-      potentialAction: {
-        '@type': 'RegisterAction',
-        target: absoluteUrl('/opret'),
-        name: 'Opret gratis profil',
-      },
-    })
+    setJsonLd('pm-structured-data', buildStructuredData())
   }, [pathname, meta.title, description, url])
 
   return null

@@ -23,6 +23,44 @@
     <meta property="og:image" content="/icon-512.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <title>PadelMakker | Find padelmakker på dit niveau</title>
+    <script id="pm-structured-data" type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "name": "PadelMakker",
+            "alternateName": "Padel Makker",
+            "url": "https://www.padelmakker.dk/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://www.padelmakker.dk/logo-brand.png",
+              "contentUrl": "https://www.padelmakker.dk/logo-brand.png",
+              "encodingFormat": "image/png",
+              "width": 680,
+              "height": 254
+            }
+          },
+          {
+            "@type": "WebSite",
+            "name": "PadelMakker",
+            "url": "https://www.padelmakker.dk/",
+            "inLanguage": "da-DK",
+            "description": "Find padelspillere på dit niveau, opret kampe, se ledige baner og følg din ELO-ranking. PadelMakker er en dansk padel-platform med gratis profil.",
+            "publisher": {
+              "@type": "Organization",
+              "name": "PadelMakker",
+              "url": "https://www.padelmakker.dk/"
+            },
+            "potentialAction": {
+              "@type": "RegisterAction",
+              "target": "https://www.padelmakker.dk/opret",
+              "name": "Opret gratis profil"
+            }
+          }
+        ]
+      }
+    </script>
     <link rel="preload" href="/hero-bg-mobile.avif" as="image" type="image/avif" media="(max-width: 540px)" fetchpriority="high" />
     <link rel="preload" href="/hero-bg.avif" as="image" type="image/avif" media="(min-width: 541px)" fetchpriority="high" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
