@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
 import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp } from 'lucide-react';
+import { AnimatedAppMockup } from '../components/AnimatedAppMockup';
 import { LandingTourVideo } from '../components/LandingTourVideo';
 import { useDarkMode } from '../lib/useDarkMode';
 
@@ -299,7 +300,8 @@ export function LandingPage() {
             zIndex: 2,
           }}
         >
-          <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+          <div className="pm-landing-hero-grid">
+            <div className="pm-landing-hero-copy">
             <h1 className="pm-reveal pm-delay-1" style={{ fontFamily: font, fontSize: "clamp(40px,8vw,76px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#fff", marginBottom: "24px" }}>
               Find makker<br />på dit niveau.<br /><span style={{ color: "#93C5FD" }}>Spil mere padel.</span>
             </h1>
@@ -314,6 +316,8 @@ export function LandingPage() {
                 Log ind
               </button>
             </div>
+            </div>
+            <AnimatedAppMockup className="pm-landing-hero-mockup" />
           </div>
         </div>
         <div ref={heroRef} className="pm-hero-fade-tail" aria-hidden />
@@ -329,6 +333,10 @@ export function LandingPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="pm-landing-mobile-mockup-section" style={{ background: theme.surface }}>
+        <AnimatedAppMockup className="pm-landing-mobile-mockup pm-reveal-scale" />
       </section>
 
       <LandingTourVideo />
