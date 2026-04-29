@@ -5,6 +5,7 @@ import { useScrollReveal } from '../lib/platformUtils';
 import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp } from 'lucide-react';
 import { AnimatedAppMockup } from '../components/AnimatedAppMockup';
 import { LandingEloExplainer } from '../components/LandingEloExplainer';
+import { LandingRoadmap } from '../components/LandingRoadmap';
 import { LandingTourVideo } from '../components/LandingTourVideo';
 import { useDarkMode } from '../lib/useDarkMode';
 
@@ -364,6 +365,8 @@ export function LandingPage() {
           ))}
         </div>
       </section>
+
+      <LandingRoadmap />
 
       <LandingEloExplainer />
 

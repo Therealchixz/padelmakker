@@ -32,6 +32,21 @@ test('landing page includes the ELO explainer and scroll-reveal flow styling', a
   assert.match(css, /@keyframes pmEloDeltaPop/);
 });
 
+test('landing roadmap is placed after how-it-works and avoids date promises', async () => {
+  const landingPage = await readFile(new URL('../../src/pages/LandingPage.jsx', import.meta.url), 'utf8');
+  const roadmapComponent = await readFile(new URL('../../src/components/LandingRoadmap.jsx', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../../src/responsive.css', import.meta.url), 'utf8');
+
+  assert.match(landingPage, /<LandingRoadmap \/>[\s\S]*<LandingEloExplainer \/>/);
+  assert.match(roadmapComponent, /PadelMakker bliver hele tiden bedre/);
+  assert.match(roadmapComponent, /Live nu/);
+  assert.match(roadmapComponent, /På vej/);
+  assert.match(roadmapComponent, /Senere/);
+  assert.doesNotMatch(roadmapComponent, /20\d{2}|Q[1-4]|kommer næste måned/i);
+  assert.match(css, /\.pm-roadmap-section/);
+  assert.match(css, /\.pm-roadmap-card/);
+});
+
 test('landing ELO count-up is slow and replays on every fresh page load', async () => {
   const component = await readFile(new URL('../../src/components/LandingEloExplainer.jsx', import.meta.url), 'utf8');
 
