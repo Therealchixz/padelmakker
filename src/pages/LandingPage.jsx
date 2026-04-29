@@ -178,8 +178,8 @@ export function LandingPage() {
       <nav ref={navRef} style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: theme.surface, backdropFilter: "blur(12px)", borderBottom: "1px solid " + theme.border }}>
         <div className="pm-landing-nav" style={{ paddingTop: "max(clamp(12px,2.5vw,16px), env(safe-area-inset-top))", paddingBottom: "clamp(12px,2.5vw,16px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", maxWidth: "1100px", margin: "0 auto" }}>
           <div className="pm-landing-nav-brand">
-            <button type="button" onClick={() => navigate("/")} style={{ ...heading("clamp(17px,4.5vw,20px)"), color: theme.accent, display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }} aria-label="PadelMakker forsiden">
-              <img src="/logo-nav.png" alt="" aria-hidden style={{ height: "48px", width: "auto", objectFit: "contain" }} /> PadelMakker
+            <button type="button" onClick={() => navigate("/")} style={{ display: "flex", alignItems: "center", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }} aria-label="PadelMakker forsiden">
+              <img src="/logo-brand.png" alt="PadelMakker logo" style={{ height: "clamp(46px,6vw,58px)", width: "auto", objectFit: "contain", display: "block" }} />
             </button>
             <button
               type="button"

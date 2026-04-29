@@ -8,6 +8,15 @@ test.describe('Public smoke flows', () => {
     await expect(page.getByRole('button', { name: /Opret gratis profil/i }).first()).toBeVisible()
   })
 
+  test('landing navigation uses the updated uploaded brand logo', async ({ page }) => {
+    await page.goto('/')
+
+    const logo = page.getByRole('img', { name: 'PadelMakker logo' }).first()
+    await expect(logo).toBeVisible()
+    await expect(logo).toHaveAttribute('src', '/logo-brand.png')
+    await expect(page.getByRole('button', { name: 'PadelMakker forsiden' })).toBeVisible()
+  })
+
   test('landing page communicates value proposition and SEO metadata', async ({ page }) => {
     await page.goto('/')
 
