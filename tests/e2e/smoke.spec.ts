@@ -105,7 +105,8 @@ test.describe('Public smoke flows', () => {
     await expect(page.getByRole('heading', { name: /Velkommen/i })).toBeVisible()
     await expect(page.getByLabel(/Fornavn/i)).toBeVisible()
     await expect(page.getByLabel(/Efternavn/i)).toBeVisible()
-    await expect(page.getByLabel(/Email/i)).toBeVisible()
+    await expect(page.getByLabel(/^Email$/i)).toBeVisible()
+    await expect(page.getByLabel(/Bekræft email/i)).toBeVisible()
   })
 
   test('events page is reachable', async ({ page }) => {

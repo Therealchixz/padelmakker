@@ -26,7 +26,7 @@ export function OnboardingPage() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
@@ -41,26 +41,51 @@ export function OnboardingPage() {
 
   const emailTouchedInvalid =
     form.email.trim().length > 0 && !isValidSignupEmail(form.email);
+  const normalizedEmail = form.email.trim().toLowerCase();
+  const normalizedEmailConfirm = form.email_confirm.trim().toLowerCase();
+  const emailConfirmTouchedInvalid =
+    form.email_confirm.trim().length > 0 && !isValidSignupEmail(form.email_confirm);
+  const emailMismatch =
+    form.email_confirm.trim().length > 0 &&
+    normalizedEmail !== normalizedEmailConfirm;
 
-  const canNext = () => {
-    if (step === 0)
-      return (
-        validateFirstLastName(form.first_name, form.last_name).valid &&
-        isValidSignupEmail(form.email) &&
-        form.password.length >= 8 &&
-        form.password === form.password_confirm &&
-        form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== ""
-      );
-    if (step === 1) return form.level && form.style && form.court_side;
-    if (step === 2) return form.area && form.availability.length > 0;
-    return true;
+  const missingStepRequirements = (targetStep = step) => {
+    const missing = [];
+
+    if (targetStep === 0) {
+      if (!validateFirstLastName(form.first_name, form.last_name).valid) missing.push("fornavn og efternavn");
+      if (!isValidSignupEmail(form.email)) missing.push("gyldig email");
+      if (!isValidSignupEmail(form.email_confirm) || normalizedEmail !== normalizedEmailConfirm) missing.push("email skrevet ens i begge felter");
+      if (form.password.length < 8) missing.push("adgangskode på mindst 8 tegn");
+      if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
+      if (!(form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== "")) missing.push("fødselsdato");
+    }
+
+    if (targetStep === 1) {
+      if (!form.level) missing.push("niveau");
+      if (!form.style) missing.push("spillestil");
+      if (!form.court_side) missing.push("side på banen");
+    }
+
+    if (targetStep === 2) {
+      if (!form.area) missing.push("region");
+      if (form.availability.length === 0) missing.push("hvornår du kan spille");
+    }
+
+    return missing;
   };
 
+  const canNext = () => {
+    if (step < 3) return missingStepRequirements(step).length === 0;
+    return true;
+  };
+  const missingRequirements = missingStepRequirements();
+
   const stepMeta = [
-    { title: "Konto", hint: "Navn, email og adgangskode." },
-    { title: "Niveau", hint: "Spilleniveau og spillestil." },
+    { title: "Konto", hint: "Kontaktinfo, adgangskode og aldersbekræftelse." },
+    { title: "Niveau", hint: "Vælg ærligt - du kan justere senere." },
     { title: "Område", hint: "Område og tidspunkter du spiller." },
-    { title: "Profil", hint: "Billede, bio og tjek før oprettelse." },
+    { title: "Profil", hint: "Gør profilen klar til andre spillere." },
   ];
   const totalSteps = stepMeta.length;
   const activeStepMeta = stepMeta[step];
@@ -76,6 +101,7 @@ export function OnboardingPage() {
       form.first_name.trim() ||
       form.last_name.trim() ||
       form.email.trim() ||
+      form.email_confirm.trim() ||
       form.password ||
       form.password_confirm ||
       form.level ||
@@ -141,6 +167,14 @@ export function OnboardingPage() {
         setErr("Indtast en gyldig e-mail (fx navn@domæne.dk).");
         return;
       }
+      if (!isValidSignupEmail(form.email_confirm)) {
+        setErr("Gentag din e-mail i feltet Bekræft email.");
+        return;
+      }
+      if (normalizedEmail !== normalizedEmailConfirm) {
+        setErr("E-mailadresserne matcher ikke - tjek begge felter.");
+        return;
+      }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       const levelNum = parseFloat(form.level.match(/[\d.]+/)?.[0] || "3");
       /* Vent til data URL er skrevet (ellers mangler e-mail-tag → applyPendingAvatar ved login fejler) */
@@ -183,7 +217,15 @@ export function OnboardingPage() {
   const steps = [
     <div key={0}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Velkommen! 👋</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Lad os oprette din profil.</p>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "14px", lineHeight: 1.5 }}>Lad os oprette din profil.</p>
+      <div style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "26", borderRadius: "12px", padding: "12px 14px", marginBottom: "22px" }}>
+        <div style={{ fontSize: "13px", fontWeight: 800, color: theme.accent, marginBottom: "4px" }}>
+          Det bruger vi profilen til
+        </div>
+        <p style={{ color: theme.textMid, fontSize: "13px", lineHeight: 1.5, margin: 0 }}>
+          Din profil bruges til at matche dig med spillere på samme niveau og i dit område - så andre kan finde den rigtige makker hurtigere.
+        </p>
+      </div>
       <label htmlFor="onb-first-name" style={labelStyle}>Fornavn</label>
       <input id="onb-first-name" autoComplete="given-name" value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
       <label htmlFor="onb-last-name" style={labelStyle}>Efternavn</label>
@@ -205,6 +247,30 @@ export function OnboardingPage() {
       {emailTouchedInvalid && (
         <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
           Brug en gyldig e-mail med @ og domæne (fx navn@mail.dk).
+        </p>
+      )}
+      <label htmlFor="onb-email-confirm" style={labelStyle}>Bekræft email</label>
+      <input
+        id="onb-email-confirm"
+        value={form.email_confirm}
+        onChange={e => set("email_confirm", e.target.value)}
+        placeholder="Gentag din email"
+        type="email"
+        autoComplete="email"
+        style={{
+          ...inputStyle,
+          marginBottom: emailConfirmTouchedInvalid || emailMismatch ? "6px" : "14px",
+          border: "1px solid " + (emailConfirmTouchedInvalid || emailMismatch ? theme.red : theme.border),
+        }}
+      />
+      {emailConfirmTouchedInvalid && (
+        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
+          Gentag din email i et gyldigt format.
+        </p>
+      )}
+      {!emailConfirmTouchedInvalid && emailMismatch && (
+        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
+          Emails matcher ikke - tjek begge felter.
         </p>
       )}
       <label htmlFor="onb-password" style={labelStyle}>Adgangskode</label>
@@ -235,7 +301,10 @@ export function OnboardingPage() {
           Adgangskoden skal være mindst 8 tegn.
         </p>
       )}
-      <label style={labelStyle}>Fødselsdato</label>
+      <label style={{ ...labelStyle, marginBottom: "4px" }}>Fødselsdato</label>
+      <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, margin: "0 0 8px" }}>
+        Bruges kun til aldersbekræftelse og vises ikke offentligt.
+      </p>
       <div style={{ display: "grid", gridTemplateColumns: "72px 1fr 90px", gap: "8px", marginBottom: "14px" }}>
         <select value={form.birth_day} onChange={e => set("birth_day", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
           <option value="">Dag</option>
@@ -251,7 +320,10 @@ export function OnboardingPage() {
 
     <div key={1}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Dit padel-niveau</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vær ærlig — vi matcher dig bedre!</p>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "10px", lineHeight: 1.5 }}>Vær ærlig - vi matcher dig bedre!</p>
+      <p style={{ color: theme.textLight, fontSize: "13px", marginBottom: "24px", lineHeight: 1.5 }}>
+        Ikke sikker? Vælg det niveau der passer bedst lige nu. Du kan justere det senere.
+      </p>
 
       {/* Niveau — beskrivelse vises kun for valgt */}
       <div style={labelStyle}>Niveau</div>
@@ -396,8 +468,10 @@ export function OnboardingPage() {
     </div>,
 
     <div key={3}>
-      <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Næsten færdig!</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg profilbillede og skriv lidt om dig.</p>
+      <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Din profil er klar til at finde makkere</h2>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>
+        Vælg profilbillede og skriv lidt om dig - så er det nemmere for andre at invitere dig til kamp.
+      </p>
       <div style={labelStyle}>Profilbillede</div>
       <div style={{ marginBottom: "20px" }}>
         <AvatarPicker
@@ -424,7 +498,7 @@ export function OnboardingPage() {
       <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl kort hvad du søger i en makker" style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "18px" }} />
       <div style={{ border: "1px solid " + theme.border, borderRadius: "12px", background: theme.surfaceAlt, padding: "14px" }}>
         <div style={{ fontSize: "11px", letterSpacing: "0.05em", textTransform: "uppercase", color: theme.textLight, fontWeight: 700, marginBottom: "10px" }}>
-          Forhåndsvisning af profil
+          Sådan ser andre dig
         </div>
         <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
           <div style={{ width: "44px", height: "44px", borderRadius: "50%", border: "1px solid " + theme.border, background: theme.surface, display: "grid", placeItems: "center", overflow: "hidden", flexShrink: 0 }}>
@@ -512,10 +586,28 @@ export function OnboardingPage() {
           {steps[step]}
         </div>
         {err && <p style={{ color: theme.red, fontSize: "13px", marginTop: "12px" }}>{err}</p>}
+        {step < 3 && missingRequirements.length > 0 && (
+          <div
+            aria-live="polite"
+            style={{
+              background: theme.surfaceAlt,
+              border: "1px solid " + theme.border,
+              borderRadius: "10px",
+              color: theme.textMid,
+              fontSize: "12px",
+              fontWeight: 600,
+              lineHeight: 1.45,
+              marginBottom: "12px",
+              padding: "10px 12px",
+            }}
+          >
+            Mangler før du kan fortsætte: {missingRequirements.join(", ")}.
+          </div>
+        )}
         <div className="pm-onboarding-actions">
           <button onClick={step > 0 ? () => setStep(s => s - 1) : cancelOnboarding} style={btn(false)}>{step > 0 ? "← Tilbage" : "Annuller"}</button>
           {step < 3
-            ? <button onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.4 }}>Næste <ArrowRight size={15} /></button>
+            ? <button type="button" disabled={!canNext()} onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.45, cursor: canNext() ? "pointer" : "not-allowed" }}>Næste <ArrowRight size={15} /></button>
             : <button onClick={finish} disabled={submitting || (turnstileEnabled && !captchaToken)} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
           }
         </div>

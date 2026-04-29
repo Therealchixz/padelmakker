@@ -22,7 +22,8 @@ export function SignupEmailSentPage() {
   const steps = [
     'Åbn den e-mail, vi lige har sendt dig',
     'Klik på bekræftelseslinket',
-    'Du vil kunne logge ind, når du er blevet bekræftet',
+    'Åbn helst linket i samme browser som du oprettede profilen i',
+    'Når profilen er bekræftet, kan du logge ind',
   ];
 
   return (
@@ -136,7 +137,7 @@ export function SignupEmailSentPage() {
         </p>
 
         <p style={{ fontSize: '13px', color: theme.textLight, margin: '0 0 24px', lineHeight: 1.5 }}>
-          Modtog du ikke e-mailen? Tjek din spam-mappe.
+          Modtog du ikke e-mailen? Tjek din spam-mappe, og prøv derefter at logge ind når linket er bekræftet.
         </p>
 
         <Link
