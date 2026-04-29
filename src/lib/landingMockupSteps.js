@@ -1,6 +1,6 @@
 export const landingMockupBrand = {
-  name: 'Padelmakker',
-  tagline: 'Find din perfekte makker',
+  nameLines: ['PADEL', 'MAKKER'],
+  tagline: 'FIND DIN PERFEKTE MAKKER',
 };
 
 export const landingMockupSteps = [

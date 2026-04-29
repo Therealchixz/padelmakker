@@ -276,22 +276,31 @@ body {
 
 .pm-app-mockup-brand-text {
   display: grid;
-  gap: 2px;
+  gap: 3px;
 }
 
 .pm-app-mockup-brand-text strong {
-  color: var(--pm-accent);
-  font-size: 20px;
-  line-height: 1;
-  letter-spacing: -0.04em;
+  display: grid;
+  color: #061529;
+  font-size: 19px;
+  font-style: italic;
+  font-weight: 950;
+  line-height: 0.86;
+  letter-spacing: -0.055em;
+  text-transform: uppercase;
+}
+
+.pm-app-mockup-brand-text strong span {
+  display: block;
 }
 
 .pm-app-mockup-brand-text small {
   color: #2563eb;
-  font-size: 8px;
+  font-size: 6.6px;
+  font-style: italic;
   font-weight: 900;
   line-height: 1;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 

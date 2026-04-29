@@ -17,7 +17,11 @@ export function AnimatedAppMockup({ className = '' }) {
         <div className="pm-app-mockup-speaker" />
         <div className="pm-app-mockup-appbar">
           <span className="pm-app-mockup-brand-text">
-            <strong>{landingMockupBrand.name}</strong>
+            <strong>
+              {landingMockupBrand.nameLines.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
+            </strong>
             <small>{landingMockupBrand.tagline}</small>
           </span>
           <span className="pm-app-mockup-live">

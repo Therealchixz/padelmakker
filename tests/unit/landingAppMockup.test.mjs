@@ -34,7 +34,7 @@ test('landing mockup has a concise screen reader summary', () => {
 
 test('landing mockup uses simple text branding instead of a logo image', () => {
   assert.deepEqual(landingMockupBrand, {
-    name: 'Padelmakker',
-    tagline: 'Find din perfekte makker',
+    nameLines: ['PADEL', 'MAKKER'],
+    tagline: 'FIND DIN PERFEKTE MAKKER',
   });
 });
