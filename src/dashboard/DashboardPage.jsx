@@ -6,6 +6,7 @@ import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu, Bug, Compass, Sun, Moon } from 'lucide-react';
+import { BrandLogo } from '../components/BrandLogo';
 import { NotificationBell } from '../components/NotificationBell';
 import { HomeTab } from './HomeTab';
 import { ShieldCheck } from 'lucide-react';
@@ -1053,7 +1054,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }} aria-label="Gå til Hjem">
-          <img src="/logo-brand.png" alt="PadelMakker logo" style={{ height: "32px", width: "auto", objectFit: "contain", display: "block" }} />
+          <BrandLogo size="dashboard" />
         </button>
         <div className="pm-dash-header-actions pm-dash-header-actions-mobile">
           {isMobileView && <NotificationBell />}
