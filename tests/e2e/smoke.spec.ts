@@ -65,7 +65,7 @@ test.describe('Public smoke flows', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
 
-    const firstStat = page.getByText('200+').first()
+    const firstStat = page.getByText('Find jævnbyrdige spillere').first()
     await expect(firstStat).toBeVisible()
 
     const box = await firstStat.boundingBox()
