@@ -339,7 +339,9 @@ body {
   display: flex;
   width: 500%;
   min-height: 396px;
-  animation: pmMockupSlide 16s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .pm-app-mockup-screen {
@@ -531,12 +533,12 @@ body {
   height: 7px;
   border-radius: 999px;
   background: rgba(148, 163, 184, 0.42);
-  animation: pmMockupDot 16s ease-in-out infinite;
-  animation-delay: calc(var(--pm-dot-index) * 4s);
+  transition: width 0.22s ease, background-color 0.22s ease;
 }
 
-.pm-app-mockup-dots span:first-child {
-  animation-name: pmMockupDotLoop;
+.pm-app-mockup-dots span.is-active {
+  width: 19px;
+  background: var(--pm-accent);
 }
 
 @keyframes pmMockupPulse {
@@ -548,50 +550,6 @@ body {
   }
   100% {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-  }
-}
-
-@keyframes pmMockupSlide {
-  0%, 20% {
-    transform: translateX(0);
-  }
-  25%, 45% {
-    transform: translateX(-20%);
-  }
-  50%, 70% {
-    transform: translateX(-40%);
-  }
-  75%, 95% {
-    transform: translateX(-60%);
-  }
-  100% {
-    transform: translateX(-80%);
-  }
-}
-
-@keyframes pmMockupDot {
-  0%, 20% {
-    width: 19px;
-    background: var(--pm-accent);
-  }
-  21%, 100% {
-    width: 7px;
-    background: rgba(148, 163, 184, 0.42);
-  }
-}
-
-@keyframes pmMockupDotLoop {
-  0%, 20% {
-    width: 19px;
-    background: var(--pm-accent);
-  }
-  21%, 94% {
-    width: 7px;
-    background: rgba(148, 163, 184, 0.42);
-  }
-  95%, 100% {
-    width: 19px;
-    background: var(--pm-accent);
   }
 }
 
@@ -989,8 +947,6 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .pm-app-mockup-live-dot,
-  .pm-app-mockup-screen-track,
-  .pm-app-mockup-dots span,
   .pm-elo-player-card--after b,
   .pm-elo-player-card--after em {
     animation: none;
@@ -1000,8 +956,13 @@ body {
     transition: none;
   }
 
+  .pm-app-mockup-screen-track,
+  .pm-app-mockup-dots span {
+    transition: none !important;
+  }
+
   .pm-app-mockup-screen-track {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0) !important;
   }
 
   .pm-app-mockup-dots span:first-child {

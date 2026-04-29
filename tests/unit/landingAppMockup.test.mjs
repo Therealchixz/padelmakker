@@ -40,15 +40,17 @@ test('landing mockup carousel repeats the first screen at the end for a smooth v
   assert.equal(loopScreen.metric, firstScreen.metric);
 });
 
-test('landing mockup loop clone is only used during the reset transition', async () => {
+test('landing mockup reset is controlled by React to avoid mobile repaint flashes', async () => {
   const css = await readFile(new URL('../../src/responsive.css', import.meta.url), 'utf8');
+  const component = await readFile(new URL('../../src/components/AnimatedAppMockup.jsx', import.meta.url), 'utf8');
 
-  assert.match(css, /animation:\s*pmMockupSlide 16s/);
-  assert.match(css, /0%,\s*20%\s*{\s*transform:\s*translateX\(0\);/);
-  assert.match(css, /75%,\s*95%\s*{\s*transform:\s*translateX\(-60%\);/);
-  assert.match(css, /100%\s*{\s*transform:\s*translateX\(-80%\);/);
-  assert.match(css, /@keyframes pmMockupDotLoop[\s\S]*95%,\s*100%\s*{\s*width:\s*19px;/);
-  assert.doesNotMatch(css, /80%,\s*100%\s*{\s*transform:\s*translateX\(-80%\);/);
+  assert.doesNotMatch(css, /@keyframes pmMockupSlide/);
+  assert.doesNotMatch(css, /animation:\s*pmMockupSlide/);
+  assert.match(css, /will-change:\s*transform;/);
+  assert.match(component, /onTransitionEnd=\{handleTrackTransitionEnd\}/);
+  assert.match(component, /requestAnimationFrame/);
+  assert.match(component, /transitionEnabled/);
+  assert.match(component, /translate3d/);
 });
 
 test('landing mockup has a concise screen reader summary', () => {
