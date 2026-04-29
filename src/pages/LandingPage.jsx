@@ -4,6 +4,7 @@ import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
 import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp } from 'lucide-react';
 import { AnimatedAppMockup } from '../components/AnimatedAppMockup';
+import { LandingEloExplainer } from '../components/LandingEloExplainer';
 import { LandingTourVideo } from '../components/LandingTourVideo';
 import { useDarkMode } from '../lib/useDarkMode';
 
@@ -350,7 +351,7 @@ export function LandingPage() {
             Opret profil, find makker, book bane og følg din ELO — fire enkle skridt fra idéen om en kamp til en mere aktiv padel-hverdag.
           </p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,230px),1fr))", gap: "16px" }}>
+        <div className="pm-landing-step-flow pm-reveal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,230px),1fr))", gap: "16px" }}>
           {steps.map((s, i) => (
             <div key={s.step} className={"pm-feature-card pm-reveal pm-delay-" + (i+1)} style={{ ...landingFeatureCardStyle, position: "relative" }}>
               <div style={{ fontSize: "48px", fontWeight: 900, color: theme.accent + "12", position: "absolute", top: "16px", right: "20px", letterSpacing: "-0.04em", fontFamily: font }}>{s.step}</div>
@@ -363,6 +364,8 @@ export function LandingPage() {
           ))}
         </div>
       </section>
+
+      <LandingEloExplainer />
 
       {/* Features */}
       <section style={{ background: theme.bg, padding: "clamp(56px,12vw,88px) clamp(16px,4vw,24px)" }}>
