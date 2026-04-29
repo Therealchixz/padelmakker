@@ -274,11 +274,25 @@ body {
   font-size: 20px;
 }
 
-.pm-app-mockup-brand-logo {
-  width: min(148px, 58%);
-  height: auto;
-  object-fit: contain;
-  display: block;
+.pm-app-mockup-brand-text {
+  display: grid;
+  gap: 2px;
+}
+
+.pm-app-mockup-brand-text strong {
+  color: var(--pm-accent);
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.pm-app-mockup-brand-text small {
+  color: #2563eb;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
 }
 
 .pm-app-mockup-live {

@@ -1,4 +1,7 @@
-export const landingMockupLogoSrc = '/logo-brand.png';
+export const landingMockupBrand = {
+  name: 'Padelmakker',
+  tagline: 'Find din perfekte makker',
+};
 
 export const landingMockupSteps = [
   {

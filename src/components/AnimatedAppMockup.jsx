@@ -1,5 +1,5 @@
 import { CalendarDays, MapPin, Swords, TrendingUp, Users } from 'lucide-react';
-import { getLandingMockupAriaLabel, landingMockupLogoSrc, landingMockupSteps } from '../lib/landingMockupSteps';
+import { getLandingMockupAriaLabel, landingMockupBrand, landingMockupSteps } from '../lib/landingMockupSteps';
 
 const stepIcons = {
   profile: Users,
@@ -16,7 +16,10 @@ export function AnimatedAppMockup({ className = '' }) {
       <div className="pm-app-mockup-phone" aria-hidden="true">
         <div className="pm-app-mockup-speaker" />
         <div className="pm-app-mockup-appbar">
-          <img className="pm-app-mockup-brand-logo" src={landingMockupLogoSrc} alt="" />
+          <span className="pm-app-mockup-brand-text">
+            <strong>{landingMockupBrand.name}</strong>
+            <small>{landingMockupBrand.tagline}</small>
+          </span>
           <span className="pm-app-mockup-live">
             <span className="pm-app-mockup-live-dot" />
             Live

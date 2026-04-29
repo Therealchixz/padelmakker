@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   getLandingMockupAriaLabel,
-  landingMockupLogoSrc,
+  landingMockupBrand,
   landingMockupSteps,
 } from '../../src/lib/landingMockupSteps.js';
 
@@ -32,6 +32,9 @@ test('landing mockup has a concise screen reader summary', () => {
   assert.ok(label.length <= 180, `aria label should stay concise, got ${label.length} characters`);
 });
 
-test('landing mockup uses the current brand logo asset', () => {
-  assert.equal(landingMockupLogoSrc, '/logo-brand.png');
+test('landing mockup uses simple text branding instead of a logo image', () => {
+  assert.deepEqual(landingMockupBrand, {
+    name: 'Padelmakker',
+    tagline: 'Find din perfekte makker',
+  });
 });
