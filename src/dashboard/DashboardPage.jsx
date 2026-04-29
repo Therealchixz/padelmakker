@@ -1053,7 +1053,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }} aria-label="Gå til Hjem">
-          <img src="/logo-brand.png" alt="PadelMakker logo" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
+          <img src="/logo-brand.png" alt="PadelMakker logo" style={{ height: "32px", width: "auto", objectFit: "contain", display: "block" }} />
         </button>
         <div className="pm-dash-header-actions pm-dash-header-actions-mobile">
           {isMobileView && <NotificationBell />}

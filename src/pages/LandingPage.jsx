@@ -179,7 +179,7 @@ export function LandingPage() {
         <div className="pm-landing-nav" style={{ paddingTop: "max(clamp(12px,2.5vw,16px), env(safe-area-inset-top))", paddingBottom: "clamp(12px,2.5vw,16px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", maxWidth: "1100px", margin: "0 auto" }}>
           <div className="pm-landing-nav-brand">
             <button type="button" onClick={() => navigate("/")} style={{ display: "flex", alignItems: "center", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }} aria-label="PadelMakker forsiden">
-              <img src="/logo-brand.png" alt="PadelMakker logo" style={{ height: "clamp(46px,6vw,58px)", width: "auto", objectFit: "contain", display: "block" }} />
+              <img src="/logo-brand.png" alt="PadelMakker logo" style={{ height: "clamp(40px,5vw,50px)", width: "auto", objectFit: "contain", display: "block" }} />
             </button>
             <button
               type="button"

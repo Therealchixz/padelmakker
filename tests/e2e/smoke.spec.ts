@@ -14,6 +14,8 @@ test.describe('Public smoke flows', () => {
     const logo = page.getByRole('img', { name: 'PadelMakker logo' }).first()
     await expect(logo).toBeVisible()
     await expect(logo).toHaveAttribute('src', '/logo-brand.png')
+    const logoBox = await logo.boundingBox()
+    expect(logoBox?.height).toBeLessThanOrEqual(50)
     await expect(page.getByRole('button', { name: 'PadelMakker forsiden' })).toBeVisible()
   })
 
