@@ -53,7 +53,7 @@ test('dark brand logo is transparent and readable on dark navigation', async () 
       const g = data[i + 1]
       const b = data[i + 2]
       const a = data[i + 3]
-      const isBlue = b > r + 35 && b > g + 10
+      const isBlue = b > 120 && b > r + 35 && b > g + 10
       if (a > 64 && !isBlue) {
         sampledPixels += 1
         if ((r + g + b) / 3 > 220) brightPixels += 1
