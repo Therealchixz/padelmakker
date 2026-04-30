@@ -17,6 +17,9 @@ test.describe('Public smoke flows', () => {
     const logoBox = await logo.boundingBox()
     expect(logoBox?.height).toBeLessThanOrEqual(50)
     await expect(page.getByRole('button', { name: 'PadelMakker forsiden' })).toBeVisible()
+
+    await page.getByRole('button', { name: /M.rk/i }).click()
+    await expect(logo).toHaveAttribute('src', '/logo-brand-dark.png')
   })
 
   test('landing page exposes Google-friendly organization logo structured data', async ({ page }) => {
