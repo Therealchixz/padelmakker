@@ -1,11 +1,11 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { DateTime } from 'luxon';
 import { useAuth } from '../lib/AuthContext';
-import { font, theme, heading, btn } from '../lib/platformTheme';
+import { theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
-import { Users, MapPin, Swords, Trophy, Percent, X } from 'lucide-react';
+import { Users, MapPin, Swords, Trophy, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
 import { PlayerStatsModal } from '../components/PlayerStatsModal';
@@ -33,7 +33,6 @@ export function HomeTab({ user, setTab }) {
   const games = histStats?.games ?? (profileFresh?.games_played || 0);
   const wins = histStats?.wins ?? (profileFresh?.games_won || 0);
   const winRate = games > 0 ? Math.round((wins / games) * 100) : null;
-  const eloBarPct   = Math.min(Math.max((elo / 2000) * 100, 0), 100);
 
   const fetchIdRef = useRef(0);
   const [feed, setFeed] = useState([]);
@@ -585,91 +584,169 @@ export function HomeTab({ user, setTab }) {
     [feedRows, activityGroupLabel]
   );
 
-  const statCards = [
-    {
-      key: "games",
-      label: "Kampe",
-      hint: "Spillet i alt",
-      value: String(games),
-      color: theme.blue,
-      tint: theme.blueBg,
-      icon: <Swords size={15} />,
-    },
-    {
-      key: "wins",
-      label: "Sejre",
-      hint: "Vundne kampe",
-      value: String(wins),
-      color: theme.warm,
-      tint: theme.warmBg,
-      icon: <Trophy size={15} />,
-    },
-    {
-      key: "winrate",
-      label: "Win %",
-      hint: games > 0 ? "Baseret på dine kampe" : "Spil din første kamp",
-      value: winRate === null ? "—" : `${winRate}%`,
-      color: theme.accent,
-      tint: theme.accentBg,
-      icon: <Percent size={15} />,
-    },
-  ];
+  const userInitials = useMemo(() => {
+    const parts = displayName.split(/\s+/).filter(Boolean);
+    const letters = parts.length > 1
+      ? `${parts[0][0] || ""}${parts[1][0] || ""}`
+      : displayName.slice(0, 2);
+    return letters.toUpperCase() || "?";
+  }, [displayName]);
 
+  const eloSparkValues = useMemo(() => {
+    const recentRows = [...(ratedRows || [])]
+      .filter((row) => Number(row.change) !== 0)
+      .sort((a, b) => {
+        const aTime = new Date(a.date || a.created_at || 0).getTime();
+        const bTime = new Date(b.date || b.created_at || 0).getTime();
+        return aTime - bTime;
+      })
+      .slice(-10);
+
+    const values = recentRows
+      .map((row) => {
+        const newRating = Number(row.new_rating);
+        if (Number.isFinite(newRating) && newRating > 0) return Math.round(newRating);
+        const oldRating = Number(row.old_rating);
+        const change = Number(row.change);
+        if (Number.isFinite(oldRating) && Number.isFinite(change)) return Math.round(oldRating + change);
+        return null;
+      })
+      .filter((value) => Number.isFinite(value));
+
+    if (values.length === 0) return [Math.max(100, elo - 40), elo];
+    values[values.length - 1] = elo;
+    if (values.length === 1) return [Math.max(100, values[0] - 24), values[0]];
+    return values;
+  }, [ratedRows, elo]);
+
+  const sparkWidth = 220;
+  const sparkHeight = 36;
+  const sparkMin = Math.min(...eloSparkValues) - 15;
+  const sparkMax = Math.max(...eloSparkValues) + 15;
+  const sparkRange = Math.max(1, sparkMax - sparkMin);
+  const sparkPoints = eloSparkValues
+    .map((value, index) => {
+      const x = (index / Math.max(1, eloSparkValues.length - 1)) * sparkWidth;
+      const y = sparkHeight - ((value - sparkMin) / sparkRange) * sparkHeight;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+  const sparkLastY = sparkHeight - ((eloSparkValues[eloSparkValues.length - 1] - sparkMin) / sparkRange) * sparkHeight;
+  const weeklyEloChange = useMemo(() => {
+    const cutoff = DateTime.now().minus({ days: 7 });
+    return (ratedRows || []).reduce((sum, row) => {
+      const date = DateTime.fromISO(String(row.date || row.created_at || ""));
+      if (!date.isValid || date < cutoff) return sum;
+      return sum + (Number(row.change) || 0);
+    }, 0);
+  }, [ratedRows]);
+  const latestEloChange = useMemo(() => {
+    const recent = [...(ratedRows || [])]
+      .filter((row) => Number(row.change) !== 0)
+      .sort((a, b) => new Date(b.date || b.created_at || 0).getTime() - new Date(a.date || a.created_at || 0).getTime())[0];
+    return recent ? Number(recent.change) || 0 : null;
+  }, [ratedRows]);
+  const levelBadge = profileFresh?.level || user.level ? levelLabel(profileFresh?.level || user.level) : "Aktiv spiller";
+  const seekingCount = seekingFeed.length;
+  const seekingTitle = feedLoading
+    ? "Finder spillere der søger makker"
+    : seekingCount > 0
+      ? `${seekingCount} ${seekingCount === 1 ? "spiller" : "spillere"} søger makker`
+      : "Find en makker";
+  const seekingSubtitle = seekingCount > 0 ? "I dit område lige nu" : "Se spillere på dit niveau";
   return (
     <div>
-      <h2 style={{ ...heading("clamp(22px,5vw,26px)"), marginBottom: "4px" }}>Hej {firstName}! 👋</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px" }}>Klar til at spille?</p>
-
-      {/* Stat cards + ELO: vent på frisk DB (undgå flash af forældede tal fra React) */}
+      {/* Premium ELO hero: vent på frisk DB (undgå flash af forældede tal fra React) */}
       {bundleLoading ? (
         <div style={{ textAlign: "center", padding: "32px 16px", color: theme.textLight, fontSize: "14px", marginBottom: "24px" }}>Indlæser dine tal…</div>
       ) : (
-        <>
-      <div className="pm-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,110px),1fr))", gap: "10px", marginBottom: "24px" }}>
-        {statCards.map((s) => (
-          <div
-            key={s.key}
-            className="pm-ui-card pm-home-stat-card"
-            style={{
-              background: `linear-gradient(180deg, ${s.tint}, ${theme.surface})`,
-              borderColor: `color-mix(in srgb, ${s.color} 22%, ${theme.border})`,
-            }}
-          >
-            <div className="pm-home-stat-head">
-              <div className="pm-home-stat-label">{s.label}</div>
-              <div
-                className="pm-home-stat-icon"
-                style={{
-                  color: s.color,
-                  background: `color-mix(in srgb, ${s.color} 16%, ${theme.surface})`,
-                }}
-                aria-hidden
-              >
-                {s.icon}
+        <section className="pm-home-premium-hero" aria-label="Din ELO status">
+          <div className="pm-home-premium-top">
+            <h2>Hej {firstName}!</h2>
+            <AvatarCircle
+              avatar={profileFresh?.avatar || user.avatar || userInitials}
+              size={38}
+              emojiSize="13px"
+              alt={displayName}
+              style={{
+                background: "rgba(255,255,255,0.14)",
+                border: "1px solid rgba(255,255,255,0.22)",
+                color: "white",
+                fontSize: "13px",
+                fontWeight: 800,
+                letterSpacing: "0.04em",
+              }}
+            />
+          </div>
+
+          <div className="pm-home-premium-score-row">
+            <div className="pm-home-premium-elo-block">
+              <div className="pm-home-premium-kicker">ELO rating</div>
+              <div className="pm-home-premium-elo">{elo}</div>
+            </div>
+            <div className="pm-home-premium-stats" aria-label="Dine kampstatistikker">
+              <div className="pm-home-premium-stat">
+                <strong>{games}</strong>
+                <span>Kampe</span>
+              </div>
+              <div className="pm-home-premium-stat">
+                <strong>{wins}</strong>
+                <span>Sejre</span>
+              </div>
+              <div className="pm-home-premium-stat pm-home-premium-stat--win">
+                <strong>{winRate === null ? "—" : `${winRate}%`}</strong>
+                <span>Win</span>
               </div>
             </div>
-            <div className="pm-home-stat-value" style={{ color: s.color }}>{s.value}</div>
-            <div className="pm-home-stat-hint">{s.hint}</div>
           </div>
-        ))}
-      </div>
 
-      <div style={{ background: theme.brandGradient, borderRadius: theme.radius, padding: "clamp(18px,4vw,24px)", marginBottom: "24px", color: theme.onAccent, boxShadow: theme.shadow }}>
-        <div style={{ fontSize: "10px", opacity: 0.65, marginBottom: "8px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Din ELO-rating</div>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
-          <span style={{ fontFamily: font, fontSize: "clamp(40px,10vw,52px)", fontWeight: 800, lineHeight: 1, letterSpacing: "-0.04em" }}>{elo}</span>
-          <span style={{ fontSize: "13px", opacity: 0.65, maxWidth: "200px", lineHeight: 1.5 }}>Jo højere ELO, jo stærkere matcher du ift. andre spillere.</span>
-        </div>
-        <div style={{ marginTop: "18px", background: theme.eloProgressTrack, borderRadius: "6px", height: "6px", overflow: "hidden" }}>
-          <div style={{ width: eloBarPct + "%", height: "100%", background: theme.warm, borderRadius: "6px", transition: "width 0.4s ease" }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px", fontSize: "10px", opacity: 0.55, letterSpacing: "0.04em" }}>
-          <span>0</span><span>Skala op til 2000+</span>
-        </div>
-      </div>
-        </>
+          <div className="pm-home-sparkline">
+            <div className="pm-home-sparkline-labels">
+              <span>Seneste 10 kampe</span>
+              <span>{eloSparkValues[0]} → {elo}</span>
+            </div>
+            <svg width="100%" height={sparkHeight + 8} viewBox={`0 0 ${sparkWidth} ${sparkHeight + 8}`} preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="pmHomeSparkGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.18)" />
+                  <stop offset="100%" stopColor="#FBBF24" />
+                </linearGradient>
+                <filter id="pmHomeGlowDot">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              <polyline points={sparkPoints} fill="none" stroke="url(#pmHomeSparkGrad)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx={sparkWidth} cy={sparkLastY} r="4" fill="#FBBF24" filter="url(#pmHomeGlowDot)" />
+              <circle cx={sparkWidth} cy={sparkLastY} r="2.5" fill="#FBBF24" />
+            </svg>
+          </div>
+
+          <div className="pm-home-premium-badges">
+            <span className="pm-home-premium-pill pm-home-premium-pill--green">
+              {weeklyEloChange === 0 ? "ELO stabil denne uge" : `${weeklyEloChange > 0 ? "+" : ""}${weeklyEloChange} denne uge`}
+            </span>
+            <span className="pm-home-premium-pill">{levelBadge}</span>
+            {latestEloChange !== null && (
+              <span className="pm-home-premium-latest">Seneste: {latestEloChange > 0 ? "+" : ""}{latestEloChange} ELO</span>
+            )}
+          </div>
+        </section>
       )}
 
+      <button type="button" className="pm-home-seeking-cta" onClick={() => setTab('makkere')}>
+        <span className="pm-home-seeking-cta-icon" aria-hidden="true">
+          <Users size={20} />
+        </span>
+        <span className="pm-home-seeking-cta-copy">
+          <strong>{seekingTitle}</strong>
+          <small>{seekingSubtitle}</small>
+        </span>
+        <ChevronRight size={18} aria-hidden="true" />
+      </button>
       {/* Aktivitetsfeed */}
       {feedLoading ? (
         <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
@@ -770,7 +847,7 @@ export function HomeTab({ user, setTab }) {
                     </>
                   ),
                   subtitle: row.tournamentName ? `"${row.tournamentName}"` : null,
-                  action: <button onClick={() => setViewTournament(row)} style={activityActionBtnStyle(theme.warm)}>Se detaljer</button>,
+                  action: <button onClick={() => setViewTournament(row)} style={activityActionBtnStyle(theme.warm)}>Detaljer</button>,
                 });
               }
 
@@ -790,7 +867,7 @@ export function HomeTab({ user, setTab }) {
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700 }}>{c.name}</span> vandt ligaen</>,
                   subtitle: row.leagueName ? `"${row.leagueName}"` : null,
-                  action: <button onClick={() => setViewLeague(row)} style={activityActionBtnStyle(theme.accent)}>Se detaljer</button>,
+                  action: <button onClick={() => setViewLeague(row)} style={activityActionBtnStyle(theme.accent)}>Detaljer</button>,
                 });
               }
 
@@ -825,7 +902,7 @@ export function HomeTab({ user, setTab }) {
                       }
                       style={activityActionBtnStyle(theme.green)}
                     >
-                      Se detaljer
+                      Detaljer
                     </button>
                   ),
                 });
@@ -886,7 +963,7 @@ export function HomeTab({ user, setTab }) {
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> søger makker</>,
                   subtitle: sub || "Klar til kamp",
-                  action: <button onClick={() => setViewPlayer(player)} style={activityActionBtnStyle(theme.blue)}>Se detaljer</button>,
+                  action: <button onClick={() => setViewPlayer(player)} style={activityActionBtnStyle(theme.blue)}>Detaljer</button>,
                 });
               }
 
@@ -905,7 +982,7 @@ export function HomeTab({ user, setTab }) {
                   meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.leagueName}</span>,
                   subtitle: `${isReg ? "Tilmelding åben" : "I gang"} · ${row.teamCount} hold`,
-                  action: <button onClick={() => setTab('liga')} style={activityActionBtnStyle(theme.accent)}>{isReg ? 'Tilmeld' : 'Se detaljer'}</button>,
+                  action: <button onClick={() => setTab('liga')} style={activityActionBtnStyle(theme.accent)}>{isReg ? 'Tilmeld' : 'Detaljer'}</button>,
                 });
               }
 
@@ -943,7 +1020,7 @@ export function HomeTab({ user, setTab }) {
                       }
                       style={activityActionBtnStyle(theme.accent)}
                     >
-                      Se detaljer
+                      Detaljer
                     </button>
                   ),
                 });
