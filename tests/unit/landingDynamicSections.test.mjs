@@ -57,3 +57,20 @@ test('landing ELO count-up is slow and replays on every fresh page load', async 
   assert.equal('sessionStorageKey' in landingEloAnimationConfig, false);
   assert.doesNotMatch(component, /sessionStorage/);
 });
+
+test('landing CTA buttons keep strong contrast in light and dark mode', async () => {
+  const landingPage = await readFile(new URL('../../src/pages/LandingPage.jsx', import.meta.url), 'utf8');
+  const variables = await readFile(new URL('../../src/styles/variables.css', import.meta.url), 'utf8');
+  const navPrimaryStyle = landingPage.match(/const navPrimaryBtnStyle = \{([\s\S]*?)\n {2}\};/)?.[1] ?? '';
+  const heroPrimaryStyle = landingPage.match(/const heroPrimaryBtnStyle = \{([\s\S]*?)\n {2}\};/)?.[1] ?? '';
+  const ctaPrimaryStyle = landingPage.match(/const ctaPrimaryBtnStyle = \{([\s\S]*?)\n {2}\};/)?.[1] ?? '';
+
+  assert.match(variables, /--pm-landing-cta-blue:\s*#1D4ED8/);
+  assert.match(landingPage, /const landingCtaBlue = "var\(--pm-landing-cta-blue\)";/);
+  assert.match(navPrimaryStyle, /background:\s*landingCtaBlue/);
+  assert.match(navPrimaryStyle, /color:\s*theme\.onAccent/);
+  assert.match(heroPrimaryStyle, /color:\s*landingCtaBlue/);
+  assert.match(ctaPrimaryStyle, /color:\s*landingCtaBlue/);
+  assert.doesNotMatch(heroPrimaryStyle, /color:\s*theme\.accent/);
+  assert.doesNotMatch(ctaPrimaryStyle, /color:\s*theme\.accent/);
+});

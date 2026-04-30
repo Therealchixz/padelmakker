@@ -76,6 +76,7 @@ export function LandingPage() {
     { icon: <LineChart size={22} color={theme.accent} />, title: "Profil & udvikling", desc: "Følg din ELO over tid, se sejrsstreaks, bedste makker og kamphistorik — alt på ét sted." },
   ];
 
+  const landingCtaBlue = "var(--pm-landing-cta-blue)";
   const navSecondaryBtnStyle = {
     ...btn(false, { size: 'sm', radius: 'md', fontWeight: 600 }),
     borderColor: "transparent",
@@ -85,12 +86,15 @@ export function LandingPage() {
   };
   const navPrimaryBtnStyle = {
     ...btn(true, { size: 'sm', radius: 'md' }),
+    background: landingCtaBlue,
+    borderColor: landingCtaBlue,
+    color: theme.onAccent,
   };
   const heroPrimaryBtnStyle = {
     ...btn(true, { size: 'lg', radius: 'lg' }),
     background: theme.onAccent,
     borderColor: "rgba(255,255,255,0.92)",
-    color: theme.accent,
+    color: landingCtaBlue,
     boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
   };
   const heroSecondaryBtnStyle = {
@@ -117,7 +121,7 @@ export function LandingPage() {
     ...btn(true, { size: 'lg', radius: 'lg' }),
     background: theme.onAccent,
     borderColor: "rgba(255,255,255,0.92)",
-    color: theme.accent,
+    color: landingCtaBlue,
     boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
   };
   const landingSectionStyle = {
