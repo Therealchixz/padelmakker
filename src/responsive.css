@@ -1692,6 +1692,10 @@ button,
     padding-bottom: min(calc(79px + env(safe-area-inset-bottom)), 119px);
   }
 
+  .pm-dash-main--home {
+    padding-top: 0;
+  }
+
   .pm-mobile-bottom-nav {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2099,7 +2103,7 @@ button,
   .pm-home-premium-hero {
     margin-left: calc(var(--pm-space-2) * -1);
     margin-right: calc(var(--pm-space-2) * -1);
-    border-radius: 0 0 var(--pm-radius-lg) var(--pm-radius-lg);
+    border-radius: 0;
     padding: 24px 16px 22px;
   }
 

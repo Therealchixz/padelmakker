@@ -1270,7 +1270,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
       </div>
 
-      <div className="pm-dash-main">
+      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}`}>
         {tab === "hjem" && <HomeTab user={user} setTab={setTab} />}
         {tab !== "hjem" && (
           <Suspense
