@@ -584,54 +584,7 @@ export function HomeTab({ user, setTab }) {
     [feedRows, activityGroupLabel]
   );
 
-  const userInitials = useMemo(() => {
-    const parts = displayName.split(/\s+/).filter(Boolean);
-    const letters = parts.length > 1
-      ? `${parts[0][0] || ""}${parts[1][0] || ""}`
-      : displayName.slice(0, 2);
-    return letters.toUpperCase() || "?";
-  }, [displayName]);
-
-  const eloSparkValues = useMemo(() => {
-    const recentRows = [...(ratedRows || [])]
-      .filter((row) => Number(row.change) !== 0)
-      .sort((a, b) => {
-        const aTime = new Date(a.date || a.created_at || 0).getTime();
-        const bTime = new Date(b.date || b.created_at || 0).getTime();
-        return aTime - bTime;
-      })
-      .slice(-10);
-
-    const values = recentRows
-      .map((row) => {
-        const newRating = Number(row.new_rating);
-        if (Number.isFinite(newRating) && newRating > 0) return Math.round(newRating);
-        const oldRating = Number(row.old_rating);
-        const change = Number(row.change);
-        if (Number.isFinite(oldRating) && Number.isFinite(change)) return Math.round(oldRating + change);
-        return null;
-      })
-      .filter((value) => Number.isFinite(value));
-
-    if (values.length === 0) return [Math.max(100, elo - 40), elo];
-    values[values.length - 1] = elo;
-    if (values.length === 1) return [Math.max(100, values[0] - 24), values[0]];
-    return values;
-  }, [ratedRows, elo]);
-
-  const sparkWidth = 220;
-  const sparkHeight = 36;
-  const sparkMin = Math.min(...eloSparkValues) - 15;
-  const sparkMax = Math.max(...eloSparkValues) + 15;
-  const sparkRange = Math.max(1, sparkMax - sparkMin);
-  const sparkPoints = eloSparkValues
-    .map((value, index) => {
-      const x = (index / Math.max(1, eloSparkValues.length - 1)) * sparkWidth;
-      const y = sparkHeight - ((value - sparkMin) / sparkRange) * sparkHeight;
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(" ");
-  const sparkLastY = sparkHeight - ((eloSparkValues[eloSparkValues.length - 1] - sparkMin) / sparkRange) * sparkHeight;
+  const eloScalePct = Math.min(Math.max((elo / 2000) * 100, 0), 100);
   const weeklyEloChange = useMemo(() => {
     const cutoff = DateTime.now().minus({ days: 7 });
     return (ratedRows || []).reduce((sum, row) => {
@@ -663,20 +616,6 @@ export function HomeTab({ user, setTab }) {
         <section className="pm-home-premium-hero" aria-label="Din ELO status">
           <div className="pm-home-premium-top">
             <h2>Hej {firstName}!</h2>
-            <AvatarCircle
-              avatar={profileFresh?.avatar || user.avatar || userInitials}
-              size={38}
-              emojiSize="13px"
-              alt={displayName}
-              style={{
-                background: "rgba(255,255,255,0.14)",
-                border: "1px solid rgba(255,255,255,0.22)",
-                color: "white",
-                fontSize: "13px",
-                fontWeight: 800,
-                letterSpacing: "0.04em",
-              }}
-            />
           </div>
 
           <div className="pm-home-premium-score-row">
@@ -700,29 +639,21 @@ export function HomeTab({ user, setTab }) {
             </div>
           </div>
 
-          <div className="pm-home-sparkline">
-            <div className="pm-home-sparkline-labels">
-              <span>Seneste 10 kampe</span>
-              <span>{eloSparkValues[0]} → {elo}</span>
+          <div className="pm-home-elo-scale">
+            <div className="pm-home-elo-scale-labels">
+              <span>Begynder</span>
+              <span>Pro</span>
             </div>
-            <svg width="100%" height={sparkHeight + 8} viewBox={`0 0 ${sparkWidth} ${sparkHeight + 8}`} preserveAspectRatio="none" aria-hidden="true">
-              <defs>
-                <linearGradient id="pmHomeSparkGrad" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="rgba(255,255,255,0.18)" />
-                  <stop offset="100%" stopColor="#FBBF24" />
-                </linearGradient>
-                <filter id="pmHomeGlowDot">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              <polyline points={sparkPoints} fill="none" stroke="url(#pmHomeSparkGrad)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx={sparkWidth} cy={sparkLastY} r="4" fill="#FBBF24" filter="url(#pmHomeGlowDot)" />
-              <circle cx={sparkWidth} cy={sparkLastY} r="2.5" fill="#FBBF24" />
-            </svg>
+            <div className="pm-home-elo-scale-track" aria-hidden="true">
+              <span className="pm-home-elo-scale-marker" style={{ left: `${eloScalePct}%` }} />
+            </div>
+            <div className="pm-home-elo-scale-ticks" aria-hidden="true">
+              <span>0</span>
+              <span>500</span>
+              <span>1000</span>
+              <span>1500</span>
+              <span>2000</span>
+            </div>
           </div>
 
           <div className="pm-home-premium-badges">
