@@ -55,6 +55,10 @@ test('home seeking CTA opens Makkere with the active seeking filter', async () =
 
   assert.match(homeTab, /setTab\(seekingCount > 0 \? 'makkere\?seeking=1' : 'makkere'\)/)
   assert.match(makkereTab, /useLocation/)
+  assert.match(makkereTab, /useRef/)
   assert.match(makkereTab, /new URLSearchParams\(location\.search\)/)
   assert.match(makkereTab, /setFilterSeeking\(true\)/)
+  assert.match(makkereTab, /seekingResultsRef/)
+  assert.match(makkereTab, /scrollIntoView\(\{\s*behavior:\s*'smooth',\s*block:\s*'start'/)
+  assert.match(makkereTab, /ref=\{seekingResultsRef\}/)
 })

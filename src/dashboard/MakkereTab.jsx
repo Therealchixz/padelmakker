@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
@@ -166,6 +166,8 @@ export function MakkereTab({ user, showToast }) {
   const [favorites, setFavorites]     = useState(() => readFavoritesSet(user?.id));
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [telemetryVersion, setTelemetryVersion] = useState(0);
+  const seekingResultsRef = useRef(null);
+  const hasScrolledToSeekingRef = useRef(false);
 
   const myElo = eloOf(user);
 
@@ -175,6 +177,21 @@ export function MakkereTab({ user, showToast }) {
     setShowFilters(true);
     setPage(0);
   }, [shouldShowSeekingFromUrl]);
+
+  useEffect(() => {
+    if (!shouldShowSeekingFromUrl) {
+      hasScrolledToSeekingRef.current = false;
+      return undefined;
+    }
+    if (loading || hasScrolledToSeekingRef.current) return undefined;
+
+    hasScrolledToSeekingRef.current = true;
+    const timerId = window.setTimeout(() => {
+      seekingResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+
+    return () => window.clearTimeout(timerId);
+  }, [shouldShowSeekingFromUrl, loading]);
 
   useEffect(() => {
     setFavorites(readFavoritesSet(user.id));
@@ -385,7 +402,7 @@ export function MakkereTab({ user, showToast }) {
       <div style={{ borderTop: '1px solid ' + theme.border, marginBottom: '20px' }} />
 
       {/* Browse / søg alle */}
-      <div style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+      <div ref={seekingResultsRef} style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', scrollMarginTop: '86px' }}>
         Alle spillere
       </div>
 
