@@ -4,6 +4,7 @@ import test from 'node:test'
 import { URL } from 'node:url'
 
 const HOME_TAB_URL = new URL('../../src/dashboard/HomeTab.jsx', import.meta.url)
+const MAKKERE_TAB_URL = new URL('../../src/dashboard/MakkereTab.jsx', import.meta.url)
 const RESPONSIVE_CSS_URL = new URL('../../src/responsive.css', import.meta.url)
 const DASHBOARD_PAGE_URL = new URL('../../src/dashboard/DashboardPage.jsx', import.meta.url)
 
@@ -18,6 +19,9 @@ test('home tab uses the premium scale marker hero layout from the redesign', asy
   assert.match(homeTab, /Seneste:/)
   assert.match(homeTab, /className="pm-home-seeking-cta"/)
   assert.match(homeTab, />Detaljer<\/button>/)
+  assert.doesNotMatch(homeTab, /const levelBadge/)
+  assert.doesNotMatch(homeTab, /\{levelBadge\}/)
+  assert.doesNotMatch(homeTab, /className="pm-home-premium-latest"/)
   assert.doesNotMatch(homeTab, /className="pm-home-sparkline"/)
   assert.doesNotMatch(homeTab, /profileFresh\?\.avatar \|\| user\.avatar \|\| userInitials/)
   assert.doesNotMatch(homeTab, /className="pm-stat-grid"/)
@@ -43,4 +47,14 @@ test('mobile home dashboard starts flush below the header without card rounding'
   assert.match(dashboardPage, /pm-dash-main--home/)
   assert.match(css, /@media \(max-width: 768px\)[\s\S]*\.pm-dash-main--home\s*\{[\s\S]*padding-top:\s*0/)
   assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-premium-hero\s*\{[\s\S]*border-radius:\s*0;/)
+})
+
+test('home seeking CTA opens Makkere with the active seeking filter', async () => {
+  const homeTab = await readFile(HOME_TAB_URL, 'utf8')
+  const makkereTab = await readFile(MAKKERE_TAB_URL, 'utf8')
+
+  assert.match(homeTab, /setTab\(seekingCount > 0 \? 'makkere\?seeking=1' : 'makkere'\)/)
+  assert.match(makkereTab, /useLocation/)
+  assert.match(makkereTab, /new URLSearchParams\(location\.search\)/)
+  assert.match(makkereTab, /setFilterSeeking\(true\)/)
 })

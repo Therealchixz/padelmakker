@@ -2009,8 +2009,7 @@ button,
   margin-top: 10px;
 }
 
-.pm-home-premium-pill,
-.pm-home-premium-latest {
+.pm-home-premium-pill {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
@@ -2029,12 +2028,6 @@ button,
 .pm-home-premium-pill--green {
   color: #86efac;
   background: rgba(134, 239, 172, 0.13);
-}
-
-.pm-home-premium-latest {
-  color: #86efac;
-  padding-left: 0;
-  padding-right: 0;
 }
 
 .pm-home-seeking-cta {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Profile } from '../api/base44Client';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
 import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS, COURT_SIDES, SEEK_TTL_MS } from '../lib/platformConstants';
@@ -143,15 +143,20 @@ function SuggestionCard({ suggestion, onView, onInvite }) {
 
 export function MakkereTab({ user, showToast }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const shouldShowSeekingFromUrl = useMemo(
+    () => new URLSearchParams(location.search).get('seeking') === '1',
+    [location.search]
+  );
   const [search, setSearch]           = useState('');
   const [filterElo, setFilterElo]     = useState('all');
   const [filterArea, setFilterArea]   = useState('all');
   const [filterStyle, setFilterStyle] = useState('all');
   const [filterIntent, setFilterIntent] = useState('all');
   const [filterCourtSide, setFilterCourtSide] = useState('all');
-  const [filterSeeking, setFilterSeeking] = useState(false);
+  const [filterSeeking, setFilterSeeking] = useState(() => shouldShowSeekingFromUrl);
   const [filterFav, setFilterFav]     = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(() => shouldShowSeekingFromUrl);
   const [players, setPlayers]         = useState([]);
   const [statsById, setStatsById]     = useState({});
   const [loading, setLoading]         = useState(true);
@@ -163,6 +168,13 @@ export function MakkereTab({ user, showToast }) {
   const [telemetryVersion, setTelemetryVersion] = useState(0);
 
   const myElo = eloOf(user);
+
+  useEffect(() => {
+    if (!shouldShowSeekingFromUrl) return;
+    setFilterSeeking(true);
+    setShowFilters(true);
+    setPage(0);
+  }, [shouldShowSeekingFromUrl]);
 
   useEffect(() => {
     setFavorites(readFavoritesSet(user.id));

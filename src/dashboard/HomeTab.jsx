@@ -599,7 +599,6 @@ export function HomeTab({ user, setTab }) {
       .sort((a, b) => new Date(b.date || b.created_at || 0).getTime() - new Date(a.date || a.created_at || 0).getTime())[0];
     return recent ? Number(recent.change) || 0 : null;
   }, [ratedRows]);
-  const levelBadge = profileFresh?.level || user.level ? levelLabel(profileFresh?.level || user.level) : "Aktiv spiller";
   const seekingCount = seekingFeed.length;
   const seekingTitle = feedLoading
     ? "Finder spillere der søger makker"
@@ -660,15 +659,14 @@ export function HomeTab({ user, setTab }) {
             <span className="pm-home-premium-pill pm-home-premium-pill--green">
               {weeklyEloChange === 0 ? "ELO stabil denne uge" : `${weeklyEloChange > 0 ? "+" : ""}${weeklyEloChange} denne uge`}
             </span>
-            <span className="pm-home-premium-pill">{levelBadge}</span>
             {latestEloChange !== null && (
-              <span className="pm-home-premium-latest">Seneste: {latestEloChange > 0 ? "+" : ""}{latestEloChange} ELO</span>
+              <span className="pm-home-premium-pill pm-home-premium-pill--green">Seneste: {latestEloChange > 0 ? "+" : ""}{latestEloChange} ELO</span>
             )}
           </div>
         </section>
       )}
 
-      <button type="button" className="pm-home-seeking-cta" onClick={() => setTab('makkere')}>
+      <button type="button" className="pm-home-seeking-cta" onClick={() => setTab(seekingCount > 0 ? 'makkere?seeking=1' : 'makkere')}>
         <span className="pm-home-seeking-cta-icon" aria-hidden="true">
           <Users size={20} />
         </span>
