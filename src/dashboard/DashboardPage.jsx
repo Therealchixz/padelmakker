@@ -640,9 +640,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
       },
       {
         id: 'notification-bell',
-        selector: '[data-tour="notification-bell"]',
+        selector: isMobileView ? '[data-tour="notification-bell"]' : '[data-tour="account-menu-btn"]',
         title: 'Notifikationer & push-indstillinger',
-        description: 'Her finder du alle dine notifikationer. Øverst i panelet kan du slå push-beskeder til og fra når som helst.',
+        description: isMobileView
+          ? 'Her finder du alle dine notifikationer. Øverst i panelet kan du slå push-beskeder til og fra når som helst.'
+          : 'Åbn konto-menuen øverst til højre – der finder du alle dine notifikationer og kan slå push-beskeder til og fra når som helst.',
       },
       {
         id: 'home',
