@@ -4,10 +4,11 @@
 
 import { fetchHalbookingPadelSchedule } from '../halbookingFetch.js';
 import { getAllowlistedVenue } from '../halbookingVenuesAllowlist.js';
+import { setCorsHeaders } from '../cors.js';
 
 export async function handleHalbookingSkansenLegacy(req, res) {
   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  setCorsHeaders(req, res);
 
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });

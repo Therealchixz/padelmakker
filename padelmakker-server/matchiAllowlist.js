@@ -17,7 +17,7 @@ export const MATCHI_VENUE_ALLOWLIST = {
     facilityId: '2430',
     sport: '5',
     indoorQuery: '',
-    bookingUrl: 'https://www.matchi.se/facilities/SkagenPadelcenter%20',
+    bookingUrl: 'https://www.matchi.se/facilities/SkagenPadelcenter',
   },
 };
 
