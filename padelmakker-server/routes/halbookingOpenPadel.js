@@ -46,7 +46,7 @@ export async function handleHalbookingOpenPadel(req, res) {
     return;
   }
 
-  if (!await checkRateLimit(getClientIp(req), 20, 60_000)) {
+  if (!await checkRateLimit(getClientIp(req) + ':booking', 20, 60_000)) {
     sendHtml(res, 429, `<!DOCTYPE html><html><body><p>For mange forespørgsler. Prøv igen om et øjeblik.</p></body></html>`);
     return;
   }
