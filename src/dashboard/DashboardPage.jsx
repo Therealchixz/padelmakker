@@ -20,6 +20,7 @@ import { KAMPE_NOTIFICATION_TYPES } from '../lib/kampeNotificationTypes';
 import { countRelevantKampeUnreadNotifications } from '../lib/kampeNotificationBadges';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { filterConfirmablePendingResults } from '../lib/resolvePadelMatchResult';
+import { subscribeToPush, isPushSupported } from '../lib/pushNotifications';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -541,7 +542,7 @@ function useUnreadKampeNotificationsCount(userId) {
 }
 
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder"];
-const TOUR_VERSION = 1;
+const TOUR_VERSION = 2;
 
 const tabBtnStyle = (active) => ({
   background: "transparent",
@@ -631,6 +632,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
         id: 'intro',
         title: 'Velkommen til PadelMakker',
         description: 'Denne korte guide viser de vigtigste funktioner, så du hurtigt kan finde makkere, tilmelde dig kampe og følge din udvikling.',
+      },
+      {
+        id: 'push-notifications',
+        title: 'Hold dig opdateret',
+        description: 'PadelMakker sender dig push-notifikationer, når nogen bekræfter et resultat, inviterer dig til en kamp eller svarer på din makker-ansøgning. Tryk Næste for at aktivere – du kan altid slå det fra igen i din profil, men du risikerer at gå glip af vigtige beskeder.',
       },
       {
         id: 'home',
@@ -750,8 +756,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, []);
 
   const handleTourNext = useCallback(() => {
+    if (tourSteps[tourStepIndex]?.id === 'push-notifications' && user?.id && isPushSupported()) {
+      subscribeToPush(user.id).catch(() => {});
+    }
     setTourStepIndex((prev) => Math.min(tourSteps.length - 1, prev + 1));
-  }, [tourSteps.length]);
+  }, [tourSteps, tourStepIndex, user?.id]);
 
   useEffect(() => {
     if (!accountOpen) return;
