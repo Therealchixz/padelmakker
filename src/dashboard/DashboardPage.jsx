@@ -635,9 +635,14 @@ export function DashboardPage({ user, onLogout, showToast }) {
       },
       {
         id: 'push-notifications',
-        selector: '[data-tour="notification-bell"]',
         title: 'Hold dig opdateret',
-        description: 'Tryk Næste for at aktivere push-notifikationer – du får besked om resultater, kampe og makker-svar selv når appen er lukket. Du kan til enhver tid slå det til eller fra via klokke-ikonet her.',
+        description: 'Tryk Næste for at aktivere push-notifikationer – du får besked om resultater, kampe og makker-svar selv når appen er lukket. Du kan til enhver tid slå dem til eller fra igen.',
+      },
+      {
+        id: 'notification-bell',
+        selector: '[data-tour="notification-bell"]',
+        title: 'Notifikationer & push-indstillinger',
+        description: 'Her finder du alle dine notifikationer. Øverst i panelet kan du slå push-beskeder til og fra når som helst.',
       },
       {
         id: 'home',
