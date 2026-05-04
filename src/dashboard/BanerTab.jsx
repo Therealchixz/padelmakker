@@ -383,10 +383,10 @@ export function BanerTab() {
         {showBookingHelp && (
           <div style={{ borderTop: '1px solid ' + theme.border, padding: '12px 14px 14px' }}>
             <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.55, margin: 0 }}>
-              Åbn ét sted ad gangen. <strong>Halbooking</strong>: grøn = direkte til booking, gul = regel (tooltip).{' '}
-              <strong>PadelPadel (Bookli)</strong>: oversigt hentes som på padelpadel.dk — grøn åbner Bookli til login og booking
-              (mødelokaler vises ikke). <strong>MATCHi (Padel99, Skagen)</strong>: oversigt hentes fra matchi.se — grøn åbner facilitetssiden med valgt dato.
-              <strong> Eksterne links</strong> (Aars, Gug): åbner klubbens booking; tider vises på deres side.
+              <strong>Grøn</strong> felt = ledigt – klik for at booke.{' '}
+              <strong>Gul</strong> felt = ledigt, men med en betingelse (fx kun for medlemmer) – hold musen over for at se reglen.{' '}
+              Klik på et grønt felt for at gå videre til banens eget bookingsystem, hvor du logger ind og færdiggør bookingen.{' '}
+              <strong>Aars og Gug</strong> viser ikke tider herinde – klik på linket for at åbne klubbens bookingside direkte.
             </p>
           </div>
         )}
