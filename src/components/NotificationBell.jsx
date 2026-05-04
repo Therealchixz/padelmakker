@@ -450,7 +450,7 @@ export function NotificationBell() {
         onCancel={() => setConfirmClear(false)}
       />
     )}
-    <div ref={panelRef} className="pm-notification-bell-root" style={{ position: "relative", flexShrink: 0 }}>
+    <div ref={panelRef} className="pm-notification-bell-root" data-tour="notification-bell" style={{ position: "relative", flexShrink: 0 }}>
       <button
         type="button"
         onClick={() => { setOpen(!open); if (!open) load(); }}

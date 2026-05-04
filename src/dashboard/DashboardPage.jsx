@@ -635,8 +635,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
       },
       {
         id: 'push-notifications',
+        selector: '[data-tour="notification-bell"]',
         title: 'Hold dig opdateret',
-        description: 'PadelMakker sender dig push-notifikationer, når nogen bekræfter et resultat, inviterer dig til en kamp eller svarer på din makker-ansøgning. Tryk Næste for at aktivere – du kan altid slå det fra igen i din profil, men du risikerer at gå glip af vigtige beskeder.',
+        description: 'Tryk Næste for at aktivere push-notifikationer – du får besked om resultater, kampe og makker-svar selv når appen er lukket. Du kan til enhver tid slå det til eller fra via klokke-ikonet her.',
       },
       {
         id: 'home',
