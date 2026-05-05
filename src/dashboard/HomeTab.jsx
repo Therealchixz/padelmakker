@@ -590,12 +590,10 @@ export function HomeTab({ user, setTab }) {
     const step = 50;
     const max = 2000;
     if (current >= max) {
-      return { target: max, remaining: 0, progressPct: 100 };
+      return { target: max, remaining: 0 };
     }
     const target = Math.min(max, Math.ceil((current + 1) / step) * step);
-    const start = Math.max(0, target - step);
-    const progressPct = Math.min(Math.max(((current - start) / step) * 100, 0), 100);
-    return { target, remaining: Math.max(0, target - current), progressPct };
+    return { target, remaining: Math.max(0, target - current) };
   }, [elo]);
   const seekingCount = seekingFeed.length;
   const seekingTitle = feedLoading
@@ -639,6 +637,17 @@ export function HomeTab({ user, setTab }) {
           <div className="pm-home-elo-scale">
             <div className="pm-home-elo-scale-labels">
               <span>Begynder</span>
+              <span
+                className="pm-home-elo-goal"
+                aria-label={`Næste milepæl: ${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`}
+              >
+                <span>Næste milepæl</span>
+                <strong>
+                  {nextEloMilestone.remaining > 0
+                    ? `${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`
+                    : `${nextEloMilestone.target} ELO nået`}
+                </strong>
+              </span>
               <span>Pro</span>
             </div>
             <div className="pm-home-elo-scale-track" aria-hidden="true">
@@ -650,23 +659,6 @@ export function HomeTab({ user, setTab }) {
               <span>1000</span>
               <span>1500</span>
               <span>2000</span>
-            </div>
-          </div>
-
-          <div
-            className="pm-home-elo-goal"
-            aria-label={`Næste milepæl: ${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`}
-          >
-            <div className="pm-home-elo-goal-copy">
-              <span>Næste milepæl</span>
-              <strong>
-                {nextEloMilestone.remaining > 0
-                  ? `${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`
-                  : `${nextEloMilestone.target} ELO nået`}
-              </strong>
-            </div>
-            <div className="pm-home-elo-goal-track" aria-hidden="true">
-              <span style={{ width: `${nextEloMilestone.progressPct}%` }} />
             </div>
           </div>
         </section>

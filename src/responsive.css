@@ -1962,14 +1962,18 @@ button,
 }
 
 .pm-home-elo-scale-labels {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(58px, 1fr) auto minmax(34px, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   margin-bottom: 6px;
   color: rgba(255, 255, 255, 0.58);
   font-size: 10px;
   font-weight: 800;
+}
+
+.pm-home-elo-scale-labels > span:last-child {
+  text-align: right;
 }
 
 .pm-home-elo-scale-track {
@@ -2002,50 +2006,30 @@ button,
 }
 
 .pm-home-elo-goal {
-  width: min(100%, 440px);
-  margin-top: 12px;
-  padding: 9px 11px 10px;
+  justify-self: center;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 9px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--pm-radius-md);
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
 }
 
-.pm-home-elo-goal-copy {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-  font-size: 11px;
-  line-height: 1.2;
-}
-
-.pm-home-elo-goal-copy span {
+.pm-home-elo-goal span {
   color: rgba(255, 255, 255, 0.6);
+  font-size: 9px;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.pm-home-elo-goal-copy strong {
+.pm-home-elo-goal strong {
   color: #86efac;
+  font-size: 11px;
   font-weight: 900;
-  text-align: right;
-}
-
-.pm-home-elo-goal-track {
-  height: 6px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.pm-home-elo-goal-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #86efac, #fbbf24);
-  transition: width 420ms ease;
 }
 
 .pm-home-seeking-cta {
