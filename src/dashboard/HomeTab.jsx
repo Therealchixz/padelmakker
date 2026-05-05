@@ -584,7 +584,6 @@ export function HomeTab({ user, setTab }) {
     [feedRows, activityGroupLabel]
   );
 
-  const eloScalePct = Math.min(Math.max((elo / 2000) * 100, 0), 100);
   const nextEloMilestone = useMemo(() => {
     const current = Math.max(0, Math.round(Number(elo) || 0));
     const step = 50;
@@ -595,6 +594,17 @@ export function HomeTab({ user, setTab }) {
     const target = Math.min(max, Math.ceil((current + 1) / step) * step);
     return { target, remaining: Math.max(0, target - current) };
   }, [elo]);
+  const recentForm = useMemo(() => {
+    return [...(ratedRows || [])]
+      .filter((row) => row.result === 'win' || row.result === 'loss')
+      .sort((a, b) => new Date(b.date || b.created_at || 0).getTime() - new Date(a.date || a.created_at || 0).getTime())
+      .slice(0, 5)
+      .map((row, index) => ({
+        key: `${row.match_id || row.created_at || row.date || index}-${index}`,
+        label: row.result === 'win' ? 'V' : 'T',
+        result: row.result,
+      }));
+  }, [ratedRows]);
   const seekingCount = seekingFeed.length;
   const seekingTitle = feedLoading
     ? "Finder spillere der søger makker"
@@ -613,10 +623,21 @@ export function HomeTab({ user, setTab }) {
             <h2>Hej {firstName}!</h2>
           </div>
 
-          <div className="pm-home-premium-score-row">
+          <div className="pm-home-player-card-head">
             <div className="pm-home-premium-elo-block">
               <div className="pm-home-premium-kicker">ELO rating</div>
               <div className="pm-home-premium-elo">{elo}</div>
+            </div>
+            <div
+              className="pm-home-next-goal-card"
+              aria-label={`Næste mål: ${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`}
+            >
+              <span>Næste mål</span>
+              <strong>
+                {nextEloMilestone.remaining > 0
+                  ? `${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`
+                  : `${nextEloMilestone.target} ELO nået`}
+              </strong>
             </div>
             <div className="pm-home-premium-stats" aria-label="Dine kampstatistikker">
               <div className="pm-home-premium-stat">
@@ -634,31 +655,16 @@ export function HomeTab({ user, setTab }) {
             </div>
           </div>
 
-          <div className="pm-home-elo-scale">
-            <div className="pm-home-elo-scale-labels">
-              <span>Begynder</span>
-              <span
-                className="pm-home-elo-goal"
-                aria-label={`Næste milepæl: ${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`}
-              >
-                <span>Næste milepæl</span>
-                <strong>
-                  {nextEloMilestone.remaining > 0
-                    ? `${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`
-                    : `${nextEloMilestone.target} ELO nået`}
-                </strong>
-              </span>
-              <span>Pro</span>
-            </div>
-            <div className="pm-home-elo-scale-track" aria-hidden="true">
-              <span className="pm-home-elo-scale-marker" style={{ left: `${eloScalePct}%` }} />
-            </div>
-            <div className="pm-home-elo-scale-ticks" aria-hidden="true">
-              <span>0</span>
-              <span>500</span>
-              <span>1000</span>
-              <span>1500</span>
-              <span>2000</span>
+          <div className="pm-home-form-row" aria-label="Seneste form">
+            <span>Seneste form</span>
+            <div className="pm-home-form-chips">
+              {recentForm.length > 0 ? recentForm.map((item) => (
+                <span key={item.key} className={`pm-home-form-chip pm-home-form-chip--${item.result}`}>
+                  {item.label}
+                </span>
+              )) : (
+                <small>Spil en kamp for at se din form</small>
+              )}
             </div>
           </div>
         </section>

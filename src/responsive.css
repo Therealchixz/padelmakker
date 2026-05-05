@@ -1880,15 +1880,17 @@ button,
   letter-spacing: -0.04em;
 }
 
-.pm-home-premium-score-row {
-  display: flex;
-  align-items: flex-end;
-  gap: clamp(14px, 3vw, 18px);
-  flex-wrap: wrap;
+.pm-home-player-card-head {
+  display: grid;
+  grid-template-columns: minmax(104px, 0.72fr) minmax(154px, 0.9fr) minmax(250px, 2fr);
+  align-items: stretch;
+  gap: 10px;
 }
 
 .pm-home-premium-elo-block {
-  min-width: 106px;
+  min-width: 0;
+  display: grid;
+  align-content: center;
 }
 
 .pm-home-premium-kicker {
@@ -1913,9 +1915,7 @@ button,
   display: grid;
   grid-template-columns: repeat(3, minmax(72px, 1fr));
   gap: 8px;
-  flex: 1;
-  min-width: min(100%, 248px);
-  padding-bottom: 5px;
+  min-width: 0;
 }
 
 .pm-home-premium-stat {
@@ -1957,68 +1957,21 @@ button,
   text-transform: uppercase;
 }
 
-.pm-home-elo-scale {
-  margin-top: 14px;
-}
-
-.pm-home-elo-scale-labels {
+.pm-home-next-goal-card {
   display: grid;
-  grid-template-columns: minmax(58px, 1fr) auto minmax(34px, 1fr);
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
-  color: rgba(255, 255, 255, 0.58);
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.pm-home-elo-scale-labels > span:last-child {
-  text-align: right;
-}
-
-.pm-home-elo-scale-track {
-  position: relative;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-}
-
-.pm-home-elo-scale-marker {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  background: #fbbf24;
-  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.18), 0 4px 12px rgba(0, 0, 0, 0.22);
-  transform: translate(-50%, -50%);
-}
-
-.pm-home-elo-scale-ticks {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 6px;
-  color: rgba(255, 255, 255, 0.34);
-  font-size: 9px;
-  font-weight: 800;
-}
-
-.pm-home-elo-goal {
-  justify-self: center;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  max-width: 100%;
-  padding: 4px 9px;
+  align-content: center;
+  gap: 5px;
+  min-height: 56px;
+  padding: 10px 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  white-space: nowrap;
+  border-radius: var(--pm-radius-md);
+  background:
+    linear-gradient(135deg, rgba(134, 239, 172, 0.14), rgba(255, 255, 255, 0.08)),
+    rgba(255, 255, 255, 0.08);
 }
 
-.pm-home-elo-goal span {
+.pm-home-next-goal-card span,
+.pm-home-form-row > span {
   color: rgba(255, 255, 255, 0.6);
   font-size: 9px;
   font-weight: 900;
@@ -2026,10 +1979,59 @@ button,
   text-transform: uppercase;
 }
 
-.pm-home-elo-goal strong {
+.pm-home-next-goal-card strong {
   color: #86efac;
-  font-size: 11px;
+  font-size: 14px;
+  line-height: 1.1;
   font-weight: 900;
+}
+
+.pm-home-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--pm-radius-md);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.pm-home-form-chips {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.pm-home-form-chips small {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.pm-home-form-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 999px;
+  color: white;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.pm-home-form-chip--win {
+  background: rgba(34, 197, 94, 0.92);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.14);
+}
+
+.pm-home-form-chip--loss {
+  background: rgba(248, 113, 113, 0.92);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.14);
 }
 
 .pm-home-seeking-cta {
@@ -2102,8 +2104,8 @@ button,
     padding: 24px 16px 22px;
   }
 
-  .pm-home-premium-score-row {
-    display: block;
+  .pm-home-player-card-head {
+    grid-template-columns: 1fr;
   }
 
   .pm-home-premium-stats {
@@ -2122,9 +2124,14 @@ button,
     font-size: 18px;
   }
 
-  .pm-home-elo-scale-labels,
-  .pm-home-elo-scale-ticks {
-    font-size: 9px;
+  .pm-home-form-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pm-home-form-chips {
+    justify-content: flex-start;
   }
 }
 
