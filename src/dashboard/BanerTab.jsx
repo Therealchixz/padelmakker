@@ -383,10 +383,15 @@ export function BanerTab() {
         {showBookingHelp && (
           <div style={{ borderTop: '1px solid ' + theme.border, padding: '12px 14px 14px' }}>
             <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.55, margin: 0 }}>
-              <strong>Grøn</strong> felt = ledigt – klik for at booke.{' '}
-              <strong>Gul</strong> felt = ledigt, men med en betingelse (fx kun for medlemmer) – hold musen over for at se reglen.{' '}
-              Klik på et grønt felt for at gå videre til banens eget bookingsystem, hvor du logger ind og færdiggør bookingen.{' '}
-              <strong>Aars og Gug</strong> viser ikke tider herinde – klik på linket for at åbne klubbens bookingside direkte.
+              Start med at vælge et center og en dato. Når PadelMakker kan hente tiderne, viser vi dem direkte i listen.
+            </p>
+            <ul style={{ margin: '10px 0', paddingLeft: '18px', color: theme.textMid, fontSize: '13px', lineHeight: 1.55 }}>
+              <li><strong>Grøn tid:</strong> tiden ser ledig ud. Tryk på tiden eller &quot;Åbn booking&quot; for at booke hos centret.</li>
+              <li><strong>Gul tid:</strong> der er en regel eller note til tiden. Læs beskeden før du går videre.</li>
+              <li><strong>Ingen tider i listen:</strong> nogle centre viser kun tider på deres egen booking-side. Brug knappen &quot;Åbn booking&quot;.</li>
+            </ul>
+            <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.55, margin: 0 }}>
+              PadelMakker hjælper med overblikket, men selve bookingen foregår altid hos centret.
             </p>
           </div>
         )}
