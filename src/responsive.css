@@ -2101,22 +2101,46 @@ button,
     margin-left: calc(var(--pm-space-2) * -1);
     margin-right: calc(var(--pm-space-2) * -1);
     border-radius: 0;
-    padding: 24px 16px 22px;
+    padding: 16px 14px 16px;
+  }
+
+  .pm-home-premium-top {
+    margin-bottom: 12px;
+  }
+
+  .pm-home-premium-top h2 {
+    font-size: 18px;
+    letter-spacing: -0.035em;
   }
 
   .pm-home-player-card-head {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 0.9fr) minmax(132px, 1fr);
+    gap: 9px;
+  }
+
+  .pm-home-premium-elo {
+    font-size: clamp(42px, 15vw, 58px);
+  }
+
+  .pm-home-next-goal-card {
+    min-height: 0;
+    padding: 9px 10px;
+  }
+
+  .pm-home-next-goal-card strong {
+    font-size: 13px;
   }
 
   .pm-home-premium-stats {
-    margin-top: 12px;
+    grid-column: 1 / -1;
+    margin-top: 2px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     min-width: 0;
     padding-bottom: 0;
   }
 
   .pm-home-premium-stat {
-    min-height: 50px;
+    min-height: 42px;
     padding: 7px 6px;
   }
 
@@ -2125,13 +2149,21 @@ button,
   }
 
   .pm-home-form-row {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
+    align-items: center;
+    flex-direction: row;
+    gap: 10px;
+    margin-top: 9px;
+    padding: 8px 10px;
   }
 
   .pm-home-form-chips {
-    justify-content: flex-start;
+    justify-content: flex-end;
+  }
+
+  .pm-home-form-chip {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
   }
 }
 

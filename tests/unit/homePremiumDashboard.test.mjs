@@ -69,6 +69,15 @@ test('mobile home dashboard starts flush below the header without card rounding'
   assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-premium-hero\s*\{[\s\S]*border-radius:\s*0;/)
 })
 
+test('mobile player-card ELO hero is compact instead of a tall stacked block', async () => {
+  const css = await readFile(RESPONSIVE_CSS_URL, 'utf8')
+
+  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-premium-hero\s*\{[\s\S]*padding:\s*16px 14px 16px;/)
+  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-player-card-head\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*0\.9fr\)\s*minmax\(132px,\s*1fr\);/)
+  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-premium-stats\s*\{[\s\S]*grid-column:\s*1 \/ -1;/)
+  assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.pm-home-form-row\s*\{[\s\S]*padding:\s*8px 10px;/)
+})
+
 test('home seeking CTA opens Makkere with the active seeking filter', async () => {
   const homeTab = await readFile(HOME_TAB_URL, 'utf8')
   const makkereTab = await readFile(MAKKERE_TAB_URL, 'utf8')
