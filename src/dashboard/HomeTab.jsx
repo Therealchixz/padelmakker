@@ -585,20 +585,18 @@ export function HomeTab({ user, setTab }) {
   );
 
   const eloScalePct = Math.min(Math.max((elo / 2000) * 100, 0), 100);
-  const weeklyEloChange = useMemo(() => {
-    const cutoff = DateTime.now().minus({ days: 7 });
-    return (ratedRows || []).reduce((sum, row) => {
-      const date = DateTime.fromISO(String(row.date || row.created_at || ""));
-      if (!date.isValid || date < cutoff) return sum;
-      return sum + (Number(row.change) || 0);
-    }, 0);
-  }, [ratedRows]);
-  const latestEloChange = useMemo(() => {
-    const recent = [...(ratedRows || [])]
-      .filter((row) => Number(row.change) !== 0)
-      .sort((a, b) => new Date(b.date || b.created_at || 0).getTime() - new Date(a.date || a.created_at || 0).getTime())[0];
-    return recent ? Number(recent.change) || 0 : null;
-  }, [ratedRows]);
+  const nextEloMilestone = useMemo(() => {
+    const current = Math.max(0, Math.round(Number(elo) || 0));
+    const step = 50;
+    const max = 2000;
+    if (current >= max) {
+      return { target: max, remaining: 0, progressPct: 100 };
+    }
+    const target = Math.min(max, Math.ceil((current + 1) / step) * step);
+    const start = Math.max(0, target - step);
+    const progressPct = Math.min(Math.max(((current - start) / step) * 100, 0), 100);
+    return { target, remaining: Math.max(0, target - current), progressPct };
+  }, [elo]);
   const seekingCount = seekingFeed.length;
   const seekingTitle = feedLoading
     ? "Finder spillere der søger makker"
@@ -655,13 +653,21 @@ export function HomeTab({ user, setTab }) {
             </div>
           </div>
 
-          <div className="pm-home-premium-badges">
-            <span className="pm-home-premium-pill pm-home-premium-pill--green">
-              {weeklyEloChange === 0 ? "ELO stabil denne uge" : `${weeklyEloChange > 0 ? "+" : ""}${weeklyEloChange} denne uge`}
-            </span>
-            {latestEloChange !== null && (
-              <span className="pm-home-premium-pill pm-home-premium-pill--green">Seneste: {latestEloChange > 0 ? "+" : ""}{latestEloChange} ELO</span>
-            )}
+          <div
+            className="pm-home-elo-goal"
+            aria-label={`Næste milepæl: ${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`}
+          >
+            <div className="pm-home-elo-goal-copy">
+              <span>Næste milepæl</span>
+              <strong>
+                {nextEloMilestone.remaining > 0
+                  ? `${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`
+                  : `${nextEloMilestone.target} ELO nået`}
+              </strong>
+            </div>
+            <div className="pm-home-elo-goal-track" aria-hidden="true">
+              <span style={{ width: `${nextEloMilestone.progressPct}%` }} />
+            </div>
           </div>
         </section>
       )}

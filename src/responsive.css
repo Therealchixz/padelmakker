@@ -2001,33 +2001,51 @@ button,
   font-weight: 800;
 }
 
-.pm-home-premium-badges {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+.pm-home-elo-goal {
+  width: min(100%, 440px);
+  margin-top: 12px;
+  padding: 9px 11px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--pm-radius-md);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.pm-home-premium-pill {
-  display: inline-flex;
+.pm-home-elo-goal-copy {
+  display: flex;
   align-items: center;
-  border-radius: 999px;
-  min-height: 23px;
-  padding: 4px 10px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
   font-size: 11px;
-  font-weight: 800;
   line-height: 1.2;
 }
 
-.pm-home-premium-pill {
-  color: rgba(255, 255, 255, 0.62);
-  background: rgba(255, 255, 255, 0.1);
+.pm-home-elo-goal-copy span {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.pm-home-premium-pill--green {
+.pm-home-elo-goal-copy strong {
   color: #86efac;
-  background: rgba(134, 239, 172, 0.13);
+  font-weight: 900;
+  text-align: right;
+}
+
+.pm-home-elo-goal-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.pm-home-elo-goal-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #86efac, #fbbf24);
+  transition: width 420ms ease;
 }
 
 .pm-home-seeking-cta {
