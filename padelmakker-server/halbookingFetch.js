@@ -5,6 +5,8 @@
 import { readHalbookingHtml } from './halbookingEncoding.js';
 
 const UA = 'PadelMakkerHalbooking/1.0 (+https://www.padelmakker.dk)';
+const MAX_NAV_STEPS = 80;
+const MAX_NAV_DAYS = 120;
 
 export function collectInputFields(formInner) {
   const params = new URLSearchParams();
@@ -393,7 +395,7 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, op
   let html = await readHalbookingHtml(secondRes);
 
   const targetUtc = targetDateYmd ? utcDateFromYmd(targetDateYmd) : null;
-  const maxSteps = 400;
+  const maxSteps = MAX_NAV_STEPS;
 
   if (targetUtc) {
     let reached = false;
@@ -407,6 +409,9 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, op
       }
 
       const diffDays = Math.round((targetUtc.getTime() - curUtc.getTime()) / 86400000);
+      if (Math.abs(diffDays) > MAX_NAV_DAYS) {
+        return { error: `Dato er for langt væk (maks ${MAX_NAV_DAYS} dage fra nuværende kalenderdato)` };
+      }
       let nav = null;
       if (diffDays <= -7) nav = 'ugeback';
       else if (diffDays < 0) nav = 'dagback';

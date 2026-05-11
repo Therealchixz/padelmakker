@@ -8,6 +8,19 @@
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const localRateLimitFallback = new Map();
+
+function consumeLocalRateLimit(key, windowStart, maxReqs) {
+  const prev = localRateLimitFallback.get(key);
+  if (!prev || prev.windowStart !== windowStart) {
+    localRateLimitFallback.set(key, { windowStart, hits: 1 });
+    return true;
+  }
+
+  const nextHits = prev.hits + 1;
+  localRateLimitFallback.set(key, { windowStart, hits: nextHits });
+  return nextHits <= maxReqs;
+}
 
 /**
  * Returnerer true hvis forespørgslen er tilladt, false hvis den er rate-limited.
@@ -16,11 +29,12 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
  * @param {number} windowMs   Tidsvindue i millisekunder (default: 60 sekunder)
  */
 export async function checkRateLimit(key, maxReqs = 30, windowMs = 60_000) {
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    return true; // fail open: ingen konfiguration
-  }
-
   const windowStart = Math.floor(Date.now() / windowMs);
+
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    // Fallback i lokal/dev eller ved manglende konfiguration.
+    return consumeLocalRateLimit(key, windowStart, maxReqs);
+  }
 
   try {
     const controller = new AbortController();
@@ -39,11 +53,11 @@ export async function checkRateLimit(key, maxReqs = 30, windowMs = 60_000) {
 
     clearTimeout(timer);
 
-    if (!res.ok) return true; // fail open ved DB-fejl
+    if (!res.ok) return consumeLocalRateLimit(key, windowStart, maxReqs);
     const allowed = await res.json();
     return allowed === true;
   } catch {
-    return true; // fail open ved timeout eller netværksfejl
+    return consumeLocalRateLimit(key, windowStart, maxReqs);
   }
 }
 

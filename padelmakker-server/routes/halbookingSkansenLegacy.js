@@ -5,6 +5,7 @@
 import { fetchHalbookingPadelSchedule } from '../halbookingFetch.js';
 import { getAllowlistedVenue } from '../halbookingVenuesAllowlist.js';
 import { setCorsHeaders } from '../cors.js';
+import { checkRateLimit, getClientIp } from '../rateLimit.js';
 
 export async function handleHalbookingSkansenLegacy(req, res) {
   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
@@ -12,6 +13,11 @@ export async function handleHalbookingSkansenLegacy(req, res) {
 
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  if (!await checkRateLimit(getClientIp(req) + ':baner', 60, 60_000)) {
+    res.status(429).json({ error: 'For mange forespørgsler. Prøv igen om et øjeblik.' });
     return;
   }
 

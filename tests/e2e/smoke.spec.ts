@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('Public smoke flows', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      try { window.localStorage.setItem('pm_cookie_notice_v1', '1') } catch { /* ignore */ }
+    })
+  })
+
   test('landing page renders hero and primary CTA', async ({ page }) => {
     await page.goto('/')
 
