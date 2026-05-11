@@ -18,7 +18,7 @@ ALTER TABLE match_join_requests ENABLE ROW LEVEL SECURITY;
 -- Users can see their own requests
 CREATE POLICY "join_req_select_own" ON match_join_requests
   FOR SELECT TO authenticated
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 -- Creators can see all requests for their matches
 CREATE POLICY "join_req_select_creator" ON match_join_requests
@@ -27,14 +27,14 @@ CREATE POLICY "join_req_select_creator" ON match_join_requests
     EXISTS (
       SELECT 1 FROM matches
       WHERE matches.id = match_join_requests.match_id
-      AND matches.creator_id = auth.uid()
+      AND matches.creator_id = (select auth.uid())
     )
   );
 
 -- Users can create their own requests
 CREATE POLICY "join_req_insert" ON match_join_requests
   FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK ((select auth.uid()) = user_id);
 
 -- Creators can approve/reject requests for their matches
 CREATE POLICY "join_req_update_creator" ON match_join_requests
@@ -43,14 +43,14 @@ CREATE POLICY "join_req_update_creator" ON match_join_requests
     EXISTS (
       SELECT 1 FROM matches
       WHERE matches.id = match_join_requests.match_id
-      AND matches.creator_id = auth.uid()
+      AND matches.creator_id = (select auth.uid())
     )
   );
 
 -- Users can cancel (delete) their own pending requests
 CREATE POLICY "join_req_delete_own" ON match_join_requests
   FOR DELETE TO authenticated
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 -- Admins bypass all RLS
 CREATE POLICY "join_req_admin" ON match_join_requests
@@ -58,14 +58,14 @@ CREATE POLICY "join_req_admin" ON match_join_requests
   USING (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
+      WHERE profiles.id = (select auth.uid())
       AND profiles.role = 'admin'
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
+      WHERE profiles.id = (select auth.uid())
       AND profiles.role = 'admin'
     )
   );

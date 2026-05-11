@@ -36,14 +36,25 @@ function corsHeadersForRequest(req: Request) {
   return {
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
     "Vary": "Origin",
   };
 }
 
 Deno.serve(async (req: Request) => {
+  const origin = normalizeOrigin(req.headers.get("origin"));
+  const allowed = allowedOrigins();
   const corsHeaders = corsHeadersForRequest(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Afvis browserkald fra ukendte origins (non-browser/server-to-server requests har ofte tom origin).
+  if (origin && !allowed.includes(origin)) {
+    return new Response(JSON.stringify({ error: "Origin not allowed" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {

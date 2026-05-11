@@ -23,7 +23,7 @@ DROP POLICY IF EXISTS profiles_select_all_authenticated ON public.profiles;
 CREATE POLICY profiles_select_all_authenticated
   ON public.profiles
   FOR SELECT TO authenticated
-  USING (true OR public.is_admin());
+  USING (true);
 
 -- INSERT
 DROP POLICY IF EXISTS "Brugere kan oprette egen profil" ON public.profiles;
@@ -67,7 +67,7 @@ DROP POLICY IF EXISTS "Alle kan se kampe" ON public.matches;
 CREATE POLICY "Alle kan se kampe"
   ON public.matches
   FOR SELECT TO authenticated
-  USING (true OR public.is_admin());
+  USING (true);
 
 DROP POLICY IF EXISTS "Opretteren kan slette sin kamp" ON public.matches;
 CREATE POLICY "Opretteren kan slette sin kamp"
@@ -122,7 +122,7 @@ DROP POLICY IF EXISTS "Alle kan se resultater" ON public.match_results;
 CREATE POLICY "Alle kan se resultater"
   ON public.match_results
   FOR SELECT TO authenticated
-  USING (true OR public.is_admin());
+  USING (true);
 
 DROP POLICY IF EXISTS match_results_update_by_participant ON public.match_results;
 CREATE POLICY match_results_update_by_participant
@@ -177,7 +177,7 @@ DROP POLICY IF EXISTS elo_history_select_authenticated ON public.elo_history;
 CREATE POLICY elo_history_select_authenticated
   ON public.elo_history
   FOR SELECT TO authenticated
-  USING (true OR public.is_admin());
+  USING (true);
 
 DROP POLICY IF EXISTS elo_history_no_insert ON public.elo_history;
 CREATE POLICY elo_history_no_insert
