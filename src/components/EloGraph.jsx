@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { font, theme } from '../lib/platformTheme';
 import { sortEloHistoryChronological, formatEloHistoryDate } from '../lib/eloHistoryUtils';
 
-export function EloGraph({ data }) {
+export function EloGraph({ data, valueLabel = 'ELO', emptyText = 'Spil mindst 2 kampe for at se din ELO-graf.' }) {
   const svgRef = useRef(null);
   const [hoverIdx, setHoverIdx] = useState(null);
 
@@ -101,7 +101,7 @@ export function EloGraph({ data }) {
   if (!hasGraph) {
     return (
       <div style={{ textAlign: 'center', padding: '24px', color: theme.textLight, fontSize: '13px' }}>
-        Spil mindst 2 kampe for at se din ELO-graf.
+        {emptyText}
       </div>
     );
   }
@@ -195,7 +195,7 @@ export function EloGraph({ data }) {
           }}
         >
           <div style={{ fontSize: '15px', fontWeight: 800, color: theme.accent, letterSpacing: '-0.02em' }}>
-            ELO {Math.round(hi.val)}
+            {valueLabel} {Math.round(hi.val)}
           </div>
           <div style={{ fontSize: '11px', color: theme.textMid, marginTop: '2px', lineHeight: 1.3 }}>
             {formatEloHistoryDate(hi.date)}

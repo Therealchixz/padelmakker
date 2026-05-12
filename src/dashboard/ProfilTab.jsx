@@ -112,6 +112,9 @@ export function ProfilTab({ user, showToast, setTab }) {
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
   const [avatarUploading, setAvatarUploading]       = useState(false);
   const [overviewMode, setOverviewMode] = useState("2v2");
+  const [eloGraphMode, setEloGraphMode] = useState("2v2");
+  const [americanoEloHistoryRows, setAmericanoEloHistoryRows] = useState([]);
+  const [americanoEloHistoryLoading, setAmericanoEloHistoryLoading] = useState(true);
   const [ligaLoading, setLigaLoading] = useState(true);
   const [ligaStats, setLigaStats] = useState({
     leagues: 0,
@@ -142,6 +145,7 @@ export function ProfilTab({ user, showToast, setTab }) {
   useEffect(() => {
     if (!user?.id) {
       setOverviewMode("2v2");
+      setEloGraphMode("2v2");
       return;
     }
     const persistedMode = readProfileOverviewMode(user.id);
@@ -152,6 +156,42 @@ export function ProfilTab({ user, showToast, setTab }) {
     if (!user?.id) return;
     writeProfileOverviewMode(user.id, overviewMode);
   }, [user?.id, overviewMode]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setAmericanoEloHistoryRows([]);
+      setAmericanoEloHistoryLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setAmericanoEloHistoryLoading(true);
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('americano_elo_history')
+          .select('id, old_rating, new_rating, change, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+        if (error) throw error;
+        if (cancelled) return;
+        const mapped = (data || []).map((row) => ({
+          id: row.id,
+          old_rating: row.old_rating,
+          new_rating: row.new_rating,
+          change: row.change,
+          date: row.created_at,
+          match_id: row.id,
+        }));
+        setAmericanoEloHistoryRows(mapped);
+      } catch (error) {
+        console.warn('americano_elo_history load:', error?.message || error);
+        if (!cancelled) setAmericanoEloHistoryRows([]);
+      } finally {
+        if (!cancelled) setAmericanoEloHistoryLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, pStats?.americano_elo_rating]);
 
   useEffect(() => {
     if (statsLoading || !user?.id) return;
@@ -165,10 +205,11 @@ export function ProfilTab({ user, showToast, setTab }) {
     statsLoading,
     user?.id,
     eloSyncKey,
-    user?.americano_played,
-    user?.americano_wins,
-    user?.americano_draws,
-    user?.americano_losses,
+    pStats?.americano_played,
+    pStats?.americano_wins,
+    pStats?.americano_draws,
+    pStats?.americano_losses,
+    pStats?.americano_elo_rating,
   ]);
 
   useEffect(() => {
@@ -319,10 +360,11 @@ export function ProfilTab({ user, showToast, setTab }) {
   };
 
   const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
-  const americanoPlayed = Number(user.americano_played) || 0;
-  const americanoWins = Number(user.americano_wins) || 0;
-  const americanoDraws = Number(user.americano_draws) || 0;
-  const americanoLosses = Number(user.americano_losses) || 0;
+  const americanoElo = Math.round(Number(pStats.americano_elo_rating) || 1000);
+  const americanoPlayed = Number(pStats.americano_played) || 0;
+  const americanoWins = Number(pStats.americano_wins) || 0;
+  const americanoDraws = Number(pStats.americano_draws) || 0;
+  const americanoLosses = Number(pStats.americano_losses) || 0;
   const americanoRounds = americanoWins + americanoDraws + americanoLosses;
   const americanoWinPct = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : 0;
   const ligaWinPct = ligaStats.matches > 0 ? Math.round((ligaStats.wins / ligaStats.matches) * 100) : 0;
@@ -333,6 +375,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     { label: "Sejre", value: wins, color: theme.warm },
   ];
   const americanoOverviewCards = [
+    { label: "ELO", value: americanoElo, color: theme.accent },
     { label: "Turneringer", value: americanoPlayed, color: theme.text },
     { label: "Runder i alt", value: americanoRounds, color: theme.blue },
     { label: "Runder vundet", value: americanoWins, color: americanoOutcomeColors.win.text },
@@ -354,6 +397,13 @@ export function ProfilTab({ user, showToast, setTab }) {
       : overviewMode === "liga"
         ? ligaOverviewCards
         : twoVTwoOverviewCards;
+  const activeEloGraphData = eloGraphMode === "americano" ? americanoEloHistoryRows : eloHistory;
+  const activeEloGraphLoading = eloGraphMode === "americano" ? americanoEloHistoryLoading : statsLoading;
+  const activeEloGraphLabel = eloGraphMode === "americano" ? "Americano ELO" : "ELO";
+  const activeEloGraphEmptyText =
+    eloGraphMode === "americano"
+      ? "Afslut mindst 2 Americano-turneringer for at se din Americano-ELO graf."
+      : "Spil mindst 2 kampe for at se din ELO-graf.";
   const activeOverviewSource =
     overviewMode === "americano"
       ? "Datakilde: Americano-turneringer"
@@ -402,6 +452,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div className="pm-profile-email" style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
               <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
                 {!statsLoading && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
+                {!statsLoading && <span style={tag(theme.blueBg, theme.blue)}>Americano ELO {americanoElo}</span>}
                 {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
                 {user.level && <span style={tag(theme.blueBg, theme.blue)}>{levelLabel(user.level)}</span>}
                 <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
@@ -511,18 +562,32 @@ export function ProfilTab({ user, showToast, setTab }) {
         </div>
         {/* ELO over tid */}
         <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
-          <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <TrendingUp size={16} color={theme.accent} /> ELO over tid
+          <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", flexWrap: "wrap" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <TrendingUp size={16} color={theme.accent} /> {activeEloGraphLabel} over tid
+            </span>
+            <span style={{ display: "inline-flex", gap: "6px" }}>
+              <button onClick={() => setEloGraphMode("2v2")} style={{ ...btn(eloGraphMode === "2v2"), padding: "5px 10px", fontSize: "11px" }}>
+                2v2
+              </button>
+              <button onClick={() => setEloGraphMode("americano")} style={{ ...btn(eloGraphMode === "americano"), padding: "5px 10px", fontSize: "11px" }}>
+                Americano
+              </button>
+            </span>
           </div>
-          {statsLoading ? (
+          {activeEloGraphLoading ? (
             <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px" }}>Indlæser...</div>
           ) : (
-            <EloGraph data={eloHistory} />
+            <EloGraph
+              data={activeEloGraphData}
+              valueLabel={activeEloGraphLabel}
+              emptyText={activeEloGraphEmptyText}
+            />
           )}
         </div>
 
         {/* Ekstra statistik */}
-        {!statsLoading && (() => {
+        {!statsLoading && eloGraphMode === "2v2" && (() => {
           const { currentStreak, bestStreak } = winStreaksFromEloHistory(eloHistory);
 
           const monthStats = {};
@@ -566,7 +631,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         })()}
 
         {/* Peak ELO + Seneste form */}
-        {!statsLoading && ratedRows.length > 0 && (
+        {!statsLoading && eloGraphMode === "2v2" && ratedRows.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginBottom: "10px" }}>
             {peakElo && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
