@@ -26,6 +26,14 @@ function adminDisplayName(user) {
   return 'Spiller';
 }
 
+function digitsOnly(value) {
+  return String(value || '').replace(/\D/g, '').slice(0, 6);
+}
+
+function isSixDigitPin(value) {
+  return /^\d{6}$/.test(String(value || ''));
+}
+
 export function AdminTab() {
   const ask = useConfirm();
   const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' or 'matches'
@@ -39,6 +47,11 @@ export function AdminTab() {
   const [editingUser, setEditingUser] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'asc' });
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  const [deletePinOpen, setDeletePinOpen] = useState(false);
+  const [deleteTargetUser, setDeleteTargetUser] = useState(null);
+  const [deletePin, setDeletePin] = useState('');
+  const [deletePinError, setDeletePinError] = useState('');
+  const [deletePinBusy, setDeletePinBusy] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
@@ -159,31 +172,61 @@ export function AdminTab() {
       danger: true,
     });
     if (!ok) return;
+    setDeleteTargetUser(targetUser);
+    setDeletePin('');
+    setDeletePinError('');
+    setDeletePinOpen(true);
+  };
 
-    const { data, error } = await supabase.rpc('admin_delete_user', {
-      p_user_id: targetUser.id,
-    });
+  const closeDeletePinModal = (force = false) => {
+    if (deletePinBusy && !force) return;
+    setDeletePinOpen(false);
+    setDeleteTargetUser(null);
+    setDeletePin('');
+    setDeletePinError('');
+  };
 
-    if (error) {
-      const msg = String(error?.message || '');
-      const fnMissing = msg.includes('Could not find the function public.admin_delete_user');
-      await ask({
-        message: fnMissing
-          ? 'DB-funktion mangler: kør SQL-scriptet "supabase/sql/admin_delete_user.sql" i Supabase SQL Editor først.'
-          : `Kunne ikke slette spilleren: ${msg || 'ukendt fejl'}`,
-        notice: true,
+  const confirmDeleteWithPin = async () => {
+    if (!deleteTargetUser?.id) return;
+    const pin = digitsOnly(deletePin);
+    if (!isSixDigitPin(pin)) {
+      setDeletePinError('Indtast din 6-cifrede admin-kode.');
+      return;
+    }
+
+    setDeletePinBusy(true);
+    setDeletePinError('');
+    try {
+      const { data, error } = await supabase.rpc('admin_delete_user', {
+        p_user_id: deleteTargetUser.id,
+        p_pin: pin,
       });
-      return;
-    }
 
-    if (data?.error) {
-      await ask({ message: `Kunne ikke slette spilleren: ${String(data.error)}`, notice: true });
-      return;
-    }
+      if (error) {
+        const msg = String(error?.message || '');
+        const fnMissing = msg.includes('Could not find the function public.admin_delete_user');
+        await ask({
+          message: fnMissing
+            ? 'DB-funktion mangler eller er for gammel: kør SQL-scriptet "supabase/sql/admin_delete_user.sql" i Supabase SQL Editor først.'
+            : `Kunne ikke slette spilleren: ${msg || 'ukendt fejl'}`,
+          notice: true,
+        });
+        return;
+      }
 
-    if (editingUser?.id === targetUser.id) setEditingUser(null);
-    await ask({ message: `Spiller slettet: ${displayName}`, notice: true });
-    fetchUsers();
+      if (data?.error) {
+        setDeletePinError(String(data.error));
+        return;
+      }
+
+      const displayName = adminDisplayName(deleteTargetUser);
+      if (editingUser?.id === deleteTargetUser.id) setEditingUser(null);
+      closeDeletePinModal(true);
+      await ask({ message: `Spiller slettet: ${displayName}`, notice: true });
+      fetchUsers();
+    } finally {
+      setDeletePinBusy(false);
+    }
   };
 
   const deleteMatch = async (matchId) => {
@@ -799,6 +842,60 @@ export function AdminTab() {
                 <button type="submit" style={{ ...btn(true), flex: 1 }}>Gem ændringer</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {deletePinOpen && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, backdropFilter: "blur(4px)" }}>
+          <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "14px", padding: "20px", maxWidth: "420px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }}>
+            <h3 style={{ ...heading("18px"), marginBottom: "8px" }}>Bekræft med admin-kode</h3>
+            <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.5, marginBottom: "12px" }}>
+              Sletning af <strong style={{ color: theme.text }}>{adminDisplayName(deleteTargetUser)}</strong> kræver din 6-cifrede admin-kode.
+            </div>
+
+            <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>Admin-kode (6 tal)</label>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={deletePin}
+              onChange={(e) => {
+                setDeletePin(digitsOnly(e.target.value));
+                if (deletePinError) setDeletePinError('');
+              }}
+              style={{
+                ...inputStyle,
+                letterSpacing: "0.2em",
+                fontFamily: font,
+              }}
+              disabled={deletePinBusy}
+            />
+
+            {deletePinError && (
+              <div style={{ marginTop: "8px", fontSize: "12px", color: theme.red }}>
+                {deletePinError}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+              <button
+                type="button"
+                onClick={() => closeDeletePinModal()}
+                style={{ ...btn(false), flex: 1 }}
+                disabled={deletePinBusy}
+              >
+                Annuller
+              </button>
+              <button
+                type="button"
+                onClick={() => { void confirmDeleteWithPin(); }}
+                style={{ ...btn(true), flex: 1, background: theme.red, borderColor: theme.red }}
+                disabled={deletePinBusy}
+              >
+                {deletePinBusy ? 'Sletter...' : 'Slet spiller'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -3,10 +3,12 @@
 -- =============================================================================
 -- Kør denne i Supabase SQL Editor.
 -- Efter migrationen kan appen kalde:
---   select public.admin_delete_user('<user-uuid>');
+--   select public.admin_delete_user('<user-uuid>', '123456');
 -- =============================================================================
 
-CREATE OR REPLACE FUNCTION public.admin_delete_user(p_user_id uuid)
+DROP FUNCTION IF EXISTS public.admin_delete_user(uuid);
+
+CREATE OR REPLACE FUNCTION public.admin_delete_user(p_user_id uuid, p_pin text)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -20,6 +22,9 @@ DECLARE
   v_target_role text;
   v_mids uuid[];
   v_deleted_matches integer := 0;
+  v_pin_check jsonb;
+  v_pin_ok boolean := false;
+  v_pin_reason text;
 BEGIN
   v_actor_id := auth.uid();
 
@@ -34,6 +39,24 @@ BEGIN
 
   IF COALESCE(v_actor_role, '') <> 'admin' THEN
     RETURN jsonb_build_object('error', 'Kun admin kan slette spillere');
+  END IF;
+
+  -- Ekstra sikkerhed: kræv frisk PIN-verificering ved hver sletning.
+  v_pin_check := public.admin_verify_pin(p_pin, 5);
+  v_pin_ok := COALESCE((v_pin_check->>'ok')::boolean, false);
+  IF NOT v_pin_ok THEN
+    v_pin_reason := COALESCE(v_pin_check->>'reason', 'invalid');
+    IF v_pin_reason = 'locked' THEN
+      RETURN jsonb_build_object(
+        'error',
+        'For mange forkerte kodeforsøg. Prøv igen senere.',
+        'reason',
+        'locked',
+        'locked_until',
+        v_pin_check->>'locked_until'
+      );
+    END IF;
+    RETURN jsonb_build_object('error', 'Forkert eller manglende admin-kode');
   END IF;
 
   IF p_user_id IS NULL THEN
@@ -161,6 +184,5 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.admin_delete_user(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.admin_delete_user(uuid) TO authenticated;
-
+REVOKE ALL ON FUNCTION public.admin_delete_user(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_delete_user(uuid, text) TO authenticated;
