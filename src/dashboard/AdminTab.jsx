@@ -13,6 +13,19 @@ import {
   levelStringFromNum,
 } from '../lib/platformConstants';
 
+function adminDisplayName(user) {
+  const fullName = String(user?.full_name || '').trim();
+  if (fullName) return fullName;
+  const name = String(user?.name || '').trim();
+  if (name) return name;
+  const email = String(user?.email || '').trim();
+  if (email) {
+    const emailPrefix = email.split('@')[0]?.trim();
+    if (emailPrefix) return emailPrefix;
+  }
+  return 'Spiller';
+}
+
 export function AdminTab() {
   const ask = useConfirm();
   const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' or 'matches'
@@ -114,9 +127,10 @@ export function AdminTab() {
 
   const toggleAdmin = async (user) => {
     const newRole = user.role === 'admin' ? 'player' : 'admin';
+    const displayName = adminDisplayName(user);
     const confirmMsg = user.role === 'admin' 
-        ? `Er du sikker på, at du vil fjerne admin-rettigheder fra ${user.full_name}?`
-        : `Vil du give admin-rettigheder til ${user.full_name}?`;
+        ? `Er du sikker på, at du vil fjerne admin-rettigheder fra ${displayName}?`
+        : `Vil du give admin-rettigheder til ${displayName}?`;
     
     const ok = await ask({
       message: confirmMsg,
@@ -211,6 +225,12 @@ export function AdminTab() {
           const priority = { admin: 1, player: 2 };
           aValue = priority[aValue] || 3;
           bValue = priority[bValue] || 3;
+        } else if (sortConfig.key === 'full_name') {
+          aValue = adminDisplayName(a).toLowerCase();
+          bValue = adminDisplayName(b).toLowerCase();
+        } else {
+          aValue = aValue == null ? '' : aValue;
+          bValue = bValue == null ? '' : bValue;
         }
 
         if (aValue < bValue) {
@@ -225,10 +245,15 @@ export function AdminTab() {
     return sortableUsers;
   }, [users, sortConfig]);
 
-  const filteredUsers = sortedUsers.filter(u => 
-    (u.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (u.email || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredUsers = sortedUsers.filter((u) => {
+    const q = search.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      adminDisplayName(u).toLowerCase().includes(q) ||
+      String(u.name || '').toLowerCase().includes(q) ||
+      String(u.email || '').toLowerCase().includes(q)
+    );
+  });
 
   const SortIcon = ({ columnKey }) => {
     if (sortConfig.key !== columnKey) return <ChevronDown size={12} style={{ opacity: 0.3, marginLeft: '4px' }} />;
@@ -340,7 +365,7 @@ export function AdminTab() {
                         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                           <AvatarCircle avatar={u.avatar || '🎾'} size={32} />
                           <div>
-                            <div style={{ fontSize: "14px", fontWeight: 600 }}>{u.full_name}</div>
+                            <div style={{ fontSize: "14px", fontWeight: 600 }}>{adminDisplayName(u)}</div>
                             <div style={{ fontSize: "11px", color: theme.textMid }}>{u.email}</div>
                           </div>
                         </div>
@@ -379,7 +404,7 @@ export function AdminTab() {
                     <div style={{ display: "flex", gap: "12px" }}>
                       <AvatarCircle avatar={u.avatar || '🎾'} size={40} />
                       <div>
-                        <div style={{ fontSize: "15px", fontWeight: 700 }}>{u.full_name}</div>
+                        <div style={{ fontSize: "15px", fontWeight: 700 }}>{adminDisplayName(u)}</div>
                         <div style={{ fontSize: "12px", color: theme.textMid }}>{u.email}</div>
                       </div>
                     </div>
@@ -592,7 +617,7 @@ export function AdminTab() {
                   <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Fulde Navn</label>
                   <input 
                     type="text" 
-                    value={editingUser.full_name} 
+                    value={editingUser.full_name ?? editingUser.name ?? ''} 
                     onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
                     style={inputStyle}
                   />
