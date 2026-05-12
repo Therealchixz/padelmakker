@@ -7,6 +7,7 @@
 -- =============================================================================
 
 DROP FUNCTION IF EXISTS public.admin_delete_user(uuid);
+DROP FUNCTION IF EXISTS public.admin_delete_user(uuid, text);
 
 CREATE OR REPLACE FUNCTION public.admin_delete_user(p_user_id uuid, p_pin text)
 RETURNS jsonb
@@ -186,3 +187,23 @@ $$;
 
 REVOKE ALL ON FUNCTION public.admin_delete_user(uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.admin_delete_user(uuid, text) TO authenticated;
+
+-- Bagudkompatibilitet: ældre frontend kalder admin_delete_user(uuid) uden PIN.
+-- Vi sletter IKKE i dette kald; vi returnerer en klar fejl, så brugeren ved at opdatere appen.
+CREATE OR REPLACE FUNCTION public.admin_delete_user(p_user_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+SET row_security = off
+AS $$
+BEGIN
+  RETURN jsonb_build_object(
+    'error',
+    'App-versionen er for gammel til sletning. Opdater siden (Ctrl+F5) og prøv igen.'
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_delete_user(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_delete_user(uuid) TO authenticated;
