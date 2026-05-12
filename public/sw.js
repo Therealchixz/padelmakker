@@ -29,8 +29,8 @@ self.addEventListener('push', (event) => {
     Promise.all([
       self.registration.showNotification(data.title, {
         body: data.body,
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
+        icon: '/icon-192-v2.png',
+        badge: '/icon-192-v2.png',
         tag: data.matchId ? 'match-' + data.matchId : 'pm-notif',
         renotify: true,
         data: { matchId: data.matchId },

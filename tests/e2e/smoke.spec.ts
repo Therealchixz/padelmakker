@@ -43,8 +43,8 @@ test.describe('Public smoke flows', () => {
       url: 'https://www.padelmakker.dk/',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://www.padelmakker.dk/icon-512.png',
-        contentUrl: 'https://www.padelmakker.dk/icon-512.png',
+        url: 'https://www.padelmakker.dk/icon-512-v2.png',
+        contentUrl: 'https://www.padelmakker.dk/icon-512-v2.png',
         encodingFormat: 'image/png',
         width: 512,
         height: 512,
