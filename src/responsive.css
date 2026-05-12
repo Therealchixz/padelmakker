@@ -2034,6 +2034,11 @@ button,
   box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.14);
 }
 
+.pm-home-form-chip--draw {
+  background: rgba(148, 163, 184, 0.95);
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.16);
+}
+
 .pm-home-seeking-cta {
   width: 100%;
   display: flex;

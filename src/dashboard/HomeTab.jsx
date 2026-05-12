@@ -13,12 +13,32 @@ import { HOME_FEED_CACHE_TTL_MS, levelLabel } from '../lib/platformConstants';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 
 const HOME_FEED_CACHE_BY_USER = new Map();
+const HOME_ELO_MODE_STORAGE_PREFIX = "pm-home-elo-mode:";
 const HOME_FEED_FILTERS = [
   { id: 'kampe', label: 'Kampe', icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
   { id: 'americano', label: 'Americano', icon: '🎾', types: ['americano_winner', 'americano_registration'] },
   { id: 'liga', label: 'Liga', icon: '🏆', types: ['liga_completed', 'league_new'] },
   { id: 'spillere', label: 'Spillere', icon: '⚡', types: ['elo_milestone', 'seeking_player'] },
 ];
+
+function readHomeEloMode(userId) {
+  if (typeof localStorage === "undefined" || !userId) return "2v2";
+  try {
+    const raw = localStorage.getItem(HOME_ELO_MODE_STORAGE_PREFIX + String(userId));
+    return raw === "americano" ? "americano" : "2v2";
+  } catch {
+    return "2v2";
+  }
+}
+
+function writeHomeEloMode(userId, mode) {
+  if (typeof localStorage === "undefined" || !userId) return;
+  try {
+    localStorage.setItem(HOME_ELO_MODE_STORAGE_PREFIX + String(userId), mode === "americano" ? "americano" : "2v2");
+  } catch {
+    // Ignore localStorage limitations (private mode / quota).
+  }
+}
 
 export function HomeTab({ user, setTab }) {
   const { user: authUser } = useAuth();
@@ -28,11 +48,66 @@ export function HomeTab({ user, setTab }) {
   const firstName   = displayName.split(/\s+/)[0];
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { bundleLoading, profileFresh, ratedRows } = useProfileEloBundle(user.id, eloSyncKey);
+  const [eloMode, setEloMode] = useState(() => readHomeEloMode(user?.id));
+  const [americanoHistoryRows, setAmericanoHistoryRows] = useState([]);
   const histStats = useMemo(() => statsFromEloHistoryRows(ratedRows), [ratedRows]);
   const elo = histStats?.elo ?? Math.round(Number(profileFresh?.elo_rating) || 1000);
   const games = histStats?.games ?? (profileFresh?.games_played || 0);
   const wins = histStats?.wins ?? (profileFresh?.games_won || 0);
   const winRate = games > 0 ? Math.round((wins / games) * 100) : null;
+  const americanoElo = Math.round(Number(profileFresh?.americano_elo_rating) || 1000);
+  const americanoPlayed = Number(profileFresh?.americano_played) || 0;
+  const americanoWins = Number(profileFresh?.americano_wins) || 0;
+  const americanoDraws = Number(profileFresh?.americano_draws) || 0;
+  const americanoLosses = Number(profileFresh?.americano_losses) || 0;
+  const americanoRounds = americanoWins + americanoDraws + americanoLosses;
+  const americanoWinRate = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : null;
+
+  useEffect(() => {
+    setEloMode(readHomeEloMode(user?.id));
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    writeHomeEloMode(user.id, eloMode);
+  }, [user?.id, eloMode]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setAmericanoHistoryRows([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('americano_elo_history')
+          .select('id, old_rating, new_rating, change, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+        if (error) throw error;
+        if (cancelled) return;
+        setAmericanoHistoryRows((data || []).map((row) => ({
+          id: row.id,
+          old_rating: row.old_rating,
+          new_rating: row.new_rating,
+          change: row.change,
+          date: row.created_at,
+          match_id: row.id,
+          result:
+            Number(row.change) > 0
+              ? 'win'
+              : Number(row.change) < 0
+                ? 'loss'
+                : 'draw',
+        })));
+      } catch (error) {
+        console.warn('home americano_elo_history load:', error?.message || error);
+        if (!cancelled) setAmericanoHistoryRows([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, profileFresh?.americano_elo_rating]);
 
   const fetchIdRef = useRef(0);
   const [feed, setFeed] = useState([]);
@@ -584,8 +659,22 @@ export function HomeTab({ user, setTab }) {
     [feedRows, activityGroupLabel]
   );
 
+  const activeElo = eloMode === 'americano' ? americanoElo : elo;
+  const activeStats = eloMode === 'americano'
+    ? {
+        primary: { value: americanoPlayed, label: 'Turn.' },
+        secondary: { value: americanoWins, label: 'Vundne runder' },
+        tertiary: { value: americanoWinRate == null ? "—" : `${americanoWinRate}%`, label: 'Win' },
+      }
+    : {
+        primary: { value: games, label: 'Kampe' },
+        secondary: { value: wins, label: 'Sejre' },
+        tertiary: { value: winRate == null ? "—" : `${winRate}%`, label: 'Win' },
+      };
+  const activeHistoryRows = eloMode === 'americano' ? americanoHistoryRows : ratedRows;
+
   const nextEloMilestone = useMemo(() => {
-    const current = Math.max(0, Math.round(Number(elo) || 0));
+    const current = Math.max(0, Math.round(Number(activeElo) || 0));
     const step = 50;
     const max = 2000;
     if (current >= max) {
@@ -593,18 +682,18 @@ export function HomeTab({ user, setTab }) {
     }
     const target = Math.min(max, Math.ceil((current + 1) / step) * step);
     return { target, remaining: Math.max(0, target - current) };
-  }, [elo]);
+  }, [activeElo]);
   const recentForm = useMemo(() => {
-    return [...(ratedRows || [])]
-      .filter((row) => row.result === 'win' || row.result === 'loss')
+    return [...(activeHistoryRows || [])]
+      .filter((row) => row.result === 'win' || row.result === 'loss' || row.result === 'draw')
       .sort((a, b) => new Date(b.date || b.created_at || 0).getTime() - new Date(a.date || a.created_at || 0).getTime())
       .slice(0, 5)
       .map((row, index) => ({
         key: `${row.match_id || row.created_at || row.date || index}-${index}`,
-        label: row.result === 'win' ? 'V' : 'T',
+        label: row.result === 'win' ? 'V' : row.result === 'loss' ? 'T' : 'U',
         result: row.result,
       }));
-  }, [ratedRows]);
+  }, [activeHistoryRows]);
   const seekingCount = seekingFeed.length;
   const seekingTitle = feedLoading
     ? "Finder spillere der søger makker"
@@ -621,12 +710,20 @@ export function HomeTab({ user, setTab }) {
         <section className="pm-home-premium-hero" aria-label="Din ELO status">
           <div className="pm-home-premium-top">
             <h2>Hej {firstName}!</h2>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <button onClick={() => setEloMode('2v2')} style={{ ...btn(eloMode === '2v2'), padding: "5px 10px", fontSize: "11px" }}>
+                2v2
+              </button>
+              <button onClick={() => setEloMode('americano')} style={{ ...btn(eloMode === 'americano'), padding: "5px 10px", fontSize: "11px" }}>
+                Americano
+              </button>
+            </div>
           </div>
 
           <div className="pm-home-player-card-head">
             <div className="pm-home-premium-elo-block">
-              <div className="pm-home-premium-kicker">ELO rating</div>
-              <div className="pm-home-premium-elo">{elo}</div>
+              <div className="pm-home-premium-kicker">{eloMode === 'americano' ? 'Americano ELO rating' : '2v2 ELO rating'}</div>
+              <div className="pm-home-premium-elo">{activeElo}</div>
             </div>
             <div
               className="pm-home-next-goal-card"
@@ -641,16 +738,16 @@ export function HomeTab({ user, setTab }) {
             </div>
             <div className="pm-home-premium-stats" aria-label="Dine kampstatistikker">
               <div className="pm-home-premium-stat">
-                <strong>{games}</strong>
-                <span>Kampe</span>
+                <strong>{activeStats.primary.value}</strong>
+                <span>{activeStats.primary.label}</span>
               </div>
               <div className="pm-home-premium-stat">
-                <strong>{wins}</strong>
-                <span>Sejre</span>
+                <strong>{activeStats.secondary.value}</strong>
+                <span>{activeStats.secondary.label}</span>
               </div>
               <div className="pm-home-premium-stat pm-home-premium-stat--win">
-                <strong>{winRate === null ? "—" : `${winRate}%`}</strong>
-                <span>Win</span>
+                <strong>{activeStats.tertiary.value}</strong>
+                <span>{activeStats.tertiary.label}</span>
               </div>
             </div>
           </div>
@@ -663,7 +760,7 @@ export function HomeTab({ user, setTab }) {
                   {item.label}
                 </span>
               )) : (
-                <small>Spil en kamp for at se din form</small>
+                <small>{eloMode === 'americano' ? 'Afslut en Americano-turnering for at se din form' : 'Spil en kamp for at se din form'}</small>
               )}
             </div>
           </div>

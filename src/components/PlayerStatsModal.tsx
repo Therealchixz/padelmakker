@@ -46,6 +46,7 @@ type CellStyleOpts = {
 
 export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsModalProps) {
   const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<'2v2' | 'americano'>('2v2');
   const [row, setRow] = useState<PlayerRow>(null);
   const [histStats, setHistStats] = useState<HistoryStats>(null);
   const [fetchErr, setFetchErr] = useState(false);
@@ -55,6 +56,7 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
     (async () => {
       setLoading(true);
       setFetchErr(false);
+      setMode('2v2');
       setRow(null);
       setHistStats(null);
       try {
@@ -96,6 +98,8 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
   const amW = Number(row?.americano_wins) || 0;
   const amL = Number(row?.americano_losses) || 0;
   const amD = Number(row?.americano_draws) || 0;
+  const amRounds = amW + amL + amD;
+  const amWinPct = amRounds > 0 ? Math.round((amW / amRounds) * 100) : 0;
   const amPlayed = Number(row?.americano_played) || 0;
   const amElo = Math.round(Number(row?.americano_elo_rating) || 1000);
 
@@ -165,25 +169,60 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
           <div style={{ fontSize: 14, color: theme.red, textAlign: "center", padding: 24 }}>Kunne ikke hente profil.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {/* Padel Stats */}
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Padel Ranking</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                {cell('ELO', elo, { bg: theme.surfaceAlt, border: theme.border, text: theme.accent })}
-                {cell('Kampe', padelGames, { bg: theme.surfaceAlt, border: theme.border, text: theme.textMid })}
-                {cell('Sejre', padelWins, { bg: theme.surfaceAlt, border: theme.border, text: theme.green })}
-              </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button
+                onClick={() => setMode('2v2')}
+                style={{
+                  border: "1px solid " + (mode === '2v2' ? theme.accent : theme.border),
+                  background: mode === '2v2' ? theme.accent : theme.surfaceAlt,
+                  color: mode === '2v2' ? "#fff" : theme.textMid,
+                  borderRadius: 999,
+                  padding: "6px 12px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                2v2
+              </button>
+              <button
+                onClick={() => setMode('americano')}
+                style={{
+                  border: "1px solid " + (mode === 'americano' ? theme.accent : theme.border),
+                  background: mode === 'americano' ? theme.accent : theme.surfaceAlt,
+                  color: mode === 'americano' ? "#fff" : theme.textMid,
+                  borderRadius: 999,
+                  padding: "6px 12px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Americano
+              </button>
             </div>
 
-            {/* Americano Stats */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Americano</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
-                {cell('ELO', amElo, { bg: theme.surfaceAlt, border: theme.border, text: theme.accent })}
-                {cell('Turneringer', amPlayed, { bg: theme.surfaceAlt, border: theme.border, text: theme.purple })}
-                {cell('Runder vundet', amW, { ...americanoOutcomeColors.win })}
-                {cell('Uafgjort', amD, { ...americanoOutcomeColors.tie })}
-                {cell('Runder tabt', amL, { ...americanoOutcomeColors.loss })}
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+                {mode === 'americano' ? 'Americano' : 'Padel Ranking'}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: mode === 'americano' ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: 8 }}>
+                {mode === 'americano' ? (
+                  <>
+                    {cell('ELO', amElo, { bg: theme.surfaceAlt, border: theme.border, text: theme.accent })}
+                    {cell('Turn.', amPlayed, { bg: theme.surfaceAlt, border: theme.border, text: theme.purple })}
+                    {cell('Vundne', amW, { ...americanoOutcomeColors.win })}
+                    {cell('Uafgjort', amD, { ...americanoOutcomeColors.tie })}
+                    {cell('Tabte', amL, { ...americanoOutcomeColors.loss })}
+                    {cell('Win %', amRounds > 0 ? `${amWinPct}%` : '—', { ...americanoOutcomeColors.neutral })}
+                  </>
+                ) : (
+                  <>
+                    {cell('ELO', elo, { bg: theme.surfaceAlt, border: theme.border, text: theme.accent })}
+                    {cell('Kampe', padelGames, { bg: theme.surfaceAlt, border: theme.border, text: theme.textMid })}
+                    {cell('Sejre', padelWins, { bg: theme.surfaceAlt, border: theme.border, text: theme.green })}
+                  </>
+                )}
               </div>
             </div>
           </div>
