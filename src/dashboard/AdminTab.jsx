@@ -147,6 +147,45 @@ export function AdminTab() {
     if (!error) fetchUsers();
   };
 
+  const deleteUser = async (targetUser) => {
+    if (!targetUser?.id) return;
+    const displayName = adminDisplayName(targetUser);
+
+    const ok = await ask({
+      message:
+        `Slet spilleren "${displayName}" permanent?\n\n` +
+        'Dette sletter også login, profil og tilknyttede kampdata for spilleren.',
+      confirmLabel: 'Ja, slet spiller',
+      danger: true,
+    });
+    if (!ok) return;
+
+    const { data, error } = await supabase.rpc('admin_delete_user', {
+      p_user_id: targetUser.id,
+    });
+
+    if (error) {
+      const msg = String(error?.message || '');
+      const fnMissing = msg.includes('Could not find the function public.admin_delete_user');
+      await ask({
+        message: fnMissing
+          ? 'DB-funktion mangler: kør SQL-scriptet "supabase/sql/admin_delete_user.sql" i Supabase SQL Editor først.'
+          : `Kunne ikke slette spilleren: ${msg || 'ukendt fejl'}`,
+        notice: true,
+      });
+      return;
+    }
+
+    if (data?.error) {
+      await ask({ message: `Kunne ikke slette spilleren: ${String(data.error)}`, notice: true });
+      return;
+    }
+
+    if (editingUser?.id === targetUser.id) setEditingUser(null);
+    await ask({ message: `Spiller slettet: ${displayName}`, notice: true });
+    fetchUsers();
+  };
+
   const deleteMatch = async (matchId) => {
     const ok = await ask({
       message: 'Er du helt sikker på at du vil slette denne kamp? Dette kan ikke fortrydes og vil påvirke ELO.',
@@ -389,6 +428,9 @@ export function AdminTab() {
                           <button onClick={() => toggleAdmin(u)} style={{ background: "none", border: "none", cursor: "pointer", color: u.role === 'admin' ? theme.red : theme.accent }}>
                             {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
                           </button>
+                          <button onClick={() => deleteUser(u)} style={{ background: "none", border: "none", cursor: "pointer", color: theme.red }} title="Slet spiller">
+                            <Trash2 size={18} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -426,6 +468,13 @@ export function AdminTab() {
                       )}
                     </div>
                     <div style={{ display: "flex", gap: "8px" }}>
+                      <button
+                        onClick={() => deleteUser(u)}
+                        style={{ background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", color: theme.red, display: "flex", alignItems: "center" }}
+                        title="Slet spiller"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                       <button 
                         onClick={() => toggleAdmin(u)} 
                         style={{ background: u.role === 'admin' ? theme.redBg : theme.accentBg, border: "none", borderRadius: "8px", padding: "8px", color: u.role === 'admin' ? theme.red : theme.accent, display: "flex", alignItems: "center" }}
