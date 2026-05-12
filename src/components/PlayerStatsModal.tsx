@@ -29,6 +29,7 @@ type PlayerRow = {
   americano_losses?: number | null;
   americano_draws?: number | null;
   americano_played?: number | null;
+  americano_elo_rating?: number | null;
 } | null;
 
 type HistoryStats = {
@@ -60,7 +61,7 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
         const [pRes, hRes] = await Promise.all([
           supabase
             .from('profiles')
-            .select('full_name, name, avatar, elo_rating, games_played, games_won, americano_wins, americano_losses, americano_draws, americano_played')
+            .select('full_name, name, avatar, elo_rating, games_played, games_won, americano_wins, americano_losses, americano_draws, americano_played, americano_elo_rating')
             .eq('id', userId)
             .maybeSingle(),
           supabase
@@ -96,6 +97,7 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
   const amL = Number(row?.americano_losses) || 0;
   const amD = Number(row?.americano_draws) || 0;
   const amPlayed = Number(row?.americano_played) || 0;
+  const amElo = Math.round(Number(row?.americano_elo_rating) || 1000);
 
   const title = String(row?.full_name || row?.name || fallbackName || 'Spiller').trim() || fallbackName || 'Spiller';
 
@@ -177,6 +179,7 @@ export function PlayerStatsModal({ userId, onClose, fallbackName }: PlayerStatsM
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Americano</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+                {cell('ELO', amElo, { bg: theme.surfaceAlt, border: theme.border, text: theme.accent })}
                 {cell('Turneringer', amPlayed, { bg: theme.surfaceAlt, border: theme.border, text: theme.purple })}
                 {cell('Runder vundet', amW, { ...americanoOutcomeColors.win })}
                 {cell('Uafgjort', amD, { ...americanoOutcomeColors.tie })}

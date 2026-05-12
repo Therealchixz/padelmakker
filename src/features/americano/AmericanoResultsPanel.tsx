@@ -442,7 +442,25 @@ export function AmericanoResultsPanel({
         .update({ status: 'completed', updated_at: new Date().toISOString() })
         .eq('id', tournament.id)
       if (error) throw error
-      showToast('Turnering afsluttet.')
+      const { data: eloData, error: eloError } = await supabase.rpc('apply_americano_elo_for_tournament', {
+        p_tournament_id: tournament.id,
+      })
+
+      if (eloError) {
+        console.warn('Americano ELO rpc error:', eloError.message)
+        showToast('Turnering afsluttet. Americano-ELO blev ikke opdateret endnu (mangler DB-migration).')
+      } else if (eloData?.error) {
+        showToast('Turnering afsluttet. Americano-ELO kunne ikke beregnes: ' + String(eloData.error))
+      } else if (eloData?.success) {
+        const playersUpdated = Number(eloData.players_updated) || 0
+        if (eloData.already_applied) {
+          showToast('Turnering afsluttet. Americano-ELO var allerede beregnet.')
+        } else {
+          showToast(`Turnering afsluttet. Americano-ELO opdateret for ${playersUpdated} spillere.`)
+        }
+      } else {
+        showToast('Turnering afsluttet.')
+      }
       onProfileStatsRefresh?.()
       onSaved()
     } catch (e: unknown) {
@@ -485,19 +503,19 @@ export function AmericanoResultsPanel({
   return (
     <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.line}` }}>
       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: c.text, fontFamily: font }}>
-        Resultater (ingen ELO)
+        Resultater (Americano-ELO)
       </div>
       <div className="pm-help-box" style={{ marginBottom: 14 }}>
         <div className="pm-help-box-copy" style={{ fontFamily: font }}>
           {isCreator ? (
             <>
               <strong>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
-              <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Uafgjort tæller ikke som V/T på profilen.
+              <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Når du afslutter turneringen, beregnes separat Americano-ELO ud fra slutstillingen.
             </>
           ) : (
             <>
               <strong>Format {P} point:</strong> Her ser du stilling og alle kampe. Kun{' '}
-              <strong>opretteren</strong> kan indtaste og rette resultater.
+              <strong>opretteren</strong> kan indtaste og rette resultater. Americano-ELO beregnes ved afslutning.
             </>
           )}
         </div>

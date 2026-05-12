@@ -137,7 +137,7 @@ export function CreateAmericanoTournamentForm({
     >
       <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Opret Americano</h3>
       <p style={{ fontSize: 13, color: 'var(--pm-text-mid)', marginBottom: 18, lineHeight: 1.5 }}>
-        Individuel turnering med skiftende makkere. <strong>Ingen ELO</strong> — kun separat Americano V/T på profilen (som i Padelboard-lignende apps). Du tilmeldes automatisk som første spiller.
+        Individuel turnering med skiftende makkere. <strong>Separat Americano-ELO</strong> beregnes ved afslutning (adskilt fra normal 2v2-ELO). Du tilmeldes automatisk som første spiller.
       </p>
 
       <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--pm-text)' }}>
