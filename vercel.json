@@ -1,6 +1,36 @@
 {
   "headers": [
     {
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/apple-touch-icon.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/apple-touch-icon-180-v2.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/icon-192-v2.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/icon-512-v2.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    },
+    {
       "source": "/sw.js",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
