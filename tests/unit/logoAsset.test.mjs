@@ -72,6 +72,6 @@ test('landing and dashboard swap to dark logo in dark mode without changing Goog
 
   assert.match(landingPage, /src=\{dark \? "\/logo-brand-dark\.png" : "\/logo-brand\.png"\}/)
   assert.match(dashboardPage, /src=\{dark \? "\/logo-brand-dark\.png" : "\/logo-brand\.png"\}/)
-  assert.match(documentHead, /ORGANIZATION_LOGO_PATH = '\/logo-brand\.png'/)
+  assert.match(documentHead, /ORGANIZATION_LOGO_PATH = '\/icon-512\.png'/)
   assert.doesNotMatch(documentHead, /logo-brand-dark\.png/)
 })

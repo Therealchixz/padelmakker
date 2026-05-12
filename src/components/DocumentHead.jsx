@@ -5,9 +5,9 @@ import { absoluteUrl } from '../lib/siteMeta'
 const DEFAULT_DESC =
   'Find padelspillere på dit niveau, opret kampe, se ledige baner og følg din ELO-ranking. PadelMakker er en dansk padel-platform med gratis profil.'
 
-const ORGANIZATION_LOGO_PATH = '/logo-brand.png'
-const ORGANIZATION_LOGO_WIDTH = 680
-const ORGANIZATION_LOGO_HEIGHT = 254
+const ORGANIZATION_LOGO_PATH = '/icon-512.png'
+const ORGANIZATION_LOGO_WIDTH = 512
+const ORGANIZATION_LOGO_HEIGHT = 512
 
 /** @type {Record<string, { title: string; description?: string }>} */
 const ROUTE_META = {
