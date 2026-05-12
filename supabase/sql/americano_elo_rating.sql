@@ -168,7 +168,11 @@ BEGIN
       pp.user_id,
       pp.points,
       COALESCE(pr.americano_elo_rating, 1000)::int AS old_rating,
-      COALESCE(pr.americano_played, 0)::int AS americano_played
+      COALESCE((
+        SELECT COUNT(*)::int
+        FROM public.americano_elo_history h
+        WHERE h.user_id = pp.user_id
+      ), 0)::int AS americano_played
     FROM participant_points pp
     JOIN public.profiles pr
       ON pr.id = pp.user_id
@@ -254,6 +258,7 @@ BEGIN
       c.participant_id,
       c.points,
       c.old_rating,
+      c.americano_played,
       c.participant_count,
       (
         c.delta_rounded
@@ -268,15 +273,17 @@ BEGIN
   ranked AS (
     SELECT
       f.*,
-      dense_rank() OVER (ORDER BY f.points DESC, f.user_id) AS placement
+      dense_rank() OVER (ORDER BY f.points DESC) AS placement
     FROM final_deltas f
   ),
   updated_profiles AS (
     UPDATE public.profiles p
-    SET americano_elo_rating = GREATEST(100, COALESCE(p.americano_elo_rating, 1000) + r.delta)
+    SET
+      americano_elo_rating = GREATEST(100, COALESCE(p.americano_elo_rating, 1000) + r.delta),
+      americano_played = GREATEST(COALESCE(p.americano_played, 0), COALESCE(r.americano_played, 0) + 1)
     FROM ranked r
     WHERE p.id = r.user_id
-    RETURNING p.id, p.americano_elo_rating
+    RETURNING p.id, p.americano_elo_rating, p.americano_played
   ),
   inserted_history AS (
     INSERT INTO public.americano_elo_history (
