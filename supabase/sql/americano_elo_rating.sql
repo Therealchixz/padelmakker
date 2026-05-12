@@ -3,10 +3,17 @@
 -- - Gemmer rating i profiles.americano_elo_rating
 -- - Logger ændringer pr. turnering i americano_elo_history
 -- - Beregner multiplayer-ELO ud fra slutstilling (sum af kamp-point)
+-- - Dynamisk K for mere action tidligt:
+--     americano_played 0-4  -> K=72
+--     americano_played 5-19 -> K=56
+--     americano_played 20+  -> K=40
 -- =============================================================================
 
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS americano_elo_rating integer NOT NULL DEFAULT 1000;
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS americano_played integer NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS public.americano_elo_history (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -160,7 +167,8 @@ BEGIN
       pp.participant_id,
       pp.user_id,
       pp.points,
-      COALESCE(pr.americano_elo_rating, 1000)::int AS old_rating
+      COALESCE(pr.americano_elo_rating, 1000)::int AS old_rating,
+      COALESCE(pr.americano_played, 0)::int AS americano_played
     FROM participant_points pp
     JOIN public.profiles pr
       ON pr.id = pp.user_id
@@ -171,6 +179,7 @@ BEGIN
       a.participant_id,
       a.points,
       a.old_rating,
+      a.americano_played,
       SUM(
         CASE
           WHEN a.points > b.points THEN 1::numeric
@@ -184,13 +193,26 @@ BEGIN
     FROM rated a
     JOIN rated b
       ON b.user_id <> a.user_id
-    GROUP BY a.user_id, a.participant_id, a.points, a.old_rating
+    GROUP BY a.user_id, a.participant_id, a.points, a.old_rating, a.americano_played
   ),
   deltas_raw AS (
     SELECT
       p.*,
       COUNT(*) OVER ()::int AS participant_count,
-      (56::numeric * (p.actual_sum - p.expected_sum) / GREATEST(1, COUNT(*) OVER () - 1)::numeric) AS delta_raw
+      CASE
+        WHEN COALESCE(p.americano_played, 0) < 5 THEN 72::numeric
+        WHEN COALESCE(p.americano_played, 0) < 20 THEN 56::numeric
+        ELSE 40::numeric
+      END AS k_value,
+      (
+        (
+          CASE
+            WHEN COALESCE(p.americano_played, 0) < 5 THEN 72::numeric
+            WHEN COALESCE(p.americano_played, 0) < 20 THEN 56::numeric
+            ELSE 40::numeric
+          END
+        ) * (p.actual_sum - p.expected_sum) / GREATEST(1, COUNT(*) OVER () - 1)::numeric
+      ) AS delta_raw
     FROM pairwise p
   ),
   rounded AS (
