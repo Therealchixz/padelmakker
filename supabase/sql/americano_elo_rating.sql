@@ -276,12 +276,63 @@ BEGIN
       dense_rank() OVER (ORDER BY f.points DESC) AS placement
     FROM final_deltas f
   ),
+  capped AS (
+    SELECT
+      r.*,
+      (100 - r.old_rating)::int AS min_delta,
+      GREATEST(r.delta, (100 - r.old_rating))::int AS delta_capped
+    FROM ranked r
+  ),
+  cap_totals AS (
+    SELECT
+      COALESCE(SUM(delta_capped - delta), 0)::int AS overflow_total
+    FROM capped
+  ),
+  cap_order AS (
+    SELECT
+      c.*,
+      GREATEST(c.delta_capped - c.min_delta, 0)::int AS give_back_capacity,
+      row_number() OVER (ORDER BY c.delta_capped DESC, c.user_id) AS cap_order
+    FROM capped c
+  ),
+  cap_alloc AS (
+    SELECT
+      co.*,
+      ct.overflow_total,
+      COALESCE(
+        SUM(co.give_back_capacity) OVER (
+          ORDER BY co.cap_order
+          ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+        ),
+        0
+      )::int AS capacity_before
+    FROM cap_order co
+    CROSS JOIN cap_totals ct
+  ),
+  final_applied AS (
+    SELECT
+      ca.user_id,
+      ca.participant_id,
+      ca.points,
+      ca.old_rating,
+      ca.americano_played,
+      ca.participant_count,
+      ca.placement,
+      (
+        ca.delta_capped
+        - LEAST(
+            ca.give_back_capacity,
+            GREATEST(ca.overflow_total - ca.capacity_before, 0)
+          )
+      )::int AS delta
+    FROM cap_alloc ca
+  ),
   updated_profiles AS (
     UPDATE public.profiles p
     SET
       americano_elo_rating = GREATEST(100, COALESCE(p.americano_elo_rating, 1000) + r.delta),
       americano_played = GREATEST(COALESCE(p.americano_played, 0), COALESCE(r.americano_played, 0) + 1)
-    FROM ranked r
+    FROM final_applied r
     WHERE p.id = r.user_id
     RETURNING p.id, p.americano_elo_rating, p.americano_played
   ),
@@ -305,7 +356,7 @@ BEGIN
       r.points,
       r.placement,
       r.participant_count
-    FROM ranked r
+    FROM final_applied r
     RETURNING id, user_id, change
   )
   SELECT
@@ -325,3 +376,69 @@ $$;
 
 REVOKE ALL ON FUNCTION public.apply_americano_elo_for_tournament(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.apply_americano_elo_for_tournament(uuid) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.complete_americano_tournament(p_tournament_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+SET row_security = off
+AS $$
+DECLARE
+  v_actor_id uuid;
+  v_actor_role text;
+  v_creator_id uuid;
+  v_status text;
+  v_apply jsonb;
+BEGIN
+  v_actor_id := auth.uid();
+
+  IF v_actor_id IS NULL THEN
+    RAISE EXCEPTION 'Ikke logget ind';
+  END IF;
+
+  IF p_tournament_id IS NULL THEN
+    RAISE EXCEPTION 'Mangler tournament_id';
+  END IF;
+
+  SELECT t.creator_id, t.status
+    INTO v_creator_id, v_status
+  FROM public.americano_tournaments t
+  WHERE t.id = p_tournament_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Turnering ikke fundet';
+  END IF;
+
+  SELECT p.role
+    INTO v_actor_role
+  FROM public.profiles p
+  WHERE p.id = v_actor_id;
+
+  IF v_actor_id <> v_creator_id AND COALESCE(v_actor_role, '') <> 'admin' THEN
+    RAISE EXCEPTION 'Kun opretter eller admin må afslutte turneringen';
+  END IF;
+
+  IF v_status <> 'completed' THEN
+    UPDATE public.americano_tournaments
+    SET status = 'completed',
+        updated_at = now()
+    WHERE id = p_tournament_id;
+  END IF;
+
+  v_apply := public.apply_americano_elo_for_tournament(p_tournament_id);
+
+  IF v_apply ? 'error' THEN
+    RAISE EXCEPTION '%', COALESCE(v_apply->>'error', 'Ukendt Americano-ELO fejl');
+  END IF;
+
+  RETURN v_apply || jsonb_build_object(
+    'success', true,
+    'status_updated', (v_status <> 'completed')
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.complete_americano_tournament(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.complete_americano_tournament(uuid) TO authenticated;

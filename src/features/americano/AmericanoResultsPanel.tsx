@@ -257,6 +257,10 @@ function complementFromOneSide(raw: string, P: number, showToast: (msg: string) 
   return P - n
 }
 
+function isMissingRpcFunctionError(message: string): boolean {
+  return /could not find the function|function .* does not exist|schema cache/i.test(message || '')
+}
+
 export function AmericanoResultsPanel({
   tournament,
   currentUserId,
@@ -437,14 +441,30 @@ export function AmericanoResultsPanel({
     }
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('americano_tournaments')
-        .update({ status: 'completed', updated_at: new Date().toISOString() })
-        .eq('id', tournament.id)
-      if (error) throw error
-      const { data: eloData, error: eloError } = await supabase.rpc('apply_americano_elo_for_tournament', {
+      let eloData: any = null
+      let eloError: any = null
+
+      const atomicRes = await supabase.rpc('complete_americano_tournament', {
         p_tournament_id: tournament.id,
       })
+
+      if (atomicRes.error && isMissingRpcFunctionError(String(atomicRes.error.message || ''))) {
+        // Backward-compatible fallback if DB migration is not applied yet.
+        const { error } = await supabase
+          .from('americano_tournaments')
+          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .eq('id', tournament.id)
+        if (error) throw error
+
+        const legacyRes = await supabase.rpc('apply_americano_elo_for_tournament', {
+          p_tournament_id: tournament.id,
+        })
+        eloData = legacyRes.data
+        eloError = legacyRes.error
+      } else {
+        eloData = atomicRes.data
+        eloError = atomicRes.error
+      }
 
       if (eloError) {
         console.warn('Americano ELO rpc error:', eloError.message)
