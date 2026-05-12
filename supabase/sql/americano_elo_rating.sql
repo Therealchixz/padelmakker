@@ -215,11 +215,17 @@ BEGIN
       ) AS delta_raw
     FROM pairwise p
   ),
+  deltas_centered AS (
+    SELECT
+      d.*,
+      (d.delta_raw - AVG(d.delta_raw) OVER ()) AS delta_raw_centered
+    FROM deltas_raw d
+  ),
   rounded AS (
     SELECT
       d.*,
-      round(d.delta_raw)::int AS delta_rounded
-    FROM deltas_raw d
+      round(d.delta_raw_centered)::int AS delta_rounded
+    FROM deltas_centered d
   ),
   rounded_total AS (
     SELECT COALESCE(SUM(delta_rounded), 0)::int AS total_delta
@@ -228,14 +234,14 @@ BEGIN
   correction_rank AS (
     SELECT
       r.*,
-      (r.delta_rounded::numeric - r.delta_raw) AS rounding_residual,
+      (r.delta_rounded::numeric - r.delta_raw_centered) AS rounding_residual,
       rt.total_delta,
       CASE
         WHEN rt.total_delta > 0 THEN row_number() OVER (
-          ORDER BY (r.delta_rounded::numeric - r.delta_raw) DESC, r.delta_rounded DESC, r.user_id
+          ORDER BY (r.delta_rounded::numeric - r.delta_raw_centered) DESC, r.delta_rounded DESC, r.user_id
         )
         WHEN rt.total_delta < 0 THEN row_number() OVER (
-          ORDER BY (r.delta_rounded::numeric - r.delta_raw) ASC, r.delta_rounded ASC, r.user_id
+          ORDER BY (r.delta_rounded::numeric - r.delta_raw_centered) ASC, r.delta_rounded ASC, r.user_id
         )
         ELSE 0
       END AS correction_order
