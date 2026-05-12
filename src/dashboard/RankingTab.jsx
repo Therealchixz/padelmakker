@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import {
@@ -14,49 +14,91 @@ import { AvatarCircle } from '../components/AvatarCircle';
 export function RankingTab({ user }) {
   const [players, setPlayers] = useState([]);
   const [eloHistory, setEloHistory] = useState([]);
+  const [americanoHistory, setAmericanoHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewPlayer, setViewPlayer] = useState(null);
+  const [rankMode, setRankMode] = useState(() => {
+    try { return localStorage.getItem('pm-rank-mode') || '2v2'; } catch { return '2v2'; }
+  });
   const [period, setPeriod] = useState(() => {
-    try { return localStorage.getItem("pm-rank-period") || "all"; } catch { return "all"; }
+    try { return localStorage.getItem('pm-rank-period') || 'all'; } catch { return 'all'; }
   });
 
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { bundleLoading: myBundleLoading, profileFresh: myProfileFresh, ratedRows: myRatedRows } = useProfileEloBundle(user.id, eloSyncKey);
   const myHistStats = useMemo(() => statsFromEloHistoryRows(myRatedRows), [myRatedRows]);
+
   const myAllTimeElo = myHistStats?.elo ?? Math.round(Number(myProfileFresh?.elo_rating ?? user.elo_rating) || 1000);
   const myAllTimeGames = myHistStats?.games ?? (myProfileFresh?.games_played ?? user.games_played ?? 0);
   const myAllTimeWins = myHistStats?.wins ?? (myProfileFresh?.games_won ?? user.games_won ?? 0);
 
+  const myAllTimeAmericanoElo = Math.round(Number(myProfileFresh?.americano_elo_rating ?? user.americano_elo_rating) || 1000);
+  const myAllTimeAmericanoPlayed = Number(myProfileFresh?.americano_played ?? user.americano_played) || 0;
+  const myAllTimeAmericanoWins = Number(myProfileFresh?.americano_wins ?? user.americano_wins) || 0;
+
   const allTimeFromHistory = useMemo(() => allTimeStatsMapFromEloHistory(eloHistory), [eloHistory]);
-  const myId = user?.id != null ? String(user.id) : "";
+  const americanoHistoryForStats = useMemo(
+    () =>
+      (americanoHistory || []).map((h) => ({
+        ...h,
+        date: h.created_at,
+        match_id: h.tournament_id || h.id,
+        result: Number(h.change) > 0 ? 'win' : Number(h.change) < 0 ? 'loss' : 'draw',
+      })),
+    [americanoHistory]
+  );
+  const allTimeAmericanoFromHistory = useMemo(
+    () => allTimeStatsMapFromEloHistory(americanoHistoryForStats),
+    [americanoHistoryForStats]
+  );
+
+  const myId = user?.id != null ? String(user.id) : '';
 
   useEffect(() => {
     try {
-      localStorage.setItem("pm-rank-period", period);
+      localStorage.setItem('pm-rank-period', period);
     } catch {
-      /* private mode / storage disabled */
+      // private mode / storage disabled
     }
   }, [period]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('pm-rank-mode', rankMode);
+    } catch {
+      // private mode / storage disabled
+    }
+  }, [rankMode]);
+
   const loadRankingData = useCallback(async () => {
     try {
-      const [profileRes, historyData] = await Promise.all([
+      const [profileRes, historyData, americanoHistoryData] = await Promise.all([
         supabase
-          .from("profiles")
-          .select("id, full_name, name, avatar, area, elo_rating, games_played, games_won, level")
-          .order("elo_rating", { ascending: false }),
+          .from('profiles')
+          .select('id, full_name, name, avatar, area, elo_rating, games_played, games_won, level, americano_elo_rating, americano_played, americano_wins')
+          .order(rankMode === 'americano' ? 'americano_elo_rating' : 'elo_rating', { ascending: false }),
         supabase
-          .from("elo_history")
-          .select("user_id, result, change, old_rating, new_rating, date, match_id")
-          .order("date", { ascending: false })
-          .order("match_id", { ascending: false })
+          .from('elo_history')
+          .select('user_id, result, change, old_rating, new_rating, date, match_id')
+          .order('date', { ascending: false })
+          .order('match_id', { ascending: false })
+          .limit(5000),
+        supabase
+          .from('americano_elo_history')
+          .select('id, tournament_id, user_id, old_rating, new_rating, change, points, created_at')
+          .order('created_at', { ascending: false })
           .limit(5000),
       ]);
+
       setPlayers(profileRes.data || []);
       setEloHistory(historyData.data || []);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }, []);
+      setAmericanoHistory(americanoHistoryData.data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [rankMode]);
 
   useEffect(() => {
     setLoading(true);
@@ -67,174 +109,259 @@ export function RankingTab({ user }) {
     let lastVisFetch = 0;
     const throttleMs = 120000;
     const onVis = () => {
-      if (document.visibilityState !== "visible") return;
+      if (document.visibilityState !== 'visible') return;
       const now = Date.now();
       if (now - lastVisFetch < throttleMs) return;
       lastVisFetch = now;
       loadRankingData();
     };
-    document.addEventListener("visibilitychange", onVis);
+    document.addEventListener('visibilitychange', onVis);
     return () => {
-      document.removeEventListener("visibilitychange", onVis);
+      document.removeEventListener('visibilitychange', onVis);
     };
   }, [loadRankingData]);
 
-  // Calculate period start dates
-  const now = new Date();
-  const getMonday = () => {
-    const d = new Date(now);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  };
-  const getMonthStart = () => {
-    const d = new Date(now.getFullYear(), now.getMonth(), 1);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  };
-
-  // Build ranking based on period
-  const buildRanking = () => {
-    if (period === "all") {
+  const buildRanking = useCallback(() => {
+    if (period === 'all') {
       return [...players]
-        .map(p => {
+        .map((p) => {
           const pid = String(p.id);
           const h = allTimeFromHistory[pid];
+          const ah = allTimeAmericanoFromHistory[pid];
           const isMe = myId && pid === myId;
           const isMeReady = isMe && !myBundleLoading;
+          const isAmericano = rankMode === 'americano';
+
           return {
             ...p,
-            score: isMeReady ? myAllTimeElo : (h?.elo ?? Math.round(Number(p.elo_rating) || 1000)),
-            periodGames: isMeReady ? myAllTimeGames : (h?.games ?? (p.games_played || 0)),
-            periodWins: isMeReady ? myAllTimeWins : (h?.wins ?? (p.games_won || 0)),
+            score: isAmericano
+              ? (isMeReady ? myAllTimeAmericanoElo : (Math.round(Number(p.americano_elo_rating) || 0) || ah?.elo || 1000))
+              : (isMeReady ? myAllTimeElo : (h?.elo ?? Math.round(Number(p.elo_rating) || 1000))),
+            periodGames: isAmericano
+              ? (isMeReady ? myAllTimeAmericanoPlayed : (Number(p.americano_played) || ah?.games || 0))
+              : (isMeReady ? myAllTimeGames : (h?.games ?? (p.games_played || 0))),
+            periodWins: isAmericano
+              ? (isMeReady ? myAllTimeAmericanoWins : (Number(p.americano_wins) || 0))
+              : (isMeReady ? myAllTimeWins : (h?.wins ?? (p.games_won || 0))),
+            periodPoints: 0,
           };
         })
         .sort((a, b) => b.score - a.score);
     }
 
-    const cutoff = period === "week" ? getMonday() : getMonthStart();
+    const now = new Date();
+    const cutoff = period === 'week'
+      ? (() => {
+          const d = new Date(now);
+          const day = d.getDay();
+          const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+          d.setDate(diff);
+          d.setHours(0, 0, 0, 0);
+          return d;
+        })()
+      : (() => {
+          const d = new Date(now.getFullYear(), now.getMonth(), 1);
+          d.setHours(0, 0, 0, 0);
+          return d;
+        })();
     const cutoffStr = formatLocalDateYMD(cutoff);
 
-    // Sum ELO changes per player within the period (lokal dato vs. cutoff — undgår UTC-forskydning)
+    if (rankMode === 'americano') {
+      const periodStats = {};
+      americanoHistoryForStats.forEach((h) => {
+        if (h.old_rating == null || h.match_id == null) return;
+        const rowDay = eloHistoryRowDateKey(h);
+        if (rowDay == null || rowDay < cutoffStr) return;
+        const uid = String(h.user_id);
+        if (!periodStats[uid]) periodStats[uid] = { change: 0, games: 0, wins: 0, points: 0 };
+        periodStats[uid].change += Number(h.change) || 0;
+        periodStats[uid].games += 1;
+        periodStats[uid].wins += Number(h.change) > 0 ? 1 : 0;
+        periodStats[uid].points += Number(h.points) || 0;
+      });
+
+      return [...players]
+        .map((p) => {
+          const stats = periodStats[String(p.id)] || { change: 0, games: 0, wins: 0, points: 0 };
+          return { ...p, score: stats.change, periodGames: stats.games, periodWins: stats.wins, periodPoints: stats.points };
+        })
+        .filter((p) => p.periodGames > 0)
+        .sort((a, b) => b.score - a.score);
+    }
+
     const periodStats = {};
-    eloHistory.forEach(h => {
+    eloHistory.forEach((h) => {
       if (h.old_rating == null || h.match_id == null) return;
       const rowDay = eloHistoryRowDateKey(h);
       if (rowDay == null || rowDay < cutoffStr) return;
       const uid = String(h.user_id);
-      if (!periodStats[uid]) periodStats[uid] = { change: 0, games: 0, wins: 0 };
+      if (!periodStats[uid]) periodStats[uid] = { change: 0, games: 0, wins: 0, points: 0 };
       periodStats[uid].change += Number(h.change) || 0;
       periodStats[uid].games += 1;
-      if (h.result === "win") periodStats[uid].wins += 1;
+      if (h.result === 'win') periodStats[uid].wins += 1;
     });
 
     return [...players]
-      .map(p => {
-        const stats = periodStats[String(p.id)] || { change: 0, games: 0, wins: 0 };
-        return { ...p, score: stats.change, periodGames: stats.games, periodWins: stats.wins };
+      .map((p) => {
+        const stats = periodStats[String(p.id)] || { change: 0, games: 0, wins: 0, points: 0 };
+        return { ...p, score: stats.change, periodGames: stats.games, periodWins: stats.wins, periodPoints: 0 };
       })
-      .filter(p => p.periodGames > 0)
+      .filter((p) => p.periodGames > 0)
       .sort((a, b) => b.score - a.score);
-  };
+  }, [
+    period,
+    rankMode,
+    players,
+    allTimeFromHistory,
+    allTimeAmericanoFromHistory,
+    myId,
+    myBundleLoading,
+    myAllTimeElo,
+    myAllTimeGames,
+    myAllTimeWins,
+    myAllTimeAmericanoElo,
+    myAllTimeAmericanoPlayed,
+    myAllTimeAmericanoWins,
+    americanoHistoryForStats,
+    eloHistory,
+  ]);
 
-  const sorted = useMemo(
-    () => buildRanking(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [period, players, eloHistory, allTimeFromHistory, myId, myBundleLoading, myAllTimeElo, myAllTimeGames, myAllTimeWins]
-  );
-  const userRank = sorted.findIndex(p => String(p.id) === myId) + 1;
-  const userEntry = sorted.find(p => String(p.id) === myId);
-  const displayScore = period === "all"
-    ? (myBundleLoading ? null : (myAllTimeElo ?? allTimeFromHistory[myId]?.elo ?? Math.round(Number(user.elo_rating) || 1000)))
+  const sorted = useMemo(() => buildRanking(), [buildRanking]);
+
+  const userRank = sorted.findIndex((p) => String(p.id) === myId) + 1;
+  const userEntry = sorted.find((p) => String(p.id) === myId);
+  const displayScore = period === 'all'
+    ? (myBundleLoading
+      ? null
+      : (rankMode === 'americano'
+        ? myAllTimeAmericanoElo
+        : (myAllTimeElo ?? allTimeFromHistory[myId]?.elo ?? Math.round(Number(user.elo_rating) || 1000))))
     : (userEntry?.score || 0);
-  const medals = ["🥇", "🥈", "🥉"];
+
+  const medals = ['🥇', '🥈', '🥉'];
+  const rankModeLabel = rankMode === 'americano' ? 'Americano' : '2v2';
 
   const periodLabels = {
-    week: "Denne uge",
-    month: "Denne måned",
-    all: "All-time",
+    week: 'Denne uge',
+    month: 'Denne måned',
+    all: 'All-time',
   };
 
   const periodInfo = {
-    week: "Nulstilles hver mandag",
-    month: "Nulstilles d. 1 i måneden",
-    all: "Samlet ELO-rating",
+    week: 'Nulstilles hver mandag',
+    month: 'Nulstilles d. 1 i måneden',
+    all: rankMode === 'americano' ? 'Samlet Americano ELO-rating' : 'Samlet 2v2 ELO-rating',
   };
 
-  if (loading) return <div style={{ textAlign: "center", padding: "40px", color: theme.textLight, fontSize: "14px" }}>Indlæser ranking...</div>;
+  if (loading) return <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>Indlæser ranking...</div>;
 
   return (
     <div>
-      <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "16px" }}>Ranking</h2>
+      <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Ranking</h2>
 
-      {/* Period tabs */}
-      <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
-        {["week", "month", "all"].map(p => (
-          <button key={p} onClick={() => setPeriod(p)} style={{ ...btn(period === p), padding: "8px 14px", fontSize: "12px", flex: 1, justifyContent: "center" }}>
-            {p === "week" ? "📅 Uge" : p === "month" ? "🗓️ Måned" : "🏆 All-time"}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+        <button onClick={() => setRankMode('2v2')} style={{ ...btn(rankMode === '2v2'), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}>
+          2v2 ELO
+        </button>
+        <button onClick={() => setRankMode('americano')} style={{ ...btn(rankMode === 'americano'), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}>
+          Americano ELO
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+        {['week', 'month', 'all'].map((p) => (
+          <button key={p} onClick={() => setPeriod(p)} style={{ ...btn(period === p), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}>
+            {p === 'week' ? 'Uge' : p === 'month' ? 'Måned' : 'All-time'}
           </button>
         ))}
       </div>
 
-      {/* Period info */}
-      <div style={{ fontSize: "12px", color: theme.textLight, marginBottom: "16px", textAlign: "center" }}>
-        {periodLabels[period]} · {periodInfo[period]}
+      <div style={{ fontSize: '12px', color: theme.textLight, marginBottom: '16px', textAlign: 'center' }}>
+        {rankModeLabel} · {periodLabels[period]} · {periodInfo[period]}
       </div>
 
-      {/* Hero card */}
-      <div style={{ background: "linear-gradient(135deg, #1E3A5F, #1D4ED8)", borderRadius: theme.radius, padding: "clamp(18px,4vw,24px)", marginBottom: "24px", color: "#fff" }}>
-        <div style={{ fontSize: "10px", opacity: 0.65, marginBottom: "6px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Din placering · {periodLabels[period]}</div>
+      <div style={{ background: 'linear-gradient(135deg, #1E3A5F, #1D4ED8)', borderRadius: theme.radius, padding: 'clamp(18px,4vw,24px)', marginBottom: '24px', color: '#fff' }}>
+        <div style={{ fontSize: '10px', opacity: 0.65, marginBottom: '6px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          Din placering · {rankModeLabel} · {periodLabels[period]}
+        </div>
         <div className="pm-rank-hero-inner">
           <div>
-            <span style={{ fontFamily: font, fontSize: "clamp(32px,8vw,40px)", fontWeight: 800, letterSpacing: "-0.04em" }}>
-              {period === "all" && myBundleLoading ? "…" : userRank > 0 ? `#${userRank}` : "—"}
+            <span style={{ fontFamily: font, fontSize: 'clamp(32px,8vw,40px)', fontWeight: 800, letterSpacing: '-0.04em' }}>
+              {period === 'all' && myBundleLoading ? '…' : userRank > 0 ? `#${userRank}` : '—'}
             </span>
-            <span style={{ fontSize: "14px", marginLeft: "8px", opacity: 0.6 }}>
-              {period === "all" && myBundleLoading ? "" : sorted.length > 0 ? `af ${sorted.length}` : ""}
+            <span style={{ fontSize: '14px', marginLeft: '8px', opacity: 0.6 }}>
+              {period === 'all' && myBundleLoading ? '' : sorted.length > 0 ? `af ${sorted.length}` : ''}
             </span>
           </div>
           <div className="pm-rank-hero-elo">
-            <div style={{ fontFamily: font, fontSize: "clamp(20px,5vw,24px)", fontWeight: 800, letterSpacing: "-0.03em" }}>
-              {period === "all" && displayScore === null ? "…" : period === "all" ? displayScore : (displayScore > 0 ? "+" + displayScore : displayScore)}
+            <div style={{ fontFamily: font, fontSize: 'clamp(20px,5vw,24px)', fontWeight: 800, letterSpacing: '-0.03em' }}>
+              {period === 'all' && displayScore === null ? '…' : period === 'all' ? displayScore : (displayScore > 0 ? `+${displayScore}` : displayScore)}
             </div>
-            <div style={{ fontSize: "10px", opacity: 0.65, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              {period === "all" ? "ELO" : "ELO ændring"}
+            <div style={{ fontSize: '10px', opacity: 0.65, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {period === 'all' ? (rankMode === 'americano' ? 'Americano ELO' : '2v2 ELO') : 'ELO ændring'}
             </div>
           </div>
         </div>
-        {period === "all" && displayScore != null && (
-          <div style={{ marginTop: "14px", background: "rgba(255,255,255,0.15)", borderRadius: "6px", height: "6px" }}>
-            <div style={{ width: Math.min((displayScore / 2000) * 100, 100) + "%", height: "100%", background: theme.warm, borderRadius: "6px" }} />
+
+        {period === 'all' && displayScore != null && (
+          <div style={{ marginTop: '14px', background: 'rgba(255,255,255,0.15)', borderRadius: '6px', height: '6px' }}>
+            <div style={{ width: `${Math.min((displayScore / 2000) * 100, 100)}%`, height: '100%', background: theme.warm, borderRadius: '6px' }} />
           </div>
         )}
-        {userEntry && (period !== "all" || !myBundleLoading) && (
-          <div style={{ marginTop: "12px", fontSize: "12px", opacity: 0.7 }}>
-            {userEntry.periodGames} kampe · {userEntry.periodWins} sejre
+
+        {userEntry && (period !== 'all' || !myBundleLoading) && (
+          <div style={{ marginTop: '12px', fontSize: '12px', opacity: 0.7 }}>
+            {rankMode === 'americano'
+              ? (period === 'all'
+                ? `${userEntry.periodGames} turneringer · ${userEntry.periodWins} vundne runder`
+                : `${userEntry.periodGames} turneringer · ${userEntry.periodPoints || 0} point`)
+              : `${userEntry.periodGames} kampe · ${userEntry.periodWins} sejre`}
           </div>
         )}
       </div>
 
-      {/* Leaderboard */}
       {sorted.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 20px", color: theme.textLight }}>
-          <div style={{ fontSize: "32px", marginBottom: "12px" }}>📊</div>
-          <div style={{ fontSize: "15px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>
-            {period === "week" ? "Ingen kampe denne uge endnu" : period === "month" ? "Ingen kampe denne måned endnu" : "Ingen spillere fundet"}
+        <div style={{ textAlign: 'center', padding: '48px 20px', color: theme.textLight }}>
+          <div style={{ fontSize: '32px', marginBottom: '12px' }}>📊</div>
+          <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
+            {period === 'week'
+              ? (rankMode === 'americano' ? 'Ingen Americano-turneringer denne uge endnu' : 'Ingen kampe denne uge endnu')
+              : period === 'month'
+                ? (rankMode === 'americano' ? 'Ingen Americano-turneringer denne måned endnu' : 'Ingen kampe denne måned endnu')
+                : 'Ingen spillere fundet'}
           </div>
-          <div style={{ fontSize: "13px", lineHeight: 1.5 }}>Spil en kamp for at komme på ranglisten!</div>
+          <div style={{ fontSize: '13px', lineHeight: 1.5 }}>
+            {rankMode === 'americano'
+              ? 'Afslut en Americano-turnering for at komme på ranglisten!'
+              : 'Spil en kamp for at komme på ranglisten!'}
+          </div>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {sorted.map((p, i) => {
             const me = p.id === user.id;
             const score = p.score;
-            const isPositive = period !== "all" && score > 0;
-            const isNegative = period !== "all" && score < 0;
+            const isPositive = period !== 'all' && score > 0;
+            const isNegative = period !== 'all' && score < 0;
+
             return (
-              <div key={p.id} onClick={() => !me && setViewPlayer(p)} className="pm-rank-row" style={{ background: me ? theme.accentBg : theme.surface, borderRadius: "8px", padding: "12px 14px", boxShadow: me ? "none" : theme.shadow, display: "flex", alignItems: "center", gap: "12px", border: me ? "1.5px solid " + theme.accent + "35" : "1px solid " + theme.border, cursor: me ? "default" : "pointer" }}>
-                <div style={{ width: "28px", flexShrink: 0, textAlign: "center", fontSize: i < 3 ? "18px" : "13px", fontWeight: 700, color: i < 3 ? "inherit" : theme.textLight }}>
+              <div
+                key={p.id}
+                onClick={() => !me && setViewPlayer(p)}
+                className="pm-rank-row"
+                style={{
+                  background: me ? theme.accentBg : theme.surface,
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  boxShadow: me ? 'none' : theme.shadow,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  border: me ? `1.5px solid ${theme.accent}35` : `1px solid ${theme.border}`,
+                  cursor: me ? 'default' : 'pointer',
+                }}
+              >
+                <div style={{ width: '28px', flexShrink: 0, textAlign: 'center', fontSize: i < 3 ? '18px' : '13px', fontWeight: 700, color: i < 3 ? 'inherit' : theme.textLight }}>
                   {i < 3 ? medals[i] : i + 1}
                 </div>
 
@@ -243,28 +370,44 @@ export function RankingTab({ user }) {
                   size={38}
                   emojiSize="17px"
                   alt={`${p.full_name || p.name || 'Spiller'} avatar`}
-                  style={{ background: '#F1F5F9', border: '1px solid ' + theme.border }}
+                  style={{ background: '#F1F5F9', border: `1px solid ${theme.border}` }}
                 />
 
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: "14px", fontWeight: me ? 700 : 600, letterSpacing: "-0.01em", wordBreak: "break-word" }}>
-                    {p.full_name || p.name}{me ? " (dig)" : ""}
+                  <div style={{ fontSize: '14px', fontWeight: me ? 700 : 600, letterSpacing: '-0.01em', wordBreak: 'break-word' }}>
+                    {p.full_name || p.name}{me ? ' (dig)' : ''}
                   </div>
-                  <div style={{ fontSize: "11px", color: theme.textLight, marginTop: "1px" }}>
-                    {period === "all"
-                      ? `${p.area || "?"} · ${p.periodGames} kampe · ${p.periodWins} sejre`
-                      : `${p.periodGames} kampe · ${p.periodWins} sejre`
+                  <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '1px' }}>
+                    {rankMode === 'americano'
+                      ? (period === 'all'
+                        ? `${p.area || '?'} · ${p.periodGames} turneringer · ${p.periodWins} vundne runder`
+                        : `${p.periodGames} turneringer · ${p.periodPoints || 0} point`)
+                      : (period === 'all'
+                        ? `${p.area || '?'} · ${p.periodGames} kampe · ${p.periodWins} sejre`
+                        : `${p.periodGames} kampe · ${p.periodWins} sejre`)
                     }
                   </div>
                 </div>
-                <div className="pm-rank-score" style={{ fontFamily: font, fontSize: "17px", fontWeight: 800, flexShrink: 0, letterSpacing: "-0.02em", color: period === "all" ? theme.accent : isPositive ? theme.accent : isNegative ? theme.red : theme.textLight }}>
-                  {period === "all" ? score : (score > 0 ? "+" + score : score)}
+
+                <div
+                  className="pm-rank-score"
+                  style={{
+                    fontFamily: font,
+                    fontSize: '17px',
+                    fontWeight: 800,
+                    flexShrink: 0,
+                    letterSpacing: '-0.02em',
+                    color: period === 'all' ? theme.accent : isPositive ? theme.accent : isNegative ? theme.red : theme.textLight,
+                  }}
+                >
+                  {period === 'all' ? score : (score > 0 ? `+${score}` : score)}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
     </div>
   );
