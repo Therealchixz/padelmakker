@@ -261,6 +261,14 @@ function isMissingRpcFunctionError(message: string): boolean {
   return /could not find the function|function .* does not exist|schema cache/i.test(message || '')
 }
 
+type AmericanoEloRpcData = {
+  success?: boolean
+  error?: string
+  already_applied?: boolean
+  players_updated?: number
+  status_updated?: boolean
+}
+
 export function AmericanoResultsPanel({
   tournament,
   currentUserId,
@@ -441,14 +449,16 @@ export function AmericanoResultsPanel({
     }
     setSaving(true)
     try {
-      let eloData: any = null
-      let eloError: any = null
+      let eloData: AmericanoEloRpcData | null = null
+      let eloErrorMessage: string | null = null
+      let usedLegacyFallback = false
 
       const atomicRes = await supabase.rpc('complete_americano_tournament', {
         p_tournament_id: tournament.id,
       })
 
       if (atomicRes.error && isMissingRpcFunctionError(String(atomicRes.error.message || ''))) {
+        usedLegacyFallback = true
         // Backward-compatible fallback if DB migration is not applied yet.
         const { error } = await supabase
           .from('americano_tournaments')
@@ -459,16 +469,20 @@ export function AmericanoResultsPanel({
         const legacyRes = await supabase.rpc('apply_americano_elo_for_tournament', {
           p_tournament_id: tournament.id,
         })
-        eloData = legacyRes.data
-        eloError = legacyRes.error
+        eloData = legacyRes.data as AmericanoEloRpcData | null
+        eloErrorMessage = legacyRes.error?.message ?? null
       } else {
-        eloData = atomicRes.data
-        eloError = atomicRes.error
+        eloData = atomicRes.data as AmericanoEloRpcData | null
+        eloErrorMessage = atomicRes.error?.message ?? null
       }
 
-      if (eloError) {
-        console.warn('Americano ELO rpc error:', eloError.message)
-        showToast('Turnering afsluttet. Americano-ELO blev ikke opdateret endnu (mangler DB-migration).')
+      if (eloErrorMessage) {
+        console.warn('Americano ELO rpc error:', eloErrorMessage)
+        if (usedLegacyFallback) {
+          showToast('Turnering afsluttet. Americano-ELO blev ikke opdateret endnu (mangler DB-migration).')
+        } else {
+          throw new Error(eloErrorMessage)
+        }
       } else if (eloData?.error) {
         showToast('Turnering afsluttet. Americano-ELO kunne ikke beregnes: ' + String(eloData.error))
       } else if (eloData?.success) {
