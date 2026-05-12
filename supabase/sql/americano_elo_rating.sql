@@ -190,7 +190,7 @@ BEGIN
     SELECT
       p.*,
       COUNT(*) OVER ()::int AS participant_count,
-      (24::numeric * (p.actual_sum - p.expected_sum) / GREATEST(1, COUNT(*) OVER () - 1)::numeric) AS delta_raw
+      (56::numeric * (p.actual_sum - p.expected_sum) / GREATEST(1, COUNT(*) OVER () - 1)::numeric) AS delta_raw
     FROM pairwise p
   ),
   rounded AS (
