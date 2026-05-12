@@ -12,6 +12,17 @@ import {
 const font = "'Inter', sans-serif"
 
 type PartMin = { id: string; user_id: string; display_name: string }
+type AmericanoEloSnap = {
+  change: number
+  oldRating: number | null
+  newRating: number | null
+}
+
+function eloDeltaColor(delta: number) {
+  if (delta > 0) return 'var(--pm-green)'
+  if (delta < 0) return 'var(--pm-red)'
+  return 'var(--pm-text-mid)'
+}
 
 function coercePointsPerMatch(t: AmericanoTournament): 16 | 24 | 32 {
   const ppm = Number(t.points_per_match)
@@ -59,6 +70,7 @@ export function AmericanoCompletedSummary({
   onSummaryToggle,
 }: Props) {
   const [matches, setMatches] = useState<AmericanoMatchRow[] | undefined>(undefined)
+  const [eloByUserId, setEloByUserId] = useState<Record<string, AmericanoEloSnap>>({})
   const [loading, setLoading] = useState(false)
   const [fetchErr, setFetchErr] = useState<string | null>(null)
 
@@ -74,18 +86,37 @@ export function AmericanoCompletedSummary({
       setLoading(true)
       setFetchErr(null)
       try {
-        const { data, error } = await supabase
-          .from('americano_matches')
-          .select('*')
-          .eq('tournament_id', tournament.id)
-          .order('round_number', { ascending: true })
-          .order('court_index', { ascending: true })
+        const [matchesRes, eloRes] = await Promise.all([
+          supabase
+            .from('americano_matches')
+            .select('*')
+            .eq('tournament_id', tournament.id)
+            .order('round_number', { ascending: true })
+            .order('court_index', { ascending: true }),
+          supabase
+            .from('americano_elo_history')
+            .select('user_id, old_rating, new_rating, change')
+            .eq('tournament_id', tournament.id),
+        ])
         if (cancelled) return
-        if (error) throw error
-        setMatches((data || []) as AmericanoMatchRow[])
+        if (matchesRes.error) throw matchesRes.error
+        if (eloRes.error) throw eloRes.error
+        const eloMap: Record<string, AmericanoEloSnap> = {}
+        ;(eloRes.data || []).forEach((row: { user_id: string; old_rating: number | null; new_rating: number | null; change: number | null }) => {
+          const uid = String(row.user_id || '')
+          if (!uid) return
+          eloMap[uid] = {
+            change: Number(row.change) || 0,
+            oldRating: row.old_rating ?? null,
+            newRating: row.new_rating ?? null,
+          }
+        })
+        setEloByUserId(eloMap)
+        setMatches((matchesRes.data || []) as AmericanoMatchRow[])
       } catch (e) {
         if (!cancelled) {
           setFetchErr(e instanceof Error ? e.message : 'Kunne ikke hente kampe')
+          setEloByUserId({})
           setMatches([])
         }
       } finally {
@@ -109,6 +140,7 @@ export function AmericanoCompletedSummary({
     : -1
   const myPlacement = myPlacementIndex >= 0 ? myPlacementIndex + 1 : null
   const myPoints = myPlacementIndex >= 0 ? leaderboard[myPlacementIndex]?.points ?? null : null
+  const myElo = currentParticipant ? eloByUserId[String(currentParticipant.user_id)] : null
   const winner = leaderboard[0]
   const reportedMatches = sortedMatches.filter(
     (m) => m.team_a_score != null && m.team_b_score != null && isValidScore(m.team_a_score, m.team_b_score, P)
@@ -175,6 +207,20 @@ export function AmericanoCompletedSummary({
             </div>
             <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--pm-text)', marginTop: 2 }}>
               {summaryReady ? (myPoints != null ? myPoints : '-') : '...'}
+            </div>
+            <div
+              style={{
+                marginTop: 3,
+                fontSize: 11,
+                fontWeight: 700,
+                color: myElo ? eloDeltaColor(myElo.change) : 'var(--pm-text-light)',
+              }}
+            >
+              {summaryReady
+                ? myElo
+                  ? `${myElo.change > 0 ? '+' : ''}${myElo.change} ELO`
+                  : 'ELO -'
+                : '...'}
             </div>
           </div>
           <div
@@ -259,12 +305,27 @@ export function AmericanoCompletedSummary({
                   {leaderboard.map((row, idx) => {
                     const pu = participants.find((p) => p.id === row.id)
                     const isMe = pu && String(pu.user_id) === String(currentUserId)
+                    const eloSnap = pu ? eloByUserId[String(pu.user_id)] : null
                     return (
                       <li key={row.id}>
-                        <span style={{ color: 'var(--pm-text)', fontWeight: idx === 0 ? 700 : 500 }}>{row.name}</span>
-                        {isMe ? <span style={{ color: 'var(--pm-accent)', fontWeight: 600 }}> (dig)</span> : null}
-                        {' - '}
-                        <strong style={{ color: 'var(--pm-text)' }}>{row.points}</strong> point
+                        <div>
+                          <span style={{ color: 'var(--pm-text)', fontWeight: idx === 0 ? 700 : 500 }}>{row.name}</span>
+                          {isMe ? <span style={{ color: 'var(--pm-accent)', fontWeight: 600 }}> (dig)</span> : null}
+                          {' - '}
+                          <strong style={{ color: 'var(--pm-text)' }}>{row.points}</strong> point
+                        </div>
+                        <div
+                          style={{
+                            marginTop: 1,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: eloSnap ? eloDeltaColor(eloSnap.change) : 'var(--pm-text-light)',
+                          }}
+                        >
+                          {eloSnap
+                            ? `${eloSnap.change > 0 ? '+' : ''}${eloSnap.change} ELO${eloSnap.newRating != null ? ` (nu ${eloSnap.newRating})` : ''}`
+                            : 'ELO -'}
+                        </div>
                       </li>
                     )
                   })}

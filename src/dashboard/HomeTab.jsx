@@ -251,7 +251,7 @@ export function HomeTab({ user, setTab }) {
       // Round 2: alle sekundære queries i parallel
       const [
         mResultsRes, mDetailsRes,
-        amPartsRes, amMatchesRes,
+        amPartsRes, amMatchesRes, amEloRes,
         lgTeamsRes, lgMatchesRes,
         creatorProfilesRes, regAmPartsRes, newLgTeamsRes,
       ] = await Promise.allSettled([
@@ -259,6 +259,7 @@ export function HomeTab({ user, setTab }) {
         matchIds.length       ? supabase.from('matches').select('id, court_name, description').in('id', matchIds)                                                                                                                                : Promise.resolve({ data: [] }),
         completedAmIds.length ? supabase.from('americano_participants').select('id, tournament_id, user_id, display_name').in('tournament_id', completedAmIds)                                                                                   : Promise.resolve({ data: [] }),
         completedAmIds.length ? supabase.from('americano_matches').select('tournament_id, team_a_p1, team_a_p2, team_b_p1, team_b_p2, team_a_score, team_b_score').in('tournament_id', completedAmIds)                                           : Promise.resolve({ data: [] }),
+        completedAmIds.length ? supabase.from('americano_elo_history').select('tournament_id, user_id, old_rating, new_rating, change').in('tournament_id', completedAmIds)                                                                     : Promise.resolve({ data: [] }),
         completedLgIds.length ? supabase.from('league_teams').select('id, league_id, name, player1_id, player1_name, player1_avatar, player2_id, player2_name, player2_avatar').eq('status', 'ready').in('league_id', completedLgIds)            : Promise.resolve({ data: [] }),
         completedLgIds.length ? supabase.from('league_matches').select('league_id, team1_id, team2_id, winner_id, score_text').eq('status', 'reported').in('league_id', completedLgIds)                                                         : Promise.resolve({ data: [] }),
         creatorIds.length     ? supabase.from('profiles').select('id, full_name, name, avatar').in('id', creatorIds)                                                                                                                             : Promise.resolve({ data: [] }),
@@ -266,7 +267,7 @@ export function HomeTab({ user, setTab }) {
         newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
       ]);
       const round2Results = {
-        mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes,
+        mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, amEloRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes,
       };
       for (const [key, result] of Object.entries(round2Results)) {
         if (result.status === 'rejected') console.warn('[home-feed] Round2 query fejlede:', key, result.reason);
@@ -274,6 +275,16 @@ export function HomeTab({ user, setTab }) {
 
       // Round 3: Americano avatar-opslag (afhænger af participants fra Round 2)
       const amParts = amPartsRes.value?.data || [];
+      const amEloRows = amEloRes.value?.data || [];
+      const amEloByTournamentUser = {};
+      amEloRows.forEach((r) => {
+        if (!r?.tournament_id || !r?.user_id) return;
+        amEloByTournamentUser[`${r.tournament_id}:${r.user_id}`] = {
+          old_rating: r.old_rating,
+          new_rating: r.new_rating,
+          change: r.change,
+        };
+      });
       const amUserIds = [...new Set(amParts.map(p => p.user_id).filter(Boolean))];
       let amAvatarMap = {};
       if (amUserIds.length) {
@@ -327,8 +338,33 @@ export function HomeTab({ user, setTab }) {
         let bestPart = null, bestPts = -1;
         tParts.forEach(p => { const pts = totals[p.id] || 0; if (pts > bestPts) { bestPts = pts; bestPart = p; } });
         if (!bestPart) return null;
-        const leaderboard = tParts.map(p => ({ name: p.display_name, points: totals[p.id] || 0, userId: p.user_id, avatar: amAvatarMap[String(p.user_id)] || '🎾' })).sort((a, b) => b.points - a.points);
-        return { type: 'americano_winner', userId: bestPart.user_id, name: bestPart.display_name, points: bestPts, tournamentName: t.name, tournamentId: t.id, leaderboard, avatar: amAvatarMap[String(bestPart.user_id)] || '🏆', created_at: t.updated_at || t.tournament_date };
+        const leaderboard = tParts
+          .map((p) => {
+            const eloRow = amEloByTournamentUser[`${t.id}:${p.user_id}`];
+            return {
+              name: p.display_name,
+              points: totals[p.id] || 0,
+              userId: p.user_id,
+              avatar: amAvatarMap[String(p.user_id)] || '🎾',
+              eloChange: eloRow ? Number(eloRow.change) : null,
+              oldRating: eloRow?.old_rating ?? null,
+              newRating: eloRow?.new_rating ?? null,
+            };
+          })
+          .sort((a, b) => b.points - a.points);
+        const winnerRow = leaderboard[0] || null;
+        return {
+          type: 'americano_winner',
+          userId: bestPart.user_id,
+          name: bestPart.display_name,
+          points: bestPts,
+          tournamentName: t.name,
+          tournamentId: t.id,
+          leaderboard,
+          winnerEloChange: winnerRow?.eloChange ?? null,
+          avatar: amAvatarMap[String(bestPart.user_id)] || '🏆',
+          created_at: t.updated_at || t.tournament_date,
+        };
       }).filter(Boolean);
 
       // Liga afsluttede
@@ -860,6 +896,10 @@ export function HomeTab({ user, setTab }) {
 
               if (row.type === 'americano_winner') {
                 const player = { id: row.userId, name: row.name };
+                const winnerEloChange = Number(row.winnerEloChange);
+                const hasWinnerElo = Number.isFinite(winnerEloChange);
+                const winnerEloTone =
+                  winnerEloChange > 0 ? theme.green : winnerEloChange < 0 ? theme.red : theme.textMid;
                 return renderActivityRowCard({
                   key: `am-${i}`,
                   isHighlight,
@@ -877,6 +917,11 @@ export function HomeTab({ user, setTab }) {
                     </>
                   ),
                   subtitle: row.tournamentName ? `"${row.tournamentName}"` : null,
+                  stat: hasWinnerElo ? (
+                    <span style={activityStatPillStyle(winnerEloTone)}>
+                      {winnerEloChange > 0 ? '+' : ''}{winnerEloChange} ELO
+                    </span>
+                  ) : undefined,
                   action: <button onClick={() => setViewTournament(row)} style={activityActionBtnStyle(theme.warm)}>Detaljer</button>,
                 });
               }
@@ -1146,8 +1191,29 @@ export function HomeTab({ user, setTab }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
                     </div>
-                    <div style={{ fontSize: "15px", fontWeight: 800, color: isWinner ? theme.warm : theme.text }}>
-                      {p.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px", minWidth: "78px" }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: isWinner ? theme.warm : theme.text }}>
+                        {p.points} <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.6 }}>PTS</span>
+                      </div>
+                      {Number.isFinite(Number(p.eloChange)) ? (
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            color:
+                              Number(p.eloChange) > 0
+                                ? theme.green
+                                : Number(p.eloChange) < 0
+                                  ? theme.red
+                                  : theme.textMid,
+                          }}
+                        >
+                          {Number(p.eloChange) > 0 ? "+" : ""}
+                          {Number(p.eloChange)} ELO
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: "10px", color: theme.textLight }}>ELO -</div>
+                      )}
                     </div>
                   </div>
                 );
