@@ -30,20 +30,34 @@ export function useScrollReveal() {
   useEffect(() => {
     const root = containerRef.current;
     if (!root) return;
-    const els = root.querySelectorAll('.pm-reveal, .pm-reveal-left, .pm-reveal-right, .pm-reveal-scale');
-    if (!els.length) return;
-    const revealAll = () => els.forEach((el) => el.classList.add('pm-visible'));
+    const selector = '.pm-reveal, .pm-reveal-left, .pm-reveal-right, .pm-reveal-scale';
+
+    const revealElement = (el) => {
+      if (!el || !(el instanceof Element)) return;
+      el.classList.add('pm-visible');
+    };
+
+    const revealAll = () => {
+      root.querySelectorAll(selector).forEach(revealElement);
+    };
 
     if (typeof IntersectionObserver === 'undefined') {
       revealAll();
       return undefined;
     }
 
+    const observed = new WeakSet();
+    const isLikelyInViewport = (el) => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+      return rect.bottom >= 0 && rect.top <= vh;
+    };
+
     const io = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (e.isIntersecting || e.intersectionRatio > 0) {
-          e.target.classList.add('pm-visible');
-          io.unobserve(e.target);
+      entries.forEach((entry) => {
+        if (entry.isIntersecting || entry.intersectionRatio > 0) {
+          revealElement(entry.target);
+          io.unobserve(entry.target);
         }
       });
     }, {
@@ -51,13 +65,46 @@ export function useScrollReveal() {
       rootMargin: '0px 0px -6% 0px',
     });
 
-    els.forEach((el) => io.observe(el));
+    const registerElement = (el) => {
+      if (!el || !(el instanceof Element)) return;
+      if (el.classList.contains('pm-visible')) return;
+      if (observed.has(el)) return;
 
-    // Safety net: never keep content hidden if observer callbacks are delayed.
-    const failSafeTimer = window.setTimeout(revealAll, 900);
+      if (isLikelyInViewport(el)) {
+        revealElement(el);
+        return;
+      }
+
+      observed.add(el);
+      io.observe(el);
+    };
+
+    const registerTree = (node) => {
+      if (!node || !(node instanceof Element)) return;
+      if (node.matches(selector)) registerElement(node);
+      node.querySelectorAll(selector).forEach(registerElement);
+    };
+
+    registerTree(root);
+
+    const mo = typeof MutationObserver === 'undefined'
+      ? null
+      : new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((addedNode) => registerTree(addedNode));
+          });
+        });
+
+    if (mo) {
+      mo.observe(root, { childList: true, subtree: true });
+    }
+
+    // Safety net: never keep reveal elements hidden if observer callbacks are delayed.
+    const failSafeTimer = window.setTimeout(revealAll, 1200);
 
     return () => {
       window.clearTimeout(failSafeTimer);
+      if (mo) mo.disconnect();
       io.disconnect();
     };
   }, []);
