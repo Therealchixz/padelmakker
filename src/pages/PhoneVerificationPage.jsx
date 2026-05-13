@@ -116,10 +116,9 @@ export function PhoneVerificationPage() {
     const metaPhone = normalizePhoneToE164(user?.user_metadata?.signup_phone || user?.phone || '')
     if (shouldUseLegacyPhoneChangeFlow(user)) {
       setMode('phone_change')
-      setPhoneInput(metaPhone || '')
-      setPendingPhone(metaPhone || '')
+      setPhoneInput((prev) => prev || metaPhone || '')
+      setPendingPhone((prev) => prev || metaPhone || '')
       setPendingEmail(String(user?.email || '').trim())
-      setOtpSent(false)
       return
     }
 
