@@ -8,6 +8,7 @@ export function SignupEmailSentPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const email = typeof location.state?.email === 'string' ? location.state.email.trim() : '';
+  const phone = typeof location.state?.phone === 'string' ? location.state.phone.trim() : '';
 
   useEffect(() => {
     if (!email) {
@@ -24,6 +25,9 @@ export function SignupEmailSentPage() {
     'Klik på bekræftelseslinket',
     'Åbn helst linket i samme browser som du oprettede profilen i',
     'Når profilen er bekræftet, kan du logge ind',
+    phone
+      ? `Efter login bekraefter du telefonnummeret (${phone}) med en SMS-kode`
+      : 'Efter login bekraefter du dit telefonnummer med en SMS-kode',
   ];
 
   return (

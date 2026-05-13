@@ -21,9 +21,19 @@ import { HelpContactPage } from "./pages/HelpContactPage";
 import { InstallAppPage } from "./pages/InstallAppPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { SignupEmailSentPage } from "./pages/SignupEmailSentPage";
+import { PhoneVerificationPage } from "./pages/PhoneVerificationPage";
+
+function shouldRequirePhoneVerification(authUser) {
+  if (!authUser) return false
+  const required = authUser.user_metadata?.phone_verification_required === true
+  return required && !authUser.phone_confirmed_at
+}
 
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
+  const isAuthedAndLoaded = Boolean(user && profile)
+  const requiresPhoneVerification = isAuthedAndLoaded && shouldRequirePhoneVerification(user)
+  const defaultAuthedPath = requiresPhoneVerification ? "/opret/bekraeft-telefon" : "/dashboard"
   const [toast, setToast] = useState(null);
   const [resetMode, setResetMode] = useState(false);
   const toastTimerRef = useRef(null);
@@ -86,10 +96,18 @@ export default function PadelMakker() {
           </div>
         )}
         <Routes>
-          <Route path="/" element={user && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-          <Route path="/login" element={user && profile ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-          <Route path="/opret" element={user && profile ? <Navigate to="/dashboard" replace /> : <OnboardingPage />} />
-          <Route path="/opret/bekraeft-email" element={user && profile ? <Navigate to="/dashboard" replace /> : <SignupEmailSentPage />} />
+          <Route path="/" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LandingPage />} />
+          <Route path="/login" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LoginPage />} />
+          <Route path="/opret" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <OnboardingPage />} />
+          <Route path="/opret/bekraeft-email" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <SignupEmailSentPage />} />
+          <Route
+            path="/opret/bekraeft-telefon"
+            element={
+              isAuthedAndLoaded
+                ? (requiresPhoneVerification ? <PhoneVerificationPage /> : <Navigate to="/dashboard" replace />)
+                : <Navigate to="/login" replace />
+            }
+          />
           <Route path="/privatlivspolitik" element={<PrivacyPage />} />
           <Route path="/handelsbetingelser" element={<TermsPage />} />
           <Route path="/cookies" element={<CookiesPage />} />
@@ -99,8 +117,26 @@ export default function PadelMakker() {
           <Route path="/events" element={<PublicEventsPage />} />
           <Route path="/hjaelp" element={<HelpContactPage />} />
           <Route path="/app" element={<InstallAppPage />} />
-          <Route path="/dashboard" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
-          <Route path="/dashboard/:tab" element={user && profile ? <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} /> : <Navigate to="/" replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              isAuthedAndLoaded
+                ? (requiresPhoneVerification
+                    ? <Navigate to="/opret/bekraeft-telefon" replace />
+                    : <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} />)
+                : <Navigate to="/" replace />
+            }
+          />
+          <Route
+            path="/dashboard/:tab"
+            element={
+              isAuthedAndLoaded
+                ? (requiresPhoneVerification
+                    ? <Navigate to="/opret/bekraeft-telefon" replace />
+                    : <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} />)
+                : <Navigate to="/" replace />
+            }
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
         <CookieNoticeBar />

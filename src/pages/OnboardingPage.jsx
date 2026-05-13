@@ -7,7 +7,7 @@ import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
-import { isValidSignupEmail } from '../lib/validationHelpers';
+import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
 
 import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
 
@@ -27,7 +27,7 @@ export function OnboardingPage() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
@@ -53,6 +53,8 @@ export function OnboardingPage() {
   const emailMismatch =
     form.email_confirm.trim().length > 0 &&
     normalizedEmail !== normalizedEmailConfirm;
+  const phoneTouchedInvalid =
+    form.phone.trim().length > 0 && !isValidSignupPhone(form.phone);
 
   const missingStepRequirements = (targetStep = step) => {
     const missing = [];
@@ -61,6 +63,7 @@ export function OnboardingPage() {
       if (!validateFirstLastName(form.first_name, form.last_name).valid) missing.push("fornavn og efternavn");
       if (!isValidSignupEmail(form.email)) missing.push("gyldig email");
       if (!isValidSignupEmail(form.email_confirm) || normalizedEmail !== normalizedEmailConfirm) missing.push("email skrevet ens i begge felter");
+      if (!isValidSignupPhone(form.phone)) missing.push("telefonnummer");
       if (form.password.length < 8) missing.push("adgangskode på mindst 8 tegn");
       if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
       if (!(form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== "")) missing.push("fødselsdato");
@@ -107,6 +110,7 @@ export function OnboardingPage() {
       form.last_name.trim() ||
       form.email.trim() ||
       form.email_confirm.trim() ||
+      form.phone.trim() ||
       form.password ||
       form.password_confirm ||
       form.level ||
@@ -180,6 +184,11 @@ export function OnboardingPage() {
         setErr("E-mailadresserne matcher ikke - tjek begge felter.");
         return;
       }
+      const normalizedPhone = normalizePhoneToE164(form.phone);
+      if (!normalizedPhone) {
+        setErr("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
+        return;
+      }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
       const levelNum = parseFloat(form.level.match(/[\d.]+/)?.[0] || "3");
       /* Vent til data URL er skrevet (ellers mangler e-mail-tag → applyPendingAvatar ved login fejler) */
@@ -205,12 +214,14 @@ export function OnboardingPage() {
         seeking_match: form.seeking_match,
         travel_willing: form.travel_willing,
         onboarding_completed: true,
+        phone_verification_required: true,
+        signup_phone: normalizedPhone,
       }, turnstileEnabled ? captchaToken : "");
 
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       /* Altid til login: undgå at blive på /opret eller auto-dashboard når der opstår en session */
       try { await signOut(); } catch { /* fortsæt til login alligevel */ }
-      navigate('/opret/bekraeft-email', { replace: true, state: { email: form.email.trim() } });
+      navigate('/opret/bekraeft-email', { replace: true, state: { email: form.email.trim(), phone: normalizedPhone } });
     } catch (e) {
       setErr(e.message || "Kunne ikke oprette profil.");
       if (turnstileEnabled) setCaptchaResetNonce((n) => n + 1);
@@ -276,6 +287,26 @@ export function OnboardingPage() {
       {!emailConfirmTouchedInvalid && emailMismatch && (
         <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
           Emails matcher ikke - tjek begge felter.
+        </p>
+      )}
+      <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer</label>
+      <input
+        id="onb-phone"
+        value={form.phone}
+        onChange={e => set("phone", e.target.value)}
+        placeholder="Fx 20112233 eller +4520112233"
+        type="tel"
+        autoComplete="tel"
+        inputMode="tel"
+        style={{
+          ...inputStyle,
+          marginBottom: phoneTouchedInvalid ? "6px" : "14px",
+          border: "1px solid " + (phoneTouchedInvalid ? theme.red : theme.border),
+        }}
+      />
+      {phoneTouchedInvalid && (
+        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
+          Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).
         </p>
       )}
       <label htmlFor="onb-password" style={labelStyle}>Adgangskode</label>

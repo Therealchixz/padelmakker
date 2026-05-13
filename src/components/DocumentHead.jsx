@@ -28,6 +28,11 @@ const ROUTE_META = {
     description:
       'Bekræft din e-mail for at færdiggøre oprettelsen af din PadelMakker-profil. Linket i mailen udløber efter 24 timer.',
   },
+  '/opret/bekraeft-telefon': {
+    title: 'Bekraeft telefonnummer | PadelMakker',
+    description:
+      'Bekraeft dit telefonnummer med SMS-kode for at afslutte sikkerhedsflowet ved oprettelse.',
+  },
   '/events': {
     title: 'Kommende events og Americano | PadelMakker',
     description: 'Se kommende Americano-turneringer på PadelMakker. Log ind for at tilmelde dig.',
