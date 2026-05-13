@@ -15,10 +15,8 @@ import { AvatarPicker } from '../components/AvatarPicker';
 import { TurnstileWidget } from '../components/TurnstileWidget';
 import { ArrowRight } from 'lucide-react';
 
-const PHONE_SIGNUP_PENDING_KEY = "pm_phone_signup_pending_v1";
-
 export function OnboardingPage() {
-  const { signUpWithPhone } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const ask = useConfirm();
   const onboardingTopRef = useRef(null);
@@ -65,7 +63,7 @@ export function OnboardingPage() {
       if (!validateFirstLastName(form.first_name, form.last_name).valid) missing.push("fornavn og efternavn");
       if (!isValidSignupEmail(form.email)) missing.push("gyldig email");
       if (!isValidSignupEmail(form.email_confirm) || normalizedEmail !== normalizedEmailConfirm) missing.push("email skrevet ens i begge felter");
-      if (!isValidSignupPhone(form.phone)) missing.push("telefonnummer");
+      if (form.phone.trim().length > 0 && !isValidSignupPhone(form.phone)) missing.push("gyldigt telefonnummer");
       if (form.password.length < 8) missing.push("adgangskode på mindst 8 tegn");
       if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
       if (!(form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== "")) missing.push("fødselsdato");
@@ -187,7 +185,7 @@ export function OnboardingPage() {
         return;
       }
       const normalizedPhone = normalizePhoneToE164(form.phone);
-      if (!normalizedPhone) {
+      if (form.phone.trim().length > 0 && !normalizedPhone) {
         setErr("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
         return;
       }
@@ -198,7 +196,7 @@ export function OnboardingPage() {
         await savePendingAvatar(avatarFile);
       }
       tagPendingAvatarEmail(form.email.trim());
-      await signUpWithPhone(normalizedPhone, form.password, form.email.trim(), {
+      await signUp(form.email.trim(), form.password, {
         full_name: sanitizeText(displayName),
         level: levelNum,
         play_style: form.style,
@@ -216,21 +214,11 @@ export function OnboardingPage() {
         seeking_match: form.seeking_match,
         travel_willing: form.travel_willing,
         onboarding_completed: true,
-        phone_first_signup: true,
+        signup_phone: normalizedPhone || null,
       }, turnstileEnabled ? captchaToken : "");
 
-      const pendingSignup = {
-        phone: normalizedPhone,
-        email: form.email.trim(),
-      };
-      try {
-        sessionStorage.setItem(PHONE_SIGNUP_PENDING_KEY, JSON.stringify(pendingSignup));
-      } catch {
-        /* ignore storage errors */
-      }
-
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-      navigate('/opret/bekraeft-telefon', { replace: true, state: pendingSignup });
+      navigate('/opret/bekraeft-email', { replace: true, state: { email: form.email.trim() } });
     } catch (e) {
       setErr(e.message || "Kunne ikke oprette profil.");
       if (turnstileEnabled) setCaptchaResetNonce((n) => n + 1);
@@ -298,7 +286,7 @@ export function OnboardingPage() {
           Emails matcher ikke - tjek begge felter.
         </p>
       )}
-      <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer</label>
+      <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
       <input
         id="onb-phone"
         value={form.phone}

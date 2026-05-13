@@ -25,10 +25,7 @@ import { PhoneVerificationPage } from "./pages/PhoneVerificationPage";
 
 function shouldRequirePhoneVerification(authUser) {
   if (!authUser) return false
-  if (authUser.phone_confirmed_at) return false
-  const required = authUser.user_metadata?.phone_verification_required === true
-  const legacyBackfill = authUser.user_metadata?.phone_first_signup !== true
-  return required || legacyBackfill
+  return false
 }
 
 export default function PadelMakker() {
