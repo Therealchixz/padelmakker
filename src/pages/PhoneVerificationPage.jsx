@@ -48,8 +48,15 @@ function clearPendingSignup() {
   }
 }
 
+function hasPendingSignupMetadata(user) {
+  const meta = user?.user_metadata || {}
+  return meta.phone_first_signup === true || !!meta.pending_email
+}
+
 function shouldUseLegacyPhoneChangeFlow(user) {
-  return user?.user_metadata?.phone_verification_required === true && !user?.phone_confirmed_at
+  if (!user || user.phone_confirmed_at) return false
+  if (hasPendingSignupMetadata(user)) return false
+  return true
 }
 
 export function PhoneVerificationPage() {
@@ -102,10 +109,10 @@ export function PhoneVerificationPage() {
     }
 
     const metaPhone = normalizePhoneToE164(user?.user_metadata?.signup_phone || user?.phone || '')
-    if (shouldUseLegacyPhoneChangeFlow(user) && metaPhone) {
+    if (shouldUseLegacyPhoneChangeFlow(user)) {
       setMode('phone_change')
-      setPhoneInput(metaPhone)
-      setPendingPhone(metaPhone)
+      setPhoneInput(metaPhone || '')
+      setPendingPhone(metaPhone || '')
       setPendingEmail(String(user?.email || '').trim())
       setOtpSent(false)
       return
@@ -269,7 +276,9 @@ export function PhoneVerificationPage() {
       >
         <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>Bekraeft dit telefonnummer</h1>
         <p style={{ color: theme.textMid, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>
-          Indtast SMS-koden for at fortsætte oprettelsen.
+          {mode === 'phone_change'
+            ? 'Indtast telefonnummer og SMS-koden for at fortsaette.'
+            : 'Indtast SMS-koden for at fortsaette oprettelsen.'}
         </p>
 
         {noPendingSignup && (
