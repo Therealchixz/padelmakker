@@ -546,9 +546,9 @@ BEGIN
 
   v_margin_mult := CASE
     WHEN v_margin <= 4 THEN 1.0
-    WHEN v_margin <= 9 THEN 1.12
-    WHEN v_margin <= 14 THEN 1.24
-    ELSE 1.35
+    WHEN v_margin <= 9 THEN 1.20
+    WHEN v_margin <= 14 THEN 1.40
+    ELSE 1.60
   END;
 
   PERFORM set_config('app.bypass_profile_protection', 'on', true);
@@ -582,9 +582,9 @@ BEGIN
         ELSE 0::numeric
       END AS outcome,
       CASE
-        WHEN p.games_played < 10 THEN 40::numeric
-        WHEN p.games_played < 30 THEN 32::numeric
-        ELSE 24::numeric
+        WHEN p.games_played < 10 THEN 56::numeric
+        WHEN p.games_played < 30 THEN 44::numeric
+        ELSE 32::numeric
       END AS k_value
     FROM participants p
     CROSS JOIN (SELECT avg_rating FROM team_avg WHERE team = 1) t1
