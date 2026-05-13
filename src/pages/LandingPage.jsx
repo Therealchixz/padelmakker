@@ -1,13 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
 import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp } from 'lucide-react';
-import { AnimatedAppMockup } from '../components/AnimatedAppMockup';
-import { LandingEloExplainer } from '../components/LandingEloExplainer';
-import { LandingRoadmap } from '../components/LandingRoadmap';
-import { LandingTourVideo } from '../components/LandingTourVideo';
 import { useDarkMode } from '../lib/useDarkMode';
+
+const AnimatedAppMockupLazy = lazy(() =>
+  import('../components/AnimatedAppMockup').then((m) => ({ default: m.AnimatedAppMockup }))
+);
+const LandingEloExplainerLazy = lazy(() =>
+  import('../components/LandingEloExplainer').then((m) => ({ default: m.LandingEloExplainer }))
+);
+const LandingRoadmapLazy = lazy(() =>
+  import('../components/LandingRoadmap').then((m) => ({ default: m.LandingRoadmap }))
+);
+const LandingTourVideoLazy = lazy(() =>
+  import('../components/LandingTourVideo').then((m) => ({ default: m.LandingTourVideo }))
+);
 
 export function LandingPage() {
   const revealRef = useScrollReveal();
@@ -17,6 +26,7 @@ export function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dark, setDark] = useDarkMode();
   const [navHeight, setNavHeight] = useState(0);
+  const [showDeferredSections, setShowDeferredSections] = useState(false);
   const toggleTheme = () => setDark((isDark) => !isDark);
 
   useEffect(() => {
@@ -58,6 +68,29 @@ export function LandingPage() {
 
     window.addEventListener("resize", updateNavHeight);
     return () => window.removeEventListener("resize", updateNavHeight);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    let cancelled = false;
+
+    const revealDeferredSections = () => {
+      if (!cancelled) setShowDeferredSections(true);
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      const idleId = window.requestIdleCallback(revealDeferredSections, { timeout: 1600 });
+      return () => {
+        cancelled = true;
+        if (typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timerId = window.setTimeout(revealDeferredSections, 900);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timerId);
+    };
   }, []);
 
   const steps = [
@@ -186,7 +219,16 @@ export function LandingPage() {
         <div className="pm-landing-nav" style={{ paddingTop: "max(clamp(12px,2.5vw,16px), env(safe-area-inset-top))", paddingBottom: "clamp(12px,2.5vw,16px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", maxWidth: "1100px", margin: "0 auto" }}>
           <div className="pm-landing-nav-brand">
             <button type="button" onClick={() => navigate("/")} style={{ display: "flex", alignItems: "center", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }} aria-label="PadelMakker forsiden">
-              <img src={dark ? "/logo-brand-dark.png" : "/logo-brand.png"} alt="PadelMakker logo" style={{ height: "clamp(40px,5vw,50px)", width: "auto", objectFit: "contain", display: "block" }} />
+              <picture>
+                <source srcSet={dark ? "/logo-brand-dark-nav.webp" : "/logo-brand-nav.webp"} type="image/webp" />
+                <img
+                  src={dark ? "/logo-brand-dark.png" : "/logo-brand.png"}
+                  width={320}
+                  height={120}
+                  alt="PadelMakker logo"
+                  style={{ height: "clamp(40px,5vw,50px)", width: "auto", objectFit: "contain", display: "block" }}
+                />
+              </picture>
             </button>
             <button
               type="button"
@@ -323,7 +365,13 @@ export function LandingPage() {
               </button>
             </div>
             </div>
-            <AnimatedAppMockup className="pm-landing-hero-mockup" />
+            {showDeferredSections ? (
+              <Suspense fallback={<div className="pm-landing-hero-mockup" aria-hidden="true" />}>
+                <AnimatedAppMockupLazy className="pm-landing-hero-mockup" />
+              </Suspense>
+            ) : (
+              <div className="pm-landing-hero-mockup" aria-hidden="true" />
+            )}
           </div>
         </div>
         <div ref={heroRef} className="pm-hero-fade-tail" aria-hidden />
@@ -342,10 +390,20 @@ export function LandingPage() {
       </section>
 
       <section className="pm-landing-mobile-mockup-section" style={{ background: theme.surface }}>
-        <AnimatedAppMockup className="pm-landing-mobile-mockup pm-reveal-scale" />
+        {showDeferredSections ? (
+          <Suspense fallback={<div className="pm-landing-mobile-mockup" aria-hidden="true" />}>
+            <AnimatedAppMockupLazy className="pm-landing-mobile-mockup pm-reveal-scale" />
+          </Suspense>
+        ) : (
+          <div className="pm-landing-mobile-mockup" aria-hidden="true" />
+        )}
       </section>
 
-      <LandingTourVideo />
+      {showDeferredSections && (
+        <Suspense fallback={null}>
+          <LandingTourVideoLazy />
+        </Suspense>
+      )}
 
       {/* How it works */}
       <section style={landingSectionStyle}>
@@ -370,9 +428,17 @@ export function LandingPage() {
         </div>
       </section>
 
-      <LandingRoadmap />
+      {showDeferredSections && (
+        <Suspense fallback={null}>
+          <LandingRoadmapLazy />
+        </Suspense>
+      )}
 
-      <LandingEloExplainer />
+      {showDeferredSections && (
+        <Suspense fallback={null}>
+          <LandingEloExplainerLazy />
+        </Suspense>
+      )}
 
       {/* Features */}
       <section style={{ background: theme.bg, padding: "clamp(56px,12vw,88px) clamp(16px,4vw,24px)" }}>

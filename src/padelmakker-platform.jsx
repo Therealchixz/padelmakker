@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
@@ -8,20 +8,21 @@ import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
-import { PrivacyPage } from "./pages/PrivacyPage";
-import { TermsPage } from "./pages/TermsPage";
-import { CookiesPage } from "./pages/CookiesPage";
-import { OmPage } from "./pages/OmPage";
-import { FaqPage } from "./pages/FaqPage";
-import { EloExplainerPage } from "./pages/EloExplainerPage";
-import { PublicEventsPage } from "./pages/PublicEventsPage";
-import { DashboardPage } from "./dashboard/DashboardPage";
 import { CookieNoticeBar } from "./components/CookieNoticeBar";
-import { HelpContactPage } from "./pages/HelpContactPage";
-import { InstallAppPage } from "./pages/InstallAppPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
-import { SignupEmailSentPage } from "./pages/SignupEmailSentPage";
-import { PhoneVerificationPage } from "./pages/PhoneVerificationPage";
+
+const PrivacyPageLazy = lazy(() => import("./pages/PrivacyPage").then((m) => ({ default: m.PrivacyPage })));
+const TermsPageLazy = lazy(() => import("./pages/TermsPage").then((m) => ({ default: m.TermsPage })));
+const CookiesPageLazy = lazy(() => import("./pages/CookiesPage").then((m) => ({ default: m.CookiesPage })));
+const OmPageLazy = lazy(() => import("./pages/OmPage").then((m) => ({ default: m.OmPage })));
+const FaqPageLazy = lazy(() => import("./pages/FaqPage").then((m) => ({ default: m.FaqPage })));
+const EloExplainerPageLazy = lazy(() => import("./pages/EloExplainerPage").then((m) => ({ default: m.EloExplainerPage })));
+const PublicEventsPageLazy = lazy(() => import("./pages/PublicEventsPage").then((m) => ({ default: m.PublicEventsPage })));
+const DashboardPageLazy = lazy(() => import("./dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage })));
+const HelpContactPageLazy = lazy(() => import("./pages/HelpContactPage").then((m) => ({ default: m.HelpContactPage })));
+const InstallAppPageLazy = lazy(() => import("./pages/InstallAppPage").then((m) => ({ default: m.InstallAppPage })));
+const NotFoundPageLazy = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
+const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage").then((m) => ({ default: m.SignupEmailSentPage })));
+const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
 
 function shouldRequirePhoneVerification(authUser) {
   if (!authUser) return false
@@ -94,50 +95,65 @@ export default function PadelMakker() {
             {toast}
           </div>
         )}
-        <Routes>
-          <Route path="/" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LandingPage />} />
-          <Route path="/login" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LoginPage />} />
-          <Route path="/opret" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <OnboardingPage />} />
-          <Route path="/opret/bekraeft-email" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <SignupEmailSentPage />} />
-          <Route
-            path="/opret/bekraeft-telefon"
-            element={
-              isAuthedAndLoaded
-                ? (requiresPhoneVerification ? <PhoneVerificationPage /> : <Navigate to="/dashboard" replace />)
-                : <PhoneVerificationPage />
-            }
-          />
-          <Route path="/privatlivspolitik" element={<PrivacyPage />} />
-          <Route path="/handelsbetingelser" element={<TermsPage />} />
-          <Route path="/cookies" element={<CookiesPage />} />
-          <Route path="/om" element={<OmPage />} />
-          <Route path="/faq" element={<FaqPage />} />
-          <Route path="/elo" element={<EloExplainerPage />} />
-          <Route path="/events" element={<PublicEventsPage />} />
-          <Route path="/hjaelp" element={<HelpContactPage />} />
-          <Route path="/app" element={<InstallAppPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              isAuthedAndLoaded
-                ? (requiresPhoneVerification
-                    ? <Navigate to="/opret/bekraeft-telefon" replace />
-                    : <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} />)
-                : <Navigate to="/" replace />
-            }
-          />
-          <Route
-            path="/dashboard/:tab"
-            element={
-              isAuthedAndLoaded
-                ? (requiresPhoneVerification
-                    ? <Navigate to="/opret/bekraeft-telefon" replace />
-                    : <DashboardPage user={profile} onLogout={handleLogout} showToast={showToast} />)
-                : <Navigate to="/" replace />
-            }
-          />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+        <Suspense
+          fallback={
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "60vh",
+              }}
+            >
+              <div className="pm-spinner" />
+            </div>
+          }
+        >
+          <Routes>
+            <Route path="/" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LandingPage />} />
+            <Route path="/login" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LoginPage />} />
+            <Route path="/opret" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <OnboardingPage />} />
+            <Route path="/opret/bekraeft-email" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <SignupEmailSentPageLazy />} />
+            <Route
+              path="/opret/bekraeft-telefon"
+              element={
+                isAuthedAndLoaded
+                  ? (requiresPhoneVerification ? <PhoneVerificationPageLazy /> : <Navigate to="/dashboard" replace />)
+                  : <PhoneVerificationPageLazy />
+              }
+            />
+            <Route path="/privatlivspolitik" element={<PrivacyPageLazy />} />
+            <Route path="/handelsbetingelser" element={<TermsPageLazy />} />
+            <Route path="/cookies" element={<CookiesPageLazy />} />
+            <Route path="/om" element={<OmPageLazy />} />
+            <Route path="/faq" element={<FaqPageLazy />} />
+            <Route path="/elo" element={<EloExplainerPageLazy />} />
+            <Route path="/events" element={<PublicEventsPageLazy />} />
+            <Route path="/hjaelp" element={<HelpContactPageLazy />} />
+            <Route path="/app" element={<InstallAppPageLazy />} />
+            <Route
+              path="/dashboard"
+              element={
+                isAuthedAndLoaded
+                  ? (requiresPhoneVerification
+                      ? <Navigate to="/opret/bekraeft-telefon" replace />
+                      : <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />)
+                  : <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/dashboard/:tab"
+              element={
+                isAuthedAndLoaded
+                  ? (requiresPhoneVerification
+                      ? <Navigate to="/opret/bekraeft-telefon" replace />
+                      : <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />)
+                  : <Navigate to="/" replace />
+              }
+            />
+            <Route path="*" element={<NotFoundPageLazy />} />
+          </Routes>
+        </Suspense>
         <CookieNoticeBar />
       </div>
     </ConfirmDialogProvider>

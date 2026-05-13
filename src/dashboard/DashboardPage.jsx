@@ -1003,45 +1003,52 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
-    if (hasPrefetchedTabsRef.current) return undefined;
-    hasPrefetchedTabsRef.current = true;
 
     let cancelled = false;
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     const effectiveType = connection?.effectiveType || "";
+    const deviceMemory = Number(navigator.deviceMemory || 0);
     const isConstrainedNetwork =
       connection?.saveData === true
       || effectiveType === "slow-2g"
       || effectiveType === "2g"
       || effectiveType === "3g";
+    const isLowMemoryDevice = Number.isFinite(deviceMemory) && deviceMemory > 0 && deviceMemory <= 4;
+
+    // Skip eager tab prefetch on mobile and constrained devices to keep first load lighter.
+    if (isMobileView || isConstrainedNetwork || isLowMemoryDevice) return undefined;
+    if (hasPrefetchedTabsRef.current) return undefined;
+    hasPrefetchedTabsRef.current = true;
 
     const warmTabs = () => {
       if (cancelled) return;
-      const loaders = isConstrainedNetwork
-        ? [loadKampeTab, loadBeskedTab]
-        : [loadKampeTab, loadBeskedTab, loadLigaTab, loadMakkereTab, loadRankingTab];
-      if (isAdmin) loaders.push(loadAdminTab);
+
+      const loaders = [];
+      if (tab !== "kampe") loaders.push(loadKampeTab);
+      if (tab !== "beskeder") loaders.push(loadBeskedTab);
+      if (isAdmin && tab !== "admin") loaders.push(loadAdminTab);
+
       loaders.forEach((loader, index) => {
         window.setTimeout(() => {
           if (!cancelled) void loader();
-        }, index * 180);
+        }, index * 320);
       });
     };
 
     if (typeof window.requestIdleCallback === "function") {
-      const idleId = window.requestIdleCallback(warmTabs, { timeout: 1200 });
+      const idleId = window.requestIdleCallback(warmTabs, { timeout: 2200 });
       return () => {
         cancelled = true;
         if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleId);
       };
     }
 
-    const timeoutId = window.setTimeout(warmTabs, 450);
+    const timeoutId = window.setTimeout(warmTabs, 2200);
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [isAdmin]);
+  }, [isAdmin, isMobileView, tab]);
 
   const allTabs = [
     { id: "hjem",     label: "Hjem",        icon: <Home          size={15} /> },
@@ -1070,7 +1077,16 @@ export function DashboardPage({ user, onLogout, showToast }) {
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }} aria-label="Gå til Hjem">
-          <img src={dark ? "/logo-brand-dark.png" : "/logo-brand.png"} alt="PadelMakker logo" style={{ height: "32px", width: "auto", objectFit: "contain", display: "block" }} />
+          <picture>
+            <source srcSet={dark ? "/logo-brand-dark-nav.webp" : "/logo-brand-nav.webp"} type="image/webp" />
+            <img
+              src={dark ? "/logo-brand-dark.png" : "/logo-brand.png"}
+              width={320}
+              height={120}
+              alt="PadelMakker logo"
+              style={{ height: "32px", width: "auto", objectFit: "contain", display: "block" }}
+            />
+          </picture>
         </button>
         <div className="pm-dash-header-actions pm-dash-header-actions-mobile">
           {isMobileView && <NotificationBell />}
