@@ -105,7 +105,7 @@ export default function PadelMakker() {
             element={
               isAuthedAndLoaded
                 ? (requiresPhoneVerification ? <PhoneVerificationPage /> : <Navigate to="/dashboard" replace />)
-                : <Navigate to="/login" replace />
+                : <PhoneVerificationPage />
             }
           />
           <Route path="/privatlivspolitik" element={<PrivacyPage />} />

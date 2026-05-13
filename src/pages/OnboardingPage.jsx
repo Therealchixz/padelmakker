@@ -15,8 +15,10 @@ import { AvatarPicker } from '../components/AvatarPicker';
 import { TurnstileWidget } from '../components/TurnstileWidget';
 import { ArrowRight } from 'lucide-react';
 
+const PHONE_SIGNUP_PENDING_KEY = "pm_phone_signup_pending_v1";
+
 export function OnboardingPage() {
-  const { signUp, signOut } = useAuth();
+  const { signUpWithPhone } = useAuth();
   const navigate = useNavigate();
   const ask = useConfirm();
   const onboardingTopRef = useRef(null);
@@ -196,7 +198,7 @@ export function OnboardingPage() {
         await savePendingAvatar(avatarFile);
       }
       tagPendingAvatarEmail(form.email.trim());
-      await signUp(form.email.trim(), form.password, {
+      await signUpWithPhone(normalizedPhone, form.password, form.email.trim(), {
         full_name: sanitizeText(displayName),
         level: levelNum,
         play_style: form.style,
@@ -214,14 +216,21 @@ export function OnboardingPage() {
         seeking_match: form.seeking_match,
         travel_willing: form.travel_willing,
         onboarding_completed: true,
-        phone_verification_required: true,
-        signup_phone: normalizedPhone,
+        phone_first_signup: true,
       }, turnstileEnabled ? captchaToken : "");
 
+      const pendingSignup = {
+        phone: normalizedPhone,
+        email: form.email.trim(),
+      };
+      try {
+        sessionStorage.setItem(PHONE_SIGNUP_PENDING_KEY, JSON.stringify(pendingSignup));
+      } catch {
+        /* ignore storage errors */
+      }
+
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-      /* Altid til login: undgå at blive på /opret eller auto-dashboard når der opstår en session */
-      try { await signOut(); } catch { /* fortsæt til login alligevel */ }
-      navigate('/opret/bekraeft-email', { replace: true, state: { email: form.email.trim(), phone: normalizedPhone } });
+      navigate('/opret/bekraeft-telefon', { replace: true, state: pendingSignup });
     } catch (e) {
       setErr(e.message || "Kunne ikke oprette profil.");
       if (turnstileEnabled) setCaptchaResetNonce((n) => n + 1);

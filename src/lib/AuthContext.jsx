@@ -409,6 +409,67 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  const signUpWithPhone = async (phone, password, email, metadata = {}, captchaToken = '') => {
+    if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')
+    const normalizedPhone = String(phone || '').trim()
+    const normalizedEmail = String(email || '').trim()
+    if (!normalizedPhone) throw new Error('Telefonnummer mangler')
+    if (!normalizedEmail) throw new Error('Email mangler')
+    const token = typeof captchaToken === 'string' ? captchaToken.trim() : ''
+    const mergedMeta = {
+      ...metadata,
+      pending_email: normalizedEmail,
+      signup_phone: normalizedPhone,
+      phone_verification_required: true,
+    }
+    const options = { data: mergedMeta }
+    if (token) options.captchaToken = token
+
+    const { data, error } = await supabase.auth.signUp({
+      phone: normalizedPhone,
+      password,
+      options,
+    })
+    if (error) throw error
+
+    if (data.user) {
+      const displayName =
+        (metadata.full_name && String(metadata.full_name).trim()) ||
+        (metadata.name && String(metadata.name).trim()) ||
+        normalizedEmail.split('@')[0] ||
+        'Spiller'
+      const region =
+        metadata.region || metadata.area || metadata.city || DEFAULT_REGION
+      const { error: upErr } = await supabase.from('profiles').upsert({
+        id: data.user.id,
+        email: normalizedEmail,
+        name: displayName,
+        full_name: displayName,
+        level: metadata.level || 5,
+        play_style: metadata.play_style || 'Ved ikke endnu',
+        area: region,
+        city: metadata.city || null,
+        availability: metadata.availability || [],
+        bio: metadata.bio || '',
+        avatar: metadata.avatar || '🎾',
+        birth_year: metadata.birth_year ?? null,
+        birth_month: metadata.birth_month ?? null,
+        birth_day: metadata.birth_day ?? null,
+        court_side: metadata.court_side ?? null,
+        intent_now: metadata.intent_now || null,
+        seeking_match: metadata.seeking_match === true,
+        travel_willing: metadata.travel_willing === true,
+      })
+      if (upErr) console.warn('profiles upsert (phone signup):', upErr.message)
+      if (data.session) {
+        setSession(data.session)
+        setUser(data.user)
+        loadProfile(data.user)
+      }
+    }
+    return data
+  }
+
   const signIn = async (email, password, captchaToken = '') => {
     if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')
     const token = typeof captchaToken === 'string' ? captchaToken.trim() : ''
@@ -505,6 +566,7 @@ export function AuthProvider({ children }) {
         loading,
         profileLoading,
         signUp,
+        signUpWithPhone,
         signIn,
         signOut,
         updateProfile,

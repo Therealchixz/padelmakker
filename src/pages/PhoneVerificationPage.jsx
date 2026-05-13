@@ -1,26 +1,66 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme'
 import { PublicLegalFooter } from '../components/PublicLegalFooter'
 import { normalizePhoneToE164 } from '../lib/validationHelpers'
 
+const PHONE_SIGNUP_PENDING_KEY = 'pm_phone_signup_pending_v1'
+
 function maskPhone(phone) {
   const p = String(phone || '')
   if (p.length <= 6) return p
-  return `${p.slice(0, 5)}•••${p.slice(-2)}`
+  return `${p.slice(0, 5)}***${p.slice(-2)}`
 }
 
 function cleanOtp(raw) {
   return String(raw || '').replace(/\D/g, '').slice(0, 6)
 }
 
+function readPendingSignup() {
+  try {
+    const raw = sessionStorage.getItem(PHONE_SIGNUP_PENDING_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    const phone = normalizePhoneToE164(parsed?.phone)
+    const email = String(parsed?.email || '').trim()
+    if (!phone) return null
+    return { phone, email }
+  } catch {
+    return null
+  }
+}
+
+function writePendingSignup(pending) {
+  try {
+    sessionStorage.setItem(PHONE_SIGNUP_PENDING_KEY, JSON.stringify(pending))
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearPendingSignup() {
+  try {
+    sessionStorage.removeItem(PHONE_SIGNUP_PENDING_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+function shouldUseLegacyPhoneChangeFlow(user) {
+  return user?.user_metadata?.phone_verification_required === true && !user?.phone_confirmed_at
+}
+
 export function PhoneVerificationPage() {
   const { user, signOut } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
+
+  const [mode, setMode] = useState('signup')
   const [phoneInput, setPhoneInput] = useState('')
   const [pendingPhone, setPendingPhone] = useState('')
+  const [pendingEmail, setPendingEmail] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [otpSent, setOtpSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -29,22 +69,50 @@ export function PhoneVerificationPage() {
   const [resendAtMs, setResendAtMs] = useState(0)
   const [nowMs, setNowMs] = useState(Date.now())
 
-  const metadataPhone = String(user?.user_metadata?.signup_phone || '').trim()
-  const userPhone = String(user?.phone || '').trim()
-  const initialPhone = useMemo(
-    () => normalizePhoneToE164(userPhone || metadataPhone),
-    [metadataPhone, userPhone]
+  const phoneFromState = useMemo(
+    () => normalizePhoneToE164(location.state?.phone),
+    [location.state?.phone]
+  )
+  const emailFromState = useMemo(
+    () => String(location.state?.email || '').trim(),
+    [location.state?.email]
   )
 
   useEffect(() => {
-    if (initialPhone && !phoneInput) setPhoneInput(initialPhone)
-  }, [initialPhone, phoneInput])
-
-  useEffect(() => {
-    if (user?.phone_confirmed_at) {
-      navigate('/dashboard', { replace: true })
+    if (phoneFromState) {
+      const next = { phone: phoneFromState, email: emailFromState }
+      writePendingSignup(next)
+      setMode('signup')
+      setPhoneInput(phoneFromState)
+      setPendingPhone(phoneFromState)
+      setPendingEmail(emailFromState)
+      setOtpSent(true)
+      setInfo(`SMS-kode blev sendt til ${maskPhone(phoneFromState)}.`)
+      return
     }
-  }, [navigate, user?.phone_confirmed_at])
+
+    const stored = readPendingSignup()
+    if (stored?.phone) {
+      setMode('signup')
+      setPhoneInput(stored.phone)
+      setPendingPhone(stored.phone)
+      setPendingEmail(stored.email || '')
+      setOtpSent(true)
+      return
+    }
+
+    const metaPhone = normalizePhoneToE164(user?.user_metadata?.signup_phone || user?.phone || '')
+    if (shouldUseLegacyPhoneChangeFlow(user) && metaPhone) {
+      setMode('phone_change')
+      setPhoneInput(metaPhone)
+      setPendingPhone(metaPhone)
+      setPendingEmail(String(user?.email || '').trim())
+      setOtpSent(false)
+      return
+    }
+
+    setMode('signup')
+  }, [emailFromState, phoneFromState, user])
 
   useEffect(() => {
     if (resendAtMs <= Date.now()) return undefined
@@ -67,9 +135,20 @@ export function PhoneVerificationPage() {
     setErr('')
     setInfo('')
     try {
-      const { error } = await supabase.auth.updateUser({ phone: normalizedPhone })
-      if (error) throw error
+      if (mode === 'phone_change') {
+        const { error } = await supabase.auth.updateUser({ phone: normalizedPhone })
+        if (error) throw error
+      } else {
+        const { error } = await supabase.auth.resend({
+          type: 'sms',
+          phone: normalizedPhone,
+        })
+        if (error) throw error
+      }
 
+      if (mode === 'signup') {
+        writePendingSignup({ phone: normalizedPhone, email: pendingEmail })
+      }
       setPendingPhone(normalizedPhone)
       setOtpSent(true)
       setOtpCode('')
@@ -98,22 +177,61 @@ export function PhoneVerificationPage() {
     setErr('')
     setInfo('')
     try {
-      const { error } = await supabase.auth.verifyOtp({
+      const verifyType = mode === 'phone_change' ? 'phone_change' : 'sms'
+      const { data, error } = await supabase.auth.verifyOtp({
         phone: pendingPhone,
         token,
-        type: 'phone_change',
+        type: verifyType,
       })
       if (error) throw error
 
-      await supabase.auth.updateUser({
+      const effectiveEmail = String(
+        pendingEmail || data?.user?.user_metadata?.pending_email || data?.user?.email || ''
+      ).trim()
+
+      if (mode === 'phone_change') {
+        await supabase.auth.updateUser({
+          data: {
+            phone_verification_required: false,
+            signup_phone: pendingPhone,
+            phone_verified_at: new Date().toISOString(),
+          },
+        })
+        setInfo('Telefonnummer bekraeftet. Du bliver sendt videre...')
+        navigate('/dashboard', { replace: true })
+        return
+      }
+
+      if (!effectiveEmail) {
+        throw new Error('Mangler email til sidste trin. Gaa tilbage og opret igen.')
+      }
+
+      const { error: emailErr } = await supabase.auth.updateUser({
+        email: effectiveEmail,
         data: {
-          phone_verification_required: false,
+          pending_email: effectiveEmail,
           signup_phone: pendingPhone,
+          phone_verification_required: false,
           phone_verified_at: new Date().toISOString(),
+          phone_first_signup: true,
         },
       })
-      setInfo('Telefonnummer bekraeftet. Du bliver sendt videre...')
-      navigate('/dashboard', { replace: true })
+      if (emailErr) throw emailErr
+
+      const uid = data?.user?.id || user?.id
+      if (uid) {
+        try {
+          await supabase.from('profiles').update({ email: effectiveEmail }).eq('id', uid)
+        } catch {
+          /* ignore */
+        }
+      }
+
+      clearPendingSignup()
+      try { await signOut() } catch { /* ignore */ }
+
+      setInfo('Telefon bekræftet. Tjek nu din e-mail for sidste bekræftelse.')
+      navigate('/opret/bekraeft-email', { replace: true, state: { email: effectiveEmail } })
     } catch (e) {
       setErr(e?.message || 'Koden kunne ikke verificeres.')
     } finally {
@@ -121,7 +239,7 @@ export function PhoneVerificationPage() {
     }
   }
 
-  if (!user) return null
+  const noPendingSignup = mode === 'signup' && !pendingPhone && !normalizedDraftPhone
 
   return (
     <div
@@ -151,8 +269,23 @@ export function PhoneVerificationPage() {
       >
         <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>Bekraeft dit telefonnummer</h1>
         <p style={{ color: theme.textMid, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>
-          Dette er kun et ekstra sikkerhedstrin ved oprettelse. Normal login er stadig email + adgangskode.
+          Indtast SMS-koden for at fortsætte oprettelsen.
         </p>
+
+        {noPendingSignup && (
+          <div style={{
+            background: theme.surfaceAlt,
+            border: '1px solid ' + theme.border,
+            borderRadius: '10px',
+            padding: '12px',
+            marginBottom: '14px',
+            color: theme.textMid,
+            fontSize: '13px',
+            lineHeight: 1.5,
+          }}>
+            Vi kunne ikke finde en aktiv oprettelse. Start venligst fra opret-siden.
+          </div>
+        )}
 
         <label htmlFor="verify-phone" style={labelStyle}>Telefonnummer</label>
         <input
@@ -230,6 +363,7 @@ export function PhoneVerificationPage() {
 
         <button
           onClick={async () => {
+            clearPendingSignup()
             try { await signOut() } catch { /* ignore */ }
             navigate('/login', { replace: true })
           }}
