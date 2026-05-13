@@ -5,6 +5,7 @@ import { useAuth } from '../lib/AuthContext'
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme'
 import { PublicLegalFooter } from '../components/PublicLegalFooter'
 import { normalizePhoneToE164 } from '../lib/validationHelpers'
+import { TurnstileWidget } from '../components/TurnstileWidget'
 
 const PHONE_SIGNUP_PENDING_KEY = 'pm_phone_signup_pending_v1'
 
@@ -63,11 +64,15 @@ export function PhoneVerificationPage() {
   const { user, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const turnstileSiteKey = String(import.meta.env.VITE_TURNSTILE_SITE_KEY || '').trim()
+  const turnstileEnabled = turnstileSiteKey.length > 0
 
   const [mode, setMode] = useState('signup')
   const [phoneInput, setPhoneInput] = useState('')
   const [pendingPhone, setPendingPhone] = useState('')
   const [pendingEmail, setPendingEmail] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaResetNonce, setCaptchaResetNonce] = useState(0)
   const [otpCode, setOtpCode] = useState('')
   const [otpSent, setOtpSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -137,6 +142,10 @@ export function PhoneVerificationPage() {
       setErr('Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).')
       return
     }
+    if (mode === 'signup' && turnstileEnabled && !captchaToken) {
+      setErr('Bekraeft venligst, at du ikke er en robot.')
+      return
+    }
 
     setSubmitting(true)
     setErr('')
@@ -149,6 +158,9 @@ export function PhoneVerificationPage() {
         const { error } = await supabase.auth.resend({
           type: 'sms',
           phone: normalizedPhone,
+          options: turnstileEnabled && captchaToken
+            ? { captchaToken }
+            : undefined,
         })
         if (error) throw error
       }
@@ -162,8 +174,16 @@ export function PhoneVerificationPage() {
       setResendAtMs(Date.now() + 60_000)
       setNowMs(Date.now())
       setInfo(`SMS-kode sendt til ${maskPhone(normalizedPhone)}.`)
+      if (turnstileEnabled) {
+        setCaptchaToken('')
+        setCaptchaResetNonce((n) => n + 1)
+      }
     } catch (e) {
       setErr(e?.message || 'Kunne ikke sende SMS-kode lige nu.')
+      if (turnstileEnabled) {
+        setCaptchaToken('')
+        setCaptchaResetNonce((n) => n + 1)
+      }
     } finally {
       setSubmitting(false)
     }
@@ -320,16 +340,42 @@ export function PhoneVerificationPage() {
           </p>
         )}
 
+        {mode === 'signup' && turnstileEnabled && (
+          <div style={{ marginBottom: '14px' }}>
+            <TurnstileWidget
+              siteKey={turnstileSiteKey}
+              onTokenChange={setCaptchaToken}
+              resetNonce={captchaResetNonce}
+            />
+          </div>
+        )}
         <button
           onClick={sendCode}
-          disabled={submitting || !normalizedDraftPhone || (!canResend && otpSent)}
+          disabled={
+            submitting ||
+            !normalizedDraftPhone ||
+            (!canResend && otpSent) ||
+            (mode === 'signup' && turnstileEnabled && !captchaToken)
+          }
           style={{
             ...btn(true),
             width: '100%',
             justifyContent: 'center',
             marginBottom: '14px',
-            opacity: submitting || !normalizedDraftPhone || (!canResend && otpSent) ? 0.55 : 1,
-            cursor: submitting || !normalizedDraftPhone || (!canResend && otpSent) ? 'not-allowed' : 'pointer',
+            opacity:
+              submitting ||
+              !normalizedDraftPhone ||
+              (!canResend && otpSent) ||
+              (mode === 'signup' && turnstileEnabled && !captchaToken)
+                ? 0.55
+                : 1,
+            cursor:
+              submitting ||
+              !normalizedDraftPhone ||
+              (!canResend && otpSent) ||
+              (mode === 'signup' && turnstileEnabled && !captchaToken)
+                ? 'not-allowed'
+                : 'pointer',
           }}
         >
           {!otpSent ? 'Send SMS-kode' : canResend ? 'Send kode igen' : `Send igen om ${resendSeconds}s`}
