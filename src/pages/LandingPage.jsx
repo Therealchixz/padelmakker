@@ -350,13 +350,13 @@ export function LandingPage() {
         >
           <div className="pm-landing-hero-grid">
             <div className="pm-landing-hero-copy">
-            <h1 className="pm-reveal pm-delay-1" style={{ fontFamily: font, fontSize: "clamp(40px,8vw,76px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#fff", marginBottom: "24px" }}>
+            <h1 className="pm-reveal pm-visible pm-delay-1" style={{ fontFamily: font, fontSize: "clamp(40px,8vw,76px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#fff", marginBottom: "24px" }}>
               Find makker<br />på dit niveau.<br /><span style={{ color: "#93C5FD" }}>Spil mere padel.</span>
             </h1>
-            <p className="pm-reveal pm-delay-2" style={{ fontSize: "clamp(16px,3.8vw,19px)", color: "rgba(255,255,255,0.80)", maxWidth: "480px", margin: "0 auto clamp(36px,7vw,48px)", lineHeight: 1.65 }}>
+            <p className="pm-reveal pm-visible pm-delay-2" style={{ fontSize: "clamp(16px,3.8vw,19px)", color: "rgba(255,255,255,0.80)", maxWidth: "480px", margin: "0 auto clamp(36px,7vw,48px)", lineHeight: 1.65 }}>
               Find padelspillere på dit niveau, opret kampe og se ledige baner i Danmark. PadelMakker gør det nemmere at komme fra lyst til kamp.
             </p>
-            <div className="pm-reveal pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+            <div className="pm-reveal pm-visible pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
               <button onClick={() => navigate("/opret")} style={heroPrimaryBtnStyle} aria-label="Opret gratis profil på PadelMakker">
                 Opret gratis profil <ArrowRight size={17} />
               </button>

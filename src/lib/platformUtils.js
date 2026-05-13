@@ -32,16 +32,34 @@ export function useScrollReveal() {
     if (!root) return;
     const els = root.querySelectorAll('.pm-reveal, .pm-reveal-left, .pm-reveal-right, .pm-reveal-scale');
     if (!els.length) return;
+    const revealAll = () => els.forEach((el) => el.classList.add('pm-visible'));
+
+    if (typeof IntersectionObserver === 'undefined') {
+      revealAll();
+      return undefined;
+    }
+
     const io = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
-        if (e.isIntersecting) {
+        if (e.isIntersecting || e.intersectionRatio > 0) {
           e.target.classList.add('pm-visible');
           io.unobserve(e.target);
         }
       });
-    }, { threshold: 0.12 });
+    }, {
+      threshold: 0.01,
+      rootMargin: '0px 0px -6% 0px',
+    });
+
     els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
+
+    // Safety net: never keep content hidden if observer callbacks are delayed.
+    const failSafeTimer = window.setTimeout(revealAll, 900);
+
+    return () => {
+      window.clearTimeout(failSafeTimer);
+      io.disconnect();
+    };
   }, []);
   return containerRef;
 }
