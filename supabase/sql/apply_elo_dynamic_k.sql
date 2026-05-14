@@ -100,7 +100,24 @@ GRANT EXECUTE ON FUNCTION public.has_valid_match_result_confirmation(uuid, uuid,
 -- Margin (partier over sæt 1–3): ≤4 →×1 | ≤9 →×1.12 | ≤14 →×1.24 | else ×1.35
 --
 -- Kør hele filen i Supabase SQL Editor (erstatter public.apply_elo_for_match).
+--
+-- SUPERSEDED: apply_elo_for_match er nu en thin wrapper omkring
+-- apply_elo_for_match_core i elo_v2_glicko2_shadow.sql. Re-kør af denne sektion
+-- efter elo_v2 er kørt ville stille revertere ELO-algoritmen. Guard-blokken
+-- nedenfor aborterer scriptet hvis elo_v2 allerede er på plads.
 -- =============================================================================
+
+DO $check_elo_v2$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'apply_elo_for_match_core'
+  ) THEN
+    RAISE EXCEPTION 'SUPERSEDED: apply_elo_for_match_core already exists; abort to avoid reverting ELO algorithm. See elo_v2_glicko2_shadow.sql.';
+  END IF;
+END;
+$check_elo_v2$;
 
 CREATE OR REPLACE FUNCTION public.apply_elo_for_match(p_match_result_id uuid)
 RETURNS jsonb
