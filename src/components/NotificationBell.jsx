@@ -13,6 +13,7 @@ import {
   unsubscribeFromPush,
   isPushSubscribed,
 } from '../lib/pushNotifications';
+import { createNotification } from '../lib/notifications';
 
 const DISMISSED_MAX = 400;
 const NOTIF_REFRESH_INTERVAL_MS = 10000;
@@ -63,6 +64,7 @@ export function NotificationBell() {
   const [pushSupported, setPushSupported] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [pushTestLoading, setPushTestLoading] = useState(false);
   const [pushMessage, setPushMessage] = useState(null); // kortvarig bekræftelsesbesked
   const [pushBlocked, setPushBlocked] = useState(() => {
     try { return localStorage.getItem('pm_push_blocked') === '1'; } catch { return false; }
@@ -419,6 +421,43 @@ export function NotificationBell() {
     }
   };
 
+  const handleSendPushTest = async () => {
+    if (!userId || pushTestLoading) return;
+    setPushTestLoading(true);
+    try {
+      const sentAt = new Date().toLocaleTimeString('da-DK', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const notifyError = await createNotification(
+        userId,
+        'match_invite',
+        'Test-notifikation fra PadelMakker',
+        `Push virker. Test sendt kl. ${sentAt}.`,
+        null,
+        {
+          pushPolicy: {
+            channel: 'system',
+            level: 'critical',
+            silent: false,
+            urgency: 'high',
+            cooldownSeconds: 0,
+            aggregate: false,
+            renotify: true,
+          },
+        },
+      );
+      if (notifyError) {
+        showPushMessage('Test fejlede - proev igen');
+        return;
+      }
+      showPushMessage('Test sendt - tjek popup nu');
+      void load();
+    } finally {
+      setPushTestLoading(false);
+    }
+  };
+
   const iconBtn = {
     background: "none",
     border: "none",
@@ -510,14 +549,26 @@ export function NotificationBell() {
                 {pushMessage || (pushSubscribed ? "Push-beskeder er aktiveret" : "Få push-beskeder selv når du ikke er på siden")}
               </span>
               {!pushMessage && (
-                <button
-                  type="button"
-                  onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
-                  disabled={pushLoading}
-                  style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : "#fff", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: pushLoading ? "default" : "pointer", opacity: pushLoading ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
-                >
-                  {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  {pushSubscribed && (
+                    <button
+                      type="button"
+                      onClick={handleSendPushTest}
+                      disabled={pushLoading || pushTestLoading}
+                      style={{ background: theme.surface, color: theme.textMid, border: "1px solid " + theme.border, borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: (pushLoading || pushTestLoading) ? "default" : "pointer", opacity: (pushLoading || pushTestLoading) ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
+                    >
+                      {pushTestLoading ? "..." : "Test"}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
+                    disabled={pushLoading || pushTestLoading}
+                    style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : "#fff", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: (pushLoading || pushTestLoading) ? "default" : "pointer", opacity: (pushLoading || pushTestLoading) ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
+                  >
+                    {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
+                  </button>
+                </div>
               )}
             </div>
           )}
