@@ -6,6 +6,7 @@ import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platfo
 import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
+import { explainRatingAdminFlag } from '../lib/ratingAdminFlagExplain';
 
 import {
   LEVELS,
@@ -1023,6 +1024,7 @@ export function AdminTab() {
             )}
 
             {!consoleError && filteredFlags.map((flag) => {
+              const explanation = explainRatingAdminFlag(flag);
               const statusBadge = flagStatusBadgeColor(flag.status);
               const severityBadge = flagSeverityBadgeColor(flag.severity);
               const expanded = !!expandedFlags[flag.id];
@@ -1031,7 +1033,10 @@ export function AdminTab() {
                 <div key={flag.id} style={{ border: "1px solid " + theme.border, borderRadius: "10px", marginBottom: "10px", overflow: "hidden" }}>
                   <div style={{ padding: "10px 12px", background: theme.surfaceAlt, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1.2fr 1fr", gap: "8px", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text }}>{flag.reason || 'Ukendt årsag'}</div>
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text }}>{explanation.title || 'Ukendt årsag'}</div>
+                      <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "3px" }}>
+                        {explanation.description}
+                      </div>
                       <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "2px" }}>
                         {formatDateTimeDa(flag.created_at)} · {String(flag.source || '').toUpperCase()}
                       </div>
@@ -1074,10 +1079,20 @@ export function AdminTab() {
 
                   {expanded && (
                     <div style={{ padding: "10px 12px", borderTop: "1px solid " + theme.border, background: theme.surface }}>
+                      <div style={{ marginBottom: "12px", background: theme.accentBg, border: "1px solid " + theme.accent + "33", borderRadius: "8px", padding: "10px" }}>
+                        <div style={{ fontSize: "11px", fontWeight: 800, color: theme.accent, marginBottom: "5px", textTransform: "uppercase" }}>
+                          Forslag til handling
+                        </div>
+                        <div style={{ fontSize: "12px", color: theme.text, lineHeight: 1.45 }}>
+                          {explanation.suggestion}
+                        </div>
+                      </div>
+
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
                         <div style={{ fontSize: "12px", color: theme.textMid }}>
                           <div><strong style={{ color: theme.text }}>Kamp:</strong> {flag.match_id || '-'}</div>
                           <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Turnering:</strong> {flag.tournament_id || '-'}</div>
+                          <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Teknisk kode:</strong> {explanation.technicalReason || '-'}</div>
                         </div>
                         <div style={{ fontSize: "12px", color: theme.textMid }}>
                           <div><strong style={{ color: theme.text }}>Gennemgået af:</strong> {reviewerMap[flag.reviewed_by] || '-'}</div>
