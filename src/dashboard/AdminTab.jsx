@@ -184,7 +184,7 @@ export function AdminTab() {
       if (flagsRes.error) {
         const msg = String(flagsRes.error.message || '');
         if (msg.toLowerCase().includes('rating_admin_flags')) {
-          setConsoleError('Flag-tabellen mangler i DB. Koer SQL-scriptet supabase/sql/elo_guardrails_admin_flags.sql i Supabase SQL Editor.');
+          setConsoleError('Flag-tabellen mangler i DB. Kør SQL-scriptet supabase/sql/elo_guardrails_admin_flags.sql i Supabase SQL Editor.');
           setRatingFlags([]);
         } else {
           setConsoleError('Kunne ikke hente flags: ' + msg);
@@ -917,8 +917,8 @@ export function AdminTab() {
 
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5, 1fr)", gap: "10px" }}>
             {[
-              { key: 'openFlags', label: 'Aabne flags', value: consoleStats.openFlags, color: theme.red },
-              { key: 'highFlags', label: 'Hoje flags', value: consoleStats.highFlags, color: theme.warm },
+              { key: 'openFlags', label: 'Åbne flags', value: consoleStats.openFlags, color: theme.red },
+              { key: 'highFlags', label: 'Høje flags', value: consoleStats.highFlags, color: theme.warm },
               { key: 'pendingResults', label: 'Afventer resultat', value: consoleStats.pendingResults, color: theme.accent },
               { key: 'inProgressMatches', label: 'Kampe i gang', value: consoleStats.inProgressMatches, color: theme.text },
               { key: 'bannedPlayers', label: 'Bannede spillere', value: consoleStats.bannedPlayers, color: theme.textMid },
@@ -949,15 +949,15 @@ export function AdminTab() {
             </div>
             <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
               <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>2v2 matcher</div>
-              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.openMatches} aabne, {consoleStats.inProgressMatches} i gang, {consoleStats.completedMatches24h} afsluttet (24t)</div>
+              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.openMatches} åbne, {consoleStats.inProgressMatches} i gang, {consoleStats.completedMatches24h} afsluttet (24t)</div>
             </div>
             <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
               <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>Americano</div>
-              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.americanoOpen} aabne, {consoleStats.americanoActive} aktive, {consoleStats.americanoCompleted7d} afsluttet (7 dage)</div>
+              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.americanoOpen} åbne, {consoleStats.americanoActive} aktive, {consoleStats.americanoCompleted7d} afsluttet (7 dage)</div>
             </div>
             <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
               <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>Resultater</div>
-              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.pendingResults} venter paa bekraeftelse</div>
+              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.pendingResults} venter på bekræftelse</div>
             </div>
           </div>
 
@@ -965,20 +965,20 @@ export function AdminTab() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "10px", flexWrap: "wrap" }}>
               <div style={{ fontSize: "13px", fontWeight: 800, color: theme.text }}>ELO/Americano flags</div>
               <div style={{ fontSize: "11px", color: theme.textMid }}>
-                {consoleLoading ? 'Indlaeser...' : `${filteredFlags.length} vist / ${ratingFlags.length} total`}
+                {consoleLoading ? 'Indlæser...' : `${filteredFlags.length} vist / ${ratingFlags.length} total`}
               </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr 1fr", gap: "8px", marginBottom: "10px" }}>
               <input
                 type="text"
-                placeholder="Soeg i reason, payload, match-id..."
+                placeholder="Søg i reason, payload, match-id..."
                 value={flagSearch}
                 onChange={(e) => setFlagSearch(e.target.value)}
                 style={inputStyle}
               />
               <select value={flagStatusFilter} onChange={(e) => setFlagStatusFilter(e.target.value)} style={inputStyle}>
-                <option value="open">Kun aabne</option>
+                <option value="open">Kun åbne</option>
                 <option value="reviewed">Reviewed</option>
                 <option value="closed">Closed</option>
                 <option value="all">Alle status</option>
@@ -1004,7 +1004,7 @@ export function AdminTab() {
 
             {!consoleError && filteredFlags.length === 0 && (
               <div style={{ color: theme.textMid, fontSize: "13px", padding: "8px 2px" }}>
-                Ingen flags med nuvaerende filter.
+                Ingen flags med nuværende filter.
               </div>
             )}
 
@@ -1094,7 +1094,7 @@ export function AdminTab() {
                             disabled={flagBusyId === flag.id}
                             style={{ ...btn(false), padding: "6px 12px", fontSize: "11px" }}
                           >
-                            Genabn
+                            Genåbn
                           </button>
                         )}
                       </div>
