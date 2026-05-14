@@ -33,7 +33,10 @@ self.addEventListener('push', (event) => {
   };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
-  } catch { /* brug default */ }
+  } catch (err) {
+    /* Bevar default-payload men log så vi kan se hvis serveren sender ugyldig JSON. */
+    try { console.error('[sw] ugyldig push-payload:', err); } catch { /* ignore */ }
+  }
 
   const notificationTag = typeof data.tag === 'string' && data.tag.trim()
     ? data.tag.trim()

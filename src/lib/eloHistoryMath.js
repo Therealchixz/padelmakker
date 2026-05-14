@@ -3,10 +3,16 @@ export function filterRatedEloHistoryRows(rows) {
   return (rows || []).filter((h) => h.old_rating != null && h.match_id != null);
 }
 
-/** Stabil kronologi: samme dato -> match_id -> id. */
+/**
+ * Stabil kronologi: samme dato -> match_id -> id.
+ *
+ * Invalid eller manglende dato sorteres til SLUT (Infinity), så `sorted[0]` altid
+ * bruges som ELO-base fra en gyldig datapunkt. Tidligere fallback til `0` placerede
+ * korrupte rækker først og kunne forskyde hele ELO-historien.
+ */
 export function eloHistoryTimeMs(h) {
   const t = h?.date != null ? new Date(h.date).getTime() : NaN;
-  return Number.isFinite(t) ? t : 0;
+  return Number.isFinite(t) ? t : Number.POSITIVE_INFINITY;
 }
 
 export function compareEloHistoryChronological(a, b) {

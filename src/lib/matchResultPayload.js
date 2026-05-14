@@ -1,20 +1,14 @@
-import { formatSubmittedPadelScore } from './matchResultScore.js';
+import { formatSubmittedPadelScore, toFiniteNumber } from './matchResultScore.js';
 
 function teamOf(player) {
   return Number(player?.team);
 }
 
-function finiteNumber(value) {
-  if (value == null || value === '') return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
-
 function normalizeSetForPayload(set) {
-  const gamesTeam1 = finiteNumber(set?.gamesTeam1);
-  const gamesTeam2 = finiteNumber(set?.gamesTeam2);
-  const tiebreakTeam1 = finiteNumber(set?.tiebreakTeam1);
-  const tiebreakTeam2 = finiteNumber(set?.tiebreakTeam2);
+  const gamesTeam1 = toFiniteNumber(set?.gamesTeam1);
+  const gamesTeam2 = toFiniteNumber(set?.gamesTeam2);
+  const tiebreakTeam1 = toFiniteNumber(set?.tiebreakTeam1);
+  const tiebreakTeam2 = toFiniteNumber(set?.tiebreakTeam2);
 
   if (
     gamesTeam1 === 6 &&
@@ -36,14 +30,14 @@ function normalizeSetForPayload(set) {
 }
 
 function submittedSetWinner(set) {
-  const gamesTeam1 = finiteNumber(set?.gamesTeam1);
-  const gamesTeam2 = finiteNumber(set?.gamesTeam2);
+  const gamesTeam1 = toFiniteNumber(set?.gamesTeam1);
+  const gamesTeam2 = toFiniteNumber(set?.gamesTeam2);
   if (gamesTeam1 == null || gamesTeam2 == null) return null;
   if (gamesTeam1 > gamesTeam2) return 'team1';
   if (gamesTeam2 > gamesTeam1) return 'team2';
 
-  const tiebreakTeam1 = finiteNumber(set?.tiebreakTeam1);
-  const tiebreakTeam2 = finiteNumber(set?.tiebreakTeam2);
+  const tiebreakTeam1 = toFiniteNumber(set?.tiebreakTeam1);
+  const tiebreakTeam2 = toFiniteNumber(set?.tiebreakTeam2);
   if (tiebreakTeam1 == null || tiebreakTeam2 == null) return null;
   if (tiebreakTeam1 > tiebreakTeam2) return 'team1';
   if (tiebreakTeam2 > tiebreakTeam1) return 'team2';

@@ -83,6 +83,42 @@ test('currentEloFromSortedHistory falls back to new minus old when change is mis
   assert.equal(currentEloFromSortedHistory(sorted), 1021);
 });
 
+test('sortEloHistoryChronological places rows with invalid dates after valid ones', () => {
+  const sorted = sortEloHistoryChronological([
+    {
+      id: 'bad-date-row',
+      match_id: 'match-bad',
+      old_rating: 999,
+      change: 999,
+      result: 'win',
+      date: 'not-a-date',
+    },
+    {
+      id: 'valid-1',
+      match_id: 'match-1',
+      old_rating: 1000,
+      change: 15,
+      result: 'win',
+      date: '2026-01-01',
+    },
+    {
+      id: 'valid-2',
+      match_id: 'match-2',
+      old_rating: 1015,
+      change: 10,
+      result: 'win',
+      date: '2026-02-01',
+    },
+  ]);
+
+  assert.deepEqual(
+    sorted.map((r) => r.id),
+    ['valid-1', 'valid-2', 'bad-date-row'],
+  );
+  /* Bekræft at ELO-basen tages fra første gyldige række, ikke fra den korrupte. */
+  assert.equal(currentEloFromSortedHistory(sorted), 1000 + 15 + 10 + 999);
+});
+
 test('winStreaksFromEloHistory only counts rated match rows', () => {
   const rows = [
     {
