@@ -91,13 +91,13 @@ export function LandingEloExplainer() {
     <section className="pm-landing-elo-section" aria-labelledby="landing-elo-heading">
       <div className="pm-landing-elo-inner">
         <div className="pm-landing-elo-copy pm-reveal-left">
-          <p className="pm-landing-kicker">ELO-ranking</p>
+          <p className="pm-landing-kicker">2v2 ELO</p>
           <h2 id="landing-elo-heading" style={{ ...heading('clamp(26px,5.5vw,38px)'), margin: 0 }}>
-            Hver kamp gør din næste kamp bedre
+            Hver kamp gør din næste kamp mere fair
           </h2>
           <p>
-            PadelMakker bruger resultater til at gøre niveauet mere præcist, så nye makkere og åbne kampe
-            føles mere fair fra start.
+            2v2-rating opdateres med individuel forventning, dynamisk K-værdi og sejrsmargin.
+            Americano har sin egen separate ELO, så formaterne påvirker ikke hinanden.
           </p>
         </div>
 

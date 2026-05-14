@@ -6,8 +6,8 @@ export function EloExplainerPage() {
   return (
     <LegalPageLayout title="Sådan virker ELO på PadelMakker">
       <p style={{ marginTop: 0, color: theme.textMid }}>
-        ELO er et ratingsystem, der afspejler dit niveau ud fra resultater mod andre spillere. Her er, hvordan vi bruger det i 2v2
-        padel.
+        ELO afspejler dit niveau ud fra resultater mod andre spillere. Her er, hvordan 2v2-ELO beregnes i PadelMakker, og hvordan
+        Americano-ELO holdes separat.
       </p>
 
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Hvornår opdateres min rating?</h2>
@@ -66,7 +66,8 @@ export function EloExplainerPage() {
 
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Americano og ELO</h2>
       <p style={{ color: theme.textMid }}>
-        Americano bruger et separat ratingspor og påvirker ikke din almindelige 2v2-ELO.
+        Americano bruger et separat ratingspor og påvirker ikke din almindelige 2v2-ELO. Når en Americano afsluttes, beregnes
+        Americano-ELO ud fra slutstillingen (samlede kamp-point), og ændringen gemmes i dit Americano-historikspor.
       </p>
 
       <p style={{ marginTop: '28px', marginBottom: 0, fontSize: '14px', color: theme.textLight }}>

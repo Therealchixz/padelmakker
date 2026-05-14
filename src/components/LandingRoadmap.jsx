@@ -21,33 +21,33 @@ const roadmapColumns = [
     icon: CheckCircle2,
     items: [
       { icon: Users, title: 'Find makker', detail: 'Se spillere tæt på dit niveau og område.' },
-      { icon: Target, title: 'Opret kampe', detail: 'Åbne og lukkede 2v2-kampe med tilmelding.' },
-      { icon: TrendingUp, title: 'ELO-ranking', detail: 'Resultater og rating samlet ét sted.' },
+      { icon: TrendingUp, title: 'Dynamisk 2v2-ELO', detail: 'Individuel forventning, K-faktor og sejrsmargin i alle 2v2-kampe.' },
+      { icon: Trophy, title: 'Separat Americano-ELO', detail: 'Egen rating for Americano, beregnet ved afslutning af turneringen.' },
       { icon: MapPinned, title: 'Baneoversigt', detail: 'Udvalgte centre med direkte bookingvej.' },
     ],
   },
   {
-    title: 'På vej',
+    title: 'Næste skridt',
     status: 'Under udvikling',
     tone: 'soon',
     icon: Sparkles,
     items: [
       { icon: Users, title: 'Bedre makker-forslag', detail: 'Mere relevante forslag ud fra niveau, region og aktivitet.' },
-      { icon: TrendingUp, title: 'Mere ELO-forklaring', detail: 'Tydeligere hvorfor rating ændrer sig efter en kamp.' },
       { icon: Bell, title: 'Skarpere notifikationer', detail: 'Færre støjbeskeder og mere relevante kamp-signaler.' },
+      { icon: ClipboardList, title: 'Mere statistik i profiler', detail: 'Flere indsigter om form, udvikling og historik over tid.' },
       { icon: MapPinned, title: 'Flere centre', detail: 'Mere dækning i baneoversigten.' },
     ],
   },
   {
-    title: 'Senere',
+    title: 'På sigt',
     status: 'Idéfase',
     tone: 'later',
     icon: Lightbulb,
     items: [
-      { icon: Trophy, title: 'Turneringer og ligaer', detail: 'Flere formater til klubber og grupper.' },
+      { icon: Target, title: 'Flere turneringsformater', detail: 'Endnu flere formater til klubber, grupper og events.' },
       { icon: UserRoundCog, title: 'Udvidede profiler', detail: 'Spillestil, favoritcentre og tilgængelighed.' },
       { icon: MessageCircleHeart, title: 'Brugerønsker', detail: 'Stem på de forbedringer der betyder mest.' },
-      { icon: ClipboardList, title: 'Klubfunktioner', detail: 'Bedre værktøjer til arrangører.' },
+      { icon: ClipboardList, title: 'Klubfunktioner', detail: 'Flere værktøjer til arrangører og admins.' },
     ],
   },
 ];
@@ -61,7 +61,7 @@ export function LandingRoadmap() {
           <h2 id="landing-roadmap-heading">PadelMakker bliver hele tiden bedre</h2>
           <p>
             Vi bygger platformen sammen med spillerne. Her er noget af det, der er live nu,
-            og det vi arbejder på næste.
+            hvad vi arbejder på lige nu, og hvad der ligger længere fremme.
           </p>
         </div>
 

@@ -27,13 +27,13 @@ export function HelpContactPage() {
           <Link to="/faq" style={{ color: theme.accent, fontWeight: 600 }}>
             Ofte stillede spørgsmål (FAQ)
           </Link>{' '}
-          — pris, ELO, baner, regioner, konto.
+          — pris, 2v2-ELO, Americano-ELO, baner, regioner, konto.
         </li>
         <li style={{ marginBottom: '10px' }}>
           <Link to="/elo" style={{ color: theme.accent, fontWeight: 600 }}>
             Sådan virker ELO
           </Link>{' '}
-          — detaljeret forklaring af rating-systemet.
+          — detaljeret forklaring af 2v2-ratingen og hvordan Americano holdes adskilt.
         </li>
         <li style={{ marginBottom: '10px' }}>
           <Link to="/app" style={{ color: theme.accent, fontWeight: 600 }}>

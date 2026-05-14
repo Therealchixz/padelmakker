@@ -31,12 +31,19 @@ export function FaqPage() {
 
       <Q title="Hvordan virker ELO?">
         <p style={{ margin: 0 }}>
-          Når en kamp er bekræftet, opdateres <strong style={{ color: theme.text }}>din personlige</strong> rating ud fra <strong style={{ color: theme.text }}>dit niveau mod modstanderholdets snit</strong> — du og din makker kan få forskellige point i samme kamp. Americano tæller ikke på ELO.
+          Når en 2v2-kamp er bekræftet, opdateres <strong style={{ color: theme.text }}>din personlige 2v2-ELO</strong> ud fra <strong style={{ color: theme.text }}>dit niveau mod modstanderholdets snit</strong>.
+          Du og din makker kan derfor få forskellige point i samme kamp.
         </p>
         <p style={{ margin: '12px 0 0' }}>
           <Link to="/elo" style={{ color: theme.accent, fontWeight: 600 }}>
-            Læs mere om ELO (individuel forventning, K-faktor, sejrsmargin)
+            Læs mere om ELO (individuel forventning, dynamisk K-faktor og sejrsmargin)
           </Link>
+        </p>
+      </Q>
+
+      <Q title="Tæller Americano med i min almindelige ELO?">
+        <p style={{ margin: 0 }}>
+          Nej. Americano bruger <strong style={{ color: theme.text }}>sin egen separate rating</strong>. Din 2v2-ELO og din Americano-ELO holdes adskilt, så de to formater ikke påvirker hinanden.
         </p>
       </Q>
 

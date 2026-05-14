@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { absoluteUrl } from '../lib/siteMeta'
 
 const DEFAULT_DESC =
-  'Find padelspillere på dit niveau, opret kampe, se ledige baner og følg din ELO-ranking. PadelMakker er en dansk padel-platform med gratis profil.'
+  'Find padelspillere på dit niveau, opret kampe, se ledige baner og følg både 2v2-ELO og separat Americano-ELO. PadelMakker er en dansk padel-platform med gratis profil.'
 
 const ORGANIZATION_LOGO_PATH = '/icon-512-v2.png'
 const ORGANIZATION_LOGO_WIDTH = 512
@@ -39,16 +39,16 @@ const ROUTE_META = {
   },
   '/om': {
     title: 'Om PadelMakker',
-    description: 'Hvad PadelMakker er: makkere, kampe, ELO, Americano og baner-overblik i Danmark.',
+    description: 'Hvad PadelMakker er: makkere, kampe, 2v2-ELO, separat Americano-ELO og baner-overblik i Danmark.',
   },
   '/faq': {
     title: 'Ofte stillede spørgsmål | PadelMakker',
-    description: 'FAQ om PadelMakker: pris, ELO, booking af baner, regioner og konto.',
+    description: 'FAQ om PadelMakker: pris, 2v2-ELO, Americano-ELO, booking af baner, regioner og konto.',
   },
   '/elo': {
     title: 'Sådan virker ELO | PadelMakker',
     description:
-      'Forklaring af ELO på PadelMakker: individuel forventning mod modstanderholdets snit, K pr. spiller, sejrsmargin, Americano.',
+      'Forklaring af ELO på PadelMakker: individuel forventning mod modstanderholdets snit, dynamisk K pr. spiller, sejrsmargin og separat Americano-ELO.',
   },
   '/privatlivspolitik': {
     title: 'Privatlivspolitik | PadelMakker',

@@ -17,19 +17,19 @@ export const landingEloExplainerSteps = [
     key: 'before',
     label: 'Før kampen',
     title: 'Niveauet er kendt',
-    detail: 'Begge hold starter med en tydelig rating.',
+    detail: 'Din forventning beregnes mod modstanderholdets gennemsnit.',
   },
   {
     key: 'match',
     label: 'Efter resultat',
     title: 'Scoren bekræftes',
-    detail: 'Modstanderholdet godkender, før ELO ændres.',
+    detail: 'Resultatet godkendes, og sejrsmarginen tæller med.',
   },
   {
     key: 'after',
     label: 'Ny rating',
     title: 'Udviklingen gemmes',
-    detail: 'Profilen viser din opdaterede ELO over tid.',
+    detail: 'Din 2v2-ELO opdateres. Americano-ratingspor er separat.',
   },
 ];
 
