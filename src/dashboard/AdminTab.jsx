@@ -102,7 +102,8 @@ export function AdminTab() {
   const fetchUsers = async () => {
     setLoading(true);
     const { data, error } = await supabase.from('profiles').select('*');
-    if (!error) setUsers(data || []);
+    if (error) console.warn('AdminTab fetchUsers:', error.message || error);
+    else setUsers(data || []);
     setLoading(false);
   };
 
@@ -114,7 +115,8 @@ export function AdminTab() {
       .order('completed_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .limit(50);
-    if (!error) setMatches(data || []);
+    if (error) console.warn('AdminTab fetchMatches:', error.message || error);
+    else setMatches(data || []);
     setLoading(false);
   };
 
@@ -125,7 +127,8 @@ export function AdminTab() {
       .select('id, name, status, tournament_date, updated_at, created_at')
       .order('created_at', { ascending: false })
       .limit(50);
-    if (!error) setAmericanoTournaments(data || []);
+    if (error) console.warn('AdminTab fetchAmericano:', error.message || error);
+    else setAmericanoTournaments(data || []);
     setLoading(false);
   };
 
@@ -136,7 +139,11 @@ export function AdminTab() {
       .select('id, name, status, season_type, start_date, end_date, current_round, total_rounds, created_at')
       .order('created_at', { ascending: false })
       .limit(50);
-    if (error) { setLoading(false); return; }
+    if (error) {
+      console.warn('AdminTab fetchLiga:', error.message || error);
+      setLoading(false);
+      return;
+    }
     const lIds = (leagues || []).map(l => l.id);
     let teamCounts = {};
     if (lIds.length) {
