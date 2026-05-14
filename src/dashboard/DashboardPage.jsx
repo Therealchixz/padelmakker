@@ -961,7 +961,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        throw new Error("Du skal vaere logget ind for at sende indberetning.");
+        throw new Error("Du skal være logget ind for at sende indberetning.");
       }
 
       const response = await fetch(`${supabaseUrl}/functions/v1/report-feedback`, {

@@ -142,7 +142,7 @@ export function PhoneVerificationPage() {
       return
     }
     if (mode === 'signup' && turnstileEnabled && !captchaToken) {
-      setErr('Bekraeft venligst, at du ikke er en robot.')
+      setErr('Bekræft venligst, at du ikke er en robot.')
       return
     }
 
@@ -191,11 +191,11 @@ export function PhoneVerificationPage() {
   const verifyCode = async () => {
     const token = cleanOtp(otpCode)
     if (!pendingPhone) {
-      setErr('Send en SMS-kode foerst.')
+      setErr('Send en SMS-kode først.')
       return
     }
     if (token.length !== 6) {
-      setErr('Koden skal vaere 6 cifre.')
+      setErr('Koden skal være 6 cifre.')
       return
     }
 
@@ -223,13 +223,13 @@ export function PhoneVerificationPage() {
             phone_verified_at: new Date().toISOString(),
           },
         })
-        setInfo('Telefonnummer bekraeftet. Du bliver sendt videre...')
+        setInfo('Telefonnummer bekræftet. Du bliver sendt videre...')
         navigate('/dashboard', { replace: true })
         return
       }
 
       if (!effectiveEmail) {
-        throw new Error('Mangler email til sidste trin. Gaa tilbage og opret igen.')
+        throw new Error('Mangler email til sidste trin. Gå tilbage og opret igen.')
       }
 
       const { error: emailErr } = await supabase.auth.updateUser({
@@ -293,11 +293,11 @@ export function PhoneVerificationPage() {
           border: '1px solid ' + theme.border,
         }}
       >
-        <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>Bekraeft dit telefonnummer</h1>
+        <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>Bekræft dit telefonnummer</h1>
         <p style={{ color: theme.textMid, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>
           {mode === 'phone_change'
-            ? 'Indtast telefonnummer og SMS-koden for at fortsaette.'
-            : 'Indtast SMS-koden for at fortsaette oprettelsen.'}
+            ? 'Indtast telefonnummer og SMS-koden for at fortsætte.'
+            : 'Indtast SMS-koden for at fortsætte oprettelsen.'}
         </p>
 
         {noPendingSignup && (
@@ -407,7 +407,7 @@ export function PhoneVerificationPage() {
                 cursor: submitting || cleanOtp(otpCode).length !== 6 ? 'not-allowed' : 'pointer',
               }}
             >
-              {submitting ? 'Bekraefter...' : 'Bekraeft telefonnummer'}
+              {submitting ? 'Bekræfter...' : 'Bekræft telefonnummer'}
             </button>
           </>
         )}

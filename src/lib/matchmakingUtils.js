@@ -372,17 +372,17 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
 }
 
 /**
- * Laesbar forklaring paa hvorfor en spiller er foreslaaet.
+ * Læsbar forklaring på hvorfor en spiller er foreslået.
  */
 export function matchReason(breakdown, candidate) {
   const reasons = [];
   if ((breakdown?.reciprocal || 0) >= 0.75) reasons.push('Gensidig match');
-  if ((breakdown?.skill || 0) >= 0.8) reasons.push('Taet ELO-niveau');
+  if ((breakdown?.skill || 0) >= 0.8) reasons.push('Tæt ELO-niveau');
   if ((breakdown?.time || 0) >= 0.75) reasons.push('Samme spilledage');
   if ((breakdown?.intent || 0) >= 0.8) reasons.push('Samme intention');
-  if ((breakdown?.courtSide || 0) >= 0.95) reasons.push('Komplementaer side');
+  if ((breakdown?.courtSide || 0) >= 0.95) reasons.push('Komplementær side');
   if ((breakdown?.activity || 0) >= 0.75) reasons.push('Aktiv spiller');
-  if ((breakdown?.seekingRecency || 0) >= 0.7 || candidate?.seeking_match) reasons.push('Soger kamp nu');
+  if ((breakdown?.seekingRecency || 0) >= 0.7 || candidate?.seeking_match) reasons.push('Søger kamp nu');
   if ((breakdown?.inviteAcceptanceAdjustment || 0) >= 0.02) reasons.push('God respons-rate');
   if (reasons.length === 0) reasons.push('God match');
   return reasons.join(' · ');

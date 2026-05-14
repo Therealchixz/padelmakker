@@ -52,12 +52,12 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
       invitee.id,
       'match_invite',
       `${senderName} inviterer dig til padel!`,
-      `Du er inviteret til en kamp ${dateStr} kl. ${timeStr}${desc}. Gaa til Kampe for at tilmelde dig.`,
+      `Du er inviteret til en kamp ${dateStr} kl. ${timeStr}${desc}. Gå til Kampe for at tilmelde dig.`,
       match.id
     );
 
     if (notifyError) {
-      showToast('Kunne ikke sende invitation lige nu. Proev igen.');
+      showToast('Kunne ikke sende invitation lige nu. Prøv igen.');
       setSending(null);
       return;
     }
@@ -79,12 +79,12 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
       invitee.id,
       'match_invite',
       `${senderName} inviterer dig til Americano!`,
-      `Du er inviteret til "${tournament.name}" ${dateStr} kl. ${timeStr}${desc}. Gaa til Kampe -> Americano for at tilmelde dig.`,
+      `Du er inviteret til "${tournament.name}" ${dateStr} kl. ${timeStr}${desc}. Gå til Kampe -> Americano for at tilmelde dig.`,
       tournament.id
     );
 
     if (notifyError) {
-      showToast('Kunne ikke sende invitation lige nu. Proev igen.');
+      showToast('Kunne ikke sende invitation lige nu. Prøv igen.');
       setSending(null);
       return;
     }
@@ -127,7 +127,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
           Inviter {inviteeName}
         </h3>
         <p style={{ fontSize: '13px', color: theme.textMid, marginBottom: '20px', lineHeight: 1.5 }}>
-          Vaelg hvilken af dine kampe eller turneringer du vil invitere dem til:
+          Vælg hvilken af dine kampe eller turneringer du vil invitere dem til:
         </p>
 
         {loading ? (
@@ -138,10 +138,10 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
           <div style={{ textAlign: 'center', padding: '28px 16px', color: theme.textLight }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>🎾</div>
             <p style={{ fontSize: '14px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
-              Ingen aabne kampe
+              Ingen åbne kampe
             </p>
             <p style={{ fontSize: '13px', lineHeight: 1.5 }}>
-              Opret en kamp eller Americano-turnering under fanen &quot;Kampe&quot;, saa kan du invitere spillere til den.
+              Opret en kamp eller Americano-turnering under fanen &quot;Kampe&quot;, så kan du invitere spillere til den.
             </p>
           </div>
         ) : (

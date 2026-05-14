@@ -26,8 +26,8 @@ export function SignupEmailSentPage() {
     'Åbn helst linket i samme browser som du oprettede profilen i',
     'Når profilen er bekræftet, kan du logge ind',
     phone
-      ? `Efter login bekraefter du telefonnummeret (${phone}) med en SMS-kode`
-      : 'Efter login bekraefter du dit telefonnummer med en SMS-kode',
+      ? `Efter login bekræfter du telefonnummeret (${phone}) med en SMS-kode`
+      : 'Efter login bekræfter du dit telefonnummer med en SMS-kode',
   ];
 
   return (
