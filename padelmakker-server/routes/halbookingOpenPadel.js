@@ -6,6 +6,7 @@ import { collectInputFields } from '../halbookingFetch.js';
 import { readHalbookingHtml } from '../halbookingEncoding.js';
 import { getAllowlistedVenue } from '../halbookingVenuesAllowlist.js';
 import { checkRateLimit, getClientIp } from '../rateLimit.js';
+import { fetchWithTimeout } from '../fetchWithTimeout.js';
 
 const UA = 'PadelMakkerOpenPadel/1.0 (+https://www.padelmakker.dk)';
 
@@ -63,7 +64,7 @@ export async function handleHalbookingOpenPadel(req, res) {
   const OMRAEDE = cfg.omraede;
 
   try {
-    const firstRes = await fetch(PROC_BANER, {
+    const firstRes = await fetchWithTimeout(PROC_BANER, {
       headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
     });
     if (!firstRes.ok) {

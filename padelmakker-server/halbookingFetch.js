@@ -3,6 +3,7 @@
  */
 
 import { readHalbookingHtml } from './halbookingEncoding.js';
+import { fetchWithTimeout } from './fetchWithTimeout.js';
 
 const UA = 'PadelMakkerHalbooking/1.0 (+https://www.padelmakker.dk)';
 const MAX_NAV_STEPS = 80;
@@ -308,7 +309,7 @@ async function postHalbookingCalendarNav(procBanerUrl, cookie, html, mfFunktion)
   params.set('mf_para3', '');
   params.set('mf_para4', '');
 
-  const res = await fetch(procBanerUrl, {
+  const res = await fetchWithTimeout(procBanerUrl, {
     method: 'POST',
     headers: {
       'User-Agent': UA,
@@ -353,7 +354,7 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, op
       ? options.targetDateYmd.trim()
       : null;
 
-  const firstRes = await fetch(procBanerUrl, {
+  const firstRes = await fetchWithTimeout(procBanerUrl, {
     headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
   });
   if (!firstRes.ok) {

@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { fetchWithTimeout } from './fetchWithTimeout.js';
 
 const BOOKLI_GQL = 'https://api.bookli.app/graphql';
 const UA = 'PadelMakkerBookli/1.0 (+https://www.padelmakker.dk)';
@@ -74,7 +75,7 @@ export async function fetchBookliTimelineForDate(dateYmd, cfg) {
   /** Midt på dagen i lokaltid → UTC (startOf('day').toUTC() rammer “i går” i Z og Bookli siger “past date”) */
   const dateIso = day.set({ hour: 12, minute: 0, second: 0, millisecond: 0 }).toUTC().toISO();
 
-  const res = await fetch(BOOKLI_GQL, {
+  const res = await fetchWithTimeout(BOOKLI_GQL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -196,7 +197,7 @@ export async function fetchBookliTimelineForDate(dateYmd, cfg) {
 
 /** Hent Padel-kategori-id hvis ikke sat (sjældent nødvendigt) */
 export async function fetchPadelCategoryId(locationId) {
-  const res = await fetch(BOOKLI_GQL, {
+  const res = await fetchWithTimeout(BOOKLI_GQL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

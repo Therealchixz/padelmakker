@@ -793,6 +793,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   };
 
   const switchTeam = async (matchId, newTeam) => {
+    const myCurrent = (matchPlayers[matchId] || []).find(p => p.user_id === user.id);
+    if (myCurrent && myCurrent.team === newTeam) return;
     setBusyId(matchId + '-switch');
     try {
       const { error } = await supabase
@@ -825,7 +827,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       }
       const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
       if (error) throw error;
-      const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== user.id);
+      /* Genindlæs match_players fra DB — stale React state kan ramme forkert tal hvis flere forlader samtidigt. */
+      const { data: remainingRows } = await supabase
+        .from("match_players")
+        .select("user_id, team")
+        .eq("match_id", matchId);
+      const mp = (remainingRows || []).filter(p => p.user_id !== user.id);
 
       if (mp.length === 0) {
         await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId);

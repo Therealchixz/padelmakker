@@ -2,6 +2,8 @@
  * Parser MATCHi /book/schedule HTML (samme fragment som jQuery.ajax på facilitetssiden).
  */
 
+import { fetchWithTimeout } from './fetchWithTimeout.js';
+
 const UA = 'PadelMakkerMatchi/1.0 (+https://www.padelmakker.dk)';
 
 /** @param {string} t "HH:MM" */
@@ -197,7 +199,7 @@ export function parseMatchiScheduleHtml(html, dateYmd) {
  * @param {string} scheduleUrl full https://www.matchi.se/book/schedule?...
  */
 export async function fetchMatchiSchedule(scheduleUrl) {
-  const res = await fetch(scheduleUrl, {
+  const res = await fetchWithTimeout(scheduleUrl, {
     headers: {
       'User-Agent': UA,
       Accept: 'text/html,*/*',
