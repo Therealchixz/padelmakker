@@ -157,6 +157,16 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
     }
   };
 
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (loading || busy) return;
+    if (mode === 'setup') {
+      void handleSetup();
+      return;
+    }
+    void handleVerify();
+  };
+
   return (
     <div
       role="dialog"
@@ -173,7 +183,8 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
         padding: '16px',
       }}
     >
-      <div
+      <form
+        onSubmit={handleSubmit}
         style={{
           width: 'min(420px, 100%)',
           background: theme.surface,
@@ -310,11 +321,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
             Annuller
           </button>
           <button
-            type="button"
-            onClick={() => {
-              if (mode === 'setup') void handleSetup();
-              else void handleVerify();
-            }}
+            type="submit"
             disabled={loading || busy}
             style={{
               ...btn(true),
@@ -332,7 +339,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
                 : 'Fortsæt til Admin'}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
