@@ -532,6 +532,20 @@ export function AdminTab() {
     return { text: theme.textMid, bg: theme.surfaceAlt };
   };
 
+  const statusLabelDa = (status) => {
+    if (status === 'open') return 'Åben';
+    if (status === 'reviewed') return 'Gennemgået';
+    if (status === 'closed') return 'Lukket';
+    return status || 'Ukendt';
+  };
+
+  const severityLabelDa = (severity) => {
+    if (severity === 'high') return 'Høj';
+    if (severity === 'medium') return 'Mellem';
+    if (severity === 'low') return 'Lav';
+    return severity || 'Ukendt';
+  };
+
   const updateFlag = async (flag, nextStatus) => {
     if (!flag?.id) return;
     const note = String(flagNotes[flag.id] || '').trim();
@@ -903,7 +917,7 @@ export function AdminTab() {
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, textTransform: "uppercase" }}>
-              Admin Console
+              Admin-konsol
             </h3>
             <button
               onClick={() => { void fetchAdminConsole(); }}
@@ -963,31 +977,31 @@ export function AdminTab() {
 
           <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "12px", padding: "14px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "10px", flexWrap: "wrap" }}>
-              <div style={{ fontSize: "13px", fontWeight: 800, color: theme.text }}>ELO/Americano flags</div>
+              <div style={{ fontSize: "13px", fontWeight: 800, color: theme.text }}>ELO-/Americano-flags</div>
               <div style={{ fontSize: "11px", color: theme.textMid }}>
-                {consoleLoading ? 'Indlæser...' : `${filteredFlags.length} vist / ${ratingFlags.length} total`}
+                {consoleLoading ? 'Indlæser...' : `${filteredFlags.length} vist / ${ratingFlags.length} i alt`}
               </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr 1fr", gap: "8px", marginBottom: "10px" }}>
               <input
                 type="text"
-                placeholder="Søg i reason, payload, match-id..."
+                placeholder="Søg i årsag, data, kamp-id..."
                 value={flagSearch}
                 onChange={(e) => setFlagSearch(e.target.value)}
                 style={inputStyle}
               />
               <select value={flagStatusFilter} onChange={(e) => setFlagStatusFilter(e.target.value)} style={inputStyle}>
                 <option value="open">Kun åbne</option>
-                <option value="reviewed">Reviewed</option>
-                <option value="closed">Closed</option>
+                <option value="reviewed">Gennemgået</option>
+                <option value="closed">Lukket</option>
                 <option value="all">Alle status</option>
               </select>
               <select value={flagSeverityFilter} onChange={(e) => setFlagSeverityFilter(e.target.value)} style={inputStyle}>
-                <option value="all">Alle severity</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
+                <option value="all">Alle alvorlighedsgrader</option>
+                <option value="high">Høj</option>
+                <option value="medium">Mellem</option>
+                <option value="low">Lav</option>
               </select>
               <select value={flagSourceFilter} onChange={(e) => setFlagSourceFilter(e.target.value)} style={inputStyle}>
                 <option value="all">Alle kilder</option>
@@ -1017,17 +1031,17 @@ export function AdminTab() {
                 <div key={flag.id} style={{ border: "1px solid " + theme.border, borderRadius: "10px", marginBottom: "10px", overflow: "hidden" }}>
                   <div style={{ padding: "10px 12px", background: theme.surfaceAlt, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1.2fr 1fr", gap: "8px", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text }}>{flag.reason || 'Ukendt reason'}</div>
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text }}>{flag.reason || 'Ukendt årsag'}</div>
                       <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "2px" }}>
                         {formatDateTimeDa(flag.created_at)} · {String(flag.source || '').toUpperCase()}
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                       <span style={{ fontSize: "10px", fontWeight: 700, borderRadius: "999px", padding: "3px 8px", color: statusBadge.text, background: statusBadge.bg, textTransform: "uppercase" }}>
-                        {flag.status}
+                        {statusLabelDa(flag.status)}
                       </span>
                       <span style={{ fontSize: "10px", fontWeight: 700, borderRadius: "999px", padding: "3px 8px", color: severityBadge.text, background: severityBadge.bg, textTransform: "uppercase" }}>
-                        {flag.severity}
+                        {severityLabelDa(flag.severity)}
                       </span>
                     </div>
                     <div style={{ display: "flex", justifyContent: isMobile ? "flex-start" : "flex-end", gap: "6px", flexWrap: "wrap" }}>
@@ -1045,7 +1059,7 @@ export function AdminTab() {
                         style={{ ...btn(flag.status === 'reviewed'), padding: "5px 10px", fontSize: "11px" }}
                       >
                         <CheckCircle2 size={12} style={{ marginRight: "4px" }} />
-                        Reviewed
+                        Gennemgået
                       </button>
                       <button
                         type="button"
@@ -1062,16 +1076,16 @@ export function AdminTab() {
                     <div style={{ padding: "10px 12px", borderTop: "1px solid " + theme.border, background: theme.surface }}>
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
                         <div style={{ fontSize: "12px", color: theme.textMid }}>
-                          <div><strong style={{ color: theme.text }}>Match:</strong> {flag.match_id || '-'}</div>
-                          <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Tournament:</strong> {flag.tournament_id || '-'}</div>
+                          <div><strong style={{ color: theme.text }}>Kamp:</strong> {flag.match_id || '-'}</div>
+                          <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Turnering:</strong> {flag.tournament_id || '-'}</div>
                         </div>
                         <div style={{ fontSize: "12px", color: theme.textMid }}>
-                          <div><strong style={{ color: theme.text }}>Reviewed af:</strong> {reviewerMap[flag.reviewed_by] || '-'}</div>
-                          <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Reviewed tid:</strong> {formatDateTimeDa(flag.reviewed_at)}</div>
+                          <div><strong style={{ color: theme.text }}>Gennemgået af:</strong> {reviewerMap[flag.reviewed_by] || '-'}</div>
+                          <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Gennemgået tid:</strong> {formatDateTimeDa(flag.reviewed_at)}</div>
                         </div>
                       </div>
 
-                      <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>Admin note</label>
+                      <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>Adminnote</label>
                       <textarea
                         value={flagNotes[flag.id] ?? flag.review_note ?? ''}
                         onChange={(e) => setFlagNotes((prev) => ({ ...prev, [flag.id]: e.target.value }))}
@@ -1099,7 +1113,7 @@ export function AdminTab() {
                         )}
                       </div>
 
-                      <div style={{ fontSize: "11px", color: theme.textMid, marginBottom: "6px" }}>Payload</div>
+                      <div style={{ fontSize: "11px", color: theme.textMid, marginBottom: "6px" }}>Datafelt</div>
                       <pre style={{ margin: 0, background: theme.surfaceAlt, border: "1px solid " + theme.border, borderRadius: "8px", padding: "10px", fontSize: "11px", lineHeight: 1.4, whiteSpace: "pre-wrap", wordBreak: "break-word", color: theme.text }}>
                         {JSON.stringify(flag.payload || {}, null, 2)}
                       </pre>
