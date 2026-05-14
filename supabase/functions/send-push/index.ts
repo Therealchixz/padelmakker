@@ -483,7 +483,7 @@ Deno.serve(async (req: Request) => {
 
     if (subsError) {
       console.error("push_subscriptions fetch failed:", subsError.message);
-      return new Response(JSON.stringify({ error: subsError.message }), {
+      return new Response(JSON.stringify({ error: "Internal error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
