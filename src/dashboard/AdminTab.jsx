@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
 
@@ -34,9 +35,23 @@ function isSixDigitPin(value) {
   return /^\d{6}$/.test(String(value || ''));
 }
 
+function formatDateTimeDa(value) {
+  if (!value) return 'Ukendt';
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return 'Ukendt';
+  return new Intl.DateTimeFormat('da-DK', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(dt);
+}
+
 export function AdminTab() {
+  const { user } = useAuth();
   const ask = useConfirm();
-  const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' or 'matches'
+  const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' | 'matches' | 'console'
   const [matchSubTab, setMatchSubTab] = useState('2v2'); // '2v2' | 'americano' | 'liga'
   const [_loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -52,6 +67,30 @@ export function AdminTab() {
   const [deletePin, setDeletePin] = useState('');
   const [deletePinError, setDeletePinError] = useState('');
   const [deletePinBusy, setDeletePinBusy] = useState(false);
+  const [consoleLoading, setConsoleLoading] = useState(false);
+  const [consoleError, setConsoleError] = useState('');
+  const [ratingFlags, setRatingFlags] = useState([]);
+  const [flagSearch, setFlagSearch] = useState('');
+  const [flagStatusFilter, setFlagStatusFilter] = useState('open');
+  const [flagSourceFilter, setFlagSourceFilter] = useState('all');
+  const [flagSeverityFilter, setFlagSeverityFilter] = useState('all');
+  const [expandedFlags, setExpandedFlags] = useState({});
+  const [flagNotes, setFlagNotes] = useState({});
+  const [flagBusyId, setFlagBusyId] = useState(null);
+  const [reviewerMap, setReviewerMap] = useState({});
+  const [consoleStats, setConsoleStats] = useState({
+    totalPlayers: 0,
+    bannedPlayers: 0,
+    pendingResults: 0,
+    openMatches: 0,
+    inProgressMatches: 0,
+    completedMatches24h: 0,
+    americanoOpen: 0,
+    americanoActive: 0,
+    americanoCompleted7d: 0,
+    openFlags: 0,
+    highFlags: 0,
+  });
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
@@ -107,6 +146,97 @@ export function AdminTab() {
     setLoading(false);
   };
 
+  const fetchAdminConsole = async () => {
+    setConsoleLoading(true);
+    setConsoleError('');
+    try {
+      const [
+        flagsRes,
+        profilesRes,
+        matchesRes,
+        resultsRes,
+        americanoRes,
+      ] = await Promise.all([
+        supabase
+          .from('rating_admin_flags')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(300),
+        supabase
+          .from('profiles')
+          .select('id, is_banned'),
+        supabase
+          .from('matches')
+          .select('id, status, completed_at')
+          .order('created_at', { ascending: false })
+          .limit(500),
+        supabase
+          .from('match_results')
+          .select('id, confirmed')
+          .eq('confirmed', false),
+        supabase
+          .from('americano_tournaments')
+          .select('id, status, updated_at')
+          .order('created_at', { ascending: false })
+          .limit(300),
+      ]);
+
+      if (flagsRes.error) {
+        const msg = String(flagsRes.error.message || '');
+        if (msg.toLowerCase().includes('rating_admin_flags')) {
+          setConsoleError('Flag-tabellen mangler i DB. Koer SQL-scriptet supabase/sql/elo_guardrails_admin_flags.sql i Supabase SQL Editor.');
+          setRatingFlags([]);
+        } else {
+          setConsoleError('Kunne ikke hente flags: ' + msg);
+        }
+      } else {
+        setRatingFlags(flagsRes.data || []);
+      }
+
+      const profiles = profilesRes.data || [];
+      const matchesRows = matchesRes.data || [];
+      const pendingResults = resultsRes.data || [];
+      const americanoRows = americanoRes.data || [];
+      const now = Date.now();
+      const oneDayAgo = now - 24 * 60 * 60 * 1000;
+      const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+
+      const nextStats = {
+        totalPlayers: profiles.length,
+        bannedPlayers: profiles.filter((p) => !!p.is_banned).length,
+        pendingResults: pendingResults.length,
+        openMatches: matchesRows.filter((m) => m.status === 'open' || m.status === 'full').length,
+        inProgressMatches: matchesRows.filter((m) => m.status === 'in_progress').length,
+        completedMatches24h: matchesRows.filter((m) => m.status === 'completed' && m.completed_at && new Date(m.completed_at).getTime() >= oneDayAgo).length,
+        americanoOpen: americanoRows.filter((t) => t.status === 'open').length,
+        americanoActive: americanoRows.filter((t) => t.status === 'active').length,
+        americanoCompleted7d: americanoRows.filter((t) => t.status === 'completed' && t.updated_at && new Date(t.updated_at).getTime() >= sevenDaysAgo).length,
+        openFlags: (flagsRes.data || []).filter((f) => f.status === 'open').length,
+        highFlags: (flagsRes.data || []).filter((f) => f.status === 'open' && f.severity === 'high').length,
+      };
+      setConsoleStats(nextStats);
+
+      const reviewerIds = [...new Set((flagsRes.data || []).map((f) => f.reviewed_by).filter(Boolean))];
+      if (reviewerIds.length > 0) {
+        const { data: reviewerRows } = await supabase
+          .from('profiles')
+          .select('id, full_name, name, email')
+          .in('id', reviewerIds);
+        const nextReviewerMap = {};
+        for (const row of (reviewerRows || [])) {
+          nextReviewerMap[row.id] = adminDisplayName(row);
+        }
+        setReviewerMap(nextReviewerMap);
+      } else {
+        setReviewerMap({});
+      }
+    } catch (err) {
+      setConsoleError('Admin-konsol fejl: ' + (err?.message || 'ukendt fejl'));
+    } finally {
+      setConsoleLoading(false);
+    }
+  };
+
   const deleteAmericano = async (id, name) => {
     const ok = await ask({
       message: `Slet turneringen "${name}"? Dette kan ikke fortrydes.`,
@@ -133,9 +263,13 @@ export function AdminTab() {
 
   useEffect(() => {
     if (activeSubTab === 'users') fetchUsers();
-    else if (matchSubTab === '2v2') fetchMatches();
-    else if (matchSubTab === 'americano') fetchAmericano();
-    else fetchLiga();
+    else if (activeSubTab === 'matches') {
+      if (matchSubTab === '2v2') fetchMatches();
+      else if (matchSubTab === 'americano') fetchAmericano();
+      else fetchLiga();
+    } else {
+      fetchAdminConsole();
+    }
   }, [activeSubTab, matchSubTab]);
 
   const toggleAdmin = async (user) => {
@@ -366,6 +500,72 @@ export function AdminTab() {
     }).format(date);
   };
 
+  const filteredFlags = useMemo(() => {
+    return (ratingFlags || []).filter((flag) => {
+      if (flagStatusFilter !== 'all' && flag.status !== flagStatusFilter) return false;
+      if (flagSourceFilter !== 'all' && flag.source !== flagSourceFilter) return false;
+      if (flagSeverityFilter !== 'all' && flag.severity !== flagSeverityFilter) return false;
+      const q = flagSearch.trim().toLowerCase();
+      if (!q) return true;
+      const blob = [
+        flag.reason,
+        flag.source,
+        flag.severity,
+        flag.status,
+        flag.match_id,
+        flag.tournament_id,
+        JSON.stringify(flag.payload || {}),
+      ].join(' ').toLowerCase();
+      return blob.includes(q);
+    });
+  }, [ratingFlags, flagSearch, flagStatusFilter, flagSourceFilter, flagSeverityFilter]);
+
+  const flagStatusBadgeColor = (status) => {
+    if (status === 'open') return { text: theme.red, bg: theme.redBg };
+    if (status === 'reviewed') return { text: theme.warm, bg: theme.warmBg };
+    return { text: theme.accent, bg: theme.accentBg };
+  };
+
+  const flagSeverityBadgeColor = (severity) => {
+    if (severity === 'high') return { text: theme.red, bg: theme.redBg };
+    if (severity === 'medium') return { text: theme.warm, bg: theme.warmBg };
+    return { text: theme.textMid, bg: theme.surfaceAlt };
+  };
+
+  const updateFlag = async (flag, nextStatus) => {
+    if (!flag?.id) return;
+    const note = String(flagNotes[flag.id] || '').trim();
+    setFlagBusyId(flag.id);
+    try {
+      const updates = {
+        status: nextStatus,
+      };
+      if (nextStatus === 'open') {
+        updates.reviewed_at = null;
+        updates.reviewed_by = null;
+      } else {
+        updates.reviewed_at = new Date().toISOString();
+        updates.reviewed_by = user?.id || null;
+      }
+      if (note) updates.review_note = note;
+
+      const { error } = await supabase
+        .from('rating_admin_flags')
+        .update(updates)
+        .eq('id', flag.id);
+      if (error) {
+        await ask({ message: 'Kunne ikke opdatere flag: ' + error.message, notice: true });
+        return;
+      }
+      await fetchAdminConsole();
+      if (nextStatus !== 'open') {
+        setExpandedFlags((prev) => ({ ...prev, [flag.id]: false }));
+      }
+    } finally {
+      setFlagBusyId(null);
+    }
+  };
+
   return (
     <div style={{ padding: "16px", maxWidth: "1000px", margin: "0 auto", fontFamily: font }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
@@ -382,6 +582,12 @@ export function AdminTab() {
             style={{ ...btn(activeSubTab === 'matches'), padding: "6px 16px", fontSize: "13px" }}
           >
             <Swords size={14} style={{ marginRight: "6px" }} /> Kampe
+          </button>
+          <button
+            onClick={() => setActiveSubTab('console')}
+            style={{ ...btn(activeSubTab === 'console'), padding: "6px 16px", fontSize: "13px" }}
+          >
+            <AlertTriangle size={14} style={{ marginRight: "6px" }} /> Konsol
           </button>
         </div>
       </div>
@@ -538,7 +744,7 @@ export function AdminTab() {
             </div>
           )}
         </>
-      ) : (
+      ) : activeSubTab === 'matches' ? (
         <div>
           {/* Match type sub-tabs */}
           <div style={{ display: "flex", gap: "6px", marginBottom: "16px", flexWrap: "wrap" }}>
@@ -692,6 +898,222 @@ export function AdminTab() {
           })}
         </div>
           )}
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, textTransform: "uppercase" }}>
+              Admin Console
+            </h3>
+            <button
+              onClick={() => { void fetchAdminConsole(); }}
+              style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}
+              disabled={consoleLoading}
+            >
+              <RefreshCw size={13} style={{ marginRight: "6px", opacity: consoleLoading ? 0.6 : 1 }} />
+              Opdater
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5, 1fr)", gap: "10px" }}>
+            {[
+              { key: 'openFlags', label: 'Aabne flags', value: consoleStats.openFlags, color: theme.red },
+              { key: 'highFlags', label: 'Hoje flags', value: consoleStats.highFlags, color: theme.warm },
+              { key: 'pendingResults', label: 'Afventer resultat', value: consoleStats.pendingResults, color: theme.accent },
+              { key: 'inProgressMatches', label: 'Kampe i gang', value: consoleStats.inProgressMatches, color: theme.text },
+              { key: 'bannedPlayers', label: 'Bannede spillere', value: consoleStats.bannedPlayers, color: theme.textMid },
+            ].map((card) => (
+              <div
+                key={card.key}
+                style={{
+                  background: theme.surface,
+                  border: "1px solid " + theme.border,
+                  borderRadius: "12px",
+                  padding: "12px",
+                }}
+              >
+                <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>
+                  {card.label}
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: 900, color: card.color, marginTop: "6px" }}>
+                  {card.value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr 1fr", gap: "10px" }}>
+            <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
+              <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>Spillere</div>
+              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.totalPlayers} total, {consoleStats.bannedPlayers} bannet</div>
+            </div>
+            <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
+              <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>2v2 matcher</div>
+              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.openMatches} aabne, {consoleStats.inProgressMatches} i gang, {consoleStats.completedMatches24h} afsluttet (24t)</div>
+            </div>
+            <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
+              <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>Americano</div>
+              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.americanoOpen} aabne, {consoleStats.americanoActive} aktive, {consoleStats.americanoCompleted7d} afsluttet (7 dage)</div>
+            </div>
+            <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
+              <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>Resultater</div>
+              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.pendingResults} venter paa bekraeftelse</div>
+            </div>
+          </div>
+
+          <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "12px", padding: "14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "10px", flexWrap: "wrap" }}>
+              <div style={{ fontSize: "13px", fontWeight: 800, color: theme.text }}>ELO/Americano flags</div>
+              <div style={{ fontSize: "11px", color: theme.textMid }}>
+                {consoleLoading ? 'Indlaeser...' : `${filteredFlags.length} vist / ${ratingFlags.length} total`}
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr 1fr", gap: "8px", marginBottom: "10px" }}>
+              <input
+                type="text"
+                placeholder="Soeg i reason, payload, match-id..."
+                value={flagSearch}
+                onChange={(e) => setFlagSearch(e.target.value)}
+                style={inputStyle}
+              />
+              <select value={flagStatusFilter} onChange={(e) => setFlagStatusFilter(e.target.value)} style={inputStyle}>
+                <option value="open">Kun aabne</option>
+                <option value="reviewed">Reviewed</option>
+                <option value="closed">Closed</option>
+                <option value="all">Alle status</option>
+              </select>
+              <select value={flagSeverityFilter} onChange={(e) => setFlagSeverityFilter(e.target.value)} style={inputStyle}>
+                <option value="all">Alle severity</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+              <select value={flagSourceFilter} onChange={(e) => setFlagSourceFilter(e.target.value)} style={inputStyle}>
+                <option value="all">Alle kilder</option>
+                <option value="2v2">2v2</option>
+                <option value="americano">Americano</option>
+              </select>
+            </div>
+
+            {consoleError && (
+              <div style={{ marginBottom: "10px", background: theme.redBg, color: theme.red, border: "1px solid " + theme.red + "44", borderRadius: "8px", padding: "10px 12px", fontSize: "12px" }}>
+                {consoleError}
+              </div>
+            )}
+
+            {!consoleError && filteredFlags.length === 0 && (
+              <div style={{ color: theme.textMid, fontSize: "13px", padding: "8px 2px" }}>
+                Ingen flags med nuvaerende filter.
+              </div>
+            )}
+
+            {!consoleError && filteredFlags.map((flag) => {
+              const statusBadge = flagStatusBadgeColor(flag.status);
+              const severityBadge = flagSeverityBadgeColor(flag.severity);
+              const expanded = !!expandedFlags[flag.id];
+              const hasReviewMeta = flag.reviewed_at || flag.reviewed_by || flag.review_note;
+              return (
+                <div key={flag.id} style={{ border: "1px solid " + theme.border, borderRadius: "10px", marginBottom: "10px", overflow: "hidden" }}>
+                  <div style={{ padding: "10px 12px", background: theme.surfaceAlt, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1.2fr 1fr", gap: "8px", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text }}>{flag.reason || 'Ukendt reason'}</div>
+                      <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "2px" }}>
+                        {formatDateTimeDa(flag.created_at)} · {String(flag.source || '').toUpperCase()}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, borderRadius: "999px", padding: "3px 8px", color: statusBadge.text, background: statusBadge.bg, textTransform: "uppercase" }}>
+                        {flag.status}
+                      </span>
+                      <span style={{ fontSize: "10px", fontWeight: 700, borderRadius: "999px", padding: "3px 8px", color: severityBadge.text, background: severityBadge.bg, textTransform: "uppercase" }}>
+                        {flag.severity}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: isMobile ? "flex-start" : "flex-end", gap: "6px", flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedFlags((prev) => ({ ...prev, [flag.id]: !prev[flag.id] }))}
+                        style={{ ...btn(false), padding: "5px 10px", fontSize: "11px" }}
+                      >
+                        {expanded ? 'Skjul' : 'Detaljer'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { void updateFlag(flag, 'reviewed'); }}
+                        disabled={flagBusyId === flag.id}
+                        style={{ ...btn(flag.status === 'reviewed'), padding: "5px 10px", fontSize: "11px" }}
+                      >
+                        <CheckCircle2 size={12} style={{ marginRight: "4px" }} />
+                        Reviewed
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { void updateFlag(flag, 'closed'); }}
+                        disabled={flagBusyId === flag.id}
+                        style={{ ...btn(flag.status === 'closed'), padding: "5px 10px", fontSize: "11px" }}
+                      >
+                        Luk
+                      </button>
+                    </div>
+                  </div>
+
+                  {expanded && (
+                    <div style={{ padding: "10px 12px", borderTop: "1px solid " + theme.border, background: theme.surface }}>
+                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                        <div style={{ fontSize: "12px", color: theme.textMid }}>
+                          <div><strong style={{ color: theme.text }}>Match:</strong> {flag.match_id || '-'}</div>
+                          <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Tournament:</strong> {flag.tournament_id || '-'}</div>
+                        </div>
+                        <div style={{ fontSize: "12px", color: theme.textMid }}>
+                          <div><strong style={{ color: theme.text }}>Reviewed af:</strong> {reviewerMap[flag.reviewed_by] || '-'}</div>
+                          <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Reviewed tid:</strong> {formatDateTimeDa(flag.reviewed_at)}</div>
+                        </div>
+                      </div>
+
+                      <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>Admin note</label>
+                      <textarea
+                        value={flagNotes[flag.id] ?? flag.review_note ?? ''}
+                        onChange={(e) => setFlagNotes((prev) => ({ ...prev, [flag.id]: e.target.value }))}
+                        placeholder="Skriv note om vurdering af flag..."
+                        style={{ ...inputStyle, minHeight: "54px", resize: "vertical", marginBottom: "10px" }}
+                      />
+                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px" }}>
+                        <button
+                          type="button"
+                          onClick={() => { void updateFlag(flag, flag.status || 'open'); }}
+                          disabled={flagBusyId === flag.id}
+                          style={{ ...btn(true), padding: "6px 12px", fontSize: "11px" }}
+                        >
+                          Gem note
+                        </button>
+                        {flag.status !== 'open' && (
+                          <button
+                            type="button"
+                            onClick={() => { void updateFlag(flag, 'open'); }}
+                            disabled={flagBusyId === flag.id}
+                            style={{ ...btn(false), padding: "6px 12px", fontSize: "11px" }}
+                          >
+                            Genabn
+                          </button>
+                        )}
+                      </div>
+
+                      <div style={{ fontSize: "11px", color: theme.textMid, marginBottom: "6px" }}>Payload</div>
+                      <pre style={{ margin: 0, background: theme.surfaceAlt, border: "1px solid " + theme.border, borderRadius: "8px", padding: "10px", fontSize: "11px", lineHeight: 1.4, whiteSpace: "pre-wrap", wordBreak: "break-word", color: theme.text }}>
+                        {JSON.stringify(flag.payload || {}, null, 2)}
+                      </pre>
+                      {hasReviewMeta && (
+                        <div style={{ marginTop: "8px", fontSize: "11px", color: theme.textMid }}>
+                          Seneste note: {flag.review_note || '(ingen)'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
       {/* Edit User Modal */}
@@ -902,3 +1324,4 @@ export function AdminTab() {
     </div>
   );
 }
+
