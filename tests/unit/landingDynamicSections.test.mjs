@@ -37,11 +37,13 @@ test('landing roadmap is placed after how-it-works and avoids date promises', as
   const roadmapComponent = await readFile(new URL('../../src/components/LandingRoadmap.jsx', import.meta.url), 'utf8');
   const css = await readFile(new URL('../../src/responsive.css', import.meta.url), 'utf8');
 
-  assert.match(landingPage, /<LandingRoadmap \/>[\s\S]*<LandingEloExplainer \/>/);
+  // Landing sections are lazy-loaded and rendered conditionally; roadmap should
+  // still appear before the ELO explainer in the render tree.
+  assert.match(landingPage, /<LandingRoadmapLazy \/>[\s\S]*<LandingEloExplainerLazy \/>/);
   assert.match(roadmapComponent, /PadelMakker bliver hele tiden bedre/);
   assert.match(roadmapComponent, /Live nu/);
-  assert.match(roadmapComponent, /På vej/);
-  assert.match(roadmapComponent, /Senere/);
+  assert.match(roadmapComponent, /Næste skridt|På vej/);
+  assert.match(roadmapComponent, /På sigt|Senere/);
   assert.doesNotMatch(roadmapComponent, /20\d{2}|Q[1-4]|kommer næste måned/i);
   assert.match(css, /\.pm-roadmap-section/);
   assert.match(css, /\.pm-roadmap-card/);
