@@ -20,10 +20,26 @@ self.addEventListener('activate', (event) => {
 
 /* ── Push notification modtaget fra server ── */
 self.addEventListener('push', (event) => {
-  let data = { title: 'PadelMakker', body: 'Du har en ny notifikation', matchId: null, unreadCount: null };
+  let data = {
+    title: 'PadelMakker',
+    body: 'Du har en ny notifikation',
+    matchId: null,
+    unreadCount: null,
+    channel: 'system',
+    level: 'normal',
+    silent: false,
+    renotify: false,
+    tag: 'pm-notif',
+  };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch { /* brug default */ }
+
+  const notificationTag = typeof data.tag === 'string' && data.tag.trim()
+    ? data.tag.trim()
+    : (data.matchId ? 'match-' + data.matchId : 'pm-notif');
+  const shouldRenotify = Boolean(data.renotify) && notificationTag.length > 0;
+  const shouldBeSilent = Boolean(data.silent);
 
   event.waitUntil(
     Promise.all([
@@ -31,9 +47,10 @@ self.addEventListener('push', (event) => {
         body: data.body,
         icon: '/icon-192-v2.png',
         badge: '/icon-192-v2.png',
-        tag: data.matchId ? 'match-' + data.matchId : 'pm-notif',
-        renotify: true,
-        data: { matchId: data.matchId },
+        tag: notificationTag,
+        renotify: shouldRenotify,
+        silent: shouldBeSilent,
+        data: { matchId: data.matchId, channel: data.channel, level: data.level },
       }),
 
       (async () => {

@@ -1,10 +1,11 @@
 import { supabase } from './supabase';
+import { resolveNotificationPushPolicy } from './notificationPolicy';
 
 /**
  * Opret in-app notifikation + send browser push hvis brugeren har tilmeldt sig.
  * Returnerer fejl-objekt hvis RPC fejler (så UI kan vise toast).
  */
-export async function createNotification(userId, type, title, body, matchId = null) {
+export async function createNotification(userId, type, title, body, matchId = null, options = {}) {
   let rpcError = null;
 
   // 1. In-app notifikation via RPC (SECURITY DEFINER, row_security = off)
@@ -29,6 +30,9 @@ export async function createNotification(userId, type, title, body, matchId = nu
   // Undgår at push sendes hvis RPC afvises.
   if (rpcError) return rpcError;
 
+  const pushPolicy = resolveNotificationPushPolicy(type, options?.pushPolicy);
+  if (!pushPolicy.sendPush) return rpcError;
+
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     if (supabaseUrl && import.meta.env.VITE_VAPID_PUBLIC_KEY) {
@@ -40,7 +44,20 @@ export async function createNotification(userId, type, title, body, matchId = nu
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ targetUserId: userId, title, body, matchId, type }),
+          body: JSON.stringify({
+            targetUserId: userId,
+            title,
+            body,
+            matchId,
+            type: pushPolicy.type,
+            channel: pushPolicy.channel,
+            level: pushPolicy.level,
+            silent: pushPolicy.silent,
+            urgency: pushPolicy.urgency,
+            cooldownSeconds: pushPolicy.cooldownSeconds,
+            aggregate: pushPolicy.aggregate,
+            renotify: pushPolicy.renotify,
+          }),
         })
           .then(async (res) => {
             if (res.ok) return;
