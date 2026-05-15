@@ -689,6 +689,7 @@ export function AmericanoTab({
                   name,
                   avatar: snap?.avatar || null,
                   isMe,
+                  onView: () => setParticipantStatsPick({ userId: p.user_id, name: p.display_name }),
                   ...(canKickPlayer
                     ? {
                         onKick: () => kickParticipant(t.id, p.id),
@@ -749,11 +750,6 @@ export function AmericanoTab({
               ) : null
               const extras = canManageTournament ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                  {!tournamentFull && (
-                    <div className="pm-feedback-inline-note pm-feedback-inline-note--warning">
-                      Vent med at starte: {partCount}/{slotsConfigured} tilmeldt — alle {slotsConfigured} skal være med.
-                    </div>
-                  )}
                   <button
                     type="button"
                     disabled={busyId === t.id || !tournamentFull}

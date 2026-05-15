@@ -35,6 +35,8 @@ type AmericanoOpenCardPlayer = {
   /** Vises kun hvis sat — render et lille × i hjørnet af avataren */
   onKick?: () => void
   kickBusy?: boolean
+  /** Kald når avataren klikkes — typisk åbn spillerens stats-modal */
+  onView?: () => void
 }
 
 type AmericanoOpenCardProps = {
@@ -76,9 +78,10 @@ function PlayerInitials({ name }: { name: string }) {
   return <span style={{ fontSize: 13, fontWeight: 700 }}>{initials}</span>
 }
 
-function PlayerAvatar({ avatar, name }: { avatar: string | null; name: string }) {
+function PlayerAvatar({ avatar, name, clickable }: { avatar: string | null; name: string; clickable: boolean }) {
   return (
     <div
+      className={clickable ? 'pm-avatar-circle pm-avatar-circle--clickable' : 'pm-avatar-circle'}
       style={{
         width: 44,
         height: 44,
@@ -275,58 +278,80 @@ export function AmericanoOpenCard({
             justifyItems: 'center',
           }}
         >
-          {players.map((p) => (
-            <div key={p.id} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 0 }}>
-              <PlayerAvatar avatar={p.avatar} name={p.name} />
-              {p.onKick && (
-                <button
-                  type="button"
-                  onClick={p.onKick}
-                  disabled={p.kickBusy}
-                  aria-label={`Fjern ${p.name}`}
-                  title={`Fjern ${p.name}`}
+          {players.map((p) => {
+            const avatarEl = <PlayerAvatar avatar={p.avatar} name={p.name} clickable={Boolean(p.onView)} />
+            return (
+              <div key={p.id} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 0 }}>
+                {p.onView ? (
+                  <button
+                    type="button"
+                    onClick={p.onView}
+                    aria-label={`Åbn statistik for ${p.name}`}
+                    title="Se Americano-statistik"
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      padding: 0,
+                      cursor: 'pointer',
+                      display: 'flex',
+                    }}
+                  >
+                    {avatarEl}
+                  </button>
+                ) : (
+                  avatarEl
+                )}
+                {p.onKick && (
+                  <button
+                    type="button"
+                    onClick={p.onKick}
+                    disabled={p.kickBusy}
+                    aria-label={`Fjern ${p.name}`}
+                    title={`Fjern ${p.name}`}
+                    style={{
+                      position: 'absolute',
+                      top: -4,
+                      right: 'calc(50% - 26px)',
+                      width: 18,
+                      height: 18,
+                      borderRadius: '50%',
+                      border: 'none',
+                      background: '#DC2626',
+                      color: '#FFFFFF',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: p.kickBusy ? 'wait' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0,
+                      lineHeight: 1,
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.18)',
+                      zIndex: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+                <span
                   style={{
-                    position: 'absolute',
-                    top: -4,
-                    right: 'calc(50% - 26px)',
-                    width: 18,
-                    height: 18,
-                    borderRadius: '50%',
-                    border: 'none',
-                    background: '#DC2626',
-                    color: '#FFFFFF',
                     fontSize: 11,
-                    fontWeight: 700,
-                    cursor: p.kickBusy ? 'wait' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 0,
-                    lineHeight: 1,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.18)',
+                    fontWeight: 600,
+                    color: C.text,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                    textAlign: 'center',
                   }}
+                  title={p.name}
                 >
-                  ×
-                </button>
-              )}
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: C.text,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '100%',
-                  textAlign: 'center',
-                }}
-                title={p.name}
-              >
-                {p.name.split(' ')[0]}
-                {p.isMe ? <span style={{ color: C.accent }}> (dig)</span> : null}
-              </span>
-            </div>
-          ))}
+                  {p.name.split(' ')[0]}
+                  {p.isMe ? <span style={{ color: C.accent }}> (dig)</span> : null}
+                </span>
+              </div>
+            )
+          })}
           {Array.from({ length: emptySlots }).map((_, i) => (
             <div
               key={`empty-${i}`}
