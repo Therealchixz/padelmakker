@@ -1633,11 +1633,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <div className="pm-court-header">
                 <div className="pm-court-header-team pm-court-header-team--t1">
                   <span className="pm-court-header-label">Hold 1</span>
-                  {t1Avg !== null && <span className="pm-court-header-elo">Snit {t1Avg}</span>}
+                  {t1Avg !== null && <span className="pm-court-header-elo">Gns. {t1Avg}</span>}
                 </div>
                 <div className="pm-court-header-team pm-court-header-team--t2">
                   <span className="pm-court-header-label">Hold 2</span>
-                  {t2Avg !== null && <span className="pm-court-header-elo">Snit {t2Avg}</span>}
+                  {t2Avg !== null && <span className="pm-court-header-elo">Gns. {t2Avg}</span>}
                 </div>
               </div>
               <div className="pm-court">
