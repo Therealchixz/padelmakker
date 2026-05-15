@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 
 /** Antal runder per spiller-count, matcher schedule578.ts og schedule8.ts. */
@@ -52,20 +52,6 @@ type AmericanoOpenCardProps = {
   joinedNote?: ReactNode
   /** Ekstra blokke vist nedenfor (fx admin-værktøjer, start-turnering-knap) */
   extras?: ReactNode
-}
-
-function badgeStyle(bg: string, color: string): CSSProperties {
-  return {
-    fontSize: 10,
-    fontWeight: 700,
-    padding: '3px 9px',
-    borderRadius: 6,
-    background: bg,
-    color,
-    letterSpacing: 0.2,
-    whiteSpace: 'nowrap',
-    lineHeight: 1.3,
-  }
 }
 
 function PlayerInitials({ name }: { name: string }) {
@@ -167,60 +153,66 @@ export function AmericanoOpenCard({
         overflow: 'hidden',
       }}
     >
-      {/* 1. Badge row */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '14px 16px 0' }}>
-        <span style={badgeStyle(isFull ? C.amberBg : C.greenBg, isFull ? C.amber : C.green)}>
-          {isFull ? 'Fuld' : 'Åben'}
-        </span>
-        <span style={badgeStyle(C.bgBlue, C.accent)}>Americano</span>
-        <span style={badgeStyle(C.neutralBg, C.textMid)}>
-          {filled}/{maxPlayers} spillere
-        </span>
-      </div>
-
-      {/* 2. Title + meta */}
-      <div style={{ padding: '10px 16px 0' }}>
-        <div
-          style={{
-            fontSize: 17,
-            fontWeight: 800,
-            letterSpacing: '-0.02em',
-            color: C.text,
-            lineHeight: 1.25,
-          }}
-        >
-          {tournamentName}
-        </div>
-        <div
-          style={{
-            marginTop: 3,
-            fontSize: 12,
-            color: C.textMid,
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: 10,
-          }}
-        >
-          <span>📅 {dateLabel}</span>
-        </div>
-        {description ? (
-          <div
+      {/* 1. Blå gradient header — fælles stil med 2v2 og Liga */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)',
+          color: C.white,
+          padding: '16px 18px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                opacity: 0.85,
+                marginBottom: 2,
+              }}
+            >
+              Americano
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+              {tournamentName}
+            </div>
+            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>{dateLabel}</div>
+          </div>
+          <span
             style={{
-              marginTop: 6,
-              fontSize: 12,
-              color: C.textMid,
-              fontStyle: 'italic',
-              lineHeight: 1.45,
+              flexShrink: 0,
+              fontSize: 11,
+              fontWeight: 700,
+              padding: '4px 10px',
+              borderRadius: 999,
+              background: isFull ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.18)',
+              color: C.white,
+              whiteSpace: 'nowrap',
             }}
           >
-            {description}
-          </div>
-        ) : null}
+            {isFull ? 'Fuld' : `${filled}/${maxPlayers} spillere`}
+          </span>
+        </div>
       </div>
 
+      {description ? (
+        <div
+          style={{
+            padding: '10px 16px 0',
+            fontSize: 12,
+            color: C.textMid,
+            fontStyle: 'italic',
+            lineHeight: 1.45,
+          }}
+        >
+          {description}
+        </div>
+      ) : null}
+
       {/* 3. Player area */}
-      <div style={{ padding: '16px 16px 0' }}>
+      <div style={{ padding: '14px 16px 0' }}>
         {/* 3a. Fill header */}
         <div
           style={{
@@ -378,9 +370,9 @@ export function AmericanoOpenCard({
             color: C.textDim,
           }}
         >
-          <span>⏱ {totalRounds} runder</span>
-          <span>⏳ ~{estMinutes} min</span>
-          <span>🔄 Alle spiller med alle</span>
+          <span>{totalRounds} runder</span>
+          <span>~{estMinutes} min</span>
+          <span>Alle spiller med alle</span>
         </div>
       </div>
 

@@ -27,7 +27,7 @@ import { buildKampeMatchLists } from '../lib/matchListFilters';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { buildMatchLevelRange, clampElo, parseMatchLevelRange } from '../lib/matchLevelRange';
 import { DateTime } from 'luxon';
-import { Clock, MapPin, Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
+import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -1507,61 +1507,108 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         key={m.id}
         ref={observeMatchCard}
         data-match-id={m.id}
-        className="pm-ui-card pm-match-surface-card"
+        className="pm-ui-card"
         style={{
           scrollMarginTop: "88px",
           position: "relative",
+          padding: 0,
+          overflow: "hidden",
           boxShadow: unreadMatchCount > 0 ? "0 0 0 2px " + theme.red + "55, 0 8px 24px rgba(0,0,0,0.06)" : undefined,
         }}
         onClick={unreadMatchCount > 0 ? () => { void markMatchNotifsRead(m.id); } : undefined}
       >
-        {/* Header */}
-        <div className="pm-kampe-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "10px" }}>
-          <div className="pm-kampe-card-meta">
-            <div className="pm-kampe-card-datetime" style={{ fontSize: "15px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-              <Clock size={15} color={theme.accent} />
-              <span className="pm-kampe-card-time-normalized">{formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}</span>
-              {unreadMatchCount > 0 && (
-                <span
-                  aria-label={`${unreadMatchCount} ulæste notifikationer for denne kamp`}
-                  title="Ulæste notifikationer for denne kamp"
-                  style={{
-                    background: theme.red,
-                    color: theme.onAccent,
-                    borderRadius: "999px",
-                    minWidth: "18px",
-                    height: "18px",
-                    padding: "0 6px",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    lineHeight: 1,
-                  }}
-                >
-                  {unreadMatchCount > 9 ? "9+" : unreadMatchCount}
-                </span>
-              )}
+        {/* Blå gradient header — fælles stil med Americano og Liga */}
+        <div
+          style={{
+            background: "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)",
+            color: "#FFFFFF",
+            padding: "14px 16px",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  opacity: 0.85,
+                  marginBottom: 2,
+                }}
+              >
+                2v2 Kamp
+              </div>
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 800,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.2,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {m.court_name || "Padelbane"}
+                {unreadMatchCount > 0 && (
+                  <span
+                    aria-label={`${unreadMatchCount} ulæste notifikationer for denne kamp`}
+                    title="Ulæste notifikationer for denne kamp"
+                    style={{
+                      background: theme.red,
+                      color: theme.onAccent,
+                      borderRadius: "999px",
+                      minWidth: 18,
+                      height: 18,
+                      padding: "0 6px",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {unreadMatchCount > 9 ? "9+" : unreadMatchCount}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>
+                {formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}
+              </div>
             </div>
-            <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "4px", display: "flex", alignItems: "center", gap: "3px" }}><MapPin size={11} /> {m.court_name}</div>
-            {m.description && <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "4px", fontStyle: "italic", lineHeight: 1.4 }}>💬 {m.description}</div>}
+            <span
+              style={{
+                flexShrink: 0,
+                fontSize: 11,
+                fontWeight: 700,
+                padding: "4px 10px",
+                borderRadius: 999,
+                background: "rgba(255,255,255,0.18)",
+                color: "#FFFFFF",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {statusLabel.text}
+            </span>
           </div>
-          <div className="pm-kampe-card-tags" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        </div>
+
+        <div style={{ padding: "var(--pm-space-3)" }}>
+        {/* Sub-badges row */}
+        {(m.seeking_player || isClosed || matchPrefs.booked != null || (matchPrefs.min != null && matchPrefs.max != null)) && (
+          <div className="pm-card-meta-row" style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
             {m.seeking_player && (
               <span className="pm-status-badge pm-status-badge--warm">
                 <Zap size={10} /> Mangler 1 spiller
               </span>
             )}
             {isClosed && (
-              <span className="pm-status-badge pm-status-badge--neutral">
-                🔒 Lukket
-              </span>
+              <span className="pm-status-badge pm-status-badge--neutral">Lukket</span>
             )}
             {matchPrefs.booked != null && (
-              <span
-                className={`pm-status-badge ${matchPrefs.booked ? "pm-status-badge--green" : "pm-status-badge--warm"}`}
-              >
+              <span className={`pm-status-badge ${matchPrefs.booked ? "pm-status-badge--green" : "pm-status-badge--warm"}`}>
                 {matchPrefs.booked ? "Bane booket" : "Bane ikke booket"}
               </span>
             )}
@@ -1570,9 +1617,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 ELO {matchPrefs.min}-{matchPrefs.max}
               </span>
             )}
-            <span className={`pm-status-badge pm-status-badge--${statusLabel.tone}`}>{statusLabel.text}</span>
           </div>
-        </div>
+        )}
+        {m.description && (
+          <div style={{ fontSize: 12, color: theme.textMid, fontStyle: 'italic', lineHeight: 1.4, marginBottom: 12 }}>
+            {m.description}
+          </div>
+        )}
 
         {/* Padel court visualisering — top-down view med FIP-korrekte linjer */}
         {(() => {
@@ -2039,6 +2090,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <Trash2 size={14} /> {isAdmin ? "Slet kamp (Admin)" : "Slet kamp"}
             </button>
           )}
+        </div>
         </div>
       </div>
     );
