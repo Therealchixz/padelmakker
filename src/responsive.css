@@ -2830,32 +2830,33 @@ button,
 .pm-court-side--t1 { padding-left: 14px; padding-right: 4px; }
 .pm-court-side--t2 { padding-right: 14px; padding-left: 4px; }
 
+/* Team-info renderes som ét vandret pill-badge i toppen, så det visuelt
+   ikke kan forveksles med den øverste spillers ELO. ELO-værdien får
+   "snit"-prefix så det er helt klart at det er holdets gennemsnit. */
 .pm-court-team-info {
   position: absolute;
-  top: 10px;
-  display: flex;
-  flex-direction: column;
+  top: 8px;
+  display: inline-flex;
   align-items: center;
-  text-align: center;
-  line-height: 1.15;
-  z-index: 1;
-  pointer-events: none;
-}
-.pm-court-side--t1 .pm-court-team-info { left: calc(50% + 5px); transform: translateX(-50%); }
-.pm-court-side--t2 .pm-court-team-info { left: calc(50% - 5px); transform: translateX(-50%); }
-
-.pm-court-team-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.pm-court-team-elo {
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  padding: 3px 9px;
   font-size: 9px;
   font-weight: 700;
-  opacity: 0.8;
-  margin-top: 1px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  white-space: nowrap;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
+.pm-court-side--t1 .pm-court-team-info { left: 50%; transform: translateX(-50%); }
+.pm-court-side--t2 .pm-court-team-info { left: 50%; transform: translateX(-50%); }
+
+.pm-court-team-label { font-weight: 800; }
+.pm-court-team-elo { opacity: 0.85; font-weight: 700; }
 .pm-court-side--t1 .pm-court-team-label,
 .pm-court-side--t1 .pm-court-team-elo { color: var(--pm-accent); }
 .pm-court-side--t2 .pm-court-team-label,
