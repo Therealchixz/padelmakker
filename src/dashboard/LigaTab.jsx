@@ -10,6 +10,7 @@ import { ScopeSearchControls } from '../components/ScopeSearchControls';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
+import { LigaOpenCard } from './LigaOpenCard';
 
 function isTiebreakScore(scoreText) {
   return !!(scoreText && /7-6|6-7/.test(scoreText));
@@ -1305,6 +1306,133 @@ export function LigaTab({
               (isAdmin && league.status === 'active');
             const regTeamCount = (allTeamsByLeague[league.id] || []).length;
             const isFull = league.max_teams && regTeamCount >= league.max_teams;
+
+            /* Status "registration" bruger det nye visuelle kort. Active/completed beholder layoutet. */
+            if (league.status === 'registration') {
+              const regTeams = allTeamsByLeague[league.id] || [];
+              const onKickTeamCb =
+                canManageTeams && manageToolsOpen
+                  ? (t) => {
+                      if (t.player1_id === user.id || t.player2_id === user.id) return;
+                      kickTeam(t);
+                    }
+                  : null;
+
+              const joinForm = (
+                <div className="pm-card-subpanel" style={{ padding: 14, marginTop: 6 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Tilmeld hold</div>
+                  <label style={labelStyle}>Holdnavn</label>
+                  <input
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                    placeholder="F.eks. Smash Bros"
+                    style={{ ...inputStyle, marginBottom: 10 }}
+                  />
+                  <label style={labelStyle}>Din makker</label>
+                  <PartnerSearch userId={user.id} onSelect={setSelectedPartner} />
+                  {selectedPartner && (
+                    <div className="pm-card-row-item pm-card-row-item--accent" style={{ marginTop: 8 }}>
+                      <AvatarCircle avatar={selectedPartner.avatar} size={24} emojiSize="12px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedPartner.full_name || selectedPartner.name}</span>
+                      <span style={{ fontSize: 11, color: theme.textLight }}>ELO {Math.round(Number(selectedPartner.elo_rating) || 1000)}</span>
+                      <button onClick={() => setSelectedPartner(null)} style={{ ...btn(false), padding: '2px 8px', fontSize: 11, marginLeft: 'auto' }}>×</button>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <button onClick={() => createTeam(league.id)} disabled={busyId === league.id + '-team'} style={{ ...btn(true), fontSize: 13, padding: '10px 14px' }}>
+                      {busyId === league.id + '-team' ? 'Tilmelder…' : 'Tilmeld hold'}
+                    </button>
+                    <button onClick={() => { setTeamFormLeagueId(null); setTeamName(''); setSelectedPartner(null); }} style={{ ...btn(false), fontSize: 13, padding: '10px 14px' }}>Annullér</button>
+                  </div>
+                </div>
+              );
+
+              let cardActions;
+              if (showTeamForm) {
+                cardActions = joinForm;
+              } else if (joined) {
+                cardActions = (
+                  <div
+                    className={`pm-card-subpanel ${myTeam.status === 'pending' ? '' : 'pm-card-subpanel--green'}`.trim()}
+                    style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
+                  >
+                    <div style={{ fontSize: 12, color: myTeam.status === 'pending' ? theme.warm : theme.green, fontWeight: 700 }}>
+                      {myTeam.status === 'pending'
+                        ? `⏳ Afventer godkendelse fra ${myTeam.player2_name}`
+                        : `✓ Du er tilmeldt som ${myTeam.name}`}
+                    </div>
+                    <button onClick={() => leaveLeague(league.id)} disabled={busy} style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}>
+                      Afmeld hold
+                    </button>
+                  </div>
+                );
+              } else if (isFull) {
+                cardActions = (
+                  <button
+                    type="button"
+                    disabled
+                    style={{ ...btn(true), width: '100%', justifyContent: 'center', padding: 12, fontSize: 14, fontWeight: 700, borderRadius: 10, opacity: 0.55, cursor: 'not-allowed' }}
+                  >
+                    Ligaen er fuld
+                  </button>
+                );
+              } else {
+                const pladserTilbage = Math.max(0, (league.max_teams || 0) - regTeamCount);
+                cardActions = (
+                  <button
+                    type="button"
+                    onClick={() => setTeamFormLeagueId(league.id)}
+                    style={{ ...btn(true), width: '100%', justifyContent: 'center', padding: 12, fontSize: 14, fontWeight: 700, borderRadius: 10 }}
+                  >
+                    <Plus size={14} /> Tilmeld hold{pladserTilbage > 0 ? ` · ${pladserTilbage} ${pladserTilbage === 1 ? 'plads' : 'pladser'} tilbage` : ''}
+                  </button>
+                );
+              }
+
+              const cardExtras = showManageToolsToggle ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                  <button
+                    onClick={() => toggleManageTools(league.id)}
+                    style={{
+                      ...btn(false),
+                      padding: '7px 12px',
+                      fontSize: 12,
+                      color: theme.warm,
+                      borderColor: theme.warm + '55',
+                      background: theme.warmBg,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 6,
+                    }}
+                  >
+                    <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
+                    {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                  {isAdmin && manageToolsOpen && (
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button onClick={() => startLeague(league)} disabled={busy} style={{ ...btn(true), padding: '7px 12px', fontSize: 12, background: theme.warm, borderColor: theme.warm }}>
+                        <Play size={13} /> Start liga
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : null;
+
+              return (
+                <LigaOpenCard
+                  key={league.id}
+                  league={league}
+                  teams={regTeams}
+                  myTeamId={myTeam?.id}
+                  onPlayerClick={openProfile}
+                  onKickTeam={onKickTeamCb}
+                  kickBusyId={typeof busyId === 'string' && busyId.endsWith('-kick') ? busyId.replace('-kick', '') : null}
+                  actions={cardActions}
+                  extras={cardExtras}
+                />
+              );
+            }
 
             return (
               <div key={league.id} className="pm-ui-card pm-match-surface-card">
