@@ -1575,7 +1575,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 )}
               </div>
               <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>
-                {formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}
+                📅 {formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}
               </div>
             </div>
             <span
@@ -1605,7 +1605,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               </span>
             )}
             {isClosed && (
-              <span className="pm-status-badge pm-status-badge--neutral">Lukket</span>
+              <span className="pm-status-badge pm-status-badge--neutral">🔒 Lukket</span>
             )}
             {matchPrefs.booked != null && (
               <span className={`pm-status-badge ${matchPrefs.booked ? "pm-status-badge--green" : "pm-status-badge--warm"}`}>
@@ -1621,7 +1621,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         )}
         {m.description && (
           <div style={{ fontSize: 12, color: theme.textMid, fontStyle: 'italic', lineHeight: 1.4, marginBottom: 12 }}>
-            {m.description}
+            💬 {m.description}
           </div>
         )}
 

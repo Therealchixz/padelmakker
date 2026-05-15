@@ -310,7 +310,7 @@ export function LigaOpenCard({
               {league.name}
             </div>
             <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>
-              {formatDateRange(league.start_date, league.end_date)}
+              📅 {formatDateRange(league.start_date, league.end_date)}
             </div>
           </div>
           <span
@@ -401,9 +401,9 @@ export function LigaOpenCard({
             color: C.textDim,
           }}
         >
-          {totalRounds && <span>{totalRounds} runder</span>}
-          <span>2 pr. hold</span>
-          <span>Swiss-parring</span>
+          {totalRounds && <span>⏱ {totalRounds} runder</span>}
+          <span>👥 2 pr. hold</span>
+          <span>📊 Swiss-parring</span>
         </div>
 
         {/* Actions */}
