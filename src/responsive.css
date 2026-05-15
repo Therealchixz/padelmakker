@@ -2759,9 +2759,9 @@ button,
 
 .pm-pill-tab-active,
 .pm-pill-tab[aria-selected="true"] {
-  background: var(--pm-accent);
-  color: var(--pm-on-accent);
-  box-shadow: 0 2px 6px rgba(29, 78, 216, 0.32);
+  background: var(--pm-surface);
+  color: var(--pm-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   font-weight: 700;
 }
 
