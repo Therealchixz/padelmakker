@@ -1640,7 +1640,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <div className="pm-court-side pm-court-side--t1">
                   <div className="pm-court-team-info">
                     <span className="pm-court-team-label">Hold 1</span>
-                    {t1Avg !== null && <span className="pm-court-team-elo">{t1Avg} ELO</span>}
+                    {t1Avg !== null && <span className="pm-court-team-elo">· Snit {t1Avg}</span>}
                   </div>
                   <div className="pm-court-player-slot pm-court-player-slot--top">{t1Top}</div>
                   <div className="pm-court-player-slot pm-court-player-slot--bottom">{t1Bot}</div>
@@ -1648,7 +1648,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <div className="pm-court-side pm-court-side--t2">
                   <div className="pm-court-team-info">
                     <span className="pm-court-team-label">Hold 2</span>
-                    {t2Avg !== null && <span className="pm-court-team-elo">{t2Avg} ELO</span>}
+                    {t2Avg !== null && <span className="pm-court-team-elo">· Snit {t2Avg}</span>}
                   </div>
                   <div className="pm-court-player-slot pm-court-player-slot--top">{t2Top}</div>
                   <div className="pm-court-player-slot pm-court-player-slot--bottom">{t2Bot}</div>
