@@ -1629,29 +1629,33 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const t2Bot = t2[1] ? renderPlayer(t2[1], 2) : renderEmptySlot(2);
 
           return (
-            <div className="pm-court" style={{ marginBottom: "14px" }}>
-              <div className="pm-court-line pm-court-line--service-t1" />
-              <div className="pm-court-line pm-court-line--service-t2" />
-              <div className="pm-court-line pm-court-line--center-t1" />
-              <div className="pm-court-line pm-court-line--center-t2" />
-              <div className="pm-court-net" />
-              <span className="pm-court-vs">vs</span>
-              <div className="pm-court-grid">
-                <div className="pm-court-side pm-court-side--t1">
-                  <div className="pm-court-team-info">
-                    <span className="pm-court-team-label">Hold 1</span>
-                    {t1Avg !== null && <span className="pm-court-team-elo">· Snit {t1Avg}</span>}
-                  </div>
-                  <div className="pm-court-player-slot pm-court-player-slot--top">{t1Top}</div>
-                  <div className="pm-court-player-slot pm-court-player-slot--bottom">{t1Bot}</div>
+            <div className="pm-court-wrap" style={{ marginBottom: "14px" }}>
+              <div className="pm-court-header">
+                <div className="pm-court-header-team pm-court-header-team--t1">
+                  <span className="pm-court-header-label">Hold 1</span>
+                  {t1Avg !== null && <span className="pm-court-header-elo">Snit {t1Avg}</span>}
                 </div>
-                <div className="pm-court-side pm-court-side--t2">
-                  <div className="pm-court-team-info">
-                    <span className="pm-court-team-label">Hold 2</span>
-                    {t2Avg !== null && <span className="pm-court-team-elo">· Snit {t2Avg}</span>}
+                <div className="pm-court-header-team pm-court-header-team--t2">
+                  <span className="pm-court-header-label">Hold 2</span>
+                  {t2Avg !== null && <span className="pm-court-header-elo">Snit {t2Avg}</span>}
+                </div>
+              </div>
+              <div className="pm-court">
+                <div className="pm-court-line pm-court-line--service-t1" />
+                <div className="pm-court-line pm-court-line--service-t2" />
+                <div className="pm-court-line pm-court-line--center-t1" />
+                <div className="pm-court-line pm-court-line--center-t2" />
+                <div className="pm-court-net" />
+                <span className="pm-court-vs">vs</span>
+                <div className="pm-court-grid">
+                  <div className="pm-court-side pm-court-side--t1">
+                    <div className="pm-court-player-slot pm-court-player-slot--top">{t1Top}</div>
+                    <div className="pm-court-player-slot pm-court-player-slot--bottom">{t1Bot}</div>
                   </div>
-                  <div className="pm-court-player-slot pm-court-player-slot--top">{t2Top}</div>
-                  <div className="pm-court-player-slot pm-court-player-slot--bottom">{t2Bot}</div>
+                  <div className="pm-court-side pm-court-side--t2">
+                    <div className="pm-court-player-slot pm-court-player-slot--top">{t2Top}</div>
+                    <div className="pm-court-player-slot pm-court-player-slot--bottom">{t2Bot}</div>
+                  </div>
                 </div>
               </div>
             </div>

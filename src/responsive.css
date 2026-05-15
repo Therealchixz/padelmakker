@@ -2830,37 +2830,33 @@ button,
 .pm-court-side--t1 { padding-left: 14px; padding-right: 4px; }
 .pm-court-side--t2 { padding-right: 14px; padding-left: 4px; }
 
-/* Team-info renderes som ét vandret pill-badge i toppen, så det visuelt
-   ikke kan forveksles med den øverste spillers ELO. ELO-værdien får
-   "snit"-prefix så det er helt klart at det er holdets gennemsnit. */
-.pm-court-team-info {
-  position: absolute;
-  top: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 999px;
-  padding: 3px 9px;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  line-height: 1.1;
-  white-space: nowrap;
-  z-index: 2;
-  pointer-events: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+/* Team header — sidder OVER banen i stedet for inde i den, så hold-info
+   aldrig kan forveksles med en spillers ELO. */
+.pm-court-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
 }
-.pm-court-side--t1 .pm-court-team-info { left: 50%; transform: translateX(-50%); }
-.pm-court-side--t2 .pm-court-team-info { left: 50%; transform: translateX(-50%); }
-
-.pm-court-team-label { font-weight: 800; }
-.pm-court-team-elo { opacity: 0.85; font-weight: 700; }
-.pm-court-side--t1 .pm-court-team-label,
-.pm-court-side--t1 .pm-court-team-elo { color: var(--pm-accent); }
-.pm-court-side--t2 .pm-court-team-label,
-.pm-court-side--t2 .pm-court-team-elo { color: var(--pm-blue); }
+.pm-court-header-team {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.pm-court-header-label { font-weight: 800; }
+.pm-court-header-elo {
+  font-weight: 700;
+  opacity: 0.78;
+  font-size: 10px;
+}
+.pm-court-header-team--t1 { color: var(--pm-accent); }
+.pm-court-header-team--t2 { color: var(--pm-blue); }
 
 /* Player slot — top slot er hævet over center service-linjen, bottom slot under */
 .pm-court-player-slot {
@@ -2873,13 +2869,15 @@ button,
 .pm-court-player-slot--bottom { align-self: start; padding-top: 18px; }
 
 @media (max-width: 480px) {
-  .pm-court { min-height: 180px; }
-  .pm-court-grid { min-height: 180px; }
+  .pm-court { min-height: 170px; }
+  .pm-court-grid { min-height: 170px; }
   .pm-court-side--t1 { padding-left: 8px; }
   .pm-court-side--t2 { padding-right: 8px; }
-  .pm-court-team-info { top: 6px; }
   .pm-court-player-slot--top    { padding-bottom: 8px; }
   .pm-court-player-slot--bottom { padding-top: 8px; }
+  .pm-court-header { gap: 6px; margin-bottom: 6px; }
+  .pm-court-header-team { font-size: 10px; gap: 5px; }
+  .pm-court-header-elo { font-size: 9px; }
 }
 
 /* Shared segmented-control tabs.
