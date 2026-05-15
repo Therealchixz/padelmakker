@@ -1593,7 +1593,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     return (
                       <div key={p.id || p.user_id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
                         <button type="button" onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} aria-label={"Åbn profil for " + (p.user_name || "spiller")} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", border: "none", background: "transparent", padding: 0 }}>
-                          <AvatarCircle avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: "1.5px solid " + theme.accent + "40" }} />
+                          <AvatarCircle clickable avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: "1.5px solid " + theme.accent + "40" }} />
                           <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
                           <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700 }}>{playerElo(p)}</span>
                         </button>
@@ -1642,7 +1642,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     return (
                       <div key={p.id || p.user_id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
                         <button type="button" onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} aria-label={"Åbn profil for " + (p.user_name || "spiller")} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", border: "none", background: "transparent", padding: 0 }}>
-                          <AvatarCircle avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.blueBg, border: "1.5px solid " + theme.blue + "40" }} />
+                          <AvatarCircle clickable avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.blueBg, border: "1.5px solid " + theme.blue + "40" }} />
                           <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
                           <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700 }}>{playerElo(p)}</span>
                         </button>
@@ -2310,14 +2310,22 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <button
                   type="button"
                   onClick={() => setNewMatch(m => ({ ...m, court_booked: true }))}
-                  style={{ ...btn(newMatch.court_booked === true), flex: 1, fontSize: "13px", justifyContent: "center", padding: "9px 12px" }}
+                  style={{
+                    ...btn(newMatch.court_booked === true),
+                    flex: 1, fontSize: "13px", justifyContent: "center", padding: "9px 12px",
+                    opacity: newMatch.court_booked === true ? 1 : 0.65,
+                  }}
                 >
                   Ja, booket
                 </button>
                 <button
                   type="button"
                   onClick={() => setNewMatch(m => ({ ...m, court_booked: false }))}
-                  style={{ ...btn(newMatch.court_booked === false), flex: 1, fontSize: "13px", justifyContent: "center", padding: "9px 12px" }}
+                  style={{
+                    ...btn(newMatch.court_booked === false),
+                    flex: 1, fontSize: "13px", justifyContent: "center", padding: "9px 12px",
+                    opacity: newMatch.court_booked === false ? 1 : 0.65,
+                  }}
                 >
                   Nej, ikke endnu
                 </button>

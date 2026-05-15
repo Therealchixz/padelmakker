@@ -141,7 +141,7 @@ export const labelStyle = {
   fontSize: '12px',
   fontWeight: 600,
   display: 'block',
-  marginBottom: '5px',
+  marginBottom: '8px',
   color: 'var(--pm-text-mid)',
   letterSpacing: '0.01em',
 };
