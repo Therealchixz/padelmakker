@@ -2872,12 +2872,13 @@ button,
 .pm-court-player-slot--bottom { align-self: start; padding-top: 18px; }
 
 @media (max-width: 480px) {
-  .pm-court { min-height: 220px; }
-  .pm-court-grid { min-height: 220px; }
-  .pm-court-side--t1 { padding-left: 10px; }
-  .pm-court-side--t2 { padding-right: 10px; }
-  .pm-court-player-slot--top    { padding-bottom: 14px; }
-  .pm-court-player-slot--bottom { padding-top: 14px; }
+  .pm-court { min-height: 180px; }
+  .pm-court-grid { min-height: 180px; }
+  .pm-court-side--t1 { padding-left: 8px; }
+  .pm-court-side--t2 { padding-right: 8px; }
+  .pm-court-team-info { top: 6px; }
+  .pm-court-player-slot--top    { padding-bottom: 8px; }
+  .pm-court-player-slot--bottom { padding-top: 8px; }
 }
 
 /* Shared segmented-control tabs.
