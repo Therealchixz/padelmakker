@@ -93,7 +93,7 @@ function SuggestionCard({ suggestion, onView, onInvite }) {
           </span>
 
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={tag(theme.accentBg, theme.accent)}>ELO {Math.round(Number(resolvedElo) || Number(p.elo_rating) || 1000)}</span>
+            <span style={{ ...tag(theme.accent, theme.onAccent), fontWeight: 800 }}>ELO {Math.round(Number(resolvedElo) || Number(p.elo_rating) || 1000)}</span>
             {(p.city || p.area) && (
               <span style={{ ...tag(theme.blueBg, theme.blue), display: 'flex', alignItems: 'center', gap: '2px' }}>
                 <MapPin size={8} />{p.city || p.area.replace('Region ', '')}

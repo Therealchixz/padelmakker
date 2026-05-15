@@ -2709,6 +2709,23 @@ button,
   }
 }
 
+/* AvatarCircle — gør klikbare avatars tydeligt interaktive */
+.pm-avatar-circle--clickable {
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pm-avatar-circle--clickable:hover {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 3px var(--pm-accent-bg);
+  }
+}
+
+.pm-avatar-circle--clickable:active {
+  transform: scale(0.98);
+}
+
 /* Shared segmented-control tabs.
    Tab-knapperne sidder i én fælles "pille" — den aktive får accent-baggrund
    og hvid tekst, de inaktive er flade og transparente. */
@@ -3100,7 +3117,9 @@ button,
   }
 
   .pm-card-subpanel {
-    padding: 10px;
+    /* Hold samme absolutte reduktion som .pm-match-surface-card (16px → 12px),
+       så indre paneler aldrig virker mere klemte end de ydre kort. */
+    padding: var(--pm-space-1);
   }
 
   .pm-card-row-item {
