@@ -2,8 +2,8 @@ import { isAvatarUrl } from '../lib/avatarUpload';
 
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
 
-/** Hvid+purple gradient header — Liga's visuelle signatur (modsat Americano-blå) */
-const HEADER_GRADIENT = 'linear-gradient(135deg, #6D28D9 0%, #4338CA 100%)';
+/** Blå gradient header — samme stil på tværs af 2v2 / Americano / Liga */
+const HEADER_GRADIENT = 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)';
 
 const C = {
   white: '#FFFFFF',
@@ -310,7 +310,7 @@ export function LigaOpenCard({
               {league.name}
             </div>
             <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>
-              📅 {formatDateRange(league.start_date, league.end_date)}
+              {formatDateRange(league.start_date, league.end_date)}
             </div>
           </div>
           <span
@@ -355,7 +355,7 @@ export function LigaOpenCard({
             style={{
               width: `${fillPct}%`,
               height: '100%',
-              background: 'linear-gradient(90deg, #6D28D9, #4338CA)',
+              background: 'linear-gradient(90deg, #1D4ED8, #0EA5E9)',
               transition: 'width 0.25s ease',
             }}
           />
@@ -401,9 +401,9 @@ export function LigaOpenCard({
             color: C.textDim,
           }}
         >
-          {totalRounds && <span>⏱ {totalRounds} runder</span>}
-          <span>👥 2 pr. hold</span>
-          <span>📊 Swiss-parring</span>
+          {totalRounds && <span>{totalRounds} runder</span>}
+          <span>2 pr. hold</span>
+          <span>Swiss-parring</span>
         </div>
 
         {/* Actions */}
