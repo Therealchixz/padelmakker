@@ -128,6 +128,7 @@ function SuggestionCard({ suggestion, onView, onInvite }) {
           border: '1px solid ' + quality.border,
           borderRadius: '6px', padding: '3px 8px',
           fontSize: '11px', fontWeight: 700,
+          whiteSpace: 'nowrap', flexShrink: 0,
         }}>
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.color, flexShrink: 0 }} />
           {quality.label}
