@@ -2751,6 +2751,135 @@ button,
   transform: scale(0.98);
 }
 
+/* Padel court visualisering — bruges i KampeTab match cards.
+   Top-down view af en padelbane med FIP-korrekte linjer:
+   - Vertikal net i midten (stiplet)
+   - Vertikale service-linjer ved 15% / 85% (svarer til 3m fra bagvæg på en 10m halvdel)
+   - Vandret center service-linje løber fra service-linjen til nettet — kun i service-zonen
+     (dele service-boksen i deuce/ad halvdele)
+   Hold-labels og spillere er centreret i hver halvdel (ikke ved baglinjen).
+   Spillerne sidder over og under center service-linjen så de markerer deres
+   sub-quadrant (deuce position øverst, ad position nederst). */
+.pm-court {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--pm-border);
+  background: #BFE0F5;
+  min-height: 240px;
+}
+
+.pm-court-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 1;
+  pointer-events: none;
+}
+.pm-court-line--service-t1 { top: 0; bottom: 0; left: 15%; width: 1.5px; transform: translateX(-50%); }
+.pm-court-line--service-t2 { top: 0; bottom: 0; left: 85%; width: 1.5px; transform: translateX(-50%); }
+.pm-court-line--center-t1  { top: 50%; left: 15%; width: 35%; height: 1.5px; transform: translateY(-50%); }
+.pm-court-line--center-t2  { top: 50%; left: 50%; width: 35%; height: 1.5px; transform: translateY(-50%); }
+
+.pm-court-net {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.95) 0 5px,
+    transparent 5px 9px
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.pm-court-vs {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--pm-text-mid);
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 999px;
+  padding: 3px 9px;
+  z-index: 3;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.pm-court-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 240px;
+  position: relative;
+  z-index: 0;
+}
+
+.pm-court-side {
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
+  justify-items: center;
+}
+.pm-court-side--t1 { padding-left: 14px; padding-right: 4px; }
+.pm-court-side--t2 { padding-right: 14px; padding-left: 4px; }
+
+.pm-court-team-info {
+  position: absolute;
+  top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  line-height: 1.15;
+  z-index: 1;
+  pointer-events: none;
+}
+.pm-court-side--t1 .pm-court-team-info { left: calc(50% + 5px); transform: translateX(-50%); }
+.pm-court-side--t2 .pm-court-team-info { left: calc(50% - 5px); transform: translateX(-50%); }
+
+.pm-court-team-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pm-court-team-elo {
+  font-size: 9px;
+  font-weight: 700;
+  opacity: 0.8;
+  margin-top: 1px;
+}
+.pm-court-side--t1 .pm-court-team-label,
+.pm-court-side--t1 .pm-court-team-elo { color: var(--pm-accent); }
+.pm-court-side--t2 .pm-court-team-label,
+.pm-court-side--t2 .pm-court-team-elo { color: var(--pm-blue); }
+
+/* Player slot — top slot er hævet over center service-linjen, bottom slot under */
+.pm-court-player-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.pm-court-player-slot--top    { align-self: end;   padding-bottom: 18px; }
+.pm-court-player-slot--bottom { align-self: start; padding-top: 18px; }
+
+@media (max-width: 480px) {
+  .pm-court { min-height: 220px; }
+  .pm-court-grid { min-height: 220px; }
+  .pm-court-side--t1 { padding-left: 10px; }
+  .pm-court-side--t2 { padding-right: 10px; }
+  .pm-court-player-slot--top    { padding-bottom: 14px; }
+  .pm-court-player-slot--bottom { padding-top: 14px; }
+}
+
 /* Shared segmented-control tabs.
    Tab-knapperne sidder i én fælles "pille" — den aktive får accent-baggrund
    og hvid tekst, de inaktive er flade og transparente. */
