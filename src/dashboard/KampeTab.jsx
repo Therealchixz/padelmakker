@@ -2403,9 +2403,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               : "Alle kan se kampen, men skal anmode om at deltage — du godkender selv."}
           </p>
 
-          <button onClick={createMatch} disabled={creating || !newMatch.court_id || venueOptions.length === 0} style={{ ...btn(true), marginTop: "16px", width: "100%", justifyContent: "center", opacity: creating ? 0.55 : 1 }}>
-            {creating ? "Opretter..." : "Opret kamp"}
-          </button>
+          <div className="pm-form-submit-sticky">
+            <button onClick={createMatch} disabled={creating || !newMatch.court_id || venueOptions.length === 0} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: creating ? 0.55 : 1 }}>
+              {creating ? "Opretter..." : "Opret kamp"}
+            </button>
+          </div>
         </div>
       )}
 
