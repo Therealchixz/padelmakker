@@ -2709,17 +2709,26 @@ button,
   }
 }
 
-/* Shared pill tabs */
+/* Shared segmented-control tabs.
+   Tab-knapperne sidder i én fælles "pille" — den aktive får accent-baggrund
+   og hvid tekst, de inaktive er flade og transparente. */
 .pm-pill-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--pm-space-1);
+  flex-wrap: nowrap;
+  gap: 2px;
+  background: var(--pm-surface-alt);
+  border: 1px solid var(--pm-border);
+  border-radius: 12px;
+  padding: 4px;
+  width: 100%;
 }
 
 .pm-pill-tab {
-  border: 1px solid var(--pm-border);
-  border-radius: 999px;
-  background: var(--pm-surface-alt);
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
   color: var(--pm-text-mid);
   font-family: var(--pm-font);
   font-weight: 600;
@@ -2730,19 +2739,21 @@ button,
   gap: 6px;
   cursor: pointer;
   box-shadow: none;
-  padding: 0 var(--pm-space-3);
+  padding: 0 var(--pm-space-2);
   min-height: var(--pm-control-h);
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pm-pill-tab--sm {
-  min-height: 34px;
-  padding: 0 var(--pm-space-3);
+  min-height: 32px;
   font-size: 12px;
 }
 
 .pm-pill-tab--md {
   min-height: var(--pm-control-h);
-  padding: 0 var(--pm-space-3);
   font-size: 13px;
 }
 
@@ -2750,8 +2761,7 @@ button,
 .pm-pill-tab[aria-selected="true"] {
   background: var(--pm-accent);
   color: var(--pm-on-accent);
-  border-color: var(--pm-accent);
-  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.28);
+  box-shadow: 0 2px 6px rgba(29, 78, 216, 0.32);
   font-weight: 700;
 }
 
@@ -2763,15 +2773,13 @@ button,
 
 .pm-pill-tab:focus-visible {
   outline: none;
-  border-color: var(--pm-accent) !important;
   box-shadow: var(--pm-focus-ring) !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .pm-pill-tab:not(:disabled):not([aria-selected="true"]):hover {
-    border-color: color-mix(in srgb, var(--pm-accent) 25%, var(--pm-border)) !important;
-    background: color-mix(in srgb, var(--pm-accent-bg) 45%, var(--pm-surface-alt)) !important;
-    filter: saturate(1.03);
+    color: var(--pm-text);
+    background: color-mix(in srgb, var(--pm-accent-bg) 50%, transparent);
   }
 }
 
