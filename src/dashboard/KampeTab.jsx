@@ -1574,104 +1574,84 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
         </div>
 
-        {/* Teams display */}
+        {/* Padel court visualisering — top-down view med FIP-korrekte linjer */}
         {(() => {
           const playerElo = (p) => teamStats.playerEloByUserId[String(p.user_id)] ?? 1000;
           const t1Avg = teamStats.t1Avg;
           const t2Avg = teamStats.t2Avg;
+
+          const renderPlayer = (p, teamNum) => {
+            const canKick = (isCreator || isAdmin) && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
+            const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
+            const teamColor = teamNum === 1 ? theme.accent : theme.blue;
+            const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
+            return (
+              <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
+                <button type="button" onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} aria-label={"Åbn profil for " + (p.user_name || "spiller")} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", border: "none", background: "transparent", padding: 0 }}>
+                  <AvatarCircle clickable avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={36} emojiSize="16px" style={{ background: teamBg, border: "1.5px solid " + teamColor + "55" }} />
+                  <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
+                  <span style={{ fontSize: "8px", color: teamColor, fontWeight: 700 }}>{playerElo(p)}</span>
+                </button>
+                {canKick && (
+                  <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy} aria-label={"Fjern " + (p.user_name || "spiller") + " fra kampen"} style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: theme.onAccent, fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 1 }}>
+                    ×
+                  </button>
+                )}
+              </div>
+            );
+          };
+
+          const renderEmptySlot = (teamNum) => {
+            const otherTeam = teamNum === 1 ? 2 : 1;
+            const canSwitch = joined && myTeam === otherTeam && (status === "open" || status === "full") && busyId !== m.id + '-switch';
+            const teamColor = teamNum === 1 ? theme.accent : theme.blue;
+            const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
+            return (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
+                <button
+                  type="button"
+                  onClick={canSwitch ? () => switchTeam(m.id, teamNum) : undefined}
+                  disabled={!canSwitch}
+                  aria-label={"Skift til Hold " + teamNum}
+                  title={canSwitch ? "Skift til Hold " + teamNum : undefined}
+                  style={{ width: "36px", height: "36px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? teamColor : "rgba(255,255,255,0.7)"), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? teamBg : "rgba(255,255,255,0.12)", transition: "all 0.15s", padding: 0 }}
+                >
+                  <Plus size={12} color={canSwitch ? teamColor : "rgba(255,255,255,0.85)"} />
+                </button>
+                {canSwitch && <span style={{ fontSize: "8px", color: teamColor, fontWeight: 700, marginTop: "2px" }}>Skift</span>}
+              </div>
+            );
+          };
+
+          const t1Top = t1[0] ? renderPlayer(t1[0], 1) : renderEmptySlot(1);
+          const t1Bot = t1[1] ? renderPlayer(t1[1], 1) : renderEmptySlot(1);
+          const t2Top = t2[0] ? renderPlayer(t2[0], 2) : renderEmptySlot(2);
+          const t2Bot = t2[1] ? renderPlayer(t2[1], 2) : renderEmptySlot(2);
+
           return (
-            <div className="pm-card-subpanel" style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
-              {/* Team 1 */}
-              <div style={{ flex: 1, textAlign: "center" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>Hold 1</div>
-                {t1Avg !== null && <div style={{ fontSize: "10px", fontWeight: 700, color: theme.accent, marginBottom: "6px", opacity: 0.7 }}>{t1Avg} ELO</div>}
-                {t1Avg === null && <div style={{ height: "6px" }} />}
-                <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                  {t1.map(p => {
-                    const canKick = (isCreator || isAdmin) && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
-                    const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
-                    return (
-                      <div key={p.id || p.user_id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                        <button type="button" onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} aria-label={"Åbn profil for " + (p.user_name || "spiller")} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", border: "none", background: "transparent", padding: 0 }}>
-                          <AvatarCircle clickable avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: "1.5px solid " + theme.accent + "40" }} />
-                          <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
-                          <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700 }}>{playerElo(p)}</span>
-                        </button>
-                        {canKick && (
-                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy} aria-label={"Fjern " + (p.user_name || "spiller") + " fra kampen"} style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: theme.onAccent, fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {Array.from({ length: Math.max(0, 2 - t1.length) }).map((_, i) => {
-                    const canSwitch = joined && myTeam === 2 && (status === "open" || status === "full") && busyId !== m.id + '-switch';
-                    return (
-                      <div key={"t1e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                        <button
-                          type="button"
-                          onClick={canSwitch ? () => switchTeam(m.id, 1) : undefined}
-                          disabled={!canSwitch}
-                          aria-label="Skift til Hold 1"
-                          title={canSwitch ? "Skift til Hold 1" : undefined}
-                          style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? theme.accent : theme.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? theme.accentBg : "transparent", transition: "all 0.15s", padding: 0 }}
-                        >
-                          <Plus size={10} color={canSwitch ? theme.accent : theme.textLight} />
-                        </button>
-                        {canSwitch && <span style={{ fontSize: "8px", color: theme.accent, fontWeight: 700, marginTop: "2px" }}>Skift</span>}
-                      </div>
-                    );
-                  })}
+            <div className="pm-court" style={{ marginBottom: "14px" }}>
+              <div className="pm-court-line pm-court-line--service-t1" />
+              <div className="pm-court-line pm-court-line--service-t2" />
+              <div className="pm-court-line pm-court-line--center-t1" />
+              <div className="pm-court-line pm-court-line--center-t2" />
+              <div className="pm-court-net" />
+              <span className="pm-court-vs">vs</span>
+              <div className="pm-court-grid">
+                <div className="pm-court-side pm-court-side--t1">
+                  <div className="pm-court-team-info">
+                    <span className="pm-court-team-label">Hold 1</span>
+                    {t1Avg !== null && <span className="pm-court-team-elo">{t1Avg} ELO</span>}
+                  </div>
+                  <div className="pm-court-player-slot pm-court-player-slot--top">{t1Top}</div>
+                  <div className="pm-court-player-slot pm-court-player-slot--bottom">{t1Bot}</div>
                 </div>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
-                <div style={{ fontSize: "14px", fontWeight: 800, color: theme.textLight }}>vs</div>
-              </div>
-
-              {/* Team 2 */}
-              <div style={{ flex: 1, textAlign: "center" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "2px" }}>Hold 2</div>
-                {t2Avg !== null && <div style={{ fontSize: "10px", fontWeight: 700, color: theme.blue, marginBottom: "6px", opacity: 0.7 }}>{t2Avg} ELO</div>}
-                {t2Avg === null && <div style={{ height: "6px" }} />}
-                <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                  {t2.map(p => {
-                    const canKick = (isCreator || isAdmin) && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
-                    const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
-                    return (
-                      <div key={p.id || p.user_id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                        <button type="button" onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} aria-label={"Åbn profil for " + (p.user_name || "spiller")} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", border: "none", background: "transparent", padding: 0 }}>
-                          <AvatarCircle clickable avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={34} emojiSize="15px" style={{ background: theme.blueBg, border: "1.5px solid " + theme.blue + "40" }} />
-                          <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
-                          <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700 }}>{playerElo(p)}</span>
-                        </button>
-                        {canKick && (
-                          <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy} aria-label={"Fjern " + (p.user_name || "spiller") + " fra kampen"} style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: theme.onAccent, fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {Array.from({ length: Math.max(0, 2 - t2.length) }).map((_, i) => {
-                    const canSwitch = joined && myTeam === 1 && (status === "open" || status === "full") && busyId !== m.id + '-switch';
-                    return (
-                      <div key={"t2e" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                        <button
-                          type="button"
-                          onClick={canSwitch ? () => switchTeam(m.id, 2) : undefined}
-                          disabled={!canSwitch}
-                          aria-label="Skift til Hold 2"
-                          title={canSwitch ? "Skift til Hold 2" : undefined}
-                          style={{ width: "34px", height: "34px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? theme.blue : theme.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? theme.blueBg : "transparent", transition: "all 0.15s", padding: 0 }}
-                        >
-                          <Plus size={10} color={canSwitch ? theme.blue : theme.textLight} />
-                        </button>
-                        {canSwitch && <span style={{ fontSize: "8px", color: theme.blue, fontWeight: 700, marginTop: "2px" }}>Skift</span>}
-                      </div>
-                    );
-                  })}
+                <div className="pm-court-side pm-court-side--t2">
+                  <div className="pm-court-team-info">
+                    <span className="pm-court-team-label">Hold 2</span>
+                    {t2Avg !== null && <span className="pm-court-team-elo">{t2Avg} ELO</span>}
+                  </div>
+                  <div className="pm-court-player-slot pm-court-player-slot--top">{t2Top}</div>
+                  <div className="pm-court-player-slot pm-court-player-slot--bottom">{t2Bot}</div>
                 </div>
               </div>
             </div>
