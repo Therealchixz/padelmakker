@@ -7,6 +7,7 @@ import { Court } from '../../api/base44Client'
 import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
 import { AmericanoCompletedSummary } from './AmericanoCompletedSummary'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
+import { AmericanoOpenCard } from './AmericanoOpenCard'
 import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
 import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
@@ -672,6 +673,194 @@ export function AmericanoTab({
                 : t.status === 'playing'
                   ? { label: 'I gang', tone: 'accent' }
                   : { label: 'Afsluttet', tone: 'neutral' }
+
+            /* Status "registration" bruger det nye visuelle kort fra Claude Design.
+               Playing/completed beholder det eksisterende layout. */
+            if (t.status === 'registration') {
+              const parts = participantsByTournament[t.id] || []
+              const dateLabel = `${formatMatchDateDa(t.tournament_date)} kl. ${formatTimeSlotDa(t.time_slot)}`
+              const players = parts.map((p) => {
+                const snap = participantSnippets[p.user_id]
+                const name = String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name
+                const isMe = String(p.user_id) === String(profileId)
+                const canKickPlayer = canManageTournament && manageToolsOpen && !isMe
+                return {
+                  id: p.id,
+                  name,
+                  avatar: snap?.avatar || null,
+                  isMe,
+                  ...(canKickPlayer
+                    ? {
+                        onKick: () => kickParticipant(t.id, p.id),
+                        kickBusy: busyId === t.id + '-kick-' + p.id,
+                      }
+                    : {}),
+                }
+              })
+              const actions = (
+                <>
+                  {!joined && (
+                    <button
+                      type="button"
+                      disabled={busyId === t.id}
+                      onClick={() => joinTournament(t.id, t.player_slots)}
+                      style={{
+                        ...btn(true),
+                        width: '100%',
+                        justifyContent: 'center',
+                        padding: '12px',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        borderRadius: 10,
+                        cursor: busyId === t.id ? 'wait' : 'pointer',
+                      }}
+                    >
+                      {busyId === t.id ? 'Vent…' : `Tilmeld dig · ${slotsConfigured - partCount} ${(slotsConfigured - partCount) === 1 ? 'plads' : 'pladser'} tilbage`}
+                    </button>
+                  )}
+                  {joined && !isCreator && (
+                    <button
+                      type="button"
+                      disabled={busyId === t.id}
+                      onClick={() => leaveTournament(t.id)}
+                      style={{
+                        ...btn(false),
+                        width: '100%',
+                        justifyContent: 'center',
+                        padding: '12px',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        borderRadius: 10,
+                        cursor: busyId === t.id ? 'wait' : 'pointer',
+                      }}
+                    >
+                      Afmeld
+                    </button>
+                  )}
+                </>
+              )
+              const joinedNote = joined ? (
+                <span
+                  className="pm-feedback-inline-note pm-feedback-inline-note--info"
+                  style={{ alignSelf: 'center' }}
+                >
+                  Du er tilmeldt
+                </span>
+              ) : null
+              const extras = canManageTournament ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                  {!tournamentFull && (
+                    <div className="pm-feedback-inline-note pm-feedback-inline-note--warning">
+                      Vent med at starte: {partCount}/{slotsConfigured} tilmeldt — alle {slotsConfigured} skal være med.
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    disabled={busyId === t.id || !tournamentFull}
+                    title={
+                      tournamentFull
+                        ? 'Generér runder og start turneringen'
+                        : `Kræver ${slotsConfigured} tilmeldte (nu ${partCount})`
+                    }
+                    onClick={() => startTournament(t)}
+                    style={{
+                      ...btn(true),
+                      fontSize: 13,
+                      padding: '8px 14px',
+                      background: tournamentFull ? theme.warm : theme.border,
+                      borderColor: tournamentFull ? theme.warm : theme.border,
+                      color: tournamentFull ? '#fff' : theme.textLight,
+                      cursor: busyId === t.id ? 'wait' : tournamentFull ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenManageTools((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(t.id)) next.delete(t.id)
+                        else next.add(t.id)
+                        return next
+                      })
+                    }
+                    style={{
+                      ...btn(false),
+                      padding: '7px 12px',
+                      fontSize: '12px',
+                      color: theme.warm,
+                      borderColor: theme.warm + '55',
+                      background: theme.warmBg,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 6,
+                    }}
+                  >
+                    <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
+                    {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                  {manageToolsOpen && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                      {isAdmin && !tournamentFull && partCount >= 5 && (
+                        <button
+                          type="button"
+                          disabled={busyId === t.id}
+                          onClick={() => startTournament(t, true)}
+                          style={{
+                            ...btn(false),
+                            fontSize: 13,
+                            padding: '8px 14px',
+                            borderColor: theme.warm,
+                            color: theme.warm,
+                            cursor: busyId === t.id ? 'wait' : 'pointer',
+                          }}
+                        >
+                          ⚡ Gennemtving start (Admin)
+                        </button>
+                      )}
+                      {isCreator && (
+                        <button
+                          type="button"
+                          disabled={busyId === t.id}
+                          onClick={() => deleteTournament(t)}
+                          style={{
+                            ...btn(false),
+                            fontSize: 13,
+                            padding: '8px 14px',
+                            border: '1px solid var(--pm-danger-border)',
+                            color: theme.red,
+                            cursor: busyId === t.id ? 'wait' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          <Trash2 size={14} aria-hidden />
+                          Slet turnering
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : null
+              return (
+                <AmericanoOpenCard
+                  key={t.id}
+                  tournamentName={t.name}
+                  dateLabel={dateLabel}
+                  description={t.description}
+                  maxPlayers={t.player_slots}
+                  opponentPasses={t.opponent_passes ?? null}
+                  players={players}
+                  actions={actions}
+                  joinedNote={joinedNote}
+                  extras={extras}
+                />
+              )
+            }
+
             return (
             <div key={t.id} className="pm-ui-card pm-match-surface-card">
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t.name}</div>
@@ -814,81 +1003,6 @@ export function AmericanoTab({
                             )
                           })}
                         </div>
-                      ) : t.status === 'registration' ? (
-                        <div
-                          style={{
-                            marginTop: participantsCollapsible ? 10 : 0,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 8,
-                          }}
-                        >
-                          {parts.map((p) => {
-                            const snap = participantSnippets[p.user_id]
-                            const av = snap?.avatar || '🎾'
-                            const label =
-                              String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name
-                            const isMe = String(p.user_id) === String(profileId)
-                            const kickBusy = busyId === t.id + '-kick-' + p.id
-                            return (
-                              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setParticipantStatsPick({ userId: p.user_id, name: p.display_name })
-                                  }
-                                  title="Se Americano-statistik"
-                                  className="pm-card-row-item"
-                                  style={{
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    fontFamily: font,
-                                    flex: 1,
-                                    minWidth: 0,
-                                  }}
-                                >
-                                  <AvatarInCircle av={av} />
-                                  <span
-                                    style={{
-                                      fontSize: 13,
-                                      fontWeight: 600,
-                                      color: 'var(--pm-text)',
-                                      flex: 1,
-                                      minWidth: 0,
-                                    }}
-                                  >
-                                    {label}
-                                    {isMe ? (
-                                      <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
-                                    ) : null}
-                                  </span>
-                                </button>
-                                {canManageTournament && manageToolsOpen && !isMe && (
-                                  <button
-                                    type="button"
-                                    onClick={() => kickParticipant(t.id, p.id)}
-                                    disabled={kickBusy}
-                                    title="Fjern spiller"
-                                    style={{
-                                      flexShrink: 0,
-                                      padding: '6px 8px',
-                                      borderRadius: 8,
-                                      border: '1px solid var(--pm-danger-border)',
-                                      background: theme.redBg,
-                                      color: theme.red,
-                                      cursor: kickBusy ? 'wait' : 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      fontFamily: font,
-                                    }}
-                                  >
-                                    <Trash2 size={13} />
-                                  </button>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
                       ) : (
                         <ul
                           style={{
@@ -912,141 +1026,6 @@ export function AmericanoTab({
                   </div>
                 )
               })()}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                {t.status === 'registration' && !joined && (
-                  <button
-                    type="button"
-                    disabled={busyId === t.id}
-                    onClick={() => joinTournament(t.id, t.player_slots)}
-                    className="pm-card-primary-cta"
-                    style={{
-                      ...btn(true),
-                      fontSize: 13,
-                      padding: '8px 14px',
-                      cursor: busyId === t.id ? 'wait' : 'pointer',
-                    }}
-                  >
-                    Tilmeld
-                  </button>
-                )}
-                {t.status === 'registration' && joined && !isCreator && (
-                  <button
-                    type="button"
-                    disabled={busyId === t.id}
-                    onClick={() => leaveTournament(t.id)}
-                    className="pm-card-primary-cta"
-                    style={{
-                      ...btn(false),
-                      fontSize: 13,
-                      padding: '8px 14px',
-                      cursor: busyId === t.id ? 'wait' : 'pointer',
-                    }}
-                  >
-                    Afmeld
-                  </button>
-                )}
-                {t.status === 'registration' && joined && (
-                  <span className="pm-feedback-inline-note pm-feedback-inline-note--info" style={{ alignSelf: 'center' }}>Du er tilmeldt</span>
-                )}
-              </div>
-              {canManageTournament && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-                  {!tournamentFull && (
-                    <div className="pm-feedback-inline-note pm-feedback-inline-note--warning">
-                      Vent med at starte: {partCount}/{slotsConfigured} tilmeldt — alle {slotsConfigured} skal være med.
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    disabled={busyId === t.id || !tournamentFull}
-                    title={
-                      tournamentFull
-                        ? 'Generér runder og start turneringen'
-                        : `Kræver ${slotsConfigured} tilmeldte (nu ${partCount})`
-                    }
-                    onClick={() => startTournament(t)}
-                    className="pm-card-primary-cta"
-                    style={{
-                      ...btn(true),
-                      fontSize: 13,
-                      padding: '8px 14px',
-                      background: tournamentFull ? theme.warm : theme.border,
-                      borderColor: tournamentFull ? theme.warm : theme.border,
-                      color: tournamentFull ? '#fff' : theme.textLight,
-                      cursor: busyId === t.id ? 'wait' : tournamentFull ? 'pointer' : 'not-allowed',
-                    }}
-                  >
-                    {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
-                  </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setOpenManageTools((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(t.id)) next.delete(t.id)
-                        else next.add(t.id)
-                        return next
-                      })
-                    }
-                    className="pm-accordion-trigger"
-                    style={{
-                      ...btn(false),
-                      padding: '7px 12px',
-                      fontSize: '12px',
-                      color: theme.warm,
-                      borderColor: theme.warm + '55',
-                      background: theme.warmBg,
-                    }}
-                  >
-                    <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
-                    {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  </button>
-                  {manageToolsOpen && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                      {isAdmin && !tournamentFull && partCount >= 5 && (
-                        <button
-                          type="button"
-                          disabled={busyId === t.id}
-                          onClick={() => startTournament(t, true)}
-                          style={{
-                            ...btn(false),
-                            fontSize: 13,
-                            padding: '8px 14px',
-                            borderColor: theme.warm,
-                            color: theme.warm,
-                            cursor: busyId === t.id ? 'wait' : 'pointer',
-                          }}
-                        >
-                          ⚡ Gennemtving start (Admin)
-                        </button>
-                      )}
-                      {isCreator && (
-                      <button
-                        type="button"
-                        disabled={busyId === t.id}
-                        onClick={() => deleteTournament(t)}
-                        style={{
-                            ...btn(false),
-                            fontSize: 13,
-                            padding: '8px 14px',
-                            border: '1px solid var(--pm-danger-border)',
-                            color: theme.red,
-                            cursor: busyId === t.id ? 'wait' : 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                          gap: 6,
-                        }}
-                      >
-                        <Trash2 size={14} aria-hidden />
-                        Slet turnering
-                      </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
               {joined && t.status === 'playing' && (
                 <AmericanoResultsPanel
                   tournament={t}
