@@ -178,7 +178,7 @@ export function AmericanoOpenCard({
             <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
               {tournamentName}
             </div>
-            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>{dateLabel}</div>
+            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>📅 {dateLabel}</div>
           </div>
           <span
             style={{
@@ -370,9 +370,9 @@ export function AmericanoOpenCard({
             color: C.textDim,
           }}
         >
-          <span>{totalRounds} runder</span>
-          <span>~{estMinutes} min</span>
-          <span>Alle spiller med alle</span>
+          <span>⏱ {totalRounds} runder</span>
+          <span>⏳ ~{estMinutes} min</span>
+          <span>🔄 Alle spiller med alle</span>
         </div>
       </div>
 
