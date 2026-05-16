@@ -16,7 +16,7 @@ import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, f
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
-import { fetchMatchMessages, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
+import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
 import { formatMatchResultScore } from '../lib/matchResultScore';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { canConfirmPadelMatchResult, confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
@@ -235,6 +235,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [matchChatSendingById, setMatchChatSendingById] = useState({});
   const [matchChatErrorById, setMatchChatErrorById] = useState({});
   const [matchChatUnreadById, setMatchChatUnreadById] = useState({});
+  /** Totalt antal beskeder per kamp — vises i "Match chat (N)" labelen
+      uden at brugeren først skal åbne chatten. */
+  const [matchChatTotalById, setMatchChatTotalById] = useState({});
   const [matchUnreadById, setMatchUnreadById] = useState({});
   const matchUnreadByIdRef = useRef({});
   useEffect(() => {
@@ -407,6 +410,27 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   }, [user.id, showToast, reloadKampeEloBundle]);
 
   useEffect(() => { void loadData(); }, [loadData]);
+
+  /* Hent totalt antal chat-beskeder per kamp så badgen "Match chat (N)"
+     kan vises uden at brugeren først skal åbne chatten. */
+  useEffect(() => {
+    const ids = matches.map((m) => String(m.id)).filter(Boolean);
+    if (ids.length === 0) {
+      setMatchChatTotalById({});
+      return undefined;
+    }
+    let cancelled = false;
+    void fetchMatchMessageCounts(ids)
+      .then((counts) => {
+        if (!cancelled) setMatchChatTotalById(counts);
+      })
+      .catch((err) => {
+        console.warn("Kunne ikke hente match-chat counts:", err?.message || err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [matches]);
 
   useEffect(() => {
     if (!showCreate) return;
@@ -640,12 +664,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const unsubscribers = openMatchIds.map((matchId) =>
       subscribeToMatchMessages(matchId, (incoming) => {
         if (!incoming?.id) return;
+        let added = false;
         setMatchChatById((prev) => {
           const current = prev[matchId] || [];
           if (current.some((m) => String(m.id) === String(incoming.id))) return prev;
+          added = true;
           const next = [...current, incoming];
           return { ...prev, [matchId]: next.slice(-120) };
         });
+        if (added) {
+          setMatchChatTotalById((prev) => ({
+            ...prev,
+            [String(matchId)]: (prev[String(matchId)] || 0) + 1,
+          }));
+        }
         if (matchChatOpenById[matchId]) {
           if (typeof window !== "undefined") {
             window.requestAnimationFrame(() => scrollMatchChatToBottom(matchId, "smooth"));
@@ -1087,6 +1119,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     try {
       const rows = await fetchMatchMessages(matchId, 100);
       setMatchChatById((prev) => ({ ...prev, [matchId]: rows }));
+      /* Synkroniser totalen hvis bulk-tællingen var ude af sync (fx hvis besked
+         blev sendt mens kortet ikke var åbent). */
+      setMatchChatTotalById((prev) => {
+        const fresh = Math.max(rows.length, prev[String(matchId)] || 0);
+        if ((prev[String(matchId)] || 0) === fresh) return prev;
+        return { ...prev, [String(matchId)]: fresh };
+      });
     } catch (e) {
       const msg = e?.message || "Kunne ikke hente kamp-chat.";
       setMatchChatErrorById((prev) => ({ ...prev, [matchId]: msg }));
@@ -1208,11 +1247,19 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         content,
       });
       if (created?.id) {
+        let added = false;
         setMatchChatById((prev) => {
           const current = prev[matchId] || [];
           if (current.some((m) => String(m.id) === String(created.id))) return prev;
+          added = true;
           return { ...prev, [matchId]: [...current, created].slice(-120) };
         });
+        if (added) {
+          setMatchChatTotalById((prev) => ({
+            ...prev,
+            [String(matchId)]: (prev[String(matchId)] || 0) + 1,
+          }));
+        }
         if (typeof window !== "undefined") {
           window.requestAnimationFrame(() => scrollMatchChatToBottom(matchId, "smooth"));
         } else {
@@ -1849,7 +1896,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             >
               <span style={{ display: "inline-flex", alignItems: "center", gap: "7px" }}>
                 <MessageCircle size={14} />
-                Match chat {chatMessages.length > 0 ? `(${chatMessages.length})` : ""}
+                Match chat {(() => {
+                  const total = Math.max(matchChatTotalById[String(m.id)] || 0, chatMessages.length);
+                  return total > 0 ? `(${total})` : "";
+                })()}
                 {unreadChatCount > 0 && (
                   <span
                     style={{

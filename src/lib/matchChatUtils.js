@@ -1,5 +1,33 @@
 import { supabase } from './supabase';
 
+/**
+ * Henter totalt antal beskeder per kamp i bulk — bruges til at vise
+ * "Match chat (N)" label uden at brugeren først skal åbne chatten.
+ *
+ * @param {string[]} matchIds
+ * @returns {Promise<Record<string, number>>} map fra match_id → antal beskeder
+ */
+export async function fetchMatchMessageCounts(matchIds) {
+  const ids = Array.isArray(matchIds)
+    ? matchIds.filter(Boolean).map((s) => String(s))
+    : [];
+  if (ids.length === 0) return {};
+
+  const { data, error } = await supabase
+    .from('match_messages')
+    .select('match_id')
+    .in('match_id', ids);
+
+  if (error) throw error;
+
+  const counts = {};
+  for (const row of data || []) {
+    const key = String(row.match_id);
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  return counts;
+}
+
 export async function fetchMatchMessages(matchId, limit = 80) {
   if (!matchId) return [];
   const safeLimit = Math.max(1, Math.min(Number(limit) || 80, 200));
