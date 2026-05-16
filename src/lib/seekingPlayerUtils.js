@@ -16,7 +16,7 @@
  */
 
 import { supabase } from './supabase';
-import { createNotification } from './notifications';
+import { createNotificationsForUsers } from './notifications';
 import { PROFILE_KAMPE_SELECT } from './profileQueries';
 import { normalizeProfileRow } from './profileUtils';
 
@@ -130,16 +130,19 @@ export async function activateSeekingPlayer(match, creatorProfile, playerIds) {
   const title     = '⚡ Mangler 1 spiller!';
   const body      = `Kamp på ${courtName}${dateTxt ? ` · ${dateTxt}` : ''}${timeTxt ? ` kl. ${timeTxt}` : ''} · ELO ~${matchElo}`;
 
-  // Send notifikationer
-  let notified = 0;
-  await Promise.allSettled(
-    candidates.map(async ({ profile }) => {
-      await createNotification(profile.id, 'seeking_player', title, body, match.id);
-      notified++;
-    })
+  const recipientIds = candidates.map(({ profile }) => profile.id);
+  const notifyError = await createNotificationsForUsers(
+    recipientIds,
+    'seeking_player',
+    title,
+    body,
+    match.id,
   );
 
-  return { notified, error: null };
+  return {
+    notified: notifyError ? 0 : recipientIds.length,
+    error: notifyError ? (notifyError.message || String(notifyError)) : null,
+  };
 }
 
 /**

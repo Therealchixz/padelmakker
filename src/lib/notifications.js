@@ -1,5 +1,91 @@
 import { supabase } from './supabase';
 import { resolveNotificationPushPolicy } from './notificationPolicy';
+import { normalizeNotificationRecipientIds } from './notificationRecipients';
+
+export { normalizeNotificationRecipientIds } from './notificationRecipients';
+
+const BATCH_RPC = 'create_notifications_for_users';
+const SINGLE_RPC = 'create_notification_for_user';
+
+async function sendPushNotification(userId, type, title, body, matchId, options = {}) {
+  const pushPolicy = resolveNotificationPushPolicy(type, options?.pushPolicy);
+  if (!pushPolicy.sendPush) return;
+
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl || !import.meta.env.VITE_VAPID_PUBLIC_KEY) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+
+    fetch(`${supabaseUrl}/functions/v1/send-push`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        targetUserId: userId,
+        title,
+        body,
+        matchId,
+        type: pushPolicy.type,
+        channel: pushPolicy.channel,
+        level: pushPolicy.level,
+        silent: pushPolicy.silent,
+        urgency: pushPolicy.urgency,
+        cooldownSeconds: pushPolicy.cooldownSeconds,
+        aggregate: pushPolicy.aggregate,
+        renotify: pushPolicy.renotify,
+      }),
+    })
+      .then(async (res) => {
+        if (res.ok) return;
+        let details = '';
+        try {
+          details = await res.text();
+        } catch {
+          /* ignore */
+        }
+        console.warn(`[push] send-push svarede ${res.status}${details ? `: ${details}` : ''}`);
+      })
+      .catch(() => { /* ignorér netværksfejl */ });
+  } catch {
+    /* ignorér */
+  }
+}
+
+async function insertNotificationRpc(userId, type, title, body, matchId) {
+  const { error } = await supabase.rpc(SINGLE_RPC, {
+    p_user_id: userId,
+    p_type: type,
+    p_title: title,
+    p_body: body,
+    p_match_id: matchId,
+  });
+  return error || null;
+}
+
+async function insertNotificationsBatchRpc(userIds, type, title, body, matchId) {
+  const { data, error } = await supabase.rpc(BATCH_RPC, {
+    p_user_ids: userIds,
+    p_type: type,
+    p_title: title,
+    p_body: body,
+    p_match_id: matchId,
+  });
+  if (error) return { error, inserted: 0 };
+  return { error: null, inserted: Number(data) || 0 };
+}
+
+function isBatchRpcUnavailable(error) {
+  const msg = String(error?.message || error || '').toLowerCase();
+  return (
+    msg.includes('could not find the function')
+    || msg.includes('does not exist')
+    || msg.includes('schema cache')
+  );
+}
 
 /**
  * Opret in-app notifikation + send browser push hvis brugeren har tilmeldt sig.
@@ -8,67 +94,70 @@ import { resolveNotificationPushPolicy } from './notificationPolicy';
 export async function createNotification(userId, type, title, body, matchId = null, options = {}) {
   let rpcError = null;
 
-  // 1. In-app notifikation via RPC (SECURITY DEFINER, row_security = off)
   try {
-    const { error } = await supabase.rpc('create_notification_for_user', {
-      p_user_id: userId,
-      p_type: type,
-      p_title: title,
-      p_body: body,
-      p_match_id: matchId,
-    });
-    if (error) {
-      console.warn('Notification RPC fejl:', error.message || error);
-      rpcError = error;
+    rpcError = await insertNotificationRpc(userId, type, title, body, matchId);
+    if (rpcError) {
+      console.warn('Notification RPC fejl:', rpcError.message || rpcError);
     }
   } catch (e) {
     console.warn('Notification RPC fejl:', e);
     rpcError = e;
   }
 
-  // 2. Browser push kun når in-app notifikation lykkedes.
-  // Undgår at push sendes hvis RPC afvises.
   if (rpcError) return rpcError;
 
-  const pushPolicy = resolveNotificationPushPolicy(type, options?.pushPolicy);
-  if (!pushPolicy.sendPush) return rpcError;
-
-  try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    if (supabaseUrl && import.meta.env.VITE_VAPID_PUBLIC_KEY) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        fetch(`${supabaseUrl}/functions/v1/send-push`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            targetUserId: userId,
-            title,
-            body,
-            matchId,
-            type: pushPolicy.type,
-            channel: pushPolicy.channel,
-            level: pushPolicy.level,
-            silent: pushPolicy.silent,
-            urgency: pushPolicy.urgency,
-            cooldownSeconds: pushPolicy.cooldownSeconds,
-            aggregate: pushPolicy.aggregate,
-            renotify: pushPolicy.renotify,
-          }),
-        })
-          .then(async (res) => {
-            if (res.ok) return;
-            let details = '';
-            try { details = await res.text(); } catch { /* ignore */ }
-            console.warn(`[push] send-push svarede ${res.status}${details ? `: ${details}` : ''}`);
-          })
-          .catch(() => { /* ignorér netværksfejl */ });
-      }
-    }
-  } catch { /* ignorér */ }
-
+  await sendPushNotification(userId, type, title, body, matchId, options);
   return rpcError;
+}
+
+/**
+ * Opret notifikationer til flere brugere (ét batch-RPC når tilgængeligt).
+ * Returnerer første fejl eller null ved succes.
+ */
+export async function createNotificationsForUsers(
+  userIds,
+  type,
+  title,
+  body,
+  matchId = null,
+  options = {},
+) {
+  const ids = normalizeNotificationRecipientIds(userIds);
+  if (ids.length === 0) return null;
+
+  if (ids.length === 1) {
+    return createNotification(ids[0], type, title, body, matchId, options);
+  }
+
+  let rpcError = null;
+  let inserted = 0;
+
+  const batch = await insertNotificationsBatchRpc(ids, type, title, body, matchId);
+  if (batch.error) {
+    if (!isBatchRpcUnavailable(batch.error)) {
+      console.warn('Batch notification RPC fejl:', batch.error.message || batch.error);
+    }
+    const results = await Promise.allSettled(
+      ids.map((id) => insertNotificationRpc(id, type, title, body, matchId)),
+    );
+    const firstErr = results.find(
+      (r) => r.status === 'rejected' || (r.status === 'fulfilled' && r.value),
+    );
+    if (firstErr?.status === 'fulfilled' && firstErr.value) rpcError = firstErr.value;
+    else if (firstErr?.status === 'rejected') rpcError = firstErr.reason;
+    inserted = results.filter((r) => r.status === 'fulfilled' && !r.value).length;
+  } else {
+    inserted = batch.inserted;
+    if (inserted === 0) {
+      rpcError = new Error('Ingen notifikationer oprettet');
+    }
+  }
+
+  if (rpcError) return rpcError;
+
+  await Promise.allSettled(
+    ids.map((id) => sendPushNotification(id, type, title, body, matchId, options)),
+  );
+
+  return null;
 }

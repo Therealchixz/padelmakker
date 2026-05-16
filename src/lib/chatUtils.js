@@ -4,8 +4,44 @@ import { supabase } from './supabase';
 /** Seneste beskeder der dækker samtalelisten (undgår fuld tabel-scan). */
 const CONVERSATION_SCAN_LIMIT = 800;
 
+function mapRpcConversationRows(rows) {
+  return (rows || []).map((row) => ({
+    otherId: row.other_user_id,
+    lastMessage: {
+      id: row.last_message_id,
+      sender_id: row.last_sender_id,
+      receiver_id: row.last_receiver_id,
+      content: row.last_content ?? '',
+      created_at: row.last_created_at,
+      is_read: row.last_is_read,
+    },
+    unread: Number(row.unread_count) || 0,
+  }));
+}
+
+async function fetchConversationsViaRpc() {
+  const { data, error } = await supabase.rpc('list_dm_conversation_summaries', {
+    p_scan_limit: CONVERSATION_SCAN_LIMIT,
+  });
+  if (error) {
+    const msg = String(error.message || '').toLowerCase();
+    if (
+      msg.includes('could not find the function')
+      || msg.includes('does not exist')
+      || msg.includes('schema cache')
+    ) {
+      return null;
+    }
+    throw error;
+  }
+  return mapRpcConversationRows(data);
+}
+
 /** Hent alle samtaler for userId — én per samtalepartner, sorteret nyeste først. */
 export async function fetchConversations(userId) {
+  const rpcRows = await fetchConversationsViaRpc(userId);
+  if (rpcRows) return rpcRows;
+
   const { data: baseRows, error } = await supabase
     .from('messages')
     .select('id, sender_id, receiver_id, created_at, is_read')
