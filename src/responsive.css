@@ -2858,6 +2858,34 @@ button,
 .pm-court-header-team--t1 { color: var(--pm-accent); }
 .pm-court-header-team--t2 { color: var(--pm-blue); }
 
+/* Vinder/taber-tilstand på afsluttede 2v2-kort */
+.pm-court-header-team--winner { color: var(--pm-green) !important; font-weight: 800; }
+.pm-court-header-team--loser  { opacity: 0.55; }
+
+.pm-court-side--winner {
+  position: relative;
+  background: linear-gradient(180deg, rgba(5,150,105,0.22) 0%, rgba(5,150,105,0.30) 100%);
+  box-shadow: inset 0 0 0 2px rgba(5,150,105,0.55);
+}
+.pm-court-side--loser {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+
+/* LIVE-dot animation til kampe i gang */
+.pm-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  display: inline-block;
+  animation: pm-live-pulse 1.4s ease-in-out infinite;
+}
+@keyframes pm-live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 /* Player slot — top slot er hævet over center service-linjen, bottom slot under */
 .pm-court-player-slot {
   display: flex;
