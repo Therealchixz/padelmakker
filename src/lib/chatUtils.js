@@ -39,7 +39,7 @@ async function fetchConversationsViaRpc() {
 
 /** Hent alle samtaler for userId — én per samtalepartner, sorteret nyeste først. */
 export async function fetchConversations(userId) {
-  const rpcRows = await fetchConversationsViaRpc(userId);
+  const rpcRows = await fetchConversationsViaRpc();
   if (rpcRows) return rpcRows;
 
   const { data: baseRows, error } = await supabase
