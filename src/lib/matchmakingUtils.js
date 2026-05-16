@@ -104,11 +104,41 @@ function winRateAdjustedElo(profile, baseElo) {
   return baseElo + (winRate - 0.5) * 100;
 }
 
+/** Wider tolerance når brugeren har sat preferred_partner_level til "wide". */
+function partnerLevelTolerance(profile) {
+  const pref = String(profile?.preferred_partner_level || '').toLowerCase();
+  return pref === 'wide' ? 600 : 400;
+}
+
 function skillScore(myElo, theirElo, myProfile, theirProfile) {
   const myAdjusted = winRateAdjustedElo(myProfile, myElo);
   const theirAdjusted = winRateAdjustedElo(theirProfile, theirElo);
   const diff = Math.abs(toNumber(myAdjusted, 1000) - toNumber(theirAdjusted, 1000));
-  return clamp01(1 - diff / 400);
+  /* Tolerancen tages som maks af begges præference, så ingen side bliver
+     skarpere end nødvendigt — "wide" hos én er nok til at åbne båndet. */
+  const tolerance = Math.max(partnerLevelTolerance(myProfile), partnerLevelTolerance(theirProfile));
+  return clamp01(1 - diff / tolerance);
+}
+
+/**
+ * Asymmetrisk boost: belønner kandidater der matcher brugerens "stronger"/
+ * "weaker"-præference. Det reciprokke skill-score er symmetrisk per design,
+ * så vi kan ikke skubbe præferencen ind via vægtene alene — i stedet
+ * tilføjes en ensidig boost (max +0.08) når kandidat-ELO ligger i sweet-zonen.
+ */
+function partnerPreferenceBoost(myProfile, myElo, candidateElo) {
+  const pref = String(myProfile?.preferred_partner_level || '').toLowerCase();
+  if (!pref || pref === 'same' || pref === 'wide') return 0;
+  const rawDiff = toNumber(candidateElo, 1000) - toNumber(myElo, 1000);
+  let sweetCenter;
+  if (pref === 'stronger' && rawDiff > 0) sweetCenter = 100;
+  else if (pref === 'weaker' && rawDiff < 0) sweetCenter = -100;
+  else return 0;
+  const distance = Math.abs(rawDiff - sweetCenter);
+  /* Maks 0.14 ved nøjagtigt sweetCenter — skal overgå skill-score penalty (≈0.08
+     ved 100 ELO diff) for at præferencen tilter resultatet. Lineær fade til 0
+     ved 600 ELO væk. */
+  return Math.max(0, 0.14 * (1 - distance / 600));
 }
 
 function timeScore(myProfile, theirProfile) {
@@ -396,6 +426,7 @@ export function scoreCandidate(myProfile, candidate, opts = {}) {
   const exposurePenaltyValue = exposurePenalty(exposureCount);
   const pastMatchesBoostValue = pastMatchesBoost(candidate?.id, pastMatchesByUserId);
   const favoriteBoostValue = favoriteBoost(candidate?.id, favoriteIds);
+  const preferenceBoostValue = partnerPreferenceBoost(myProfile, myElo, candidateElo);
 
   let total01 = reciprocalCore;
   total01 += activity * 0.08;
@@ -403,6 +434,7 @@ export function scoreCandidate(myProfile, candidate, opts = {}) {
   total01 += inviteAdj;
   total01 += pastMatchesBoostValue;
   total01 += favoriteBoostValue;
+  total01 += preferenceBoostValue;
   total01 -= exposurePenaltyValue;
   total01 = clamp01(total01);
 
@@ -420,6 +452,7 @@ export function scoreCandidate(myProfile, candidate, opts = {}) {
     exposureCount,
     pastMatchesBoost: pastMatchesBoostValue,
     favoriteBoost: favoriteBoostValue,
+    partnerPreferenceBoost: preferenceBoostValue,
     inviteSentCount: Number(inviteStats?.sent || 0),
     inviteAcceptanceRate: Number.isFinite(inviteStats?.acceptanceRate)
       ? inviteStats.acceptanceRate

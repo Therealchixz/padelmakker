@@ -4,7 +4,7 @@ import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
@@ -27,7 +27,7 @@ export function OnboardingPage() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false, preferred_partner_level: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
@@ -211,6 +211,7 @@ export function OnboardingPage() {
         birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
         birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
         intent_now: form.intent_now || null,
+        preferred_partner_level: form.preferred_partner_level || null,
         seeking_match: form.seeking_match,
         travel_willing: form.travel_willing,
         onboarding_completed: true,
@@ -431,6 +432,25 @@ export function OnboardingPage() {
             }}>
               <span style={{ fontWeight: 700, fontSize: "13px", color: active ? theme.accent : theme.text }}>{i.label}</span>
               <span style={{ fontSize: "11px", color: active ? theme.accent : theme.textMid, lineHeight: 1.35, opacity: 0.85 }}>{i.desc}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ ...labelStyle, marginTop: "20px" }}>Hvilket niveau modspiller foretrækker du? <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+        {PARTNER_LEVELS.map((p) => {
+          const active = form.preferred_partner_level === p.value;
+          return (
+            <button key={p.value} type="button" onClick={() => set("preferred_partner_level", active ? "" : p.value)} style={{
+              padding: "10px 12px", borderRadius: "10px", textAlign: "left",
+              border: "1.5px solid " + (active ? theme.accent : theme.border),
+              background: active ? theme.accentBg : theme.surface,
+              cursor: "pointer", display: "flex", flexDirection: "column", gap: "3px",
+              fontFamily: "inherit",
+            }}>
+              <span style={{ fontWeight: 700, fontSize: "13px", color: active ? theme.accent : theme.text }}>{p.label}</span>
+              <span style={{ fontSize: "11px", color: active ? theme.accent : theme.textMid, lineHeight: 1.35, opacity: 0.85 }}>{p.desc}</span>
             </button>
           );
         })}

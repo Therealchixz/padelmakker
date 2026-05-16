@@ -1,0 +1,12 @@
+-- Tilføjer "Hvilket niveau partner vil du have?" preference til spillerprofiler.
+--
+-- Værdier (tekst, nullable):
+--   'same'     — find nogen tæt på mit ELO (standardadfærd, samme som NULL)
+--   'stronger' — jeg vil udfordres af lidt stærkere modstandere
+--   'weaker'   — jeg vil hygge med lidt svagere spillere
+--   'wide'     — bredt match, jeg er fleksibel om niveau
+--
+-- Matchmakeren (src/lib/matchmakingUtils.js → skillScore) forskyder target-ELO
+-- afhængigt af denne værdi, så brugerens eksplicitte præference vinder over
+-- den default "find tæt ELO"-logik.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS preferred_partner_level text;

@@ -102,6 +102,44 @@ test('matchReason mentions favoriter and past-history when relevant', () => {
   assert.ok(reason.includes('Spillet sammen'), `expected past-matches mention in ${reason}`);
 });
 
+test('preferred_partner_level "stronger" boosts total score for higher-rated partners', () => {
+  const me = profile({ id: 'me', elo_rating: 1000, preferred_partner_level: 'stronger' });
+  const sameLevel = profile({ id: 'same', elo_rating: 1000 });
+  const stronger  = profile({ id: 'stronger', elo_rating: 1100 });
+
+  const sameResult = scoreCandidate(me, sameLevel);
+  const strongerResult = scoreCandidate(me, stronger);
+
+  assert.ok(strongerResult.total > sameResult.total,
+    `stronger (${strongerResult.total}) > same (${sameResult.total})`);
+  assert.ok(strongerResult.breakdown.partnerPreferenceBoost > 0,
+    'preference boost should activate');
+});
+
+test('preferred_partner_level "weaker" boosts total score for lower-rated partners', () => {
+  const me = profile({ id: 'me', elo_rating: 1000, preferred_partner_level: 'weaker' });
+  const sameLevel = profile({ id: 'same', elo_rating: 1000 });
+  const weaker = profile({ id: 'weaker', elo_rating: 900 });
+
+  const sameResult = scoreCandidate(me, sameLevel);
+  const weakerResult = scoreCandidate(me, weaker);
+
+  assert.ok(weakerResult.total > sameResult.total,
+    `weaker (${weakerResult.total}) > same (${sameResult.total})`);
+});
+
+test('preferred_partner_level "wide" gives high skill score across a wider band', () => {
+  const meDefault = profile({ id: 'me', elo_rating: 1000 });
+  const meWide = profile({ id: 'me', elo_rating: 1000, preferred_partner_level: 'wide' });
+  const farPlayer = profile({ id: 'far', elo_rating: 1250 });
+
+  const defaultResult = scoreCandidate(meDefault, farPlayer);
+  const wideResult = scoreCandidate(meWide, farPlayer);
+
+  assert.ok(wideResult.breakdown.skill > defaultResult.breakdown.skill,
+    `wide (${wideResult.breakdown.skill.toFixed(2)}) > default (${defaultResult.breakdown.skill.toFixed(2)})`);
+});
+
 test('getMatchSuggestions ranks favorites and familiar partners above strangers', () => {
   const me = profile({ id: 'me' });
   const candidates = [
