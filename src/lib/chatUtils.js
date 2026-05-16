@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
 
+/** Seneste beskeder der dækker samtalelisten (undgår fuld tabel-scan). */
+const CONVERSATION_SCAN_LIMIT = 800;
+
 /** Hent alle samtaler for userId — én per samtalepartner, sorteret nyeste først. */
 export async function fetchConversations(userId) {
   const { data: baseRows, error } = await supabase
     .from('messages')
     .select('id, sender_id, receiver_id, created_at, is_read')
     .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(CONVERSATION_SCAN_LIMIT);
 
   if (error) throw error;
 

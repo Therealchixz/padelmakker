@@ -7,7 +7,9 @@ import { font, theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu, Bug, Compass, Sun, Moon } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
-import { HomeTab } from './HomeTab';
+
+const loadHomeTab = () => import('./HomeTab');
+const HomeTabLazy = lazy(() => loadHomeTab().then((m) => ({ default: m.HomeTab })));
 import { ShieldCheck } from 'lucide-react';
 import { useUnreadMessageCount } from '../lib/chatUtils';
 import { useDarkMode } from '../lib/useDarkMode';
@@ -1304,24 +1306,23 @@ export function DashboardPage({ user, onLogout, showToast }) {
       </div>
 
       <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}`}>
-        {tab === "hjem" && <HomeTab user={user} setTab={setTab} />}
-        {tab !== "hjem" && (
-          <Suspense
-            fallback={
-              <div
-                style={{
-                  background: theme.surface,
-                  border: "1px solid " + theme.border,
-                  borderRadius: "12px",
-                  padding: "18px",
-                  color: theme.textLight,
-                  fontSize: "13px",
-                }}
-              >
-                Indlæser…
-              </div>
-            }
-          >
+        <Suspense
+          fallback={
+            <div
+              style={{
+                background: theme.surface,
+                border: "1px solid " + theme.border,
+                borderRadius: "12px",
+                padding: "18px",
+                color: theme.textLight,
+                fontSize: "13px",
+              }}
+            >
+              Indlæser…
+            </div>
+          }
+        >
+          {tab === "hjem" && <HomeTabLazy user={user} setTab={setTab} />}
             {tab === "makkere"  && <MakkereTabLazy user={user} showToast={showToast} />}
             {tab === "baner"    && <BanerTabLazy />}
             {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive />}
@@ -1345,7 +1346,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
               </div>
             )}
           </Suspense>
-        )}
       </div>
 
       {tab === "admin" && isAdmin && !adminPinUnlocked && (

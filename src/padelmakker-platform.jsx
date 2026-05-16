@@ -4,10 +4,17 @@ import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
 import { font, theme } from "./lib/platformTheme";
 import { ConfirmDialogProvider } from "./lib/ConfirmDialogProvider";
-import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { LandingPage } from "./pages/LandingPage";
-import { LoginPage } from "./pages/LoginPage";
-import { OnboardingPage } from "./pages/OnboardingPage";
+
+const ResetPasswordPageLazy = lazy(() =>
+  import("./pages/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage }))
+);
+const LoginPageLazy = lazy(() =>
+  import("./pages/LoginPage").then((m) => ({ default: m.LoginPage }))
+);
+const OnboardingPageLazy = lazy(() =>
+  import("./pages/OnboardingPage").then((m) => ({ default: m.OnboardingPage }))
+);
 import { CookieNoticeBar } from "./components/CookieNoticeBar";
 
 const PrivacyPageLazy = lazy(() => import("./pages/PrivacyPage").then((m) => ({ default: m.PrivacyPage })));
@@ -80,7 +87,9 @@ export default function PadelMakker() {
               {toast}
             </div>
           )}
-          <ResetPasswordPage onDone={() => { setResetMode(false); navigate("/dashboard"); showToast("Adgangskode opdateret! ✅"); }} />
+          <Suspense fallback={<div className="pm-spinner" style={{ margin: "40px auto" }} />}>
+            <ResetPasswordPageLazy onDone={() => { setResetMode(false); navigate("/dashboard"); showToast("Adgangskode opdateret! ✅"); }} />
+          </Suspense>
           <CookieNoticeBar />
         </div>
       </ConfirmDialogProvider>
@@ -111,8 +120,8 @@ export default function PadelMakker() {
         >
           <Routes>
             <Route path="/" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LandingPage />} />
-            <Route path="/login" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LoginPage />} />
-            <Route path="/opret" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <OnboardingPage />} />
+            <Route path="/login" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LoginPageLazy />} />
+            <Route path="/opret" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <OnboardingPageLazy />} />
             <Route path="/opret/bekraeft-email" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <SignupEmailSentPageLazy />} />
             <Route
               path="/opret/bekraeft-telefon"

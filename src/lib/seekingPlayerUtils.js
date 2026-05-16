@@ -17,6 +17,8 @@
 
 import { supabase } from './supabase';
 import { createNotification } from './notifications';
+import { PROFILE_KAMPE_SELECT } from './profileQueries';
+import { normalizeProfileRow } from './profileUtils';
 
 const MAX_NOTIFY       = 10;
 const ELO_WINDOW       = 250;
@@ -29,16 +31,44 @@ function isActive(profile) {
   return new Date(profile.last_active_at).getTime() >= cutoff;
 }
 
+async function fetchSeekingPlayerCandidates(creatorProfile, playerIdSet) {
+  const matchElo = Math.round(Number(creatorProfile.elo_rating) || 1000);
+  const eloMin = matchElo - ELO_WINDOW;
+  const eloMax = matchElo + ELO_WINDOW;
+
+  let query = supabase
+    .from('profiles')
+    .select(PROFILE_KAMPE_SELECT)
+    .eq('is_banned', false)
+    .gte('elo_rating', eloMin)
+    .lte('elo_rating', eloMax)
+    .limit(80);
+
+  const matchArea = creatorProfile.area || null;
+  if (matchArea) {
+    query = query.eq('area', matchArea);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.warn('seeking_player candidates:', error.message);
+    return [];
+  }
+
+  return (data || [])
+    .map((row) => normalizeProfileRow(row))
+    .filter((p) => p?.id != null && !playerIdSet.has(String(p.id)));
+}
+
 /**
  * Marker kampen som "søger spiller" og send notifikationer.
  *
  * @param {object} match           - matches-rækken
  * @param {object} creatorProfile  - opretterens profil (for ELO + region)
- * @param {object[]} allProfiles   - alle profiler (allerede indlæst i KampeTab)
  * @param {string[]} playerIds     - user_ids allerede i kampen
  * @returns {{ notified: number, error: string|null }}
  */
-export async function activateSeekingPlayer(match, creatorProfile, allProfiles, playerIds) {
+export async function activateSeekingPlayer(match, creatorProfile, playerIds) {
   // Cooldown-tjek
   if (match.seeking_player_notified_at) {
     const lastSent = new Date(match.seeking_player_notified_at).getTime();
@@ -53,11 +83,10 @@ export async function activateSeekingPlayer(match, creatorProfile, allProfiles, 
   const matchArea  = creatorProfile.area || null;
   const playerIdSet = new Set(playerIds.map(String));
 
-  // Find kandidater
-  const candidates = allProfiles
-    .filter(p => {
-      if (playerIdSet.has(String(p.id))) return false;
-      if (p.is_banned) return false;
+  const pool = await fetchSeekingPlayerCandidates(creatorProfile, playerIdSet);
+
+  const candidates = pool
+    .filter((p) => {
       if (!isActive(p)) return false;
       const elo = Math.round(Number(p.elo_rating) || 1000);
       if (Math.abs(elo - matchElo) > ELO_WINDOW) return false;
