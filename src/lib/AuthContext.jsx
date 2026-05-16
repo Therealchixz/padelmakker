@@ -131,6 +131,7 @@ async function fetchOrCreateProfileCore(userRow) {
       birth_day: meta.birth_day ?? null,
       court_side: meta.court_side ?? null,
       intent_now: meta.intent_now || null,
+      preferred_partner_level: meta.preferred_partner_level || null,
       seeking_match: meta.seeking_match === true,
       travel_willing: meta.travel_willing === true,
     },
@@ -396,6 +397,7 @@ export function AuthProvider({ children }) {
         birth_day: metadata.birth_day ?? null,
         court_side: metadata.court_side ?? null,
         intent_now: metadata.intent_now || null,
+        preferred_partner_level: metadata.preferred_partner_level || null,
         seeking_match: metadata.seeking_match === true,
         travel_willing: metadata.travel_willing === true,
       })
@@ -457,6 +459,7 @@ export function AuthProvider({ children }) {
         birth_day: metadata.birth_day ?? null,
         court_side: metadata.court_side ?? null,
         intent_now: metadata.intent_now || null,
+        preferred_partner_level: metadata.preferred_partner_level || null,
         seeking_match: metadata.seeking_match === true,
         travel_willing: metadata.travel_willing === true,
       })

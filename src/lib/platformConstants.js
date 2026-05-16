@@ -70,6 +70,15 @@ export const DAYS_OF_WEEK = [
   { key: 'sun', label: 'Søn' },
 ];
 
+export const PARTNER_LEVELS = [
+  { value: 'same',     label: 'Samme niveau',           desc: 'Find spillere tæt på mit ELO' },
+  { value: 'stronger', label: 'Lidt stærkere',          desc: 'Jeg vil udfordres' },
+  { value: 'weaker',   label: 'Lidt svagere',           desc: 'Jeg vil hygge' },
+  { value: 'wide',     label: 'Bredt — alle niveauer',  desc: 'Jeg er fleksibel om niveau' },
+];
+
+export const PARTNER_LEVEL_LABELS = Object.fromEntries(PARTNER_LEVELS.map((p) => [p.value, p.label]));
+
 export const INTENTS = [
   { value: 'hygge',       label: 'Hygge',        desc: 'Afslappet spil med god stemning' },
   { value: 'træning',     label: 'Træning',       desc: 'Fokus på at forbedre mit spil' },

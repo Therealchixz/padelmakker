@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
-import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel, INTENTS } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
 import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
@@ -346,6 +346,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         seeking_match:     form.seeking_match,
         seeking_match_at:  form.seeking_match && !user.seeking_match ? new Date().toISOString() : form.seeking_match ? user.seeking_match_at : null,
         intent_now:        form.intent_now || null,
+        preferred_partner_level: form.preferred_partner_level || null,
         travel_willing:    form.travel_willing,
       });
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
@@ -912,6 +913,27 @@ export function ProfilTab({ user, showToast, setTab }) {
                 title={i.desc}
               >
                 {i.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Foretrukket modspiller-niveau */}
+          <div style={labelStyle}>Hvilket niveau modspiller foretrækker du?</div>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+            <button
+              onClick={() => set("preferred_partner_level", "")}
+              style={{ ...btn(!form.preferred_partner_level), padding: "6px 12px", fontSize: "12px" }}
+            >
+              Ikke angivet
+            </button>
+            {PARTNER_LEVELS.map(p => (
+              <button
+                key={p.value}
+                onClick={() => set("preferred_partner_level", p.value)}
+                style={{ ...btn(form.preferred_partner_level === p.value), padding: "6px 12px", fontSize: "12px" }}
+                title={p.desc}
+              >
+                {p.label}
               </button>
             ))}
           </div>

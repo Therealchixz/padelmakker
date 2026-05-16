@@ -29,6 +29,7 @@ export function profileFormState(p) {
     // Matchmaking
     seeking_match:  p.seeking_match  === true,
     intent_now:     p.intent_now     ?? "",
+    preferred_partner_level: p.preferred_partner_level ?? "",
     travel_willing: p.travel_willing === true,
   };
 }
