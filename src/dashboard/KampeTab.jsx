@@ -1736,18 +1736,23 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const t2Top = t2[0] ? renderPlayer(t2[0], 2) : renderEmptySlot(2);
           const t2Bot = t2[1] ? renderPlayer(t2[1], 2) : renderEmptySlot(2);
 
+          /* Hold-labels og snit-ELO vises kun for matches der ER spillet (in_progress/completed)
+             — for åbne/fulde kampe står ELO-balance-baren under banen og dækker behovet. */
+          const showTopTeamLabels = status === "in_progress" || status === "completed";
           return (
             <div className="pm-court-wrap" style={{ marginBottom: "14px" }}>
-              <div className="pm-court-header">
-                <div className={`pm-court-header-team pm-court-header-team--t1${winnerTeam === 1 ? ' pm-court-header-team--winner' : winnerTeam === 2 ? ' pm-court-header-team--loser' : ''}`}>
-                  <span className="pm-court-header-label">{winnerTeam === 1 ? '🏆 Hold 1' : 'Hold 1'}</span>
-                  {t1Avg !== null && <span className="pm-court-header-elo">Gns. {t1Avg}</span>}
+              {showTopTeamLabels && (
+                <div className="pm-court-header">
+                  <div className={`pm-court-header-team pm-court-header-team--t1${winnerTeam === 1 ? ' pm-court-header-team--winner' : winnerTeam === 2 ? ' pm-court-header-team--loser' : ''}`}>
+                    <span className="pm-court-header-label">{winnerTeam === 1 ? '🏆 Hold 1' : 'Hold 1'}</span>
+                    {t1Avg !== null && <span className="pm-court-header-elo">Gns. {t1Avg}</span>}
+                  </div>
+                  <div className={`pm-court-header-team pm-court-header-team--t2${winnerTeam === 2 ? ' pm-court-header-team--winner' : winnerTeam === 1 ? ' pm-court-header-team--loser' : ''}`}>
+                    <span className="pm-court-header-label">{winnerTeam === 2 ? '🏆 Hold 2' : 'Hold 2'}</span>
+                    {t2Avg !== null && <span className="pm-court-header-elo">Gns. {t2Avg}</span>}
+                  </div>
                 </div>
-                <div className={`pm-court-header-team pm-court-header-team--t2${winnerTeam === 2 ? ' pm-court-header-team--winner' : winnerTeam === 1 ? ' pm-court-header-team--loser' : ''}`}>
-                  <span className="pm-court-header-label">{winnerTeam === 2 ? '🏆 Hold 2' : 'Hold 2'}</span>
-                  {t2Avg !== null && <span className="pm-court-header-elo">Gns. {t2Avg}</span>}
-                </div>
-              </div>
+              )}
               <div className="pm-court">
                 <div className="pm-court-line pm-court-line--service-t1" />
                 <div className="pm-court-line pm-court-line--service-t2" />
