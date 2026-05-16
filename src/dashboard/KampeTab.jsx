@@ -1776,7 +1776,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const t2Avg = teamStats.t2Avg;
           const total = t1Avg + t2Avg;
           const t1Pct = Math.round((t1Avg / total) * 100);
-          const t2Pct = 100 - t1Pct;
           const diff = Math.abs(t1Avg - t2Avg);
           const quality =
             diff <= 50 ? "Tæt match"
@@ -1786,12 +1785,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           return (
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
-                <span style={{ color: theme.accent }}>Gns. {t1Avg}</span>
-                <span style={{ color: theme.blue }}>Gns. {t2Avg}</span>
+                <span style={{ color: theme.accent }}>Hold 1 · Gns. {t1Avg}</span>
+                <span style={{ color: theme.green }}>Hold 2 · Gns. {t2Avg}</span>
               </div>
-              <div style={{ height: 6, borderRadius: 3, background: theme.border, position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: t1Pct + '%', background: theme.accent }} />
-                <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: t2Pct + '%', background: theme.blue }} />
+              <div style={{ height: 8, borderRadius: 4, background: theme.border, display: 'flex', overflow: 'hidden' }}>
+                <div style={{ width: t1Pct + '%', background: theme.accent }} />
+                <div style={{ width: '2px', background: '#FFFFFF', flexShrink: 0 }} />
+                <div style={{ flex: 1, background: theme.green }} />
               </div>
               <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: theme.textMid }}>
                 {quality}{diff > 0 ? ` — ${diff} ELO forskel` : ''}
