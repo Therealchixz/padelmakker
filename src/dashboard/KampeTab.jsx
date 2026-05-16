@@ -1471,7 +1471,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       isClosed,
       myRequest,
       pendingRequests,
-      hasAdminActions,
       adminActionsOpen,
       canUseMatchChat,
       canWriteMatchChat,
@@ -1962,9 +1961,19 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const hasSecondaryLinks =
             (joined && status !== "completed") ||
             (isCreator && status === "open" && mp.length === 3);
+          /* Primær Start kamp vises for creator. Admin-only (uden creator-rolle)
+             får i stedet en "Gennemtving start"-knap inde i admin-værktøjer. */
+          const showPrimaryStart = isCreator && (status === "open" || status === "full");
+          const showPrimaryReport = status === "in_progress" && isPlayerInMatch && !mr;
+          const showPrimaryConfirm = mr && !mr.confirmed && isPlayerInMatch;
+          /* Admin-override-versioner — bor inde i accordion */
+          const adminCanForceStart = isAdmin && !isCreator && (status === "open" || status === "full");
+          const adminCanForceReport = isAdmin && !isPlayerInMatch && status === "in_progress" && !mr;
+          const adminCanForceConfirm = isAdmin && !isPlayerInMatch && mr && !mr.confirmed;
           const canDeleteMatch =
-            (isCreator || isAdmin) && status !== "completed" && status !== "in_progress" && (!isAdmin || adminActionsOpen);
-          const showToolsAccordion = hasAdminActions || (isCreator && !isAdmin && (isCreator || isAdmin) && status !== "completed" && status !== "in_progress");
+            (isCreator || isAdmin) && status !== "completed" && status !== "in_progress";
+          const showToolsAccordion =
+            adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch;
           return (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {/* ---- Open match: direct join ---- */}
@@ -2061,8 +2070,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             </div>
           )}
 
-          {/* ---- PRIMARY: Start kamp (creator/admin, open/full) ---- */}
-          {(isCreator || isAdmin) && (status === "open" || status === "full") && (!isAdmin || adminActionsOpen) && (
+          {/* ---- PRIMARY: Start kamp (kun creator — admin uden creator får knap i accordion) ---- */}
+          {showPrimaryStart && (
             <button
               onClick={() => startMatch(m.id)}
               disabled={busy || (!isFull && !isAdmin)}
@@ -2080,8 +2089,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             </button>
           )}
 
-          {/* ---- PRIMARY: Indrapportér resultat (in_progress) ---- */}
-          {status === "in_progress" && (isPlayerInMatch || isAdmin) && !mr && (!isAdmin || adminActionsOpen) && (
+          {/* ---- PRIMARY: Indrapportér resultat (kun spiller i kampen) ---- */}
+          {showPrimaryReport && (
             <button
               onClick={() => setResultMatch(m.id)}
               disabled={busy}
@@ -2090,16 +2099,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 width: "100%",
                 justifyContent: "center",
                 fontSize: "13px",
-                background: (isAdmin && !isPlayerInMatch) ? theme.warm : theme.accent,
-                borderColor: (isAdmin && !isPlayerInMatch) ? theme.warm : theme.accent
               }}
             >
-              📊 Indrapportér resultat {isAdmin && !isPlayerInMatch && "(Admin)"}
+              📊 Indrapportér resultat
             </button>
           )}
 
-          {/* ---- PRIMARY: Bekræft / Afvis (mr unconfirmed) ---- */}
-          {mr && !mr.confirmed && (isPlayerInMatch || isAdmin) && (!isAdmin || adminActionsOpen) && (
+          {/* ---- PRIMARY: Bekræft / Afvis (kun spiller i kampen) ---- */}
+          {showPrimaryConfirm && (
             <div style={{ display: "flex", gap: "8px" }}>
               {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok && (
                 <button
@@ -2110,11 +2117,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     flex: 1,
                     justifyContent: "center",
                     fontSize: "13px",
-                    background: isAdmin ? theme.warm : theme.accent,
-                    borderColor: isAdmin ? theme.warm : theme.accent
                   }}
                 >
-                  ✅ Bekræft {isAdmin && "(Admin)"}
+                  ✅ Bekræft
                 </button>
               )}
               <button
@@ -2125,11 +2130,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   flex: 1,
                   justifyContent: "center",
                   fontSize: "13px",
-                  color: isAdmin ? theme.warm : theme.red,
-                  borderColor: isAdmin ? theme.warm : theme.red + "55"
+                  color: theme.red,
+                  borderColor: theme.red + "55"
                 }}
               >
-                ❌ {isAdmin ? "Slet (Admin)" : "Afvis"}
+                ❌ Afvis
               </button>
             </div>
           )}
@@ -2196,11 +2201,55 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <span>🛠 {isAdmin ? "Admin-værktøjer" : "Creator-værktøjer"}</span>
                 {adminActionsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
-              {adminActionsOpen && canDeleteMatch && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 12px 12px", borderTop: "1px solid " + theme.warm + "33" }}>
-                  <button onClick={() => deleteMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55", marginTop: "10px" }}>
-                    <Trash2 size={14} /> {isAdmin ? "Slet kamp (Admin)" : "Slet kamp"}
-                  </button>
+              {adminActionsOpen && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px 12px 12px", borderTop: "1px solid " + theme.warm + "33" }}>
+                  {/* Admin override: Gennemtving start */}
+                  {adminCanForceStart && (
+                    <button
+                      onClick={() => startMatch(m.id)}
+                      disabled={busy}
+                      style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
+                    >
+                      ⚡ Gennemtving start (Admin)
+                    </button>
+                  )}
+                  {/* Admin override: Indrapportér resultat */}
+                  {adminCanForceReport && (
+                    <button
+                      onClick={() => setResultMatch(m.id)}
+                      disabled={busy}
+                      style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
+                    >
+                      📊 Indrapportér resultat (Admin)
+                    </button>
+                  )}
+                  {/* Admin override: Bekræft / Slet resultat */}
+                  {adminCanForceConfirm && (
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok && (
+                        <button
+                          onClick={() => confirmResult(m.id)}
+                          disabled={busy}
+                          style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
+                        >
+                          ✅ Bekræft (Admin)
+                        </button>
+                      )}
+                      <button
+                        onClick={() => rejectResult(m.id)}
+                        disabled={busy}
+                        style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.warm, borderColor: theme.warm + "55" }}
+                      >
+                        ❌ Slet (Admin)
+                      </button>
+                    </div>
+                  )}
+                  {/* Slet kamp */}
+                  {canDeleteMatch && (
+                    <button onClick={() => deleteMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}>
+                      <Trash2 size={14} /> {isAdmin ? "Slet kamp (Admin)" : "Slet kamp"}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
