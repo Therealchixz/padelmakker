@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import {
@@ -8,31 +8,72 @@ import {
   formatLocalDateYMD,
   eloHistoryRowDateKey,
 } from '../lib/eloHistoryUtils';
+import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 
+const RANKING_PAGE_SIZE = 50;
+const PERIOD_HISTORY_LIMIT = 5000;
+
+const PROFILE_RANKING_SELECT =
+  'id, full_name, name, avatar, area, elo_rating, games_played, games_won, level, americano_elo_rating, americano_played, americano_wins';
+
+function periodCutoffDate(period) {
+  const now = new Date();
+  if (period === 'week') {
+    const d = new Date(now);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  const d = new Date(now.getFullYear(), now.getMonth(), 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export function RankingTab({ user }) {
   const [players, setPlayers] = useState([]);
+  const [profileById, setProfileById] = useState({});
   const [eloHistory, setEloHistory] = useState([]);
   const [americanoHistory, setAmericanoHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(RANKING_PAGE_SIZE);
+  const [myGlobalRank, setMyGlobalRank] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
   const [rankMode, setRankMode] = useState(() => {
-    try { return localStorage.getItem('pm-rank-mode') || '2v2'; } catch { return '2v2'; }
+    try {
+      return localStorage.getItem('pm-rank-mode') || '2v2';
+    } catch {
+      return '2v2';
+    }
   });
   const [period, setPeriod] = useState(() => {
-    try { return localStorage.getItem('pm-rank-period') || 'all'; } catch { return 'all'; }
+    try {
+      return localStorage.getItem('pm-rank-period') || 'all';
+    } catch {
+      return 'all';
+    }
   });
 
+  const profileOffsetRef = useRef(0);
+  const profileFetchGenRef = useRef(0);
+
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
-  const { bundleLoading: myBundleLoading, profileFresh: myProfileFresh, ratedRows: myRatedRows } = useProfileEloBundle(user.id, eloSyncKey);
+  const { bundleLoading: myBundleLoading, profileFresh: myProfileFresh, ratedRows: myRatedRows } =
+    useProfileEloBundle(user.id, eloSyncKey);
   const myHistStats = useMemo(() => statsFromEloHistoryRows(myRatedRows), [myRatedRows]);
 
   const myAllTimeElo = myHistStats?.elo ?? Math.round(Number(myProfileFresh?.elo_rating ?? user.elo_rating) || 1000);
   const myAllTimeGames = myHistStats?.games ?? (myProfileFresh?.games_played ?? user.games_played ?? 0);
   const myAllTimeWins = myHistStats?.wins ?? (myProfileFresh?.games_won ?? user.games_won ?? 0);
 
-  const myAllTimeAmericanoElo = Math.round(Number(myProfileFresh?.americano_elo_rating ?? user.americano_elo_rating) || 1000);
+  const myAllTimeAmericanoElo = Math.round(
+    Number(myProfileFresh?.americano_elo_rating ?? user.americano_elo_rating) || 1000,
+  );
   const myAllTimeAmericanoPlayed = Number(myProfileFresh?.americano_played ?? user.americano_played) || 0;
   const myAllTimeAmericanoWins = Number(myProfileFresh?.americano_wins ?? user.americano_wins) || 0;
 
@@ -45,20 +86,22 @@ export function RankingTab({ user }) {
         match_id: h.tournament_id || h.id,
         result: Number(h.change) > 0 ? 'win' : Number(h.change) < 0 ? 'loss' : 'draw',
       })),
-    [americanoHistory]
+    [americanoHistory],
   );
   const allTimeAmericanoFromHistory = useMemo(
     () => allTimeStatsMapFromEloHistory(americanoHistoryForStats),
-    [americanoHistoryForStats]
+    [americanoHistoryForStats],
   );
 
   const myId = user?.id != null ? String(user.id) : '';
+  const isAmericano = rankMode === 'americano';
+  const orderColumn = isAmericano ? 'americano_elo_rating' : 'elo_rating';
 
   useEffect(() => {
     try {
       localStorage.setItem('pm-rank-period', period);
     } catch {
-      // private mode / storage disabled
+      /* ignore */
     }
   }, [period]);
 
@@ -66,45 +109,103 @@ export function RankingTab({ user }) {
     try {
       localStorage.setItem('pm-rank-mode', rankMode);
     } catch {
-      // private mode / storage disabled
+      /* ignore */
     }
   }, [rankMode]);
 
-  const loadRankingData = useCallback(async () => {
-    try {
-      const [profileRes, historyData, americanoHistoryData] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id, full_name, name, avatar, area, elo_rating, games_played, games_won, level, americano_elo_rating, americano_played, americano_wins')
-          .order(rankMode === 'americano' ? 'americano_elo_rating' : 'elo_rating', { ascending: false })
-          .limit(300),
-        supabase
-          .from('elo_history')
-          .select('user_id, result, change, old_rating, new_rating, date, match_id')
-          .order('date', { ascending: false })
-          .order('match_id', { ascending: false })
-          .limit(5000),
-        supabase
-          .from('americano_elo_history')
-          .select('id, tournament_id, user_id, old_rating, new_rating, change, points, created_at')
-          .order('created_at', { ascending: false })
-          .limit(5000),
-      ]);
+  const fetchMyAllTimeRank = useCallback(async () => {
+    if (!myId || period !== 'all') return;
+    const myScore = isAmericano ? myAllTimeAmericanoElo : myAllTimeElo;
+    const { count, error } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .gt(orderColumn, myScore);
+    if (error) {
+      console.warn('ranking: my placement', error.message);
+      setMyGlobalRank(null);
+      return;
+    }
+    setMyGlobalRank((count ?? 0) + 1);
+  }, [myId, period, isAmericano, myAllTimeElo, myAllTimeAmericanoElo, orderColumn]);
 
-      setPlayers(profileRes.data || []);
-      setEloHistory(historyData.data || []);
-      setAmericanoHistory(americanoHistoryData.data || []);
+  const loadPeriodHistory = useCallback(async () => {
+    const [historyData, americanoHistoryData] = await Promise.all([
+      supabase
+        .from('elo_history')
+        .select('user_id, result, change, old_rating, new_rating, date, match_id')
+        .order('date', { ascending: false })
+        .order('match_id', { ascending: false })
+        .limit(PERIOD_HISTORY_LIMIT),
+      supabase
+        .from('americano_elo_history')
+        .select('id, tournament_id, user_id, old_rating, new_rating, change, points, created_at')
+        .order('created_at', { ascending: false })
+        .limit(PERIOD_HISTORY_LIMIT),
+    ]);
+    if (historyData.error) throw historyData.error;
+    if (americanoHistoryData.error) throw americanoHistoryData.error;
+    setEloHistory(historyData.data || []);
+    setAmericanoHistory(americanoHistoryData.data || []);
+  }, []);
+
+  const fetchProfilePage = useCallback(
+    async (offset, append) => {
+      const from = offset;
+      const to = offset + RANKING_PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(PROFILE_RANKING_SELECT)
+        .order(orderColumn, { ascending: false })
+        .range(from, to);
+      if (error) throw error;
+      const rows = (data || []).map((row, idx) => ({
+        ...row,
+        _globalRank: from + idx + 1,
+      }));
+      setPlayers((prev) => (append ? [...prev, ...rows] : rows));
+      setHasMore(rows.length === RANKING_PAGE_SIZE);
+      profileOffsetRef.current = append ? offset + rows.length : rows.length;
+    },
+    [orderColumn],
+  );
+
+  const resetAndLoad = useCallback(async () => {
+    profileFetchGenRef.current += 1;
+    const gen = profileFetchGenRef.current;
+    setLoading(true);
+    setLoadingMore(false);
+    setHasMore(false);
+    setVisibleCount(RANKING_PAGE_SIZE);
+    setPlayers([]);
+    setProfileById({});
+    profileOffsetRef.current = 0;
+    setMyGlobalRank(null);
+
+    try {
+      if (period === 'all') {
+        setEloHistory([]);
+        setAmericanoHistory([]);
+        await fetchProfilePage(0, false);
+        if (gen === profileFetchGenRef.current) void fetchMyAllTimeRank();
+      } else {
+        await loadPeriodHistory();
+      }
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (gen === profileFetchGenRef.current) setLoading(false);
     }
-  }, [rankMode]);
+  }, [period, fetchProfilePage, loadPeriodHistory, fetchMyAllTimeRank]);
 
   useEffect(() => {
-    setLoading(true);
-    loadRankingData();
-  }, [loadRankingData, eloSyncKey]);
+    void resetAndLoad();
+  }, [resetAndLoad, eloSyncKey, rankMode]);
+
+  useEffect(() => {
+    if (period === 'all' && !myBundleLoading && myId) {
+      void fetchMyAllTimeRank();
+    }
+  }, [period, myBundleLoading, myId, fetchMyAllTimeRank, myAllTimeElo, myAllTimeAmericanoElo]);
 
   useEffect(() => {
     let lastVisFetch = 0;
@@ -114,60 +215,18 @@ export function RankingTab({ user }) {
       const now = Date.now();
       if (now - lastVisFetch < throttleMs) return;
       lastVisFetch = now;
-      loadRankingData();
+      void resetAndLoad();
     };
     document.addEventListener('visibilitychange', onVis);
-    return () => {
-      document.removeEventListener('visibilitychange', onVis);
-    };
-  }, [loadRankingData]);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [resetAndLoad]);
 
-  const buildRanking = useCallback(() => {
-    if (period === 'all') {
-      return [...players]
-        .map((p) => {
-          const pid = String(p.id);
-          const h = allTimeFromHistory[pid];
-          const ah = allTimeAmericanoFromHistory[pid];
-          const isMe = myId && pid === myId;
-          const isMeReady = isMe && !myBundleLoading;
-          const isAmericano = rankMode === 'americano';
+  const periodRankList = useMemo(() => {
+    if (period === 'all') return [];
 
-          return {
-            ...p,
-            score: isAmericano
-              ? (isMeReady ? myAllTimeAmericanoElo : (Math.round(Number(p.americano_elo_rating) || 0) || ah?.elo || 1000))
-              : (isMeReady ? myAllTimeElo : (h?.elo ?? Math.round(Number(p.elo_rating) || 1000))),
-            periodGames: isAmericano
-              ? (isMeReady ? myAllTimeAmericanoPlayed : (Number(p.americano_played) || ah?.games || 0))
-              : (isMeReady ? myAllTimeGames : (h?.games ?? (p.games_played || 0))),
-            periodWins: isAmericano
-              ? (isMeReady ? myAllTimeAmericanoWins : (Number(p.americano_wins) || 0))
-              : (isMeReady ? myAllTimeWins : (h?.wins ?? (p.games_won || 0))),
-            periodPoints: 0,
-          };
-        })
-        .sort((a, b) => b.score - a.score);
-    }
+    const cutoffStr = formatLocalDateYMD(periodCutoffDate(period));
 
-    const now = new Date();
-    const cutoff = period === 'week'
-      ? (() => {
-          const d = new Date(now);
-          const day = d.getDay();
-          const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-          d.setDate(diff);
-          d.setHours(0, 0, 0, 0);
-          return d;
-        })()
-      : (() => {
-          const d = new Date(now.getFullYear(), now.getMonth(), 1);
-          d.setHours(0, 0, 0, 0);
-          return d;
-        })();
-    const cutoffStr = formatLocalDateYMD(cutoff);
-
-    if (rankMode === 'americano') {
+    if (isAmericano) {
       const periodStats = {};
       americanoHistoryForStats.forEach((h) => {
         if (h.old_rating == null || h.match_id == null) return;
@@ -181,13 +240,17 @@ export function RankingTab({ user }) {
         periodStats[uid].points += Number(h.points) || 0;
       });
 
-      return [...players]
-        .map((p) => {
-          const stats = periodStats[String(p.id)] || { change: 0, games: 0, wins: 0, points: 0 };
-          return { ...p, score: stats.change, periodGames: stats.games, periodWins: stats.wins, periodPoints: stats.points };
-        })
-        .filter((p) => p.periodGames > 0)
-        .sort((a, b) => b.score - a.score);
+      return Object.entries(periodStats)
+        .filter(([, s]) => s.games > 0)
+        .map(([id, stats]) => ({
+          id,
+          score: stats.change,
+          periodGames: stats.games,
+          periodWins: stats.wins,
+          periodPoints: stats.points,
+        }))
+        .sort((a, b) => b.score - a.score)
+        .map((row, index) => ({ ...row, _globalRank: index + 1 }));
     }
 
     const periodStats = {};
@@ -202,45 +265,166 @@ export function RankingTab({ user }) {
       if (h.result === 'win') periodStats[uid].wins += 1;
     });
 
-    return [...players]
-      .map((p) => {
-        const stats = periodStats[String(p.id)] || { change: 0, games: 0, wins: 0, points: 0 };
-        return { ...p, score: stats.change, periodGames: stats.games, periodWins: stats.wins, periodPoints: 0 };
-      })
-      .filter((p) => p.periodGames > 0)
-      .sort((a, b) => b.score - a.score);
-  }, [
-    period,
-    rankMode,
-    players,
-    allTimeFromHistory,
-    allTimeAmericanoFromHistory,
-    myId,
-    myBundleLoading,
-    myAllTimeElo,
-    myAllTimeGames,
-    myAllTimeWins,
-    myAllTimeAmericanoElo,
-    myAllTimeAmericanoPlayed,
-    myAllTimeAmericanoWins,
-    americanoHistoryForStats,
-    eloHistory,
-  ]);
+    return Object.entries(periodStats)
+      .filter(([, s]) => s.games > 0)
+      .map(([id, stats]) => ({
+        id,
+        score: stats.change,
+        periodGames: stats.games,
+        periodWins: stats.wins,
+        periodPoints: 0,
+      }))
+      .sort((a, b) => b.score - a.score)
+      .map((row, index) => ({ ...row, _globalRank: index + 1 }));
+  }, [period, isAmericano, americanoHistoryForStats, eloHistory]);
 
-  const sorted = useMemo(() => buildRanking(), [buildRanking]);
+  useEffect(() => {
+    if (period === 'all') return undefined;
 
-  const userRank = sorted.findIndex((p) => String(p.id) === myId) + 1;
-  const userEntry = sorted.find((p) => String(p.id) === myId);
-  const displayScore = period === 'all'
-    ? (myBundleLoading
-      ? null
-      : (rankMode === 'americano'
-        ? myAllTimeAmericanoElo
-        : (myAllTimeElo ?? allTimeFromHistory[myId]?.elo ?? Math.round(Number(user.elo_rating) || 1000))))
-    : (userEntry?.score || 0);
+    const slice = periodRankList.slice(0, visibleCount);
+    const missing = slice.map((r) => r.id).filter((id) => !profileById[String(id)]);
+    if (missing.length === 0) {
+      setHasMore(visibleCount < periodRankList.length);
+      return undefined;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await fetchRowsInChunks(supabase, 'profiles', 'id', missing, PROFILE_RANKING_SELECT);
+        if (cancelled) return;
+        setProfileById((prev) => {
+          const next = { ...prev };
+          for (const row of rows) {
+            if (row?.id != null) next[String(row.id)] = row;
+          }
+          return next;
+        });
+        setHasMore(visibleCount < periodRankList.length);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [period, periodRankList, visibleCount, profileById]);
+
+  const buildAllTimeRanking = useCallback(
+    (list) =>
+      list
+        .map((p) => {
+          const pid = String(p.id);
+          const h = allTimeFromHistory[pid];
+          const ah = allTimeAmericanoFromHistory[pid];
+          const isMe = myId && pid === myId;
+          const isMeReady = isMe && !myBundleLoading;
+
+          return {
+            ...p,
+            _globalRank: p._globalRank,
+            score: isAmericano
+              ? isMeReady
+                ? myAllTimeAmericanoElo
+                : Math.round(Number(p.americano_elo_rating) || 0) || ah?.elo || 1000
+              : isMeReady
+                ? myAllTimeElo
+                : h?.elo ?? Math.round(Number(p.elo_rating) || 1000),
+            periodGames: isAmericano
+              ? isMeReady
+                ? myAllTimeAmericanoPlayed
+                : Number(p.americano_played) || ah?.games || 0
+              : isMeReady
+                ? myAllTimeGames
+                : h?.games ?? (p.games_played || 0),
+            periodWins: isAmericano
+              ? isMeReady
+                ? myAllTimeAmericanoWins
+                : Number(p.americano_wins) || 0
+              : isMeReady
+                ? myAllTimeWins
+                : h?.wins ?? (p.games_won || 0),
+            periodPoints: 0,
+          };
+        }),
+    [
+      allTimeAmericanoFromHistory,
+      allTimeFromHistory,
+      isAmericano,
+      myAllTimeAmericanoElo,
+      myAllTimeAmericanoPlayed,
+      myAllTimeAmericanoWins,
+      myAllTimeElo,
+      myAllTimeGames,
+      myAllTimeWins,
+      myBundleLoading,
+      myId,
+    ],
+  );
+
+  const sorted = useMemo(() => {
+    if (period === 'all') {
+      return buildAllTimeRanking(players);
+    }
+    return periodRankList.slice(0, visibleCount).map((row) => {
+      const p = profileById[String(row.id)] || { id: row.id, full_name: 'Spiller', name: 'Spiller' };
+      return { ...p, ...row, _globalRank: row._globalRank };
+    });
+  }, [period, players, buildAllTimeRanking, periodRankList, visibleCount, profileById]);
+
+  const totalRanked = period === 'all' ? null : periodRankList.length;
+
+  const userRank = useMemo(() => {
+    if (period === 'all' && myGlobalRank != null) return myGlobalRank;
+    const idx = sorted.findIndex((p) => String(p.id) === myId);
+    if (idx >= 0) return idx + 1;
+    if (period !== 'all') {
+      const globalIdx = periodRankList.findIndex((r) => String(r.id) === myId);
+      return globalIdx >= 0 ? globalIdx + 1 : 0;
+    }
+    return 0;
+  }, [period, myGlobalRank, sorted, myId, periodRankList]);
+
+  const userEntry = useMemo(() => {
+    const inList = sorted.find((p) => String(p.id) === myId);
+    if (inList) return inList;
+    if (period === 'all') {
+      return buildAllTimeRanking([user])[0];
+    }
+    const row = periodRankList.find((r) => String(r.id) === myId);
+    if (!row) return null;
+    const p = profileById[myId] || user;
+    return { ...p, ...row };
+  }, [sorted, myId, period, user, buildAllTimeRanking, periodRankList, profileById]);
+
+  const displayScore =
+    period === 'all'
+      ? myBundleLoading
+        ? null
+        : isAmericano
+          ? myAllTimeAmericanoElo
+          : myAllTimeElo ?? allTimeFromHistory[myId]?.elo ?? Math.round(Number(user.elo_rating) || 1000)
+      : userEntry?.score || 0;
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      if (period === 'all') {
+        await fetchProfilePage(profileOffsetRef.current, true);
+      } else {
+        setVisibleCount((n) => Math.min(n + RANKING_PAGE_SIZE, periodRankList.length));
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, period, fetchProfilePage, periodRankList.length]);
 
   const medals = ['🥇', '🥈', '🥉'];
-  const rankModeLabel = rankMode === 'americano' ? 'Americano' : '2v2';
+  const rankModeLabel = isAmericano ? 'Americano' : '2v2';
 
   const periodLabels = {
     week: 'Denne uge',
@@ -251,27 +435,53 @@ export function RankingTab({ user }) {
   const periodInfo = {
     week: 'Nulstilles hver mandag',
     month: 'Nulstilles d. 1 i måneden',
-    all: rankMode === 'americano' ? 'Samlet Americano ELO-rating' : 'Samlet 2v2 ELO-rating',
+    all: isAmericano ? 'Samlet Americano ELO-rating' : 'Samlet 2v2 ELO-rating',
   };
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>Indlæser ranking...</div>;
+  const rankTotalLabel =
+    period === 'all'
+      ? hasMore
+        ? `${sorted.length}+`
+        : String(sorted.length)
+      : String(totalRanked ?? sorted.length);
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>
+        Indlæser ranking...
+      </div>
+    );
+  }
 
   return (
     <div>
       <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Ranking</h2>
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-        <button onClick={() => setRankMode('2v2')} style={{ ...btn(rankMode === '2v2'), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}>
+        <button
+          type="button"
+          onClick={() => setRankMode('2v2')}
+          style={{ ...btn(rankMode === '2v2'), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}
+        >
           2v2 ELO
         </button>
-        <button onClick={() => setRankMode('americano')} style={{ ...btn(rankMode === 'americano'), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}>
+        <button
+          type="button"
+          onClick={() => setRankMode('americano')}
+          style={{ ...btn(rankMode === 'americano'), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}
+        >
           Americano ELO
         </button>
       </div>
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
         {['week', 'month', 'all'].map((p) => (
-          <button key={p} onClick={() => setPeriod(p)} style={{ ...btn(period === p), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}>
+          <button
+            key={p}
+            type="button"
+            onClick={() => setPeriod(p)}
+            style={{ ...btn(period === p), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}
+          >
             {p === 'week' ? 'Uge' : p === 'month' ? 'Måned' : 'All-time'}
           </button>
         ))}
@@ -281,8 +491,25 @@ export function RankingTab({ user }) {
         {rankModeLabel} · {periodLabels[period]} · {periodInfo[period]}
       </div>
 
-      <div style={{ background: 'linear-gradient(135deg, #1E3A5F, #1D4ED8)', borderRadius: theme.radius, padding: 'clamp(18px,4vw,24px)', marginBottom: '24px', color: '#fff' }}>
-        <div style={{ fontSize: '10px', opacity: 0.65, marginBottom: '6px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #1E3A5F, #1D4ED8)',
+          borderRadius: theme.radius,
+          padding: 'clamp(18px,4vw,24px)',
+          marginBottom: '24px',
+          color: '#fff',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '10px',
+            opacity: 0.65,
+            marginBottom: '6px',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
           Din placering · {rankModeLabel} · {periodLabels[period]}
         </div>
         <div className="pm-rank-hero-inner">
@@ -291,31 +518,48 @@ export function RankingTab({ user }) {
               {period === 'all' && myBundleLoading ? '…' : userRank > 0 ? `#${userRank}` : '—'}
             </span>
             <span style={{ fontSize: '14px', marginLeft: '8px', opacity: 0.6 }}>
-              {period === 'all' && myBundleLoading ? '' : sorted.length > 0 ? `af ${sorted.length}` : ''}
+              {period === 'all' && myBundleLoading
+                ? ''
+                : userRank > 0 && (totalRanked != null || sorted.length > 0)
+                  ? `af ${period === 'all' && myGlobalRank != null ? rankTotalLabel : totalRanked ?? sorted.length}`
+                  : ''}
             </span>
           </div>
           <div className="pm-rank-hero-elo">
             <div style={{ fontFamily: font, fontSize: 'clamp(20px,5vw,24px)', fontWeight: 800, letterSpacing: '-0.03em' }}>
-              {period === 'all' && displayScore === null ? '…' : period === 'all' ? displayScore : (displayScore > 0 ? `+${displayScore}` : displayScore)}
+              {period === 'all' && displayScore === null
+                ? '…'
+                : period === 'all'
+                  ? displayScore
+                  : displayScore > 0
+                    ? `+${displayScore}`
+                    : displayScore}
             </div>
             <div style={{ fontSize: '10px', opacity: 0.65, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              {period === 'all' ? (rankMode === 'americano' ? 'Americano ELO' : '2v2 ELO') : 'ELO ændring'}
+              {period === 'all' ? (isAmericano ? 'Americano ELO' : '2v2 ELO') : 'ELO ændring'}
             </div>
           </div>
         </div>
 
         {period === 'all' && displayScore != null && (
           <div style={{ marginTop: '14px', background: 'rgba(255,255,255,0.15)', borderRadius: '6px', height: '6px' }}>
-            <div style={{ width: `${Math.min((displayScore / 2000) * 100, 100)}%`, height: '100%', background: theme.warm, borderRadius: '6px' }} />
+            <div
+              style={{
+                width: `${Math.min((displayScore / 2000) * 100, 100)}%`,
+                height: '100%',
+                background: theme.warm,
+                borderRadius: '6px',
+              }}
+            />
           </div>
         )}
 
         {userEntry && (period !== 'all' || !myBundleLoading) && (
           <div style={{ marginTop: '12px', fontSize: '12px', opacity: 0.7 }}>
-            {rankMode === 'americano'
-              ? (period === 'all'
+            {isAmericano
+              ? period === 'all'
                 ? `${userEntry.periodGames} turneringer · ${userEntry.periodWins} vundne runder`
-                : `${userEntry.periodGames} turneringer · ${userEntry.periodPoints || 0} point`)
+                : `${userEntry.periodGames} turneringer · ${userEntry.periodPoints || 0} point`
               : `${userEntry.periodGames} kampe · ${userEntry.periodWins} sejre`}
           </div>
         )}
@@ -326,13 +570,17 @@ export function RankingTab({ user }) {
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>📊</div>
           <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
             {period === 'week'
-              ? (rankMode === 'americano' ? 'Ingen Americano-turneringer denne uge endnu' : 'Ingen kampe denne uge endnu')
+              ? isAmericano
+                ? 'Ingen Americano-turneringer denne uge endnu'
+                : 'Ingen kampe denne uge endnu'
               : period === 'month'
-                ? (rankMode === 'americano' ? 'Ingen Americano-turneringer denne måned endnu' : 'Ingen kampe denne måned endnu')
+                ? isAmericano
+                  ? 'Ingen Americano-turneringer denne måned endnu'
+                  : 'Ingen kampe denne måned endnu'
                 : 'Ingen spillere fundet'}
           </div>
           <div style={{ fontSize: '13px', lineHeight: 1.5 }}>
-            {rankMode === 'americano'
+            {isAmericano
               ? 'Afslut en Americano-turnering for at komme på ranglisten!'
               : 'Spil en kamp for at komme på ranglisten!'}
           </div>
@@ -340,15 +588,25 @@ export function RankingTab({ user }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {sorted.map((p, i) => {
-            const me = p.id === user.id;
+            const me = String(p.id) === myId;
             const score = p.score;
             const isPositive = period !== 'all' && score > 0;
             const isNegative = period !== 'all' && score < 0;
+            const place = p._globalRank ?? i + 1;
+            const medalIdx = place - 1;
 
             return (
               <div
                 key={p.id}
                 onClick={() => !me && setViewPlayer(p)}
+                onKeyDown={(e) => {
+                  if (!me && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    setViewPlayer(p);
+                  }
+                }}
+                role={me ? undefined : 'button'}
+                tabIndex={me ? undefined : 0}
                 className="pm-rank-row"
                 style={{
                   background: me ? theme.accentBg : theme.surface,
@@ -362,8 +620,17 @@ export function RankingTab({ user }) {
                   cursor: me ? 'default' : 'pointer',
                 }}
               >
-                <div style={{ width: '28px', flexShrink: 0, textAlign: 'center', fontSize: i < 3 ? '18px' : '13px', fontWeight: 700, color: i < 3 ? 'inherit' : theme.textLight }}>
-                  {i < 3 ? medals[i] : i + 1}
+                <div
+                  style={{
+                    width: '28px',
+                    flexShrink: 0,
+                    textAlign: 'center',
+                    fontSize: medalIdx < 3 ? '18px' : '13px',
+                    fontWeight: 700,
+                    color: medalIdx < 3 ? 'inherit' : theme.textLight,
+                  }}
+                >
+                  {medalIdx < 3 ? medals[medalIdx] : place}
                 </div>
 
                 <AvatarCircle
@@ -375,18 +642,25 @@ export function RankingTab({ user }) {
                 />
 
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '14px', fontWeight: me ? 700 : 600, letterSpacing: '-0.01em', wordBreak: 'break-word' }}>
-                    {p.full_name || p.name}{me ? ' (dig)' : ''}
+                  <div
+                    style={{
+                      fontSize: '14px',
+                      fontWeight: me ? 700 : 600,
+                      letterSpacing: '-0.01em',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {p.full_name || p.name}
+                    {me ? ' (dig)' : ''}
                   </div>
                   <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '1px' }}>
-                    {rankMode === 'americano'
-                      ? (period === 'all'
+                    {isAmericano
+                      ? period === 'all'
                         ? `${p.area || '?'} · ${p.periodGames} turneringer · ${p.periodWins} vundne runder`
-                        : `${p.periodGames} turneringer · ${p.periodPoints || 0} point`)
-                      : (period === 'all'
+                        : `${p.periodGames} turneringer · ${p.periodPoints || 0} point`
+                      : period === 'all'
                         ? `${p.area || '?'} · ${p.periodGames} kampe · ${p.periodWins} sejre`
-                        : `${p.periodGames} kampe · ${p.periodWins} sejre`)
-                    }
+                        : `${p.periodGames} kampe · ${p.periodWins} sejre`}
                   </div>
                 </div>
 
@@ -398,15 +672,41 @@ export function RankingTab({ user }) {
                     fontWeight: 800,
                     flexShrink: 0,
                     letterSpacing: '-0.02em',
-                    color: period === 'all' ? theme.accent : isPositive ? theme.accent : isNegative ? theme.red : theme.textLight,
+                    color:
+                      period === 'all'
+                        ? theme.accent
+                        : isPositive
+                          ? theme.accent
+                          : isNegative
+                            ? theme.red
+                            : theme.textLight,
                   }}
                 >
-                  {period === 'all' ? score : (score > 0 ? `+${score}` : score)}
+                  {period === 'all' ? score : score > 0 ? `+${score}` : score}
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {hasMore && sorted.length > 0 && (
+        <button
+          type="button"
+          onClick={() => void loadMore()}
+          disabled={loadingMore}
+          style={{
+            ...btn(false),
+            width: '100%',
+            marginTop: '16px',
+            justifyContent: 'center',
+            padding: '12px 16px',
+            fontSize: '13px',
+            fontWeight: 700,
+          }}
+        >
+          {loadingMore ? 'Indlæser…' : `Indlæs ${RANKING_PAGE_SIZE} flere`}
+        </button>
       )}
 
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
