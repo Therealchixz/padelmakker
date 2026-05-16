@@ -1967,7 +1967,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const showPrimaryReport = status === "in_progress" && isPlayerInMatch && !mr;
           const showPrimaryConfirm = mr && !mr.confirmed && isPlayerInMatch;
           /* Admin-override-versioner — bor inde i accordion */
-          const adminCanForceStart = isAdmin && !isCreator && (status === "open" || status === "full");
+          const adminCanForceStart = isAdmin && (status === "open" || status === "full");
           const adminCanForceReport = isAdmin && !isPlayerInMatch && status === "in_progress" && !mr;
           const adminCanForceConfirm = isAdmin && !isPlayerInMatch && mr && !mr.confirmed;
           const canDeleteMatch =
@@ -2070,22 +2070,22 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             </div>
           )}
 
-          {/* ---- PRIMARY: Start kamp (kun creator — admin uden creator får knap i accordion) ---- */}
+          {/* ---- PRIMARY: Start kamp (creator) — force-start (Admin) ligger i accordion ---- */}
           {showPrimaryStart && (
             <button
               onClick={() => startMatch(m.id)}
-              disabled={busy || (!isFull && !isAdmin)}
+              disabled={busy || !isFull}
               style={{
-                ...btn(isFull || isAdmin),
+                ...btn(isFull),
                 width: "100%",
                 justifyContent: "center",
                 fontSize: "13px",
-                background: (isFull || isAdmin) ? theme.warm : theme.border,
-                cursor: (isFull || isAdmin) ? "pointer" : "not-allowed",
-                opacity: (isFull || isAdmin) ? 1 : 0.6
+                background: isFull ? theme.warm : theme.border,
+                cursor: isFull ? "pointer" : "not-allowed",
+                opacity: isFull ? 1 : 0.6
               }}
             >
-              {isFull ? "🎾 Start kamp" : isAdmin ? "⚡ Gennemtving start (Admin)" : "🎾 Venter på spillere (2 mod 2)"}
+              {isFull ? "🎾 Start kamp" : "🎾 Venter på spillere (2 mod 2)"}
             </button>
           )}
 
