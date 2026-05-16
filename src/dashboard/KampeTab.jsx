@@ -1699,6 +1699,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             const canSwitch = joined && myTeam === otherTeam && (status === "open" || status === "full") && busyId !== m.id + '-switch';
             const teamColor = teamNum === 1 ? theme.accent : theme.blue;
             const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
+            const idleBorder = teamColor + "88";
+            const idleIcon = teamColor + "AA";
             return (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
                 <button
@@ -1707,11 +1709,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   disabled={!canSwitch}
                   aria-label={"Skift til Hold " + teamNum}
                   title={canSwitch ? "Skift til Hold " + teamNum : undefined}
-                  style={{ width: "36px", height: "36px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? teamColor : "rgba(255,255,255,0.7)"), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? teamBg : "rgba(255,255,255,0.12)", transition: "all 0.15s", padding: 0 }}
+                  style={{ width: "36px", height: "36px", borderRadius: "50%", border: "1.5px dashed " + (canSwitch ? teamColor : idleBorder), display: "flex", alignItems: "center", justifyContent: "center", cursor: canSwitch ? "pointer" : "default", background: canSwitch ? teamBg : "rgba(255,255,255,0.55)", transition: "all 0.15s", padding: 0 }}
                 >
-                  <Plus size={12} color={canSwitch ? teamColor : "rgba(255,255,255,0.85)"} />
+                  <Plus size={12} color={canSwitch ? teamColor : idleIcon} />
                 </button>
-                {canSwitch && <span style={{ fontSize: "8px", color: teamColor, fontWeight: 700, marginTop: "2px" }}>Skift</span>}
+                <span style={{ fontSize: "8px", color: teamColor, fontWeight: 700, marginTop: "3px" }}>
+                  {canSwitch ? "Skift" : "Ledig"}
+                </span>
               </div>
             );
           };
