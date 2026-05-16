@@ -1453,6 +1453,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const mr = matchResults[m.id];
     const matchPrefs = parseMatchLevelRange(m.level_range);
     const status = getStatus(m);
+    const isInProgress = status === "in_progress";
+    const winnerTeam =
+      status === "completed" && mr?.confirmed && (mr.match_winner === "team1" || mr.match_winner === "team2")
+        ? (mr.match_winner === "team1" ? 1 : 2)
+        : null;
     const {
       left,
       joined,
@@ -1578,20 +1583,57 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 📅 {formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}
               </div>
             </div>
-            <span
-              style={{
-                flexShrink: 0,
-                fontSize: 11,
-                fontWeight: 700,
-                padding: "4px 10px",
-                borderRadius: 999,
-                background: "rgba(255,255,255,0.18)",
-                color: "#FFFFFF",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {statusLabel.text}
-            </span>
+            {isInProgress ? (
+              <span
+                style={{
+                  flexShrink: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  fontSize: 10,
+                  fontWeight: 800,
+                  padding: "4px 9px",
+                  borderRadius: 999,
+                  background: "rgba(220,38,38,0.95)",
+                  color: "#FFFFFF",
+                  letterSpacing: "0.08em",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span className="pm-live-dot" />
+                LIVE
+              </span>
+            ) : winnerTeam ? (
+              <span
+                style={{
+                  flexShrink: 0,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.95)",
+                  color: theme.green,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                🏆 Hold {winnerTeam} vandt
+              </span>
+            ) : (
+              <span
+                style={{
+                  flexShrink: 0,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.18)",
+                  color: "#FFFFFF",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {statusLabel.text}
+              </span>
+            )}
           </div>
         </div>
 
@@ -1682,12 +1724,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           return (
             <div className="pm-court-wrap" style={{ marginBottom: "14px" }}>
               <div className="pm-court-header">
-                <div className="pm-court-header-team pm-court-header-team--t1">
-                  <span className="pm-court-header-label">Hold 1</span>
+                <div className={`pm-court-header-team pm-court-header-team--t1${winnerTeam === 1 ? ' pm-court-header-team--winner' : winnerTeam === 2 ? ' pm-court-header-team--loser' : ''}`}>
+                  <span className="pm-court-header-label">{winnerTeam === 1 ? '🏆 Hold 1' : 'Hold 1'}</span>
                   {t1Avg !== null && <span className="pm-court-header-elo">Gns. {t1Avg}</span>}
                 </div>
-                <div className="pm-court-header-team pm-court-header-team--t2">
-                  <span className="pm-court-header-label">Hold 2</span>
+                <div className={`pm-court-header-team pm-court-header-team--t2${winnerTeam === 2 ? ' pm-court-header-team--winner' : winnerTeam === 1 ? ' pm-court-header-team--loser' : ''}`}>
+                  <span className="pm-court-header-label">{winnerTeam === 2 ? '🏆 Hold 2' : 'Hold 2'}</span>
                   {t2Avg !== null && <span className="pm-court-header-elo">Gns. {t2Avg}</span>}
                 </div>
               </div>
@@ -1699,11 +1741,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <div className="pm-court-net" />
                 <span className="pm-court-vs">vs</span>
                 <div className="pm-court-grid">
-                  <div className="pm-court-side pm-court-side--t1">
+                  <div className={`pm-court-side pm-court-side--t1${winnerTeam === 1 ? ' pm-court-side--winner' : winnerTeam === 2 ? ' pm-court-side--loser' : ''}`}>
                     <div className="pm-court-player-slot pm-court-player-slot--top">{t1Top}</div>
                     <div className="pm-court-player-slot pm-court-player-slot--bottom">{t1Bot}</div>
                   </div>
-                  <div className="pm-court-side pm-court-side--t2">
+                  <div className={`pm-court-side pm-court-side--t2${winnerTeam === 2 ? ' pm-court-side--winner' : winnerTeam === 1 ? ' pm-court-side--loser' : ''}`}>
                     <div className="pm-court-player-slot pm-court-player-slot--top">{t2Top}</div>
                     <div className="pm-court-player-slot pm-court-player-slot--bottom">{t2Bot}</div>
                   </div>
