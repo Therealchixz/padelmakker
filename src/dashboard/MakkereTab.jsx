@@ -167,6 +167,9 @@ export function MakkereTab({ user, showToast }) {
   const [favorites, setFavorites]     = useState(() => readFavoritesSet(user?.id));
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [telemetryVersion, setTelemetryVersion] = useState(0);
+  /** Aggregeret kamp-historik mod hver anden spiller — fodres til matchmakingen
+      for at booste skjul-makker-kemi og fair-modstander-match. */
+  const [pastMatchesByUserId, setPastMatchesByUserId] = useState({});
   const seekingResultsRef = useRef(null);
   const hasScrolledToSeekingRef = useRef(false);
 
@@ -230,6 +233,73 @@ export function MakkereTab({ user, showToast }) {
     loadPlayers();
   }, [loadPlayers]);
 
+  /* Hent kamp-historik mod alle andre spillere én gang ved load.
+     Bruges af matchmakingen til at booste makker-kemi og fair modstander-match. */
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: myRows } = await supabase
+          .from('match_players')
+          .select('match_id, team')
+          .eq('user_id', user.id);
+        const matchIds = [...new Set((myRows || []).map((r) => String(r.match_id)).filter(Boolean))];
+        if (matchIds.length === 0) {
+          if (!cancelled) setPastMatchesByUserId({});
+          return;
+        }
+        const myTeamByMatch = {};
+        for (const row of myRows || []) {
+          myTeamByMatch[String(row.match_id)] = Number(row.team);
+        }
+        const [{ data: allPlayers }, { data: results }] = await Promise.all([
+          supabase
+            .from('match_players')
+            .select('match_id, user_id, team')
+            .in('match_id', matchIds),
+          supabase
+            .from('match_results')
+            .select('match_id, match_winner, confirmed')
+            .in('match_id', matchIds)
+            .eq('confirmed', true),
+        ]);
+        const winnerByMatch = {};
+        for (const r of results || []) {
+          if (r?.match_winner === 'team1' || r?.match_winner === 'team2') {
+            winnerByMatch[String(r.match_id)] = r.match_winner === 'team1' ? 1 : 2;
+          }
+        }
+        /** map: otherUserId → { asTeammate, winsAsTeammate, asOpponent, winsAgainst } */
+        const map = {};
+        for (const row of allPlayers || []) {
+          const otherId = String(row.user_id);
+          if (otherId === String(user.id)) continue;
+          const mid = String(row.match_id);
+          const myTeam = myTeamByMatch[mid];
+          const theirTeam = Number(row.team);
+          if (!myTeam || !theirTeam) continue;
+          const entry = map[otherId] || { asTeammate: 0, winsAsTeammate: 0, asOpponent: 0, winsAgainst: 0 };
+          const winnerTeam = winnerByMatch[mid] || null;
+          if (myTeam === theirTeam) {
+            entry.asTeammate += 1;
+            if (winnerTeam === myTeam) entry.winsAsTeammate += 1;
+          } else {
+            entry.asOpponent += 1;
+            if (winnerTeam === myTeam) entry.winsAgainst += 1;
+          }
+          map[otherId] = entry;
+        }
+        if (!cancelled) setPastMatchesByUserId(map);
+      } catch (err) {
+        console.warn('Kunne ikke hente kamp-historik for matchmaking:', err?.message || err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
   const displayElo = useCallback((player) => {
     const stats = statsById[String(player.id)];
     return stats != null ? stats.elo : eloOf(player);
@@ -263,7 +333,9 @@ export function MakkereTab({ user, showToast }) {
     eloByUserId,
     inviteStatsByUserId,
     exposureCountByUserId,
-  }), [user, players, eloByUserId, inviteStatsByUserId, exposureCountByUserId]);
+    pastMatchesByUserId,
+    favoriteIds: favorites,
+  }), [user, players, eloByUserId, inviteStatsByUserId, exposureCountByUserId, pastMatchesByUserId, favorites]);
 
   const visibleSuggestions = useMemo(
     () => (showAllSuggestions ? suggestions : suggestions.slice(0, 3)),

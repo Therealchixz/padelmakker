@@ -76,8 +76,38 @@ function resolveElo(profile, eloByUserId = {}) {
   return Math.round(toNumber(profile?.elo_rating, 1000));
 }
 
-function skillScore(myElo, theirElo) {
-  const diff = Math.abs(toNumber(myElo, 1000) - toNumber(theirElo, 1000));
+/**
+ * Cold-start ELO: helt nye spillere har ingen kamphistorik, og rå ELO 1000 er
+ * misvisende. Bland ratingen med deres signup-niveau indtil de har spillet
+ * mindst 5 kampe. Niveau 1-10 → ELO 800-1200.
+ */
+function resolveEloWithContext(profile, eloByUserId = {}) {
+  const baseElo = resolveElo(profile, eloByUserId);
+  const played = toNumber(profile?.games_played, 0);
+  if (played >= 5) return baseElo;
+  const level = toNumber(profile?.level, 5);
+  const levelAsElo = 800 + (level - 1) * (400 / 9);
+  const levelWeight = Math.max(0, (5 - played) / 5);
+  return Math.round(baseElo * (1 - levelWeight) + levelAsElo * levelWeight);
+}
+
+/**
+ * Justér ELO med vinder-rate når der er nok kampe at gå ud fra: en spiller
+ * der vinder 70% af deres kampe spiller sandsynligvis stærkere end deres ELO
+ * antyder, og vice versa. ±50 ELO-justering ved >=10 kampe.
+ */
+function winRateAdjustedElo(profile, baseElo) {
+  const played = toNumber(profile?.games_played, 0);
+  if (played < 10) return baseElo;
+  const won = toNumber(profile?.games_won, 0);
+  const winRate = won / played;
+  return baseElo + (winRate - 0.5) * 100;
+}
+
+function skillScore(myElo, theirElo, myProfile, theirProfile) {
+  const myAdjusted = winRateAdjustedElo(myProfile, myElo);
+  const theirAdjusted = winRateAdjustedElo(theirProfile, theirElo);
+  const diff = Math.abs(toNumber(myAdjusted, 1000) - toNumber(theirAdjusted, 1000));
   return clamp01(1 - diff / 400);
 }
 
@@ -86,15 +116,32 @@ function timeScore(myProfile, theirProfile) {
   const theirDays = normalizedList(theirProfile?.available_days);
   const myAvail = normalizedList(myProfile?.availability);
   const theirAvail = normalizedList(theirProfile?.availability);
+  /* Valgfrit fremtidigt signup-felt: time_of_day_pref = ['morgen','eftermiddag','aften'] */
+  const myTimes = normalizedList(myProfile?.time_of_day_pref);
+  const theirTimes = normalizedList(theirProfile?.time_of_day_pref);
 
   const hasDays = myDays.length > 0 && theirDays.length > 0;
   const hasAvail = myAvail.length > 0 && theirAvail.length > 0;
+  const hasTimes = myTimes.length > 0 && theirTimes.length > 0;
 
-  if (!hasDays && !hasAvail) return 0.5;
-  if (hasDays && !hasAvail) return jaccardOverlap(myDays, theirDays);
-  if (!hasDays && hasAvail) return jaccardOverlap(myAvail, theirAvail);
+  /* Manglende data scorer lavt — tomme profiler skal ikke rangeres højt */
+  if (!hasDays && !hasAvail && !hasTimes) return 0.35;
 
-  return 0.6 * jaccardOverlap(myDays, theirDays) + 0.4 * jaccardOverlap(myAvail, theirAvail);
+  let total = 0;
+  let weightSum = 0;
+  if (hasDays) {
+    total += 0.55 * jaccardOverlap(myDays, theirDays);
+    weightSum += 0.55;
+  }
+  if (hasAvail) {
+    total += 0.3 * jaccardOverlap(myAvail, theirAvail);
+    weightSum += 0.3;
+  }
+  if (hasTimes) {
+    total += 0.4 * jaccardOverlap(myTimes, theirTimes);
+    weightSum += 0.4;
+  }
+  return weightSum > 0 ? clamp01(total / weightSum) : 0.35;
 }
 
 function hasTimeOverlapSignal(myProfile, theirProfile) {
@@ -148,8 +195,11 @@ function geoScore(myProfile, theirProfile) {
 
   const myArea = normalizeText(myProfile?.area);
   const theirArea = normalizeText(theirProfile?.area);
-  if (!myArea || !theirArea) return 0.4;
-  return myArea === theirArea ? 0.6 : 0.15;
+  if (!myArea || !theirArea) return 0.3;
+  if (myArea === theirArea) return 0.6;
+  /* Begge er villige til at rejse → mindre straf for forskellige områder */
+  if (myProfile?.travel_willing && theirProfile?.travel_willing) return 0.35;
+  return 0.15;
 }
 
 function normalizeCourtSide(value) {
@@ -165,7 +215,7 @@ function courtSideScore(mySide, theirSide) {
   const mine = normalizeCourtSide(mySide);
   const theirs = normalizeCourtSide(theirSide);
 
-  if (!mine || !theirs) return 0.6;
+  if (!mine || !theirs) return 0.5;
   if (mine === 'begge' || theirs === 'begge') return 0.6;
   const complementary =
     (mine === 'venstre' && theirs === 'hojre') ||
@@ -195,10 +245,10 @@ const INTENT_COMPAT = {
 function intentScore(myIntent, theirIntent) {
   const mine = normalizeIntent(myIntent);
   const theirs = normalizeIntent(theirIntent);
-  if (!mine || !theirs) return 0.5;
+  if (!mine || !theirs) return 0.4;
   const row = INTENT_COMPAT[mine];
-  if (!row) return 0.5;
-  return row[theirs] ?? 0.5;
+  if (!row) return 0.4;
+  return row[theirs] ?? 0.4;
 }
 
 function lastActiveScore(profile) {
@@ -223,7 +273,7 @@ function isActive(profile) {
 
 function directionalScore(fromProfile, toProfile, fromElo, toElo) {
   const components = {
-    skill: skillScore(fromElo, toElo),
+    skill: skillScore(fromElo, toElo, fromProfile, toProfile),
     time: timeScore(fromProfile, toProfile),
     geo: geoScore(fromProfile, toProfile),
     intent: intentScore(fromProfile?.intent_now, toProfile?.intent_now),
@@ -255,6 +305,53 @@ function exposurePenalty(count) {
   return Math.min(0.09, Math.log2(1 + n) * 0.02);
 }
 
+/**
+ * Boost baseret på tidligere kampe sammen. To stærke signaler:
+ *
+ *  - **Kemi som makker**: hvis de har vundet mange kampe sammen, er de godt
+ *    sammen-spillende — vægter højere end win-rate som modstandere.
+ *  - **Balance som modstandere**: hvis de tit har spillet 50/50 mod hinanden,
+ *    er det god skill-match — det er præcis hvad matchmakeren leder efter.
+ *
+ *  Familiarity gør boostet større jo flere kampe de har sammen (log-skala op
+ *  til 10 kampe). Max +0.15 boost — designet til at trumfe små skill-forskelle
+ *  uden at overdøve hard filters.
+ */
+function pastMatchesBoost(candidateId, pastMatchesByUserId) {
+  if (!candidateId || !pastMatchesByUserId) return 0;
+  const stats = pastMatchesByUserId[String(candidateId)];
+  if (!stats) return 0;
+
+  const teammateCount = Math.max(0, Number(stats.asTeammate) || 0);
+  const opponentCount = Math.max(0, Number(stats.asOpponent) || 0);
+  const total = teammateCount + opponentCount;
+  if (total === 0) return 0;
+
+  /* 0 → 1 ramper op fra 0 til 10 delte kampe */
+  const familiarityFactor = Math.min(1, Math.log2(1 + total) / Math.log2(11));
+
+  let chemistryBoost = 0;
+  if (teammateCount >= 2) {
+    const winRate = (Number(stats.winsAsTeammate) || 0) / teammateCount;
+    chemistryBoost = Math.max(0, winRate - 0.4) * 0.3;
+  }
+
+  let balanceBoost = 0;
+  if (opponentCount >= 2) {
+    const winRateAgainst = (Number(stats.winsAgainst) || 0) / opponentCount;
+    const balance = 1 - Math.abs(winRateAgainst - 0.5) * 2;
+    balanceBoost = Math.max(0, balance) * 0.12;
+  }
+
+  return Math.min(0.15, familiarityFactor * (chemistryBoost + balanceBoost));
+}
+
+/** Eksplicit favorit fra brugeren → tungt boost; man har allerede sagt "ja". */
+function favoriteBoost(candidateId, favoriteIds) {
+  if (!candidateId || !favoriteIds) return 0;
+  return favoriteIds.has(String(candidateId)) ? 0.18 : 0;
+}
+
 function passesHardFilters(myProfile, candidate, myElo, candidateElo, opts) {
   if (candidate?.id === myProfile?.id) return false;
   if (candidate?.is_banned) return false;
@@ -279,9 +376,13 @@ export function scoreCandidate(myProfile, candidate, opts = {}) {
   const eloByUserId = opts.eloByUserId || {};
   const inviteStatsByUserId = opts.inviteStatsByUserId || {};
   const exposureCountByUserId = opts.exposureCountByUserId || {};
+  const pastMatchesByUserId = opts.pastMatchesByUserId || {};
+  const favoriteIds = opts.favoriteIds || null;
 
-  const myElo = resolveElo(myProfile, eloByUserId);
-  const candidateElo = resolveElo(candidate, eloByUserId);
+  /* resolveEloWithContext bruger signup-niveau som proxy for nye spillere
+     (<5 kampe), så cold-start ikke straffes urimeligt. */
+  const myElo = resolveEloWithContext(myProfile, eloByUserId);
+  const candidateElo = resolveEloWithContext(candidate, eloByUserId);
 
   const forward = directionalScore(myProfile, candidate, myElo, candidateElo);
   const reverse = directionalScore(candidate, myProfile, candidateElo, myElo);
@@ -293,11 +394,15 @@ export function scoreCandidate(myProfile, candidate, opts = {}) {
   const inviteAdj = inviteAcceptanceAdjustment(inviteStats);
   const exposureCount = Number(exposureCountByUserId[String(candidate?.id || '')] || 0);
   const exposurePenaltyValue = exposurePenalty(exposureCount);
+  const pastMatchesBoostValue = pastMatchesBoost(candidate?.id, pastMatchesByUserId);
+  const favoriteBoostValue = favoriteBoost(candidate?.id, favoriteIds);
 
   let total01 = reciprocalCore;
   total01 += activity * 0.08;
   total01 += seekingRecency * 0.07;
   total01 += inviteAdj;
+  total01 += pastMatchesBoostValue;
+  total01 += favoriteBoostValue;
   total01 -= exposurePenaltyValue;
   total01 = clamp01(total01);
 
@@ -313,6 +418,8 @@ export function scoreCandidate(myProfile, candidate, opts = {}) {
     inviteAcceptanceAdjustment: inviteAdj,
     exposurePenalty: exposurePenaltyValue,
     exposureCount,
+    pastMatchesBoost: pastMatchesBoostValue,
+    favoriteBoost: favoriteBoostValue,
     inviteSentCount: Number(inviteStats?.sent || 0),
     inviteAcceptanceRate: Number.isFinite(inviteStats?.acceptanceRate)
       ? inviteStats.acceptanceRate
@@ -336,6 +443,8 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
     eloByUserId = {},
     inviteStatsByUserId = {},
     exposureCountByUserId = {},
+    pastMatchesByUserId = {},
+    favoriteIds = null,
   } = opts;
 
   const myElo = resolveElo(myProfile, eloByUserId);
@@ -353,6 +462,8 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
         eloByUserId,
         inviteStatsByUserId,
         exposureCountByUserId,
+        pastMatchesByUserId,
+        favoriteIds,
       });
       return {
         profile: candidate,
@@ -376,6 +487,8 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
  */
 export function matchReason(breakdown, candidate) {
   const reasons = [];
+  if ((breakdown?.favoriteBoost || 0) > 0) reasons.push('⭐ Favorit');
+  if ((breakdown?.pastMatchesBoost || 0) >= 0.05) reasons.push('Spillet sammen før');
   if ((breakdown?.reciprocal || 0) >= 0.75) reasons.push('Gensidig match');
   if ((breakdown?.skill || 0) >= 0.8) reasons.push('Tæt ELO-niveau');
   if ((breakdown?.time || 0) >= 0.75) reasons.push('Samme spilledage');
