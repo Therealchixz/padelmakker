@@ -68,6 +68,7 @@ export async function confirmPadelMatchResult({
   supabaseClient,
   calculateAndApplyEloFn,
   createNotificationFn,
+  createNotificationsForUsersFn,
   matchId,
   result,
   players,
@@ -105,17 +106,28 @@ export async function confirmPadelMatchResult({
       ? `Kampen er afsluttet (${scoreDisplay}). Personlig ELO er opdateret.`
       : `Kampen er afsluttet (${scoreDisplay}), men ELO blev ikke ændret.`;
 
-  await Promise.allSettled(
-    safePlayers(players).map((player) =>
-      createNotificationFn(
-        player.user_id,
-        'result_confirmed',
-        'Resultat bekræftet!',
-        body,
-        matchId,
-      )
-    ),
-  );
+  const playerIds = safePlayers(players).map((player) => player.user_id);
+  if (createNotificationsForUsersFn) {
+    await createNotificationsForUsersFn(
+      playerIds,
+      'result_confirmed',
+      'Resultat bekræftet!',
+      body,
+      matchId,
+    );
+  } else {
+    await Promise.allSettled(
+      playerIds.map((userId) =>
+        createNotificationFn(
+          userId,
+          'result_confirmed',
+          'Resultat bekræftet!',
+          body,
+          matchId,
+        ),
+      ),
+    );
+  }
 
   return {
     ok: true,
@@ -128,6 +140,7 @@ export async function confirmPadelMatchResult({
 export async function rejectPadelMatchResult({
   supabaseClient,
   createNotificationFn,
+  createNotificationsForUsersFn,
   matchId,
   result,
   rejectedBy,
@@ -165,17 +178,29 @@ export async function rejectPadelMatchResult({
     if (error) throw error;
     const adminRows = Array.isArray(admins) ? admins : [];
     adminsNotified = adminRows.length;
-    await Promise.allSettled(
-      adminRows.map((admin) =>
-        createNotificationFn(
-          admin.id,
-          'result_submitted',
-          'Resultat afvist ❌',
-          `${rejecterName || 'En spiller'} har afvist et indberettet resultat. Kampen venter på et nyt resultat.`,
-          matchId,
-        )
-      ),
-    );
+    const adminIds = adminRows.map((admin) => admin.id);
+    const rejectBody = `${rejecterName || 'En spiller'} har afvist et indberettet resultat. Kampen venter på et nyt resultat.`;
+    if (createNotificationsForUsersFn && adminIds.length > 0) {
+      await createNotificationsForUsersFn(
+        adminIds,
+        'result_submitted',
+        'Resultat afvist ❌',
+        rejectBody,
+        matchId,
+      );
+    } else {
+      await Promise.allSettled(
+        adminIds.map((adminId) =>
+          createNotificationFn(
+            adminId,
+            'result_submitted',
+            'Resultat afvist ❌',
+            rejectBody,
+            matchId,
+          ),
+        ),
+      );
+    }
   } catch (error) {
     if (typeof onWarn === 'function') onWarn(error);
   }

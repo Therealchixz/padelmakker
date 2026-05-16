@@ -17,7 +17,7 @@ import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
 import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
-import { createNotification } from '../lib/notifications';
+import { createNotification, createNotificationsForUsers } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
 import { formatMatchResultScore } from '../lib/matchResultScore';
@@ -816,9 +816,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       }
       // Notify all players if match is now full
       if (t1 >= 2 && t2 >= 2) {
-        mp.filter(p => p.user_id !== user.id).forEach(p => {
-          createNotification(p.user_id, "match_full", "Kampen er fuld! 🎾", "Alle 4 pladser er fyldt — kampen er klar til at starte.", matchId);
-        });
+        const fullNotifyIds = mp.filter((p) => p.user_id !== user.id).map((p) => p.user_id);
+        void createNotificationsForUsers(
+          fullNotifyIds,
+          "match_full",
+          "Kampen er fuld! 🎾",
+          "Alle 4 pladser er fyldt — kampen er klar til at starte.",
+          matchId,
+        );
       }
 
       showToast(`Du er tilmeldt Hold ${teamNum}! ⚔️`);
@@ -1066,9 +1071,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const { error } = await q;
       if (error) throw error;
 
-      mpBefore.filter(p => p.user_id !== user.id).forEach(p => {
-        createNotification(p.user_id, "match_cancelled", "Kamp aflyst ❌", isAdmin ? "En admin har aflyst kampen." : `${myDisplayName} har aflyst kampen.`, matchId);
-      });
+      const cancelNotifyIds = mpBefore.filter((p) => p.user_id !== user.id).map((p) => p.user_id);
+      void createNotificationsForUsers(
+        cancelNotifyIds,
+        "match_cancelled",
+        "Kamp aflyst ❌",
+        isAdmin ? "En admin har aflyst kampen." : `${myDisplayName} har aflyst kampen.`,
+        matchId,
+      );
       showToast("Kamp slettet.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
@@ -1217,16 +1227,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const preview = messageText.length > 90 ? `${messageText.slice(0, 87)}...` : messageText;
     const title = "Ny besked i kamp-chat 💬";
     const body = `${myDisplayName}: ${preview}`;
-    const results = await Promise.allSettled(
-      recipientIds.map((recipientId) =>
-        createNotification(recipientId, "match_chat", title, body, matchId)
-      )
+    const notifyError = await createNotificationsForUsers(
+      recipientIds,
+      "match_chat",
+      title,
+      body,
+      matchId,
     );
-    const hasErrors = results.some((result) => (
-      result.status === "rejected"
-      || (result.status === "fulfilled" && result.value)
-    ));
-    if (hasErrors) console.warn("match chat notification: en eller flere notifikationer fejlede");
+    if (notifyError) console.warn("match chat notification:", notifyError.message || notifyError);
   }, [matchPlayers, myDisplayName, user.id]);
 
   const submitMatchChat = async (matchId, canWrite = false) => {
@@ -1363,6 +1371,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const submission = await submitPadelMatchResult({
         supabaseClient: supabase,
         createNotificationFn: createNotification,
+        createNotificationsForUsersFn: createNotificationsForUsers,
         matchId,
         players: mp,
         submittedBy: user.id,
@@ -1390,6 +1399,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         supabaseClient: supabase,
         calculateAndApplyEloFn: calculateAndApplyElo,
         createNotificationFn: createNotification,
+        createNotificationsForUsersFn: createNotificationsForUsers,
         matchId,
         result: mr,
         players: mp,
@@ -1421,6 +1431,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const rejection = await rejectPadelMatchResult({
         supabaseClient: supabase,
         createNotificationFn: createNotification,
+        createNotificationsForUsersFn: createNotificationsForUsers,
         matchId,
         result: mr,
         rejectedBy: user.id,

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { theme, btn, font } from '../lib/platformTheme';
 import { supabase } from '../lib/supabase';
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
-import { createNotification } from '../lib/notifications';
+import { createNotification, createNotificationsForUsers } from '../lib/notifications';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import { formatMatchResultScore } from '../lib/matchResultScore';
@@ -234,16 +234,14 @@ export function PendingResultConfirmModal({ user }) {
           .from('match_players')
           .select('user_id')
           .eq('match_id', result.match_id);
-        (players || []).forEach((p) => {
-          if (!p.user_id) return;
-          createNotification(
-            p.user_id,
-            'result_confirmed',
-            'Resultat bekræftet! 🏆',
-            `Kampen er afsluttet (${scoreDisplay}). Personlig ELO er opdateret.`,
-            result.match_id,
-          );
-        });
+        const playerIds = (players || []).map((p) => p.user_id).filter(Boolean);
+        await createNotificationsForUsers(
+          playerIds,
+          'result_confirmed',
+          'Resultat bekræftet! 🏆',
+          `Kampen er afsluttet (${scoreDisplay}). Personlig ELO er opdateret.`,
+          result.match_id,
+        );
       } catch (notifyErr) {
         console.warn('notify on modal confirm:', notifyErr?.message || notifyErr);
       }
@@ -296,15 +294,14 @@ export function PendingResultConfirmModal({ user }) {
           .select('id')
           .eq('role', 'admin')
           .neq('id', userId);
-        (admins || []).forEach((a) => {
-          createNotification(
-            a.id,
-            'result_submitted',
-            'Resultat afvist ❌',
-            `${myDisplayName} har afvist et indberettet resultat. Kampen venter på et nyt resultat.`,
-            result.match_id,
-          );
-        });
+        const adminIds = (admins || []).map((a) => a.id).filter(Boolean);
+        await createNotificationsForUsers(
+          adminIds,
+          'result_submitted',
+          'Resultat afvist ❌',
+          `${myDisplayName} har afvist et indberettet resultat. Kampen venter på et nyt resultat.`,
+          result.match_id,
+        );
       } catch (notifyErr) {
         console.warn('notify admins on modal reject:', notifyErr?.message || notifyErr);
       }

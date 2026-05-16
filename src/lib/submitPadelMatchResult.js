@@ -8,6 +8,7 @@ function defaultTeamOf(player) {
 export async function submitPadelMatchResult({
   supabaseClient,
   createNotificationFn,
+  createNotificationsForUsersFn,
   matchId,
   players,
   submittedBy,
@@ -45,19 +46,32 @@ export async function submitPadelMatchResult({
   const { error } = await supabaseClient.from('match_results').insert(payload);
   if (error) throw error;
 
-  await Promise.all(
-    roster
-      .filter((player) => String(player.user_id) !== String(submittedBy))
-      .map((player) =>
+  const opponentIds = roster
+    .filter((player) => String(player.user_id) !== String(submittedBy))
+    .map((player) => player.user_id);
+  const submitBody = `${submitterName || 'En spiller'} har indsendt et resultat (${scoreDisplay}). Bekræft venligst.`;
+
+  if (createNotificationsForUsersFn && opponentIds.length > 0) {
+    await createNotificationsForUsersFn(
+      opponentIds,
+      'result_submitted',
+      'Resultat indsendt 📊',
+      submitBody,
+      matchId,
+    );
+  } else {
+    await Promise.all(
+      opponentIds.map((userId) =>
         createNotificationFn(
-          player.user_id,
+          userId,
           'result_submitted',
           'Resultat indsendt 📊',
-          `${submitterName || 'En spiller'} har indsendt et resultat (${scoreDisplay}). Bekræft venligst.`,
+          submitBody,
           matchId,
-        )
+        ),
       ),
-  );
+    );
+  }
 
   return { ok: true, scoreDisplay, payload };
 }
