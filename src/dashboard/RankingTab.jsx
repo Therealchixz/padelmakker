@@ -76,7 +76,8 @@ export function RankingTab({ user }) {
         supabase
           .from('profiles')
           .select('id, full_name, name, avatar, area, elo_rating, games_played, games_won, level, americano_elo_rating, americano_played, americano_wins')
-          .order(rankMode === 'americano' ? 'americano_elo_rating' : 'elo_rating', { ascending: false }),
+          .order(rankMode === 'americano' ? 'americano_elo_rating' : 'elo_rating', { ascending: false })
+          .limit(300),
         supabase
           .from('elo_history')
           .select('user_id, result, change, old_rating, new_rating, date, match_id')

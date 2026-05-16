@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Profile } from '../api/base44Client';
+import { fetchMakkerePlayerProfiles } from '../lib/profileQueries';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
 import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS, COURT_SIDES, SEEK_TTL_MS } from '../lib/platformConstants';
 import { eloOf } from '../lib/matchDisplayUtils';
@@ -215,7 +215,7 @@ export function MakkereTab({ user, showToast }) {
   const loadPlayers = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await Profile.filter({ is_banned: false });
+      const data = await fetchMakkerePlayerProfiles();
       const list = (data || []).filter((p) => p.id !== user.id);
       setPlayers(list);
       const ids = list.map((p) => p.id);

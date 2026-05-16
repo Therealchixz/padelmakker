@@ -2,13 +2,16 @@ import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } fro
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
-import { Profile, Court } from '../api/base44Client';
+import { Court } from '../api/base44Client';
+import { fetchProfilesByIdMap } from '../lib/profileQueries';
 import { supabase } from '../lib/supabase';
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 const AmericanoTab = lazy(() =>
   import('../features/americano/AmericanoTab').then(m => ({ default: m.AmericanoTab }))
 );
-import { LigaTab as LigaTabEmbed } from './LigaTab';
+const LigaTabLazyEmbed = lazy(() =>
+  import('./LigaTab').then((m) => ({ default: m.LigaTab }))
+);
 import { theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
@@ -261,7 +264,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   /**
    * Samme rækkefølge som ProfilTab: elo_history først (sand nuværende rating), derefter frisk
    * profiles-række, derefter bulk-liste (kan være bagud ift. DB), til sidst context.
-   * Ellers vises 1000 fra Profile.filter() selvom profilen viser 1020 fra historik.
+   * Ellers vises forældet elo fra profiles-listen selvom historik viser nyere tal.
    */
   const myUidStr = String(user.id);
   const venueOptions = useMemo(() => getMatchVenueOptions(courts), [courts]);
@@ -294,9 +297,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     setLoadError("");
     try {
       const uid = user.id;
-      const [cd, profiles, openPoolRes, createdRes, myMpRes] = await Promise.all([
+      const [cd, openPoolRes, createdRes, myMpRes] = await Promise.all([
         Court.filter(),
-        Profile.filter(),
         supabase
           .from("matches")
           .select("*")
@@ -311,13 +313,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       if (myMpRes.error) throw myMpRes.error;
 
       setCourts(cd || []);
-      const eloMap = {};
-      const pById = {};
-      (profiles || []).forEach((pr) => {
-        const id = String(pr.id);
-        eloMap[id] = eloOf(pr);
-        pById[id] = pr;
-      });
 
       const idSet = new Set();
       (openPoolRes.data || []).forEach((m) => idSet.add(m.id));
@@ -363,9 +358,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         }
       }
       idsForHist.add(String(user.id));
-      const histEloMap = await fetchEloByUserIdFromHistory([...idsForHist]);
+      const profileIdList = [...idsForHist];
+      const [histEloMap, pById] = await Promise.all([
+        fetchEloByUserIdFromHistory(profileIdList),
+        fetchProfilesByIdMap(profileIdList),
+      ]);
       setEloFromHistoryByUserId(histEloMap);
 
+      const eloMap = {};
+      for (const [id, pr] of Object.entries(pById)) {
+        eloMap[id] = eloOf(pr);
+      }
       setEloByUserId(eloMap);
       setProfilesById(pById);
       setMatchPlayers(mm);
@@ -1089,10 +1092,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     try {
       const creatorProfile = profilesById[String(match.creator_id)] || user;
       const playerIds = (matchPlayers[match.id] || []).map(p => p.user_id);
-      const allProfilesList = Object.values(profilesById);
 
       const { notified, error } = await activateSeekingPlayer(
-        match, creatorProfile, allProfilesList, playerIds
+        match, creatorProfile, playerIds
       );
 
       if (error) {
@@ -2422,17 +2424,26 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         cardStyle={{ marginBottom: "18px" }}
       />
       {kampeFormat === "liga" && (
-        <LigaTabEmbed
-          user={user}
-          showToast={showToast}
-          createOpen={showLigaCreate}
-          onCreateOpenChange={setShowLigaCreate}
-          embedInKampe
-          scope={kampeScope}
-          onScopeChange={onScopeChange}
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-        />
+        <Suspense
+          fallback={
+            <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: "14px" }}>
+              <div className="pm-spinner pm-state-spinner" />
+              <div className="pm-state-title">Indlæser liga…</div>
+            </div>
+          }
+        >
+          <LigaTabLazyEmbed
+            user={user}
+            showToast={showToast}
+            createOpen={showLigaCreate}
+            onCreateOpenChange={setShowLigaCreate}
+            embedInKampe
+            scope={kampeScope}
+            onScopeChange={onScopeChange}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+          />
+        </Suspense>
       )}
 
       {kampeFormat === "liga" ? null : (

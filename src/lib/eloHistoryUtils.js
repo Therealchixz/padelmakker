@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabase';
 import { normalizeProfileRow } from './profileUtils';
 import {
@@ -73,20 +73,29 @@ export function eloHistoryRowDateKey(h) {
   return formatLocalDateYMD(t);
 }
 
+const ELO_HISTORY_BATCH_COLUMNS =
+  'user_id, result, change, old_rating, new_rating, date, match_id, id';
+
 /**
- * ELO pr. bruger ud fra elo_history (samme som profil/ranking). Virker selv når RLS kun tillader
- * at læse egne profiles — historikken er typisk synlig for alle authenticated (til ranking).
+ * ELO-statistik pr. bruger fra elo_history (chunked).
+ * @param {string[]} userIds
+ * @param {'elo' | 'full'} mode
  */
-export async function fetchEloByUserIdFromHistory(userIds) {
+async function fetchEloStatsFromHistoryBatch(userIds, mode = 'elo') {
   const ids = [...new Set((userIds || []).map((x) => String(x)).filter(Boolean))];
+  if (ids.length === 0) return mode === 'elo' ? {} : {};
+
+  /** @type {Record<string, number | { elo: number; games: number; wins: number }>} */
   const out = {};
-  if (ids.length === 0) return out;
   const chunkSize = 100;
   for (let i = 0; i < ids.length; i += chunkSize) {
     const chunk = ids.slice(i, i + chunkSize);
-    const { data, error } = await supabase.from('elo_history').select('*').in('user_id', chunk);
+    const { data, error } = await supabase
+      .from('elo_history')
+      .select(ELO_HISTORY_BATCH_COLUMNS)
+      .in('user_id', chunk);
     if (error) {
-      console.warn('elo_history batch for Kampe:', error.message);
+      console.warn('elo_history batch:', error.message);
       continue;
     }
     const byUser = {};
@@ -97,10 +106,22 @@ export async function fetchEloByUserIdFromHistory(userIds) {
     }
     for (const uid of chunk) {
       const st = statsFromEloHistoryRows(byUser[String(uid)] || []);
-      if (st != null) out[String(uid)] = st.elo;
+      if (st == null) continue;
+      out[String(uid)] =
+        mode === 'full' ? { elo: st.elo, games: st.games, wins: st.wins } : st.elo;
     }
   }
   return out;
+}
+
+/**
+ * ELO pr. bruger ud fra elo_history (samme som profil/ranking). Virker selv når RLS kun tillader
+ * at læse egne profiles — historikken er typisk synlig for alle authenticated (til ranking).
+ */
+export async function fetchEloByUserIdFromHistory(userIds) {
+  return /** @type {Promise<Record<string, number>>} */ (
+    fetchEloStatsFromHistoryBatch(userIds, 'elo')
+  );
 }
 
 /**
@@ -108,30 +129,37 @@ export async function fetchEloByUserIdFromHistory(userIds) {
  * Bruges på Find makker så listen ikke viser forældede profiles.elo_rating / games_played.
  */
 export async function fetchEloStatsBatchByUserIds(userIds) {
-  const ids = [...new Set((userIds || []).map((x) => String(x)).filter(Boolean))];
-  /** @type {Record<string, { elo: number; games: number; wins: number }>} */
-  const out = {};
-  if (ids.length === 0) return out;
-  const chunkSize = 100;
-  for (let i = 0; i < ids.length; i += chunkSize) {
-    const chunk = ids.slice(i, i + chunkSize);
-    const { data, error } = await supabase.from('elo_history').select('*').in('user_id', chunk);
-    if (error) {
-      console.warn('elo_history batch (makkere):', error.message);
-      continue;
-    }
-    const byUser = {};
-    for (const h of data || []) {
-      const u = String(h.user_id);
-      if (!byUser[u]) byUser[u] = [];
-      byUser[u].push(h);
-    }
-    for (const uid of chunk) {
-      const st = statsFromEloHistoryRows(byUser[String(uid)] || []);
-      if (st != null) out[String(uid)] = { elo: st.elo, games: st.games, wins: st.wins };
-    }
-  }
-  return out;
+  return /** @type {Promise<Record<string, { elo: number; games: number; wins: number }>>} */ (
+    fetchEloStatsFromHistoryBatch(userIds, 'full')
+  );
+}
+
+/** Delt cache mellem dashboard-faner — undgår gentagne fulde elo_history-hentninger. */
+const profileEloBundleCache = new Map();
+const PROFILE_ELO_CACHE_TTL_MS = 90_000;
+
+function readProfileEloBundleCache(userId, syncKey) {
+  if (!userId) return null;
+  const entry = profileEloBundleCache.get(String(userId));
+  if (!entry) return null;
+  if (entry.syncKey !== syncKey) return null;
+  if (Date.now() - entry.fetchedAt > PROFILE_ELO_CACHE_TTL_MS) return null;
+  return entry;
+}
+
+function writeProfileEloBundleCache(userId, syncKey, profileFresh, ratedRows) {
+  if (!userId) return;
+  profileEloBundleCache.set(String(userId), {
+    syncKey,
+    profileFresh,
+    ratedRows,
+    fetchedAt: Date.now(),
+  });
+}
+
+export function invalidateProfileEloBundleCache(userId) {
+  if (userId) profileEloBundleCache.delete(String(userId));
+  else profileEloBundleCache.clear();
 }
 
 /**
@@ -139,9 +167,11 @@ export async function fetchEloStatsBatchByUserIds(userIds) {
  * vises loading igen så vi ikke flasher forældede tal. Ved fokus/genvisning opdateres stille.
  */
 export function useProfileEloBundle(userId, syncKey) {
-  const [loading, setLoading] = useState(true);
-  const [profileFresh, setProfileFresh] = useState(null);
-  const [ratedRows, setRatedRows] = useState([]);
+  const cached = readProfileEloBundleCache(userId, syncKey);
+  const [loading, setLoading] = useState(() => !cached);
+  const [profileFresh, setProfileFresh] = useState(() => cached?.profileFresh ?? null);
+  const [ratedRows, setRatedRows] = useState(() => cached?.ratedRows ?? []);
+  const syncKeyRef = useRef(syncKey);
 
   const fetchBundle = useCallback(
     async (showLoading) => {
@@ -151,7 +181,14 @@ export function useProfileEloBundle(userId, syncKey) {
         setLoading(false);
         return;
       }
-      if (showLoading) setLoading(true);
+      const hit = readProfileEloBundleCache(userId, syncKeyRef.current);
+      if (hit && !showLoading) {
+        setProfileFresh(hit.profileFresh);
+        setRatedRows(hit.ratedRows);
+        setLoading(false);
+        return;
+      }
+      if (showLoading && !hit) setLoading(true);
       try {
         const [pr, hist] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
@@ -163,8 +200,11 @@ export function useProfileEloBundle(userId, syncKey) {
             .order('match_id', { ascending: true })
             .order('id', { ascending: true }),
         ]);
-        setProfileFresh(normalizeProfileRow(pr.data || null));
-        setRatedRows(filterRatedEloHistoryRows(hist.data || []));
+        const fresh = normalizeProfileRow(pr.data || null);
+        const rated = filterRatedEloHistoryRows(hist.data || []);
+        writeProfileEloBundleCache(userId, syncKeyRef.current, fresh, rated);
+        setProfileFresh(fresh);
+        setRatedRows(rated);
       } catch {
         setProfileFresh(null);
         setRatedRows([]);
@@ -176,6 +216,14 @@ export function useProfileEloBundle(userId, syncKey) {
   );
 
   useEffect(() => {
+    syncKeyRef.current = syncKey;
+    const hit = readProfileEloBundleCache(userId, syncKey);
+    if (hit) {
+      setProfileFresh(hit.profileFresh);
+      setRatedRows(hit.ratedRows);
+      setLoading(false);
+      return;
+    }
     fetchBundle(true);
   }, [userId, syncKey, fetchBundle]);
 
@@ -196,8 +244,9 @@ export function useProfileEloBundle(userId, syncKey) {
   }, [userId, fetchBundle]);
 
   const reloadProfileEloBundle = useCallback(() => {
+    invalidateProfileEloBundleCache(userId);
     void fetchBundle(true);
-  }, [fetchBundle]);
+  }, [fetchBundle, userId]);
 
   return {
     bundleLoading: loading,
