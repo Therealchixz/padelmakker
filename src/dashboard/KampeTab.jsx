@@ -1770,6 +1770,36 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           );
         })()}
 
+        {/* ELO match-balance — vises kun før kampen starter og når begge hold har spillere */}
+        {(status === "open" || status === "full") && teamStats.t1Avg !== null && teamStats.t2Avg !== null && (() => {
+          const t1Avg = teamStats.t1Avg;
+          const t2Avg = teamStats.t2Avg;
+          const total = t1Avg + t2Avg;
+          const t1Pct = Math.round((t1Avg / total) * 100);
+          const t2Pct = 100 - t1Pct;
+          const diff = Math.abs(t1Avg - t2Avg);
+          const quality =
+            diff <= 50 ? "Tæt match"
+            : diff <= 150 ? "Lille forskel"
+            : diff <= 300 ? "Moderat forskel"
+            : "Stor forskel";
+          return (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
+                <span style={{ color: theme.accent }}>Gns. {t1Avg}</span>
+                <span style={{ color: theme.blue }}>Gns. {t2Avg}</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 3, background: theme.border, position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: t1Pct + '%', background: theme.accent }} />
+                <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: t2Pct + '%', background: theme.blue }} />
+              </div>
+              <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: theme.textMid }}>
+                {quality}{diff > 0 ? ` — ${diff} ELO forskel` : ''}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Score display for completed/result pending */}
         {mr && (() => {
           const myTeam = t1.some(p => p.user_id === user.id) ? "team1" : t2.some(p => p.user_id === user.id) ? "team2" : null;
