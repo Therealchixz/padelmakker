@@ -9,7 +9,7 @@ import { calcAge, normalizeStringArrayField } from '../lib/profileUtils';
 import { levelLabel, DAYS_OF_WEEK } from '../lib/platformConstants';
 import { AvatarCircle } from '../components/AvatarCircle';
 
-export function PlayerProfileModal({ player, onClose, onMessage }) {
+export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
   const [dataLoading, setDataLoading] = useState(true);
   const [statsMode, setStatsMode] = useState('2v2');
   const [streakError, setStreakError] = useState(false);

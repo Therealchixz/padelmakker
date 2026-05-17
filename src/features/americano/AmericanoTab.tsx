@@ -142,9 +142,21 @@ export function AmericanoTab({
   const [participantListsOpen, setParticipantListsOpen] = useState<Set<string>>(() => new Set())
   const [openManageTools, setOpenManageTools] = useState<Set<string>>(() => new Set())
   const [participantSnippets, setParticipantSnippets] = useState<Record<string, ProfileSnippet>>({})
-  const [participantStatsPick, setParticipantStatsPick] = useState<{ userId: string; name: string } | null>(
-    null
-  )
+  const [participantStatsPick, setParticipantStatsPick] = useState<{
+    userId: string
+    name: string
+    avatar?: string | null
+  } | null>(null)
+
+  const openParticipantProfile = useCallback((userId: string, displayName: string) => {
+    const snap = participantSnippets[userId]
+    const name = String(snap?.full_name || snap?.name || displayName).trim() || displayName
+    setParticipantStatsPick({
+      userId,
+      name,
+      avatar: snap?.avatar ?? null,
+    })
+  }, [participantSnippets])
   const [americanoHelpOpen, setAmericanoHelpOpen] = useState<boolean>(false)
 
   const load = useCallback(async () => {
@@ -702,9 +714,7 @@ export function AmericanoTab({
                   onSummaryToggle={() =>
                     setOpenCompletedSummaryId((cur) => (cur === t.id ? null : t.id))
                   }
-                  onParticipantView={(userId, name) =>
-                    setParticipantStatsPick({ userId, name })
-                  }
+                  onParticipantView={openParticipantProfile}
                 />
               )
             }
@@ -724,7 +734,7 @@ export function AmericanoTab({
                   name,
                   avatar: snap?.avatar || null,
                   isMe,
-                  onView: () => setParticipantStatsPick({ userId: p.user_id, name: p.display_name }),
+                  onView: () => openParticipantProfile(p.user_id, p.display_name),
                   ...(canKickPlayer
                     ? {
                         onKick: () => kickParticipant(t.id, p.id),
@@ -997,9 +1007,7 @@ export function AmericanoTab({
                               <button
                                 key={p.id}
                                 type="button"
-                                onClick={() =>
-                                  setParticipantStatsPick({ userId: p.user_id, name: p.display_name })
-                                }
+                                onClick={() => openParticipantProfile(p.user_id, p.display_name)}
                                 className="pm-card-row-item"
                                 style={{
                                   cursor: 'pointer',
@@ -1068,6 +1076,7 @@ export function AmericanoTab({
         <PlayerStatsModal
           userId={participantStatsPick.userId}
           fallbackName={participantStatsPick.name}
+          avatar={participantStatsPick.avatar}
           onClose={() => setParticipantStatsPick(null)}
         />
       )}
