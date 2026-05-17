@@ -10,6 +10,8 @@ import {
   sendMessage,
   markMessagesRead,
 } from '../lib/chatUtils';
+import { fetchDmHiddenUserIds, fetchUsersIBlocked } from '../lib/userModeration';
+import { BeskedChatActions } from '../components/BeskedChatActions';
 
 const CHAT_WINDOW_SIZE = 80;
 const CONVO_CACHE_TTL_MS = 30_000;
@@ -67,6 +69,8 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   const [chatVisibleCount, setChatVisibleCount] = useState(CHAT_WINDOW_SIZE);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 768 : false));
   const [mobileChatOffsets, setMobileChatOffsets] = useState({ top: 0 });
+  const [dmHiddenIds, setDmHiddenIds] = useState(() => new Set());
+  const [blockedByMeIds, setBlockedByMeIds] = useState(() => new Set());
   const bottomRef = useRef(null);
   const messagesPaneRef = useRef(null);
   const inputRef = useRef(null);
@@ -163,6 +167,29 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       );
     });
   }, [ensureProfile, user?.id]);
+
+  const refreshBlockState = useCallback(async () => {
+    if (!user?.id) {
+      setDmHiddenIds(new Set());
+      setBlockedByMeIds(new Set());
+      return;
+    }
+    try {
+      const [hidden, mine] = await Promise.all([
+        fetchDmHiddenUserIds(user.id),
+        fetchUsersIBlocked(user.id),
+      ]);
+      setDmHiddenIds(hidden);
+      setBlockedByMeIds(mine);
+    } catch {
+      setDmHiddenIds(new Set());
+      setBlockedByMeIds(new Set());
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    void refreshBlockState();
+  }, [refreshBlockState]);
 
   const loadConversations = useCallback(async () => {
     if (!user?.id) return;
@@ -328,8 +355,12 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       const msg = await sendMessage(user.id, selectedId, text);
       setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
       upsertConversationFromMessage(msg);
-    } catch {
+    } catch (e) {
       setInputText(text);
+      const errMsg = String(e?.message || '');
+      if (errMsg.toLowerCase().includes('bloker')) {
+        void refreshBlockState();
+      }
     } finally {
       setSending(false);
       if (isMobileView) {
@@ -408,7 +439,8 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
           .neq('id', user.id)
           .limit(8);
         if (requestId === composeSearchSeqRef.current) {
-          setComposeResults(data || []);
+          const rows = (data || []).filter((p) => !dmHiddenIds.has(String(p.id)));
+          setComposeResults(rows);
         }
       } finally {
         if (requestId === composeSearchSeqRef.current) {
@@ -420,7 +452,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       clearTimeout(timer);
       composeSearchSeqRef.current += 1;
     };
-  }, [composeQuery, composeOpen, user.id]);
+  }, [composeQuery, composeOpen, user.id, dmHiddenIds]);
 
   // Fokusér søgefeltet når compose åbner
   useEffect(() => {
@@ -445,6 +477,8 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   // ── Beskedvisning ──────────────────────────────────────────────────────────
   if (selectedId) {
     const otherProfile = profiles[selectedId];
+    const chatIsBlocked = dmHiddenIds.has(String(selectedId));
+    const iBlockedThem = blockedByMeIds.has(String(selectedId));
     const hiddenMessageCount = Math.max(0, messages.length - chatVisibleCount);
     const visibleMessages = hiddenMessageCount > 0 ? messages.slice(-chatVisibleCount) : messages;
     const chatShellStyle = mobileChatActive
@@ -490,7 +524,40 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
           <span style={{ fontWeight: 700, fontSize: '15px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {getName(selectedId)}
           </span>
+          <BeskedChatActions
+            otherUserId={selectedId}
+            otherName={getName(selectedId)}
+            iBlockedThem={iBlockedThem}
+            onBlocked={async () => {
+              await refreshBlockState();
+              setSelectedId(null);
+              navigate('/dashboard/beskeder', { replace: true });
+              void loadConversations();
+            }}
+            onUnblocked={async () => {
+              await refreshBlockState();
+              void loadConversations();
+            }}
+          />
         </div>
+
+        {chatIsBlocked && (
+          <div
+            style={{
+              padding: '10px 14px',
+              background: theme.warmBg,
+              borderBottom: `1px solid ${theme.border}`,
+              fontSize: 12,
+              color: theme.textMid,
+              lineHeight: 1.45,
+              flexShrink: 0,
+            }}
+          >
+            {iBlockedThem
+              ? `Du har blokeret ${getName(selectedId)}. Fjern blokeringen via ⋮ for at skrive igen.`
+              : `Du kan ikke sende beskeder til ${getName(selectedId)} i denne samtale.`}
+          </div>
+        )}
 
         {/* Beskeder */}
         <div style={{
@@ -568,17 +635,19 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
             value={inputText}
             onChange={e => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Skriv en besked..."
+            placeholder={chatIsBlocked ? 'Beskeder er blokeret' : 'Skriv en besked...'}
             rows={1}
+            disabled={chatIsBlocked}
             style={{
               ...inputStyle, flex: 1, resize: 'none',
               padding: '10px 12px', fontSize: isMobileView ? '16px' : '14px', lineHeight: 1.4,
               maxHeight: '100px', overflowY: 'auto',
+              opacity: chatIsBlocked ? 0.6 : 1,
             }}
           />
           <button
             onClick={handleSend}
-            disabled={!inputText.trim() || sending}
+            disabled={chatIsBlocked || !inputText.trim() || sending}
             style={{
               ...btn(true), padding: '10px 14px', flexShrink: 0,
               opacity: !inputText.trim() || sending ? 0.45 : 1,
