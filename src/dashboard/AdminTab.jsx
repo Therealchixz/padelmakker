@@ -670,35 +670,65 @@ export function AdminTab({ initialSubTab = null }) {
     }
   };
 
+  const adminSubTabs = [
+    { id: 'users', label: 'Brugere', shortLabel: 'Brugere', icon: User },
+    { id: 'matches', label: 'Kampe', shortLabel: 'Kampe', icon: Swords },
+    { id: 'reports', label: 'Anmeldelser', shortLabel: 'Anmeld.', icon: Flag },
+    { id: 'console', label: 'Konsol', shortLabel: 'Konsol', icon: AlertTriangle },
+  ];
+
+  const subTabBtnStyle = (active) => ({
+    ...btn(active),
+    padding: isMobile ? '8px 12px' : '6px 16px',
+    fontSize: isMobile ? '12px' : '13px',
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+    display: 'inline-flex',
+    alignItems: 'center',
+  });
+
   return (
-    <div style={{ padding: "16px", maxWidth: "1000px", margin: "0 auto", fontFamily: font }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2 style={heading("20px")}>Admin Panel</h2>
-        <div style={{ display: "flex", gap: "8px", background: theme.bg, padding: "4px", borderRadius: "10px" }}>
-          <button 
-            onClick={() => setActiveSubTab('users')}
-            style={{ ...btn(activeSubTab === 'users'), padding: "6px 16px", fontSize: "13px" }}
-          >
-            <User size={14} style={{ marginRight: "6px" }} /> Brugere
-          </button>
-          <button 
-            onClick={() => setActiveSubTab('matches')}
-            style={{ ...btn(activeSubTab === 'matches'), padding: "6px 16px", fontSize: "13px" }}
-          >
-            <Swords size={14} style={{ marginRight: "6px" }} /> Kampe
-          </button>
-          <button
-            onClick={() => setActiveSubTab('reports')}
-            style={{ ...btn(activeSubTab === 'reports'), padding: "6px 16px", fontSize: "13px" }}
-          >
-            <Flag size={14} style={{ marginRight: "6px" }} /> Anmeldelser
-          </button>
-          <button
-            onClick={() => setActiveSubTab('console')}
-            style={{ ...btn(activeSubTab === 'console'), padding: "6px 16px", fontSize: "13px" }}
-          >
-            <AlertTriangle size={14} style={{ marginRight: "6px" }} /> Konsol
-          </button>
+    <div style={{ padding: isMobile ? '12px' : '16px', maxWidth: '1000px', margin: '0 auto', fontFamily: font }}>
+      <div
+        style={{
+          marginBottom: '20px',
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'stretch' : 'center',
+          gap: isMobile ? '10px' : '12px',
+        }}
+      >
+        <h2 style={{ ...heading('20px'), margin: 0, flexShrink: 0 }}>Admin Panel</h2>
+        <div
+          style={{
+            display: 'flex',
+            gap: '6px',
+            background: theme.bg,
+            padding: '4px',
+            borderRadius: '10px',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            maxWidth: '100%',
+            scrollbarWidth: 'thin',
+          }}
+        >
+          {adminSubTabs.map((t) => {
+            const Icon = t.icon;
+            const active = activeSubTab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveSubTab(t.id)}
+                style={subTabBtnStyle(active)}
+                aria-current={active ? 'page' : undefined}
+              >
+                <Icon size={14} style={{ marginRight: isMobile ? 4 : 6, flexShrink: 0 }} />
+                {isMobile ? t.shortLabel : t.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -857,14 +887,33 @@ export function AdminTab({ initialSubTab = null }) {
       ) : activeSubTab === 'matches' ? (
         <div>
           {/* Match type sub-tabs */}
-          <div style={{ display: "flex", gap: "6px", marginBottom: "16px", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: '6px',
+              marginBottom: '16px',
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              paddingBottom: '4px',
+            }}
+          >
             {[
-              { id: '2v2',       label: '2v2-kampe' },
+              { id: '2v2', label: '2v2-kampe' },
               { id: 'americano', label: 'Americano' },
-              { id: 'liga',      label: '🏆 Liga' },
-            ].map(t => (
-              <button key={t.id} onClick={() => setMatchSubTab(t.id)}
-                style={{ ...btn(matchSubTab === t.id), padding: "7px 14px", fontSize: "13px" }}>
+              { id: 'liga', label: '🏆 Liga' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setMatchSubTab(t.id)}
+                style={{
+                  ...btn(matchSubTab === t.id),
+                  padding: '7px 14px',
+                  fontSize: '13px',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {t.label}
               </button>
             ))}
