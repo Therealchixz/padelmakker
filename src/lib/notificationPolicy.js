@@ -113,6 +113,15 @@ const TYPE_POLICIES = Object.freeze({
     urgency: "low",
     cooldownSeconds: 0,
   },
+  user_report: {
+    channel: "admin",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 30,
+    renotify: true,
+  },
 });
 
 function normalizeType(type) {

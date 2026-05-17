@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { sendPushNotificationsForUsers } from './notifications';
 
 export const REPORT_REASONS = [
   { id: 'harassment', label: 'Chikane eller trusler' },
@@ -63,11 +64,32 @@ export async function reportUser({ reportedId, reason, details, context = 'dm' }
   if (error) throw error;
   const result = data || {};
   if (!result.ok) throw new Error(result.error || 'Kunne ikke sende anmeldelsen');
+
+  const adminIds = Array.isArray(result.admin_ids)
+    ? result.admin_ids
+    : [];
+  if (adminIds.length > 0 && result.notify_title && result.notify_body) {
+    void sendPushNotificationsForUsers(
+      adminIds,
+      'user_report',
+      result.notify_title,
+      result.notify_body,
+      null,
+    );
+  }
+
   return result;
 }
 
 export function reportReasonLabel(reasonId) {
   return REPORT_REASONS.find((r) => r.id === reasonId)?.label || reasonId || 'Ukendt';
+}
+
+/** Antal åbne spilleranmeldelser (kun for role=admin). */
+export async function fetchAdminOpenUserReportsCount() {
+  const { data, error } = await supabase.rpc('admin_open_user_reports_count');
+  if (error) throw error;
+  return Number(data) || 0;
 }
 
 /** Admin (PIN): hent DM-tråd mellem anmelder og anmeldt til gennemgang. */
