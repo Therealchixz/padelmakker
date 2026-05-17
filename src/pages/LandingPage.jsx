@@ -424,47 +424,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section
-        style={{
-          background: theme.accentBg,
-          borderBottom: '1px solid ' + theme.border,
-          padding: 'clamp(20px,4vw,28px) clamp(16px,4vw,24px)',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '720px',
-            margin: '0 auto',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '14px 20px',
-          }}
-        >
-          <div style={{ flex: '1 1 220px', minWidth: 0 }}>
-            <p style={{ fontSize: '15px', fontWeight: 700, color: theme.text, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-              Kender du nogen der mangler makker?
-            </p>
-            <p style={{ fontSize: '13px', color: theme.textMid, margin: 0, lineHeight: 1.5 }}>
-              Send en invitation — det tager under et minut at komme i gang på PadelMakker.
-            </p>
-            {inviteNote ? (
-              <p style={{ fontSize: '12px', color: theme.accent, margin: '8px 0 0', fontWeight: 600 }} role="status">
-                {inviteNote}
-              </p>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={() => void handleInviteFriend()}
-            style={{ ...btn(true), padding: '11px 18px', fontSize: '13px', flexShrink: 0 }}
-          >
-            <Share2 size={16} /> Inviter en ven
-          </button>
-        </div>
-      </section>
-
       <section className="pm-landing-mobile-mockup-section" style={{ background: theme.surface }}>
         {showDeferredSections ? (
           <Suspense fallback={<div className="pm-landing-mobile-mockup" aria-hidden="true" />}>
@@ -564,6 +523,41 @@ export function LandingPage() {
           <Link to="/om" style={{ fontSize: "14px", fontWeight: 600, color: theme.accent, textDecoration: "none" }}>
             Læs mere om PadelMakker →
           </Link>
+        </div>
+      </section>
+
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 clamp(16px,4vw,24px) clamp(32px,6vw,48px)" }}>
+        <div
+          className="pm-reveal"
+          style={{
+            ...landingInfoCardStyle,
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "16px 20px",
+          }}
+        >
+          <div style={{ flex: "1 1 220px", minWidth: 0 }}>
+            <p style={{ fontSize: "15px", fontWeight: 700, color: theme.text, margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+              Kender du nogen der mangler makker?
+            </p>
+            <p style={{ fontSize: "13px", color: theme.textMid, margin: 0, lineHeight: 1.5 }}>
+              Send en invitation — det tager under et minut at komme i gang på PadelMakker.
+            </p>
+            {inviteNote ? (
+              <p style={{ fontSize: "12px", color: theme.accent, margin: "8px 0 0", fontWeight: 600 }} role="status">
+                {inviteNote}
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => void handleInviteFriend()}
+            style={{ ...btn(true), padding: "11px 18px", fontSize: "13px", flexShrink: 0 }}
+          >
+            <Share2 size={16} /> Inviter en ven
+          </button>
         </div>
       </section>
 
