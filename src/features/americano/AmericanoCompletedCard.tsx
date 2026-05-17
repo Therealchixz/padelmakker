@@ -624,7 +624,8 @@ export function AmericanoCompletedCard({
               const isMe = pu && String(pu.user_id) === String(currentUserId)
               const eloSnap = pu ? eloByUserId[String(pu.user_id)] : null
               const color = podiumColor(place)
-              const height = place === 1 ? 78 : place === 2 ? 64 : 56
+              /* Visuel højdeforskel via ekstra top-padding — minHeight sikrer at indhold aldrig cuttes */
+              const topSpacer = place === 1 ? 18 : place === 2 ? 10 : 4
               const first = firstNameOf(row.name)
               return (
                 <div
@@ -672,12 +673,11 @@ export function AmericanoCompletedCard({
                       background: `linear-gradient(180deg, ${color} 0%, ${color}CC 100%)`,
                       color: C.white,
                       borderRadius: '10px 10px 4px 4px',
-                      height,
-                      padding: '6px 6px 8px',
+                      padding: `${topSpacer}px 6px 10px`,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
+                      gap: 4,
                       textAlign: 'center',
                       minWidth: 0,
                     }}
