@@ -100,11 +100,8 @@ BEGIN
   v_elo := public.apply_elo_for_match_core(p_match_result_id, v_admin, true);
 
   IF COALESCE(v_elo->>'success', 'false')::boolean IS NOT TRUE THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'error', coalesce(v_elo->>'error', 'ELO kunne ikke genberegnes'),
-      'elo', v_elo
-    );
+    RAISE EXCEPTION '%', coalesce(v_elo->>'error', 'ELO kunne ikke genberegnes')
+      USING DETAIL = coalesce(v_elo::text, '');
   END IF;
 
   RETURN jsonb_build_object(
@@ -113,9 +110,6 @@ BEGIN
     'score_display', v_score_display,
     'elo', v_elo
   );
-EXCEPTION
-  WHEN OTHERS THEN
-    RETURN jsonb_build_object('ok', false, 'error', SQLERRM);
 END;
 $$;
 

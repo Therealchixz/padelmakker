@@ -165,7 +165,7 @@ export function ReportResultErrorButton({
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 100,
+            zIndex: 1100,
             background: 'rgba(15,23,42,0.45)',
             display: 'flex',
             alignItems: 'center',

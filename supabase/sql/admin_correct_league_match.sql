@@ -88,9 +88,6 @@ BEGIN
     'winner_id', p_winner_id,
     'score_text', v_score
   );
-EXCEPTION
-  WHEN OTHERS THEN
-    RETURN jsonb_build_object('ok', false, 'error', SQLERRM);
 END;
 $$;
 

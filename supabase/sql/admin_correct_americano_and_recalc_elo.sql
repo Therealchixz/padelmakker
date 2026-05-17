@@ -187,11 +187,8 @@ BEGIN
   v_apply := public.apply_americano_elo_for_tournament(p_tournament_id);
 
   IF COALESCE(v_apply->>'success', 'false')::boolean IS NOT TRUE THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'error', coalesce(v_apply->>'error', 'Americano-ELO kunne ikke genberegnes'),
-      'elo', v_apply
-    );
+    RAISE EXCEPTION '%', coalesce(v_apply->>'error', 'Americano-ELO kunne ikke genberegnes')
+      USING DETAIL = coalesce(v_apply::text, '');
   END IF;
 
   RETURN jsonb_build_object(
@@ -200,9 +197,6 @@ BEGIN
     'matches_updated', v_updated,
     'elo', v_apply
   );
-EXCEPTION
-  WHEN OTHERS THEN
-    RETURN jsonb_build_object('ok', false, 'error', SQLERRM);
 END;
 $$;
 
