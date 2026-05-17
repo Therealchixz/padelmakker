@@ -126,6 +126,42 @@ export async function fetchAdminSubTabBadges(adminUserId) {
   return badges;
 }
 
+/** Samlet antal admin-opgaver til menu-badge (anmeldelser + konsol + kampe). */
+export function adminAttentionTotal(badges) {
+  if (!badges) return 0;
+  return (badges.reports || 0) + (badges.console || 0) + (badges.matches || 0);
+}
+
+/** Hvilken under-fane admin bør åbnes først ved opmærksomhed. */
+export function adminAttentionFocusSubTab(badges) {
+  if (!badges) return null;
+  if (badges.reports > 0) return 'reports';
+  if (badges.console > 0) return 'console';
+  if (badges.matches > 0) return 'matches';
+  return null;
+}
+
+/** Push til alle admins ved nye konsol-flags (når en admin har appen åben). */
+export async function notifyAdminsNewConsoleFlags(newFlagCount = 1) {
+  const { data, error } = await supabase.rpc('admin_list_admin_ids');
+  if (error) {
+    console.warn('notifyAdminsNewConsoleFlags:', error.message || error);
+    return;
+  }
+  const ids = Array.isArray(data) ? data : [];
+  if (ids.length === 0) return;
+  const n = Math.max(1, Number(newFlagCount) || 1);
+  await sendPushNotificationsForUsers(
+    ids,
+    'system_flag',
+    'Nyt flag i admin-konsol',
+    n === 1
+      ? 'Der er et nyt åbent ELO-flag. Gå til Admin → Konsol.'
+      : `Der er ${n} nye åbne ELO-flags. Gå til Admin → Konsol.`,
+    null,
+  );
+}
+
 /** Admin (PIN): hent DM-tråd mellem anmelder og anmeldt til gennemgang. */
 export async function fetchAdminDmThread(reporterId, reportedId, limit = 300) {
   const { data, error } = await supabase.rpc('admin_get_dm_messages_between', {

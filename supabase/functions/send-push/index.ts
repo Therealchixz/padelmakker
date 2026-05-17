@@ -136,11 +136,12 @@ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
   },
   system_flag: {
     channel: "admin",
-    level: "quiet",
-    sendPush: false,
-    silent: true,
-    urgency: "low",
-    cooldownSeconds: 0,
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 45,
+    renotify: true,
   },
 });
 
