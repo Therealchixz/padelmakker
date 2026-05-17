@@ -22,6 +22,11 @@ import { KAMPE_NOTIFICATION_TYPES } from '../lib/kampeNotificationTypes';
 import { countRelevantKampeUnreadNotifications } from '../lib/kampeNotificationBadges';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { filterConfirmablePendingResults } from '../lib/resolvePadelMatchResult';
+import {
+  adminAttentionFocusSubTab,
+  adminAttentionTotal,
+  fetchAdminSubTabBadges,
+} from '../lib/userModeration';
 import { subscribeToPush, isPushSupported } from '../lib/pushNotifications';
 
 const loadMakkereTab = () => import('./MakkereTab');
@@ -358,7 +363,7 @@ function usePendingKampeBadge(userId, isAdmin = false) {
   return useRealtimeCount(userId, createController);
 }
 
-function useOpenUserReportsBadge(userId, isAdminRole = false) {
+function useAdminAttentionBadge(userId, isAdminRole = false) {
   const createController = useCallback((api) => {
     if (!isAdminRole || !api.userId) {
       return {
@@ -370,11 +375,10 @@ function useOpenUserReportsBadge(userId, isAdminRole = false) {
 
     const syncCount = async () => {
       try {
-        const { data, error } = await supabase.rpc('admin_open_user_reports_count');
-        if (error) throw error;
-        api.setCountSafe(Number(data) || 0);
+        const badges = await fetchAdminSubTabBadges(api.userId);
+        api.setCountSafe(adminAttentionTotal(badges));
       } catch (e) {
-        console.warn('admin reports badge:', e);
+        console.warn('admin attention badge:', e);
       }
     };
 
@@ -382,14 +386,28 @@ function useOpenUserReportsBadge(userId, isAdminRole = false) {
       refetch: syncCount,
       subscriptions: [
         {
-          name: 'admin-reports-badge-' + api.userId,
+          name: 'admin-attn-reports-' + api.userId,
           table: 'user_reports',
           onEvent: ({ api: runtime }) => {
             runtime.scheduleRefetch({ delay: 120 });
           },
         },
         {
-          name: 'admin-reports-notif-' + api.userId,
+          name: 'admin-attn-flags-' + api.userId,
+          table: 'rating_admin_flags',
+          onEvent: ({ api: runtime }) => {
+            runtime.scheduleRefetch({ delay: 120 });
+          },
+        },
+        {
+          name: 'admin-attn-results-' + api.userId,
+          table: 'match_results',
+          onEvent: ({ api: runtime }) => {
+            runtime.scheduleRefetch({ delay: 120 });
+          },
+        },
+        {
+          name: 'admin-attn-notif-' + api.userId,
           table: 'notifications',
           filter: 'user_id=eq.' + api.userId,
           onEvent: ({ api: runtime }) => {
@@ -646,7 +664,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const unreadMessages = useUnreadMessageCount(user?.id);
   const pendingLigaInvites = usePendingLigaInvites(user?.id);
   const pendingKampe = usePendingKampeBadge(user?.id, isAdmin);
-  const openUserReports = useOpenUserReportsBadge(user?.id, isAdmin);
+  const adminAttentionCount = useAdminAttentionBadge(user?.id, isAdmin);
   const [adminInitialSubTab, setAdminInitialSubTab] = useState(null);
   const unreadNotifs = useUnreadNotificationsCount(user?.id);
   const unreadKampeNotifs = useUnreadKampeNotificationsCount(user?.id);
@@ -1124,12 +1142,21 @@ export function DashboardPage({ user, onLogout, showToast }) {
       id: "admin",
       label: "Admin",
       icon: <ShieldCheck size={15} />,
-      badge: openUserReports > 0 ? openUserReports : null,
+      badge: adminAttentionCount > 0 ? adminAttentionCount : null,
     });
   }
 
-  const openAdminPanel = (focusReports = false) => {
-    setAdminInitialSubTab(focusReports && openUserReports > 0 ? 'reports' : null);
+  const openAdminPanel = async () => {
+    let focusSubTab = null;
+    if (isAdmin && user?.id) {
+      try {
+        const badges = await fetchAdminSubTabBadges(user.id);
+        focusSubTab = adminAttentionFocusSubTab(badges);
+      } catch {
+        focusSubTab = null;
+      }
+    }
+    setAdminInitialSubTab(focusSubTab);
     setTab('admin');
     setAccountOpen(false);
   };
@@ -1235,14 +1262,14 @@ export function DashboardPage({ user, onLogout, showToast }) {
             {isAdmin && (
               <button
                 type="button"
-                onClick={() => openAdminPanel(openUserReports > 0)}
+                onClick={() => { void openAdminPanel(); }}
                 style={accountMenuRowBtnStyle()}
               >
                 <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
                   <ShieldCheck size={15} />
-                  {openUserReports > 0 && (
+                  {adminAttentionCount > 0 && (
                     <span
-                      aria-label={`${openUserReports} åbne anmeldelser`}
+                      aria-label={`${adminAttentionCount} admin-opgaver kræver opmærksomhed`}
                       style={{
                         position: 'absolute',
                         top: '-6px',
@@ -1262,12 +1289,12 @@ export function DashboardPage({ user, onLogout, showToast }) {
                         border: '2px solid ' + theme.surface,
                       }}
                     >
-                      {openUserReports > 9 ? '9+' : openUserReports}
+                      {adminAttentionCount > 9 ? '9+' : adminAttentionCount}
                     </span>
                   )}
                 </span>
                 Admin
-                {openUserReports > 0 && (
+                {adminAttentionCount > 0 && (
                   <span
                     style={{
                       marginLeft: 'auto',
@@ -1279,7 +1306,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                       borderRadius: '999px',
                     }}
                   >
-                    {openUserReports} ny{openUserReports === 1 ? '' : 'e'}
+                    {adminAttentionCount} opgave{adminAttentionCount === 1 ? '' : 'r'}
                   </span>
                 )}
               </button>

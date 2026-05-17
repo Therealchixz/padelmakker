@@ -107,11 +107,12 @@ const TYPE_POLICIES = Object.freeze({
   },
   system_flag: {
     channel: "admin",
-    level: "quiet",
-    sendPush: false,
-    silent: true,
-    urgency: "low",
-    cooldownSeconds: 0,
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 45,
+    renotify: true,
   },
   user_report: {
     channel: "admin",

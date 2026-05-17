@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
 import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle } from 'lucide-react';
-import { fetchAdminSubTabBadges, reportReasonLabel } from '../lib/userModeration';
+import { fetchAdminSubTabBadges, notifyAdminsNewConsoleFlags, reportReasonLabel } from '../lib/userModeration';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AdminReportDmViewer } from '../components/AdminReportDmViewer';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
@@ -115,9 +115,22 @@ export function AdminTab({ initialSubTab = null }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const prevSubTabBadgesRef = useRef(null);
+  const badgesSyncedRef = useRef(false);
+
   const refreshSubTabBadges = useCallback(async () => {
     try {
       const next = await fetchAdminSubTabBadges(user?.id);
+      const prev = prevSubTabBadgesRef.current;
+      if (
+        badgesSyncedRef.current
+        && prev
+        && next.console > prev.console
+      ) {
+        void notifyAdminsNewConsoleFlags(next.console - prev.console);
+      }
+      prevSubTabBadgesRef.current = next;
+      badgesSyncedRef.current = true;
       setSubTabBadges(next);
     } catch (e) {
       console.warn('admin sub-tab badges:', e);
