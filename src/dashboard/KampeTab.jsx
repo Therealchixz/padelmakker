@@ -1910,6 +1910,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           />
         ) : null}
 
+        {status === 'completed' && joined && !isCreator ? (
+          <p style={{ fontSize: 11, color: theme.textLight, margin: '8px 0 4px', lineHeight: 1.4 }}>
+            Kun kampens opretter kan indberette fejl i resultat/ELO til admin.
+          </p>
+        ) : null}
+
         {canUseMatchChat && (
           <>
             <button
