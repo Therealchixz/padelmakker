@@ -2862,10 +2862,21 @@ button,
 .pm-court-header-team--winner { color: var(--pm-green) !important; font-weight: 800; }
 .pm-court-header-team--loser  { opacity: 0.55; }
 
-.pm-court-side--winner {
-  position: relative;
-  background: linear-gradient(180deg, rgba(5,150,105,0.22) 0%, rgba(5,150,105,0.30) 100%);
-  box-shadow: inset 0 0 0 2px rgba(5,150,105,0.55);
+/* Fuld halvdel — baggrund i ::before så side-padding ikke efterlader blå kanter */
+.pm-court-side--winner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(5, 150, 105, 0.22) 0%, rgba(5, 150, 105, 0.3) 100%);
+  box-shadow: inset 0 0 0 2px rgba(5, 150, 105, 0.55);
+}
+.pm-court-side--winner.pm-court-side--t1::before {
+  border-radius: 10px 0 0 10px;
+}
+.pm-court-side--winner.pm-court-side--t2::before {
+  border-radius: 0 10px 10px 0;
 }
 .pm-court-side--loser {
   opacity: 0.55;
@@ -2892,6 +2903,7 @@ button,
   align-items: center;
   justify-content: center;
   position: relative;
+  z-index: 1;
 }
 .pm-court-player-slot--top    { align-self: end;   padding-bottom: 18px; }
 .pm-court-player-slot--bottom { align-self: start; padding-top: 18px; }
