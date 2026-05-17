@@ -2309,6 +2309,73 @@ button,
   border-color: color-mix(in srgb, var(--pm-danger-border) 72%, var(--pm-border));
 }
 
+/* Kompakt kampresultat under 2v2-banen */
+.pm-match-result-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--pm-radius-sm);
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface-alt);
+}
+.pm-match-result-strip__score {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  color: var(--pm-text);
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.pm-match-result-strip__aside {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.pm-match-result-strip__status {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.pm-match-result-strip__elo {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.pm-match-result-strip--pending {
+  background: var(--pm-warning-bg);
+  border-color: color-mix(in srgb, var(--pm-warning-border) 72%, var(--pm-border));
+}
+.pm-match-result-strip--pending .pm-match-result-strip__status {
+  color: var(--pm-warning);
+}
+.pm-match-result-strip--won {
+  background: var(--pm-success-bg);
+  border-color: color-mix(in srgb, var(--pm-success-border) 55%, var(--pm-border));
+}
+.pm-match-result-strip--won .pm-match-result-strip__status {
+  color: var(--pm-success);
+}
+.pm-match-result-strip--lost {
+  background: var(--pm-surface-alt);
+  border-color: var(--pm-border);
+}
+.pm-match-result-strip--lost .pm-match-result-strip__status {
+  color: var(--pm-text-mid);
+}
+.pm-match-result-strip--neutral .pm-match-result-strip__status {
+  color: var(--pm-info);
+}
+
 .pm-feedback-inline-note {
   font-size: 12px;
   font-weight: 600;
