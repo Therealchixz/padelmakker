@@ -36,6 +36,8 @@ import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { MatchWinPrediction } from '../components/MatchWinPrediction';
+import { calculate2v2MatchWinPrediction } from '../lib/matchWinPrediction';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
@@ -1503,20 +1505,40 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           ? Math.round(team.reduce((sum, p) => sum + (playerEloByUserId[String(p.user_id)] ?? 1000), 0) / team.length)
           : null
       );
+      const toPredictionPlayer = (p) => {
+        const uid = String(p.user_id);
+        const profile = profilesById[uid];
+        return {
+          rating: playerEloByUserId[uid] ?? 1000,
+          gamesPlayed: profile?.games_played ?? (uid === myUidStr ? user.games_played : 0),
+        };
+      };
+      const winPrediction =
+        t1.length === 2 && t2.length === 2
+          ? calculate2v2MatchWinPrediction(t1.map(toPredictionPlayer), t2.map(toPredictionPlayer))
+          : null;
       stats[String(matchId)] = {
         t1,
         t2,
         t1Avg: avgElo(t1),
         t2Avg: avgElo(t2),
         playerEloByUserId,
+        winPrediction,
       };
     }
     return stats;
-  }, [eloByUserId, eloFromHistoryByUserId, matchPlayers, myElo, myUidStr]);
+  }, [eloByUserId, eloFromHistoryByUserId, matchPlayers, myElo, myUidStr, profilesById, user.games_played]);
 
   const renderMatchCard = (m) => {
     const mp = matchPlayers[m.id] || [];
-    const teamStats = matchTeamStatsById[String(m.id)] || { t1: [], t2: [], t1Avg: null, t2Avg: null, playerEloByUserId: {} };
+    const teamStats = matchTeamStatsById[String(m.id)] || {
+      t1: [],
+      t2: [],
+      t1Avg: null,
+      t2Avg: null,
+      playerEloByUserId: {},
+      winPrediction: null,
+    };
     const mr = matchResults[m.id];
     const matchPrefs = parseMatchLevelRange(m.level_range);
     const status = getStatus(m);
@@ -1802,8 +1824,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const t2Top = t2[0] ? renderPlayer(t2[0], 2) : renderEmptySlot(2);
           const t2Bot = t2[1] ? renderPlayer(t2[1], 2) : renderEmptySlot(2);
 
-          /* Hold-labels og snit-ELO vises kun for matches der ER spillet (in_progress/completed)
-             — for åbne/fulde kampe står ELO-balance-baren under banen og dækker behovet. */
+          /* Hold-labels og snit-ELO vises for kampe i gang og afsluttede. Win-chance står under banen. */
           const showTopTeamLabels = status === "in_progress" || status === "completed";
           return (
             <div className="pm-court-wrap" style={{ marginBottom: "14px" }}>
@@ -1841,35 +1862,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           );
         })()}
 
-        {/* ELO match-balance — vises kun før kampen starter og når begge hold har spillere */}
-        {(status === "open" || status === "full") && teamStats.t1Avg !== null && teamStats.t2Avg !== null && (() => {
-          const t1Avg = teamStats.t1Avg;
-          const t2Avg = teamStats.t2Avg;
-          const total = t1Avg + t2Avg;
-          const t1Pct = Math.round((t1Avg / total) * 100);
-          const diff = Math.abs(t1Avg - t2Avg);
-          const quality =
-            diff <= 50 ? "Tæt match"
-            : diff <= 150 ? "Lille forskel"
-            : diff <= 300 ? "Moderat forskel"
-            : "Stor forskel";
-          return (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
-                <span style={{ color: theme.accent }}>Hold 1 · Gns. {t1Avg}</span>
-                <span style={{ color: theme.green }}>Hold 2 · Gns. {t2Avg}</span>
-              </div>
-              <div style={{ height: 8, borderRadius: 4, background: theme.border, display: 'flex', overflow: 'hidden' }}>
-                <div style={{ width: t1Pct + '%', background: theme.accent }} />
-                <div style={{ width: '2px', background: '#FFFFFF', flexShrink: 0 }} />
-                <div style={{ flex: 1, background: theme.green }} />
-              </div>
-              <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: theme.textMid }}>
-                {quality}{diff > 0 ? ` — ${diff} ELO forskel` : ''}
-              </div>
-            </div>
-          );
-        })()}
+        {/* Win-chance — åbne, fulde og i-gang-kampe med 2v2-hold */}
+        {(status === "open" || status === "full" || status === "in_progress") && teamStats.winPrediction ? (
+          <MatchWinPrediction prediction={teamStats.winPrediction} />
+        ) : null}
 
         {/* Score display for completed/result pending */}
         {mr && (() => {
