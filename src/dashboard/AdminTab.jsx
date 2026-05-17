@@ -3,9 +3,10 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag } from 'lucide-react';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle } from 'lucide-react';
 import { reportReasonLabel } from '../lib/userModeration';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { AdminReportDmViewer } from '../components/AdminReportDmViewer';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { explainRatingAdminFlag } from '../lib/ratingAdminFlagExplain';
 
@@ -84,6 +85,7 @@ export function AdminTab() {
   const [reportsError, setReportsError] = useState('');
   const [reportStatusFilter, setReportStatusFilter] = useState('open');
   const [reportBusyId, setReportBusyId] = useState(null);
+  const [dmViewerReport, setDmViewerReport] = useState(null);
   const [reviewerMap, setReviewerMap] = useState({});
   const [consoleStats, setConsoleStats] = useState({
     totalPlayers: 0,
@@ -1134,6 +1136,16 @@ export function AdminTab() {
                           Genåbn
                         </button>
                       )}
+                      {(report.context === 'dm' || !report.context) && (
+                        <button
+                          type="button"
+                          onClick={() => setDmViewerReport(report)}
+                          style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                        >
+                          <MessageCircle size={13} style={{ marginRight: 4 }} />
+                          Vis DM-samtale
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={async () => {
@@ -1538,6 +1550,13 @@ export function AdminTab() {
           </div>
         </div>
       )}
+      <AdminReportDmViewer
+        open={!!dmViewerReport}
+        onClose={() => setDmViewerReport(null)}
+        report={dmViewerReport}
+        reporterName={dmViewerReport ? adminDisplayName(dmViewerReport.reporter) : ''}
+        reportedName={dmViewerReport ? adminDisplayName(dmViewerReport.reported) : ''}
+      />
       {deletePinOpen && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, backdropFilter: "blur(4px)" }}>
           <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "14px", padding: "20px", maxWidth: "420px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }}>
