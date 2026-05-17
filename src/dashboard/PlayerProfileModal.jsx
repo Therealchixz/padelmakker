@@ -17,7 +17,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
   const [ratedHistoryRows, setRatedHistoryRows] = useState([]);
   const [americanoHistoryRows, setAmericanoHistoryRows] = useState([]);
   const [profileRow, setProfileRow] = useState(null);
-  const [ligaWins, setLigaWins] = useState(null);
+  const [ligaStats, setLigaStats] = useState(null);
 
   useEffect(() => {
     if (!player?.id) {
@@ -27,7 +27,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
       setRatedHistoryRows([]);
       setAmericanoHistoryRows([]);
       setProfileRow(null);
-      setLigaWins(null);
+      setLigaStats(null);
       return;
     }
 
@@ -38,7 +38,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
     setRatedHistoryRows([]);
     setAmericanoHistoryRows([]);
     setProfileRow(null);
-    setLigaWins(null);
+    setLigaStats(null);
 
     (async () => {
       try {
@@ -50,7 +50,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
             .select('id, old_rating, new_rating, change, created_at')
             .eq('user_id', player.id)
             .order('created_at', { ascending: true }),
-          supabase.from('league_teams').select('id').or(`player1_id.eq.${player.id},player2_id.eq.${player.id}`),
+          supabase.from('league_teams').select('id, league_id').or(`player1_id.eq.${player.id},player2_id.eq.${player.id}`),
         ]);
 
         if (cancelled) return;
@@ -70,16 +70,30 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
         );
         setProfileRow(pr.data || player);
 
-        const teamIds = (teamsRes.data || []).map((t) => t.id);
+        const teams = teamsRes.data || [];
+        const teamIds = teams.map((t) => t.id);
+        const leagueIds = [...new Set(teams.map((t) => t.league_id).filter(Boolean))];
         if (teamIds.length > 0) {
-          const { count } = await supabase
+          const { data: leagueMatches } = await supabase
             .from('league_matches')
-            .select('id', { count: 'exact', head: true })
-            .in('winner_id', teamIds)
-            .eq('status', 'reported');
-          if (!cancelled) setLigaWins(count || 0);
-        } else {
-          if (!cancelled) setLigaWins(0);
+            .select('winner_id, team1_id, team2_id')
+            .eq('status', 'reported')
+            .or(`team1_id.in.(${teamIds.join(',')}),team2_id.in.(${teamIds.join(',')})`);
+          let wins = 0;
+          let played = 0;
+          for (const m of leagueMatches || []) {
+            const mine = teamIds.includes(m.team1_id) || teamIds.includes(m.team2_id);
+            if (!mine) continue;
+            played++;
+            if (m.winner_id && teamIds.includes(m.winner_id)) wins++;
+          }
+          const losses = played - wins;
+          const winPct = played > 0 ? Math.round((wins / played) * 100) : 0;
+          if (!cancelled) {
+            setLigaStats({ wins, losses, played, leagues: leagueIds.length, winPct });
+          }
+        } else if (!cancelled) {
+          setLigaStats({ wins: 0, losses: 0, played: 0, leagues: 0, winPct: 0 });
         }
       } catch {
         if (!cancelled) {
@@ -88,7 +102,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
           setRatedHistoryRows([]);
           setAmericanoHistoryRows([]);
           setProfileRow(player);
-          setLigaWins(0);
+          setLigaStats({ wins: 0, losses: 0, played: 0, leagues: 0, winPct: 0 });
         }
       } finally {
         if (!cancelled) setDataLoading(false);
@@ -138,19 +152,26 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
   );
 
   const activeOverviewCards =
-    statsMode === 'americano'
+    statsMode === 'liga'
       ? [
-          { label: 'ELO', value: americanoElo, color: theme.accent },
-          { label: 'Turn.', value: americanoPlayed, color: theme.blue },
-          { label: 'Vundne', value: americanoWins, color: theme.warm },
-          { label: 'Win %', value: americanoRounds > 0 ? `${americanoWinPct}%` : '—', color: theme.accent },
+          { label: 'Vundet', value: ligaStats?.wins ?? 0, color: theme.green },
+          { label: 'Tabt', value: ligaStats?.losses ?? 0, color: theme.red },
+          { label: 'Kampe', value: ligaStats?.played ?? 0, color: theme.blue },
+          { label: 'Win %', value: ligaStats?.played > 0 ? `${ligaStats.winPct}%` : '—', color: theme.accent },
         ]
-      : [
-          { label: 'ELO', value: elo, color: theme.accent },
-          { label: 'Kampe', value: games, color: theme.blue },
-          { label: 'Sejre', value: wins, color: theme.warm },
-          { label: 'Win %', value: games != null && games > 0 ? `${winPct}%` : '—', color: theme.accent },
-        ];
+      : statsMode === 'americano'
+        ? [
+            { label: 'ELO', value: americanoElo, color: theme.accent },
+            { label: 'Turn.', value: americanoPlayed, color: theme.blue },
+            { label: 'Vundne', value: americanoWins, color: theme.warm },
+            { label: 'Win %', value: americanoRounds > 0 ? `${americanoWinPct}%` : '—', color: theme.accent },
+          ]
+        : [
+            { label: 'ELO', value: elo, color: theme.accent },
+            { label: 'Kampe', value: games, color: theme.blue },
+            { label: 'Sejre', value: wins, color: theme.warm },
+            { label: 'Win %', value: games != null && games > 0 ? `${winPct}%` : '—', color: theme.accent },
+          ];
 
   const age = calcAge(pRef.birth_year, pRef.birth_month, pRef.birth_day);
 
@@ -176,12 +197,15 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
           <button onClick={() => setStatsMode('2v2')} style={{ ...btn(statsMode === '2v2'), padding: '5px 10px', fontSize: '11px' }}>
             2v2
           </button>
           <button onClick={() => setStatsMode('americano')} style={{ ...btn(statsMode === 'americano'), padding: '5px 10px', fontSize: '11px' }}>
             Americano
+          </button>
+          <button onClick={() => setStatsMode('liga')} style={{ ...btn(statsMode === 'liga'), padding: '5px 10px', fontSize: '11px' }}>
+            Liga
           </button>
         </div>
 
@@ -198,16 +222,41 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
           </div>
         )}
 
-        {!dataLoading && ligaWins !== null && (
-          <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.accentBg, borderRadius: '10px', border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Ligakampe vundet</div>
-              <div style={{ fontSize: '22px', fontWeight: 800, color: theme.blue, letterSpacing: '-0.02em' }}>🏅 {ligaWins}</div>
+        {statsMode === 'liga' ? (
+          !dataLoading &&
+          ligaStats !== null && (
+            <div
+              style={{
+                marginBottom: '16px',
+                padding: '12px 14px',
+                background: theme.accentBg,
+                borderRadius: '10px',
+                border: '1px solid ' + theme.border,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  color: theme.textLight,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '4px',
+                }}
+              >
+                Ligakampe vundet
+              </div>
+              <div style={{ fontSize: '22px', fontWeight: 800, color: theme.blue, letterSpacing: '-0.02em' }}>
+                🏅 {ligaStats.wins}
+              </div>
+              <div style={{ fontSize: '11px', color: theme.textMid, marginTop: '6px', lineHeight: 1.4 }}>
+                {ligaStats.leagues > 0
+                  ? `${ligaStats.leagues} liga${ligaStats.leagues === 1 ? '' : 'er'} · ${ligaStats.played} kampe i alt`
+                  : 'Ingen afsluttede ligakampe endnu.'}
+              </div>
             </div>
-          </div>
-        )}
-
-        {statsMode === 'americano' ? (
+          )
+        ) : statsMode === 'americano' ? (
           <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>
             <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Americano form</div>
             <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginTop: '8px', marginBottom: '6px' }}>
@@ -237,7 +286,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
             </div>
             <div style={{ fontSize: '11px', color: theme.textMid }}>Seneste {americanoForm.length} Americano-turneringer</div>
           </div>
-        ) : (
+        ) : statsMode === '2v2' ? (
           <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>
             <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sejrsstreak</div>
             {dataLoading ? (
@@ -253,7 +302,7 @@ export function PlayerProfileModal({ player, onClose, onMessage }) {
               </>
             )}
           </div>
-        )}
+        ) : null}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
           {pRef.level && (
