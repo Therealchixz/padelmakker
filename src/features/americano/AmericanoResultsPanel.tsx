@@ -45,7 +45,7 @@ function DualAvatar({ a, b }: { a: string; b: string }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '2px solid #fff',
+          border: '2px solid var(--pm-surface)',
           zIndex: 2,
           fontFamily: font,
         }}
@@ -65,7 +65,7 @@ function DualAvatar({ a, b }: { a: string; b: string }) {
           alignItems: 'center',
           justifyContent: 'center',
           marginLeft: -14,
-          border: '2px solid #fff',
+          border: '2px solid var(--pm-surface)',
           zIndex: 1,
           fontFamily: font,
         }}
@@ -764,7 +764,7 @@ export function AmericanoResultsPanel({
                           textAlign: 'center',
                           fontFamily: font,
                           color: c.accent,
-                          background: '#F0F7FF',
+                          background: 'var(--pm-accent-bg)',
                           outline: 'none',
                         }}
                       />
@@ -808,7 +808,7 @@ export function AmericanoResultsPanel({
                           textAlign: 'center',
                           fontFamily: font,
                           color: c.accent,
-                          background: '#F0F7FF',
+                          background: 'var(--pm-accent-bg)',
                           outline: 'none',
                         }}
                       />

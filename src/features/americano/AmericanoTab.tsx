@@ -797,7 +797,7 @@ export function AmericanoTab({
                       padding: '8px 14px',
                       background: tournamentFull ? theme.warm : theme.border,
                       borderColor: tournamentFull ? theme.warm : theme.border,
-                      color: tournamentFull ? '#fff' : theme.textLight,
+                      color: tournamentFull ? theme.onAccent : theme.textLight,
                       cursor: busyId === t.id ? 'wait' : tournamentFull ? 'pointer' : 'not-allowed',
                     }}
                   >

@@ -228,13 +228,13 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }
         {/* Score section */}
         <div style={{ padding: '10px 26px 26px' }}>
           {!t2 ? (
-            <div style={{ padding: '20px 0', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>
+            <div style={{ padding: '20px 0', borderBottom: `1px solid ${theme.border}`, textAlign: 'center' }}>
               <DotName teamId={t1?.id} name={t1?.name} teamColors={teamColors} />
               <div style={{ marginTop: '8px', fontSize: '12px', color: theme.textLight }}>{t1?.player1_name} · {t1?.player2_name}</div>
               <div style={{ marginTop: '14px', fontSize: '13px', color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fri runde</div>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '16px', padding: '20px 0', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '16px', padding: '20px 0', borderBottom: `1px solid ${theme.border}` }}>
               {/* Team 1 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', opacity: reported && !t1Wins ? 0.45 : 1 }}>
                 <DotName teamId={t1?.id} name={t1?.name} teamColors={teamColors} />
@@ -269,7 +269,7 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }
                 ['Resultat', resultLabel],
                 t2 && ['Records før', `${t1Stats.wins}W-${t1Stats.losses}L · ${t2Stats?.wins}W-${t2Stats?.losses}L`],
               ].filter(Boolean).map(([label, value]) => (
-                <tr key={label} style={{ borderTop: '1px solid #E2E8F0' }}>
+                <tr key={label} style={{ borderTop: `1px solid ${theme.border}` }}>
                   <td style={{ padding: '10px 0', color: theme.textLight, fontSize: '12px' }}>{label}</td>
                   <td style={{ padding: '10px 0', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, monospace', color: theme.text }}>{value}</td>
                 </tr>
