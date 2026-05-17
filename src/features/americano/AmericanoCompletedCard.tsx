@@ -921,18 +921,21 @@ export function AmericanoCompletedCard({
               >
                 Samlet stilling
               </div>
-              <div className="pm-card-subpanel" style={{ padding: '14px 16px', marginBottom: 8 }}>
-                {leaderboard.length === 0 ? (
-                  <div className="pm-data-empty-note">Ingen deltagere.</div>
-                ) : (
-                  <div
-                    className="pm-data-table"
-                    style={
-                      {
-                        '--pm-table-cols': '36px minmax(0, 1fr) 52px minmax(72px, 1fr)',
-                      } as CSSProperties
-                    }
-                  >
+              {leaderboard.length === 0 ? (
+                <div className="pm-data-empty-note" style={{ marginBottom: 8 }}>
+                  Ingen deltagere.
+                </div>
+              ) : (
+                <div
+                  className="pm-data-table"
+                  style={
+                    {
+                      '--pm-table-cols': '36px minmax(0, 1fr) 52px minmax(72px, 1fr)',
+                      marginTop: 0,
+                      marginBottom: 8,
+                    } as CSSProperties
+                  }
+                >
                     <div className="pm-data-table-head">
                       <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>
                         #
@@ -1014,9 +1017,8 @@ export function AmericanoCompletedCard({
                         </div>
                       )
                     })}
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
               <div
                 style={{
                   fontSize: 11,
