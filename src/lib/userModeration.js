@@ -69,3 +69,14 @@ export async function reportUser({ reportedId, reason, details, context = 'dm' }
 export function reportReasonLabel(reasonId) {
   return REPORT_REASONS.find((r) => r.id === reasonId)?.label || reasonId || 'Ukendt';
 }
+
+/** Admin (PIN): hent DM-tråd mellem anmelder og anmeldt til gennemgang. */
+export async function fetchAdminDmThread(reporterId, reportedId, limit = 300) {
+  const { data, error } = await supabase.rpc('admin_get_dm_messages_between', {
+    p_user_a: reporterId,
+    p_user_b: reportedId,
+    p_limit: limit,
+  });
+  if (error) throw error;
+  return data || [];
+}
