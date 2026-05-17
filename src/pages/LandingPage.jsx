@@ -2,8 +2,10 @@ import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2 } from 'lucide-react';
 import { useDarkMode } from '../lib/useDarkMode';
+import { fetchLandingPublicStats, formatLandingStatCount } from '../lib/landingPublicStats';
+import { shareInviteFriendToApp, shareResultToastMessage } from '../lib/shareUtils';
 
 const AnimatedAppMockupLazy = lazy(() =>
   import('../components/AnimatedAppMockup').then((m) => ({ default: m.AnimatedAppMockup }))
@@ -27,7 +29,40 @@ export function LandingPage() {
   const [dark, setDark] = useDarkMode();
   const [navHeight, setNavHeight] = useState(0);
   const [showDeferredSections, setShowDeferredSections] = useState(false);
+  const [publicStats, setPublicStats] = useState(null);
+  const [inviteNote, setInviteNote] = useState('');
   const toggleTheme = () => setDark((isDark) => !isDark);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchLandingPublicStats().then((stats) => {
+      if (!cancelled) setPublicStats(stats);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleInviteFriend = async () => {
+    setInviteNote('');
+    const result = await shareInviteFriendToApp();
+    const msg = shareResultToastMessage(result);
+    if (msg) setInviteNote(msg);
+  };
+
+  const statsBannerItems = publicStats
+    ? [
+        { n: formatLandingStatCount(publicStats.player_count), l: 'Spillere på platformen' },
+        { n: formatLandingStatCount(publicStats.open_matches), l: 'Åbne kampe lige nu' },
+        { n: formatLandingStatCount(publicStats.matches_last_30_days), l: 'Kampe spillet (30 dage)' },
+        { n: 'Gratis', l: 'Opret profil uden betaling' },
+      ]
+    : [
+        { n: 'Gratis', l: 'Opret profil uden betaling' },
+        { n: 'Makkere', l: 'Find spillere på dit niveau' },
+        { n: 'Kampe', l: 'Opret og deltag i 2v2' },
+        { n: 'ELO', l: 'Følg udviklingen over tid' },
+      ];
 
   useEffect(() => {
     const el = heroRef.current;
@@ -380,12 +415,53 @@ export function LandingPage() {
       {/* Stats banner */}
       <section style={{ background: theme.surface, padding: "clamp(32px,6vw,48px) clamp(16px,4vw,24px)", borderBottom: "1px solid " + theme.border }}>
         <div style={{ maxWidth: "900px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,140px),1fr))", gap: "20px", textAlign: "center" }}>
-          {[{ n: "Niveau", l: "Find jævnbyrdige spillere" }, { n: "Makkere", l: "Invitér direkte til kamp" }, { n: "Baner", l: "Se udvalgte baneoversigter" }, { n: "ELO", l: "Følg din udvikling over tid" }].map((s, i) => (
+          {statsBannerItems.map((s, i) => (
             <div key={i} className={"pm-reveal pm-delay-" + (i+1)}>
               <div className="pm-stat-number" style={{ fontFamily: font, fontSize: "clamp(32px,7vw,44px)", fontWeight: 800, color: theme.accent, letterSpacing: "-0.04em" }}>{s.n}</div>
               <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "4px", fontWeight: 500 }}>{s.l}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section
+        style={{
+          background: theme.accentBg,
+          borderBottom: '1px solid ' + theme.border,
+          padding: 'clamp(20px,4vw,28px) clamp(16px,4vw,24px)',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '720px',
+            margin: '0 auto',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '14px 20px',
+          }}
+        >
+          <div style={{ flex: '1 1 220px', minWidth: 0 }}>
+            <p style={{ fontSize: '15px', fontWeight: 700, color: theme.text, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+              Kender du nogen der mangler makker?
+            </p>
+            <p style={{ fontSize: '13px', color: theme.textMid, margin: 0, lineHeight: 1.5 }}>
+              Send en invitation — det tager under et minut at komme i gang på PadelMakker.
+            </p>
+            {inviteNote ? (
+              <p style={{ fontSize: '12px', color: theme.accent, margin: '8px 0 0', fontWeight: 600 }} role="status">
+                {inviteNote}
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => void handleInviteFriend()}
+            style={{ ...btn(true), padding: '11px 18px', fontSize: '13px', flexShrink: 0 }}
+          >
+            <Share2 size={16} /> Inviter en ven
+          </button>
         </div>
       </section>
 

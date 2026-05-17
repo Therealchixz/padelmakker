@@ -30,7 +30,8 @@ import { buildKampeMatchLists } from '../lib/matchListFilters';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { buildMatchLevelRange, clampElo, parseMatchLevelRange } from '../lib/matchLevelRange';
 import { DateTime } from 'luxon';
-import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus } from 'lucide-react';
+import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus, Share2 } from 'lucide-react';
+import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -1085,6 +1086,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     finally { setBusyId(null); }
   };
 
+  const shareMatch = async (match) => {
+    const result = await sharePadelMatch({ match, hostName: myDisplayName });
+    const msg = shareResultToastMessage(result);
+    if (msg) showToast(msg);
+  };
+
   const toggleSeekingPlayer = async (match) => {
     // Sluk hvis allerede aktiv
     if (match.seeking_player) {
@@ -2021,7 +2028,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
         {/* Actions — Model 1: primary CTA, secondary links, admin/creator accordion */}
         {(() => {
+          const showShareLink = status === "open" || status === "full" || status === "in_progress";
           const hasSecondaryLinks =
+            showShareLink ||
             (joined && status !== "completed") ||
             (isCreator && status === "open" && mp.length === 3);
           /* Primær Start kamp vises for creator. Admin-only (uden creator-rolle)
@@ -2205,6 +2214,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           {/* ---- SECONDARY LINKS row ---- */}
           {hasSecondaryLinks && (
             <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "8px 14px", padding: "2px 0", fontSize: "12px", color: theme.textMid }}>
+              {showShareLink && (
+                <button
+                  type="button"
+                  onClick={() => void shareMatch(m)}
+                  style={{ background: "none", border: "none", padding: 0, color: theme.accent, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(37,99,235,0.25)", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                >
+                  <Share2 size={12} /> Del kamp
+                </button>
+              )}
               {joined && status !== "completed" && (
                 <span style={{ color: theme.green, fontWeight: 700 }}>✅ Du er tilmeldt</span>
               )}
