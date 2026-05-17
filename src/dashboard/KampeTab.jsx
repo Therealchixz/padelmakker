@@ -20,7 +20,6 @@ import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification, createNotificationsForUsers } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
-import { formatMatchResultScore } from '../lib/matchResultScore';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { canConfirmPadelMatchResult, confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
 import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
@@ -37,6 +36,7 @@ import { ResultModal } from './ResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { MatchWinPrediction } from '../components/MatchWinPrediction';
+import { MatchResultStrip } from '../components/MatchResultStrip';
 import { calculate2v2MatchWinPrediction } from '../lib/matchWinPrediction';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
@@ -1880,33 +1880,23 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           <MatchWinPrediction prediction={teamStats.winPrediction} />
         ) : null}
 
-        {/* Score display for completed/result pending */}
-        {mr && (() => {
-          const myTeam = t1.some(p => p.user_id === user.id) ? "team1" : t2.some(p => p.user_id === user.id) ? "team2" : null;
-          const iWon = mr.confirmed && myTeam === mr.match_winner;
-          const iLost = mr.confirmed && myTeam && myTeam !== mr.match_winner;
-          const toneClass = !mr.confirmed
-            ? "pm-feedback-panel--warning"
-            : iWon
-              ? "pm-feedback-panel--success"
-              : iLost
-                ? "pm-feedback-panel--danger"
-                : "pm-feedback-panel--info";
-          const textColor = !mr.confirmed ? theme.warm : iWon ? theme.green : iLost ? theme.red : theme.blue;
-          return (
-            <div className={`pm-feedback-panel ${toneClass}`} style={{ marginBottom: "12px", padding: "14px" }}>
-              <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "0.05em", color: textColor }}>{formatMatchResultScore(mr)}</div>
-              <div style={{ fontSize: "12px", color: textColor, marginTop: "5px", fontWeight: 600 }}>
-                {!mr.confirmed ? "⏳ Venter på bekræftelse" : iWon ? "🏆 Du vandt!" : iLost ? "😞 Du tabte" : `🏆 ${mr.match_winner === "team1" ? "Hold 1" : "Hold 2"} vandt`}
-              </div>
-              {mr.confirmed && eloChangeByMatchId[String(m.id)] != null && (
-                <div style={{ fontSize: "14px", fontWeight: 800, color: eloChangeByMatchId[String(m.id)] >= 0 ? theme.green : theme.red, marginTop: "6px", letterSpacing: "-0.01em" }}>
-                  {eloChangeByMatchId[String(m.id)] >= 0 ? "+" : ""}{eloChangeByMatchId[String(m.id)]} ELO
-                </div>
-              )}
-            </div>
-          );
-        })()}
+        {mr ? (
+          <MatchResultStrip
+            matchResult={mr}
+            myTeam={
+              t1.some((p) => p.user_id === user.id)
+                ? 'team1'
+                : t2.some((p) => p.user_id === user.id)
+                  ? 'team2'
+                  : null
+            }
+            eloChange={
+              mr.confirmed && eloChangeByMatchId[String(m.id)] != null
+                ? eloChangeByMatchId[String(m.id)]
+                : null
+            }
+          />
+        ) : null}
 
         {canUseMatchChat && (
           <>
