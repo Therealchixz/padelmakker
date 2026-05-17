@@ -44,6 +44,23 @@ function submittedSetWinner(set) {
   return null;
 }
 
+/** Felter til admin-opdatering / RPC (uden match_id, submitted_by, confirmed). */
+export function buildMatchResultUpdateFields({ players, result }) {
+  const full = buildMatchResultInsertPayload({
+    matchId: '00000000-0000-0000-0000-000000000000',
+    players,
+    submittedBy: '00000000-0000-0000-0000-000000000000',
+    result,
+  });
+  const {
+    match_id: _m,
+    submitted_by: _s,
+    confirmed: _c,
+    ...fields
+  } = full;
+  return fields;
+}
+
 export function buildMatchResultInsertPayload({ matchId, players, submittedBy, result }) {
   const roster = Array.isArray(players) ? players : [];
   const team1 = roster.filter((player) => teamOf(player) === 1);

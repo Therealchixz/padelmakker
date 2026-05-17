@@ -11,6 +11,7 @@ import {
 } from '../lib/resultErrorReports';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AdminReportDmViewer } from '../components/AdminReportDmViewer';
+import { AdminMatchResultEditor } from '../components/AdminMatchResultEditor';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { explainRatingAdminFlag } from '../lib/ratingAdminFlagExplain';
 
@@ -101,6 +102,7 @@ export function AdminTab({ initialSubTab = null }) {
   const [resultErrorsError, setResultErrorsError] = useState('');
   const [resultErrorStatusFilter, setResultErrorStatusFilter] = useState('open');
   const [resultErrorBusyId, setResultErrorBusyId] = useState(null);
+  const [editMatchTarget, setEditMatchTarget] = useState(null);
   const [subTabBadges, setSubTabBadges] = useState({
     users: 0,
     matches: 0,
@@ -1199,6 +1201,8 @@ export function AdminTab({ initialSubTab = null }) {
             const status = m.status;
             const statusColor = status === 'completed' ? theme.accent : status === 'in_progress' ? theme.warm : theme.textMid;
             const statusLabel = status === 'completed' ? 'Afsluttet' : status === 'in_progress' ? 'I gang' : 'Åben';
+            const confirmedResult = (m.match_results || []).find((r) => r.confirmed) || null;
+            const canEditResult = status === 'completed' && confirmedResult;
 
             return (
               <div key={m.id} style={{ background: theme.surface, padding: "16px", borderRadius: "12px", border: "1px solid " + theme.border, boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
@@ -1221,13 +1225,45 @@ export function AdminTab({ initialSubTab = null }) {
                       </div>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => deleteMatch(m.id)}
-                    style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "10px", padding: "10px", cursor: "pointer", display: "flex", alignItems: "center", transition: "all 0.2s" }}
-                    title="Slet kamp"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    {canEditResult ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditMatchTarget({
+                            match: m,
+                            matchResult: confirmedResult,
+                            players: m.match_players || [],
+                          })
+                        }
+                        style={{
+                          color: theme.accent,
+                          background: theme.accentBg,
+                          border: 'none',
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 12,
+                          fontWeight: 700,
+                        }}
+                        title="Ret resultat og genberegn ELO"
+                      >
+                        <Edit2 size={16} />
+                        Ret resultat
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => deleteMatch(m.id)}
+                      style={{ color: theme.red, background: theme.redBg, border: 'none', borderRadius: '10px', padding: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
+                      title="Slet kamp"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ 
@@ -1268,6 +1304,19 @@ export function AdminTab({ initialSubTab = null }) {
             );
           })}
         </div>
+          {editMatchTarget ? (
+            <AdminMatchResultEditor
+              match={editMatchTarget.match}
+              matchResult={editMatchTarget.matchResult}
+              players={editMatchTarget.players}
+              onClose={() => setEditMatchTarget(null)}
+              onSaved={() => {
+                setEditMatchTarget(null);
+                void fetchMatches();
+                void refreshSubTabBadges();
+              }}
+            />
+          ) : null}
           )}
         </div>
       ) : activeSubTab === 'reports' ? (
