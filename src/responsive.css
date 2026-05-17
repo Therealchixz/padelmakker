@@ -2936,8 +2936,9 @@ button,
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(5, 150, 105, 0.22) 0%, rgba(5, 150, 105, 0.3) 100%);
-  box-shadow: inset 0 0 0 2px rgba(5, 150, 105, 0.55);
+  /* Samme grøn som "Bane booket" / hold-vinder-labels — ikke gennemsigtig over blå bane */
+  background: var(--pm-green-bg);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--pm-green) 28%, var(--pm-border));
 }
 .pm-court-side--winner.pm-court-side--t1::before {
   border-radius: 10px 0 0 10px;
