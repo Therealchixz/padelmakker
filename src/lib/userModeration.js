@@ -92,6 +92,40 @@ export async function fetchAdminOpenUserReportsCount() {
   return Number(data) || 0;
 }
 
+/** Tællere til badges på admin-underfaner (efter PIN). */
+export async function fetchAdminSubTabBadges(adminUserId) {
+  const badges = { users: 0, matches: 0, reports: 0, console: 0 };
+
+  const [openReports, flagsRes, resultsRes, notifsRes] = await Promise.all([
+    fetchAdminOpenUserReportsCount().catch(() => 0),
+    supabase
+      .from('rating_admin_flags')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'open'),
+    supabase
+      .from('match_results')
+      .select('id', { count: 'exact', head: true })
+      .eq('confirmed', false),
+    adminUserId
+      ? supabase
+          .from('notifications')
+          .select('type')
+          .eq('user_id', adminUserId)
+          .eq('read', false)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const unread = notifsRes.data || [];
+  const unreadReports = unread.filter((n) => n.type === 'user_report').length;
+  const unreadFlags = unread.filter((n) => n.type === 'system_flag').length;
+
+  badges.reports = Math.max(Number(openReports) || 0, unreadReports);
+  badges.console = Math.max(flagsRes.error ? 0 : (flagsRes.count || 0), unreadFlags);
+  badges.matches = resultsRes.error ? 0 : (resultsRes.count || 0);
+
+  return badges;
+}
+
 /** Admin (PIN): hent DM-tråd mellem anmelder og anmeldt til gennemgang. */
 export async function fetchAdminDmThread(reporterId, reportedId, limit = 300) {
   const { data, error } = await supabase.rpc('admin_get_dm_messages_between', {

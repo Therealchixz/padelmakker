@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
 import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle } from 'lucide-react';
-import { reportReasonLabel } from '../lib/userModeration';
+import { fetchAdminSubTabBadges, reportReasonLabel } from '../lib/userModeration';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AdminReportDmViewer } from '../components/AdminReportDmViewer';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
@@ -88,6 +88,12 @@ export function AdminTab({ initialSubTab = null }) {
   const [reportStatusFilter, setReportStatusFilter] = useState('open');
   const [reportBusyId, setReportBusyId] = useState(null);
   const [dmViewerReport, setDmViewerReport] = useState(null);
+  const [subTabBadges, setSubTabBadges] = useState({
+    users: 0,
+    matches: 0,
+    reports: 0,
+    console: 0,
+  });
   const [reviewerMap, setReviewerMap] = useState({});
   const [consoleStats, setConsoleStats] = useState({
     totalPlayers: 0,
@@ -108,6 +114,53 @@ export function AdminTab({ initialSubTab = null }) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const refreshSubTabBadges = useCallback(async () => {
+    try {
+      const next = await fetchAdminSubTabBadges(user?.id);
+      setSubTabBadges(next);
+    } catch (e) {
+      console.warn('admin sub-tab badges:', e);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    void refreshSubTabBadges();
+
+    const channel = supabase
+      .channel('admin-subtab-badges-' + user.id)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_reports' },
+        () => { void refreshSubTabBadges(); },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'rating_admin_flags' },
+        () => { void refreshSubTabBadges(); },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'match_results' },
+        () => { void refreshSubTabBadges(); },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id },
+        () => { void refreshSubTabBadges(); },
+      )
+      .subscribe();
+
+    const interval = setInterval(() => {
+      void refreshSubTabBadges();
+    }, 20000);
+
+    return () => {
+      clearInterval(interval);
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id, refreshSubTabBadges]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -233,6 +286,7 @@ export function AdminTab({ initialSubTab = null }) {
         highFlags: (flagsRes.data || []).filter((f) => f.status === 'open' && f.severity === 'high').length,
       };
       setConsoleStats(nextStats);
+      void refreshSubTabBadges();
 
       const reviewerIds = [...new Set((flagsRes.data || []).map((f) => f.reviewed_by).filter(Boolean))];
       if (reviewerIds.length > 0) {
@@ -336,6 +390,7 @@ export function AdminTab({ initialSubTab = null }) {
         .eq('id', report.id);
       if (error) throw error;
       await fetchUserReports();
+      await refreshSubTabBadges();
     } catch (err) {
       await ask({ message: 'Fejl: ' + (err?.message || 'ukendt'), notice: true });
     } finally {
@@ -662,6 +717,7 @@ export function AdminTab({ initialSubTab = null }) {
         return;
       }
       await fetchAdminConsole();
+      await refreshSubTabBadges();
       if (nextStatus !== 'open') {
         setExpandedFlags((prev) => ({ ...prev, [flag.id]: false }));
       }
@@ -671,11 +727,28 @@ export function AdminTab({ initialSubTab = null }) {
   };
 
   const adminSubTabs = [
-    { id: 'users', label: 'Brugere', shortLabel: 'Brugere', icon: User },
-    { id: 'matches', label: 'Kampe', shortLabel: 'Kampe', icon: Swords },
-    { id: 'reports', label: 'Anmeldelser', shortLabel: 'Anmeld.', icon: Flag },
-    { id: 'console', label: 'Konsol', shortLabel: 'Konsol', icon: AlertTriangle },
+    { id: 'users', label: 'Brugere', shortLabel: 'Brugere', icon: User, badgeKey: 'users' },
+    { id: 'matches', label: 'Kampe', shortLabel: 'Kampe', icon: Swords, badgeKey: 'matches' },
+    { id: 'reports', label: 'Anmeldelser', shortLabel: 'Anmeld.', icon: Flag, badgeKey: 'reports' },
+    { id: 'console', label: 'Konsol', shortLabel: 'Konsol', icon: AlertTriangle, badgeKey: 'console' },
   ];
+
+  const subTabBadgeStyle = {
+    marginLeft: '6px',
+    minWidth: '16px',
+    height: '16px',
+    padding: '0 4px',
+    borderRadius: '999px',
+    background: theme.red,
+    color: theme.onAccent,
+    fontSize: '10px',
+    fontWeight: 800,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    lineHeight: 1,
+    flexShrink: 0,
+  };
 
   const subTabBtnStyle = (active) => ({
     ...btn(active),
@@ -716,6 +789,7 @@ export function AdminTab({ initialSubTab = null }) {
           {adminSubTabs.map((t) => {
             const Icon = t.icon;
             const active = activeSubTab === t.id;
+            const badgeCount = subTabBadges[t.badgeKey] || 0;
             return (
               <button
                 key={t.id}
@@ -723,9 +797,19 @@ export function AdminTab({ initialSubTab = null }) {
                 onClick={() => setActiveSubTab(t.id)}
                 style={subTabBtnStyle(active)}
                 aria-current={active ? 'page' : undefined}
+                aria-label={
+                  badgeCount > 0
+                    ? `${t.label}, ${badgeCount} kræver opmærksomhed`
+                    : t.label
+                }
               >
                 <Icon size={14} style={{ marginRight: isMobile ? 4 : 6, flexShrink: 0 }} />
                 {isMobile ? t.shortLabel : t.label}
+                {badgeCount > 0 && (
+                  <span style={subTabBadgeStyle} aria-hidden>
+                    {badgeCount > 9 ? '9+' : badgeCount}
+                  </span>
+                )}
               </button>
             );
           })}
