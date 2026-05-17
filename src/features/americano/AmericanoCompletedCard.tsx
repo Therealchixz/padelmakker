@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { CalendarDays, ChevronDown, Trophy } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { isAvatarUrl } from '../../lib/avatarUpload'
@@ -84,6 +84,50 @@ function initialsOf(name: string): string {
       .slice(0, 2)
       .map((s) => s[0]?.toUpperCase() || '')
       .join('') || '?'
+  )
+}
+
+function standingsRankLabel(idx: number): string {
+  if (idx === 0) return '🥇'
+  if (idx === 1) return '🥈'
+  if (idx === 2) return '🥉'
+  return String(idx + 1)
+}
+
+function StandingsMiniAvatar({
+  avatar,
+  name,
+}: {
+  avatar: string | null | undefined
+  name: string
+}) {
+  return (
+    <div
+      style={{
+        width: 28,
+        height: 28,
+        borderRadius: '50%',
+        background: theme.surfaceAlt,
+        border: `1px solid ${theme.border}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        overflow: 'hidden',
+        fontSize: 10,
+        fontWeight: 700,
+        color: theme.textMid,
+      }}
+      aria-hidden
+    >
+      {avatar && isAvatarUrl(avatar) ? (
+        <img src={avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : avatar ? (
+        <span style={{ fontSize: 14 }}>{avatar}</span>
+      ) : (
+        initialsOf(name)
+      )}
+    </div>
   )
 }
 
@@ -877,54 +921,102 @@ export function AmericanoCompletedCard({
               >
                 Samlet stilling
               </div>
-              {leaderboard.length === 0 ? (
-                <div style={{ fontSize: 12, color: theme.textLight }}>Ingen deltagere.</div>
-              ) : (
-                <ol
-                  style={{
-                    margin: 0,
-                    paddingLeft: 18,
-                    fontSize: 13,
-                    color: theme.textMid,
-                    lineHeight: 1.65,
-                  }}
-                >
-                  {leaderboard.map((row, idx) => {
-                    const pu = participants.find((p) => p.id === row.id)
-                    const isMe = pu && String(pu.user_id) === String(currentUserId)
-                    const eloSnap = pu ? eloByUserId[String(pu.user_id)] : null
-                    return (
-                      <li key={row.id}>
-                        <div>
-                          <span style={{ color: theme.text, fontWeight: idx === 0 ? 700 : 500 }}>
-                            {row.name}
-                          </span>
-                          {isMe ? (
-                            <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
-                          ) : null}
-                          {' — '}
-                          <strong style={{ color: theme.text }}>{row.points}</strong> point
-                        </div>
+              <div className="pm-card-subpanel" style={{ padding: '14px 16px', marginBottom: 8 }}>
+                {leaderboard.length === 0 ? (
+                  <div className="pm-data-empty-note">Ingen deltagere.</div>
+                ) : (
+                  <div
+                    className="pm-data-table"
+                    style={
+                      {
+                        '--pm-table-cols': '36px minmax(0, 1fr) 52px minmax(72px, 1fr)',
+                      } as CSSProperties
+                    }
+                  >
+                    <div className="pm-data-table-head">
+                      <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>
+                        #
+                      </div>
+                      <div className="pm-data-table-cell-head">Spiller</div>
+                      <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>
+                        Point
+                      </div>
+                      <div className="pm-data-table-cell-head" style={{ textAlign: 'right' }}>
+                        ELO
+                      </div>
+                    </div>
+                    {leaderboard.map((row, idx) => {
+                      const pu = participants.find((p) => p.id === row.id)
+                      const isMe = pu && String(pu.user_id) === String(currentUserId)
+                      const eloSnap = pu ? eloByUserId[String(pu.user_id)] : null
+                      return (
                         <div
-                          style={{
-                            marginTop: 1,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: eloSnap ? eloDeltaColor(eloSnap.change) : theme.textLight,
-                          }}
+                          key={row.id}
+                          className={`pm-data-table-row${isMe ? ' pm-data-table-row--highlight' : ''}`}
                         >
-                          {eloSnap
-                            ? `${eloSnap.change > 0 ? '+' : ''}${eloSnap.change} ELO${
-                                eloSnap.newRating != null ? ` (nu ${eloSnap.newRating})` : ''
-                              }`
-                            : 'ELO –'}
+                          <div
+                            className="pm-data-table-cell"
+                            style={{
+                              textAlign: 'center',
+                              fontWeight: 700,
+                              color: idx < 3 ? theme.warm : theme.textLight,
+                            }}
+                          >
+                            {standingsRankLabel(idx)}
+                          </div>
+                          <div
+                            className="pm-data-table-cell"
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}
+                          >
+                            <StandingsMiniAvatar avatar={pu?.avatar} name={row.name} />
+                            <div style={{ minWidth: 0 }}>
+                              <div
+                                style={{
+                                  fontSize: 13,
+                                  fontWeight: isMe ? 700 : 600,
+                                  color: theme.text,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {row.name}
+                                {isMe ? (
+                                  <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                          <div
+                            className="pm-data-table-cell"
+                            style={{ textAlign: 'center', fontWeight: 700, color: theme.text }}
+                          >
+                            {row.points}
+                          </div>
+                          <div className="pm-data-table-cell" style={{ textAlign: 'right' }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: eloSnap ? eloDeltaColor(eloSnap.change) : theme.textLight,
+                              }}
+                            >
+                              {eloSnap
+                                ? `${eloSnap.change > 0 ? '+' : ''}${eloSnap.change}`
+                                : '–'}
+                            </div>
+                            {eloSnap?.newRating != null ? (
+                              <div style={{ fontSize: 10, color: theme.textLight, marginTop: 2 }}>
+                                nu {eloSnap.newRating}
+                              </div>
+                            ) : null}
+                          </div>
                         </div>
-                      </li>
-                    )
-                  })}
-                </ol>
-              )}
-
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
               <div
                 style={{
                   fontSize: 11,
