@@ -86,7 +86,7 @@ export function timeToMinutes(hhmm) {
 /** Nyeste afsluttede kamp først: resultat-tidsstempel, ellers kamp dato+tid. */
 export function matchCompletedSortMs(m, resultsByMatchId) {
   const mr = resultsByMatchId[m.id];
-  const ts = mr?.updated_at || mr?.created_at || mr?.confirmed_at;
+  const ts = mr?.updated_at || mr?.created_at;
   if (ts) {
     const n = new Date(ts).getTime();
     if (Number.isFinite(n)) return n;

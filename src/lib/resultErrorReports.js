@@ -33,12 +33,12 @@ export function completionMsFor2v2(match, matchResult) {
     return Number.isFinite(ms) ? ms : null;
   };
 
-  const resultTimes = [
-    fromTs(matchResult?.confirmed_at),
-    fromTs(matchResult?.updated_at),
-    fromTs(matchResult?.created_at),
-  ].filter((ms) => ms != null);
-  if (resultTimes.length > 0) return Math.max(...resultTimes);
+  const resultTimes = [];
+  if (matchResult?.confirmed) {
+    resultTimes.push(fromTs(matchResult?.updated_at), fromTs(matchResult?.created_at));
+  }
+  const validResultTimes = resultTimes.filter((ms) => ms != null);
+  if (validResultTimes.length > 0) return Math.max(...validResultTimes);
 
   const completedMs = fromTs(match?.completed_at);
   const createdMs = fromTs(match?.created_at);

@@ -18,12 +18,11 @@ DECLARE
   v_created timestamptz;
 BEGIN
   IF p_source_type = 'match_2v2' THEN
-    SELECT max(
-      coalesce(mr.confirmed_at, mr.updated_at, mr.created_at)
-    )
+    SELECT max(greatest(mr.updated_at, mr.created_at))
     INTO v_ts
     FROM public.match_results mr
-    WHERE mr.match_id = p_entity_id;
+    WHERE mr.match_id = p_entity_id
+      AND mr.confirmed = true;
 
     IF v_ts IS NOT NULL THEN
       RETURN v_ts;
@@ -70,9 +69,10 @@ FROM (
     m2.id,
     coalesce(
       (
-        SELECT max(coalesce(mr.confirmed_at, mr.updated_at, mr.created_at))
+        SELECT max(greatest(mr.updated_at, mr.created_at))
         FROM public.match_results mr
         WHERE mr.match_id = m2.id
+          AND mr.confirmed = true
       ),
       (m2.date::text || ' ' || coalesce(nullif(trim(m2.time::text), ''), '12:00'))::timestamptz
     ) AS finished_at
