@@ -11,6 +11,13 @@ import {
   userIsOnCourtInAmericanoMatch,
 } from './americanoOutcomeColors'
 
+/** Podium medal accent colors (theme-independent) */
+const PODIUM = {
+  gold: '#D97706',
+  silver: '#94A3B8',
+  bronze: '#B45309',
+} as const
+
 type PartMin = {
   id: string
   user_id: string
@@ -327,7 +334,7 @@ export function AmericanoCompletedCard({
 
   const winnerParticipant = winner ? participants.find((p) => p.id === winner.id) : null
   const podiumColor = (place: number) =>
-    place === 1 ? C.gold : place === 2 ? C.silver : C.bronze
+    place === 1 ? PODIUM.gold : place === 2 ? PODIUM.silver : PODIUM.bronze
   const podiumEmoji = (place: number) =>
     place === 1 ? '🥇' : place === 2 ? '🥈' : '🥉'
 
@@ -434,7 +441,7 @@ export function AmericanoCompletedCard({
                 height: 40,
                 borderRadius: '50%',
                 background: 'rgba(255,255,255,0.95)',
-                color: C.gold,
+                color: PODIUM.gold,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
