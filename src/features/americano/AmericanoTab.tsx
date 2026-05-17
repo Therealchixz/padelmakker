@@ -5,7 +5,7 @@ import { useAuth } from '../../lib/AuthContext'
 import { useConfirm } from '../../lib/ConfirmDialogProvider'
 import { Court } from '../../api/base44Client'
 import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
-import { AmericanoCompletedSummary } from './AmericanoCompletedSummary'
+import { AmericanoCompletedCard } from './AmericanoCompletedCard'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { AmericanoOpenCard } from './AmericanoOpenCard'
 import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
@@ -246,7 +246,8 @@ export function AmericanoTab({
   useEffect(() => {
     const uidSet = new Set<string>()
     for (const t of rows) {
-      if (t.status !== 'playing' && t.status !== 'registration') continue
+      /* Completed inkluderet for at vise avatar på podium */
+      if (t.status !== 'playing' && t.status !== 'registration' && t.status !== 'completed') continue
       for (const p of participantsByTournament[t.id] || []) {
         uidSet.add(p.user_id)
       }
@@ -674,8 +675,39 @@ export function AmericanoTab({
                   ? { label: 'I gang', tone: 'accent' }
                   : { label: 'Afsluttet', tone: 'neutral' }
 
+            /* Status "completed" bruger det nye redesignede trofæ-kort */
+            if (t.status === 'completed') {
+              const parts = participantsByTournament[t.id] || []
+              const dateLabel = `${formatMatchDateDa(t.tournament_date)} kl. ${formatTimeSlotDa(t.time_slot)}`
+              const enrichedParts = parts.map((p) => {
+                const snap = participantSnippets[p.user_id]
+                return {
+                  id: p.id,
+                  user_id: p.user_id,
+                  display_name:
+                    String(snap?.full_name || snap?.name || p.display_name).trim() ||
+                    p.display_name,
+                  avatar: snap?.avatar || null,
+                  full_name: snap?.full_name || null,
+                }
+              })
+              return (
+                <AmericanoCompletedCard
+                  key={t.id}
+                  tournament={t}
+                  dateLabel={dateLabel}
+                  participants={enrichedParts}
+                  currentUserId={profileId}
+                  summaryOpen={openCompletedSummaryId === t.id}
+                  onSummaryToggle={() =>
+                    setOpenCompletedSummaryId((cur) => (cur === t.id ? null : t.id))
+                  }
+                />
+              )
+            }
+
             /* Status "registration" bruger det nye visuelle kort fra Claude Design.
-               Playing/completed beholder det eksisterende layout. */
+               Playing beholder det eksisterende layout. */
             if (t.status === 'registration') {
               const parts = participantsByTournament[t.id] || []
               const dateLabel = `${formatMatchDateDa(t.tournament_date)} kl. ${formatTimeSlotDa(t.time_slot)}`
@@ -862,23 +894,17 @@ export function AmericanoTab({
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t.name}</div>
               <div className="pm-card-meta-row" style={{ marginBottom: 6 }}>
                 <span className={`pm-status-badge pm-status-badge--${statusMeta.tone}`}>{statusMeta.label}</span>
-                {t.status !== 'completed' && (
-                  <span className="pm-status-badge pm-status-badge--blue">
-                    {partCount}/{slotsConfigured} spillere
-                  </span>
-                )}
+                <span className="pm-status-badge pm-status-badge--blue">
+                  {partCount}/{slotsConfigured} spillere
+                </span>
                 <span className="pm-status-badge">
                   {t.points_per_match} point{Number(t.opponent_passes) === 2 ? ' · lang' : ''}
                 </span>
               </div>
               <div style={{ fontSize: 12, color: 'var(--pm-text-mid)' }}>
                 {formatMatchDateDa(t.tournament_date)} · {formatTimeSlotDa(t.time_slot)}
-                {t.status !== 'completed' ? (
-                  <>
-                    {' · '}
-                    {t.player_slots} spillere
-                  </>
-                ) : null}
+                {' · '}
+                {t.player_slots} spillere
               </div>
               {t.description && (
                 <div style={{ fontSize: 12, color: 'var(--pm-text-light)', marginTop: 8, fontStyle: 'italic' }}>{t.description}</div>
@@ -886,7 +912,7 @@ export function AmericanoTab({
               {(() => {
                 const parts = participantsByTournament[t.id] || []
                 const maxSlots = t.player_slots
-                const participantsCollapsible = t.status === 'playing' || t.status === 'completed'
+                const participantsCollapsible = t.status === 'playing'
                 const listOpen = !participantsCollapsible || participantListsOpen.has(t.id)
                 const toggleParticipants = () => {
                   setParticipantListsOpen((prev) => {
@@ -1029,17 +1055,6 @@ export function AmericanoTab({
                   onSaved={load}
                   showToast={showToast}
                   onProfileStatsRefresh={refreshProfileQuiet}
-                />
-              )}
-              {t.status === 'completed' && (
-                <AmericanoCompletedSummary
-                  tournament={t}
-                  participants={participantsByTournament[t.id] || []}
-                  currentUserId={profileId}
-                  summaryOpen={openCompletedSummaryId === t.id}
-                  onSummaryToggle={() =>
-                    setOpenCompletedSummaryId((cur) => (cur === t.id ? null : t.id))
-                  }
                 />
               )}
             </div>
