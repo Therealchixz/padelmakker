@@ -22,9 +22,8 @@
   --pm-green:       #059669;
   --pm-green-bg:    #ECFDF5;
   /* 2v2-banen */
-  --pm-court-base:             #BFE0F5;
-  --pm-court-winner-fill:      var(--pm-green-bg);
-  --pm-court-winner-line:      var(--pm-green);
+  --pm-court-base:        #BFE0F5;
+  --pm-court-winner-fill: var(--pm-green-bg);
   --pm-purple:      #7C3AED;
   --pm-purple-bg:   #F5F3FF;
   --pm-info:        #2563EB;
@@ -109,9 +108,8 @@
 
   --pm-green:       #34D399;
   --pm-green-bg:    #0A2A1A;
-  --pm-court-base:             #1A3350;
-  --pm-court-winner-fill:      var(--pm-green-bg);
-  --pm-court-winner-line:      var(--pm-green);
+  --pm-court-base:        #1A3350;
+  --pm-court-winner-fill: var(--pm-green-bg);
   --pm-purple:      #A78BFA;
   --pm-purple-bg:   #1A0F35;
   --pm-info:        #60A5FA;
