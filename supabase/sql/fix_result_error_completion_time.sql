@@ -69,7 +69,7 @@ FROM (
     m2.id,
     coalesce(
       (
-        SELECT max(greatest(mr.updated_at, mr.created_at))
+        SELECT max(mr.created_at)
         FROM public.match_results mr
         WHERE mr.match_id = m2.id
           AND mr.confirmed = true
