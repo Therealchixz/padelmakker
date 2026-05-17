@@ -1304,6 +1304,7 @@ export function AdminTab({ initialSubTab = null }) {
             );
           })}
         </div>
+          )}
           {editMatchTarget ? (
             <AdminMatchResultEditor
               match={editMatchTarget.match}
