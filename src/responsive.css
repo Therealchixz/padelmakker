@@ -2936,18 +2936,11 @@ button,
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* Samme fladefarve som "Bane booket"-badget */
   background: var(--pm-court-winner-fill);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-green) 28%, var(--pm-border));
 }
-/* Grønne banestreger på vinderhalvdel (ikke hvide — de forsvinder på green-bg) */
-.pm-court:has(.pm-court-side--t1.pm-court-side--winner) .pm-court-line--service-t1,
-.pm-court:has(.pm-court-side--t1.pm-court-side--winner) .pm-court-line--center-t1 {
-  background: var(--pm-court-winner-line);
-}
-.pm-court:has(.pm-court-side--t2.pm-court-side--winner) .pm-court-line--service-t2,
-.pm-court:has(.pm-court-side--t2.pm-court-side--winner) .pm-court-line--center-t2 {
-  background: var(--pm-court-winner-line);
+/* Grøn kant om hele banen på afsluttede kampe med vinder */
+.pm-court-wrap:has(.pm-court-side--winner) .pm-court {
+  border-color: color-mix(in srgb, var(--pm-green) 38%, var(--pm-border));
 }
 .pm-court-side--winner.pm-court-side--t1::before {
   border-radius: 10px 0 0 10px;
