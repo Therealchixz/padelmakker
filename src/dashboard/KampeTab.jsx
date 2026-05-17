@@ -37,6 +37,8 @@ import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { MatchWinPrediction } from '../components/MatchWinPrediction';
 import { MatchResultStrip } from '../components/MatchResultStrip';
+import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
+import { completionMsFor2v2 } from '../lib/resultErrorReports';
 import { calculate2v2MatchWinPrediction } from '../lib/matchWinPrediction';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
@@ -1895,6 +1897,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 ? eloChangeByMatchId[String(m.id)]
                 : null
             }
+          />
+        ) : null}
+
+        {status === 'completed' && isCreator ? (
+          <ReportResultErrorButton
+            sourceType="match_2v2"
+            entityId={m.id}
+            completedAtMs={completionMsFor2v2(m, mr)}
+            isCreator={isCreator}
+            entityLabel={`2v2 · ${formatMatchDateDa(m.date)}${m.court_name ? ` · ${m.court_name}` : ''}`}
           />
         ) : null}
 

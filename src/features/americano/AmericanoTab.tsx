@@ -715,6 +715,7 @@ export function AmericanoTab({
                     setOpenCompletedSummaryId((cur) => (cur === t.id ? null : t.id))
                   }
                   onParticipantView={openParticipantProfile}
+                  isCreator={String(t.creator_id) === String(profileId)}
                 />
               )
             }

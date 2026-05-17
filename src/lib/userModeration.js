@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { sendPushNotificationsForUsers } from './notifications';
+import { fetchAdminOpenResultErrorReportsCount } from './resultErrorReports';
 
 export const REPORT_REASONS = [
   { id: 'harassment', label: 'Chikane eller trusler' },
@@ -94,10 +95,11 @@ export async function fetchAdminOpenUserReportsCount() {
 
 /** Tællere til badges på admin-underfaner (efter PIN). */
 export async function fetchAdminSubTabBadges(adminUserId) {
-  const badges = { users: 0, matches: 0, reports: 0, console: 0 };
+  const badges = { users: 0, matches: 0, reports: 0, console: 0, resultErrors: 0 };
 
-  const [openReports, flagsRes, resultsRes, notifsRes] = await Promise.all([
+  const [openReports, openResultErrors, flagsRes, resultsRes, notifsRes] = await Promise.all([
     fetchAdminOpenUserReportsCount().catch(() => 0),
+    fetchAdminOpenResultErrorReportsCount().catch(() => 0),
     supabase
       .from('rating_admin_flags')
       .select('id', { count: 'exact', head: true })
@@ -120,6 +122,7 @@ export async function fetchAdminSubTabBadges(adminUserId) {
   const unreadFlags = unread.filter((n) => n.type === 'system_flag').length;
 
   badges.reports = Math.max(Number(openReports) || 0, unreadReports);
+  badges.resultErrors = Number(openResultErrors) || 0;
   badges.console = Math.max(flagsRes.error ? 0 : (flagsRes.count || 0), unreadFlags);
   badges.matches = resultsRes.error ? 0 : (resultsRes.count || 0);
 
@@ -129,13 +132,14 @@ export async function fetchAdminSubTabBadges(adminUserId) {
 /** Samlet antal admin-opgaver til menu-badge (anmeldelser + konsol + kampe). */
 export function adminAttentionTotal(badges) {
   if (!badges) return 0;
-  return (badges.reports || 0) + (badges.console || 0) + (badges.matches || 0);
+  return (badges.reports || 0) + (badges.resultErrors || 0) + (badges.console || 0) + (badges.matches || 0);
 }
 
 /** Hvilken under-fane admin bør åbnes først ved opmærksomhed. */
 export function adminAttentionFocusSubTab(badges) {
   if (!badges) return null;
   if (badges.reports > 0) return 'reports';
+  if (badges.resultErrors > 0) return 'result_errors';
   if (badges.console > 0) return 'console';
   if (badges.matches > 0) return 'matches';
   return null;

@@ -407,6 +407,13 @@ function useAdminAttentionBadge(userId, isAdminRole = false) {
           },
         },
         {
+          name: 'admin-attn-result-errors-' + api.userId,
+          table: 'result_error_reports',
+          onEvent: ({ api: runtime }) => {
+            runtime.scheduleRefetch({ delay: 120 });
+          },
+        },
+        {
           name: 'admin-attn-notif-' + api.userId,
           table: 'notifications',
           filter: 'user_id=eq.' + api.userId,

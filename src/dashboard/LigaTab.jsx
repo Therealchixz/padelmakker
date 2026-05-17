@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
+import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
+import { completionMsForLeague } from '../lib/resultErrorReports';
 import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PillTabs } from '../components/PillTabs';
@@ -1788,6 +1790,16 @@ export function LigaTab({
                     )}
                   </div>
                 )}
+
+                {league.status === 'completed' && isCreator ? (
+                  <ReportResultErrorButton
+                    sourceType="league"
+                    entityId={league.id}
+                    completedAtMs={completionMsForLeague(league)}
+                    isCreator={isCreator}
+                    entityLabel={`Liga · ${league.name}`}
+                  />
+                ) : null}
 
                 {/* Turneringsplan */}
                 {(league.status === 'active' || league.status === 'completed') && (

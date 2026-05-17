@@ -3,8 +3,12 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle } from 'lucide-react';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle } from 'lucide-react';
 import { fetchAdminSubTabBadges, notifyAdminsNewConsoleFlags, reportReasonLabel } from '../lib/userModeration';
+import {
+  resultErrorReasonLabel,
+  resultErrorSourceLabel,
+} from '../lib/resultErrorReports';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AdminReportDmViewer } from '../components/AdminReportDmViewer';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
@@ -55,8 +59,12 @@ export function AdminTab({ initialSubTab = null }) {
   const { user } = useAuth();
   const ask = useConfirm();
   const [activeSubTab, setActiveSubTab] = useState(
-    initialSubTab === 'reports' ? 'reports' : 'users'
-  ); // 'users' | 'matches' | 'console' | 'reports'
+    initialSubTab === 'reports'
+      ? 'reports'
+      : initialSubTab === 'result_errors'
+        ? 'result_errors'
+        : 'users'
+  ); // 'users' | 'matches' | 'console' | 'reports' | 'result_errors'
   const [matchSubTab, setMatchSubTab] = useState('2v2'); // '2v2' | 'americano' | 'liga'
   const [_loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -88,11 +96,17 @@ export function AdminTab({ initialSubTab = null }) {
   const [reportStatusFilter, setReportStatusFilter] = useState('open');
   const [reportBusyId, setReportBusyId] = useState(null);
   const [dmViewerReport, setDmViewerReport] = useState(null);
+  const [resultErrorReports, setResultErrorReports] = useState([]);
+  const [resultErrorsLoading, setResultErrorsLoading] = useState(false);
+  const [resultErrorsError, setResultErrorsError] = useState('');
+  const [resultErrorStatusFilter, setResultErrorStatusFilter] = useState('open');
+  const [resultErrorBusyId, setResultErrorBusyId] = useState(null);
   const [subTabBadges, setSubTabBadges] = useState({
     users: 0,
     matches: 0,
     reports: 0,
     console: 0,
+    resultErrors: 0,
   });
   const [reviewerMap, setReviewerMap] = useState({});
   const [consoleStats, setConsoleStats] = useState({
@@ -156,6 +170,11 @@ export function AdminTab({ initialSubTab = null }) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'match_results' },
+        () => { void refreshSubTabBadges(); },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'result_error_reports' },
         () => { void refreshSubTabBadges(); },
       )
       .on(
@@ -411,9 +430,102 @@ export function AdminTab({ initialSubTab = null }) {
     }
   };
 
+  const fetchResultErrorReports = async () => {
+    setResultErrorsLoading(true);
+    setResultErrorsError('');
+    try {
+      let query = supabase
+        .from('result_error_reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (resultErrorStatusFilter !== 'all') {
+        query = query.eq('status', resultErrorStatusFilter);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = data || [];
+      const reporterIds = [...new Set(rows.map((r) => r.reporter_id).filter(Boolean))];
+      let profileMap = {};
+      if (reporterIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, full_name, name, email')
+          .in('id', reporterIds);
+        profileMap = Object.fromEntries((profs || []).map((p) => [p.id, p]));
+      }
+      const matchIds = rows.filter((r) => r.source_type === 'match_2v2').map((r) => r.entity_id);
+      const tournamentIds = rows.filter((r) => r.source_type === 'americano').map((r) => r.entity_id);
+      const leagueIds = rows.filter((r) => r.source_type === 'league').map((r) => r.entity_id);
+      const [matchesRes, tournamentsRes, leaguesRes] = await Promise.all([
+        matchIds.length
+          ? supabase.from('matches').select('id, date, court_name').in('id', matchIds)
+          : Promise.resolve({ data: [] }),
+        tournamentIds.length
+          ? supabase.from('americano_tournaments').select('id, name').in('id', tournamentIds)
+          : Promise.resolve({ data: [] }),
+        leagueIds.length
+          ? supabase.from('leagues').select('id, name').in('id', leagueIds)
+          : Promise.resolve({ data: [] }),
+      ]);
+      const matchMap = Object.fromEntries((matchesRes.data || []).map((m) => [m.id, m]));
+      const tournamentMap = Object.fromEntries((tournamentsRes.data || []).map((t) => [t.id, t]));
+      const leagueMap = Object.fromEntries((leaguesRes.data || []).map((l) => [l.id, l]));
+      setResultErrorReports(
+        rows.map((r) => {
+          let entityLabel = r.entity_id;
+          if (r.source_type === 'match_2v2') {
+            const m = matchMap[r.entity_id];
+            entityLabel = m
+              ? `2v2 · ${formatEloHistoryDate(m.date)}${m.court_name ? ` · ${m.court_name}` : ''}`
+              : `2v2 · ${r.entity_id}`;
+          } else if (r.source_type === 'americano') {
+            entityLabel = tournamentMap[r.entity_id]?.name || `Americano · ${r.entity_id}`;
+          } else if (r.source_type === 'league') {
+            entityLabel = leagueMap[r.entity_id]?.name || `Liga · ${r.entity_id}`;
+          }
+          return {
+            ...r,
+            reporter: profileMap[r.reporter_id],
+            entityLabel,
+          };
+        }),
+      );
+    } catch (err) {
+      setResultErrorsError(err?.message || 'Kunne ikke hente fejlindberetninger');
+      setResultErrorReports([]);
+    } finally {
+      setResultErrorsLoading(false);
+    }
+  };
+
+  const updateResultErrorReportStatus = async (report, nextStatus) => {
+    setResultErrorBusyId(report.id);
+    try {
+      const { error } = await supabase
+        .from('result_error_reports')
+        .update({
+          status: nextStatus,
+          updated_at: new Date().toISOString(),
+          resolved_at: nextStatus === 'open' ? null : new Date().toISOString(),
+          resolved_by: nextStatus === 'open' ? null : user.id,
+        })
+        .eq('id', report.id);
+      if (error) throw error;
+      await fetchResultErrorReports();
+      await refreshSubTabBadges();
+    } catch (err) {
+      await ask({ message: 'Fejl: ' + (err?.message || 'ukendt'), notice: true });
+    } finally {
+      setResultErrorBusyId(null);
+    }
+  };
+
   useEffect(() => {
     if (initialSubTab === 'reports') {
       setActiveSubTab('reports');
+    } else if (initialSubTab === 'result_errors') {
+      setActiveSubTab('result_errors');
     }
   }, [initialSubTab]);
 
@@ -425,10 +537,12 @@ export function AdminTab({ initialSubTab = null }) {
       else fetchLiga();
     } else if (activeSubTab === 'reports') {
       fetchUserReports();
+    } else if (activeSubTab === 'result_errors') {
+      fetchResultErrorReports();
     } else if (activeSubTab === 'console') {
       fetchAdminConsole();
     }
-  }, [activeSubTab, matchSubTab, reportStatusFilter]);
+  }, [activeSubTab, matchSubTab, reportStatusFilter, resultErrorStatusFilter]);
 
   const toggleAdmin = async (user) => {
     const newRole = user.role === 'admin' ? 'player' : 'admin';
@@ -743,6 +857,7 @@ export function AdminTab({ initialSubTab = null }) {
     { id: 'users', label: 'Brugere', shortLabel: 'Brugere', icon: User, badgeKey: 'users' },
     { id: 'matches', label: 'Kampe', shortLabel: 'Kampe', icon: Swords, badgeKey: 'matches' },
     { id: 'reports', label: 'Anmeldelser', shortLabel: 'Anmeld.', icon: Flag, badgeKey: 'reports' },
+    { id: 'result_errors', label: 'Fejl', shortLabel: 'Fejl', icon: AlertCircle, badgeKey: 'resultErrors' },
     { id: 'console', label: 'Konsol', shortLabel: 'Konsol', icon: AlertTriangle, badgeKey: 'console' },
   ];
 
@@ -1314,6 +1429,166 @@ export function AdminTab({ initialSubTab = null }) {
                         style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
                       >
                         Åbn anmeldt profil
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : activeSubTab === 'result_errors' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 800, color: theme.accent, textTransform: 'uppercase' }}>
+              Fejl i resultater
+            </h3>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {[
+                { id: 'open', label: 'Åbne' },
+                { id: 'resolved', label: 'Løst' },
+                { id: 'dismissed', label: 'Afvist' },
+                { id: 'all', label: 'Alle' },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setResultErrorStatusFilter(f.id)}
+                  style={{ ...btn(resultErrorStatusFilter === f.id), padding: '5px 10px', fontSize: '12px' }}
+                >
+                  {f.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => { void fetchResultErrorReports(); }}
+                style={{ ...btn(false), padding: '5px 10px', fontSize: '12px' }}
+                disabled={resultErrorsLoading}
+              >
+                <RefreshCw size={13} style={{ marginRight: 4, opacity: resultErrorsLoading ? 0.6 : 1 }} />
+                Opdater
+              </button>
+            </div>
+          </div>
+          <p style={{ fontSize: 12, color: theme.textMid, margin: 0, lineHeight: 1.45 }}>
+            Oprettere kan indberette fejl inden 24 timer efter afslutning. Gå til Kampe for at rette data.
+          </p>
+          {resultErrorsError ? (
+            <div style={{ fontSize: 13, color: theme.red }}>{resultErrorsError}</div>
+          ) : null}
+          {resultErrorsLoading ? (
+            <div style={{ padding: 24, textAlign: 'center', color: theme.textMid }}>Indlæser fejlindberetninger…</div>
+          ) : resultErrorReports.length === 0 ? (
+            <div className="pm-ui-card" style={{ padding: 16, color: theme.textMid, fontSize: 13 }}>
+              Ingen fejlindberetninger i denne visning.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {resultErrorReports.map((report) => {
+                const reporterName = adminDisplayName(report.reporter);
+                const statusColors =
+                  report.status === 'open'
+                    ? { text: theme.red, bg: theme.redBg }
+                    : report.status === 'resolved'
+                      ? { text: theme.green, bg: theme.greenBg }
+                      : { text: theme.textMid, bg: theme.surfaceAlt };
+                return (
+                  <div
+                    key={report.id}
+                    style={{
+                      background: theme.surface,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: 12,
+                      padding: 14,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>
+                        {reporterName} · {resultErrorSourceLabel(report.source_type)}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 999,
+                          color: statusColors.text,
+                          background: statusColors.bg,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {report.status === 'open'
+                          ? 'Åben'
+                          : report.status === 'resolved'
+                            ? 'Løst'
+                            : 'Afvist'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: theme.textMid, marginBottom: 6 }}>
+                      {formatDateTimeDa(report.created_at)} · {resultErrorReasonLabel(report.reason)}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: theme.text, marginBottom: 6 }}>
+                      {report.entityLabel}
+                    </div>
+                    {report.details ? (
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: theme.text,
+                          lineHeight: 1.45,
+                          marginBottom: 10,
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {report.details}
+                      </div>
+                    ) : null}
+                    <div style={{ fontSize: 11, color: theme.textLight, marginBottom: 10 }}>
+                      Afsluttet: {formatDateTimeDa(report.entity_completed_at)} · ID: {report.entity_id}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {report.status !== 'resolved' ? (
+                        <button
+                          type="button"
+                          disabled={resultErrorBusyId === report.id}
+                          onClick={() => updateResultErrorReportStatus(report, 'resolved')}
+                          style={{ ...btn(true), padding: '6px 12px', fontSize: 12 }}
+                        >
+                          <CheckCircle2 size={13} style={{ marginRight: 4 }} />
+                          Marker løst
+                        </button>
+                      ) : null}
+                      {report.status !== 'dismissed' ? (
+                        <button
+                          type="button"
+                          disabled={resultErrorBusyId === report.id}
+                          onClick={() => updateResultErrorReportStatus(report, 'dismissed')}
+                          style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                        >
+                          Afvis
+                        </button>
+                      ) : null}
+                      {report.status !== 'open' ? (
+                        <button
+                          type="button"
+                          disabled={resultErrorBusyId === report.id}
+                          onClick={() => updateResultErrorReportStatus(report, 'open')}
+                          style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                        >
+                          Genåbn
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSubTab('matches');
+                          if (report.source_type === 'match_2v2') setMatchSubTab('2v2');
+                          else if (report.source_type === 'americano') setMatchSubTab('americano');
+                          else setMatchSubTab('liga');
+                        }}
+                        style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                      >
+                        Gå til Kampe
                       </button>
                     </div>
                   </div>

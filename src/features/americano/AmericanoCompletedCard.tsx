@@ -10,6 +10,8 @@ import {
   americanoViewerStatusLabel,
   userIsOnCourtInAmericanoMatch,
 } from './americanoOutcomeColors'
+import { ReportResultErrorButton } from '../../components/ReportResultErrorButton'
+import { completionMsForAmericano } from '../../lib/resultErrorReports'
 
 /** Podium medal accent colors (theme-independent) */
 const PODIUM = {
@@ -271,6 +273,7 @@ type Props = {
   onSummaryToggle: () => void
   /** Åbn deltagerens Americano-statistik (samme modal som på åbne turneringer) */
   onParticipantView?: (userId: string, name: string) => void
+  isCreator?: boolean
 }
 
 export function AmericanoCompletedCard({
@@ -281,6 +284,7 @@ export function AmericanoCompletedCard({
   summaryOpen: open,
   onSummaryToggle,
   onParticipantView,
+  isCreator = false,
 }: Props) {
   const [matches, setMatches] = useState<AmericanoMatchRow[] | undefined>(undefined)
   const [eloByUserId, setEloByUserId] = useState<Record<string, AmericanoEloSnap>>({})
@@ -538,6 +542,18 @@ export function AmericanoCompletedCard({
           </div>
         ) : null}
       </div>
+
+      {isCreator ? (
+        <div style={{ padding: '0 16px' }}>
+          <ReportResultErrorButton
+            sourceType="americano"
+            entityId={tournament.id}
+            completedAtMs={completionMsForAmericano(tournament)}
+            isCreator={isCreator}
+            entityLabel={`Americano · ${tournament.name}`}
+          />
+        </div>
+      ) : null}
 
       {/* 2. Din placering */}
       <div style={{ padding: '14px 16px 0' }}>
