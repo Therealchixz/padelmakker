@@ -30,7 +30,7 @@ import { buildKampeMatchLists } from '../lib/matchListFilters';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { buildMatchLevelRange, clampElo, parseMatchLevelRange } from '../lib/matchLevelRange';
 import { DateTime } from 'luxon';
-import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus, Share2 } from 'lucide-react';
+import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarDays, CalendarPlus, Share2 } from 'lucide-react';
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
@@ -1667,8 +1667,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>
-                📅 {formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}
+              <div
+                style={{
+                  fontSize: 12,
+                  opacity: 0.9,
+                  marginTop: 4,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                }}
+              >
+                <CalendarDays size={13} strokeWidth={2} aria-hidden />
+                {formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}
               </div>
             </div>
             {isInProgress ? (

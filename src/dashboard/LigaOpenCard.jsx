@@ -1,3 +1,4 @@
+import { CalendarDays } from 'lucide-react';
 import { isAvatarUrl } from '../lib/avatarUpload';
 
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
@@ -309,8 +310,18 @@ export function LigaOpenCard({
             <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
               {league.name}
             </div>
-            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>
-              📅 {formatDateRange(league.start_date, league.end_date)}
+            <div
+              style={{
+                fontSize: 12,
+                opacity: 0.9,
+                marginTop: 4,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              <CalendarDays size={13} strokeWidth={2} aria-hidden />
+              {formatDateRange(league.start_date, league.end_date)}
             </div>
           </div>
           <span
