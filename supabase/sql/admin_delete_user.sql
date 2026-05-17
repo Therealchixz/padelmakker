@@ -145,6 +145,16 @@ BEGIN
     USING p_user_id;
   END IF;
 
+  IF to_regclass('public.user_blocks') IS NOT NULL THEN
+    EXECUTE 'DELETE FROM public.user_blocks WHERE blocker_id = $1 OR blocked_id = $1'
+    USING p_user_id;
+  END IF;
+
+  IF to_regclass('public.user_reports') IS NOT NULL THEN
+    EXECUTE 'DELETE FROM public.user_reports WHERE reporter_id = $1 OR reported_id = $1 OR resolved_by = $1'
+    USING p_user_id;
+  END IF;
+
   IF to_regclass('public.push_subscriptions') IS NOT NULL THEN
     EXECUTE 'DELETE FROM public.push_subscriptions WHERE user_id = $1'
     USING p_user_id;

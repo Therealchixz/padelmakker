@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag } from 'lucide-react';
+import { reportReasonLabel } from '../lib/userModeration';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { explainRatingAdminFlag } from '../lib/ratingAdminFlagExplain';
@@ -52,7 +53,7 @@ function formatDateTimeDa(value) {
 export function AdminTab() {
   const { user } = useAuth();
   const ask = useConfirm();
-  const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' | 'matches' | 'console'
+  const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' | 'matches' | 'console' | 'reports'
   const [matchSubTab, setMatchSubTab] = useState('2v2'); // '2v2' | 'americano' | 'liga'
   const [_loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -78,6 +79,11 @@ export function AdminTab() {
   const [expandedFlags, setExpandedFlags] = useState({});
   const [flagNotes, setFlagNotes] = useState({});
   const [flagBusyId, setFlagBusyId] = useState(null);
+  const [userReports, setUserReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [reportsError, setReportsError] = useState('');
+  const [reportStatusFilter, setReportStatusFilter] = useState('open');
+  const [reportBusyId, setReportBusyId] = useState(null);
   const [reviewerMap, setReviewerMap] = useState({});
   const [consoleStats, setConsoleStats] = useState({
     totalPlayers: 0,
@@ -269,16 +275,82 @@ export function AdminTab() {
     else fetchLiga();
   };
 
+  const fetchUserReports = async () => {
+    setReportsLoading(true);
+    setReportsError('');
+    try {
+      let query = supabase
+        .from('user_reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (reportStatusFilter !== 'all') {
+        query = query.eq('status', reportStatusFilter);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = data || [];
+      const ids = [
+        ...new Set(
+          rows.flatMap((r) => [r.reporter_id, r.reported_id]).filter(Boolean)
+        ),
+      ];
+      let profileMap = {};
+      if (ids.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, full_name, name, email')
+          .in('id', ids);
+        profileMap = Object.fromEntries((profs || []).map((p) => [p.id, p]));
+      }
+      setUserReports(
+        rows.map((r) => ({
+          ...r,
+          reporter: profileMap[r.reporter_id],
+          reported: profileMap[r.reported_id],
+        }))
+      );
+    } catch (err) {
+      setReportsError(err?.message || 'Kunne ikke hente anmeldelser');
+      setUserReports([]);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  const updateUserReportStatus = async (report, nextStatus) => {
+    setReportBusyId(report.id);
+    try {
+      const { error } = await supabase
+        .from('user_reports')
+        .update({
+          status: nextStatus,
+          updated_at: new Date().toISOString(),
+          resolved_at: nextStatus === 'open' ? null : new Date().toISOString(),
+          resolved_by: nextStatus === 'open' ? null : user.id,
+        })
+        .eq('id', report.id);
+      if (error) throw error;
+      await fetchUserReports();
+    } catch (err) {
+      await ask({ message: 'Fejl: ' + (err?.message || 'ukendt'), notice: true });
+    } finally {
+      setReportBusyId(null);
+    }
+  };
+
   useEffect(() => {
     if (activeSubTab === 'users') fetchUsers();
     else if (activeSubTab === 'matches') {
       if (matchSubTab === '2v2') fetchMatches();
       else if (matchSubTab === 'americano') fetchAmericano();
       else fetchLiga();
-    } else {
+    } else if (activeSubTab === 'reports') {
+      fetchUserReports();
+    } else if (activeSubTab === 'console') {
       fetchAdminConsole();
     }
-  }, [activeSubTab, matchSubTab]);
+  }, [activeSubTab, matchSubTab, reportStatusFilter]);
 
   const toggleAdmin = async (user) => {
     const newRole = user.role === 'admin' ? 'player' : 'admin';
@@ -606,6 +678,12 @@ export function AdminTab() {
             <Swords size={14} style={{ marginRight: "6px" }} /> Kampe
           </button>
           <button
+            onClick={() => setActiveSubTab('reports')}
+            style={{ ...btn(activeSubTab === 'reports'), padding: "6px 16px", fontSize: "13px" }}
+          >
+            <Flag size={14} style={{ marginRight: "6px" }} /> Anmeldelser
+          </button>
+          <button
             onClick={() => setActiveSubTab('console')}
             style={{ ...btn(activeSubTab === 'console'), padding: "6px 16px", fontSize: "13px" }}
           >
@@ -919,6 +997,163 @@ export function AdminTab() {
             );
           })}
         </div>
+          )}
+        </div>
+      ) : activeSubTab === 'reports' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 800, color: theme.accent, textTransform: 'uppercase' }}>
+              Spilleranmeldelser
+            </h3>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {[
+                { id: 'open', label: 'Åbne' },
+                { id: 'reviewed', label: 'Gennemgået' },
+                { id: 'dismissed', label: 'Afvist' },
+                { id: 'all', label: 'Alle' },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setReportStatusFilter(f.id)}
+                  style={{ ...btn(reportStatusFilter === f.id), padding: '5px 10px', fontSize: '12px' }}
+                >
+                  {f.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => { void fetchUserReports(); }}
+                style={{ ...btn(false), padding: '5px 10px', fontSize: '12px' }}
+                disabled={reportsLoading}
+              >
+                <RefreshCw size={13} style={{ marginRight: 4, opacity: reportsLoading ? 0.6 : 1 }} />
+                Opdater
+              </button>
+            </div>
+          </div>
+
+          {reportsError && (
+            <div style={{ fontSize: 13, color: theme.red }}>{reportsError}</div>
+          )}
+          {reportsLoading ? (
+            <div style={{ padding: 24, textAlign: 'center', color: theme.textMid }}>Indlæser anmeldelser…</div>
+          ) : userReports.length === 0 ? (
+            <div className="pm-ui-card" style={{ padding: 16, color: theme.textMid, fontSize: 13 }}>
+              Ingen anmeldelser i denne visning.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {userReports.map((report) => {
+                const reporterName = adminDisplayName(report.reporter);
+                const reportedName = adminDisplayName(report.reported);
+                const statusColors =
+                  report.status === 'open'
+                    ? { text: theme.red, bg: theme.redBg }
+                    : report.status === 'reviewed'
+                      ? { text: theme.green, bg: theme.greenBg }
+                      : { text: theme.textMid, bg: theme.surfaceAlt };
+                return (
+                  <div
+                    key={report.id}
+                    style={{
+                      background: theme.surface,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: 12,
+                      padding: 14,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>
+                        {reporterName} → {reportedName}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 999,
+                          color: statusColors.text,
+                          background: statusColors.bg,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {report.status === 'open'
+                          ? 'Åben'
+                          : report.status === 'reviewed'
+                            ? 'Gennemgået'
+                            : 'Afvist'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: theme.textMid, marginBottom: 6 }}>
+                      {formatDateTimeDa(report.created_at)} · {reportReasonLabel(report.reason)} ·{' '}
+                      {report.context || 'dm'}
+                    </div>
+                    {report.details ? (
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: theme.text,
+                          lineHeight: 1.45,
+                          marginBottom: 10,
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {report.details}
+                      </div>
+                    ) : null}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {report.status !== 'reviewed' && (
+                        <button
+                          type="button"
+                          disabled={reportBusyId === report.id}
+                          onClick={() => { void updateUserReportStatus(report, 'reviewed'); }}
+                          style={{ ...btn(true), padding: '6px 12px', fontSize: 12 }}
+                        >
+                          <CheckCircle2 size={13} style={{ marginRight: 4 }} />
+                          Marker gennemgået
+                        </button>
+                      )}
+                      {report.status !== 'dismissed' && (
+                        <button
+                          type="button"
+                          disabled={reportBusyId === report.id}
+                          onClick={() => { void updateUserReportStatus(report, 'dismissed'); }}
+                          style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                        >
+                          Afvis
+                        </button>
+                      )}
+                      {report.status !== 'open' && (
+                        <button
+                          type="button"
+                          disabled={reportBusyId === report.id}
+                          onClick={() => { void updateUserReportStatus(report, 'open'); }}
+                          style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                        >
+                          Genåbn
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const { data } = await supabase
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', report.reported_id)
+                            .maybeSingle();
+                          if (data) setEditingUser(data);
+                          else await ask({ message: 'Kunne ikke hente profilen', notice: true });
+                        }}
+                        style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                      >
+                        Åbn anmeldt profil
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       ) : (

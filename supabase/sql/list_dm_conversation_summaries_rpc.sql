@@ -36,7 +36,11 @@ BEGIN
   WITH scoped AS (
     SELECT m.id, m.sender_id, m.receiver_id, m.content, m.created_at, m.is_read
     FROM public.messages m
-    WHERE m.sender_id = v_caller OR m.receiver_id = v_caller
+    WHERE (m.sender_id = v_caller OR m.receiver_id = v_caller)
+      AND NOT public.dm_users_blocked(
+        v_caller,
+        CASE WHEN m.sender_id = v_caller THEN m.receiver_id ELSE m.sender_id END
+      )
     ORDER BY m.created_at DESC
     LIMIT v_limit
   ),

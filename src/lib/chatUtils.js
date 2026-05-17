@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
+import { fetchDmHiddenUserIds } from './userModeration';
 
 /** Seneste beskeder der dækker samtalelisten (undgår fuld tabel-scan). */
 const CONVERSATION_SCAN_LIMIT = 800;
@@ -37,10 +38,16 @@ async function fetchConversationsViaRpc() {
   return mapRpcConversationRows(data);
 }
 
+function filterConversationsByBlocks(conversations, hiddenIds) {
+  if (!hiddenIds?.size) return conversations;
+  return conversations.filter((c) => !hiddenIds.has(String(c.otherId)));
+}
+
 /** Hent alle samtaler for userId — én per samtalepartner, sorteret nyeste først. */
 export async function fetchConversations(userId) {
+  const hiddenIds = await fetchDmHiddenUserIds(userId);
   const rpcRows = await fetchConversationsViaRpc();
-  if (rpcRows) return rpcRows;
+  if (rpcRows) return filterConversationsByBlocks(rpcRows, hiddenIds);
 
   const { data: baseRows, error } = await supabase
     .from('messages')
@@ -85,8 +92,11 @@ export async function fetchConversations(userId) {
     }
   }
 
-  return Object.values(convoMap).sort(
-    (a, b) => new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
+  return filterConversationsByBlocks(
+    Object.values(convoMap).sort(
+      (a, b) => new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
+    ),
+    hiddenIds
   );
 }
 
