@@ -2936,20 +2936,8 @@ button,
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* Grøn vinder-tone (samme palette som badges) — mørk nok til hvide banestreger */
   background: var(--pm-court-winner-fill);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--pm-green) 35%, var(--pm-border));
-}
-/* Tydeligere linjer på vinderhalvdelen */
-.pm-court:has(.pm-court-side--t1.pm-court-side--winner) .pm-court-line--service-t1,
-.pm-court:has(.pm-court-side--t1.pm-court-side--winner) .pm-court-line--center-t1 {
-  background: #FFFFFF;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pm-green) 45%, transparent);
-}
-.pm-court:has(.pm-court-side--t2.pm-court-side--winner) .pm-court-line--service-t2,
-.pm-court:has(.pm-court-side--t2.pm-court-side--winner) .pm-court-line--center-t2 {
-  background: #FFFFFF;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pm-green) 45%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--pm-green) 22%, var(--pm-border));
 }
 .pm-court-side--winner.pm-court-side--t1::before {
   border-radius: 10px 0 0 10px;
