@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase';
 import { Users, MapPin, Swords, Trophy, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
-import { PlayerStatsModal } from '../components/PlayerStatsModal';
+import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS, levelLabel } from '../lib/platformConstants';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 
@@ -1333,9 +1333,8 @@ export function HomeTab({ user, setTab }) {
       </AppModal>
 
       {viewPlayer && (
-        <PlayerStatsModal
-          userId={viewPlayer.id}
-          fallbackName={viewPlayer.name}
+        <PlayerProfileModal
+          player={viewPlayer}
           onClose={() => setViewPlayer(null)}
         />
       )}
