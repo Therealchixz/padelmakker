@@ -702,6 +702,9 @@ export function AmericanoTab({
                   onSummaryToggle={() =>
                     setOpenCompletedSummaryId((cur) => (cur === t.id ? null : t.id))
                   }
+                  onParticipantView={(userId, name) =>
+                    setParticipantStatsPick({ userId, name })
+                  }
                 />
               )
             }

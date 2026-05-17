@@ -97,12 +97,15 @@ function standingsRankLabel(idx: number): string {
 function StandingsMiniAvatar({
   avatar,
   name,
+  clickable = false,
 }: {
   avatar: string | null | undefined
   name: string
+  clickable?: boolean
 }) {
   return (
     <div
+      className={clickable ? 'pm-avatar-circle pm-avatar-circle--clickable' : 'pm-avatar-circle'}
       style={{
         width: 28,
         height: 28,
@@ -266,6 +269,8 @@ type Props = {
   /** Når true er detail-sektionen åben (én ad gangen, styres af AmericanoTab) */
   summaryOpen: boolean
   onSummaryToggle: () => void
+  /** Åbn deltagerens Americano-statistik (samme modal som på åbne turneringer) */
+  onParticipantView?: (userId: string, name: string) => void
 }
 
 export function AmericanoCompletedCard({
@@ -275,6 +280,7 @@ export function AmericanoCompletedCard({
   currentUserId,
   summaryOpen: open,
   onSummaryToggle,
+  onParticipantView,
 }: Props) {
   const [matches, setMatches] = useState<AmericanoMatchRow[] | undefined>(undefined)
   const [eloByUserId, setEloByUserId] = useState<Record<string, AmericanoEloSnap>>({})
@@ -952,6 +958,18 @@ export function AmericanoCompletedCard({
                       const pu = participants.find((p) => p.id === row.id)
                       const isMe = pu && String(pu.user_id) === String(currentUserId)
                       const eloSnap = pu ? eloByUserId[String(pu.user_id)] : null
+                      const openProfile =
+                        pu && onParticipantView
+                          ? () => onParticipantView(pu.user_id, row.name)
+                          : undefined
+                      const playerLabel = (
+                        <>
+                          {row.name}
+                          {isMe ? (
+                            <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
+                          ) : null}
+                        </>
+                      )
                       return (
                         <div
                           key={row.id}
@@ -967,28 +985,66 @@ export function AmericanoCompletedCard({
                           >
                             {standingsRankLabel(idx)}
                           </div>
-                          <div
-                            className="pm-data-table-cell"
-                            style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}
-                          >
-                            <StandingsMiniAvatar avatar={pu?.avatar} name={row.name} />
-                            <div style={{ minWidth: 0 }}>
-                              <div
+                          <div className="pm-data-table-cell" style={{ minWidth: 0 }}>
+                            {openProfile ? (
+                              <button
+                                type="button"
+                                onClick={openProfile}
+                                aria-label={`Åbn statistik for ${row.name}`}
+                                title="Se Americano-statistik"
                                 style={{
-                                  fontSize: 13,
-                                  fontWeight: isMe ? 700 : 600,
-                                  color: theme.text,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  minWidth: 0,
+                                  width: '100%',
+                                  border: 'none',
+                                  background: 'transparent',
+                                  padding: 0,
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  fontFamily: 'inherit',
                                 }}
                               >
-                                {row.name}
-                                {isMe ? (
-                                  <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
-                                ) : null}
+                                <StandingsMiniAvatar
+                                  avatar={pu?.avatar}
+                                  name={row.name}
+                                  clickable
+                                />
+                                <div
+                                  style={{
+                                    minWidth: 0,
+                                    fontSize: 13,
+                                    fontWeight: isMe ? 700 : 600,
+                                    color: theme.text,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {playerLabel}
+                                </div>
+                              </button>
+                            ) : (
+                              <div
+                                style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}
+                              >
+                                <StandingsMiniAvatar avatar={pu?.avatar} name={row.name} />
+                                <div
+                                  style={{
+                                    minWidth: 0,
+                                    fontSize: 13,
+                                    fontWeight: isMe ? 700 : 600,
+                                    color: theme.text,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {playerLabel}
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                           <div
                             className="pm-data-table-cell"
