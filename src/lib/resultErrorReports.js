@@ -25,21 +25,34 @@ export function resultErrorSourceLabel(sourceType) {
   return RESULT_ERROR_SOURCE_LABELS[sourceType] || sourceType || 'Ukendt';
 }
 
+/** 24t-frist fra kampen blev færdigspillet — ikke fra oprettelse (completed_at kan være backfill). */
 export function completionMsFor2v2(match, matchResult) {
-  const candidates = [
-    match?.completed_at,
-    matchResult?.confirmed_at,
-    matchResult?.updated_at,
-    matchResult?.created_at,
-    match?.updated_at,
-    match?.created_at,
-  ];
-  for (const raw of candidates) {
-    if (!raw) continue;
+  const fromTs = (raw) => {
+    if (!raw) return null;
     const ms = new Date(raw).getTime();
-    if (Number.isFinite(ms)) return ms;
+    return Number.isFinite(ms) ? ms : null;
+  };
+
+  const resultTimes = [
+    fromTs(matchResult?.confirmed_at),
+    fromTs(matchResult?.updated_at),
+    fromTs(matchResult?.created_at),
+  ].filter((ms) => ms != null);
+  if (resultTimes.length > 0) return Math.max(...resultTimes);
+
+  const completedMs = fromTs(match?.completed_at);
+  const createdMs = fromTs(match?.created_at);
+  if (completedMs != null && (createdMs == null || completedMs > createdMs + 60_000)) {
+    return completedMs;
   }
-  return null;
+
+  if (match?.date) {
+    const timePart = match.time ? String(match.time).trim().slice(0, 5) : '12:00';
+    const playedMs = fromTs(`${match.date}T${timePart}:00`);
+    if (playedMs != null) return playedMs;
+  }
+
+  return completedMs ?? null;
 }
 
 export function completionMsForAmericano(tournament) {
