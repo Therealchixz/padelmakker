@@ -26,6 +26,8 @@ test('landing page includes the ELO explainer and scroll-reveal flow styling', a
   const css = await readFile(new URL('../../src/responsive.css', import.meta.url), 'utf8');
 
   assert.match(landingPage, /<LandingEloExplainer/);
+  assert.match(landingPage, /fetchLandingPublicStats/);
+  assert.match(landingPage, /Inviter en ven/);
   assert.match(landingPage, /pm-landing-step-flow/);
   assert.match(css, /\.pm-landing-step-flow\.pm-visible::before/);
   assert.match(css, /\.pm-elo-explainer-card\.pm-visible/);
