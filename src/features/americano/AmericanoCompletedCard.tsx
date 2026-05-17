@@ -361,10 +361,10 @@ export function AmericanoCompletedCard({
         overflow: 'hidden',
       }}
     >
-      {/* 1. Header — orange trofæ-gradient */}
+      {/* 1. Header — fælles blå gradient med 2v2 / Liga / Americano open */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
+          background: 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)',
           color: C.white,
           padding: '16px 18px',
         }}
