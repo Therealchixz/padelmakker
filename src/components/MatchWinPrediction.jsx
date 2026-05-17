@@ -2,7 +2,7 @@ import { theme } from '../lib/platformTheme';
 import { formatWinPredictionPct } from '../lib/matchWinPrediction';
 
 /**
- * Win-chance bar under kampbanen. Holdnavn og gns. ELO vises i pm-court-header.
+ * Sejrschance under kampbanen. Holdnavn og gns. ELO vises i pm-court-header.
  *
  * @param {{ prediction: { team1WinPct: number, team2WinPct: number, approximate: boolean, quality: string, eloDiff: number } }} props
  */
@@ -32,7 +32,7 @@ export function MatchWinPrediction({ prediction }) {
       >
         <span style={{ color: theme.accent }}>{t1Label}</span>
         <span style={{ color: theme.textMid, fontWeight: 600, fontSize: 10 }}>
-          {approximate ? 'Estimat' : 'Win-chance'}
+          Sejrschance
         </span>
         <span style={{ color: theme.green }}>{t2Label}</span>
       </div>
