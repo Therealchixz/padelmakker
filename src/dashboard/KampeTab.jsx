@@ -1824,8 +1824,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const t2Top = t2[0] ? renderPlayer(t2[0], 2) : renderEmptySlot(2);
           const t2Bot = t2[1] ? renderPlayer(t2[1], 2) : renderEmptySlot(2);
 
-          /* Hold-labels og snit-ELO vises for kampe i gang og afsluttede. Win-chance står under banen. */
-          const showTopTeamLabels = status === "in_progress" || status === "completed";
+          /* Hold-labels og snit-ELO over banen; win-chance (uden gentaget gns.) står under. */
+          const showTopTeamLabels =
+            t1Avg !== null &&
+            t2Avg !== null &&
+            (status === "open" || status === "full" || status === "in_progress" || status === "completed");
           return (
             <div className="pm-court-wrap" style={{ marginBottom: "14px" }}>
               {showTopTeamLabels && (
