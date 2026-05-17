@@ -12,6 +12,8 @@ import {
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AdminReportDmViewer } from '../components/AdminReportDmViewer';
 import { AdminMatchResultEditor } from '../components/AdminMatchResultEditor';
+import { AdminAmericanoResultEditor } from '../components/AdminAmericanoResultEditor';
+import { AdminLeagueResultEditor } from '../components/AdminLeagueResultEditor';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { explainRatingAdminFlag } from '../lib/ratingAdminFlagExplain';
 
@@ -103,6 +105,8 @@ export function AdminTab({ initialSubTab = null }) {
   const [resultErrorStatusFilter, setResultErrorStatusFilter] = useState('open');
   const [resultErrorBusyId, setResultErrorBusyId] = useState(null);
   const [editMatchTarget, setEditMatchTarget] = useState(null);
+  const [editAmericanoTarget, setEditAmericanoTarget] = useState(null);
+  const [editLigaTarget, setEditLigaTarget] = useState(null);
   const [subTabBadges, setSubTabBadges] = useState({
     users: 0,
     matches: 0,
@@ -221,7 +225,7 @@ export function AdminTab({ initialSubTab = null }) {
     setLoading(true);
     const { data, error } = await supabase
       .from('americano_tournaments')
-      .select('id, name, status, tournament_date, updated_at, created_at')
+      .select('id, name, status, tournament_date, updated_at, created_at, points_per_match')
       .order('created_at', { ascending: false })
       .limit(50);
     if (error) console.warn('AdminTab fetchAmericano:', error.message || error);
@@ -1139,8 +1143,9 @@ export function AdminTab({ initialSubTab = null }) {
               <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "4px", textTransform: "uppercase" }}>Americano-turneringer</h3>
               {americanoTournaments.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen turneringer fundet.</div>}
               {americanoTournaments.map(t => {
-                const statusLabel = t.status === 'completed' ? 'Afsluttet' : t.status === 'active' ? 'Aktiv' : 'Åben';
-                const statusColor = t.status === 'completed' ? theme.accent : t.status === 'active' ? theme.green : theme.textMid;
+                const statusLabel = t.status === 'completed' ? 'Afsluttet' : t.status === 'playing' ? 'I gang' : t.status === 'active' ? 'Aktiv' : 'Åben';
+                const statusColor = t.status === 'completed' ? theme.accent : t.status === 'playing' || t.status === 'active' ? theme.green : theme.textMid;
+                const canEditResults = t.status === 'completed';
                 return (
                   <div key={t.id} style={{ background: theme.surface, padding: "14px 16px", borderRadius: "12px", border: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -1150,11 +1155,36 @@ export function AdminTab({ initialSubTab = null }) {
                         <span style={{ marginLeft: "8px", fontWeight: 700, color: statusColor, background: statusColor + '15', padding: "1px 6px", borderRadius: "4px", textTransform: "uppercase", fontSize: "10px" }}>{statusLabel}</span>
                       </div>
                     </div>
-                    <button onClick={() => deleteAmericano(t.id, t.name)}
-                      style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer", flexShrink: 0 }}
-                      title="Slet turnering">
-                      <Trash2 size={16} />
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      {canEditResults ? (
+                        <button
+                          type="button"
+                          onClick={() => setEditAmericanoTarget(t)}
+                          style={{
+                            color: theme.accent,
+                            background: theme.accentBg,
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 10px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                          title="Ret resultater og genberegn Americano-ELO"
+                        >
+                          <Edit2 size={16} />
+                          Ret resultater
+                        </button>
+                      ) : null}
+                      <button type="button" onClick={() => deleteAmericano(t.id, t.name)}
+                        style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer" }}
+                        title="Slet turnering">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -1169,6 +1199,7 @@ export function AdminTab({ initialSubTab = null }) {
               {ligaLeagues.map(l => {
                 const statusLabel = l.status === 'completed' ? 'Afsluttet' : l.status === 'active' ? 'Aktiv' : 'Tilmelding';
                 const statusColor = l.status === 'completed' ? theme.textMid : l.status === 'active' ? theme.green : theme.warm;
+                const canEditLigaResults = l.status === 'active' || l.status === 'completed';
                 return (
                   <div key={l.id} style={{ background: theme.surface, padding: "14px 16px", borderRadius: "12px", border: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -1180,11 +1211,36 @@ export function AdminTab({ initialSubTab = null }) {
                         <span>{formatEloHistoryDate(l.start_date)} – {formatEloHistoryDate(l.end_date)}</span>
                       </div>
                     </div>
-                    <button onClick={() => deleteLiga(l.id, l.name)}
-                      style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer", flexShrink: 0 }}
-                      title="Slet liga">
-                      <Trash2 size={16} />
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      {canEditLigaResults ? (
+                        <button
+                          type="button"
+                          onClick={() => setEditLigaTarget(l)}
+                          style={{
+                            color: theme.accent,
+                            background: theme.accentBg,
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 10px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                          title="Ret rapporterede kampresultater"
+                        >
+                          <Edit2 size={16} />
+                          Ret resultater
+                        </button>
+                      ) : null}
+                      <button type="button" onClick={() => deleteLiga(l.id, l.name)}
+                        style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer" }}
+                        title="Slet liga">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -1318,7 +1374,27 @@ export function AdminTab({ initialSubTab = null }) {
               }}
             />
           ) : null}
-          )}
+          {editAmericanoTarget ? (
+            <AdminAmericanoResultEditor
+              tournament={editAmericanoTarget}
+              onClose={() => setEditAmericanoTarget(null)}
+              onSaved={() => {
+                setEditAmericanoTarget(null);
+                void fetchAmericano();
+                void refreshSubTabBadges();
+              }}
+            />
+          ) : null}
+          {editLigaTarget ? (
+            <AdminLeagueResultEditor
+              league={editLigaTarget}
+              onClose={() => setEditLigaTarget(null)}
+              onSaved={() => {
+                void fetchLiga();
+                void refreshSubTabBadges();
+              }}
+            />
+          ) : null}
         </div>
       ) : activeSubTab === 'reports' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
