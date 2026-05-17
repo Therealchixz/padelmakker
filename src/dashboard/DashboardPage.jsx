@@ -358,6 +358,60 @@ function usePendingKampeBadge(userId, isAdmin = false) {
   return useRealtimeCount(userId, createController);
 }
 
+function useOpenUserReportsBadge(userId, isAdminRole = false) {
+  const createController = useCallback((api) => {
+    if (!isAdminRole || !api.userId) {
+      return {
+        refetch: async () => {
+          api.setCountSafe(0);
+        },
+      };
+    }
+
+    const syncCount = async () => {
+      try {
+        const { data, error } = await supabase.rpc('admin_open_user_reports_count');
+        if (error) throw error;
+        api.setCountSafe(Number(data) || 0);
+      } catch (e) {
+        console.warn('admin reports badge:', e);
+      }
+    };
+
+    return {
+      refetch: syncCount,
+      subscriptions: [
+        {
+          name: 'admin-reports-badge-' + api.userId,
+          table: 'user_reports',
+          onEvent: ({ api: runtime }) => {
+            runtime.scheduleRefetch({ delay: 120 });
+          },
+        },
+        {
+          name: 'admin-reports-notif-' + api.userId,
+          table: 'notifications',
+          filter: 'user_id=eq.' + api.userId,
+          onEvent: ({ api: runtime }) => {
+            runtime.scheduleRefetch({ delay: 120 });
+          },
+        },
+      ],
+      intervalMs: 15000,
+      onInterval: (runtime) => {
+        if (runtime.isPageVisible()) runtime.scheduleRefetch({ delay: 50 });
+      },
+      listenVisibility: true,
+      onVisibility: (runtime) => {
+        if (!runtime.isPageVisible()) return;
+        runtime.scheduleRefetch({ delay: 80 });
+      },
+    };
+  }, [isAdminRole]);
+
+  return useRealtimeCount(userId, createController);
+}
+
 function useUnreadNotificationsCount(userId) {
   const createController = useCallback((api) => {
     const syncCount = async () => {
@@ -592,6 +646,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const unreadMessages = useUnreadMessageCount(user?.id);
   const pendingLigaInvites = usePendingLigaInvites(user?.id);
   const pendingKampe = usePendingKampeBadge(user?.id, isAdmin);
+  const openUserReports = useOpenUserReportsBadge(user?.id, isAdmin);
+  const [adminInitialSubTab, setAdminInitialSubTab] = useState(null);
   const unreadNotifs = useUnreadNotificationsCount(user?.id);
   const unreadKampeNotifs = useUnreadKampeNotificationsCount(user?.id);
   const hasKampeAttention = pendingKampe > 0 || unreadKampeNotifs > 0;
@@ -1063,7 +1119,20 @@ export function DashboardPage({ user, onLogout, showToast }) {
   ];
   // Profil vises i konto-dropdown på desktop, men beholdes i mobilens "Mere"-menu.
   if (isMobileView) allTabs.push({ id: "profil", label: "Profil", icon: <Settings size={15} /> });
-  if (isAdmin && isMobileView) allTabs.push({ id: "admin", label: "Admin", icon: <ShieldCheck size={15} /> });
+  if (isAdmin && isMobileView) {
+    allTabs.push({
+      id: "admin",
+      label: "Admin",
+      icon: <ShieldCheck size={15} />,
+      badge: openUserReports > 0 ? openUserReports : null,
+    });
+  }
+
+  const openAdminPanel = (focusReports = false) => {
+    setAdminInitialSubTab(focusReports && openUserReports > 0 ? 'reports' : null);
+    setTab('admin');
+    setAccountOpen(false);
+  };
 
   const primaryTabs = allTabs.filter(t => PRIMARY_TAB_IDS.includes(t.id));
   const mobilePrimaryTabs = allTabs.filter(t => ["hjem", "makkere", "baner", "kampe"].includes(t.id));
@@ -1166,14 +1235,53 @@ export function DashboardPage({ user, onLogout, showToast }) {
             {isAdmin && (
               <button
                 type="button"
-                onClick={() => {
-                  setTab("admin");
-                  setAccountOpen(false);
-                }}
+                onClick={() => openAdminPanel(openUserReports > 0)}
                 style={accountMenuRowBtnStyle()}
               >
-                <ShieldCheck size={15} />
+                <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                  <ShieldCheck size={15} />
+                  {openUserReports > 0 && (
+                    <span
+                      aria-label={`${openUserReports} åbne anmeldelser`}
+                      style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        right: '-8px',
+                        minWidth: '16px',
+                        height: '16px',
+                        padding: '0 4px',
+                        borderRadius: '999px',
+                        background: theme.red,
+                        color: theme.onAccent,
+                        fontSize: '9px',
+                        fontWeight: 800,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        lineHeight: 1,
+                        border: '2px solid ' + theme.surface,
+                      }}
+                    >
+                      {openUserReports > 9 ? '9+' : openUserReports}
+                    </span>
+                  )}
+                </span>
                 Admin
+                {openUserReports > 0 && (
+                  <span
+                    style={{
+                      marginLeft: 'auto',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      color: theme.red,
+                      background: theme.redBg,
+                      padding: '2px 7px',
+                      borderRadius: '999px',
+                    }}
+                  >
+                    {openUserReports} ny{openUserReports === 1 ? '' : 'e'}
+                  </span>
+                )}
               </button>
             )}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", borderBottom: "1px solid " + theme.border }}>
@@ -1330,7 +1438,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
             {tab === "liga"     && <LigaTabLazy user={user} showToast={showToast} />}
             {tab === "beskeder" && <BeskedTabLazy user={user} onMobileConversationStateChange={setMobileConversationOpen} />}
             {tab === "profil"   && <ProfilTabLazy user={user} showToast={showToast} setTab={setTab} />}
-            {tab === "admin"    && isAdmin && adminPinUnlocked && <AdminTabLazy />}
+            {tab === "admin"    && isAdmin && adminPinUnlocked && (
+              <AdminTabLazy initialSubTab={adminInitialSubTab} />
+            )}
             {tab === "admin"    && isAdmin && !adminPinUnlocked && (
               <div
                 style={{

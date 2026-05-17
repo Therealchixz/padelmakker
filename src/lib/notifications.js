@@ -114,6 +114,22 @@ export async function createNotification(userId, type, title, body, matchId = nu
  * Opret notifikationer til flere brugere (ét batch-RPC når tilgængeligt).
  * Returnerer første fejl eller null ved succes.
  */
+/** Send kun browser-push (in-app notifikationer forventes allerede oprettet). */
+export async function sendPushNotificationsForUsers(
+  userIds,
+  type,
+  title,
+  body,
+  matchId = null,
+  options = {},
+) {
+  const ids = normalizeNotificationRecipientIds(userIds);
+  if (ids.length === 0) return;
+  await Promise.allSettled(
+    ids.map((id) => sendPushNotification(id, type, title, body, matchId, options)),
+  );
+}
+
 export async function createNotificationsForUsers(
   userIds,
   type,

@@ -170,6 +170,9 @@ AS $$
 DECLARE
   v_caller uuid := auth.uid();
   v_details text;
+  v_reporter_name text;
+  v_reported_name text;
+  v_reason_label text;
 BEGIN
   IF v_caller IS NULL THEN
     RETURN jsonb_build_object('ok', false, 'error', 'Ikke logget ind');
@@ -198,7 +201,69 @@ BEGIN
     coalesce(nullif(trim(p_context), ''), 'dm')
   );
 
-  RETURN jsonb_build_object('ok', true);
+  SELECT coalesce(
+    nullif(trim(full_name), ''),
+    nullif(trim(name), ''),
+    'En spiller'
+  )
+  INTO v_reporter_name
+  FROM public.profiles
+  WHERE id = v_caller;
+
+  SELECT coalesce(
+    nullif(trim(full_name), ''),
+    nullif(trim(name), ''),
+    'En spiller'
+  )
+  INTO v_reported_name
+  FROM public.profiles
+  WHERE id = p_reported_id;
+
+  v_reason_label := CASE p_reason
+    WHEN 'harassment' THEN 'Chikane eller trusler'
+    WHEN 'spam' THEN 'Spam eller reklame'
+    WHEN 'inappropriate' THEN 'Upassende indhold'
+    ELSE 'Andet'
+  END;
+
+  IF to_regclass('public.notifications') IS NOT NULL THEN
+    BEGIN
+      INSERT INTO public.notifications (user_id, type, title, body, match_id, read)
+      SELECT
+        p.id,
+        'user_report',
+        'Ny spilleranmeldelse',
+        format(
+          '%s har anmeldt %s (%s). Gå til Admin → Anmeldelser for at gennemgå.',
+          v_reporter_name,
+          v_reported_name,
+          v_reason_label
+        ),
+        NULL,
+        false
+      FROM public.profiles p
+      WHERE lower(COALESCE(p.role, '')) = 'admin';
+    EXCEPTION
+      WHEN OTHERS THEN
+        NULL;
+    END;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'notify_title', 'Ny spilleranmeldelse',
+    'notify_body', format(
+      '%s har anmeldt %s (%s). Gå til Admin → Anmeldelser for at gennemgå.',
+      v_reporter_name,
+      v_reported_name,
+      v_reason_label
+    ),
+    'admin_ids', (
+      SELECT coalesce(jsonb_agg(p.id), '[]'::jsonb)
+      FROM public.profiles p
+      WHERE lower(COALESCE(p.role, '')) = 'admin'
+    )
+  );
 END;
 $$;
 
@@ -311,3 +376,30 @@ $$;
 
 REVOKE ALL ON FUNCTION public.list_dm_conversation_summaries(integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.list_dm_conversation_summaries(integer) TO authenticated;
+
+-- Antal åbne anmeldelser (badge i admin-menu; role=admin, ikke PIN)
+CREATE OR REPLACE FUNCTION public.admin_open_user_reports_count()
+RETURNS integer
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT CASE
+    WHEN EXISTS (
+      SELECT 1
+      FROM public.profiles p
+      WHERE p.id = auth.uid()
+        AND lower(COALESCE(p.role, '')) = 'admin'
+    )
+    THEN (
+      SELECT count(*)::integer
+      FROM public.user_reports r
+      WHERE r.status = 'open'
+    )
+    ELSE 0
+  END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_open_user_reports_count() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_open_user_reports_count() TO authenticated;

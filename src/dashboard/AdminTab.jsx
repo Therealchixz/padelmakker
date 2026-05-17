@@ -51,10 +51,12 @@ function formatDateTimeDa(value) {
   }).format(dt);
 }
 
-export function AdminTab() {
+export function AdminTab({ initialSubTab = null }) {
   const { user } = useAuth();
   const ask = useConfirm();
-  const [activeSubTab, setActiveSubTab] = useState('users'); // 'users' | 'matches' | 'console' | 'reports'
+  const [activeSubTab, setActiveSubTab] = useState(
+    initialSubTab === 'reports' ? 'reports' : 'users'
+  ); // 'users' | 'matches' | 'console' | 'reports'
   const [matchSubTab, setMatchSubTab] = useState('2v2'); // '2v2' | 'americano' | 'liga'
   const [_loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -340,6 +342,12 @@ export function AdminTab() {
       setReportBusyId(null);
     }
   };
+
+  useEffect(() => {
+    if (initialSubTab === 'reports') {
+      setActiveSubTab('reports');
+    }
+  }, [initialSubTab]);
 
   useEffect(() => {
     if (activeSubTab === 'users') fetchUsers();
