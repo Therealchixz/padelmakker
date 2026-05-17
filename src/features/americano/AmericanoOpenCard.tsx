@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { CalendarDays } from 'lucide-react'
 import { isAvatarUrl } from '../../lib/avatarUpload'
+import { theme } from '../../lib/platformTheme'
 
 /** Antal runder per spiller-count, matcher schedule578.ts og schedule8.ts. */
 const ROUNDS_BY_SLOTS: Record<number, number> = {
@@ -10,23 +11,6 @@ const ROUNDS_BY_SLOTS: Record<number, number> = {
   8: 7,
 }
 const MIN_PER_ROUND = 12
-
-const C = {
-  accent: '#1D4ED8',
-  sky: '#0EA5E9',
-  white: '#FFFFFF',
-  bgBlue: '#DBEAFE',
-  text: '#0B1120',
-  textMid: '#3E4C63',
-  textDim: '#94A3B8',
-  border: '#E2E8F0',
-  green: '#059669',
-  greenBg: '#D1FAE5',
-  amber: '#D97706',
-  amberBg: '#FEF3C7',
-  trackBg: '#E2E8F0',
-  neutralBg: '#F1F5F9',
-}
 
 type AmericanoOpenCardPlayer = {
   id: string
@@ -73,12 +57,12 @@ function PlayerAvatar({ avatar, name, clickable }: { avatar: string | null; name
         width: 44,
         height: 44,
         borderRadius: '50%',
-        background: C.accent,
-        color: C.white,
+        background: theme.accent,
+        color: theme.onAccent,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        border: `2.5px solid ${C.white}`,
+        border: `2.5px solid ${theme.onAccent}`,
         boxShadow: '0 1px 4px rgba(29,78,216,0.2)',
         overflow: 'hidden',
       }}
@@ -147,10 +131,10 @@ export function AmericanoOpenCard({
     <div
       className="pm-ui-card"
       style={{
-        background: C.white,
-        border: `1px solid ${C.border}`,
+        background: theme.surface,
+        border: `1px solid ${theme.border}`,
         borderRadius: 16,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 14px rgba(0,0,0,0.04)',
+        boxShadow: theme.shadow,
         overflow: 'hidden',
       }}
     >
@@ -158,7 +142,7 @@ export function AmericanoOpenCard({
       <div
         style={{
           background: 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)',
-          color: C.white,
+          color: theme.onAccent,
           padding: '16px 18px',
         }}
       >
@@ -201,7 +185,7 @@ export function AmericanoOpenCard({
               padding: '4px 10px',
               borderRadius: 999,
               background: isFull ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.18)',
-              color: C.white,
+              color: theme.onAccent,
               whiteSpace: 'nowrap',
             }}
           >
@@ -215,7 +199,7 @@ export function AmericanoOpenCard({
           style={{
             padding: '10px 16px 0',
             fontSize: 12,
-            color: C.textMid,
+            color: theme.textMid,
             fontStyle: 'italic',
             lineHeight: 1.45,
           }}
@@ -236,14 +220,14 @@ export function AmericanoOpenCard({
             gap: 8,
           }}
         >
-          <span style={{ fontSize: 11, fontWeight: 600, color: C.textMid }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: theme.textMid }}>
             {filled} af {maxPlayers} tilmeldt
           </span>
           <span
             style={{
               fontSize: 11,
               fontWeight: 700,
-              color: isFull ? C.green : isAlmostFull ? C.amber : C.green,
+              color: isFull ? theme.green : isAlmostFull ? theme.warm : theme.green,
               textAlign: 'right',
             }}
           >
@@ -258,7 +242,7 @@ export function AmericanoOpenCard({
           style={{
             height: 5,
             borderRadius: 3,
-            background: C.trackBg,
+            background: theme.border,
             overflow: 'hidden',
             marginBottom: 18,
           }}
@@ -267,7 +251,7 @@ export function AmericanoOpenCard({
             style={{
               width: `${fillPct}%`,
               height: '100%',
-              background: `linear-gradient(90deg, ${C.accent}, ${C.sky})`,
+              background: `linear-gradient(90deg, ${theme.accent}, ${theme.blue})`,
               transition: 'width 0.25s ease',
             }}
           />
@@ -321,8 +305,8 @@ export function AmericanoOpenCard({
                       height: 18,
                       borderRadius: '50%',
                       border: 'none',
-                      background: '#DC2626',
-                      color: '#FFFFFF',
+                      background: theme.red,
+                      color: theme.onAccent,
                       fontSize: 11,
                       fontWeight: 700,
                       cursor: p.kickBusy ? 'wait' : 'pointer',
@@ -342,7 +326,7 @@ export function AmericanoOpenCard({
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: C.text,
+                    color: theme.text,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -352,7 +336,7 @@ export function AmericanoOpenCard({
                   title={p.name}
                 >
                   {p.name.split(' ')[0]}
-                  {p.isMe ? <span style={{ color: C.accent }}> (dig)</span> : null}
+                  {p.isMe ? <span style={{ color: theme.accent }}> (dig)</span> : null}
                 </span>
               </div>
             )
@@ -363,7 +347,7 @@ export function AmericanoOpenCard({
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}
             >
               <EmptySlot />
-              <span style={{ fontSize: 11, fontWeight: 600, color: C.textDim }}>Ledig</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: theme.textLight }}>Ledig</span>
             </div>
           ))}
         </div>
@@ -373,14 +357,14 @@ export function AmericanoOpenCard({
           style={{
             marginTop: 14,
             paddingTop: 12,
-            borderTop: `1px solid ${C.border}`,
+            borderTop: `1px solid ${theme.border}`,
             display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'center',
             gap: 14,
             fontSize: 10,
             fontWeight: 500,
-            color: C.textDim,
+            color: theme.textLight,
           }}
         >
           <span>⏱ {totalRounds} runder</span>

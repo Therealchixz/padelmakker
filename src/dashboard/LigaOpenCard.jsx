@@ -1,35 +1,21 @@
 import { CalendarDays } from 'lucide-react';
 import { isAvatarUrl } from '../lib/avatarUpload';
+import { theme } from '../lib/platformTheme';
 
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
 
 /** Blå gradient header — samme stil på tværs af 2v2 / Americano / Liga */
 const HEADER_GRADIENT = 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)';
 
-const C = {
-  white: '#FFFFFF',
-  text: '#0B1120',
-  textMid: '#3E4C63',
-  textDim: '#94A3B8',
-  border: '#E2E8F0',
-  surfaceAlt: '#F8FAFC',
-  accent: '#1D4ED8',
-  green: '#059669',
-  greenBg: '#D1FAE5',
-  amber: '#D97706',
-  amberBg: '#FEF3C7',
-  pendingBg: '#FEF3C7',
-  pending: '#D97706',
-  /** Subtile farver til hold-initial bokse — vælges deterministisk fra hold-id */
-  teamPalette: [
-    { bg: '#1D4ED8', fg: '#FFFFFF' },
-    { bg: '#059669', fg: '#FFFFFF' },
-    { bg: '#7C3AED', fg: '#FFFFFF' },
-    { bg: '#D97706', fg: '#FFFFFF' },
-    { bg: '#DB2777', fg: '#FFFFFF' },
-    { bg: '#0891B2', fg: '#FFFFFF' },
-  ],
-};
+/** Subtile farver til hold-initial bokse — vælges deterministisk fra hold-id */
+const TEAM_PALETTE = [
+  { bg: '#1D4ED8', fg: '#FFFFFF' },
+  { bg: '#059669', fg: '#FFFFFF' },
+  { bg: '#7C3AED', fg: '#FFFFFF' },
+  { bg: '#D97706', fg: '#FFFFFF' },
+  { bg: '#DB2777', fg: '#FFFFFF' },
+  { bg: '#0891B2', fg: '#FFFFFF' },
+];
 
 function hashStr(s) {
   let h = 0;
@@ -38,7 +24,7 @@ function hashStr(s) {
 }
 
 function teamColor(teamId) {
-  return C.teamPalette[hashStr(String(teamId || 'x')) % C.teamPalette.length];
+  return TEAM_PALETTE[hashStr(String(teamId || 'x')) % TEAM_PALETTE.length];
 }
 
 function teamInitials(name) {
@@ -59,14 +45,14 @@ function PlayerMiniAvatar({ avatar, name, onClick }) {
         width: 24,
         height: 24,
         borderRadius: '50%',
-        background: C.surfaceAlt,
-        border: `1px solid ${C.border}`,
+        background: theme.surfaceAlt,
+        border: `1px solid ${theme.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: 9,
         fontWeight: 700,
-        color: C.textMid,
+        color: theme.textMid,
         flexShrink: 0,
         overflow: 'hidden',
       }}
@@ -106,8 +92,8 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
         alignItems: 'center',
         gap: 12,
         padding: '10px 12px',
-        background: isMine ? C.greenBg : C.surfaceAlt,
-        border: `1px solid ${isMine ? '#86EFAC' : C.border}`,
+        background: isMine ? theme.greenBg : theme.surfaceAlt,
+        border: `1px solid ${isMine ? 'color-mix(in srgb, var(--pm-green) 35%, var(--pm-border))' : theme.border}`,
         borderRadius: 10,
       }}
     >
@@ -116,8 +102,8 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
           width: 36,
           height: 36,
           borderRadius: 8,
-          background: isPending ? C.pendingBg : color.bg,
-          color: isPending ? C.pending : color.fg,
+          background: isPending ? theme.warmBg : color.bg,
+          color: isPending ? theme.warm : color.fg,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -135,7 +121,7 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
           style={{
             fontSize: 13,
             fontWeight: 700,
-            color: C.text,
+            color: theme.text,
             display: 'flex',
             alignItems: 'center',
             gap: 6,
@@ -145,12 +131,12 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
           }}
         >
           {team.name}
-          {isMine && <span style={{ fontSize: 10, fontWeight: 700, color: C.green }}>(dit hold)</span>}
+          {isMine && <span style={{ fontSize: 10, fontWeight: 700, color: theme.green }}>(dit hold)</span>}
         </div>
         <div
           style={{
             fontSize: 11,
-            color: C.textMid,
+            color: theme.textMid,
             marginTop: 2,
             display: 'flex',
             alignItems: 'center',
@@ -159,7 +145,7 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
           }}
         >
           <span>{team.player1_name}</span>
-          <span style={{ color: C.textDim }}>+</span>
+          <span style={{ color: theme.textLight }}>+</span>
           <span>{team.player2_name}</span>
           {isPending && (
             <span
@@ -167,8 +153,8 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
                 marginLeft: 4,
                 fontSize: 10,
                 fontWeight: 700,
-                color: C.pending,
-                background: C.pendingBg,
+                color: theme.warm,
+                background: theme.warmBg,
                 padding: '1px 6px',
                 borderRadius: 4,
               }}
@@ -195,8 +181,8 @@ function TeamRow({ team, isMine, onPlayer1Click, onPlayer2Click, onKick, kickBus
             height: 22,
             borderRadius: '50%',
             border: 'none',
-            background: '#DC2626',
-            color: '#FFFFFF',
+            background: theme.red,
+            color: theme.onAccent,
             fontSize: 12,
             fontWeight: 700,
             cursor: kickBusy ? 'wait' : 'pointer',
@@ -222,7 +208,7 @@ function EmptyTeamSlot() {
         alignItems: 'center',
         gap: 12,
         padding: '10px 12px',
-        border: `1.5px dashed ${C.border}`,
+        border: `1.5px dashed ${theme.border}`,
         borderRadius: 10,
         background: 'transparent',
       }}
@@ -233,22 +219,22 @@ function EmptyTeamSlot() {
           width: 36,
           height: 36,
           borderRadius: 8,
-          border: `1.5px dashed ${C.border}`,
+          border: `1.5px dashed ${theme.border}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: C.textDim,
+          color: theme.textLight,
           flexShrink: 0,
         }}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <line x1="7" y1="2" x2="7" y2="12" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-          <line x1="2" y1="7" x2="12" y2="7" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+          <line x1="7" y1="2" x2="7" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.textDim }}>Ledig holdplads</div>
-        <div style={{ fontSize: 11, color: C.textDim }}>2 spillere</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: theme.textLight }}>Ledig holdplads</div>
+        <div style={{ fontSize: 11, color: theme.textLight }}>2 spillere</div>
       </div>
     </div>
   );
@@ -277,10 +263,10 @@ export function LigaOpenCard({
     <div
       className="pm-ui-card"
       style={{
-        background: C.white,
-        border: `1px solid ${C.border}`,
+        background: theme.surface,
+        border: `1px solid ${theme.border}`,
         borderRadius: 16,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 14px rgba(0,0,0,0.04)',
+        boxShadow: theme.shadow,
         overflow: 'hidden',
       }}
     >
@@ -288,7 +274,7 @@ export function LigaOpenCard({
       <div
         style={{
           background: HEADER_GRADIENT,
-          color: C.white,
+          color: theme.onAccent,
           padding: '16px 18px',
           position: 'relative',
         }}
@@ -332,7 +318,7 @@ export function LigaOpenCard({
               padding: '4px 10px',
               borderRadius: 999,
               background: 'rgba(255,255,255,0.18)',
-              color: C.white,
+              color: theme.onAccent,
               backdropFilter: 'blur(4px)',
               whiteSpace: 'nowrap',
             }}
@@ -345,14 +331,14 @@ export function LigaOpenCard({
       <div style={{ padding: '14px 16px' }}>
         {/* Progress */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: C.textMid }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: theme.textMid }}>
             {filled} af {maxTeams} hold tilmeldt
           </span>
           <span
             style={{
               fontSize: 11,
               fontWeight: 700,
-              color: isFull ? C.green : isAlmostFull ? C.amber : C.green,
+              color: isFull ? theme.green : isAlmostFull ? theme.warm : theme.green,
               textAlign: 'right',
             }}
           >
@@ -361,7 +347,7 @@ export function LigaOpenCard({
               : `${emptySlots} ${emptySlots === 1 ? 'plads' : 'pladser'} tilbage`}
           </span>
         </div>
-        <div style={{ height: 5, borderRadius: 3, background: C.border, overflow: 'hidden', marginBottom: 14 }}>
+        <div style={{ height: 5, borderRadius: 3, background: theme.border, overflow: 'hidden', marginBottom: 14 }}>
           <div
             style={{
               width: `${fillPct}%`,
@@ -374,7 +360,7 @@ export function LigaOpenCard({
 
         {/* Description */}
         {league.description && (
-          <div style={{ fontSize: 12, color: C.textMid, fontStyle: 'italic', marginBottom: 12, lineHeight: 1.45 }}>
+          <div style={{ fontSize: 12, color: theme.textMid, fontStyle: 'italic', marginBottom: 12, lineHeight: 1.45 }}>
             {league.description}
           </div>
         )}
@@ -402,14 +388,14 @@ export function LigaOpenCard({
           style={{
             marginTop: 14,
             paddingTop: 12,
-            borderTop: `1px solid ${C.border}`,
+            borderTop: `1px solid ${theme.border}`,
             display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'center',
             gap: 14,
             fontSize: 10,
             fontWeight: 500,
-            color: C.textDim,
+            color: theme.textLight,
           }}
         >
           {totalRounds && <span>⏱ {totalRounds} runder</span>}

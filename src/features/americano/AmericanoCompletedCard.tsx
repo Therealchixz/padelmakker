@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { CalendarDays, ChevronDown, Trophy } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { isAvatarUrl } from '../../lib/avatarUpload'
+import { theme } from '../../lib/platformTheme'
 import type { AmericanoMatchRow, AmericanoTournament } from './types'
 import {
   americanoOutcomeColors,
@@ -9,26 +10,6 @@ import {
   americanoViewerStatusLabel,
   userIsOnCourtInAmericanoMatch,
 } from './americanoOutcomeColors'
-
-const C = {
-  white: '#FFFFFF',
-  border: '#E2E8F0',
-  text: '#0B1120',
-  textMid: '#3E4C63',
-  textDim: '#94A3B8',
-  accent: '#1D4ED8',
-  surfaceAlt: '#F1F5F9',
-  trophyBg: '#FEF3C7',
-  trophyText: '#92400E',
-  trophyBorder: '#FCD34D',
-  gold: '#D97706',
-  silver: '#94A3B8',
-  bronze: '#B45309',
-  green: '#059669',
-  greenBg: '#D1FAE5',
-  red: '#DC2626',
-  redBg: '#FEE2E2',
-}
 
 type PartMin = {
   id: string
@@ -46,9 +27,9 @@ type AmericanoEloSnap = {
 }
 
 function eloDeltaColor(delta: number) {
-  if (delta > 0) return C.green
-  if (delta < 0) return C.red
-  return C.textMid
+  if (delta > 0) return theme.green
+  if (delta < 0) return theme.red
+  return theme.textMid
 }
 
 function coercePointsPerMatch(t: AmericanoTournament): 16 | 24 | 32 {
@@ -354,10 +335,10 @@ export function AmericanoCompletedCard({
     <div
       className="pm-ui-card"
       style={{
-        background: C.white,
-        border: `1px solid ${C.border}`,
+        background: theme.surface,
+        border: `1px solid ${theme.border}`,
         borderRadius: 16,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 14px rgba(0,0,0,0.04)',
+        boxShadow: theme.shadow,
         overflow: 'hidden',
       }}
     >
@@ -365,7 +346,7 @@ export function AmericanoCompletedCard({
       <div
         style={{
           background: 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)',
-          color: C.white,
+          color: theme.onAccent,
           padding: '16px 18px',
         }}
       >
@@ -422,7 +403,7 @@ export function AmericanoCompletedCard({
               padding: '4px 10px',
               borderRadius: 999,
               background: 'rgba(255,255,255,0.22)',
-              color: C.white,
+              color: theme.onAccent,
               whiteSpace: 'nowrap',
               display: 'inline-flex',
               alignItems: 'center',
@@ -512,8 +493,8 @@ export function AmericanoCompletedCard({
         >
           <div
             style={{
-              background: C.surfaceAlt,
-              border: `1px solid ${C.border}`,
+              background: theme.surfaceAlt,
+              border: `1px solid ${theme.border}`,
               borderRadius: 10,
               padding: '8px 10px',
             }}
@@ -522,21 +503,21 @@ export function AmericanoCompletedCard({
               style={{
                 fontSize: 10,
                 fontWeight: 700,
-                color: C.textDim,
+                color: theme.textLight,
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
               }}
             >
               Din placering
             </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: C.text, marginTop: 2 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: theme.text, marginTop: 2 }}>
               {summaryReady ? (myPlacement ? `#${myPlacement}` : '–') : '…'}
             </div>
           </div>
           <div
             style={{
-              background: C.surfaceAlt,
-              border: `1px solid ${C.border}`,
+              background: theme.surfaceAlt,
+              border: `1px solid ${theme.border}`,
               borderRadius: 10,
               padding: '8px 10px',
             }}
@@ -545,21 +526,21 @@ export function AmericanoCompletedCard({
               style={{
                 fontSize: 10,
                 fontWeight: 700,
-                color: C.textDim,
+                color: theme.textLight,
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
               }}
             >
               Dine point
             </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: C.text, marginTop: 2 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: theme.text, marginTop: 2 }}>
               {summaryReady ? (myPoints != null ? myPoints : '–') : '…'}
             </div>
           </div>
           <div
             style={{
-              background: C.surfaceAlt,
-              border: `1px solid ${C.border}`,
+              background: theme.surfaceAlt,
+              border: `1px solid ${theme.border}`,
               borderRadius: 10,
               padding: '8px 10px',
             }}
@@ -568,7 +549,7 @@ export function AmericanoCompletedCard({
               style={{
                 fontSize: 10,
                 fontWeight: 700,
-                color: C.textDim,
+                color: theme.textLight,
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
               }}
@@ -580,7 +561,7 @@ export function AmericanoCompletedCard({
                 fontSize: 18,
                 fontWeight: 800,
                 marginTop: 2,
-                color: summaryReady && myElo ? eloDeltaColor(myElo.change) : C.textDim,
+                color: summaryReady && myElo ? eloDeltaColor(myElo.change) : theme.textLight,
               }}
             >
               {summaryReady
@@ -600,7 +581,7 @@ export function AmericanoCompletedCard({
             style={{
               fontSize: 10,
               fontWeight: 700,
-              color: C.textDim,
+              color: theme.textLight,
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               marginBottom: 8,
@@ -644,12 +625,12 @@ export function AmericanoCompletedCard({
                       height: 44,
                       borderRadius: '50%',
                       background: color,
-                      color: C.white,
+                      color: theme.onAccent,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontWeight: 800,
-                      border: `2.5px solid ${C.white}`,
+                      border: `2.5px solid ${theme.surface}`,
                       boxShadow: `0 1px 4px ${color}55`,
                       overflow: 'hidden',
                     }}
@@ -671,7 +652,7 @@ export function AmericanoCompletedCard({
                     style={{
                       width: '100%',
                       background: `linear-gradient(180deg, ${color} 0%, ${color}CC 100%)`,
-                      color: C.white,
+                      color: theme.onAccent,
                       borderRadius: '10px 10px 4px 4px',
                       padding: `${topSpacer}px 6px 10px`,
                       display: 'flex',
@@ -723,7 +704,7 @@ export function AmericanoCompletedCard({
             style={{
               fontSize: 10,
               fontWeight: 700,
-              color: C.textDim,
+              color: theme.textLight,
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               marginBottom: 8,
@@ -738,8 +719,8 @@ export function AmericanoCompletedCard({
                   <div
                     key={`hl-${i}`}
                     style={{
-                      background: C.greenBg,
-                      border: `1px solid ${C.green}33`,
+                      background: theme.greenBg,
+                      border: `1px solid ${theme.green}33`,
                       borderRadius: 10,
                       padding: '8px 10px',
                       display: 'flex',
@@ -751,10 +732,10 @@ export function AmericanoCompletedCard({
                       💪
                     </span>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: C.green }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: theme.green }}>
                         Din bedste kamp
                       </div>
-                      <div style={{ fontSize: 12, color: C.text, marginTop: 1 }}>
+                      <div style={{ fontSize: 12, color: theme.text, marginTop: 1 }}>
                         Med {h.partnerName} mod {h.opponents[0]} & {h.opponents[1]} ({h.a}–{h.b})
                       </div>
                     </div>
@@ -766,8 +747,8 @@ export function AmericanoCompletedCard({
                   <div
                     key={`hl-${i}`}
                     style={{
-                      background: '#FEF3C7',
-                      border: `1px solid #FCD34D`,
+                      background: theme.warmBg,
+                      border: `1px solid color-mix(in srgb, var(--pm-warm) 45%, var(--pm-border))`,
                       borderRadius: 10,
                       padding: '8px 10px',
                       display: 'flex',
@@ -779,10 +760,10 @@ export function AmericanoCompletedCard({
                       🔥
                     </span>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: C.trophyText }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: theme.warm }}>
                         Tætteste kamp
                       </div>
-                      <div style={{ fontSize: 12, color: C.text, marginTop: 1 }}>
+                      <div style={{ fontSize: 12, color: theme.text, marginTop: 1 }}>
                         {h.mine[0]} & {h.mine[1]} vs {h.theirs[0]} & {h.theirs[1]} ({h.a}–{h.b})
                       </div>
                     </div>
@@ -793,8 +774,8 @@ export function AmericanoCompletedCard({
                 <div
                   key={`hl-${i}`}
                   style={{
-                    background: '#DBEAFE',
-                    border: `1px solid ${C.accent}33`,
+                    background: theme.accentBg,
+                    border: `1px solid ${theme.accent}33`,
                     borderRadius: 10,
                     padding: '8px 10px',
                     display: 'flex',
@@ -806,10 +787,10 @@ export function AmericanoCompletedCard({
                     🤝
                   </span>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: C.accent }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: theme.accent }}>
                       Bedste makker
                     </div>
-                    <div style={{ fontSize: 12, color: C.text, marginTop: 1 }}>
+                    <div style={{ fontSize: 12, color: theme.text, marginTop: 1 }}>
                       {h.partnerName} — {h.wins} sejre ud af {h.played} kamp
                       {h.played === 1 ? '' : 'e'}
                     </div>
@@ -835,17 +816,17 @@ export function AmericanoCompletedCard({
           width: '100%',
           padding: '12px 16px',
           border: 'none',
-          borderTop: `1px solid ${C.border}`,
+          borderTop: `1px solid ${theme.border}`,
           background: 'transparent',
           cursor: 'pointer',
           textAlign: 'left',
         }}
       >
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.accent }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: theme.accent }}>
             {open ? 'Skjul fuld stilling og resultater' : 'Se fuld stilling og resultater'}
           </div>
-          <div style={{ fontSize: 11, color: C.textDim, marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
             {!summaryReady
               ? 'Vi beregner placering og kampresultater…'
               : `Samlet point + alle kampe (${reportedMatches}/${sortedMatches.length} registreret)`}
@@ -853,7 +834,7 @@ export function AmericanoCompletedCard({
         </div>
         <ChevronDown
           size={18}
-          color={C.textDim}
+          color={theme.textLight}
           strokeWidth={2}
           style={{
             flexShrink: 0,
@@ -865,14 +846,14 @@ export function AmericanoCompletedCard({
       </button>
 
       {open ? (
-        <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${C.border}` }}>
+        <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${theme.border}` }}>
           {loading && (
-            <div style={{ fontSize: 12, color: C.textDim, paddingTop: 12 }}>
+            <div style={{ fontSize: 12, color: theme.textLight, paddingTop: 12 }}>
               Henter resultater…
             </div>
           )}
           {fetchErr && !loading && (
-            <div style={{ fontSize: 12, color: C.red, paddingTop: 12 }}>{fetchErr}</div>
+            <div style={{ fontSize: 12, color: theme.red, paddingTop: 12 }}>{fetchErr}</div>
           )}
           {!loading && matches !== undefined && (
             <>
@@ -880,7 +861,7 @@ export function AmericanoCompletedCard({
                 style={{
                   fontSize: 11,
                   fontWeight: 700,
-                  color: C.textDim,
+                  color: theme.textLight,
                   marginTop: 12,
                   marginBottom: 8,
                   textTransform: 'uppercase',
@@ -890,14 +871,14 @@ export function AmericanoCompletedCard({
                 Samlet stilling
               </div>
               {leaderboard.length === 0 ? (
-                <div style={{ fontSize: 12, color: C.textDim }}>Ingen deltagere.</div>
+                <div style={{ fontSize: 12, color: theme.textLight }}>Ingen deltagere.</div>
               ) : (
                 <ol
                   style={{
                     margin: 0,
                     paddingLeft: 18,
                     fontSize: 13,
-                    color: C.textMid,
+                    color: theme.textMid,
                     lineHeight: 1.65,
                   }}
                 >
@@ -908,21 +889,21 @@ export function AmericanoCompletedCard({
                     return (
                       <li key={row.id}>
                         <div>
-                          <span style={{ color: C.text, fontWeight: idx === 0 ? 700 : 500 }}>
+                          <span style={{ color: theme.text, fontWeight: idx === 0 ? 700 : 500 }}>
                             {row.name}
                           </span>
                           {isMe ? (
-                            <span style={{ color: C.accent, fontWeight: 600 }}> (dig)</span>
+                            <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
                           ) : null}
                           {' — '}
-                          <strong style={{ color: C.text }}>{row.points}</strong> point
+                          <strong style={{ color: theme.text }}>{row.points}</strong> point
                         </div>
                         <div
                           style={{
                             marginTop: 1,
                             fontSize: 11,
                             fontWeight: 700,
-                            color: eloSnap ? eloDeltaColor(eloSnap.change) : C.textDim,
+                            color: eloSnap ? eloDeltaColor(eloSnap.change) : theme.textLight,
                           }}
                         >
                           {eloSnap
@@ -941,7 +922,7 @@ export function AmericanoCompletedCard({
                 style={{
                   fontSize: 11,
                   fontWeight: 700,
-                  color: C.textDim,
+                  color: theme.textLight,
                   marginTop: 16,
                   marginBottom: 8,
                   textTransform: 'uppercase',
@@ -952,7 +933,7 @@ export function AmericanoCompletedCard({
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {sortedMatches.length === 0 ? (
-                  <div style={{ fontSize: 12, color: C.textDim }}>
+                  <div style={{ fontSize: 12, color: theme.textLight }}>
                     Ingen kampe i turneringen.
                   </div>
                 ) : (
@@ -998,12 +979,12 @@ export function AmericanoCompletedCard({
                         key={m.id}
                         style={{
                           padding: '10px 12px',
-                          background: C.white,
+                          background: theme.surface,
                           borderRadius: 8,
-                          border: `1px solid ${C.border}`,
+                          border: `1px solid ${theme.border}`,
                           borderLeft: `4px solid ${mpal.border}`,
                           fontSize: 12,
-                          color: C.text,
+                          color: theme.text,
                         }}
                       >
                         <div
@@ -1027,11 +1008,11 @@ export function AmericanoCompletedCard({
                               style={{
                                 fontSize: 10,
                                 fontWeight: 700,
-                                color: C.textDim,
+                                color: theme.textLight,
                                 letterSpacing: '0.04em',
                                 textTransform: 'uppercase',
-                                background: C.surfaceAlt,
-                                border: `1px solid ${C.border}`,
+                                background: theme.surfaceAlt,
+                                border: `1px solid ${theme.border}`,
                                 borderRadius: 999,
                                 padding: '2px 8px',
                               }}
@@ -1054,7 +1035,7 @@ export function AmericanoCompletedCard({
                             </span>
                           </div>
                           <span
-                            style={{ fontSize: 10, color: C.textDim, fontWeight: 700 }}
+                            style={{ fontSize: 10, color: theme.textLight, fontWeight: 700 }}
                           >
                             #{i + 1}
                           </span>
@@ -1069,21 +1050,21 @@ export function AmericanoCompletedCard({
                               gap: 8,
                               borderRadius: 8,
                               padding: '6px 8px',
-                              background: teamAHighlighted ? mpal.bg : C.surfaceAlt,
-                              border: `1px solid ${teamAHighlighted ? mpal.border : C.border}`,
+                              background: teamAHighlighted ? mpal.bg : theme.surfaceAlt,
+                              border: `1px solid ${teamAHighlighted ? mpal.border : theme.border}`,
                             }}
                           >
                             <div
                               style={{
                                 minWidth: 0,
                                 lineHeight: 1.35,
-                                color: teamAHighlighted ? mpal.text : C.text,
+                                color: teamAHighlighted ? mpal.text : theme.text,
                               }}
                             >
                               <span style={{ fontWeight: 700 }}>{n1}</span> &{' '}
                               <span style={{ fontWeight: 700 }}>{n2}</span>
                               {meOnA ? (
-                                <span style={{ color: C.accent, fontWeight: 700 }}>
+                                <span style={{ color: theme.accent, fontWeight: 700 }}>
                                   {' '}
                                   (jeres hold)
                                 </span>
@@ -1095,7 +1076,7 @@ export function AmericanoCompletedCard({
                                 textAlign: 'center',
                                 fontSize: 14,
                                 fontWeight: 800,
-                                color: teamAHighlighted ? mpal.text : C.textMid,
+                                color: teamAHighlighted ? mpal.text : theme.textMid,
                               }}
                             >
                               {ok ? a : '–'}
@@ -1105,7 +1086,7 @@ export function AmericanoCompletedCard({
                           <div
                             style={{
                               fontSize: 10,
-                              color: C.textDim,
+                              color: theme.textLight,
                               textAlign: 'center',
                               textTransform: 'uppercase',
                               letterSpacing: '0.04em',
@@ -1122,21 +1103,21 @@ export function AmericanoCompletedCard({
                               gap: 8,
                               borderRadius: 8,
                               padding: '6px 8px',
-                              background: teamBHighlighted ? mpal.bg : C.surfaceAlt,
-                              border: `1px solid ${teamBHighlighted ? mpal.border : C.border}`,
+                              background: teamBHighlighted ? mpal.bg : theme.surfaceAlt,
+                              border: `1px solid ${teamBHighlighted ? mpal.border : theme.border}`,
                             }}
                           >
                             <div
                               style={{
                                 minWidth: 0,
                                 lineHeight: 1.35,
-                                color: teamBHighlighted ? mpal.text : C.text,
+                                color: teamBHighlighted ? mpal.text : theme.text,
                               }}
                             >
                               <span style={{ fontWeight: 700 }}>{n3}</span> &{' '}
                               <span style={{ fontWeight: 700 }}>{n4}</span>
                               {meOnB ? (
-                                <span style={{ color: C.accent, fontWeight: 700 }}>
+                                <span style={{ color: theme.accent, fontWeight: 700 }}>
                                   {' '}
                                   (jeres hold)
                                 </span>
@@ -1148,7 +1129,7 @@ export function AmericanoCompletedCard({
                                 textAlign: 'center',
                                 fontSize: 14,
                                 fontWeight: 800,
-                                color: teamBHighlighted ? mpal.text : C.textMid,
+                                color: teamBHighlighted ? mpal.text : theme.textMid,
                               }}
                             >
                               {ok ? b : '–'}
@@ -1156,7 +1137,7 @@ export function AmericanoCompletedCard({
                           </div>
                         </div>
 
-                        <div style={{ marginTop: 8, fontSize: 11, color: C.textDim }}>
+                        <div style={{ marginTop: 8, fontSize: 11, color: theme.textLight }}>
                           {ok ? 'Slutresultat registreret' : 'Resultat ikke registreret'}
                         </div>
                       </div>
