@@ -18,22 +18,22 @@ DECLARE
   v_created timestamptz;
 BEGIN
   IF p_source_type = 'match_2v2' THEN
-    SELECT max(greatest(mr.updated_at, mr.created_at))
-    INTO v_ts
-    FROM public.match_results mr
-    WHERE mr.match_id = p_entity_id
-      AND mr.confirmed = true;
-
-    IF v_ts IS NOT NULL THEN
-      RETURN v_ts;
-    END IF;
-
     SELECT m.completed_at, m.created_at
     INTO v_ts, v_created
     FROM public.matches m
     WHERE m.id = p_entity_id;
 
     IF v_ts IS NOT NULL AND (v_created IS NULL OR v_ts > v_created + interval '1 minute') THEN
+      RETURN v_ts;
+    END IF;
+
+    SELECT max(mr.created_at)
+    INTO v_ts
+    FROM public.match_results mr
+    WHERE mr.match_id = p_entity_id
+      AND mr.confirmed = true;
+
+    IF v_ts IS NOT NULL THEN
       RETURN v_ts;
     END IF;
 
