@@ -460,9 +460,10 @@ export function AmericanoResultsPanel({
       if (atomicRes.error && isMissingRpcFunctionError(String(atomicRes.error.message || ''))) {
         usedLegacyFallback = true
         // Backward-compatible fallback if DB migration is not applied yet.
+        const nowIso = new Date().toISOString()
         const { error } = await supabase
           .from('americano_tournaments')
-          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .update({ status: 'completed', updated_at: nowIso, completed_at: nowIso })
           .eq('id', tournament.id)
         if (error) throw error
 

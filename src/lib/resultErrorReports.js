@@ -25,49 +25,82 @@ export function resultErrorSourceLabel(sourceType) {
   return RESULT_ERROR_SOURCE_LABELS[sourceType] || sourceType || 'Ukendt';
 }
 
+function fromTimestamp(raw) {
+  if (!raw) return null;
+  const ms = new Date(raw).getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
+
 /** 24t-frist fra kampen blev færdigspillet — ikke fra oprettelse (completed_at kan være backfill). */
 export function completionMsFor2v2(match, matchResult) {
-  const fromTs = (raw) => {
-    if (!raw) return null;
-    const ms = new Date(raw).getTime();
-    return Number.isFinite(ms) ? ms : null;
-  };
-
-  const completedMs = fromTs(match?.completed_at);
-  const createdMs = fromTs(match?.created_at);
+  const createdMs = fromTimestamp(match?.created_at);
+  const completedMs = fromTimestamp(match?.completed_at);
   if (completedMs != null && (createdMs == null || completedMs > createdMs + 60_000)) {
     return completedMs;
   }
 
   if (matchResult?.confirmed) {
-    const resultMs = fromTs(matchResult?.created_at);
+    const resultMs = fromTimestamp(matchResult?.created_at);
     if (resultMs != null) return resultMs;
   }
 
   if (match?.date) {
     const timePart = match.time ? String(match.time).trim().slice(0, 5) : '12:00';
-    const playedMs = fromTs(`${match.date}T${timePart}:00`);
+    const playedMs = fromTimestamp(`${match.date}T${timePart}:00`);
     if (playedMs != null) return playedMs;
   }
 
   return completedMs ?? null;
 }
 
+/**
+ * Americano: completed_at ved afslutning, ellers ELO-/kamp-tid (matcher DB-helper).
+ * updated_at ignoreres hvis den ligger tæt på created_at (oprettelse).
+ */
 export function completionMsForAmericano(tournament) {
-  const raw = tournament?.updated_at || tournament?.created_at;
-  if (!raw) return null;
-  const ms = new Date(raw).getTime();
-  return Number.isFinite(ms) ? ms : null;
+  const createdMs = fromTimestamp(tournament?.created_at);
+  const completedMs = fromTimestamp(tournament?.completed_at);
+  if (completedMs != null && (createdMs == null || completedMs > createdMs + 60_000)) {
+    return completedMs;
+  }
+
+  const updatedMs = fromTimestamp(tournament?.updated_at);
+  if (updatedMs != null && (createdMs == null || updatedMs > createdMs + 60_000)) {
+    return updatedMs;
+  }
+
+  if (tournament?.tournament_date) {
+    const timePart = tournament.time_slot
+      ? String(tournament.time_slot).trim().slice(0, 5)
+      : '18:00';
+    const playedMs = fromTimestamp(`${tournament.tournament_date}T${timePart}:00`);
+    if (playedMs != null) return playedMs;
+  }
+
+  return createdMs;
 }
 
+/**
+ * Liga: completed_at ved afslutning, ellers sidste rapporterede kamp / updated_at.
+ */
 export function completionMsForLeague(league) {
-  const candidates = [league?.updated_at, league?.end_date, league?.created_at];
-  for (const raw of candidates) {
-    if (!raw) continue;
-    const ms = new Date(raw).getTime();
-    if (Number.isFinite(ms)) return ms;
+  const createdMs = fromTimestamp(league?.created_at);
+  const completedMs = fromTimestamp(league?.completed_at);
+  if (completedMs != null && (createdMs == null || completedMs > createdMs + 60_000)) {
+    return completedMs;
   }
-  return null;
+
+  const updatedMs = fromTimestamp(league?.updated_at);
+  if (updatedMs != null && (createdMs == null || updatedMs > createdMs + 60_000)) {
+    return updatedMs;
+  }
+
+  if (league?.end_date) {
+    const endMs = fromTimestamp(`${league.end_date}T23:59:59`);
+    if (endMs != null) return endMs;
+  }
+
+  return createdMs;
 }
 
 export function isWithinResultErrorReportWindow(completedAtMs, nowMs = Date.now()) {
@@ -128,4 +161,17 @@ export async function fetchAdminOpenResultErrorReportsCount() {
   const { data, error } = await supabase.rpc('admin_open_result_error_reports_count');
   if (error) throw error;
   return Number(data) || 0;
+}
+
+/** Hent afslutningstid fra DB (samme logik som submit-RPC). */
+export async function fetchEntityCompletedAtMs(sourceType, entityId) {
+  const { data, error } = await supabase.rpc('_result_error_entity_completed_at', {
+    p_source_type: sourceType,
+    p_entity_id: entityId,
+  });
+  if (error) {
+    console.warn('fetchEntityCompletedAtMs:', error.message);
+    return null;
+  }
+  return fromTimestamp(data);
 }

@@ -20,6 +20,7 @@ export type AmericanoTournament = {
   status: AmericanoStatus
   created_at: string
   updated_at: string
+  completed_at?: string | null
 }
 
 export type AmericanoParticipant = {

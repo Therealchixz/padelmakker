@@ -422,8 +422,10 @@ BEGIN
 
   IF v_status <> 'completed' THEN
     UPDATE public.americano_tournaments
-    SET status = 'completed',
-        updated_at = now()
+    SET
+      status = 'completed',
+      updated_at = now(),
+      completed_at = coalesce(completed_at, now())
     WHERE id = p_tournament_id;
   END IF;
 

@@ -1060,7 +1060,11 @@ export function LigaTab({
     }
     setBusyId(league.id + '-complete');
     try {
-      const { error } = await supabase.from('leagues').update({ status: 'completed' }).eq('id', league.id);
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from('leagues')
+        .update({ status: 'completed', completed_at: nowIso, updated_at: nowIso })
+        .eq('id', league.id);
       if (error) throw error;
       showToast('Liga afsluttet!');
       await load();

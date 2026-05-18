@@ -4,6 +4,7 @@ import { theme, btn, inputStyle } from '../lib/platformTheme';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import {
   RESULT_ERROR_REASONS,
+  fetchEntityCompletedAtMs,
   fetchMyResultErrorReport,
   isWithinResultErrorReportWindow,
   resultErrorReasonLabel,
@@ -32,6 +33,11 @@ export function ReportResultErrorButton({
   const [reason, setReason] = useState('elo');
   const [details, setDetails] = useState('');
   const [busy, setBusy] = useState(false);
+  const [resolvedCompletedMs, setResolvedCompletedMs] = useState(completedAtMs ?? null);
+
+  useEffect(() => {
+    setResolvedCompletedMs(completedAtMs ?? null);
+  }, [completedAtMs]);
 
   useEffect(() => {
     if (!isCreator || !entityId) {
@@ -41,8 +47,14 @@ export function ReportResultErrorButton({
     let cancelled = false;
     (async () => {
       try {
-        const row = await fetchMyResultErrorReport(sourceType, entityId);
-        if (!cancelled) setReport(row);
+        const [row, serverMs] = await Promise.all([
+          fetchMyResultErrorReport(sourceType, entityId),
+          fetchEntityCompletedAtMs(sourceType, entityId),
+        ]);
+        if (!cancelled) {
+          setReport(row);
+          if (serverMs != null) setResolvedCompletedMs(serverMs);
+        }
       } catch (e) {
         console.warn('result error report load:', e);
       } finally {
@@ -56,8 +68,8 @@ export function ReportResultErrorButton({
 
   if (!isCreator || loading) return null;
 
-  const withinWindow = isWithinResultErrorReportWindow(completedAtMs);
-  const deadlineLabel = withinWindow ? resultErrorReportDeadlineLabel(completedAtMs) : null;
+  const withinWindow = isWithinResultErrorReportWindow(resolvedCompletedMs);
+  const deadlineLabel = withinWindow ? resultErrorReportDeadlineLabel(resolvedCompletedMs) : null;
 
   if (report) {
     return (

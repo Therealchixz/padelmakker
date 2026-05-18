@@ -91,12 +91,18 @@ BEGIN
 
     RETURN v_ts;
   ELSIF p_source_type = 'americano' THEN
-    SELECT coalesce(t.updated_at, t.created_at)
+    IF to_regprocedure('public._americano_entity_finished_at(uuid)') IS NOT NULL THEN
+      RETURN public._americano_entity_finished_at(p_entity_id);
+    END IF;
+    SELECT coalesce(t.completed_at, t.updated_at, t.created_at)
     INTO v_ts
     FROM public.americano_tournaments t
     WHERE t.id = p_entity_id;
   ELSIF p_source_type = 'league' THEN
-    SELECT coalesce(l.updated_at, l.end_date::timestamptz, l.created_at)
+    IF to_regprocedure('public._league_entity_finished_at(uuid)') IS NOT NULL THEN
+      RETURN public._league_entity_finished_at(p_entity_id);
+    END IF;
+    SELECT coalesce(l.completed_at, l.updated_at, l.end_date::timestamptz, l.created_at)
     INTO v_ts
     FROM public.leagues l
     WHERE l.id = p_entity_id;
