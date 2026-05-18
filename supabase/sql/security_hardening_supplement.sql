@@ -27,9 +27,6 @@ BEGIN
 END
 $$;
 
--- Fjern dublet-policies på messages (behold engelske navne fra hardening)
-DROP POLICY IF EXISTS "Brugere kan se egne beskeder" ON public.messages;
-DROP POLICY IF EXISTS "Brugere kan sende beskeder" ON public.messages;
-DROP POLICY IF EXISTS messages_update_read ON public.messages;
+-- Fjern dublet-policies: brug messages_rls_policy_cleanup.sql (fuld oprydning)
 
 NOTIFY pgrst, 'reload schema';

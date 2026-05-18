@@ -143,6 +143,10 @@ BEGIN
   IF to_regclass('public.messages') IS NOT NULL THEN
     ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
+    DROP POLICY IF EXISTS "Brugere kan se egne beskeder" ON public.messages;
+    DROP POLICY IF EXISTS "Brugere kan sende beskeder" ON public.messages;
+    DROP POLICY IF EXISTS messages_update_read ON public.messages;
+
     DROP POLICY IF EXISTS "Users see own messages" ON public.messages;
     CREATE POLICY "Users see own messages"
       ON public.messages
