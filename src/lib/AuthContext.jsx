@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
+import { signInWithOAuthProvider } from './authOAuth'
 import { normalizeProfileRow, buildOnboardingProfileRowPatch } from './profileUtils'
 import { applyPendingAvatar } from './avatarUpload'
 import { DEFAULT_REGION } from './platformConstants'
@@ -473,6 +474,11 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  const signInWithOAuth = async (provider, redirectPath = '/login') => {
+    if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')
+    await signInWithOAuthProvider(provider, redirectPath)
+  }
+
   const signIn = async (email, password, captchaToken = '') => {
     if (!isSupabaseConfigured) throw new Error('Supabase er ikke konfigureret')
     const token = typeof captchaToken === 'string' ? captchaToken.trim() : ''
@@ -571,6 +577,7 @@ export function AuthProvider({ children }) {
         signUp,
         signUpWithPhone,
         signIn,
+        signInWithOAuth,
         signOut,
         updateProfile,
         refreshProfile,

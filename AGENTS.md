@@ -31,6 +31,17 @@ Prettier is not configured.
 
 No test framework is configured (no Jest, Vitest, or similar).
 
+### Google / Apple login (OAuth)
+
+Enable providers in Supabase Dashboard → **Authentication** → **Providers** (Google, Apple).
+
+Under **Authentication** → **URL configuration**, add redirect URLs:
+
+- `http://localhost:5173/login` and `http://localhost:5173/opret` (local dev)
+- `https://<your-production-domain>/login` and `https://<your-production-domain>/opret`
+
+The app uses `signInWithOAuth` with PKCE; no extra env vars beyond `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+
 ### Supabase dependency
 
 The app requires two environment variables for full functionality:
