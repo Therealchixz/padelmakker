@@ -65,19 +65,7 @@ export async function reportUser({ reportedId, reason, details, context = 'dm' }
   if (error) throw error;
   const result = data || {};
   if (!result.ok) throw new Error(result.error || 'Kunne ikke sende anmeldelsen');
-
-  const adminIds = Array.isArray(result.admin_ids)
-    ? result.admin_ids
-    : [];
-  if (adminIds.length > 0 && result.notify_title && result.notify_body) {
-    void sendPushNotificationsForUsers(
-      adminIds,
-      'user_report',
-      result.notify_title,
-      result.notify_body,
-      null,
-    );
-  }
+  // Admins får in-app notifikation via report_user RPC; push kræver ikke admin_ids i svar.
 
   return result;
 }

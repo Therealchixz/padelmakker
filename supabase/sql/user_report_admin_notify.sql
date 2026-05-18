@@ -96,21 +96,7 @@ BEGIN
     END;
   END IF;
 
-  RETURN jsonb_build_object(
-    'ok', true,
-    'notify_title', 'Ny spilleranmeldelse',
-    'notify_body', format(
-      '%s har anmeldt %s (%s). Gå til Admin → Anmeldelser for at gennemgå.',
-      v_reporter_name,
-      v_reported_name,
-      v_reason_label
-    ),
-    'admin_ids', (
-      SELECT coalesce(jsonb_agg(p.id), '[]'::jsonb)
-      FROM public.profiles p
-      WHERE lower(COALESCE(p.role, '')) = 'admin'
-    )
-  );
+  RETURN jsonb_build_object('ok', true);
 END;
 $$;
 

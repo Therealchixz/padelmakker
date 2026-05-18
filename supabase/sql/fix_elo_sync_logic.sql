@@ -70,5 +70,7 @@ BEGIN
 END $$;
 
 -- Sørg for at rettighederne er på plads
-GRANT EXECUTE ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) FROM anon;
+REVOKE ALL ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) FROM authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_adjust_elo(uuid, int) TO authenticated;

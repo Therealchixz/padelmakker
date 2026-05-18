@@ -474,6 +474,15 @@ BEGIN
     RETURN jsonb_build_object('error', 'Authentication required');
   END IF;
 
+  IF current_user IN ('anon', 'authenticated') THEN
+    IF COALESCE(p_require_actor, true) AND p_actor_id IS DISTINCT FROM auth.uid() THEN
+      RETURN jsonb_build_object('error', 'Authentication required');
+    END IF;
+    IF NOT COALESCE(p_require_actor, true) THEN
+      RETURN jsonb_build_object('error', 'Not authorized');
+    END IF;
+  END IF;
+
   SELECT * INTO v_mr
   FROM public.match_results
   WHERE id = p_match_result_id;
@@ -781,7 +790,8 @@ END;
 $function$;
 
 REVOKE ALL ON FUNCTION public.apply_elo_for_match_core(uuid, uuid, boolean) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.apply_elo_for_match_core(uuid, uuid, boolean) TO authenticated;
+REVOKE ALL ON FUNCTION public.apply_elo_for_match_core(uuid, uuid, boolean) FROM anon;
+REVOKE ALL ON FUNCTION public.apply_elo_for_match_core(uuid, uuid, boolean) FROM authenticated;
 
 -- -----------------------------------------------------------------------------
 -- 4) Public wrappers

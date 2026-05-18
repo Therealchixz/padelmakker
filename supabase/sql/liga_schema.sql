@@ -64,17 +64,17 @@ CREATE POLICY leagues_select ON public.leagues
 DROP POLICY IF EXISTS leagues_admin_insert ON public.leagues;
 CREATE POLICY leagues_admin_insert ON public.leagues
   FOR INSERT TO authenticated
-  WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+  WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS leagues_admin_update ON public.leagues;
 CREATE POLICY leagues_admin_update ON public.leagues
   FOR UPDATE TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (public.is_admin());
 
 DROP POLICY IF EXISTS leagues_admin_delete ON public.leagues;
 CREATE POLICY leagues_admin_delete ON public.leagues
   FOR DELETE TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (public.is_admin());
 
 -- League participants: alle kan læse
 DROP POLICY IF EXISTS league_participants_select ON public.league_participants;
@@ -93,7 +93,7 @@ CREATE POLICY league_participants_delete ON public.league_participants
   FOR DELETE TO authenticated
   USING (
     user_id = auth.uid()
-    OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    OR public.is_admin()
   );
 
 -- League matches: alle kan læse
@@ -105,7 +105,7 @@ CREATE POLICY league_matches_select ON public.league_matches
 DROP POLICY IF EXISTS league_matches_insert ON public.league_matches;
 CREATE POLICY league_matches_insert ON public.league_matches
   FOR INSERT TO authenticated
-  WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+  WITH CHECK (public.is_admin());
 
 -- Spillere i kampen kan rapportere; admin kan alt
 DROP POLICY IF EXISTS league_matches_update ON public.league_matches;
@@ -117,5 +117,5 @@ CREATE POLICY league_matches_update ON public.league_matches
       WHERE lp.id IN (league_matches.player1_id, league_matches.player2_id)
         AND lp.user_id = auth.uid()
     )
-    OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    OR public.is_admin()
   );

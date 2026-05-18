@@ -182,5 +182,6 @@ CREATE TRIGGER elo_history_sync_profile
   EXECUTE FUNCTION public.trg_elo_history_sync_profile();
 
 REVOKE ALL ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) FROM anon;
+REVOKE ALL ON FUNCTION public.recalc_profile_stats_from_elo_history(uuid) FROM authenticated;
 REVOKE ALL ON FUNCTION public.trg_elo_history_sync_profile() FROM PUBLIC;

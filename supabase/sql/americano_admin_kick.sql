@@ -5,10 +5,4 @@ CREATE POLICY "americano_participants_admin_delete"
   ON public.americano_participants
   FOR DELETE
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = (SELECT auth.uid())
-        AND role = 'admin'
-    )
-  );
+  USING (public.is_admin());

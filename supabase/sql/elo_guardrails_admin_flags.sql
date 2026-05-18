@@ -445,7 +445,8 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.create_rating_admin_flag(text, text, text, uuid, uuid, jsonb, boolean) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.create_rating_admin_flag(text, text, text, uuid, uuid, jsonb, boolean) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_rating_admin_flag(text, text, text, uuid, uuid, jsonb, boolean) FROM anon;
+REVOKE ALL ON FUNCTION public.create_rating_admin_flag(text, text, text, uuid, uuid, jsonb, boolean) FROM authenticated;
 
 CREATE OR REPLACE FUNCTION public.detect_and_flag_suspicious_2v2_match(p_match_id uuid)
 RETURNS jsonb

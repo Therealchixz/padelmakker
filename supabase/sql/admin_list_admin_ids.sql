@@ -3,14 +3,23 @@
 
 CREATE OR REPLACE FUNCTION public.admin_list_admin_ids()
 RETURNS uuid[]
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT coalesce(array_agg(p.id), ARRAY[]::uuid[])
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Kun admins med aktiv PIN-session';
+  END IF;
+
+  RETURN coalesce(
+    array_agg(p.id ORDER BY p.id),
+    ARRAY[]::uuid[]
+  )
   FROM public.profiles p
   WHERE lower(COALESCE(p.role, '')) = 'admin';
+END;
 $$;
 
 REVOKE ALL ON FUNCTION public.admin_list_admin_ids() FROM PUBLIC;

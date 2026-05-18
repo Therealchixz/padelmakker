@@ -51,7 +51,8 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.recalc_americano_elo_from_history(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.recalc_americano_elo_from_history(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.recalc_americano_elo_from_history(uuid) FROM anon;
+REVOKE ALL ON FUNCTION public.recalc_americano_elo_from_history(uuid) FROM authenticated;
 
 CREATE OR REPLACE FUNCTION public.admin_correct_americano_tournament(
   p_tournament_id uuid,

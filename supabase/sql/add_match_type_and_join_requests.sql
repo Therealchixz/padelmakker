@@ -55,20 +55,8 @@ CREATE POLICY "join_req_delete_own" ON match_join_requests
 -- Admins bypass all RLS
 CREATE POLICY "join_req_admin" ON match_join_requests
   FOR ALL TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.id = (select auth.uid())
-      AND profiles.role = 'admin'
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.id = (select auth.uid())
-      AND profiles.role = 'admin'
-    )
-  );
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- Index for performance
 CREATE INDEX IF NOT EXISTS idx_match_join_requests_match_id ON match_join_requests(match_id);
