@@ -63,7 +63,7 @@ export function LoginPage() {
             <div style={{ background: theme.accentBg, padding: "20px", borderRadius: theme.radius, marginTop: "20px" }}>
               <p style={{ fontSize: "14px", color: theme.accent, fontWeight: 600, marginBottom: "8px" }}>✉️ Tjek din indbakke</p>
               <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5 }}>
-                Hvis der findes en konto med <strong>{email}</strong>, har vi sendt et link til at nulstille adgangskoden. Tjek også spam. Ukendte adresser får ingen mail — det er med vilje af sikkerhedshensyn.
+                Hvis der findes en konto med <strong>{email}</strong>, har vi sendt et link til at nulstille adgangskoden. Tjek også spam.
               </p>
             </div>
           ) : (
