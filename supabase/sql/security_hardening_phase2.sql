@@ -730,16 +730,24 @@ BEGIN
       WITH CHECK (public.is_admin());
 
     DROP POLICY IF EXISTS league_matches_update ON public.league_matches;
-    CREATE POLICY league_matches_update ON public.league_matches
-      FOR UPDATE TO authenticated
-      USING (
-        EXISTS (
-          SELECT 1 FROM public.league_participants lp
-          WHERE lp.id IN (league_matches.player1_id, league_matches.player2_id)
-            AND lp.user_id = auth.uid()
-        )
-        OR public.is_admin()
-      );
+
+    IF to_regclass('public.league_participants') IS NOT NULL THEN
+      CREATE POLICY league_matches_update ON public.league_matches
+        FOR UPDATE TO authenticated
+        USING (
+          EXISTS (
+            SELECT 1 FROM public.league_participants lp
+            WHERE lp.id IN (league_matches.player1_id, league_matches.player2_id)
+              AND lp.user_id = auth.uid()
+          )
+          OR public.is_admin()
+        );
+    ELSE
+      -- league_matches uden league_participants (delvis schema): kun PIN-admin
+      CREATE POLICY league_matches_update ON public.league_matches
+        FOR UPDATE TO authenticated
+        USING (public.is_admin());
+    END IF;
   END IF;
 END
 $$;
