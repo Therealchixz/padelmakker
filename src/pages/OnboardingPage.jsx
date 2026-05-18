@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { supabase } from '../lib/supabase';
+import { splitDisplayName, oauthAvatarUrl } from '../lib/authOAuth';
+import { OAuthButtons, AuthDivider } from '../components/OAuthButtons';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
@@ -16,7 +19,8 @@ import { TurnstileWidget } from '../components/TurnstileWidget';
 import { ArrowRight } from 'lucide-react';
 
 export function OnboardingPage() {
-  const { signUp } = useAuth();
+  const { signUp, user, updateProfile } = useAuth();
+  const oauthSession = Boolean(user);
   const navigate = useNavigate();
   const ask = useConfirm();
   const onboardingTopRef = useRef(null);
@@ -34,6 +38,23 @@ export function OnboardingPage() {
   useEffect(() => {
     onboardingTopRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
   }, [step]);
+
+  useEffect(() => {
+    if (!user) return;
+    const { first, last } = splitDisplayName(user.user_metadata?.full_name || user.user_metadata?.name);
+    const email = user.email || '';
+    setForm((f) => ({
+      ...f,
+      first_name: f.first_name || first,
+      last_name: f.last_name || last,
+      email: f.email || email,
+      email_confirm: f.email_confirm || email,
+    }));
+    const pic = oauthAvatarUrl(user);
+    if (pic && !avatarPreviewUrl && !avatarFile) {
+      setAvatarPreviewUrl(pic);
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps -- prefill once per OAuth session
 
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
@@ -61,11 +82,13 @@ export function OnboardingPage() {
 
     if (targetStep === 0) {
       if (!validateFirstLastName(form.first_name, form.last_name).valid) missing.push("fornavn og efternavn");
-      if (!isValidSignupEmail(form.email)) missing.push("gyldig email");
-      if (!isValidSignupEmail(form.email_confirm) || normalizedEmail !== normalizedEmailConfirm) missing.push("email skrevet ens i begge felter");
+      if (!oauthSession) {
+        if (!isValidSignupEmail(form.email)) missing.push("gyldig email");
+        if (!isValidSignupEmail(form.email_confirm) || normalizedEmail !== normalizedEmailConfirm) missing.push("email skrevet ens i begge felter");
+        if (form.password.length < 8) missing.push("adgangskode på mindst 8 tegn");
+        if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
+      }
       if (form.phone.trim().length > 0 && !isValidSignupPhone(form.phone)) missing.push("gyldigt telefonnummer");
-      if (form.password.length < 8) missing.push("adgangskode på mindst 8 tegn");
-      if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
       if (!(form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== "")) missing.push("fødselsdato");
     }
 
@@ -152,7 +175,7 @@ export function OnboardingPage() {
   };
 
   const finish = async () => {
-    if (turnstileEnabled && !captchaToken) {
+    if (!oauthSession && turnstileEnabled && !captchaToken) {
       setErr("Bekræft venligst, at du ikke er en robot.");
       return;
     }
@@ -164,6 +187,51 @@ export function OnboardingPage() {
         setErr(nameCheck.message);
         return;
       }
+      const normalizedPhone = normalizePhoneToE164(form.phone);
+      if (form.phone.trim().length > 0 && !normalizedPhone) {
+        setErr("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
+        return;
+      }
+      const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
+      const levelNum = parseFloat(form.level.match(/[\d.]+/)?.[0] || "3");
+      const profilePayload = {
+        full_name: sanitizeText(displayName),
+        name: sanitizeText(displayName),
+        level: levelNum,
+        play_style: form.style,
+        court_side: form.court_side || null,
+        area: form.area,
+        city: form.city.trim() || null,
+        availability: form.availability,
+        available_days: form.available_days,
+        bio: sanitizeText(form.bio),
+        avatar: avatarFile ? "🎾" : (oauthAvatarUrl(user) || form.avatar),
+        birth_year: parseInt(form.birth_year, 10) || null,
+        birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
+        birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
+        intent_now: form.intent_now || null,
+        preferred_partner_level: form.preferred_partner_level || null,
+        seeking_match: form.seeking_match,
+        travel_willing: form.travel_willing,
+      };
+
+      if (oauthSession) {
+        if (avatarFile) await savePendingAvatar(avatarFile);
+        await updateProfile(profilePayload);
+        const { error: metaErr } = await supabase.auth.updateUser({
+          data: {
+            ...profilePayload,
+            onboarding_completed: true,
+            onboarding_applied_to_profile: true,
+            signup_phone: normalizedPhone || null,
+          },
+        });
+        if (metaErr) throw metaErr;
+        if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(avatarPreviewUrl);
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
       if (form.password.length < 8) {
         setErr("Adgangskoden skal være mindst 8 tegn.");
         return;
@@ -184,36 +252,12 @@ export function OnboardingPage() {
         setErr("E-mailadresserne matcher ikke - tjek begge felter.");
         return;
       }
-      const normalizedPhone = normalizePhoneToE164(form.phone);
-      if (form.phone.trim().length > 0 && !normalizedPhone) {
-        setErr("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
-        return;
-      }
-      const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
-      const levelNum = parseFloat(form.level.match(/[\d.]+/)?.[0] || "3");
-      /* Vent til data URL er skrevet (ellers mangler e-mail-tag → applyPendingAvatar ved login fejler) */
       if (avatarFile) {
         await savePendingAvatar(avatarFile);
       }
       tagPendingAvatarEmail(form.email.trim());
       await signUp(form.email.trim(), form.password, {
-        full_name: sanitizeText(displayName),
-        level: levelNum,
-        play_style: form.style,
-        court_side: form.court_side || null,
-        area: form.area,
-        city: form.city.trim() || null,
-        availability: form.availability,
-        available_days: form.available_days,
-        bio: sanitizeText(form.bio),
-        avatar: avatarFile ? "🎾" : form.avatar,
-        birth_year: parseInt(form.birth_year, 10) || null,
-        birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
-        birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
-        intent_now: form.intent_now || null,
-        preferred_partner_level: form.preferred_partner_level || null,
-        seeking_match: form.seeking_match,
-        travel_willing: form.travel_willing,
+        ...profilePayload,
         onboarding_completed: true,
         signup_phone: normalizedPhone || null,
       }, turnstileEnabled ? captchaToken : "");
@@ -232,6 +276,18 @@ export function OnboardingPage() {
     <div key={0}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Velkommen! 👋</h2>
       <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "14px", lineHeight: 1.5 }}>Lad os oprette din profil.</p>
+      {oauthSession ? (
+        <div style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "26", borderRadius: "12px", padding: "12px 14px", marginBottom: "18px" }}>
+          <p style={{ color: theme.textMid, fontSize: "13px", lineHeight: 1.5, margin: 0 }}>
+            Du er logget ind med <strong>{user?.email || "din konto"}</strong>. Udfyld resten af profilen herunder.
+          </p>
+        </div>
+      ) : (
+        <>
+          <OAuthButtons redirectPath="/opret" disabled={submitting} onError={setErr} />
+          <AuthDivider />
+        </>
+      )}
       <div style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "26", borderRadius: "12px", padding: "12px 14px", marginBottom: "22px" }}>
         <div style={{ fontSize: "13px", fontWeight: 800, color: theme.accent, marginBottom: "4px" }}>
           Det bruger vi profilen til
@@ -244,6 +300,8 @@ export function OnboardingPage() {
       <input id="onb-first-name" autoComplete="given-name" value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
       <label htmlFor="onb-last-name" style={labelStyle}>Efternavn</label>
       <input id="onb-last-name" autoComplete="family-name" value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "14px" }} />
+      {!oauthSession && (
+        <>
       <label htmlFor="onb-email" style={labelStyle}>Email</label>
       <input
         id="onb-email"
@@ -287,6 +345,8 @@ export function OnboardingPage() {
           Emails matcher ikke - tjek begge felter.
         </p>
       )}
+        </>
+      )}
       <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
       <input
         id="onb-phone"
@@ -307,6 +367,8 @@ export function OnboardingPage() {
           Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).
         </p>
       )}
+      {!oauthSession && (
+        <>
       <label htmlFor="onb-password" style={labelStyle}>Adgangskode</label>
       <input id="onb-password" value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "10px" }} />
       <label htmlFor="onb-password-confirm" style={labelStyle}>Bekræft adgangskode</label>
@@ -334,6 +396,8 @@ export function OnboardingPage() {
         <p style={{ color: theme.warm, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
           Adgangskoden skal være mindst 8 tegn.
         </p>
+      )}
+        </>
       )}
       <label style={{ ...labelStyle, marginBottom: "4px" }}>Fødselsdato</label>
       <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, margin: "0 0 8px" }}>
@@ -662,7 +726,7 @@ export function OnboardingPage() {
           <button onClick={step > 0 ? () => setStep(s => s - 1) : cancelOnboarding} style={btn(false)}>{step > 0 ? "← Tilbage" : "Annuller"}</button>
           {step < 3
             ? <button type="button" disabled={!canNext()} onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.45, cursor: canNext() ? "pointer" : "not-allowed" }}>Næste <ArrowRight size={15} /></button>
-            : <button onClick={finish} disabled={submitting || (turnstileEnabled && !captchaToken)} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
+            : <button onClick={finish} disabled={submitting || (!oauthSession && turnstileEnabled && !captchaToken)} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
           }
         </div>
         <PublicLegalFooter />

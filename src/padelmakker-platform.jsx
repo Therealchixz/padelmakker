@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react"
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
+import { isOnboardingComplete } from "./lib/profileUtils";
 import { font, theme } from "./lib/platformTheme";
 import { ConfirmDialogProvider } from "./lib/ConfirmDialogProvider";
 import { LandingPage } from "./pages/LandingPage";
@@ -38,9 +39,11 @@ function shouldRequirePhoneVerification(authUser) {
 
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
-  const isAuthedAndLoaded = Boolean(user && profile)
-  const requiresPhoneVerification = isAuthedAndLoaded && shouldRequirePhoneVerification(user)
-  const defaultAuthedPath = requiresPhoneVerification ? "/opret/bekraeft-telefon" : "/dashboard"
+  const hasProfile = Boolean(user && profile);
+  const onboardingComplete = hasProfile && isOnboardingComplete(user, profile);
+  const canUseApp = onboardingComplete;
+  const requiresPhoneVerification = canUseApp && shouldRequirePhoneVerification(user);
+  const defaultAuthedPath = requiresPhoneVerification ? "/opret/bekraeft-telefon" : "/dashboard";
   const [toast, setToast] = useState(null);
   const [resetMode, setResetMode] = useState(false);
   const toastTimerRef = useRef(null);
@@ -119,14 +122,14 @@ export default function PadelMakker() {
           }
         >
           <Routes>
-            <Route path="/" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LandingPage />} />
-            <Route path="/login" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <LoginPageLazy />} />
-            <Route path="/opret" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <OnboardingPageLazy />} />
-            <Route path="/opret/bekraeft-email" element={isAuthedAndLoaded ? <Navigate to={defaultAuthedPath} replace /> : <SignupEmailSentPageLazy />} />
+            <Route path="/" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : hasProfile ? <Navigate to="/opret" replace /> : <LandingPage />} />
+            <Route path="/login" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : hasProfile ? <Navigate to="/opret" replace /> : <LoginPageLazy />} />
+            <Route path="/opret" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : <OnboardingPageLazy />} />
+            <Route path="/opret/bekraeft-email" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : <SignupEmailSentPageLazy />} />
             <Route
               path="/opret/bekraeft-telefon"
               element={
-                isAuthedAndLoaded
+                canUseApp
                   ? (requiresPhoneVerification ? <PhoneVerificationPageLazy /> : <Navigate to="/dashboard" replace />)
                   : <PhoneVerificationPageLazy />
               }
@@ -143,21 +146,25 @@ export default function PadelMakker() {
             <Route
               path="/dashboard"
               element={
-                isAuthedAndLoaded
+                canUseApp
                   ? (requiresPhoneVerification
                       ? <Navigate to="/opret/bekraeft-telefon" replace />
                       : <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />)
-                  : <Navigate to="/" replace />
+                  : hasProfile
+                    ? <Navigate to="/opret" replace />
+                    : <Navigate to="/" replace />
               }
             />
             <Route
               path="/dashboard/:tab"
               element={
-                isAuthedAndLoaded
+                canUseApp
                   ? (requiresPhoneVerification
                       ? <Navigate to="/opret/bekraeft-telefon" replace />
                       : <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />)
-                  : <Navigate to="/" replace />
+                  : hasProfile
+                    ? <Navigate to="/opret" replace />
+                    : <Navigate to="/" replace />
               }
             />
             <Route path="*" element={<NotFoundPageLazy />} />
