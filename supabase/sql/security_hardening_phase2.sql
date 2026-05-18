@@ -199,9 +199,6 @@ BEGIN
 END
 $$;
 
-REVOKE ALL ON FUNCTION public.admin_list_admin_ids() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_list_admin_ids() FROM anon;
-
 -- apply_elo_for_match_core: klienter skal kun bruge apply_elo_for_match (wrapper).
 -- Genkør apply_elo_for_match_core fra elo_v2_glicko2_shadow.sql hvis I mangler auth-bind;
 -- den fil er opdateret med p_actor_id = auth.uid() når require_actor er true.
@@ -229,7 +226,15 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.admin_list_admin_ids() FROM PUBLIC;
+DO $$
+BEGIN
+  IF to_regprocedure('public.admin_list_admin_ids()') IS NOT NULL THEN
+    REVOKE ALL ON FUNCTION public.admin_list_admin_ids() FROM PUBLIC;
+    REVOKE ALL ON FUNCTION public.admin_list_admin_ids() FROM anon;
+  END IF;
+END
+$$;
+
 GRANT EXECUTE ON FUNCTION public.admin_list_admin_ids() TO authenticated;
 
 -- ─── 4) Resultat-bekræftelse: admin = PIN-verificeret ────────────────────────
