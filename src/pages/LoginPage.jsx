@@ -61,12 +61,14 @@ export function LoginPage() {
           <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Glemt adgangskode</h1>
           {forgotSent ? (
             <div style={{ background: theme.accentBg, padding: "20px", borderRadius: theme.radius, marginTop: "20px" }}>
-              <p style={{ fontSize: "14px", color: theme.accent, fontWeight: 600, marginBottom: "8px" }}>✉️ Mail sendt!</p>
-              <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5 }}>Tjek din indbakke på <strong>{email}</strong> og følg linket for at nulstille din adgangskode.</p>
+              <p style={{ fontSize: "14px", color: theme.accent, fontWeight: 600, marginBottom: "8px" }}>✉️ Tjek din indbakke</p>
+              <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5 }}>
+                Hvis der findes en konto med <strong>{email}</strong>, har vi sendt et link til at nulstille adgangskoden. Tjek også spam. Ukendte adresser får ingen mail — det er med vilje af sikkerhedshensyn.
+              </p>
             </div>
           ) : (
             <>
-              <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Indtast din email, så sender vi et link til at nulstille din adgangskode.</p>
+              <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Indtast din email. Hvis der findes en konto, sender vi et link til at nulstille adgangskoden.</p>
               <label htmlFor="forgot-email" style={labelStyle}>Email</label>
               <input id="forgot-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
               {turnstileEnabled && (
