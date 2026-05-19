@@ -1,55 +1,3 @@
--- =============================================================================
--- Americano: separat ELO-system (adskilt fra normal 2v2 ELO)
--- - Gemmer rating i profiles.americano_elo_rating
--- - Logger ændringer pr. turnering i americano_elo_history
--- - Beregner multiplayer-ELO ud fra slutstilling (sum af kamp-point)
--- - Dynamisk K for mere action tidligt:
---     americano_played 0-4  -> K=72
---     americano_played 5-19 -> K=56
---     americano_played 20+  -> K=40
--- =============================================================================
-
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS americano_elo_rating integer NOT NULL DEFAULT 1000;
-
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS americano_played integer NOT NULL DEFAULT 0;
-
-CREATE TABLE IF NOT EXISTS public.americano_elo_history (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  tournament_id uuid NOT NULL REFERENCES public.americano_tournaments (id) ON DELETE CASCADE,
-  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  old_rating integer NOT NULL,
-  new_rating integer NOT NULL,
-  change integer NOT NULL,
-  points integer NOT NULL DEFAULT 0,
-  placement integer NOT NULL,
-  participant_count integer NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (tournament_id, user_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_americano_elo_history_tournament ON public.americano_elo_history (tournament_id);
-CREATE INDEX IF NOT EXISTS idx_americano_elo_history_user_created ON public.americano_elo_history (user_id, created_at DESC);
-
-ALTER TABLE public.americano_elo_history ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS americano_elo_history_select_authenticated ON public.americano_elo_history;
-CREATE POLICY americano_elo_history_select_authenticated ON public.americano_elo_history
-  FOR SELECT TO authenticated USING (true);
-
-DROP POLICY IF EXISTS americano_elo_history_insert_deny ON public.americano_elo_history;
-CREATE POLICY americano_elo_history_insert_deny ON public.americano_elo_history
-  FOR INSERT TO authenticated WITH CHECK (false);
-
-DROP POLICY IF EXISTS americano_elo_history_update_deny ON public.americano_elo_history;
-CREATE POLICY americano_elo_history_update_deny ON public.americano_elo_history
-  FOR UPDATE TO authenticated USING (false) WITH CHECK (false);
-
-DROP POLICY IF EXISTS americano_elo_history_delete_deny ON public.americano_elo_history;
-CREATE POLICY americano_elo_history_delete_deny ON public.americano_elo_history
-  FOR DELETE TO authenticated USING (false);
-
 CREATE OR REPLACE FUNCTION public.apply_americano_elo_for_tournament(p_tournament_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -368,8 +316,6 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.apply_americano_elo_for_tournament(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.apply_americano_elo_for_tournament(uuid) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.complete_americano_tournament(p_tournament_id uuid)
 RETURNS jsonb
@@ -430,5 +376,3 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.complete_americano_tournament(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.complete_americano_tournament(uuid) TO authenticated;

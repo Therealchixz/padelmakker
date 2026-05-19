@@ -63,20 +63,12 @@ SET search_path = public
 SET row_security = off
 AS $confirm_guard$
 DECLARE
-  v_confirmer_is_admin boolean := false;
 BEGIN
   IF p_match_id IS NULL OR p_confirmed_by IS NULL THEN
     RETURN false;
   END IF;
 
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.profiles p
-    WHERE p.id = p_confirmed_by
-      AND p.role = 'admin'
-  ) INTO v_confirmer_is_admin;
-
-  IF v_confirmer_is_admin THEN
+  IF public.is_user_admin_verified(p_confirmed_by) THEN
     RETURN true;
   END IF;
 

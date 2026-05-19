@@ -5,7 +5,7 @@
 
 CREATE OR REPLACE FUNCTION public.admin_setup_pin(
   p_pin text,
-  p_remember_minutes integer DEFAULT 60
+  p_remember_minutes integer DEFAULT 30
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -15,22 +15,14 @@ SET row_security = off
 AS $$
 DECLARE
   v_uid uuid := auth.uid();
-  v_is_admin boolean;
   v_until timestamptz;
-  v_minutes integer := GREATEST(5, LEAST(COALESCE(p_remember_minutes, 60), 120));
+  v_minutes integer := GREATEST(5, LEAST(COALESCE(p_remember_minutes, 30), 60));
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Ikke logget ind';
   END IF;
 
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.profiles p
-    WHERE p.id = v_uid
-      AND p.role = 'admin'
-  ) INTO v_is_admin;
-
-  IF NOT v_is_admin THEN
+  IF NOT public.has_admin_role() THEN
     RAISE EXCEPTION 'Kun admins';
   END IF;
 
@@ -63,7 +55,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.admin_verify_pin(
   p_pin text,
-  p_remember_minutes integer DEFAULT 60
+  p_remember_minutes integer DEFAULT 30
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -73,24 +65,16 @@ SET row_security = off
 AS $$
 DECLARE
   v_uid uuid := auth.uid();
-  v_is_admin boolean;
   v_setting public.admin_pin_settings%ROWTYPE;
   v_until timestamptz;
   v_attempts integer;
-  v_minutes integer := GREATEST(5, LEAST(COALESCE(p_remember_minutes, 60), 120));
+  v_minutes integer := GREATEST(5, LEAST(COALESCE(p_remember_minutes, 30), 60));
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Ikke logget ind';
   END IF;
 
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.profiles p
-    WHERE p.id = v_uid
-      AND p.role = 'admin'
-  ) INTO v_is_admin;
-
-  IF NOT v_is_admin THEN
+  IF NOT public.has_admin_role() THEN
     RAISE EXCEPTION 'Kun admins';
   END IF;
 
@@ -144,6 +128,12 @@ BEGIN
   ON CONFLICT (user_id) DO UPDATE
     SET verified_until = EXCLUDED.verified_until,
         updated_at = now();
+
+  PERFORM public._admin_audit_log(
+    'pin_verified',
+    NULL,
+    jsonb_build_object('remember_minutes', v_minutes)
+  );
 
   RETURN jsonb_build_object(
     'ok', true,

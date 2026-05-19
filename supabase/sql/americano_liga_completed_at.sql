@@ -203,7 +203,6 @@ SET row_security = off
 AS $$
 DECLARE
   v_actor_id uuid;
-  v_actor_role text;
   v_creator_id uuid;
   v_status text;
   v_apply jsonb;
@@ -228,12 +227,7 @@ BEGIN
     RAISE EXCEPTION 'Turnering ikke fundet';
   END IF;
 
-  SELECT p.role
-    INTO v_actor_role
-  FROM public.profiles p
-  WHERE p.id = v_actor_id;
-
-  IF v_actor_id <> v_creator_id AND COALESCE(v_actor_role, '') <> 'admin' THEN
+  IF v_actor_id <> v_creator_id AND NOT public.is_user_admin_verified(v_actor_id) THEN
     RAISE EXCEPTION 'Kun opretter eller admin må afslutte turneringen';
   END IF;
 
