@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle } from 'lucide-react';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle, Smartphone } from 'lucide-react';
 import { fetchAdminSubTabBadges, notifyAdminsNewConsoleFlags, reportReasonLabel } from '../lib/userModeration';
 import {
   resultErrorReasonLabel,
@@ -572,6 +572,40 @@ export function AdminTab({ initialSubTab = null }) {
     if (!error) fetchUsers();
   };
 
+  const togglePhoneExempt = async (targetUser) => {
+    if (!targetUser?.id) return;
+    const next = !targetUser.phone_verification_exempt;
+    const displayName = adminDisplayName(targetUser);
+    const ok = await ask({
+      message: next
+        ? `Slå telefon-krav fra for ${displayName}? (fx testkonto — kan logge ind uden SMS-bekræftet nummer.)`
+        : `Kræv telefon-SMS igen for ${displayName}?`,
+      confirmLabel: next ? 'Ja, undtag' : 'Ja, kræv telefon',
+    });
+    if (!ok) return;
+
+    const { data, error } = await supabase.rpc('admin_set_phone_verification_exempt', {
+      p_user_id: targetUser.id,
+      p_exempt: next,
+    });
+
+    if (error) {
+      const msg = String(error.message || '');
+      await ask({
+        message: msg.includes('admin_set_phone_verification_exempt')
+          ? 'DB-funktion mangler: kør supabase/sql/phone_verification_exempt.sql i Supabase SQL Editor.'
+          : `Kunne ikke opdatere: ${msg || 'ukendt fejl'}`,
+        notice: true,
+      });
+      return;
+    }
+    if (data?.error) {
+      await ask({ message: String(data.error), notice: true });
+      return;
+    }
+    fetchUsers();
+  };
+
   const deleteUser = async (targetUser) => {
     if (!targetUser?.id) return;
     const displayName = adminDisplayName(targetUser);
@@ -678,11 +712,24 @@ export function AdminTab({ initialSubTab = null }) {
           bio: editingUser.bio,
           court_side: editingUser.court_side,
           is_banned: editingUser.is_banned,
-          ban_reason: editingUser.ban_reason
+          ban_reason: editingUser.ban_reason,
+          phone_verification_exempt: editingUser.phone_verification_exempt === true,
         })
         .eq('id', editingUser.id);
 
       if (profErr) throw profErr;
+
+      const { data: exemptData, error: exemptRpcErr } = await supabase.rpc(
+        'admin_set_phone_verification_exempt',
+        {
+          p_user_id: editingUser.id,
+          p_exempt: editingUser.phone_verification_exempt === true,
+        }
+      );
+      if (exemptRpcErr && !String(exemptRpcErr.message || '').includes('admin_set_phone_verification_exempt')) {
+        throw exemptRpcErr;
+      }
+      if (exemptData?.error) throw new Error(String(exemptData.error));
 
       const { error: eloErr } = await supabase
         .rpc('admin_adjust_elo', { 
@@ -1027,11 +1074,23 @@ export function AdminTab({ initialSubTab = null }) {
                               Bannet
                             </span>
                           )}
+                          {u.phone_verification_exempt && (
+                            <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: theme.surfaceAlt, border: "1px solid " + theme.border, color: theme.textMid, textTransform: "uppercase" }}>
+                              Ingen SMS-krav
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td style={{ padding: "12px", textAlign: "right" }}>
                         <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                           <button onClick={() => setEditingUser({ ...u })} style={{ background: "none", border: "none", cursor: "pointer", color: theme.accent }}><Edit2 size={18} /></button>
+                          <button
+                            onClick={() => togglePhoneExempt(u)}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: u.phone_verification_exempt ? theme.accent : theme.textLight }}
+                            title={u.phone_verification_exempt ? 'Kræv telefon-SMS igen' : 'Undtag fra telefon-SMS (testkonto)'}
+                          >
+                            <Smartphone size={18} />
+                          </button>
                           <button onClick={() => toggleAdmin(u)} style={{ background: "none", border: "none", cursor: "pointer", color: u.role === 'admin' ? theme.red : theme.accent }}>
                             {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
                           </button>
@@ -1073,8 +1132,20 @@ export function AdminTab({ initialSubTab = null }) {
                           Bannet
                         </span>
                       )}
+                      {u.phone_verification_exempt && (
+                        <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "100px", background: theme.surfaceAlt, border: "1px solid " + theme.border, color: theme.textMid, textTransform: "uppercase" }}>
+                          Ingen SMS
+                        </span>
+                      )}
                     </div>
                     <div style={{ display: "flex", gap: "8px" }}>
+                      <button
+                        onClick={() => togglePhoneExempt(u)}
+                        style={{ background: theme.surfaceAlt, border: "none", borderRadius: "8px", padding: "8px", color: u.phone_verification_exempt ? theme.accent : theme.textLight, display: "flex", alignItems: "center" }}
+                        title={u.phone_verification_exempt ? 'Kræv telefon-SMS' : 'Undtag telefon-SMS'}
+                      >
+                        <Smartphone size={18} />
+                      </button>
                       <button
                         onClick={() => deleteUser(u)}
                         style={{ background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", color: theme.red, display: "flex", alignItems: "center" }}
@@ -2095,6 +2166,31 @@ export function AdminTab({ initialSubTab = null }) {
                     />
                   </div>
                 )}
+              </div>
+
+              <div style={{ marginTop: "8px", padding: "12px", background: editingUser.phone_verification_exempt ? theme.accentBg : theme.surfaceAlt, borderRadius: "10px", border: "1px solid " + (editingUser.phone_verification_exempt ? theme.accent + "40" : theme.border) }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", minWidth: 0 }}>
+                    <Smartphone size={16} style={{ color: editingUser.phone_verification_exempt ? theme.accent : theme.textLight, flexShrink: 0, marginTop: "2px" }} />
+                    <div>
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: editingUser.phone_verification_exempt ? theme.accent : theme.text }}>
+                        {editingUser.phone_verification_exempt ? "Ingen telefon-SMS påkrævet" : "Telefon-SMS påkrævet ved login"}
+                      </div>
+                      <div style={{ fontSize: "11px", color: theme.textMid, lineHeight: 1.4 }}>
+                        {editingUser.phone_verification_exempt
+                          ? "Brugeren kan bruge appen uden bekræftet telefonnummer (fx testkonto)."
+                          : "Brugeren skal tilføje og bekræfte et telefonnummer næste gang de logger ind, hvis de mangler det."}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingUser({ ...editingUser, phone_verification_exempt: !editingUser.phone_verification_exempt })}
+                    style={{ ...btn(editingUser.phone_verification_exempt), background: editingUser.phone_verification_exempt ? theme.textMid : theme.accent, borderColor: editingUser.phone_verification_exempt ? theme.textMid : theme.accent, fontSize: "12px", padding: "6px 12px", flexShrink: 0 }}
+                  >
+                    {editingUser.phone_verification_exempt ? "Kræv telefon igen" : "Undtag (test)"}
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
