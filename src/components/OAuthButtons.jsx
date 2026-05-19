@@ -21,27 +21,19 @@ function GoogleIcon() {
   )
 }
 
-function AppleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M17.05 20.28c-.98.95-2.05 1.88-3.51 1.9-1.46.02-1.93-.86-3.6-.86-1.66 0-2.18.84-3.56.88-1.44.04-2.53-1.47-3.51-2.42-1.92-1.9-3.39-5.38-3.42-8.53-.03-3.15 1.66-4.86 3.26-4.86 1.52 0 2.45.86 3.6.86 1.14 0 1.84-.86 3.59-.86 1.28.02 2.64.74 3.41 2.02-3 1.64-2.51 5.9.95 7.12-.63 1.52-1.62 3.03-2.93 3.09-.66.03-1.44-.38-2.29-.38zM14.03 3.5c.73-.89 1.23-2.12 1.09-3.35-1.05.04-2.32.7-3.08 1.59-.68.78-1.27 2.03-1.11 3.23 1.18.09 2.38-.6 3.1-1.47z" />
-    </svg>
-  )
-}
-
 /**
  * @param {{ onError?: (msg: string) => void, disabled?: boolean, redirectPath?: string }} props
  */
 export function OAuthButtons({ onError, disabled = false, redirectPath = '/login' }) {
-  const [busy, setBusy] = useState(null)
+  const [busy, setBusy] = useState(false)
 
-  const start = async (provider) => {
+  const startGoogle = async () => {
     if (disabled || busy) return
-    setBusy(provider)
+    setBusy(true)
     try {
-      await signInWithOAuthProvider(provider, redirectPath)
+      await signInWithOAuthProvider('google', redirectPath)
     } catch (e) {
-      setBusy(null)
+      setBusy(false)
       onError?.(e?.message || 'Login fejlede.')
     }
   }
@@ -50,21 +42,12 @@ export function OAuthButtons({ onError, disabled = false, redirectPath = '/login
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px' }}>
       <button
         type="button"
-        disabled={disabled || !!busy}
-        onClick={() => start('google')}
+        disabled={disabled || busy}
+        onClick={startGoogle}
         style={oauthBtnStyle}
       >
         <GoogleIcon />
-        {busy === 'google' ? 'Åbner Google…' : 'Fortsæt med Google'}
-      </button>
-      <button
-        type="button"
-        disabled={disabled || !!busy}
-        onClick={() => start('apple')}
-        style={oauthBtnStyle}
-      >
-        <AppleIcon />
-        {busy === 'apple' ? 'Åbner Apple…' : 'Fortsæt med Apple'}
+        {busy ? 'Åbner Google…' : 'Fortsæt med Google'}
       </button>
     </div>
   )

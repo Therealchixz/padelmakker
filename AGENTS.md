@@ -31,9 +31,9 @@ Prettier is not configured.
 
 No test framework is configured (no Jest, Vitest, or similar).
 
-### Google / Apple login (OAuth)
+### Google login (OAuth)
 
-Enable providers in Supabase Dashboard → **Authentication** → **Providers** (Google, Apple).
+Enable **Google** in Supabase Dashboard → **Authentication** → **Providers**.
 
 Under **Authentication** → **URL configuration**, add redirect URLs:
 
