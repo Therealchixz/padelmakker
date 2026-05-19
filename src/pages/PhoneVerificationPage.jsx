@@ -297,7 +297,7 @@ export function PhoneVerificationPage() {
         <p style={{ color: theme.textMid, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>
           {mode === 'phone_change'
             ? 'Indtast telefonnummer og SMS-koden for at fortsætte.'
-            : 'Indtast SMS-koden for at fortsætte oprettelsen.'}
+            : 'Vi har sendt en 6-cifret kode til dit nummer. Indtast den her for at bekræfte kontoen.'}
         </p>
 
         {noPendingSignup && (

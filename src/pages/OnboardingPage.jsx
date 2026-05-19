@@ -19,7 +19,7 @@ import { TurnstileWidget } from '../components/TurnstileWidget';
 import { ArrowRight } from 'lucide-react';
 
 export function OnboardingPage() {
-  const { signUp, user, updateProfile } = useAuth();
+  const { signUpWithPhone, user, updateProfile } = useAuth();
   const oauthSession = Boolean(user);
   const navigate = useNavigate();
   const ask = useConfirm();
@@ -88,7 +88,9 @@ export function OnboardingPage() {
         if (form.password.length < 8) missing.push("adgangskode på mindst 8 tegn");
         if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
       }
-      if (form.phone.trim().length > 0 && !isValidSignupPhone(form.phone)) missing.push("gyldigt telefonnummer");
+      if (!isValidSignupPhone(form.phone) || !normalizePhoneToE164(form.phone)) {
+        missing.push("gyldigt telefonnummer");
+      }
       if (!(form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== "")) missing.push("fødselsdato");
     }
 
@@ -188,7 +190,7 @@ export function OnboardingPage() {
         return;
       }
       const normalizedPhone = normalizePhoneToE164(form.phone);
-      if (form.phone.trim().length > 0 && !normalizedPhone) {
+      if (!normalizedPhone) {
         setErr("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
         return;
       }
@@ -218,17 +220,22 @@ export function OnboardingPage() {
       if (oauthSession) {
         if (avatarFile) await savePendingAvatar(avatarFile);
         await updateProfile(profilePayload);
-        const { error: metaErr } = await supabase.auth.updateUser({
+        const { error: phoneErr } = await supabase.auth.updateUser({
+          phone: normalizedPhone,
           data: {
             ...profilePayload,
             onboarding_completed: true,
             onboarding_applied_to_profile: true,
-            signup_phone: normalizedPhone || null,
+            signup_phone: normalizedPhone,
+            phone_verification_required: true,
           },
         });
-        if (metaErr) throw metaErr;
+        if (phoneErr) throw phoneErr;
         if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(avatarPreviewUrl);
-        navigate('/dashboard', { replace: true });
+        navigate('/opret/bekraeft-telefon', {
+          replace: true,
+          state: { phone: normalizedPhone, email: user?.email || form.email.trim() },
+        });
         return;
       }
 
@@ -256,14 +263,22 @@ export function OnboardingPage() {
         await savePendingAvatar(avatarFile);
       }
       tagPendingAvatarEmail(form.email.trim());
-      await signUp(form.email.trim(), form.password, {
-        ...profilePayload,
-        onboarding_completed: true,
-        signup_phone: normalizedPhone || null,
-      }, turnstileEnabled ? captchaToken : "");
+      await signUpWithPhone(
+        normalizedPhone,
+        form.password,
+        form.email.trim(),
+        {
+          ...profilePayload,
+          onboarding_completed: true,
+        },
+        turnstileEnabled ? captchaToken : ''
+      );
 
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-      navigate('/opret/bekraeft-email', { replace: true, state: { email: form.email.trim() } });
+      navigate('/opret/bekraeft-telefon', {
+        replace: true,
+        state: { phone: normalizedPhone, email: form.email.trim() },
+      });
     } catch (e) {
       setErr(e.message || "Kunne ikke oprette profil.");
       if (turnstileEnabled) setCaptchaResetNonce((n) => n + 1);
@@ -347,7 +362,10 @@ export function OnboardingPage() {
       )}
         </>
       )}
-      <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
+      <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer</label>
+      <p style={{ color: theme.textMid, fontSize: '12px', margin: '0 0 8px', lineHeight: 1.45 }}>
+        Vi sender en SMS-kode for at bekræfte nummeret og mindske falske konti.
+      </p>
       <input
         id="onb-phone"
         value={form.phone}

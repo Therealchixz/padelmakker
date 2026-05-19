@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
 import { isOnboardingComplete } from "./lib/profileUtils";
+import { shouldRequirePhoneVerification } from "./lib/phoneVerification";
 import { font, theme } from "./lib/platformTheme";
 import { ConfirmDialogProvider } from "./lib/ConfirmDialogProvider";
 import { LandingPage } from "./pages/LandingPage";
@@ -31,11 +32,6 @@ const InstallAppPageLazy = lazy(() => import("./pages/InstallAppPage").then((m) 
 const NotFoundPageLazy = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
 const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage").then((m) => ({ default: m.SignupEmailSentPage })));
 const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
-
-function shouldRequirePhoneVerification(authUser) {
-  if (!authUser) return false
-  return false
-}
 
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
