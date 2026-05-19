@@ -48,9 +48,8 @@ DECLARE
     'apply_elo_for_match_system',
     'apply_glicko2_shadow_for_match',
     'detect_and_flag_suspicious_2v2_match',
-    'americano_internal_tournament_creator',
-    'americano_internal_tournament_status',
-    'americano_is_participant',
+    -- americano_internal_* / americano_is_participant: bruges i RLS SELECT-policies —
+    -- authenticated skal kunne EXECUTE (se americano_rls_visibility.sql).
     '_americano_entity_finished_at',
     '_league_entity_finished_at',
     'recalc_americano_elo_from_history',
