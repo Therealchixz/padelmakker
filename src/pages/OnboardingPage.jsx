@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { splitDisplayName, oauthAvatarUrl } from '../lib/authOAuth';
@@ -9,7 +9,12 @@ import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platfo
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
-import { validateFirstLastName } from '../lib/profileUtils';
+import { shouldSkipOnboardingAccountStep, validateFirstLastName } from '../lib/profileUtils';
+import {
+  getPhoneVerificationPath,
+  shouldRequirePhoneVerification,
+  shouldUseExistingUserPhoneFlow,
+} from '../lib/phoneVerification';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
 
 import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
@@ -19,9 +24,10 @@ import { TurnstileWidget } from '../components/TurnstileWidget';
 import { ArrowRight } from 'lucide-react';
 
 export function OnboardingPage() {
-  const { signUpWithPhone, user, updateProfile } = useAuth();
+  const { signUpWithPhone, user, profile, updateProfile } = useAuth();
   const oauthSession = Boolean(user);
   const navigate = useNavigate();
+  const location = useLocation();
   const ask = useConfirm();
   const onboardingTopRef = useRef(null);
   const turnstileSiteKey = String(import.meta.env.VITE_TURNSTILE_SITE_KEY || "").trim();
@@ -38,6 +44,38 @@ export function OnboardingPage() {
   useEffect(() => {
     onboardingTopRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
   }, [step]);
+
+  useEffect(() => {
+    if (!user || !profile) return;
+    if (shouldRequirePhoneVerification(user, profile) && shouldUseExistingUserPhoneFlow(user, profile)) {
+      const path = getPhoneVerificationPath(user, profile);
+      if (path) navigate(path, { replace: true });
+    }
+  }, [user, profile, navigate]);
+
+  useEffect(() => {
+    if (!profile) return;
+    if (location.state?.skipAccountStep || shouldSkipOnboardingAccountStep(profile)) {
+      setStep((s) => (s === 0 ? 1 : s));
+    }
+  }, [profile, location.state?.skipAccountStep]);
+
+  useEffect(() => {
+    if (!profile) return;
+    const name = String(profile.full_name || profile.name || '').trim();
+    if (!name) return;
+    const parts = name.split(/\s+/);
+    const first = parts[0] || '';
+    const last = parts.slice(1).join(' ') || '';
+    setForm((f) => ({
+      ...f,
+      first_name: f.first_name || first,
+      last_name: f.last_name || last,
+      birth_year: f.birth_year || (profile.birth_year != null ? String(profile.birth_year) : ''),
+      birth_month: f.birth_month || (profile.birth_month != null ? String(profile.birth_month) : ''),
+      birth_day: f.birth_day || (profile.birth_day != null ? String(profile.birth_day) : ''),
+    }));
+  }, [profile]);
 
   useEffect(() => {
     if (!user) return;

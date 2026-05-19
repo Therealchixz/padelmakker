@@ -389,6 +389,14 @@ export function validateDisplayName(raw) {
   return { valid: true }
 }
 
+/** Spring onboarding trin 1 (navn/telefon/alder) over — profilen har allerede disse data. */
+export function shouldSkipOnboardingAccountStep(profile) {
+  if (!profile) return false
+  const name = String(profile.full_name || profile.name || '').trim()
+  const birthOk = profile.birth_year != null && String(profile.birth_year).trim() !== ''
+  return name.length > 0 && birthOk
+}
+
 /** Har brugeren gennemført onboarding (email eller OAuth)? */
 export function isOnboardingComplete(user, profile) {
   if (!user || !profile) return false

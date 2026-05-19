@@ -3,7 +3,11 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
 import { isOnboardingComplete } from "./lib/profileUtils";
-import { shouldRequirePhoneVerification } from "./lib/phoneVerification";
+import {
+  getPhoneVerificationPath,
+  shouldRequirePhoneVerification,
+  shouldUseExistingUserPhoneFlow,
+} from "./lib/phoneVerification";
 import { font, theme } from "./lib/platformTheme";
 import { ConfirmDialogProvider } from "./lib/ConfirmDialogProvider";
 import { LandingPage } from "./pages/LandingPage";
@@ -32,14 +36,19 @@ const InstallAppPageLazy = lazy(() => import("./pages/InstallAppPage").then((m) 
 const NotFoundPageLazy = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
 const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage").then((m) => ({ default: m.SignupEmailSentPage })));
 const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
+const ExistingUserPhonePageLazy = lazy(() =>
+  import("./pages/ExistingUserPhonePage").then((m) => ({ default: m.ExistingUserPhonePage }))
+);
 
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
   const hasProfile = Boolean(user && profile);
   const onboardingComplete = hasProfile && isOnboardingComplete(user, profile);
   const canUseApp = onboardingComplete;
-  const requiresPhoneVerification = canUseApp && shouldRequirePhoneVerification(user, profile);
-  const defaultAuthedPath = requiresPhoneVerification ? "/opret/bekraeft-telefon" : "/dashboard";
+  const needsPhoneVerification = hasProfile && shouldRequirePhoneVerification(user, profile);
+  const phoneVerificationPath = needsPhoneVerification ? getPhoneVerificationPath(user, profile) : null;
+  const defaultAuthedPath = phoneVerificationPath || (canUseApp ? "/dashboard" : "/opret");
+  const profileEntryPath = phoneVerificationPath || "/opret";
   const [toast, setToast] = useState(null);
   const [resetMode, setResetMode] = useState(false);
   const toastTimerRef = useRef(null);
@@ -118,16 +127,61 @@ export default function PadelMakker() {
           }
         >
           <Routes>
-            <Route path="/" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : hasProfile ? <Navigate to="/opret" replace /> : <LandingPage />} />
-            <Route path="/login" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : hasProfile ? <Navigate to="/opret" replace /> : <LoginPageLazy />} />
-            <Route path="/opret" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : <OnboardingPageLazy />} />
+            <Route
+              path="/"
+              element={
+                needsPhoneVerification
+                  ? <Navigate to={phoneVerificationPath} replace />
+                  : canUseApp
+                    ? <Navigate to="/dashboard" replace />
+                    : hasProfile
+                      ? <Navigate to={profileEntryPath} replace />
+                      : <LandingPage />
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                needsPhoneVerification
+                  ? <Navigate to={phoneVerificationPath} replace />
+                  : canUseApp
+                    ? <Navigate to="/dashboard" replace />
+                    : hasProfile
+                      ? <Navigate to={profileEntryPath} replace />
+                      : <LoginPageLazy />
+              }
+            />
+            <Route
+              path="/konto/telefon"
+              element={
+                user && profile && needsPhoneVerification && shouldUseExistingUserPhoneFlow(user, profile)
+                  ? <ExistingUserPhonePageLazy />
+                  : user && profile && needsPhoneVerification
+                    ? <Navigate to="/opret/bekraeft-telefon" replace />
+                    : user && profile
+                      ? <Navigate to={canUseApp ? "/dashboard" : "/opret"} replace />
+                      : <Navigate to="/login" replace />
+              }
+            />
+            <Route
+              path="/opret"
+              element={
+                canUseApp
+                  ? <Navigate to={defaultAuthedPath} replace />
+                  : user && profile && needsPhoneVerification && shouldUseExistingUserPhoneFlow(user, profile)
+                    ? <Navigate to="/konto/telefon" replace />
+                    : <OnboardingPageLazy />
+              }
+            />
             <Route path="/opret/bekraeft-email" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : <SignupEmailSentPageLazy />} />
             <Route
               path="/opret/bekraeft-telefon"
               element={
-                canUseApp
-                  ? (requiresPhoneVerification ? <PhoneVerificationPageLazy /> : <Navigate to="/dashboard" replace />)
-                  : <PhoneVerificationPageLazy />
+                user && profile && needsPhoneVerification && shouldUseExistingUserPhoneFlow(user, profile)
+                  ? <Navigate to="/konto/telefon" replace />
+                  : canUseApp
+                    ? (needsPhoneVerification ? <PhoneVerificationPageLazy /> : <Navigate to="/dashboard" replace />)
+                    : <PhoneVerificationPageLazy />
               }
             />
             <Route path="/privatlivspolitik" element={<PrivacyPageLazy />} />
@@ -143,11 +197,11 @@ export default function PadelMakker() {
               path="/dashboard"
               element={
                 canUseApp
-                  ? (requiresPhoneVerification
-                      ? <Navigate to="/opret/bekraeft-telefon" replace />
+                  ? (needsPhoneVerification
+                      ? <Navigate to={phoneVerificationPath} replace />
                       : <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />)
                   : hasProfile
-                    ? <Navigate to="/opret" replace />
+                    ? <Navigate to={profileEntryPath} replace />
                     : <Navigate to="/" replace />
               }
             />
@@ -155,11 +209,11 @@ export default function PadelMakker() {
               path="/dashboard/:tab"
               element={
                 canUseApp
-                  ? (requiresPhoneVerification
-                      ? <Navigate to="/opret/bekraeft-telefon" replace />
+                  ? (needsPhoneVerification
+                      ? <Navigate to={phoneVerificationPath} replace />
                       : <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />)
                   : hasProfile
-                    ? <Navigate to="/opret" replace />
+                    ? <Navigate to={profileEntryPath} replace />
                     : <Navigate to="/" replace />
               }
             />

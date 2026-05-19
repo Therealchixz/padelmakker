@@ -8,7 +8,7 @@ export function isPhoneVerificationExempt(user, profile) {
   return meta.phone_verification_exempt === true
 }
 
-/** Skal brugeren bekræfte telefon før dashboard? (kræver canUseApp hos kalder) */
+/** Skal brugeren bekræfte telefon før dashboard? */
 export function shouldRequirePhoneVerification(user, profile) {
   if (!user) return false
   if (isPhoneVerificationExempt(user, profile)) return false
@@ -18,6 +18,39 @@ export function shouldRequirePhoneVerification(user, profile) {
   if (meta.phone_verified_at) return false
 
   return true
+}
+
+/**
+ * Eksisterende konto (ikke ny signup): eget telefonvindue uden onboarding trin 1–4.
+ */
+export function shouldUseExistingUserPhoneFlow(user, profile) {
+  if (!user || !profile) return false
+  const meta = user.user_metadata || {}
+  if (meta.phone_first_signup === true) return false
+
+  if (meta.onboarding_completed === true && meta.phone_verification_required === true) {
+    return false
+  }
+
+  const profileName = String(profile.full_name || profile.name || '').trim()
+  const hasDbProfileData =
+    profileName.length > 0 ||
+    (profile.birth_year != null && String(profile.birth_year).trim() !== '') ||
+    String(profile.play_style || '').trim() !== '' ||
+    String(profile.area || profile.city || '').trim() !== ''
+
+  if (!hasDbProfileData && meta.onboarding_applied_to_profile !== true) {
+    return false
+  }
+
+  return true
+}
+
+/** Sti til telefon-SMS når brugeren skal bekræfte nummer. */
+export function getPhoneVerificationPath(user, profile) {
+  if (!shouldRequirePhoneVerification(user, profile)) return null
+  if (shouldUseExistingUserPhoneFlow(user, profile)) return '/konto/telefon'
+  return '/opret/bekraeft-telefon'
 }
 
 export function mapPhoneAuthError(message) {
