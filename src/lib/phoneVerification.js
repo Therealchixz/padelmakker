@@ -58,8 +58,19 @@ export function mapPhoneAuthError(message) {
   if (m.includes('already registered') || m.includes('already exists') || m.includes('duplicate')) {
     return 'Dette telefonnummer er allerede knyttet til en anden konto. Hvert nummer kan kun bruges én gang.'
   }
-  if (m.includes('rate limit') || m.includes('too many')) {
+  if (m.includes('rate limit') || m.includes('too many') || m.includes('sms rate')) {
     return 'For mange forsøg. Vent et øjeblik og prøv igen.'
+  }
+  if (
+    m.includes('invalid from number') ||
+    m.includes('caller id') ||
+    m.includes('21212') ||
+    (m.includes('sms') && m.includes('provider'))
+  ) {
+    return 'Dit nummer ser gyldigt ud, men SMS kunne ikke sendes (serveropsætning). Prøv igen om lidt — ved vedvarende fejl, kontakt support.'
+  }
+  if (m.includes('invalid') && m.includes('phone') && m.includes('e.164')) {
+    return 'Ugyldigt telefonnummer. Brug 8 cifre (fx 21162004) eller med landekode (+4521162004).'
   }
   if (m.includes('invalid') && m.includes('phone')) {
     return 'Ugyldigt telefonnummer. Brug fx 20112233 eller +4520112233.'

@@ -220,7 +220,7 @@ export function ExistingUserPhonePage() {
         />
         {!normalizedDraftPhone && phoneInput.trim().length > 0 && (
           <p style={{ color: theme.red, fontSize: '12px', marginBottom: '12px', fontWeight: 600 }}>
-            Ugyldigt nummer. Brug fx 20112233 eller +4520112233.
+            Ugyldigt format. Brug 8 cifre (fx 21162004) eller +4521162004.
           </p>
         )}
 

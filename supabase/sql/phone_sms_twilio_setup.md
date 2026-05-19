@@ -11,7 +11,8 @@
 
 **Authentication → Phone → SMS provider → Twilio**
 
-- Account SID, Auth Token, Message Service SID
+- Account SID, Auth Token, **Message Service SID** (starter med `MG...`)
+- Brug **ikke** Twilio Verify Service SID (`VA...`) i Message Service / From-feltet — det giver fejl 21212 («Invalid From Number»), og appen kan vise en misvisende «ugyldigt telefonnummer»-besked selv om brugerens nummer er korrekt.
 
 ### B) Edge Function hook (kode i repo)
 
