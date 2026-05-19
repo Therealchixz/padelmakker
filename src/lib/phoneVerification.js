@@ -2,10 +2,14 @@
  * Phone SMS verification gate (Supabase Auth + Twilio).
  */
 
+function isTruthyFlag(value) {
+  return value === true || value === 'true' || value === 1 || value === '1'
+}
+
 export function isPhoneVerificationExempt(user, profile) {
-  if (profile?.phone_verification_exempt === true) return true
+  if (isTruthyFlag(profile?.phone_verification_exempt)) return true
   const meta = user?.user_metadata || {}
-  return meta.phone_verification_exempt === true
+  return isTruthyFlag(meta.phone_verification_exempt)
 }
 
 /** Skal brugeren bekræfte telefon før dashboard? */

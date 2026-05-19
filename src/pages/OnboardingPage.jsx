@@ -9,9 +9,14 @@ import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platfo
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
-import { shouldSkipOnboardingAccountStep, validateFirstLastName } from '../lib/profileUtils';
+import {
+  isOnboardingComplete,
+  shouldSkipOnboardingAccountStep,
+  validateFirstLastName,
+} from '../lib/profileUtils';
 import {
   getPhoneVerificationPath,
+  isPhoneVerificationExempt,
   shouldRequirePhoneVerification,
   shouldUseExistingUserPhoneFlow,
 } from '../lib/phoneVerification';
@@ -26,6 +31,7 @@ import { ArrowRight } from 'lucide-react';
 export function OnboardingPage() {
   const { signUpWithPhone, user, profile, updateProfile } = useAuth();
   const oauthSession = Boolean(user);
+  const phoneExempt = isPhoneVerificationExempt(user, profile);
   const navigate = useNavigate();
   const location = useLocation();
   const ask = useConfirm();
@@ -47,6 +53,10 @@ export function OnboardingPage() {
 
   useEffect(() => {
     if (!user || !profile) return;
+    if (isOnboardingComplete(user, profile)) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
     if (shouldRequirePhoneVerification(user, profile) && shouldUseExistingUserPhoneFlow(user, profile)) {
       const path = getPhoneVerificationPath(user, profile);
       if (path) navigate(path, { replace: true });
@@ -126,7 +136,10 @@ export function OnboardingPage() {
         if (form.password.length < 8) missing.push("adgangskode på mindst 8 tegn");
         if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
       }
-      if (!isValidSignupPhone(form.phone) || !normalizePhoneToE164(form.phone)) {
+      if (
+        !phoneExempt &&
+        (!isValidSignupPhone(form.phone) || !normalizePhoneToE164(form.phone))
+      ) {
         missing.push("gyldigt telefonnummer");
       }
       if (!(form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== "")) missing.push("fødselsdato");
@@ -227,8 +240,8 @@ export function OnboardingPage() {
         setErr(nameCheck.message);
         return;
       }
-      const normalizedPhone = normalizePhoneToE164(form.phone);
-      if (!normalizedPhone) {
+      const normalizedPhone = phoneExempt ? '' : normalizePhoneToE164(form.phone);
+      if (!phoneExempt && !normalizedPhone) {
         setErr("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
         return;
       }
@@ -258,6 +271,20 @@ export function OnboardingPage() {
       if (oauthSession) {
         if (avatarFile) await savePendingAvatar(avatarFile);
         await updateProfile(profilePayload);
+        if (phoneExempt) {
+          const { error: metaErr } = await supabase.auth.updateUser({
+            data: {
+              ...profilePayload,
+              onboarding_completed: true,
+              onboarding_applied_to_profile: true,
+              phone_verification_required: false,
+            },
+          });
+          if (metaErr) throw metaErr;
+          if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(avatarPreviewUrl);
+          navigate('/dashboard', { replace: true });
+          return;
+        }
         const { error: phoneErr } = await supabase.auth.updateUser({
           phone: normalizedPhone,
           data: {
@@ -400,28 +427,47 @@ export function OnboardingPage() {
       )}
         </>
       )}
-      <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer</label>
-      <p style={{ color: theme.textMid, fontSize: '12px', margin: '0 0 8px', lineHeight: 1.45 }}>
-        Vi sender en SMS-kode for at bekræfte nummeret og mindske falske konti.
-      </p>
-      <input
-        id="onb-phone"
-        value={form.phone}
-        onChange={e => set("phone", e.target.value)}
-        placeholder="Fx 20112233 eller +4520112233"
-        type="tel"
-        autoComplete="tel"
-        inputMode="tel"
-        style={{
-          ...inputStyle,
-          marginBottom: phoneTouchedInvalid ? "6px" : "14px",
-          border: "1px solid " + (phoneTouchedInvalid ? theme.red : theme.border),
-        }}
-      />
-      {phoneTouchedInvalid && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).
-        </p>
+      {phoneExempt ? (
+        <div
+          style={{
+            background: theme.accentBg,
+            border: '1px solid ' + theme.accent + '26',
+            borderRadius: '12px',
+            padding: '12px 14px',
+            marginBottom: '14px',
+            fontSize: '13px',
+            color: theme.textMid,
+            lineHeight: 1.5,
+          }}
+        >
+          Denne testkonto er undtaget fra telefon-SMS (sat af admin). Du behøver ikke tilføje telefonnummer.
+        </div>
+      ) : (
+        <>
+          <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer</label>
+          <p style={{ color: theme.textMid, fontSize: '12px', margin: '0 0 8px', lineHeight: 1.45 }}>
+            Vi sender en SMS-kode for at bekræfte nummeret og mindske falske konti.
+          </p>
+          <input
+            id="onb-phone"
+            value={form.phone}
+            onChange={e => set("phone", e.target.value)}
+            placeholder="Fx 20112233 eller +4520112233"
+            type="tel"
+            autoComplete="tel"
+            inputMode="tel"
+            style={{
+              ...inputStyle,
+              marginBottom: phoneTouchedInvalid ? "6px" : "14px",
+              border: "1px solid " + (phoneTouchedInvalid ? theme.red : theme.border),
+            }}
+          />
+          {phoneTouchedInvalid && (
+            <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
+              Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).
+            </p>
+          )}
+        </>
       )}
       {!oauthSession && (
         <>

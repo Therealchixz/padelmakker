@@ -1,4 +1,5 @@
 import { REGIONS, DEFAULT_REGION } from "./platformConstants"
+import { isPhoneVerificationExempt } from "./phoneVerification"
 
 /** Beregn præcis alder ud fra fødselsår, evt. måned og dag */
 export function calcAge(birth_year, birth_month, birth_day) {
@@ -196,6 +197,10 @@ export function normalizeProfileRow(p) {
     intent_now:     p.intent_now     != null ? String(p.intent_now) : null,
     preferred_partner_level: p.preferred_partner_level != null ? String(p.preferred_partner_level) : null,
     last_active_at: p.last_active_at ?? null,
+    phone_verification_exempt:
+      p.phone_verification_exempt === true ||
+      p.phone_verification_exempt === 'true' ||
+      p.phone_verification_exempt === 1,
   }
 }
 
@@ -402,6 +407,12 @@ export function isOnboardingComplete(user, profile) {
   if (!user || !profile) return false
   const meta = user.user_metadata || {}
   if (meta.onboarding_completed === true) return true
+
+  if (isPhoneVerificationExempt(user, profile)) {
+    const name = String(profile.full_name || profile.name || '').trim()
+    if (name.length > 0) return true
+  }
+
   const birthOk = profile.birth_year != null && String(profile.birth_year).trim() !== ''
   const style = String(profile.play_style || '').trim()
   const styleOk = style !== '' && style !== 'Ved ikke endnu'
