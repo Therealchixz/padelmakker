@@ -1,7 +1,8 @@
 /**
  * Distribueret rate limiter via Supabase (check_rate_limit RPC).
  * Virker på tværs af alle Vercel-container-instanser.
- * Falder tilbage til at tillade requesten hvis Supabase er utilgængeligt.
+ * I produktion: fail-closed hvis RPC fejler (undgår ubegrænset proxy).
+ * I dev: lokal fallback så Baner-proxy stadig virker uden service_role.
  */
 
 /* global process */
@@ -9,6 +10,13 @@
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const localRateLimitFallback = new Map();
+
+function isProductionRuntime() {
+  return (
+    process.env.VERCEL_ENV === 'production' ||
+    process.env.NODE_ENV === 'production'
+  );
+}
 
 function consumeLocalRateLimit(key, windowStart, maxReqs) {
   const prev = localRateLimitFallback.get(key);
@@ -32,7 +40,7 @@ export async function checkRateLimit(key, maxReqs = 30, windowMs = 60_000) {
   const windowStart = Math.floor(Date.now() / windowMs);
 
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    // Fallback i lokal/dev eller ved manglende konfiguration.
+    if (isProductionRuntime()) return false;
     return consumeLocalRateLimit(key, windowStart, maxReqs);
   }
 
@@ -53,10 +61,14 @@ export async function checkRateLimit(key, maxReqs = 30, windowMs = 60_000) {
 
     clearTimeout(timer);
 
-    if (!res.ok) return consumeLocalRateLimit(key, windowStart, maxReqs);
+    if (!res.ok) {
+      if (isProductionRuntime()) return false;
+      return consumeLocalRateLimit(key, windowStart, maxReqs);
+    }
     const allowed = await res.json();
     return allowed === true;
   } catch {
+    if (isProductionRuntime()) return false;
     return consumeLocalRateLimit(key, windowStart, maxReqs);
   }
 }
