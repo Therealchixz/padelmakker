@@ -30,7 +30,28 @@
 - Tjek **Supabase → Logs → Auth** for `sms_send_failed`, `phone_exists` eller `Invalid From Number` (VA... i stedet for MG...).
 - Nummeret `+4521162004` er allerede på en konto — andre brugere får `phone_exists` og ingen ny SMS til det nummer.
 
-## 3. App-flow
+## 3. Afsender «PadelMakker» i stedet for amerikansk nummer
+
+Supabase/appen bestemmer **ikke** afsender — det vælger Twilio ud fra jeres **Messaging Service** (`MG...`).
+
+| Twilio-begreb | Hvad det gør | Gælder DK-SMS? |
+|---------------|--------------|----------------|
+| Business Profile / Branded Calling / A2P (USA) | Tillid og compliance for **amerikanske** numre | Nej — ændrer ikke afsender til +45 |
+| **Alphanumeric Sender ID** (fx `PadelMakker`) | Vises som afsendernavn på understøttede lande | Ja — Danmark understøttes (dynamisk) |
+
+### Sådan får modtagere «PadelMakker» på SMS
+
+1. **Twilio Console → Messaging → Services** → vælg jeres service (`MG539245...`).
+2. **Sender pool → Add senders → Alphanumeric Sender ID**.
+3. Indtast `PadelMakker` (max **11** tegn; kun bogstaver/tal).
+4. Sørg for at den **amerikanske** sender i poolen **ikke** er den eneste — ellers vælger Twilio stadig +1-nummeret til DK, hvis alfanumerisk ikke er tilføjet/konfigureret.
+5. Under **Sender Selection** / geo: alfanumerisk afsender til **Denmark** (se [Twilio DK SMS guidelines](https://www.twilio.com/en-us/guidelines/dk/sms)).
+
+**Bemærk:** Alfanumerisk afsender er **kun udgående** — brugere kan ikke svare på SMS. Det er fint til OTP-koder.
+
+Nogle telefoner viser stadig et nummer afhængigt af teleselskab — det er normalt.
+
+## 4. App-flow
 
 1. Opret profil med **obligatorisk** telefon.
 2. SMS-kode på `/opret/bekraeft-telefon`.
