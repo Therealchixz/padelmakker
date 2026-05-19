@@ -2,6 +2,28 @@
  * Phone SMS verification gate (Supabase Auth + Twilio).
  */
 
+/** Klient-cooldown før "Send kode igen" (10 min). */
+export const PHONE_SMS_RESEND_COOLDOWN_MS = 600_000
+
+/** Skal matche Supabase Auth → Phone → OTP expiry (sekunder) i dashboard. */
+export const PHONE_SMS_OTP_VALID_MINUTES = 10
+
+export function formatPhoneSmsResendCountdown(totalSeconds) {
+  if (totalSeconds <= 0) return ''
+  const mins = Math.floor(totalSeconds / 60)
+  const secs = totalSeconds % 60
+  if (mins > 0) {
+    return `${mins}:${String(secs).padStart(2, '0')}`
+  }
+  return `${secs}s`
+}
+
+export function phoneSmsResendButtonLabel(otpSent, canResend, resendSeconds) {
+  if (!otpSent) return 'Send SMS-kode'
+  if (canResend) return 'Send kode igen'
+  return `Send igen om ${formatPhoneSmsResendCountdown(resendSeconds)}`
+}
+
 function isTruthyFlag(value) {
   return value === true || value === 'true' || value === 1 || value === '1'
 }
@@ -63,7 +85,10 @@ export function mapPhoneAuthError(message) {
     return 'Dette telefonnummer er allerede knyttet til en anden konto. Hvert nummer kan kun bruges én gang.'
   }
   if (m.includes('rate limit') || m.includes('too many') || m.includes('sms rate')) {
-    return 'For mange forsøg. Vent et øjeblik og prøv igen.'
+    return `For mange SMS-forsøg. Vent ${PHONE_SMS_OTP_VALID_MINUTES} minutter før du sender igen.`
+  }
+  if (m.includes('phone_exists')) {
+    return 'Dette telefonnummer er allerede knyttet til en anden konto. Hvert nummer kan kun bruges én gang.'
   }
   if (
     m.includes('invalid from number') ||

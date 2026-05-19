@@ -7,6 +7,9 @@ import { PublicLegalFooter } from '../components/PublicLegalFooter'
 import { normalizePhoneToE164 } from '../lib/validationHelpers'
 import {
   mapPhoneAuthError,
+  PHONE_SMS_OTP_VALID_MINUTES,
+  PHONE_SMS_RESEND_COOLDOWN_MS,
+  phoneSmsResendButtonLabel,
   shouldRequirePhoneVerification,
 } from '../lib/phoneVerification'
 import { Shield } from 'lucide-react'
@@ -80,14 +83,19 @@ export function ExistingUserPhonePage() {
     setErr('')
     setInfo('')
     try {
-      const { error } = await supabase.auth.updateUser({ phone: normalizedPhone })
+      const isResendSamePhone = otpSent && pendingPhone === normalizedPhone
+      const { error } = isResendSamePhone
+        ? await supabase.auth.resend({ type: 'phone_change', phone: normalizedPhone })
+        : await supabase.auth.updateUser({ phone: normalizedPhone })
       if (error) throw error
       setPendingPhone(normalizedPhone)
       setOtpSent(true)
       setOtpCode('')
-      setResendAtMs(Date.now() + 60_000)
+      setResendAtMs(Date.now() + PHONE_SMS_RESEND_COOLDOWN_MS)
       setNowMs(Date.now())
-      setInfo(`SMS-kode sendt til ${maskPhone(normalizedPhone)}.`)
+      setInfo(
+        `SMS-kode sendt til ${maskPhone(normalizedPhone)}. Koden er gyldig i ${PHONE_SMS_OTP_VALID_MINUTES} minutter.`
+      )
     } catch (e) {
       setErr(mapPhoneAuthError(e?.message) || 'Kunne ikke sende SMS-kode lige nu.')
     } finally {
@@ -244,7 +252,7 @@ export function ExistingUserPhonePage() {
               submitting || !normalizedDraftPhone || (!canResend && otpSent) ? 'not-allowed' : 'pointer',
           }}
         >
-          {!otpSent ? 'Send SMS-kode' : canResend ? 'Send kode igen' : `Send igen om ${resendSeconds}s`}
+          {phoneSmsResendButtonLabel(otpSent, canResend, resendSeconds)}
         </button>
 
         {otpSent && (

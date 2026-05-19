@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: { message: 'Mangler telefon eller OTP' } }, 400)
     }
 
-    const messageBody = `Din PadelMakker-kode er: ${otp}. Den udløber om kort tid.`
+    const messageBody = `Din PadelMakker-kode er: ${otp}. Den udløber om 10 minutter.`
     const twilioResult = await sendTwilioSms(phone, messageBody)
 
     if (twilioResult?.status && twilioResult.status !== 'queued' && twilioResult.status !== 'sent') {
