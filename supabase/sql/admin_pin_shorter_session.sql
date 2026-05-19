@@ -1,5 +1,5 @@
 -- =============================================================================
--- Admin PIN: kortere session (60 min default, max 120 min fra klient)
+-- Admin PIN: kortere session (30 min default, max 60 min fra klient)
 -- Kør i Supabase SQL Editor efter admin_pin_guard.sql
 -- =============================================================================
 
