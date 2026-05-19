@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { TurnstileWidget } from '../components/TurnstileWidget';
+import { OAuthButtons, AuthDivider } from '../components/OAuthButtons';
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -95,7 +96,9 @@ export function LoginPage() {
       <div className="pm-auth-narrow">
         <button onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
         <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Velkommen tilbage</h1>
-        <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Log ind med din email og adgangskode.</p>
+        <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "20px", lineHeight: 1.5 }}>Log ind med Google, Apple eller email.</p>
+        <OAuthButtons redirectPath="/login" disabled={submitting} onError={setErr} />
+        <AuthDivider />
         <label htmlFor="login-email" style={labelStyle}>Email</label>
         <input id="login-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
         <label htmlFor="login-password" style={labelStyle}>Adgangskode</label>
