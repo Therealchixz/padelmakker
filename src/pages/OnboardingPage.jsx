@@ -29,7 +29,7 @@ import { TurnstileWidget } from '../components/TurnstileWidget';
 import { ArrowRight } from 'lucide-react';
 
 export function OnboardingPage() {
-  const { signUpWithPhone, user, profile, updateProfile } = useAuth();
+  const { signUp, signUpWithPhone, user, profile, updateProfile, refreshProfileQuiet } = useAuth();
   const oauthSession = Boolean(user);
   const phoneExempt = isPhoneVerificationExempt(user, profile);
   const navigate = useNavigate();
@@ -50,6 +50,10 @@ export function OnboardingPage() {
   useEffect(() => {
     onboardingTopRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
   }, [step]);
+
+  useEffect(() => {
+    if (user?.id) refreshProfileQuiet();
+  }, [user?.id, refreshProfileQuiet]);
 
   useEffect(() => {
     if (!user || !profile) return;
@@ -328,6 +332,25 @@ export function OnboardingPage() {
         await savePendingAvatar(avatarFile);
       }
       tagPendingAvatarEmail(form.email.trim());
+
+      if (phoneExempt) {
+        await signUp(
+          form.email.trim(),
+          form.password,
+          {
+            ...profilePayload,
+            onboarding_completed: true,
+            onboarding_applied_to_profile: true,
+            phone_verification_required: false,
+            phone_verification_exempt: true,
+          },
+          turnstileEnabled ? captchaToken : ''
+        );
+        if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
       await signUpWithPhone(
         normalizedPhone,
         form.password,

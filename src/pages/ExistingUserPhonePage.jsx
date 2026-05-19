@@ -5,8 +5,10 @@ import { useAuth } from '../lib/AuthContext'
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme'
 import { PublicLegalFooter } from '../components/PublicLegalFooter'
 import { normalizePhoneToE164 } from '../lib/validationHelpers'
-import { mapPhoneAuthError } from '../lib/phoneVerification'
-import { isOnboardingComplete } from '../lib/profileUtils'
+import {
+  mapPhoneAuthError,
+  shouldRequirePhoneVerification,
+} from '../lib/phoneVerification'
 import { Shield } from 'lucide-react'
 
 function maskPhone(phone) {
@@ -27,7 +29,7 @@ function displayAccountName(user, profile) {
 }
 
 export function ExistingUserPhonePage() {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, signOut, refreshProfile } = useAuth()
   const navigate = useNavigate()
   const accountName = displayAccountName(user, profile)
   const accountEmail = String(user?.email || '').trim()
@@ -41,6 +43,13 @@ export function ExistingUserPhonePage() {
   const [info, setInfo] = useState('')
   const [resendAtMs, setResendAtMs] = useState(0)
   const [nowMs, setNowMs] = useState(Date.now())
+
+  useEffect(() => {
+    if (!user || !profile) return
+    if (!shouldRequirePhoneVerification(user, profile)) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [user, profile, navigate])
 
   useEffect(() => {
     const metaPhone = normalizePhoneToE164(user?.user_metadata?.signup_phone || user?.phone || '')
@@ -116,12 +125,9 @@ export function ExistingUserPhonePage() {
         },
       })
 
+      refreshProfile()
       setInfo('Telefonnummer bekræftet. Du bliver sendt videre...')
-      if (isOnboardingComplete(user, profile)) {
-        navigate('/dashboard', { replace: true })
-      } else {
-        navigate('/opret', { replace: true, state: { skipAccountStep: true } })
-      }
+      navigate('/', { replace: true })
     } catch (e) {
       setErr(mapPhoneAuthError(e?.message) || 'Koden kunne ikke verificeres.')
     } finally {
