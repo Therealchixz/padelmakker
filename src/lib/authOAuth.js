@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-/** @param {'google' | 'apple'} provider */
+/** @param {'google'} provider */
 export async function signInWithOAuthProvider(provider, redirectPath = '/login') {
   const redirectTo = getAuthRedirectTo(redirectPath)
   const { error } = await supabase.auth.signInWithOAuth({
@@ -19,12 +19,12 @@ export function getAuthRedirectTo(path = '/login') {
 export function mapOAuthError(message) {
   const m = String(message || '').toLowerCase()
   if (m.includes('provider is not enabled')) {
-    return 'Google/Apple-login er ikke slået til i Supabase endnu. Kontakt support.'
+    return 'Google-login er ikke slået til i Supabase endnu. Kontakt support.'
   }
   if (m.includes('redirect') && m.includes('url')) {
     return 'Login-return URL mangler i Supabase (Authentication → URL configuration).'
   }
-  return message || 'Kunne ikke starte login med Google/Apple.'
+  return message || 'Kunne ikke starte login med Google.'
 }
 
 export function splitDisplayName(fullName) {

@@ -96,7 +96,7 @@ export function LoginPage() {
       <div className="pm-auth-narrow">
         <button onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
         <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Velkommen tilbage</h1>
-        <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "20px", lineHeight: 1.5 }}>Log ind med Google, Apple eller email.</p>
+        <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "20px", lineHeight: 1.5 }}>Log ind med Google eller email.</p>
         <OAuthButtons redirectPath="/login" disabled={submitting} onError={setErr} />
         <AuthDivider />
         <label htmlFor="login-email" style={labelStyle}>Email</label>
