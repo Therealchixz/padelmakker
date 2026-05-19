@@ -31,6 +31,16 @@ Prettier is not configured.
 
 No test framework is configured (no Jest, Vitest, or similar).
 
+### Phone SMS verification (Twilio)
+
+New signups require a **verified phone number** (SMS OTP via Supabase Auth).
+
+1. Enable **Phone** under **Authentication → Providers**.
+2. Configure **Twilio** in Phone settings **or** deploy `supabase/functions/send-auth-sms` and wire the **Send SMS** auth hook (see `supabase/sql/phone_sms_twilio_setup.md`).
+3. Edge function secrets: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGING_SERVICE_SID` (or `TWILIO_PHONE_NUMBER`), `SEND_SMS_HOOK_SECRET`.
+
+Flow: `/opret` → `/opret/bekraeft-telefon` (SMS) → `/opret/bekraeft-email` → login → dashboard.
+
 ### Google login (OAuth)
 
 Enable **Google** in Supabase Dashboard → **Authentication** → **Providers**.
