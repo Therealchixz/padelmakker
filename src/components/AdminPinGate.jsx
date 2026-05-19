@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { ADMIN_PIN_SESSION_MINUTES } from '../lib/adminPinConfig';
 import { theme, btn, font } from '../lib/platformTheme';
-
-const DEFAULT_REMEMBER_MINUTES = 12 * 60;
 
 function digitsOnly(value) {
   return String(value || '').replace(/\D/g, '').slice(0, 6);
@@ -107,11 +106,11 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
     try {
       const { data, error } = await supabase.rpc('admin_setup_pin', {
         p_pin: setupPin,
-        p_remember_minutes: DEFAULT_REMEMBER_MINUTES,
+        p_remember_minutes: ADMIN_PIN_SESSION_MINUTES,
       });
       if (error) throw error;
       onUnlocked?.(data?.verified_until || null);
-      showToast?.('Admin-kode oprettet.');
+      showToast?.(`Admin-kode oprettet (gyldig i ${ADMIN_PIN_SESSION_MINUTES} min).`);
     } catch (err) {
       const message = toFriendlyError(err, 'Kunne ikke oprette admin-kode.');
       setErrorText(message);
@@ -133,7 +132,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
     try {
       const { data, error } = await supabase.rpc('admin_verify_pin', {
         p_pin: verifyPin,
-        p_remember_minutes: DEFAULT_REMEMBER_MINUTES,
+        p_remember_minutes: ADMIN_PIN_SESSION_MINUTES,
       });
       if (error) throw error;
 
@@ -148,7 +147,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
       }
 
       onUnlocked?.(data?.verified_until || null);
-      showToast?.('Admin-adgang godkendt.');
+      showToast?.(`Admin-adgang godkendt (${ADMIN_PIN_SESSION_MINUTES} min).`);
     } catch (err) {
       const message = toFriendlyError(err, 'Kunne ikke verificere admin-kode.');
       setErrorText(message);

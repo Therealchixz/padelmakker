@@ -498,6 +498,11 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     profileReqId.current += 1
     signingOutRef.current = false
+    try {
+      await supabase.rpc('admin_clear_pin_session')
+    } catch {
+      /* admin RPC irrelevant for most users */
+    }
     await supabase.auth.signOut()
     setSession(null)
     setUser(null)
