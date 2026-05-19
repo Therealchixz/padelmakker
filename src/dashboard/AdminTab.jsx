@@ -202,7 +202,7 @@ export function AdminTab({ initialSubTab = null }) {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('profiles').select('*');
+    const { data, error } = await supabase.rpc('admin_profiles_with_email');
     if (error) console.warn('AdminTab fetchUsers:', error.message || error);
     else setUsers(data || []);
     setLoading(false);
