@@ -96,26 +96,7 @@ export function ReportResultErrorButton({
   }
 
   if (!withinWindow) {
-    return (
-      <div
-        className="pm-feedback-panel"
-        style={{
-          marginTop: 10,
-          marginBottom: 4,
-          padding: '8px 12px',
-          fontSize: 12,
-          color: theme.textMid,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        <AlertCircle size={14} aria-hidden />
-        <span>
-          Indberet fejl er ikke tilgængelig — fristen på 24 timer efter afslutning er udløbet.
-        </span>
-      </div>
-    );
+    return null;
   }
 
   const handleSubmit = async () => {
