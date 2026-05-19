@@ -33,6 +33,11 @@ const ROUTE_META = {
     description:
       'Bekræft dit telefonnummer med SMS-kode for at afslutte sikkerhedsflowet ved oprettelse.',
   },
+  '/konto/telefon': {
+    title: 'Tilføj telefonnummer | PadelMakker',
+    description:
+      'Tilføj og bekræft dit telefonnummer på din eksisterende PadelMakker-konto.',
+  },
   '/events': {
     title: 'Kommende events og Americano | PadelMakker',
     description: 'Se kommende Americano-turneringer på PadelMakker. Log ind for at tilmelde dig.',

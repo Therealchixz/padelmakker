@@ -5,6 +5,12 @@ import { useAuth } from '../lib/AuthContext'
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme'
 import { PublicLegalFooter } from '../components/PublicLegalFooter'
 import { normalizePhoneToE164 } from '../lib/validationHelpers'
+import {
+  mapPhoneAuthError,
+  PHONE_SMS_OTP_VALID_MINUTES,
+  PHONE_SMS_RESEND_COOLDOWN_MS,
+  phoneSmsResendButtonLabel,
+} from '../lib/phoneVerification'
 import { TurnstileWidget } from '../components/TurnstileWidget'
 
 const PHONE_SIGNUP_PENDING_KEY = 'pm_phone_signup_pending_v1'
@@ -150,8 +156,11 @@ export function PhoneVerificationPage() {
     setErr('')
     setInfo('')
     try {
+      const isResendSamePhone = otpSent && pendingPhone === normalizedPhone
       if (mode === 'phone_change') {
-        const { error } = await supabase.auth.updateUser({ phone: normalizedPhone })
+        const { error } = isResendSamePhone
+          ? await supabase.auth.resend({ type: 'phone_change', phone: normalizedPhone })
+          : await supabase.auth.updateUser({ phone: normalizedPhone })
         if (error) throw error
       } else {
         const { error } = await supabase.auth.resend({
@@ -170,15 +179,17 @@ export function PhoneVerificationPage() {
       setPendingPhone(normalizedPhone)
       setOtpSent(true)
       setOtpCode('')
-      setResendAtMs(Date.now() + 60_000)
+      setResendAtMs(Date.now() + PHONE_SMS_RESEND_COOLDOWN_MS)
       setNowMs(Date.now())
-      setInfo(`SMS-kode sendt til ${maskPhone(normalizedPhone)}.`)
+      setInfo(
+        `SMS-kode sendt til ${maskPhone(normalizedPhone)}. Koden er gyldig i ${PHONE_SMS_OTP_VALID_MINUTES} minutter.`
+      )
       if (turnstileEnabled) {
         setCaptchaToken('')
         setCaptchaResetNonce((n) => n + 1)
       }
     } catch (e) {
-      setErr(e?.message || 'Kunne ikke sende SMS-kode lige nu.')
+      setErr(mapPhoneAuthError(e?.message) || 'Kunne ikke sende SMS-kode lige nu.')
       if (turnstileEnabled) {
         setCaptchaToken('')
         setCaptchaResetNonce((n) => n + 1)
@@ -259,7 +270,7 @@ export function PhoneVerificationPage() {
       setInfo('Telefon bekræftet. Tjek nu din e-mail for sidste bekræftelse.')
       navigate('/opret/bekraeft-email', { replace: true, state: { email: effectiveEmail } })
     } catch (e) {
-      setErr(e?.message || 'Koden kunne ikke verificeres.')
+      setErr(mapPhoneAuthError(e?.message) || 'Koden kunne ikke verificeres.')
     } finally {
       setSubmitting(false)
     }
@@ -293,10 +304,12 @@ export function PhoneVerificationPage() {
           border: '1px solid ' + theme.border,
         }}
       >
-        <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>Bekræft dit telefonnummer</h1>
+        <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>
+          {mode === 'phone_change' ? 'Tilføj dit telefonnummer' : 'Bekræft dit telefonnummer'}
+        </h1>
         <p style={{ color: theme.textMid, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>
           {mode === 'phone_change'
-            ? 'Indtast telefonnummer og SMS-koden for at fortsætte.'
+            ? 'For at fortsætte skal du knytte et telefonnummer til kontoen. Vi sender en SMS-kode — hvert nummer kan kun bruges til én bruger.'
             : 'Vi har sendt en 6-cifret kode til dit nummer. Indtast den her for at bekræfte kontoen.'}
         </p>
 
@@ -377,7 +390,7 @@ export function PhoneVerificationPage() {
                 : 'pointer',
           }}
         >
-          {!otpSent ? 'Send SMS-kode' : canResend ? 'Send kode igen' : `Send igen om ${resendSeconds}s`}
+          {phoneSmsResendButtonLabel(otpSent, canResend, resendSeconds)}
         </button>
 
         {otpSent && (
