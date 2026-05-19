@@ -6,6 +6,17 @@
 - **OTP expiry**: sæt til **600 sekunder (10 min)** — standard er 60 sek, hvilket giver en misvisende 60s-nedtælling i appen og for kort tid til at indtaste koden.
 - **SMS rate limit / max frequency**: sæt til **600s (10 min)** mellem SMS til samme nummer, så det matcher appens «Send igen»-cooldown.
 - **Authentication → Attack Protection**: Turnstile (valgfri, matcher `VITE_TURNSTILE_SITE_KEY`).
+- **SMS-besked (kun built-in Twilio, ingen Send SMS-hook):** brug GoTrue-syntaks med punktum og stort C:
+
+  ```
+  Din PadelMakker-kode er: {{ .Code }}. Koden udløber om 10 minutter.
+  ```
+
+  Skabelonen `{{friendly_name}}`, `{{code}}` og `{{ttl}}` virker **ikke** — så falder Supabase tilbage til en generisk tekst som «din kode er 123456». `friendly_name` og `ttl` findes ikke som SMS-variabler; skriv navn og minutter direkte i teksten.
+
+  Sæt **Project Settings → General → Project name** til ønsket visningsnavn hvis andre dele af Auth bruger det — det påvirker ikke SMS-body alene.
+
+- **Send SMS-hook:** Hvis **Authentication → Auth Hooks → Send SMS** er slået til, **ignoreres** dashboard-skabelonen. Teksten kommer fra edge function `send-auth-sms` (secrets `SMS_FRIENDLY_NAME`, `SMS_OTP_TTL_MINUTES`, valgfri `SMS_OTP_MESSAGE_TEMPLATE`).
 
 ## 2. Twilio (to muligheder)
 

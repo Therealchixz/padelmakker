@@ -8,6 +8,9 @@
 //   TWILIO_AUTH_TOKEN
 //   TWILIO_MESSAGING_SERVICE_SID  (preferred) OR TWILIO_PHONE_NUMBER (E.164)
 //   SEND_SMS_HOOK_SECRET          (from hook config, format v1,whsec_...)
+//   SMS_FRIENDLY_NAME             (optional, default PadelMakker)
+//   SMS_OTP_TTL_MINUTES           (optional, default 10)
+//   SMS_OTP_MESSAGE_TEMPLATE      (optional, supports {{code}}, {{friendly_name}}, {{ttl}})
 
 import { Webhook } from 'npm:standardwebhooks@1.0.0'
 
@@ -16,6 +19,22 @@ const ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID') ?? ''
 const AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN') ?? ''
 const MESSAGING_SERVICE_SID = Deno.env.get('TWILIO_MESSAGING_SERVICE_SID') ?? ''
 const FROM_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER') ?? ''
+
+/** Vises i SMS når Send SMS-hook er aktiv (dashboard-skabelon bruges ikke). */
+const SMS_FRIENDLY_NAME = Deno.env.get('SMS_FRIENDLY_NAME') ?? 'PadelMakker'
+const SMS_OTP_TTL_MINUTES = Deno.env.get('SMS_OTP_TTL_MINUTES') ?? '10'
+
+function buildOtpMessage(otp: string): string {
+  const template = Deno.env.get('SMS_OTP_MESSAGE_TEMPLATE')?.trim()
+  if (template) {
+    return template
+      .replace(/\{\{\s*code\s*\}\}/gi, otp)
+      .replace(/\{\{\s*\.Code\s*\}\}/g, otp)
+      .replace(/\{\{\s*friendly_name\s*\}\}/gi, SMS_FRIENDLY_NAME)
+      .replace(/\{\{\s*ttl\s*\}\}/gi, SMS_OTP_TTL_MINUTES)
+  }
+  return `Din ${SMS_FRIENDLY_NAME}-kode er: ${otp}. Koden udløber om ${SMS_OTP_TTL_MINUTES} minutter.`
+}
 
 function hookSecret(): string {
   return HOOK_SECRET_RAW.replace(/^v1,whsec_/, '')
@@ -88,7 +107,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: { message: 'Mangler telefon eller OTP' } }, 400)
     }
 
-    const messageBody = `Din PadelMakker-kode er: ${otp}. Den udløber om 10 minutter.`
+    const messageBody = buildOtpMessage(otp)
     const twilioResult = await sendTwilioSms(phone, messageBody)
 
     if (twilioResult?.status && twilioResult.status !== 'queued' && twilioResult.status !== 'sent') {
