@@ -12,7 +12,7 @@
   Din PadelMakker-kode er: {{ .Code }}. Koden udløber om 10 minutter.
   ```
 
-  Skabelonen `{{friendly_name}}`, `{{code}}` og `{{ttl}}` virker **ikke** — så falder Supabase tilbage til en generisk tekst som «din kode er 123456». `friendly_name` og `ttl` findes ikke som SMS-variabler; skriv navn og minutter direkte i teksten.
+  Skabelonen `Din {{friendly_name}} kode er: {{code}}...` virker **ikke**. GoTrue understøtter kun `{{ .Code }}` — ikke `friendly_name`, `code` eller `ttl`. Ved ugyldig skabelon vises i **Logs → Auth** fejlen `template: function "friendly_name" not defined`, og SMS sendes med generisk tekst som «din kode er 234249». Skriv PadelMakker-navn og «10 minutter» direkte i teksten (matcher OTP expiry 600 sek).
 
   Sæt **Project Settings → General → Project name** til ønsket visningsnavn hvis andre dele af Auth bruger det — det påvirker ikke SMS-body alene.
 
