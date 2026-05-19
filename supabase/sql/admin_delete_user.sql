@@ -18,7 +18,6 @@ SET row_security = off
 AS $$
 DECLARE
   v_actor_id uuid;
-  v_actor_role text;
   v_target_email text;
   v_target_role text;
   v_mids uuid[];
@@ -33,12 +32,7 @@ BEGIN
     RETURN jsonb_build_object('error', 'Ikke logget ind');
   END IF;
 
-  SELECT p.role
-    INTO v_actor_role
-  FROM public.profiles p
-  WHERE p.id = v_actor_id;
-
-  IF COALESCE(v_actor_role, '') <> 'admin' THEN
+  IF NOT public.has_admin_role() THEN
     RETURN jsonb_build_object('error', 'Kun admin kan slette spillere');
   END IF;
 
@@ -185,6 +179,12 @@ BEGIN
 
   DELETE FROM auth.users
   WHERE id = p_user_id;
+
+  PERFORM public._admin_audit_log(
+    'delete_user',
+    p_user_id,
+    jsonb_build_object('deleted_email', v_target_email, 'deleted_matches', v_deleted_matches)
+  );
 
   RETURN jsonb_build_object(
     'success', true,

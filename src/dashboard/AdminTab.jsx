@@ -16,6 +16,7 @@ import { AdminAmericanoResultEditor } from '../components/AdminAmericanoResultEd
 import { AdminLeagueResultEditor } from '../components/AdminLeagueResultEditor';
 import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { explainRatingAdminFlag } from '../lib/ratingAdminFlagExplain';
+import { fetchAdminAuditLogRecent, adminAuditActionLabel } from '../lib/adminAuditLog';
 
 import {
   LEVELS,
@@ -115,6 +116,8 @@ export function AdminTab({ initialSubTab = null }) {
     resultErrors: 0,
   });
   const [reviewerMap, setReviewerMap] = useState({});
+  const [auditLog, setAuditLog] = useState([]);
+  const [auditLogError, setAuditLogError] = useState('');
   const [consoleStats, setConsoleStats] = useState({
     totalPlayers: 0,
     bannedPlayers: 0,
@@ -339,6 +342,15 @@ export function AdminTab({ initialSubTab = null }) {
         setReviewerMap(nextReviewerMap);
       } else {
         setReviewerMap({});
+      }
+
+      const { data: auditRows, error: auditErr } = await fetchAdminAuditLogRecent(50);
+      if (auditErr) {
+        setAuditLogError(auditErr.message || 'Kunne ikke hente admin-log');
+        setAuditLog([]);
+      } else {
+        setAuditLogError('');
+        setAuditLog(auditRows || []);
       }
     } catch (err) {
       setConsoleError('Admin-konsol fejl: ' + (err?.message || 'ukendt fejl'));
@@ -1951,6 +1963,50 @@ export function AdminTab({ initialSubTab = null }) {
                 </div>
               );
             })}
+          </div>
+
+          <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "12px", padding: "14px", marginTop: "14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "10px", flexWrap: "wrap" }}>
+              <div style={{ fontSize: "13px", fontWeight: 800, color: theme.text }}>Admin-log (seneste handlinger)</div>
+              <div style={{ fontSize: "11px", color: theme.textMid }}>
+                {consoleLoading ? 'Indlæser...' : `${auditLog.length} poster`}
+              </div>
+            </div>
+            {auditLogError ? (
+              <div style={{ fontSize: "12px", color: theme.red }}>{auditLogError}</div>
+            ) : null}
+            {!auditLogError && auditLog.length === 0 && !consoleLoading ? (
+              <div style={{ fontSize: "12px", color: theme.textMid }}>Ingen logposter endnu.</div>
+            ) : null}
+            {auditLog.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "280px", overflowY: "auto" }}>
+                {auditLog.map((entry) => (
+                  <div
+                    key={entry.id}
+                    style={{
+                      border: "1px solid " + theme.border,
+                      borderRadius: "8px",
+                      padding: "10px 12px",
+                      background: theme.surfaceAlt,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "12px", fontWeight: 700, color: theme.text }}>
+                        {adminAuditActionLabel(entry.action)}
+                      </span>
+                      <span style={{ fontSize: "11px", color: theme.textMid }}>
+                        {formatDateTimeDa(entry.created_at)}
+                      </span>
+                    </div>
+                    {entry.target_user_id ? (
+                      <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>
+                        Bruger: {String(entry.target_user_id).slice(0, 8)}…
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
       )}

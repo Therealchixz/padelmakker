@@ -7,7 +7,20 @@ ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'player';
 
 -- 2. Opret helper funktion til at tjekke admin-status (undgår rekursion i RLS)
--- Da vi bruger SECURITY DEFINER og fjerner søgestien, er den sikker.
+-- Fuld logik (PIN + JWT-alder): admin_security_phase3_deploy.sql
+CREATE OR REPLACE FUNCTION public.has_admin_role()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles p
+    WHERE p.id = auth.uid() AND lower(COALESCE(p.role, '')) = 'admin'
+  );
+$$;
+
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean
 LANGUAGE plpgsql
@@ -16,42 +29,36 @@ SET search_path = public
 AS $$
 DECLARE
   v_uid uuid := auth.uid();
-  v_is_admin boolean := false;
   v_pin_verified boolean := false;
+  v_iat bigint;
+  v_max_admin_jwt_seconds constant integer := 8 * 3600;
 BEGIN
-  IF v_uid IS NULL THEN
+  IF v_uid IS NULL OR NOT public.has_admin_role() THEN
     RETURN false;
   END IF;
 
-  SELECT EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = v_uid AND role = 'admin'
-  ) INTO v_is_admin;
-
-  IF NOT v_is_admin THEN
+  v_iat := NULLIF(auth.jwt() ->> 'iat', '')::bigint;
+  IF v_iat IS NULL OR (extract(epoch FROM now())::bigint - v_iat) > v_max_admin_jwt_seconds THEN
     RETURN false;
   END IF;
 
-  -- Hvis PIN-tabeller ikke findes endnu, behandles admin som ikke-verificeret.
   IF to_regclass('public.admin_pin_sessions') IS NULL THEN
     RETURN false;
   END IF;
 
-  EXECUTE '
-    SELECT EXISTS (
-      SELECT 1
-      FROM public.admin_pin_sessions s
-      WHERE s.user_id = $1
-        AND s.verified_until > now()
-    )'
-  INTO v_pin_verified
-  USING v_uid;
+  SELECT EXISTS (
+    SELECT 1 FROM public.admin_pin_sessions s
+    WHERE s.user_id = v_uid AND s.verified_until > now()
+  ) INTO v_pin_verified;
 
   RETURN COALESCE(v_pin_verified, false);
 END;
 $$;
 
 -- Fjern offentlig adgang til funktionen
+REVOKE ALL ON FUNCTION public.has_admin_role() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.has_admin_role() TO authenticated;
+
 REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
 

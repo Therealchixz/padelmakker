@@ -77,7 +77,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.admin_setup_pin(
   p_pin text,
-  p_remember_minutes integer DEFAULT 60
+  p_remember_minutes integer DEFAULT 30
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -89,7 +89,7 @@ DECLARE
   v_uid uuid := auth.uid();
   v_is_admin boolean;
   v_until timestamptz;
-  v_minutes integer := GREATEST(5, LEAST(COALESCE(p_remember_minutes, 60), 120));
+  v_minutes integer := GREATEST(5, LEAST(COALESCE(p_remember_minutes, 30), 60));
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Ikke logget ind';
@@ -135,7 +135,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.admin_verify_pin(
   p_pin text,
-  p_remember_minutes integer DEFAULT 60
+  p_remember_minutes integer DEFAULT 30
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -149,7 +149,7 @@ DECLARE
   v_setting public.admin_pin_settings%ROWTYPE;
   v_until timestamptz;
   v_attempts integer;
-  v_minutes integer := GREATEST(5, LEAST(COALESCE(p_remember_minutes, 60), 120));
+  v_minutes integer := GREATEST(5, LEAST(COALESCE(p_remember_minutes, 30), 60));
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Ikke logget ind';

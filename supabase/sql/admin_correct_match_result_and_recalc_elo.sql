@@ -104,6 +104,12 @@ BEGIN
       USING DETAIL = coalesce(v_elo::text, '');
   END IF;
 
+  PERFORM public._admin_audit_log(
+    'correct_match_result',
+    NULL,
+    jsonb_build_object('match_result_id', p_match_result_id, 'match_id', v_match_id)
+  );
+
   RETURN jsonb_build_object(
     'ok', true,
     'match_id', v_match_id,

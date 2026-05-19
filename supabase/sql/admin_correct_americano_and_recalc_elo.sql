@@ -192,6 +192,12 @@ BEGIN
       USING DETAIL = coalesce(v_apply::text, '');
   END IF;
 
+  PERFORM public._admin_audit_log(
+    'correct_americano_tournament',
+    NULL,
+    jsonb_build_object('tournament_id', p_tournament_id, 'matches_updated', v_updated)
+  );
+
   RETURN jsonb_build_object(
     'ok', true,
     'tournament_id', p_tournament_id,

@@ -81,6 +81,12 @@ BEGIN
     reported_by = COALESCE(v_m.reported_by, v_admin)
   WHERE id = p_match_id;
 
+  PERFORM public._admin_audit_log(
+    'correct_league_match',
+    NULL,
+    jsonb_build_object('match_id', p_match_id, 'league_id', v_m.league_id)
+  );
+
   RETURN jsonb_build_object(
     'ok', true,
     'match_id', p_match_id,
