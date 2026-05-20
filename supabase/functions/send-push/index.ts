@@ -69,6 +69,15 @@ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
     cooldownSeconds: 30,
     renotify: true,
   },
+  americano_invite: {
+    channel: "invitation",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 30,
+    renotify: true,
+  },
   result_confirmed: {
     channel: "resultat",
     level: "normal",
@@ -287,6 +296,70 @@ async function profileIsAdmin(
   return String(data?.role || "").trim().toLowerCase() === "admin";
 }
 
+async function callerCanAccessMatch(
+  adminClient: ReturnType<typeof createClient>,
+  callerId: string,
+  matchId: string,
+): Promise<boolean> {
+  const [{ data: callerInMatch }, { data: isCreator }] = await Promise.all([
+    adminClient
+      .from("match_players")
+      .select("id")
+      .eq("match_id", matchId)
+      .eq("user_id", callerId)
+      .maybeSingle(),
+    adminClient
+      .from("matches")
+      .select("id")
+      .eq("id", matchId)
+      .eq("creator_id", callerId)
+      .maybeSingle(),
+  ]);
+  return !!(callerInMatch || isCreator);
+}
+
+const ADMIN_PUSH_LEGIT_WINDOW_MS = 15 * 60 * 1000;
+
+/** Admin-target push kun efter legitim indberetning (ikke vilkårlig spam). */
+async function verifyAdminTargetPushLegitimacy({
+  adminClient,
+  callerId,
+  notificationType,
+}: {
+  adminClient: ReturnType<typeof createClient>;
+  callerId: string;
+  notificationType: string;
+}): Promise<boolean> {
+  const sinceIso = new Date(Date.now() - ADMIN_PUSH_LEGIT_WINDOW_MS).toISOString();
+  const type = normalizeType(notificationType);
+
+  if (type === "result_error_report") {
+    const { data } = await adminClient
+      .from("result_error_reports")
+      .select("id")
+      .eq("reporter_id", callerId)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return !!data;
+  }
+
+  if (type === "user_report") {
+    const { data } = await adminClient
+      .from("user_reports")
+      .select("id")
+      .eq("reporter_id", callerId)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return !!data;
+  }
+
+  return false;
+}
+
 async function authorizeCrossUserPush({
   adminClient,
   callerId,
@@ -315,31 +388,49 @@ async function authorizeCrossUserPush({
       return (await profileIsAdmin(adminClient, callerId)) &&
         (await profileIsAdmin(adminClient, targetUserId));
     }
-    return await profileIsAdmin(adminClient, targetUserId);
+    if (!(await profileIsAdmin(adminClient, targetUserId))) {
+      return false;
+    }
+    return verifyAdminTargetPushLegitimacy({ adminClient, callerId, notificationType: type });
+  }
+
+  if (
+    type === "americano_invite" &&
+    normalizedEntityType === "americano" &&
+    normalizedEntityId
+  ) {
+    const { data: creator } = await adminClient
+      .from("americano_tournaments")
+      .select("id")
+      .eq("id", normalizedEntityId)
+      .eq("creator_id", callerId)
+      .maybeSingle();
+    return !!creator;
   }
 
   if (normalizedMatchId) {
-    const [{ data: callerInMatch }, { data: isCreator }, { data: targetInMatch }] = await Promise.all([
-      adminClient
-        .from("match_players")
-        .select("id")
-        .eq("match_id", normalizedMatchId)
-        .eq("user_id", callerId)
-        .maybeSingle(),
-      adminClient
-        .from("matches")
-        .select("id")
-        .eq("id", normalizedMatchId)
-        .eq("creator_id", callerId)
-        .maybeSingle(),
+    const callerOk = await callerCanAccessMatch(adminClient, callerId, normalizedMatchId);
+    if (!callerOk) return false;
+
+    if (type === "seeking_player" || type === "match_invite") {
+      return true;
+    }
+
+    const [{ data: targetInMatch }, { data: targetIsCreator }] = await Promise.all([
       adminClient
         .from("match_players")
         .select("id")
         .eq("match_id", normalizedMatchId)
         .eq("user_id", targetUserId)
         .maybeSingle(),
+      adminClient
+        .from("matches")
+        .select("id")
+        .eq("id", normalizedMatchId)
+        .eq("creator_id", targetUserId)
+        .maybeSingle(),
     ]);
-    return !!(callerInMatch || isCreator) && !!targetInMatch;
+    return !!(targetInMatch || targetIsCreator);
   }
 
   if (
@@ -509,12 +600,16 @@ async function shouldSkipByCooldown({
   targetUserId,
   type,
   matchId,
+  entityType,
+  entityId,
   cooldownSeconds,
 }: {
   adminClient: ReturnType<typeof createClient>;
   targetUserId: string;
   type: string;
   matchId: string | null;
+  entityType: string | null;
+  entityId: string | null;
   cooldownSeconds: number;
 }) {
   if (!cooldownSeconds || cooldownSeconds <= 0 || !type) return false;
@@ -528,7 +623,13 @@ async function shouldSkipByCooldown({
       .eq("type", type)
       .gte("created_at", sinceIso);
 
-    query = matchId ? query.eq("match_id", matchId) : query.is("match_id", null);
+    if (matchId) {
+      query = query.eq("match_id", matchId);
+    } else if (entityType && entityId) {
+      query = query.eq("entity_type", entityType).eq("entity_id", entityId);
+    } else {
+      query = query.is("match_id", null);
+    }
 
     const { count, error } = await query;
     if (error) {
@@ -724,6 +825,8 @@ Deno.serve(async (req: Request) => {
       targetUserId: String(targetUserId),
       type: policy.type,
       matchId: normalizedMatchId,
+      entityType: normalizedEntityType,
+      entityId: normalizedEntityId,
       cooldownSeconds: policy.cooldownSeconds,
     });
     if (cooldownSkip) {

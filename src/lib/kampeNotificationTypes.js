@@ -12,6 +12,7 @@ export const KAMPE_NON_CHAT_NOTIFICATION_TYPES = Object.freeze([
 
 /** Americano/liga + holdinvitationer (entity_type + entity_id). */
 export const KAMPE_ENTITY_NOTIFICATION_TYPES = Object.freeze([
+  'americano_invite',
   'americano_full',
   'americano_started',
   'americano_completed',

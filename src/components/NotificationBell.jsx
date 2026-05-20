@@ -91,6 +91,7 @@ export function NotificationBell() {
 
   const persistPrefs = async (nextPrefs) => {
     if (!userId) return;
+    const prevPrefs = notifPrefs;
     setNotifPrefs(nextPrefs);
     setPrefsSaving(true);
     try {
@@ -100,6 +101,7 @@ export function NotificationBell() {
         .eq('id', userId);
       if (error) {
         console.warn('notification_prefs update:', error.message);
+        setNotifPrefs(prevPrefs);
       } else {
         invalidateNotificationPrefsCache(userId);
         try {
@@ -464,6 +466,7 @@ export function NotificationBell() {
       case "team_invite": return "\uD83C\uDFBE";
       case "team_invite_accepted": return "\u2705";
       case "team_invite_declined": return "\u274C";
+      case "americano_invite": return "\u2694\uFE0F";
       case "americano_full": return "\u2705";
       case "americano_started": return "\uD83C\uDFBE";
       case "americano_spot_open": return "\uD83D\uDD14";

@@ -77,10 +77,14 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
 
     const notifyError = await createNotification(
       invitee.id,
-      'match_invite',
+      'americano_invite',
       `${senderName} inviterer dig til Americano!`,
       `Du er inviteret til "${tournament.name}" ${dateStr} kl. ${timeStr}${desc}. Gå til Kampe -> Americano for at tilmelde dig.`,
-      tournament.id
+      null,
+      {
+        entityType: 'americano',
+        entityId: tournament.id,
+      },
     );
 
     if (notifyError) {

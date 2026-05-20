@@ -40,6 +40,15 @@ const TYPE_POLICIES = Object.freeze({
     cooldownSeconds: 30,
     renotify: true,
   },
+  americano_invite: {
+    channel: "invitation",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 30,
+    renotify: true,
+  },
   result_confirmed: {
     channel: "resultat",
     level: "normal",

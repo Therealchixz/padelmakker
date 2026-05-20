@@ -15,6 +15,7 @@ import { PlayerProfileModal } from './PlayerProfileModal';
 import { LigaOpenCard } from './LigaOpenCard';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
+import { sendPushNotificationsForUsers } from '../lib/notifications';
 
 function isTiebreakScore(scoreText) {
   return !!(scoreText && /7-6|6-7/.test(scoreText));
@@ -847,12 +848,22 @@ export function LigaTab({
       if (error) throw error;
       void maybeNotifyLeagueFull(leagueId);
       const leagueName = leagues.find(l => l.id === leagueId)?.name || 'ligaen';
+      const inviteTitle = 'Holdinvitation 🎾';
+      const inviteBody = `${user.full_name || user.name || 'En spiller'} inviterer dig til holdet "${teamName.trim()}" i ${leagueName}`;
       await supabase.rpc('notify_league_invite', {
         p_user_id: selectedPartner.id,
         p_league_id: leagueId,
-        p_title: 'Holdinvitation 🎾',
-        p_body: `${user.full_name || user.name || 'En spiller'} inviterer dig til holdet "${teamName.trim()}" i ${leagueName}`,
+        p_title: inviteTitle,
+        p_body: inviteBody,
       });
+      void sendPushNotificationsForUsers(
+        [selectedPartner.id],
+        'team_invite',
+        inviteTitle,
+        inviteBody,
+        null,
+        { entityType: 'league', entityId: leagueId },
+      );
       showToast('Hold tilmeldt — invitation sendt til ' + (selectedPartner.full_name || selectedPartner.name) + '!');
       setTeamFormLeagueId(null);
       setTeamName('');
@@ -868,14 +879,25 @@ export function LigaTab({
     try {
       const { error } = await supabase.from('league_teams').update({ status: 'ready' }).eq('id', team.id);
       if (error) throw error;
-      // Notify inviter (player1) via SECURITY DEFINER RPC
-      supabase.rpc('notify_league_invite_accepted', {
+      const acceptTitle = 'Invitation accepteret! 🎾';
+      const acceptBody = `${user.full_name || user.name || 'Din makker'} har accepteret invitationen til holdet "${team.name}".`;
+      void supabase.rpc('notify_league_invite_accepted', {
         p_team_id: team.id,
-        p_title: 'Invitation accepteret! 🎾',
-        p_body: `${user.full_name || user.name || 'Din makker'} har accepteret invitationen til holdet "${team.name}".`,
+        p_title: acceptTitle,
+        p_body: acceptBody,
       }).then(({ error: nErr }) => {
         if (nErr) console.warn('notify_league_invite_accepted:', nErr.message || nErr);
       });
+      if (team.player1_id && team.league_id) {
+        void sendPushNotificationsForUsers(
+          [team.player1_id],
+          'team_invite_accepted',
+          acceptTitle,
+          acceptBody,
+          null,
+          { entityType: 'league', entityId: team.league_id },
+        );
+      }
       showToast('Du har accepteret invitationen! 🎾');
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
@@ -891,11 +913,23 @@ export function LigaTab({
     if (!ok) return;
     setBusyId(team.id + '-decline');
     try {
+      const declineTitle = 'Invitation afvist';
+      const declineBody = `${user.full_name || user.name || 'Din makker'} har afvist invitationen til holdet "${team.name}".`;
       await supabase.rpc('notify_league_invite_declined', {
         p_team_id: team.id,
-        p_title: 'Invitation afvist',
-        p_body: `${user.full_name || user.name || 'Din makker'} har afvist invitationen til holdet "${team.name}".`,
+        p_title: declineTitle,
+        p_body: declineBody,
       });
+      if (team.player1_id && team.league_id) {
+        void sendPushNotificationsForUsers(
+          [team.player1_id],
+          'team_invite_declined',
+          declineTitle,
+          declineBody,
+          null,
+          { entityType: 'league', entityId: team.league_id },
+        );
+      }
       const { error } = await supabase.from('league_teams').delete().eq('id', team.id);
       if (error) throw error;
       showToast('Invitation afvist.');

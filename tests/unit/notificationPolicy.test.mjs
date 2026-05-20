@@ -11,6 +11,13 @@ test("critical notification types stay loud and high priority", () => {
   assert.equal(policy.urgency, "high");
 });
 
+test("americano invite uses invitation channel", () => {
+  const policy = resolveNotificationPushPolicy("americano_invite");
+  assert.equal(policy.type, "americano_invite");
+  assert.equal(policy.channel, "invitation");
+  assert.equal(policy.sendPush, true);
+});
+
 test("quiet notification types are in-app only", () => {
   const policy = resolveNotificationPushPolicy("elo_change");
   assert.equal(policy.level, "quiet");
