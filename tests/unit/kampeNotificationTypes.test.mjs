@@ -12,6 +12,7 @@ import {
 
 test('Kampe notification types include padel, entity events, and chat', () => {
   assert.equal(KAMPE_CHAT_NOTIFICATION_TYPE, 'match_chat');
+  assert.ok(KAMPE_ENTITY_NOTIFICATION_TYPES.includes('americano_invite'));
   assert.ok(KAMPE_ENTITY_NOTIFICATION_TYPES.includes('americano_full'));
   assert.ok(KAMPE_ENTITY_NOTIFICATION_TYPES.includes('team_invite'));
   assert.ok(KAMPE_NON_CHAT_NOTIFICATION_TYPES.includes('match_join'));
@@ -28,4 +29,5 @@ test('isKampeNotificationType and isKampeEntityNotificationType', () => {
   assert.equal(isKampeNotificationType('system'), false);
   assert.equal(isKampeEntityNotificationType('team_invite'), true);
   assert.equal(isKampeEntityNotificationType('match_join'), false);
+  assert.equal(isKampeEntityNotificationType('americano_invite'), true);
 });
