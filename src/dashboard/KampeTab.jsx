@@ -17,7 +17,11 @@ import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
 import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
-import { createNotification, createNotificationsForUsers } from '../lib/notifications';
+import {
+  createNotification,
+  createNotificationsForUsers,
+  sendPushNotificationsForUsers,
+} from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
@@ -802,6 +806,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           console.warn("notify_match_creator_on_join:", nErr.message || nErr);
           showToast(
             "Tilmelding gemt, men notifikation fejlede. Kør opdateret create_notification_rpc.sql (notify_match_creator_on_join) i Supabase."
+          );
+        } else if (match?.creator_id && String(match.creator_id) !== String(user.id)) {
+          void sendPushNotificationsForUsers(
+            [match.creator_id],
+            'match_join',
+            'Ny spiller tilmeldt!',
+            `${myDisplayName} har tilmeldt sig Hold ${teamNum} i din kamp.`,
+            matchId,
           );
         }
       }
