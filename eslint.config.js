@@ -43,4 +43,10 @@ export default tseslint.config(
       react: { version: 'detect' },
     },
   },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
 )
