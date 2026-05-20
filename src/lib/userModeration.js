@@ -116,15 +116,29 @@ export async function fetchAdminSubTabBadges(adminUserId) {
   ]);
 
   const unread = notifsRes.data || [];
-  const unreadReports = unread.filter((n) => n.type === 'user_report').length;
   const unreadFlags = unread.filter((n) => n.type === 'system_flag').length;
 
-  badges.reports = Math.max(Number(openReports) || 0, unreadReports);
+  // Kun åbne anmeldelser — ulæste klokke-notifikationer håndteres separat
+  badges.reports = Number(openReports) || 0;
   badges.resultErrors = Number(openResultErrors) || 0;
   badges.console = Math.max(flagsRes.error ? 0 : (flagsRes.count || 0), unreadFlags);
   badges.matches = resultsRes.error ? 0 : (resultsRes.count || 0);
 
   return badges;
+}
+
+/** Marker ulæste user_report-notifikationer som læst når ingen åbne anmeldelser er tilbage. */
+export async function dismissAdminUserReportNotificationsIfQueueEmpty(adminUserId) {
+  if (!adminUserId) return;
+  const open = await fetchAdminOpenUserReportsCount().catch(() => -1);
+  if (open !== 0) return;
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('user_id', adminUserId)
+    .eq('type', 'user_report')
+    .eq('read', false);
+  if (error) console.warn('dismissAdminUserReportNotificationsIfQueueEmpty:', error.message || error);
 }
 
 /** Samlet antal admin-opgaver til menu-badge (anmeldelser + konsol + kampe). */

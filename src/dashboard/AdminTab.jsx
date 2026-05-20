@@ -4,7 +4,12 @@ import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
 import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle, Smartphone } from 'lucide-react';
-import { fetchAdminSubTabBadges, notifyAdminsNewConsoleFlags, reportReasonLabel } from '../lib/userModeration';
+import {
+  dismissAdminUserReportNotificationsIfQueueEmpty,
+  fetchAdminSubTabBadges,
+  notifyAdminsNewConsoleFlags,
+  reportReasonLabel,
+} from '../lib/userModeration';
 import {
   resultErrorReasonLabel,
   resultErrorSourceLabel,
@@ -184,7 +189,13 @@ export function AdminTab({ initialSubTab = null }) {
 
   const refreshSubTabBadges = useCallback(async () => {
     try {
-      const next = await fetchAdminSubTabBadges(user?.id);
+      let next = await fetchAdminSubTabBadges(user?.id);
+      if (next.reports === 0) {
+        await dismissAdminUserReportNotificationsIfQueueEmpty(user?.id);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('pm-notifications-sync'));
+        }
+      }
       const prev = prevSubTabBadgesRef.current;
       if (
         badgesSyncedRef.current
@@ -482,6 +493,12 @@ export function AdminTab({ initialSubTab = null }) {
         .eq('id', report.id);
       if (error) throw error;
       await fetchUserReports();
+      if (nextStatus !== 'open') {
+        await dismissAdminUserReportNotificationsIfQueueEmpty(user.id);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('pm-notifications-sync'));
+        }
+      }
       await refreshSubTabBadges();
     } catch (err) {
       await ask({ message: 'Fejl: ' + (err?.message || 'ukendt'), notice: true });

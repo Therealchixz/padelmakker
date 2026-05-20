@@ -174,3 +174,16 @@ test('client and server push policies share core notification types', () => {
     assert.ok(serverTypes.includes(type), `server missing ${type}`);
   }
 });
+
+test('admin reports badge uses open queue only, not unread bell duplicates', () => {
+  const src = readSrc('src/lib/userModeration.js');
+  assert.match(src, /badges\.reports = Number\(openReports\)/);
+  assert.doesNotMatch(src, /badges\.reports = Math\.max/);
+  assert.match(src, /dismissAdminUserReportNotificationsIfQueueEmpty/);
+});
+
+test('marking user report reviewed clears stale user_report notifications when queue empty', () => {
+  const adminSrc = readSrc('src/dashboard/AdminTab.jsx');
+  assert.match(adminSrc, /dismissAdminUserReportNotificationsIfQueueEmpty/);
+  assert.match(adminSrc, /nextStatus !== 'open'/);
+});
