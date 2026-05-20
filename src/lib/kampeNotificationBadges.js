@@ -1,5 +1,6 @@
 import {
   KAMPE_CHAT_NOTIFICATION_TYPE,
+  KAMPE_ENTITY_NOTIFICATION_TYPES,
   KAMPE_NON_CHAT_NOTIFICATION_TYPES,
 } from './kampeNotificationTypes.js';
 
@@ -11,6 +12,19 @@ export function groupUnreadNotificationsByMatchId(rows) {
     grouped[matchId] = (grouped[matchId] || 0) + 1;
   });
   return grouped;
+}
+
+export function countUnreadEntityNotifications(rows, entityIds = []) {
+  const idSet = new Set((entityIds || []).map((id) => String(id)));
+  if (idSet.size === 0) return 0;
+  let n = 0;
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!row || row.read) continue;
+    if (!KAMPE_ENTITY_NOTIFICATION_TYPES.includes(row.type)) continue;
+    const eid = row.entity_id ? String(row.entity_id) : '';
+    if (eid && idSet.has(eid)) n += 1;
+  }
+  return n;
 }
 
 function normalizeMatchStatus(status) {
@@ -72,5 +86,6 @@ export function removeUnreadForMatch(previous, matchId) {
 export function shouldRefreshKampeUnreadForNotificationType(type) {
   if (type === KAMPE_CHAT_NOTIFICATION_TYPE) return 'chat';
   if (KAMPE_NON_CHAT_NOTIFICATION_TYPES.includes(type)) return 'match';
+  if (KAMPE_ENTITY_NOTIFICATION_TYPES.includes(type)) return 'entity';
   return null;
 }

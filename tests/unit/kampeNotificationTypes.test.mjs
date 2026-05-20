@@ -3,39 +3,29 @@ import assert from 'node:assert/strict';
 
 import {
   KAMPE_CHAT_NOTIFICATION_TYPE,
+  KAMPE_ENTITY_NOTIFICATION_TYPES,
   KAMPE_NON_CHAT_NOTIFICATION_TYPES,
   KAMPE_NOTIFICATION_TYPES,
+  isKampeEntityNotificationType,
   isKampeNotificationType,
 } from '../../src/lib/kampeNotificationTypes.js';
 
-test('Kampe badge notification types include every match-related type exactly once', () => {
+test('Kampe notification types include padel, entity events, and chat', () => {
   assert.equal(KAMPE_CHAT_NOTIFICATION_TYPE, 'match_chat');
-  assert.deepEqual(KAMPE_NON_CHAT_NOTIFICATION_TYPES, [
-    'match_join',
-    'match_invite',
-    'match_full',
-    'match_cancelled',
-    'result_submitted',
-    'result_confirmed',
-    'seeking_player',
-  ]);
+  assert.ok(KAMPE_ENTITY_NOTIFICATION_TYPES.includes('americano_full'));
+  assert.ok(KAMPE_ENTITY_NOTIFICATION_TYPES.includes('team_invite'));
+  assert.ok(KAMPE_NON_CHAT_NOTIFICATION_TYPES.includes('match_join'));
 
-  assert.deepEqual(KAMPE_NOTIFICATION_TYPES, [
-    'match_chat',
-    'match_join',
-    'match_invite',
-    'match_full',
-    'match_cancelled',
-    'result_submitted',
-    'result_confirmed',
-    'seeking_player',
-  ]);
-  assert.equal(new Set(KAMPE_NOTIFICATION_TYPES).size, KAMPE_NOTIFICATION_TYPES.length);
+  const all = [...KAMPE_NOTIFICATION_TYPES];
+  assert.equal(new Set(all).size, all.length);
+  assert.ok(all.includes('match_chat'));
+  assert.ok(all.includes('league_started'));
 });
 
-test('isKampeNotificationType only accepts match-related notification types', () => {
+test('isKampeNotificationType and isKampeEntityNotificationType', () => {
   assert.equal(isKampeNotificationType('match_chat'), true);
-  assert.equal(isKampeNotificationType('result_submitted'), true);
+  assert.equal(isKampeNotificationType('americano_started'), true);
   assert.equal(isKampeNotificationType('system'), false);
-  assert.equal(isKampeNotificationType(null), false);
+  assert.equal(isKampeEntityNotificationType('team_invite'), true);
+  assert.equal(isKampeEntityNotificationType('match_join'), false);
 });

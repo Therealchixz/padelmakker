@@ -19,7 +19,11 @@ import { AdminPinGate } from '../components/AdminPinGate';
 import { GuidedTourOverlay } from '../components/GuidedTourOverlay';
 import { PendingResultConfirmModal } from '../components/PendingResultConfirmModal';
 import { KAMPE_NOTIFICATION_TYPES } from '../lib/kampeNotificationTypes';
-import { countRelevantKampeUnreadNotifications } from '../lib/kampeNotificationBadges';
+import {
+  countRelevantKampeUnreadNotifications,
+  countUnreadEntityNotifications,
+} from '../lib/kampeNotificationBadges';
+import { KAMPE_ENTITY_NOTIFICATION_TYPES } from '../lib/kampeNotificationTypes';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { filterConfirmablePendingResults } from '../lib/resolvePadelMatchResult';
 import {
@@ -514,20 +518,30 @@ function useUnreadKampeNotificationsCount(userId) {
   const createController = useCallback((api) => {
     let shouldRefreshIds = true;
     let myRelatedMatchIds = [];
+    let myRelatedEntityIds = [];
     let statusByMatchId = {};
     const RELEVANT_TYPES = KAMPE_NOTIFICATION_TYPES;
 
-    const loadRelatedMatchIds = async () => {
+    const loadRelatedIds = async () => {
       try {
-        const [createdRes, playerRes] = await Promise.all([
+        const [createdRes, playerRes, americanoRes, leagueTeamRes, leagueCreatedRes] = await Promise.all([
           supabase.from("matches").select("id").eq("creator_id", api.userId),
           supabase.from("match_players").select("match_id").eq("user_id", api.userId),
+          supabase.from("americano_participants").select("tournament_id").eq("user_id", api.userId),
+          supabase.from("league_teams").select("league_id").or(`player1_id.eq.${api.userId},player2_id.eq.${api.userId}`),
+          supabase.from("leagues").select("id").eq("created_by", api.userId),
         ]);
-        const set = new Set([
+        const matchSet = new Set([
           ...(createdRes.data || []).map((m) => String(m.id)),
           ...(playerRes.data || []).map((p) => String(p.match_id)),
         ]);
-        myRelatedMatchIds = [...set];
+        myRelatedMatchIds = [...matchSet];
+        const entitySet = new Set([
+          ...(americanoRes.data || []).map((p) => String(p.tournament_id)),
+          ...(leagueTeamRes.data || []).map((t) => String(t.league_id)),
+          ...(leagueCreatedRes.data || []).map((l) => String(l.id)),
+        ]);
+        myRelatedEntityIds = [...entitySet];
         const matchRows = myRelatedMatchIds.length > 0
           ? await fetchRowsInChunks(supabase, "matches", "id", myRelatedMatchIds, "id,status")
           : [];
@@ -537,6 +551,7 @@ function useUnreadKampeNotificationsCount(userId) {
       } catch (e) {
         console.warn("kampe notif badge ids:", e);
         myRelatedMatchIds = [];
+        myRelatedEntityIds = [];
         statusByMatchId = {};
       } finally {
         shouldRefreshIds = false;
@@ -545,20 +560,32 @@ function useUnreadKampeNotificationsCount(userId) {
 
     const loadCount = async () => {
       try {
-        if (myRelatedMatchIds.length === 0) {
-          api.setCountSafe(0);
-          return;
+        let total = 0;
+        if (myRelatedMatchIds.length > 0) {
+          const { data, error } = await supabase
+            .from("notifications")
+            .select("id,type,match_id,entity_id,read")
+            .eq("user_id", api.userId)
+            .eq("read", false)
+            .in("type", RELEVANT_TYPES)
+            .in("match_id", myRelatedMatchIds)
+            .limit(500);
+          if (error) throw error;
+          total += countRelevantKampeUnreadNotifications(data, statusByMatchId);
         }
-        const { data, error } = await supabase
-          .from("notifications")
-          .select("id,type,match_id")
-          .eq("user_id", api.userId)
-          .eq("read", false)
-          .in("type", RELEVANT_TYPES)
-          .in("match_id", myRelatedMatchIds)
-          .limit(500);
-        if (error) throw error;
-        api.setCountSafe(countRelevantKampeUnreadNotifications(data, statusByMatchId));
+        if (myRelatedEntityIds.length > 0) {
+          const { data: entityRows, error: eErr } = await supabase
+            .from("notifications")
+            .select("id,type,entity_id,read")
+            .eq("user_id", api.userId)
+            .eq("read", false)
+            .in("type", [...KAMPE_ENTITY_NOTIFICATION_TYPES])
+            .in("entity_id", myRelatedEntityIds)
+            .limit(500);
+          if (eErr) throw eErr;
+          total += countUnreadEntityNotifications(entityRows, myRelatedEntityIds);
+        }
+        api.setCountSafe(total);
       } catch (e) {
         console.warn("kampe notif badge refetch:", e);
       }
@@ -566,7 +593,7 @@ function useUnreadKampeNotificationsCount(userId) {
 
     return {
       refetch: async () => {
-        if (shouldRefreshIds) await loadRelatedMatchIds();
+        if (shouldRefreshIds) await loadRelatedIds();
         await loadCount();
       },
       subscriptions: [

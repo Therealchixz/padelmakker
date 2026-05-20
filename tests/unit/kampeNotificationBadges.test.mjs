@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   countRelevantKampeUnreadNotifications,
+  countUnreadEntityNotifications,
   groupUnreadNotificationsByMatchId,
   groupRelevantUnreadNotificationsByMatchId,
   isKampeNotificationRelevantForStatus,
@@ -78,10 +79,24 @@ test('countRelevantKampeUnreadNotifications counts only relevant unread rows', (
   }), 2);
 });
 
-test('shouldRefreshKampeUnreadForNotificationType routes chat and match notifications separately', () => {
+test('shouldRefreshKampeUnreadForNotificationType routes chat, match, and entity notifications', () => {
   assert.equal(shouldRefreshKampeUnreadForNotificationType('match_chat'), 'chat');
   assert.equal(shouldRefreshKampeUnreadForNotificationType('result_submitted'), 'match');
   assert.equal(shouldRefreshKampeUnreadForNotificationType('match_cancelled'), 'match');
+  assert.equal(shouldRefreshKampeUnreadForNotificationType('league_full'), 'entity');
   assert.equal(shouldRefreshKampeUnreadForNotificationType('system'), null);
   assert.equal(shouldRefreshKampeUnreadForNotificationType(null), null);
+});
+
+test('countUnreadEntityNotifications only counts unread entity rows for known ids', () => {
+  const n = countUnreadEntityNotifications(
+    [
+      { type: 'league_full', entity_id: 'liga-1', read: false },
+      { type: 'league_full', entity_id: 'liga-2', read: false },
+      { type: 'league_full', entity_id: 'liga-1', read: true },
+      { type: 'match_join', entity_id: 'liga-1', read: false },
+    ],
+    ['liga-1'],
+  );
+  assert.equal(n, 1);
 });
