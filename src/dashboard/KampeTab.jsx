@@ -778,6 +778,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const joinMatchWithTeam = async (matchId, teamNum) => {
     setTeamSelectMatch(null);
     setBusyId(matchId);
+    const match = matches.find((m) => String(m.id) === String(matchId));
     try {
       const { error } = await supabase.from("match_players").insert({
         match_id: matchId, user_id: user.id, user_name: myDisplayName,

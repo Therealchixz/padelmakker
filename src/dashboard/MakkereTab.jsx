@@ -26,6 +26,96 @@ const isSeekingActive = (p) =>
   p.seeking_match_at != null &&
   Date.now() - new Date(p.seeking_match_at).getTime() < SEEK_TTL_MS;
 
+/** Maks. synlige linjer før "Vis mere" på Find makker-kort. */
+const BIO_COLLAPSED_LINES = 3;
+/** Lange tekster uden linjeskift foldes også ud ved tegn-grænse. */
+const BIO_COLLAPSE_MIN_CHARS = 200;
+
+/** Fjerner tomme linjer fra textarea (\\n\\n) så udfoldet tekst ikke får “blank” mellemrum. */
+function normalizeBioParagraphs(text) {
+  return String(text || '')
+    .trim()
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function bioNeedsCollapse(paragraphs) {
+  if (!paragraphs.length) return false;
+  const joined = paragraphs.join('\n');
+  if (joined.length >= BIO_COLLAPSE_MIN_CHARS) return true;
+  return paragraphs.length > BIO_COLLAPSED_LINES;
+}
+
+function PlayerBioPreview({ bio }) {
+  const [expanded, setExpanded] = useState(false);
+  const paragraphs = normalizeBioParagraphs(bio);
+  if (!paragraphs.length) return null;
+
+  const collapsible = bioNeedsCollapse(paragraphs);
+
+  return (
+    <div
+      style={{ marginTop: '8px' }}
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
+      <div
+        style={{
+          fontSize: '12px',
+          color: theme.textMid,
+          lineHeight: 1.5,
+          wordBreak: 'break-word',
+          ...(collapsible && !expanded
+            ? {
+                display: '-webkit-box',
+                WebkitLineClamp: BIO_COLLAPSED_LINES,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }
+            : {}),
+        }}
+      >
+        {paragraphs.map((part, index) => (
+          <p
+            key={index}
+            style={{
+              margin: 0,
+              marginTop: index === 0 ? 0 : '6px',
+            }}
+          >
+            {part}
+          </p>
+        ))}
+      </div>
+      {collapsible && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          style={{
+            marginTop: '6px',
+            padding: 0,
+            border: 'none',
+            background: 'none',
+            color: theme.accent,
+            fontSize: '12px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+          }}
+        >
+          {expanded ? 'Vis mindre' : 'Vis mere'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function favoritesKeyForUser(userId) {
   return userId != null && String(userId).trim() !== ''
     ? `pm_favorites_${String(userId)}`
@@ -61,8 +151,9 @@ function matchQuality(score) {
   return               { label: 'Mulig match',  color: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB' };
 }
 
-function SuggestionCard({ suggestion, onView, onInvite }) {
-  const { profile: p, score, breakdown, resolvedElo } = suggestion;
+function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
+  const { profile: p, score, breakdown } = suggestion;
+  const eloShown = displayEloFor(p);
   const reason = matchReason(breakdown, p);
   const quality = matchQuality(score);
 
@@ -93,7 +184,7 @@ function SuggestionCard({ suggestion, onView, onInvite }) {
           </span>
 
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ ...tag(theme.accent, theme.onAccent), fontWeight: 800 }}>ELO {Math.round(Number(resolvedElo) || Number(p.elo_rating) || 1000)}</span>
+            <span style={{ ...tag(theme.accent, theme.onAccent), fontWeight: 800 }}>ELO {eloShown}</span>
             {(p.city || p.area) && (
               <span style={{ ...tag(theme.blueBg, theme.blue), display: 'flex', alignItems: 'center', gap: '2px' }}>
                 <MapPin size={8} />{p.city || p.area.replace('Region ', '')}
@@ -319,6 +410,16 @@ export function MakkereTab({ user, showToast }) {
     return map;
   }, [players, displayElo, user.id, myElo]);
 
+  const gamesByUserId = useMemo(() => {
+    const map = {};
+    for (const [id, stats] of Object.entries(statsById)) {
+      if (stats != null && Number.isFinite(Number(stats.games))) {
+        map[id] = Number(stats.games);
+      }
+    }
+    return map;
+  }, [statsById]);
+
   const { exposureCountByUserId, inviteStatsByUserId } = useMemo(
     () => {
       void telemetryVersion;
@@ -331,11 +432,12 @@ export function MakkereTab({ user, showToast }) {
   const suggestions = useMemo(() => getMatchSuggestions(user, players, {
     limit: 10,
     eloByUserId,
+    gamesByUserId,
     inviteStatsByUserId,
     exposureCountByUserId,
     pastMatchesByUserId,
     favoriteIds: favorites,
-  }), [user, players, eloByUserId, inviteStatsByUserId, exposureCountByUserId, pastMatchesByUserId, favorites]);
+  }), [user, players, eloByUserId, gamesByUserId, inviteStatsByUserId, exposureCountByUserId, pastMatchesByUserId, favorites]);
 
   const visibleSuggestions = useMemo(
     () => (showAllSuggestions ? suggestions : suggestions.slice(0, 3)),
@@ -463,6 +565,7 @@ export function MakkereTab({ user, showToast }) {
               <SuggestionCard
                 key={s.profile.id}
                 suggestion={s}
+                displayEloFor={displayElo}
                 onView={setViewPlayer}
                 onInvite={setInviteTarget}
               />
@@ -589,7 +692,7 @@ export function MakkereTab({ user, showToast }) {
                     <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>
                     {isSeekingActive(p) && <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>}
                   </div>
-                  {p.bio && <p style={{ fontSize: '12px', color: theme.textMid, marginTop: '8px', lineHeight: 1.5 }}>{p.bio}</p>}
+                  {p.bio && <PlayerBioPreview bio={p.bio} />}
                 </div>
               </div>
               <div className="pm-makker-card-actions">
