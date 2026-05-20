@@ -726,8 +726,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     [user.id]
   );
 
-  /** Bevares efter ?focus= er fjernet fra URL — scroll-effekt nedenfor bruger den. */
-  const pendingFocusMatchIdRef = useRef(null);
+  /** Kamp der skal scrolles til (state så ny notifikation trigger scroll selv på samme underfane). */
+  const [focusScrollMatchId, setFocusScrollMatchId] = useState(null);
 
   const createMatch = async () => {
     const startM = timeToMinutes(newMatch.time);
@@ -1474,7 +1474,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       navigate("/dashboard/kampe", { replace: true });
       return;
     }
-    pendingFocusMatchIdRef.current = mid;
+    setFocusScrollMatchId(mid);
     const st = (m.status ?? "open").toString().toLowerCase();
     const mp = matchPlayers[m.id] || [];
     const imIn = mp.some((p) => p.user_id === user.id);
@@ -1485,7 +1485,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
 
   useEffect(() => {
-    const mid = pendingFocusMatchIdRef.current;
+    const mid = focusScrollMatchId;
     if (!mid || !tabActive || loadingMatches) return;
 
     const matchInRenderedList = () => {
@@ -1515,7 +1515,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const el = document.getElementById("pm-match-" + String(mid));
       if (!el) return false;
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      pendingFocusMatchIdRef.current = null;
+      setFocusScrollMatchId(null);
       return true;
     };
 
@@ -1524,9 +1524,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     let cancelled = false;
     let attempts = 0;
     const retry = () => {
-      if (cancelled || pendingFocusMatchIdRef.current !== mid) return;
+      if (cancelled) return;
       if (scrollToCard() || attempts >= 15) {
-        if (attempts >= 15) pendingFocusMatchIdRef.current = null;
+        if (attempts >= 15) setFocusScrollMatchId(null);
         return;
       }
       attempts += 1;
@@ -1543,6 +1543,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     tabActive,
     loadingMatches,
     matches,
+    focusScrollMatchId,
     viewTab,
     openMatches,
     activeMatches,
