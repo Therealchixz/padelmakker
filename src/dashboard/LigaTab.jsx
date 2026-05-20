@@ -697,6 +697,9 @@ export function LigaTab({
   createOpen: createOpenProp,
   onCreateOpenChange,
   embedInKampe = false,
+  tabActive = true,
+  focusLeagueId = null,
+  onFocusLeagueHandled,
   scope: scopeProp,
   onScopeChange,
   searchQuery: searchQueryProp,
@@ -1067,6 +1070,8 @@ export function LigaTab({
         .eq('id', league.id);
       if (error) throw error;
       showToast('Liga afsluttet!');
+      const { notifyLeagueCompleted } = await import('../lib/notifyKampeEntityComplete');
+      void notifyLeagueCompleted(league, user.id);
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
     finally { setBusyId(null); }
@@ -1079,6 +1084,49 @@ export function LigaTab({
     return n;
   });
   const toggleManageTools = (id) => setOpenManageTools((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  useEffect(() => {
+    const lid = focusLeagueId;
+    if (!lid || !tabActive || !embedInKampe || loading) return;
+    const league = leagues.find((l) => String(l.id) === String(lid));
+    if (!league) {
+      onFocusLeagueHandled?.();
+      return;
+    }
+    const st = String(league.status || '').toLowerCase();
+    if (st === 'registration' || st === 'active' || st === 'completed') {
+      setView(st);
+    }
+
+    const scrollToCard = () => {
+      const el = document.getElementById(`pm-liga-${lid}`);
+      if (!el) return false;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      onFocusLeagueHandled?.();
+      return true;
+    };
+
+    if (scrollToCard()) return undefined;
+
+    let cancelled = false;
+    let attempts = 0;
+    const retry = () => {
+      if (cancelled) return;
+      if (scrollToCard() || attempts >= 15) {
+        if (attempts >= 15) onFocusLeagueHandled?.();
+        return;
+      }
+      attempts += 1;
+      window.setTimeout(retry, 80);
+    };
+    const raf = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(retry);
+    });
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(raf);
+    };
+  }, [focusLeagueId, tabActive, embedInKampe, loading, leagues, onFocusLeagueHandled]);
 
   const visibleLeagues = leagues.filter(l => {
     if (l.status !== view) return false;
@@ -1426,22 +1474,23 @@ export function LigaTab({
               ) : null;
 
               return (
-                <LigaOpenCard
-                  key={league.id}
-                  league={league}
-                  teams={regTeams}
-                  myTeamId={myTeam?.id}
-                  onPlayerClick={openProfile}
-                  onKickTeam={onKickTeamCb}
-                  kickBusyId={typeof busyId === 'string' && busyId.endsWith('-kick') ? busyId.replace('-kick', '') : null}
-                  actions={cardActions}
-                  extras={cardExtras}
-                />
+                <div key={league.id} id={`pm-liga-${league.id}`} style={{ scrollMarginTop: '88px' }}>
+                  <LigaOpenCard
+                    league={league}
+                    teams={regTeams}
+                    myTeamId={myTeam?.id}
+                    onPlayerClick={openProfile}
+                    onKickTeam={onKickTeamCb}
+                    kickBusyId={typeof busyId === 'string' && busyId.endsWith('-kick') ? busyId.replace('-kick', '') : null}
+                    actions={cardActions}
+                    extras={cardExtras}
+                  />
+                </div>
               );
             }
 
             return (
-              <div key={league.id} className="pm-ui-card pm-match-surface-card">
+              <div key={league.id} id={`pm-liga-${league.id}`} className="pm-ui-card pm-match-surface-card" style={{ scrollMarginTop: '88px' }}>
 
                 {/* Winner banner for completed leagues */}
                 {league.status === 'completed' && standings.length > 0 && (() => {

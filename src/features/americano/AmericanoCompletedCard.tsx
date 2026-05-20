@@ -264,6 +264,7 @@ function computeHighlights(
 }
 
 type Props = {
+  domId?: string
   tournament: AmericanoTournament
   dateLabel: string
   participants: PartMin[]
@@ -277,6 +278,7 @@ type Props = {
 }
 
 export function AmericanoCompletedCard({
+  domId,
   tournament,
   dateLabel,
   participants,
@@ -394,6 +396,7 @@ export function AmericanoCompletedCard({
 
   return (
     <div
+      id={domId}
       className="pm-ui-card"
       style={{
         background: theme.surface,
@@ -401,6 +404,7 @@ export function AmericanoCompletedCard({
         borderRadius: 16,
         boxShadow: theme.shadow,
         overflow: 'hidden',
+        scrollMarginTop: domId ? '88px' : undefined,
       }}
     >
       {/* 1. Header — fælles blå gradient med 2v2 / Liga / Americano open */}

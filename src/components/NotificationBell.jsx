@@ -14,6 +14,11 @@ import {
   isPushSubscribed,
 } from '../lib/pushNotifications';
 import { createNotification } from '../lib/notifications';
+import {
+  buildKampeFocusPath,
+  notificationKampeTarget,
+  kampeFocusFooterLabel,
+} from '../lib/kampeFocusNavigation';
 
 const DISMISSED_MAX = 400;
 const NOTIF_REFRESH_INTERVAL_MS = 10000;
@@ -49,7 +54,7 @@ function addDismissedIds(userId, ids) {
 }
 
 export function NotificationBell() {
-  const { user: authUser } = useAuth();
+  const { user: authUser, profile } = useAuth();
   const navigate = useNavigate();
   const userId = authUser?.id;
   const [open, setOpen] = useState(false);
@@ -324,22 +329,34 @@ export function NotificationBell() {
     }
   };
 
-  const openNotificationMatch = async (n) => {
-    if (!n?.match_id || !userId) return;
+  const markNotifRead = async (n) => {
     const ids = Array.isArray(n?.notifIds)
       ? n.notifIds.filter((id) => typeof id === "string")
       : [n?.id].filter((id) => typeof id === "string");
+    if (!ids.length || !userId) return;
     try {
-      if (ids.length > 0) {
-        await supabase.from("notifications").update({ read: true }).in("id", ids).eq("user_id", userId);
-        const idSet = new Set(ids);
-        setNotifs((prev) => prev.map((x) => (idSet.has(x.id) ? { ...x, read: true } : x)));
-        emitNotificationsSync();
-      }
+      await supabase.from("notifications").update({ read: true }).in("id", ids).eq("user_id", userId);
+      const idSet = new Set(ids);
+      setNotifs((prev) => prev.map((x) => (idSet.has(x.id) ? { ...x, read: true } : x)));
+      emitNotificationsSync();
     } catch { /* ignore */ }
+  };
+
+  const openNotificationTarget = async (n) => {
+    if (!userId) return;
+    const isAdminResultError =
+      n?.type === "result_error_report" && profile?.role === "admin";
+    if (isAdminResultError) {
+      await markNotifRead(n);
+      setOpen(false);
+      navigate("/dashboard/admin?adminSub=result_errors");
+      return;
+    }
+    const kampeTarget = notificationKampeTarget(n);
+    if (!kampeTarget) return;
+    await markNotifRead(n);
     setOpen(false);
-    /* ?focus= så KampeTab reagerer også hvis man allerede er på Kampe-fanen */
-    navigate("/dashboard/kampe?focus=" + encodeURIComponent(String(n.match_id)));
+    navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId));
   };
 
   const timeAgo = useCallback((dateStr) => {
@@ -376,6 +393,9 @@ export function NotificationBell() {
       case "match_cancelled": return "\u274C";
       case "welcome": return "\uD83D\uDC4B";
       case "team_invite": return "\uD83C\uDFBE";
+      case "americano_completed": return "\uD83C\uDFC6";
+      case "league_completed": return "\uD83C\uDFC6";
+      case "result_error_report": return "\u26A0\uFE0F";
       default: return "\uD83D\uDD14";
     }
   };
@@ -580,7 +600,10 @@ export function NotificationBell() {
                 <div>Ingen notifikationer endnu</div>
               </div>
             ) : displayNotifs.map(n => {
-              const hasMatch = Boolean(n.match_id);
+              const isAdminResultError =
+                n.type === "result_error_report" && profile?.role === "admin";
+              const kampeTarget = notificationKampeTarget(n);
+              const isClickable = Boolean(kampeTarget) || isAdminResultError;
               const isMatchChatGroup = n.type === "match_chat_group";
               const itemTitle = isMatchChatGroup
                 ? (n.unreadCount > 0 ? "Nye beskeder i kamp-chat" : "Beskeder i kamp-chat")
@@ -594,16 +617,16 @@ export function NotificationBell() {
               return (
               <div
                 key={n.id}
-                role={hasMatch ? "button" : undefined}
-                tabIndex={hasMatch ? 0 : undefined}
-                onClick={hasMatch ? () => openNotificationMatch(n) : undefined}
-                onKeyDown={hasMatch ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openNotificationMatch(n); } } : undefined}
+                role={isClickable ? "button" : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                onClick={isClickable ? () => { void openNotificationTarget(n); } : undefined}
+                onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void openNotificationTarget(n); } } : undefined}
                 style={{
                   padding: "10px 12px 10px 14px",
                   borderBottom: "1px solid " + theme.border + "80",
                   background: n.read ? "transparent" : theme.accentBg + "40",
                   transition: "background 0.2s",
-                  cursor: hasMatch ? "pointer" : "default",
+                  cursor: isClickable ? "pointer" : "default",
                 }}
               >
                 <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
@@ -614,8 +637,14 @@ export function NotificationBell() {
                     {isMatchChatGroup && (
                       <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{itemMeta}</div>
                     )}
-                    {hasMatch && (
-                      <div style={{ fontSize: "10px", color: theme.accent, marginTop: "6px", fontWeight: 600 }}>Tryk for at gå til kampen →</div>
+                    {isClickable && (
+                      <div style={{ fontSize: "10px", color: theme.accent, marginTop: "6px", fontWeight: 600 }}>
+                        {isAdminResultError
+                          ? "Tryk for at åbne Admin (PIN) → Fejl →"
+                          : kampeTarget
+                            ? kampeFocusFooterLabel(kampeTarget.format)
+                            : "Tryk for at åbne →"}
+                      </div>
                     )}
                     <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{timeAgo(n.created_at)}</div>
                   </div>

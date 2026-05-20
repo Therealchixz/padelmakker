@@ -950,6 +950,25 @@ export function DashboardPage({ user, onLogout, showToast }) {
     lastNonAdminTabRef.current = tab;
   }, [tab]);
 
+  /** Deep link fra admin-notifikation: /dashboard/admin?adminSub=result_errors */
+  useEffect(() => {
+    if (!isAdmin || tab !== "admin") return;
+    const params = new URLSearchParams(location.search);
+    const raw = params.get("adminSub");
+    if (raw !== "result_errors") {
+      if (params.has("adminSub")) {
+        params.delete("adminSub");
+        const next = params.toString();
+        navigate({ pathname: location.pathname, search: next ? `?${next}` : "" }, { replace: true });
+      }
+      return;
+    }
+    setAdminInitialSubTab("result_errors");
+    params.delete("adminSub");
+    const next = params.toString();
+    navigate({ pathname: location.pathname, search: next ? `?${next}` : "" }, { replace: true });
+  }, [isAdmin, tab, location.pathname, location.search, navigate]);
+
   useEffect(() => {
     setAdminPinUnlocked(false);
   }, [user?.id]);

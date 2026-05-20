@@ -89,6 +89,22 @@ const TYPE_POLICIES = Object.freeze({
     urgency: "normal",
     cooldownSeconds: 60,
   },
+  americano_completed: {
+    channel: "kampe",
+    level: "normal",
+    sendPush: true,
+    silent: false,
+    urgency: "normal",
+    cooldownSeconds: 60,
+  },
+  league_completed: {
+    channel: "liga",
+    level: "normal",
+    sendPush: true,
+    silent: false,
+    urgency: "normal",
+    cooldownSeconds: 60,
+  },
   elo_change: {
     channel: "elo",
     level: "quiet",

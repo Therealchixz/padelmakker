@@ -29,6 +29,8 @@ async function sendPushNotification(userId, type, title, body, matchId, options 
         title,
         body,
         matchId,
+        entityType: options.entityType || null,
+        entityId: options.entityId || null,
         type: pushPolicy.type,
         channel: pushPolicy.channel,
         level: pushPolicy.level,
@@ -55,24 +57,33 @@ async function sendPushNotification(userId, type, title, body, matchId, options 
   }
 }
 
-async function insertNotificationRpc(userId, type, title, body, matchId) {
+function entityRpcArgs(options = {}) {
+  const entityType = options.entityType ? String(options.entityType) : null;
+  const entityId = options.entityId ? String(options.entityId) : null;
+  if (!entityType || !entityId) return {};
+  return { p_entity_type: entityType, p_entity_id: entityId };
+}
+
+async function insertNotificationRpc(userId, type, title, body, matchId, options = {}) {
   const { error } = await supabase.rpc(SINGLE_RPC, {
     p_user_id: userId,
     p_type: type,
     p_title: title,
     p_body: body,
     p_match_id: matchId,
+    ...entityRpcArgs(options),
   });
   return error || null;
 }
 
-async function insertNotificationsBatchRpc(userIds, type, title, body, matchId) {
+async function insertNotificationsBatchRpc(userIds, type, title, body, matchId, options = {}) {
   const { data, error } = await supabase.rpc(BATCH_RPC, {
     p_user_ids: userIds,
     p_type: type,
     p_title: title,
     p_body: body,
     p_match_id: matchId,
+    ...entityRpcArgs(options),
   });
   if (error) return { error, inserted: 0 };
   return { error: null, inserted: Number(data) || 0 };
@@ -95,7 +106,7 @@ export async function createNotification(userId, type, title, body, matchId = nu
   let rpcError = null;
 
   try {
-    rpcError = await insertNotificationRpc(userId, type, title, body, matchId);
+    rpcError = await insertNotificationRpc(userId, type, title, body, matchId, options);
     if (rpcError) {
       console.warn('Notification RPC fejl:', rpcError.message || rpcError);
     }
@@ -148,13 +159,13 @@ export async function createNotificationsForUsers(
   let rpcError = null;
   let inserted = 0;
 
-  const batch = await insertNotificationsBatchRpc(ids, type, title, body, matchId);
+  const batch = await insertNotificationsBatchRpc(ids, type, title, body, matchId, options);
   if (batch.error) {
     if (!isBatchRpcUnavailable(batch.error)) {
       console.warn('Batch notification RPC fejl:', batch.error.message || batch.error);
     }
     const results = await Promise.allSettled(
-      ids.map((id) => insertNotificationRpc(id, type, title, body, matchId)),
+      ids.map((id) => insertNotificationRpc(id, type, title, body, matchId, options)),
     );
     const firstErr = results.find(
       (r) => r.status === 'rejected' || (r.status === 'fulfilled' && r.value),
