@@ -10,6 +10,12 @@ const SINGLE_RPC = 'create_notification_for_user';
 
 const prefsCache = new Map();
 
+/** Ryd cache når bruger ændrer push-kanaler i klokken (ellers stale prefs ved send-push). */
+export function invalidateNotificationPrefsCache(userId) {
+  const key = String(userId || '');
+  if (key) prefsCache.delete(key);
+}
+
 async function loadNotificationPrefsForUser(userId) {
   const key = String(userId || '');
   if (!key) return null;

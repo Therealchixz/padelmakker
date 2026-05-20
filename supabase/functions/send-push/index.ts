@@ -216,6 +216,24 @@ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
     cooldownSeconds: 45,
     renotify: true,
   },
+  result_error_report: {
+    channel: "admin",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 30,
+    renotify: true,
+  },
+  user_report: {
+    channel: "admin",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 30,
+    renotify: true,
+  },
 });
 
 function normalizeOrigin(value: string | null) {
@@ -255,6 +273,154 @@ function topicForPush({
   return topic || "pm-notif";
 }
 
+const ADMIN_TARGET_PUSH_TYPES = new Set(["system_flag", "result_error_report", "user_report"]);
+
+async function profileIsAdmin(
+  adminClient: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<boolean> {
+  const { data } = await adminClient
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+  return String(data?.role || "").trim().toLowerCase() === "admin";
+}
+
+async function authorizeCrossUserPush({
+  adminClient,
+  callerId,
+  targetUserId,
+  normalizedMatchId,
+  normalizedEntityType,
+  normalizedEntityId,
+  notificationType,
+}: {
+  adminClient: ReturnType<typeof createClient>;
+  callerId: string;
+  targetUserId: string;
+  normalizedMatchId: string | null;
+  normalizedEntityType: string | null;
+  normalizedEntityId: string | null;
+  notificationType: string;
+}): Promise<boolean> {
+  const type = normalizeType(notificationType);
+
+  if (!PUSH_POLICY_BY_TYPE[type]) {
+    return false;
+  }
+
+  if (ADMIN_TARGET_PUSH_TYPES.has(type)) {
+    if (type === "system_flag") {
+      return (await profileIsAdmin(adminClient, callerId)) &&
+        (await profileIsAdmin(adminClient, targetUserId));
+    }
+    return await profileIsAdmin(adminClient, targetUserId);
+  }
+
+  if (normalizedMatchId) {
+    const [{ data: callerInMatch }, { data: isCreator }, { data: targetInMatch }] = await Promise.all([
+      adminClient
+        .from("match_players")
+        .select("id")
+        .eq("match_id", normalizedMatchId)
+        .eq("user_id", callerId)
+        .maybeSingle(),
+      adminClient
+        .from("matches")
+        .select("id")
+        .eq("id", normalizedMatchId)
+        .eq("creator_id", callerId)
+        .maybeSingle(),
+      adminClient
+        .from("match_players")
+        .select("id")
+        .eq("match_id", normalizedMatchId)
+        .eq("user_id", targetUserId)
+        .maybeSingle(),
+    ]);
+    return !!(callerInMatch || isCreator) && !!targetInMatch;
+  }
+
+  if (
+    (normalizedEntityType === "americano" || normalizedEntityType === "league") &&
+    normalizedEntityId
+  ) {
+    if (normalizedEntityType === "americano") {
+      const [
+        { data: callerPart },
+        { data: callerCreator },
+        { data: targetPart },
+        { data: targetCreator },
+      ] = await Promise.all([
+        adminClient
+          .from("americano_participants")
+          .select("id")
+          .eq("tournament_id", normalizedEntityId)
+          .eq("user_id", callerId)
+          .maybeSingle(),
+        adminClient
+          .from("americano_tournaments")
+          .select("id")
+          .eq("id", normalizedEntityId)
+          .eq("creator_id", callerId)
+          .maybeSingle(),
+        adminClient
+          .from("americano_participants")
+          .select("id")
+          .eq("tournament_id", normalizedEntityId)
+          .eq("user_id", targetUserId)
+          .maybeSingle(),
+        adminClient
+          .from("americano_tournaments")
+          .select("id")
+          .eq("id", normalizedEntityId)
+          .eq("creator_id", targetUserId)
+          .maybeSingle(),
+      ]);
+      return !!(callerPart || callerCreator) && !!(targetPart || targetCreator);
+    }
+
+    const callerIsAdmin = await profileIsAdmin(adminClient, callerId);
+    const [
+      { data: callerTeam },
+      { data: callerLeague },
+      { data: targetTeam },
+      { data: targetLeague },
+    ] = await Promise.all([
+      adminClient
+        .from("league_teams")
+        .select("id")
+        .eq("league_id", normalizedEntityId)
+        .or(`player1_id.eq.${callerId},player2_id.eq.${callerId}`)
+        .maybeSingle(),
+      adminClient
+        .from("leagues")
+        .select("id")
+        .eq("id", normalizedEntityId)
+        .eq("created_by", callerId)
+        .maybeSingle(),
+      adminClient
+        .from("league_teams")
+        .select("id")
+        .eq("league_id", normalizedEntityId)
+        .or(`player1_id.eq.${targetUserId},player2_id.eq.${targetUserId}`)
+        .maybeSingle(),
+      adminClient
+        .from("leagues")
+        .select("id")
+        .eq("id", normalizedEntityId)
+        .eq("created_by", targetUserId)
+        .maybeSingle(),
+    ]);
+    const callerOk = callerIsAdmin || !!(callerTeam || callerLeague);
+    const targetOk = !!(targetTeam || targetLeague);
+    return callerOk && targetOk;
+  }
+
+  return false;
+}
+
 function ttlForLevel(level: PushPolicy["level"]) {
   if (level === "critical") return 3600;
   if (level === "quiet") return 300;
@@ -284,6 +450,7 @@ function corsHeadersForRequest(req: Request) {
 
 function resolveServerPushPolicy(type: unknown, clientHints: Record<string, unknown> = {}) {
   const normalizedType = normalizeType(type);
+  const isKnownType = Boolean(PUSH_POLICY_BY_TYPE[normalizedType]);
   const known = PUSH_POLICY_BY_TYPE[normalizedType] || {};
   const merged: PushPolicy = {
     ...DEFAULT_PUSH_POLICY,
@@ -291,7 +458,7 @@ function resolveServerPushPolicy(type: unknown, clientHints: Record<string, unkn
   };
 
   // For unknown types we accept client hints as a fallback.
-  if (!PUSH_POLICY_BY_TYPE[normalizedType]) {
+  if (!isKnownType) {
     if (typeof clientHints.channel === "string" && clientHints.channel.trim()) {
       merged.channel = clientHints.channel.trim().slice(0, 32);
     }
@@ -315,10 +482,17 @@ function resolveServerPushPolicy(type: unknown, clientHints: Record<string, unkn
     }
   }
 
-  merged.cooldownSeconds = sanitizeCooldownSeconds(
-    clientHints.cooldownSeconds,
-    sanitizeCooldownSeconds(merged.cooldownSeconds, DEFAULT_PUSH_POLICY.cooldownSeconds),
-  );
+  if (isKnownType) {
+    merged.cooldownSeconds = sanitizeCooldownSeconds(
+      PUSH_POLICY_BY_TYPE[normalizedType]?.cooldownSeconds,
+      DEFAULT_PUSH_POLICY.cooldownSeconds,
+    );
+  } else {
+    merged.cooldownSeconds = sanitizeCooldownSeconds(
+      clientHints.cooldownSeconds,
+      sanitizeCooldownSeconds(merged.cooldownSeconds, DEFAULT_PUSH_POLICY.cooldownSeconds),
+    );
+  }
 
   if (!PUSH_LEVELS.has(merged.level)) merged.level = DEFAULT_PUSH_POLICY.level;
   if (!PUSH_URGENCIES.has(merged.urgency)) merged.urgency = DEFAULT_PUSH_POLICY.urgency;
@@ -487,45 +661,23 @@ Deno.serve(async (req: Request) => {
     const normalizedEntityType = entityType ? String(entityType) : null;
     const normalizedEntityId = entityId ? String(entityId) : null;
     const callerId = user.id;
+    const normalizedType = normalizeType(type);
+
     if (String(targetUserId) !== String(callerId)) {
-      const hasEntityFocus =
-        (normalizedEntityType === "americano" || normalizedEntityType === "league") &&
-        normalizedEntityId;
-      if (!normalizedMatchId && !hasEntityFocus) {
-        return new Response(JSON.stringify({ error: "Forbidden: matchId or entity focus required for cross-user push" }), {
+      const allowed = await authorizeCrossUserPush({
+        adminClient,
+        callerId,
+        targetUserId: String(targetUserId),
+        normalizedMatchId,
+        normalizedEntityType,
+        normalizedEntityId,
+        notificationType: normalizedType,
+      });
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: "Forbidden: not allowed to push to this user" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
-      }
-      if (normalizedMatchId) {
-      const [{ data: callerInMatch }, { data: isCreator }, { data: targetInMatch }] = await Promise.all([
-        adminClient
-          .from("match_players")
-          .select("id")
-          .eq("match_id", normalizedMatchId)
-          .eq("user_id", callerId)
-          .maybeSingle(),
-        adminClient
-          .from("matches")
-          .select("id")
-          .eq("id", normalizedMatchId)
-          .eq("creator_id", callerId)
-          .maybeSingle(),
-        adminClient
-          .from("match_players")
-          .select("id")
-          .eq("match_id", normalizedMatchId)
-          .eq("user_id", targetUserId)
-          .maybeSingle(),
-      ]);
-      const callerAuthorized = !!(callerInMatch || isCreator);
-      const targetIsInMatch = !!targetInMatch;
-      if (!callerAuthorized || !targetIsInMatch) {
-        return new Response(JSON.stringify({ error: "Forbidden: no access to this match notification" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       }
     }
 

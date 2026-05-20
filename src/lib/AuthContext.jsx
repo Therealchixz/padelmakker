@@ -160,6 +160,7 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [profileLoadError, setProfileLoadError] = useState(false)
   const [banNotice, setBanNotice] = useState(null)
   const profileReqId = useRef(0)
   /** Til pending-avatar merge: undgå at sætte profil efter logout når core-load timeout gav prev=null */
@@ -191,36 +192,52 @@ export function AuthProvider({ children }) {
     const uid = userRow?.id != null ? String(userRow.id) : ''
     if (!userRow?.id) {
       setProfile(null)
+      setProfileLoadError(false)
       if (!quiet) setProfileLoading(false)
       return
     }
     if (!quiet) setProfileLoading(true)
-    Promise.race([
+    setProfileLoadError(false)
+
+    const fetchWithTimeout = () => Promise.race([
       fetchOrCreateProfileCore(userRow),
       new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
     ])
-      .then((p) => {
+
+    fetchWithTimeout()
+      .then(async (p) => {
         if (profileReqId.current !== id) return;
+        let profileRow = p
+        if (!profileRow) {
+          profileRow = await fetchOrCreateProfileCore(userRow)
+        }
+        if (!profileRow) {
+          setProfileLoadError(true)
+          return
+        }
 
         // Tjek for ban-status — vis modal i stedet for blokerende alert()
-        if (p?.is_banned) {
+        if (profileRow?.is_banned) {
           if (signingOutRef.current) return
           signingOutRef.current = true
-          setBanNotice({ reason: p.ban_reason || '' })
+          setBanNotice({ reason: profileRow.ban_reason || '' })
           return;
         }
 
-        setProfile(p)
+        setProfile(profileRow)
 
         // Auto-expire seeking_match after 24h from activation
-        if (p?.seeking_match && p?.seeking_match_at) {
-          const age = Date.now() - new Date(p.seeking_match_at).getTime();
+        if (profileRow?.seeking_match && profileRow?.seeking_match_at) {
+          const age = Date.now() - new Date(profileRow.seeking_match_at).getTime();
           if (age >= 24 * 60 * 60 * 1000) {
             supabase.from('profiles')
               .update({ seeking_match: false, seeking_match_at: null })
-              .eq('id', p.id)
-              .then(({ data }) => {
-                if (data?.[0]) setProfile(normalizeProfileRow(data[0]));
+              .eq('id', profileRow.id)
+              .select()
+              .single()
+              .then(({ data, error }) => {
+                if (error || !data) return;
+                setProfile(normalizeProfileRow(data));
               })
               .catch(() => {});
           }
@@ -232,7 +249,7 @@ export function AuthProvider({ children }) {
          * (så ville pending være slettet men UI stadig vise emoji).
          * Merge med funktionel setProfile + bruger-id-tjek i stedet for profileReqId.
          */
-        void applyPendingAvatarToProfile(userRow, p).then((withAvatar) => {
+        void applyPendingAvatarToProfile(userRow, profileRow).then((withAvatar) => {
           if (!withAvatar || !uid) return
           setProfile((prev) => {
             if (String(withAvatar.id) !== uid) return prev
@@ -508,6 +525,7 @@ export function AuthProvider({ children }) {
     setUser(null)
     setProfile(null)
     setProfileLoading(false)
+    setProfileLoadError(false)
   }
 
   const updateProfile = async (updates) => {
@@ -579,6 +597,7 @@ export function AuthProvider({ children }) {
         profile,
         loading,
         profileLoading,
+        profileLoadError,
         signUp,
         signUpWithPhone,
         signIn,

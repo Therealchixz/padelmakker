@@ -13,7 +13,7 @@ import {
   unsubscribeFromPush,
   isPushSubscribed,
 } from '../lib/pushNotifications';
-import { createNotification } from '../lib/notifications';
+import { createNotification, invalidateNotificationPrefsCache } from '../lib/notifications';
 import {
   mergeNotificationPrefToggle,
   normalizeNotificationPrefs,
@@ -59,7 +59,7 @@ function addDismissedIds(userId, ids) {
 }
 
 export function NotificationBell() {
-  const { user: authUser, profile } = useAuth();
+  const { user: authUser, profile, updateProfile } = useAuth();
   const navigate = useNavigate();
   const userId = authUser?.id;
   const [open, setOpen] = useState(false);
@@ -69,9 +69,11 @@ export function NotificationBell() {
   const [confirmClear, setConfirmClear] = useState(false);
   const panelRef = useRef(null);
   const realtimeRetryTimerRef = useRef(null);
+  const loadSeqRef = useRef(0);
+  const pushMessageTimerRef = useRef(null);
 
   // Push notification opt-in state
-  const [pushSupported, setPushSupported] = useState(false);
+  const [pushSupported, setPushSupported] = useState(() => isPushSupported());
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [pushTestLoading, setPushTestLoading] = useState(false);
@@ -96,7 +98,16 @@ export function NotificationBell() {
         .from('profiles')
         .update({ notification_prefs: nextPrefs })
         .eq('id', userId);
-      if (error) console.warn('notification_prefs update:', error.message);
+      if (error) {
+        console.warn('notification_prefs update:', error.message);
+      } else {
+        invalidateNotificationPrefsCache(userId);
+        try {
+          await updateProfile({ notification_prefs: nextPrefs });
+        } catch (profileErr) {
+          console.warn('notification_prefs profile sync:', profileErr?.message || profileErr);
+        }
+      }
     } finally {
       setPrefsSaving(false);
     }
@@ -164,6 +175,7 @@ export function NotificationBell() {
       setMatchMetaById({});
       return;
     }
+    const seq = ++loadSeqRef.current;
     try {
       const { data, error } = await supabase
         .from("notifications")
@@ -171,6 +183,7 @@ export function NotificationBell() {
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(20);
+      if (loadSeqRef.current !== seq) return;
       if (error) {
         console.warn("notifications load:", error.message || error);
         setNotifs([]);
@@ -178,6 +191,7 @@ export function NotificationBell() {
       }
       const dismissed = loadDismissedIds(userId);
       const filtered = (data || []).filter((n) => !dismissed.has(n.id));
+      if (loadSeqRef.current !== seq) return;
       setNotifs(filtered);
 
       const matchIds = [...new Set(
@@ -187,7 +201,7 @@ export function NotificationBell() {
       )];
 
       if (!matchIds.length) {
-        setMatchMetaById({});
+        if (loadSeqRef.current === seq) setMatchMetaById({});
         return;
       }
 
@@ -195,6 +209,7 @@ export function NotificationBell() {
         .from("matches")
         .select("id, date, time, time_end, court_name")
         .in("id", matchIds);
+      if (loadSeqRef.current !== seq) return;
       if (matchError) {
         console.warn("notification match meta load:", matchError.message || matchError);
         setMatchMetaById({});
@@ -204,8 +219,9 @@ export function NotificationBell() {
       (matchRows || []).forEach((m) => {
         nextMeta[String(m.id)] = m;
       });
-      setMatchMetaById(nextMeta);
+      if (loadSeqRef.current === seq) setMatchMetaById(nextMeta);
     } catch (e) {
+      if (loadSeqRef.current !== seq) return;
       console.warn("notifications load:", e);
       setNotifs([]);
       setMatchMetaById({});
@@ -299,8 +315,17 @@ export function NotificationBell() {
 
   const markAllRead = async () => {
     const unread = notifs.filter(n => !n.read).map(n => n.id);
-    if (!unread.length) return;
-    await supabase.from("notifications").update({ read: true }).in("id", unread);
+    if (!unread.length || !userId) return;
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .in("id", unread)
+      .eq("user_id", userId);
+    if (error) {
+      console.warn("notifications markAllRead:", error.message || error);
+      void load();
+      return;
+    }
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));
     emitNotificationsSync();
   };
@@ -312,8 +337,8 @@ export function NotificationBell() {
       : [notif?.id].filter((id) => typeof id === "string");
     if (!ids.length) return;
 
-    addDismissedIds(userId, ids);
     const idSet = new Set(ids);
+    const prevNotifs = notifs;
     setNotifs((prev) => prev.filter((n) => !idSet.has(n.id)));
     emitNotificationsSync();
 
@@ -324,19 +349,22 @@ export function NotificationBell() {
       .eq("user_id", userId)
       .select("id");
 
-    if (error) {
-      console.warn("notifications delete:", error.message || error);
+    if (error || !data?.length) {
+      console.warn(
+        "notifications delete:",
+        error?.message || error || "ingen række slettet (tjek RLS / kør notifications_add_delete_policy.sql)",
+      );
+      setNotifs(prevNotifs);
+      void load();
       return;
     }
-    if (!data?.length) {
-      console.warn("notifications delete: ingen række slettet (tjek RLS / kør notifications_add_delete_policy.sql)");
-    }
+    addDismissedIds(userId, ids);
   };
 
   const clearAll = async () => {
     if (!userId || !notifs.length) return;
     const ids = notifs.map((n) => n.id);
-    addDismissedIds(userId, ids);
+    const prevNotifs = notifs;
     setNotifs([]);
     emitNotificationsSync();
 
@@ -347,13 +375,16 @@ export function NotificationBell() {
       .eq("user_id", userId)
       .select("id");
 
-    if (error) {
-      console.warn("notifications clear:", error.message || error);
+    if (error || !data?.length) {
+      console.warn(
+        "notifications clear:",
+        error?.message || error || "ingen rækker slettet (tjek RLS / kør notifications_add_delete_policy.sql)",
+      );
+      setNotifs(prevNotifs);
+      void load();
       return;
     }
-    if (!data?.length) {
-      console.warn("notifications clear: ingen rækker slettet (tjek RLS / kør notifications_add_delete_policy.sql)");
-    }
+    addDismissedIds(userId, ids);
   };
 
   const markNotifRead = async (n) => {
@@ -447,9 +478,17 @@ export function NotificationBell() {
   };
 
   const showPushMessage = (msg) => {
+    if (pushMessageTimerRef.current) clearTimeout(pushMessageTimerRef.current);
     setPushMessage(msg);
-    setTimeout(() => setPushMessage(null), 3000);
+    pushMessageTimerRef.current = setTimeout(() => {
+      setPushMessage(null);
+      pushMessageTimerRef.current = null;
+    }, 3000);
   };
+
+  useEffect(() => () => {
+    if (pushMessageTimerRef.current) clearTimeout(pushMessageTimerRef.current);
+  }, []);
 
   const handleEnablePush = async () => {
     if (!userId || pushLoading) return;
@@ -467,6 +506,8 @@ export function NotificationBell() {
         setPushBlocked(true);
       } else if (result === 'timeout') {
         showPushMessage('Timeout — prøv igen');
+      } else if (result === 'db_error') {
+        showPushMessage('Push aktiveret i browser, men kunne ikke gemmes — prøv igen');
       } else {
         showPushMessage('Kunne ikke aktivere — prøv igen');
       }

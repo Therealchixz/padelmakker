@@ -34,7 +34,7 @@ const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage")
 const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
 
 export default function PadelMakker() {
-  const { user, profile, loading, profileLoading, signOut } = useAuth();
+  const { user, profile, loading, profileLoading, profileLoadError, refreshProfile, signOut } = useAuth();
   const hasProfile = Boolean(user && profile);
   const phoneExempt = hasProfile && isPhoneVerificationExempt(user, profile);
   const onboardingComplete = hasProfile && canAccessDashboard(user, profile, { phoneExempt });
@@ -70,10 +70,34 @@ export default function PadelMakker() {
     };
   }, []);
 
-  if (loading || (user && profileLoading && !profile)) {
+  if (loading || (user && profileLoading && !profile && !profileLoadError)) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100dvh", background: theme.bg, padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" }}>
         <div className="pm-spinner" />
+      </div>
+    );
+  }
+
+  if (user && !profile && profileLoadError) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, minHeight: "100dvh", background: theme.bg, padding: 24, textAlign: "center", fontFamily: font }}>
+        <p style={{ margin: 0, fontSize: 15, color: theme.text, maxWidth: 320 }}>
+          Kunne ikke hente din profil. Tjek forbindelsen og prøv igen.
+        </p>
+        <button
+          type="button"
+          onClick={() => refreshProfile()}
+          style={{ background: theme.accent, color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: font }}
+        >
+          Prøv igen
+        </button>
+        <button
+          type="button"
+          onClick={() => { void signOut(); }}
+          style={{ background: "transparent", color: theme.textMid, border: "none", fontSize: 13, cursor: "pointer", fontFamily: font }}
+        >
+          Log ud
+        </button>
       </div>
     );
   }

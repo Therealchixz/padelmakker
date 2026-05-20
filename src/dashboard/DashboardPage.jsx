@@ -18,12 +18,14 @@ import { PROFILE_REFRESH_COOLDOWN_MS } from '../lib/platformConstants';
 import { AdminPinGate } from '../components/AdminPinGate';
 import { GuidedTourOverlay } from '../components/GuidedTourOverlay';
 import { PendingResultConfirmModal } from '../components/PendingResultConfirmModal';
-import { KAMPE_NOTIFICATION_TYPES } from '../lib/kampeNotificationTypes';
+import {
+  KAMPE_NOTIFICATION_TYPES,
+  KAMPE_ENTITY_NOTIFICATION_TYPES,
+} from '../lib/kampeNotificationTypes';
 import {
   countRelevantKampeUnreadNotifications,
   countUnreadEntityNotifications,
 } from '../lib/kampeNotificationBadges';
-import { KAMPE_ENTITY_NOTIFICATION_TYPES } from '../lib/kampeNotificationTypes';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { filterConfirmablePendingResults } from '../lib/resolvePadelMatchResult';
 import {

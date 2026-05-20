@@ -60,15 +60,14 @@ export async function subscribeToPush(userId) {
       return 'blocked'; // browser tillader notifikationer men blokerer push
     }
 
-    // Gem i DB — fejl her blokerer ikke
-    try {
-      const { endpoint, keys } = subscription.toJSON();
-      await supabase.from('push_subscriptions').upsert(
-        { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
-        { onConflict: 'endpoint' }
-      );
-    } catch (dbErr) {
-      console.warn('[push] Kunne ikke gemme subscription i DB:', dbErr);
+    const { endpoint, keys } = subscription.toJSON();
+    const { error: upsertError } = await supabase.from('push_subscriptions').upsert(
+      { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
+      { onConflict: 'endpoint' },
+    );
+    if (upsertError) {
+      console.warn('[push] Kunne ikke gemme subscription i DB:', upsertError.message || upsertError);
+      return 'db_error';
     }
 
     return 'granted';

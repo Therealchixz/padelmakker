@@ -187,6 +187,15 @@ const TYPE_POLICIES = Object.freeze({
     cooldownSeconds: 45,
     renotify: true,
   },
+  result_error_report: {
+    channel: "admin",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 30,
+    renotify: true,
+  },
   user_report: {
     channel: "admin",
     level: "critical",

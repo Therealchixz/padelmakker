@@ -144,12 +144,15 @@ export async function submitResultErrorReport({ sourceType, entityId, reason, de
 
   const adminIds = Array.isArray(result.admin_ids) ? result.admin_ids : [];
   if (adminIds.length > 0 && result.notify_title && result.notify_body) {
+    const entityType =
+      sourceType === 'americano' ? 'americano' : sourceType === 'league' ? 'league' : null;
     void sendPushNotificationsForUsers(
       adminIds,
       'result_error_report',
       result.notify_title,
       result.notify_body,
       sourceType === 'match_2v2' ? entityId : null,
+      entityType ? { entityType, entityId } : {},
     );
   }
 
