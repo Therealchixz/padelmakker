@@ -151,8 +151,9 @@ function matchQuality(score) {
   return               { label: 'Mulig match',  color: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB' };
 }
 
-function SuggestionCard({ suggestion, onView, onInvite }) {
-  const { profile: p, score, breakdown, resolvedElo } = suggestion;
+function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
+  const { profile: p, score, breakdown } = suggestion;
+  const eloShown = displayEloFor(p);
   const reason = matchReason(breakdown, p);
   const quality = matchQuality(score);
 
@@ -183,7 +184,7 @@ function SuggestionCard({ suggestion, onView, onInvite }) {
           </span>
 
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ ...tag(theme.accent, theme.onAccent), fontWeight: 800 }}>ELO {Math.round(Number(resolvedElo) || Number(p.elo_rating) || 1000)}</span>
+            <span style={{ ...tag(theme.accent, theme.onAccent), fontWeight: 800 }}>ELO {eloShown}</span>
             {(p.city || p.area) && (
               <span style={{ ...tag(theme.blueBg, theme.blue), display: 'flex', alignItems: 'center', gap: '2px' }}>
                 <MapPin size={8} />{p.city || p.area.replace('Region ', '')}
@@ -409,6 +410,16 @@ export function MakkereTab({ user, showToast }) {
     return map;
   }, [players, displayElo, user.id, myElo]);
 
+  const gamesByUserId = useMemo(() => {
+    const map = {};
+    for (const [id, stats] of Object.entries(statsById)) {
+      if (stats != null && Number.isFinite(Number(stats.games))) {
+        map[id] = Number(stats.games);
+      }
+    }
+    return map;
+  }, [statsById]);
+
   const { exposureCountByUserId, inviteStatsByUserId } = useMemo(
     () => {
       void telemetryVersion;
@@ -421,11 +432,12 @@ export function MakkereTab({ user, showToast }) {
   const suggestions = useMemo(() => getMatchSuggestions(user, players, {
     limit: 10,
     eloByUserId,
+    gamesByUserId,
     inviteStatsByUserId,
     exposureCountByUserId,
     pastMatchesByUserId,
     favoriteIds: favorites,
-  }), [user, players, eloByUserId, inviteStatsByUserId, exposureCountByUserId, pastMatchesByUserId, favorites]);
+  }), [user, players, eloByUserId, gamesByUserId, inviteStatsByUserId, exposureCountByUserId, pastMatchesByUserId, favorites]);
 
   const visibleSuggestions = useMemo(
     () => (showAllSuggestions ? suggestions : suggestions.slice(0, 3)),
@@ -553,6 +565,7 @@ export function MakkereTab({ user, showToast }) {
               <SuggestionCard
                 key={s.profile.id}
                 suggestion={s}
+                displayEloFor={displayElo}
                 onView={setViewPlayer}
                 onInvite={setInviteTarget}
               />

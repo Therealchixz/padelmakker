@@ -69,11 +69,18 @@ function overlapCount(a, b) {
   return a.filter((x) => bSet.has(x)).length;
 }
 
-function resolveElo(profile, eloByUserId = {}) {
+export function resolveElo(profile, eloByUserId = {}) {
   const key = String(profile?.id || '');
   const fromMap = toNumber(eloByUserId[key], NaN);
   if (Number.isFinite(fromMap)) return Math.round(fromMap);
   return Math.round(toNumber(profile?.elo_rating, 1000));
+}
+
+function resolveGamesPlayed(profile, gamesByUserId = {}) {
+  const key = String(profile?.id || '');
+  const fromMap = toNumber(gamesByUserId[key], NaN);
+  if (Number.isFinite(fromMap) && fromMap >= 0) return Math.round(fromMap);
+  return Math.round(toNumber(profile?.games_played, 0));
 }
 
 /**
@@ -81,9 +88,9 @@ function resolveElo(profile, eloByUserId = {}) {
  * misvisende. Bland ratingen med deres signup-niveau indtil de har spillet
  * mindst 5 kampe. Niveau 1-10 → ELO 800-1200.
  */
-function resolveEloWithContext(profile, eloByUserId = {}) {
+function resolveEloWithContext(profile, eloByUserId = {}, gamesByUserId = {}) {
   const baseElo = resolveElo(profile, eloByUserId);
-  const played = toNumber(profile?.games_played, 0);
+  const played = resolveGamesPlayed(profile, gamesByUserId);
   if (played >= 5) return baseElo;
   const level = toNumber(profile?.level, 5);
   const levelAsElo = 800 + (level - 1) * (400 / 9);
@@ -404,6 +411,7 @@ function passesHardFilters(myProfile, candidate, myElo, candidateElo, opts) {
  */
 export function scoreCandidate(myProfile, candidate, opts = {}) {
   const eloByUserId = opts.eloByUserId || {};
+  const gamesByUserId = opts.gamesByUserId || {};
   const inviteStatsByUserId = opts.inviteStatsByUserId || {};
   const exposureCountByUserId = opts.exposureCountByUserId || {};
   const pastMatchesByUserId = opts.pastMatchesByUserId || {};
@@ -411,8 +419,8 @@ export function scoreCandidate(myProfile, candidate, opts = {}) {
 
   /* resolveEloWithContext bruger signup-niveau som proxy for nye spillere
      (<5 kampe), så cold-start ikke straffes urimeligt. */
-  const myElo = resolveEloWithContext(myProfile, eloByUserId);
-  const candidateElo = resolveEloWithContext(candidate, eloByUserId);
+  const myElo = resolveEloWithContext(myProfile, eloByUserId, gamesByUserId);
+  const candidateElo = resolveEloWithContext(candidate, eloByUserId, gamesByUserId);
 
   const forward = directionalScore(myProfile, candidate, myElo, candidateElo);
   const reverse = directionalScore(candidate, myProfile, candidateElo, myElo);
@@ -462,7 +470,8 @@ export function scoreCandidate(myProfile, candidate, opts = {}) {
   return {
     total: Math.round(total01 * 100),
     breakdown,
-    resolvedElo: candidateElo,
+    /** Vises i UI — samme kilde som profil/liste (ikke cold-start-justeret score-ELO). */
+    resolvedElo: resolveElo(candidate, eloByUserId),
   };
 }
 
@@ -474,6 +483,7 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
     limit = 10,
     seekingOnly = false,
     eloByUserId = {},
+    gamesByUserId = {},
     inviteStatsByUserId = {},
     exposureCountByUserId = {},
     pastMatchesByUserId = {},
@@ -493,6 +503,7 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
       const score = scoreCandidate(myProfile, candidate, {
         ...opts,
         eloByUserId,
+        gamesByUserId,
         inviteStatsByUserId,
         exposureCountByUserId,
         pastMatchesByUserId,
