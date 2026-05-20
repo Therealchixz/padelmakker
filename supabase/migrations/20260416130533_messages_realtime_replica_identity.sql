@@ -1,0 +1,2 @@
+-- Migration already applied on production (history sync stub).
+-- Do not re-run manually. Reference SQL may live under supabase/sql/.
