@@ -10,7 +10,7 @@ import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
-import { isPhoneVerificationExempt } from '../lib/phoneVerification';
+import { isPhoneVerificationExempt, fetchPhoneVerificationExemptFromServer } from '../lib/phoneVerification';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
 
 import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
@@ -20,9 +20,12 @@ import { TurnstileWidget } from '../components/TurnstileWidget';
 import { ArrowRight } from 'lucide-react';
 
 export function OnboardingPage() {
-  const { signUpWithPhone, user, profile, updateProfile, refreshProfileQuiet } = useAuth();
+  const { signUpWithPhone, user, profile, profileLoading, updateProfile, refreshProfileQuiet } = useAuth();
   const oauthSession = Boolean(user);
-  const phoneExempt = isPhoneVerificationExempt(user, profile);
+  const [serverPhoneExempt, setServerPhoneExempt] = useState(null);
+  const phoneExempt = isPhoneVerificationExempt(user, profile, serverPhoneExempt === true);
+  const phoneExemptResolved =
+    !oauthSession || serverPhoneExempt !== null || (!profileLoading && profile != null);
   const navigate = useNavigate();
   const ask = useConfirm();
   const onboardingTopRef = useRef(null);
@@ -44,6 +47,20 @@ export function OnboardingPage() {
   useEffect(() => {
     if (user?.id) refreshProfileQuiet();
   }, [user?.id, refreshProfileQuiet]);
+
+  useEffect(() => {
+    if (!oauthSession || !user?.id) {
+      setServerPhoneExempt(false);
+      return;
+    }
+    let cancelled = false;
+    void fetchPhoneVerificationExemptFromServer(supabase).then((exempt) => {
+      if (!cancelled) setServerPhoneExempt(exempt);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [oauthSession, user?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -95,6 +112,7 @@ export function OnboardingPage() {
         if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
       }
       if (
+        phoneExemptResolved &&
         !phoneExempt &&
         (!isValidSignupPhone(form.phone) || !normalizePhoneToE164(form.phone))
       ) {
@@ -385,7 +403,7 @@ export function OnboardingPage() {
       )}
         </>
       )}
-      {phoneExempt ? (
+      {phoneExemptResolved && phoneExempt ? (
         <div
           style={{
             background: theme.accentBg,
@@ -400,7 +418,7 @@ export function OnboardingPage() {
         >
           Denne konto er undtaget fra telefon-SMS (sat af admin). Du behøver ikke tilføje telefonnummer.
         </div>
-      ) : (
+      ) : phoneExemptResolved ? (
         <>
       <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer</label>
       <p style={{ color: theme.textMid, fontSize: '12px', margin: '0 0 8px', lineHeight: 1.45 }}>
@@ -426,6 +444,10 @@ export function OnboardingPage() {
         </p>
       )}
         </>
+      ) : (
+        <p style={{ color: theme.textMid, fontSize: '13px', marginBottom: '14px', lineHeight: 1.5 }}>
+          Tjekker telefon-krav…
+        </p>
       )}
       {!oauthSession && (
         <>
