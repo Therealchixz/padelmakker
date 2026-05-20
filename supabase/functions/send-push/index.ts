@@ -546,6 +546,27 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    const { data: targetProfile } = await adminClient
+      .from("profiles")
+      .select("notification_prefs")
+      .eq("id", targetUserId)
+      .maybeSingle();
+
+    const pushPrefs = (targetProfile?.notification_prefs ?? null) as Record<string, unknown> | null;
+    const prefChannel = policy.channel === "admin" ? "system" : policy.channel;
+    const pushBucket =
+      pushPrefs &&
+      typeof pushPrefs === "object" &&
+      pushPrefs.push &&
+      typeof pushPrefs.push === "object"
+        ? (pushPrefs.push as Record<string, boolean>)
+        : null;
+    if (pushBucket && prefChannel in pushBucket && pushBucket[prefChannel] === false) {
+      return new Response(JSON.stringify({ sent: 0, skipped: "user_prefs" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const cooldownSkip = await shouldSkipByCooldown({
       adminClient,
       targetUserId: String(targetUserId),

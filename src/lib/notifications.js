@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { resolveNotificationPushPolicy } from './notificationPolicy';
+import { isPushChannelEnabled } from './notificationPreferences';
 import { normalizeNotificationRecipientIds } from './notificationRecipients';
 
 export { normalizeNotificationRecipientIds } from './notificationRecipients';
@@ -7,9 +8,33 @@ export { normalizeNotificationRecipientIds } from './notificationRecipients';
 const BATCH_RPC = 'create_notifications_for_users';
 const SINGLE_RPC = 'create_notification_for_user';
 
+const prefsCache = new Map();
+
+async function loadNotificationPrefsForUser(userId) {
+  const key = String(userId || '');
+  if (!key) return null;
+  if (prefsCache.has(key)) return prefsCache.get(key);
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('notification_prefs')
+      .eq('id', key)
+      .maybeSingle();
+    if (error) return null;
+    const prefs = data?.notification_prefs ?? null;
+    prefsCache.set(key, prefs);
+    return prefs;
+  } catch {
+    return null;
+  }
+}
+
 async function sendPushNotification(userId, type, title, body, matchId, options = {}) {
   const pushPolicy = resolveNotificationPushPolicy(type, options?.pushPolicy);
   if (!pushPolicy.sendPush) return;
+  if (options.notificationPrefs != null && !isPushChannelEnabled(options.notificationPrefs, pushPolicy.channel)) {
+    return;
+  }
 
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -117,7 +142,8 @@ export async function createNotification(userId, type, title, body, matchId = nu
 
   if (rpcError) return rpcError;
 
-  await sendPushNotification(userId, type, title, body, matchId, options);
+  const prefs = options.notificationPrefs ?? await loadNotificationPrefsForUser(userId);
+  await sendPushNotification(userId, type, title, body, matchId, { ...options, notificationPrefs: prefs });
   return rpcError;
 }
 
@@ -183,7 +209,10 @@ export async function createNotificationsForUsers(
   if (rpcError) return rpcError;
 
   await Promise.allSettled(
-    ids.map((id) => sendPushNotification(id, type, title, body, matchId, options)),
+    ids.map(async (id) => {
+      const prefs = options.notificationPrefs ?? await loadNotificationPrefsForUser(id);
+      return sendPushNotification(id, type, title, body, matchId, { ...options, notificationPrefs: prefs });
+    }),
   );
 
   return null;

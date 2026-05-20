@@ -15,6 +15,11 @@ import {
 } from '../lib/pushNotifications';
 import { createNotification } from '../lib/notifications';
 import {
+  mergeNotificationPrefToggle,
+  normalizeNotificationPrefs,
+  NOTIFICATION_PUSH_CHANNELS,
+} from '../lib/notificationPreferences';
+import {
   buildKampeFocusPath,
   notificationKampeTarget,
   kampeFocusFooterLabel,
@@ -74,6 +79,28 @@ export function NotificationBell() {
   const [pushBlocked, setPushBlocked] = useState(() => {
     try { return localStorage.getItem('pm_push_blocked') === '1'; } catch { return false; }
   });
+  const [notifPrefs, setNotifPrefs] = useState(() => normalizeNotificationPrefs(profile?.notification_prefs));
+  const [prefsSaving, setPrefsSaving] = useState(false);
+  const [showPrefToggles, setShowPrefToggles] = useState(false);
+
+  useEffect(() => {
+    setNotifPrefs(normalizeNotificationPrefs(profile?.notification_prefs));
+  }, [profile?.notification_prefs]);
+
+  const persistPrefs = async (nextPrefs) => {
+    if (!userId) return;
+    setNotifPrefs(nextPrefs);
+    setPrefsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ notification_prefs: nextPrefs })
+        .eq('id', userId);
+      if (error) console.warn('notification_prefs update:', error.message);
+    } finally {
+      setPrefsSaving(false);
+    }
+  };
 
   const unreadCount = notifs.filter(n => !n.read).length;
 
@@ -357,7 +384,14 @@ export function NotificationBell() {
       return;
     }
     const kampeTarget = notificationKampeTarget(n);
-    if (!kampeTarget) return;
+    if (!kampeTarget) {
+      if (n?.type === 'elo_change') {
+        await markNotifRead(n);
+        setOpen(false);
+        navigate('/dashboard/profil');
+      }
+      return;
+    }
     await markNotifRead(n);
     setOpen(false);
     navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId));
@@ -468,6 +502,7 @@ export function NotificationBell() {
         `Push virker. Test sendt kl. ${sentAt}.`,
         null,
         {
+          notificationPrefs: notifPrefs,
           pushPolicy: {
             channel: 'system',
             level: 'critical',
@@ -573,6 +608,44 @@ export function NotificationBell() {
             </div>
           </div>
 
+          <div style={{ padding: "8px 14px", borderBottom: "1px solid " + theme.border, background: theme.surface }}>
+            <button
+              type="button"
+              onClick={() => setShowPrefToggles((v) => !v)}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                fontSize: "11px",
+                fontWeight: 700,
+                color: theme.textMid,
+                cursor: "pointer",
+                fontFamily: font,
+              }}
+            >
+              {showPrefToggles ? "▼" : "▶"} Push-kanaler {prefsSaving ? "…" : ""}
+            </button>
+            {showPrefToggles && (
+              <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                {NOTIFICATION_PUSH_CHANNELS.filter((ch) => ch.id !== "system" || profile?.role === "admin").map((ch) => (
+                  <label
+                    key={ch.id}
+                    style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: theme.text, cursor: "pointer" }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={notifPrefs.push[ch.id] !== false}
+                      onChange={(e) => {
+                        void persistPrefs(mergeNotificationPrefToggle(notifPrefs, ch.id, e.target.checked));
+                      }}
+                    />
+                    {ch.label}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Push opt-in / opt-out banner */}
           {pushSupported && !pushBlocked && getPushPermission() !== 'denied' && (
             <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -617,7 +690,8 @@ export function NotificationBell() {
               const isAdminUserReport =
                 n.type === "user_report" && profile?.role === "admin";
               const kampeTarget = notificationKampeTarget(n);
-              const isClickable = Boolean(kampeTarget) || isAdminResultError || isAdminUserReport;
+              const isEloProfile = n.type === 'elo_change' && !kampeTarget;
+              const isClickable = Boolean(kampeTarget) || isAdminResultError || isAdminUserReport || isEloProfile;
               const isMatchChatGroup = n.type === "match_chat_group";
               const itemTitle = isMatchChatGroup
                 ? (n.unreadCount > 0 ? "Nye beskeder i kamp-chat" : "Beskeder i kamp-chat")
@@ -659,7 +733,9 @@ export function NotificationBell() {
                             ? "Tryk for at åbne Admin (PIN) → Anmeldelser →"
                             : kampeTarget
                             ? kampeFocusFooterLabel(kampeTarget.format, n.type)
-                            : "Tryk for at åbne →"}
+                            : isEloProfile
+                              ? "Tryk for at åbne din profil →"
+                              : "Tryk for at åbne →"}
                       </div>
                     )}
                     <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{timeAgo(n.created_at)}</div>
