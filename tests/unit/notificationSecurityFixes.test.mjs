@@ -137,13 +137,13 @@ test('send-push edge function implements invite and admin legitimacy rules', () 
 });
 
 test('migration drops duplicate notification RPC overloads', () => {
-  const sql = readSrc('supabase/migrations/20260521130000_drop_duplicate_notification_rpc_overloads.sql');
+  const sql = readSrc('supabase/migrations/20260520193932_drop_duplicate_notification_rpc_overloads.sql');
   assert.match(sql, /DROP FUNCTION IF EXISTS public\.create_notification_for_user\(uuid, text, text, text, uuid\)/);
   assert.match(sql, /DROP FUNCTION IF EXISTS public\.create_notifications_for_users\(uuid\[\], text, text, text, uuid\)/);
 });
 
 test('migration SQL allows external match and americano invites', () => {
-  const sql = readSrc('supabase/migrations/20260521120000_notification_invite_push_fixes.sql');
+  const sql = readSrc('supabase/migrations/20260520193927_notification_invite_push_fixes.sql');
   assert.match(sql, /p_type = 'match_invite'/);
   assert.match(sql, /p_type = 'americano_invite'/);
   assert.match(sql, /admin_ids/);
