@@ -1130,7 +1130,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       }
 
       if (notified > 0) {
-        showToast(`⚡ ${notified} spillere er notificeret!`);
+        const areaHint = creatorProfile.area
+          ? ` i ${String(creatorProfile.area).replace(/^Region\s+/i, '')}`
+          : '';
+        const matchElo = Math.round(Number(creatorProfile.elo_rating) || 1000);
+        showToast(
+          `⚡ ${notified} aktive spillere${areaHint} notificeret (ELO ca. ${matchElo} ±250, max 10).`
+        );
       } else {
         showToast('Kampen er markeret som "søger spiller" — ingen matchende spillere fundet lige nu.');
       }
