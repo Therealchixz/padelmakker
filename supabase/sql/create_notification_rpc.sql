@@ -1,4 +1,7 @@
 -- =============================================================================
+-- DEPRECATED — Kør IKKE på DB med supabase/migrations fra maj 2026.
+-- Brug migrations-kæden + 20260521130000_drop_duplicate_notification_rpc_overloads.sql
+-- =============================================================================
 -- Notifikationer: RPC så spillere kan underrette hinanden (RLS blokerer direkte insert)
 -- =============================================================================
 -- Problem: Appen kalder insert på public.notifications med user_id = modtageren.

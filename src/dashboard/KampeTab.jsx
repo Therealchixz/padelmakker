@@ -938,8 +938,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       if (!data?.success) throw new Error(data?.error || "Ukendt fejl");
 
       const teamNum = data.team;
-      createNotification(reqUserId, "match_invite", "Anmodning godkendt! 🎾",
+      const approveErr = await createNotification(reqUserId, "match_invite", "Anmodning godkendt! 🎾",
         `${myDisplayName} har godkendt din tilmeldingsanmodning. Du er sat på Hold ${teamNum}.`, matchId);
+      if (approveErr) console.warn("approve join notify:", approveErr.message || approveErr);
 
       showToast(`${reqUserName} er godkendt og sat på Hold ${teamNum}!`);
       await loadData();
@@ -954,9 +955,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         .update({ status: "rejected" }).eq("id", requestId);
       if (error) throw error;
 
-      // Notify the rejected user
-      createNotification(reqUserId, "match_cancelled", "Anmodning afvist",
+      const rejectErr = await createNotification(reqUserId, "match_invite", "Anmodning afvist",
         `Din anmodning om at deltage i kampen er desværre ikke godkendt.`, matchId);
+      if (rejectErr) console.warn("reject join notify:", rejectErr.message || rejectErr);
 
       showToast(`Anmodning fra ${reqUserName} afvist.`);
       await loadData();
@@ -978,13 +979,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     setBusyId(matchId + '-kick-' + targetUserId);
     try {
+      const kickNotifyErr = await createNotification(
+        targetUserId,
+        'match_cancelled',
+        'Du er fjernet fra kampen ❌',
+        'En admin/opretter har fjernet dig fra kampen.',
+        matchId,
+      );
+      if (kickNotifyErr) console.warn('kick notify:', kickNotifyErr.message || kickNotifyErr);
+
       const { error } = await supabase.from("match_players").delete()
         .eq("match_id", matchId).eq("user_id", targetUserId);
       if (error) throw error;
       const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== targetUserId);
       await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
-      // Notify kicked player (caller is still creator → RPC check passes)
-      createNotification(targetUserId, 'match_cancelled', 'Du er fjernet fra kampen ❌', `En admin/opretter har fjernet dig fra kampen.`, matchId);
       showToast("Spiller fjernet.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }

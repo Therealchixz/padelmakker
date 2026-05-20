@@ -29,7 +29,10 @@ Prettier is not configured.
 
 ### Testing
 
-No test framework is configured (no Jest, Vitest, or similar).
+- **Unit tests:** `npm run test:unit`
+- **Notification/RPC drift audit:** `npm run audit:notifications` (fails on high-severity static findings, e.g. legacy SQL overloads in `supabase/sql/`)
+
+No Jest/Vitest beyond Node’s built-in test runner.
 
 ### Phone SMS verification (Twilio)
 

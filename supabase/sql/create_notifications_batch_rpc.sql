@@ -1,4 +1,6 @@
 -- =============================================================================
+-- DEPRECATED — Kør IKKE på DB med supabase/migrations fra maj 2026.
+-- =============================================================================
 -- Batch-notifikationer + seeking_player-fix
 -- Kør i Supabase → SQL Editor (efter create_notification_rpc.sql).
 -- =============================================================================

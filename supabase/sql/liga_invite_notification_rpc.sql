@@ -1,3 +1,4 @@
+-- DEPRECATED — Brug notify_league_invite fra migrations/20260520143000 (p_league_id).
 -- RPC til liga-holdinvitationer (omgår match_id-kravet i create_notification_for_user)
 CREATE OR REPLACE FUNCTION public.notify_league_invite(
   p_user_id uuid,
