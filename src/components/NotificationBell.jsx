@@ -393,7 +393,9 @@ export function NotificationBell() {
       case "match_cancelled": return "\u274C";
       case "welcome": return "\uD83D\uDC4B";
       case "team_invite": return "\uD83C\uDFBE";
+      case "americano_full": return "\u2705";
       case "americano_completed": return "\uD83C\uDFC6";
+      case "league_full": return "\u2705";
       case "league_completed": return "\uD83C\uDFC6";
       case "result_error_report": return "\u26A0\uFE0F";
       default: return "\uD83D\uDD14";
@@ -642,7 +644,7 @@ export function NotificationBell() {
                         {isAdminResultError
                           ? "Tryk for at åbne Admin (PIN) → Fejl →"
                           : kampeTarget
-                            ? kampeFocusFooterLabel(kampeTarget.format)
+                            ? kampeFocusFooterLabel(kampeTarget.format, n.type)
                             : "Tryk for at åbne →"}
                       </div>
                     )}

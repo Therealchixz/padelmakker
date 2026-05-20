@@ -14,6 +14,7 @@ import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import { PillTabs } from '../../components/PillTabs'
 import { btn, theme } from '../../lib/platformTheme'
+import { notifyAmericanoTournamentFull } from '../../lib/notifyKampeEntityFull'
 
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
@@ -426,7 +427,9 @@ export function AmericanoTab({
     }
   }
 
-  const joinTournament = async (tournamentId: string, maxSlots: number) => {
+  const joinTournament = async (tournament: AmericanoTournament) => {
+    const tournamentId = tournament.id
+    const maxSlots = tournament.player_slots
     setBusyId(tournamentId)
     try {
       const { count, error: cErr } = await supabase
@@ -444,6 +447,10 @@ export function AmericanoTab({
         display_name: displayName,
       })
       if (error) throw error
+      const newCount = (count ?? 0) + 1
+      if (newCount >= maxSlots) {
+        void notifyAmericanoTournamentFull(tournament, profileId)
+      }
       showToast('Du er tilmeldt!')
       await load()
     } catch (e: unknown) {
@@ -802,7 +809,7 @@ export function AmericanoTab({
                     <button
                       type="button"
                       disabled={busyId === t.id}
-                      onClick={() => joinTournament(t.id, t.player_slots)}
+                      onClick={() => joinTournament(t)}
                       style={{
                         ...btn(true),
                         width: '100%',

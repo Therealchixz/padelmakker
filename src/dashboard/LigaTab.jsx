@@ -13,6 +13,7 @@ import { TabbedFilterCard } from '../components/TabbedFilterCard';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { LigaOpenCard } from './LigaOpenCard';
+import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 
 function isTiebreakScore(scoreText) {
   return !!(scoreText && /7-6|6-7/.test(scoreText));
@@ -807,6 +808,22 @@ export function LigaTab({
 
   const openProfile = (id, name, avatar) => setViewPlayer({ id, full_name: name, avatar });
 
+  const maybeNotifyLeagueFull = async (leagueId) => {
+    const league = leagues.find((l) => l.id === leagueId);
+    if (!league?.max_teams || String(league.status || '').toLowerCase() !== 'registration') return;
+    const { count, error: cErr } = await supabase
+      .from('league_teams')
+      .select('*', { count: 'exact', head: true })
+      .eq('league_id', leagueId);
+    if (cErr) {
+      console.warn('maybeNotifyLeagueFull count:', cErr.message);
+      return;
+    }
+    if ((count ?? 0) >= league.max_teams) {
+      void notifyLeagueFull(league);
+    }
+  };
+
   const createTeam = async (leagueId) => {
     if (!teamName.trim()) { showToast('Angiv et holdnavn.'); return; }
     if (!selectedPartner) { showToast('Vælg en makker.'); return; }
@@ -827,6 +844,7 @@ export function LigaTab({
         status: 'pending',
       });
       if (error) throw error;
+      void maybeNotifyLeagueFull(leagueId);
       const leagueName = leagues.find(l => l.id === leagueId)?.name || 'ligaen';
       await supabase.rpc('notify_league_invite', {
         p_user_id: selectedPartner.id,

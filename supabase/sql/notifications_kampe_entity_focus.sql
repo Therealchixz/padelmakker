@@ -68,7 +68,7 @@ BEGIN
     ) AND NOT EXISTS (
       SELECT 1 FROM public.leagues l
       WHERE l.id = p_entity_id AND l.created_by = v_caller
-    ) AND NOT public.is_user_admin_verified(v_caller) THEN
+    ) AND NOT COALESCE(public.is_user_admin_verified(v_caller), public.is_admin(), false) THEN
       RAISE EXCEPTION 'Ingen adgang til at sende liga-notifikation';
     END IF;
     IF NOT EXISTS (
