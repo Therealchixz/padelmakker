@@ -49,7 +49,7 @@ function addDismissedIds(userId, ids) {
 }
 
 export function NotificationBell() {
-  const { user: authUser } = useAuth();
+  const { user: authUser, profile } = useAuth();
   const navigate = useNavigate();
   const userId = authUser?.id;
   const [open, setOpen] = useState(false);
@@ -325,7 +325,10 @@ export function NotificationBell() {
   };
 
   const openNotificationMatch = async (n) => {
-    if (!n?.match_id || !userId) return;
+    if (!userId) return;
+    const isAdminResultError =
+      n?.type === "result_error_report" && profile?.role === "admin";
+    if (!n?.match_id && !isAdminResultError) return;
     const ids = Array.isArray(n?.notifIds)
       ? n.notifIds.filter((id) => typeof id === "string")
       : [n?.id].filter((id) => typeof id === "string");
@@ -338,6 +341,10 @@ export function NotificationBell() {
       }
     } catch { /* ignore */ }
     setOpen(false);
+    if (isAdminResultError) {
+      navigate("/dashboard/admin?adminSub=result_errors");
+      return;
+    }
     /* ?focus= så KampeTab reagerer også hvis man allerede er på Kampe-fanen */
     navigate("/dashboard/kampe?focus=" + encodeURIComponent(String(n.match_id)));
   };
@@ -372,6 +379,7 @@ export function NotificationBell() {
       case "match_full": return "\u2705";
       case "result_submitted": return "\uD83D\uDCCA";
       case "result_confirmed": return "\uD83C\uDFC6";
+      case "result_error_report": return "\u26A0\uFE0F";
       case "elo_change": return "\uD83D\uDCC8";
       case "match_cancelled": return "\u274C";
       case "welcome": return "\uD83D\uDC4B";
@@ -580,7 +588,9 @@ export function NotificationBell() {
                 <div>Ingen notifikationer endnu</div>
               </div>
             ) : displayNotifs.map(n => {
-              const hasMatch = Boolean(n.match_id);
+              const isAdminResultError =
+                n.type === "result_error_report" && profile?.role === "admin";
+              const hasMatch = Boolean(n.match_id) || isAdminResultError;
               const isMatchChatGroup = n.type === "match_chat_group";
               const itemTitle = isMatchChatGroup
                 ? (n.unreadCount > 0 ? "Nye beskeder i kamp-chat" : "Beskeder i kamp-chat")
@@ -615,7 +625,11 @@ export function NotificationBell() {
                       <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{itemMeta}</div>
                     )}
                     {hasMatch && (
-                      <div style={{ fontSize: "10px", color: theme.accent, marginTop: "6px", fontWeight: 600 }}>Tryk for at gå til kampen →</div>
+                      <div style={{ fontSize: "10px", color: theme.accent, marginTop: "6px", fontWeight: 600 }}>
+                        {isAdminResultError
+                          ? "Tryk for at åbne Admin (PIN) → Fejl →"
+                          : "Tryk for at gå til kampen →"}
+                      </div>
                     )}
                     <div style={{ fontSize: "10px", color: theme.textLight, marginTop: "4px" }}>{timeAgo(n.created_at)}</div>
                   </div>

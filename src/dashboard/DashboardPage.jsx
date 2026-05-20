@@ -699,6 +699,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const hasPrefetchedTabsRef = useRef(false);
   const lastProfileRefreshAtRef = useRef(0);
   const lastNonAdminTabRef = useRef(tab !== "admin" ? tab : "hjem");
+  /** For at nulstille admin-underfane når man forlader Admin (undgå at mobil-tab genåbner gammel underfane). */
+  const prevDashTabRef = useRef(null);
   const wasInAdminTabRef = useRef(false);
   const hasAutoStartedTourRef = useRef(false);
   const accountBtnRef = useRef(null);
@@ -949,6 +951,33 @@ export function DashboardPage({ user, onLogout, showToast }) {
     if (tab === "admin") return;
     lastNonAdminTabRef.current = tab;
   }, [tab]);
+
+  useEffect(() => {
+    const prev = prevDashTabRef.current;
+    if (prev === "admin" && tab !== "admin") {
+      setAdminInitialSubTab(null);
+    }
+    prevDashTabRef.current = tab;
+  }, [tab]);
+
+  /** Deep link: /dashboard/admin?adminSub=result_errors (fx fra fejl-indberetning-notifikation). PIN vises stadig først. */
+  useEffect(() => {
+    if (!isAdmin || tab !== "admin") return;
+    const params = new URLSearchParams(location.search);
+    const raw = params.get("adminSub");
+    if (raw !== "result_errors") {
+      if (params.has("adminSub")) {
+        params.delete("adminSub");
+        const next = params.toString();
+        navigate({ pathname: location.pathname, search: next ? `?${next}` : "" }, { replace: true });
+      }
+      return;
+    }
+    setAdminInitialSubTab("result_errors");
+    params.delete("adminSub");
+    const next = params.toString();
+    navigate({ pathname: location.pathname, search: next ? `?${next}` : "" }, { replace: true });
+  }, [isAdmin, tab, location.pathname, location.search, navigate]);
 
   useEffect(() => {
     setAdminPinUnlocked(false);
