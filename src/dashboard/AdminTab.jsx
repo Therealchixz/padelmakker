@@ -46,6 +46,46 @@ function isSixDigitPin(value) {
   return /^\d{6}$/.test(String(value || ''));
 }
 
+const ADMIN_MATCH_STATUS_FILTERS = [
+  { id: 'all', label: 'Alle' },
+  { id: 'open', label: 'Åbne' },
+  { id: 'in_progress', label: 'I gang' },
+  { id: 'completed', label: 'Afsluttet' },
+];
+
+function adminMatchSortMs(row, kind) {
+  if (kind === '2v2') {
+    return new Date(row.completed_at || row.date || row.created_at || 0).getTime() || 0;
+  }
+  if (kind === 'americano') {
+    return new Date(row.updated_at || row.tournament_date || row.created_at || 0).getTime() || 0;
+  }
+  return new Date(row.updated_at || row.created_at || row.start_date || 0).getTime() || 0;
+}
+
+function adminMatchStatusBucket(status, kind) {
+  const s = String(status || '').toLowerCase();
+  if (kind === '2v2') {
+    if (s === 'completed') return 'completed';
+    if (s === 'in_progress') return 'in_progress';
+    return 'open';
+  }
+  if (kind === 'americano') {
+    if (s === 'completed') return 'completed';
+    if (s === 'playing' || s === 'active') return 'in_progress';
+    return 'open';
+  }
+  if (s === 'completed') return 'completed';
+  if (s === 'active') return 'in_progress';
+  return 'open';
+}
+
+function sortAndFilterAdminMatches(rows, kind, statusFilter) {
+  const sorted = [...rows].sort((a, b) => adminMatchSortMs(b, kind) - adminMatchSortMs(a, kind));
+  if (statusFilter === 'all') return sorted;
+  return sorted.filter((row) => adminMatchStatusBucket(row.status, kind) === statusFilter);
+}
+
 function formatDateTimeDa(value) {
   if (!value) return 'Ukendt';
   const dt = new Date(value);
@@ -70,6 +110,7 @@ export function AdminTab({ initialSubTab = null }) {
         : 'users'
   ); // 'users' | 'matches' | 'console' | 'reports' | 'result_errors'
   const [matchSubTab, setMatchSubTab] = useState('2v2'); // '2v2' | 'americano' | 'liga'
+  const [matchStatusFilter, setMatchStatusFilter] = useState('all');
   const [_loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [matches, setMatches] = useState([]);
@@ -216,9 +257,8 @@ export function AdminTab({ initialSubTab = null }) {
     const { data, error } = await supabase
       .from('matches')
       .select('*, match_results(*), match_players(*, profiles(full_name))')
-      .order('completed_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
     if (error) console.warn('AdminTab fetchMatches:', error.message || error);
     else setMatches(data || []);
     setLoading(false);
@@ -229,8 +269,9 @@ export function AdminTab({ initialSubTab = null }) {
     const { data, error } = await supabase
       .from('americano_tournaments')
       .select('id, name, status, tournament_date, updated_at, created_at, points_per_match')
+      .order('updated_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
     if (error) console.warn('AdminTab fetchAmericano:', error.message || error);
     else setAmericanoTournaments(data || []);
     setLoading(false);
@@ -240,9 +281,10 @@ export function AdminTab({ initialSubTab = null }) {
     setLoading(true);
     const { data: leagues, error } = await supabase
       .from('leagues')
-      .select('id, name, status, season_type, start_date, end_date, current_round, total_rounds, created_at')
+      .select('id, name, status, season_type, start_date, end_date, current_round, total_rounds, created_at, updated_at')
+      .order('updated_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
     if (error) {
       console.warn('AdminTab fetchLiga:', error.message || error);
       setLoading(false);
@@ -871,6 +913,19 @@ export function AdminTab({ initialSubTab = null }) {
     }
   };
 
+  const filteredMatches = useMemo(
+    () => sortAndFilterAdminMatches(matches, '2v2', matchStatusFilter),
+    [matches, matchStatusFilter],
+  );
+  const filteredAmericano = useMemo(
+    () => sortAndFilterAdminMatches(americanoTournaments, 'americano', matchStatusFilter),
+    [americanoTournaments, matchStatusFilter],
+  );
+  const filteredLiga = useMemo(
+    () => sortAndFilterAdminMatches(ligaLeagues, 'liga', matchStatusFilter),
+    [ligaLeagues, matchStatusFilter],
+  );
+
   const adminSubTabs = [
     { id: 'users', label: 'Brugere', shortLabel: 'Brugere', icon: User, badgeKey: 'users' },
     { id: 'matches', label: 'Kampe', shortLabel: 'Kampe', icon: Swords, badgeKey: 'matches' },
@@ -1135,7 +1190,10 @@ export function AdminTab({ initialSubTab = null }) {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setMatchSubTab(t.id)}
+                onClick={() => {
+                  setMatchSubTab(t.id);
+                  setMatchStatusFilter('all');
+                }}
                 style={{
                   ...btn(matchSubTab === t.id),
                   padding: '7px 14px',
@@ -1149,13 +1207,41 @@ export function AdminTab({ initialSubTab = null }) {
             ))}
           </div>
 
+          <div
+            style={{
+              display: 'flex',
+              gap: '6px',
+              flexWrap: 'wrap',
+              marginBottom: '16px',
+              alignItems: 'center',
+            }}
+          >
+            {ADMIN_MATCH_STATUS_FILTERS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setMatchStatusFilter(f.id)}
+                style={{
+                  ...btn(matchStatusFilter === f.id),
+                  padding: '5px 10px',
+                  fontSize: '12px',
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
           {/* ── Americano ── */}
           {matchSubTab === 'americano' && (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "4px", textTransform: "uppercase" }}>Americano-turneringer</h3>
               {americanoTournaments.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen turneringer fundet.</div>}
-              {americanoTournaments.map(t => {
-                const statusLabel = t.status === 'completed' ? 'Afsluttet' : t.status === 'playing' ? 'I gang' : t.status === 'active' ? 'Aktiv' : 'Åben';
+              {americanoTournaments.length > 0 && filteredAmericano.length === 0 && (
+                <div style={{ color: theme.textLight, fontSize: '13px' }}>Ingen turneringer i denne kategori.</div>
+              )}
+              {filteredAmericano.map(t => {
+                const statusLabel = t.status === 'completed' ? 'Afsluttet' : t.status === 'playing' || t.status === 'active' ? 'I gang' : 'Åben';
                 const statusColor = t.status === 'completed' ? theme.accent : t.status === 'playing' || t.status === 'active' ? theme.green : theme.textMid;
                 const canEditResults = t.status === 'completed';
                 return (
@@ -1208,8 +1294,11 @@ export function AdminTab({ initialSubTab = null }) {
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "4px", textTransform: "uppercase" }}>Ligaer</h3>
               {ligaLeagues.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen ligaer fundet.</div>}
-              {ligaLeagues.map(l => {
-                const statusLabel = l.status === 'completed' ? 'Afsluttet' : l.status === 'active' ? 'Aktiv' : 'Tilmelding';
+              {ligaLeagues.length > 0 && filteredLiga.length === 0 && (
+                <div style={{ color: theme.textLight, fontSize: '13px' }}>Ingen ligaer i denne kategori.</div>
+              )}
+              {filteredLiga.map(l => {
+                const statusLabel = l.status === 'completed' ? 'Afsluttet' : l.status === 'active' ? 'I gang' : 'Åben';
                 const statusColor = l.status === 'completed' ? theme.textMid : l.status === 'active' ? theme.green : theme.warm;
                 const canEditLigaResults = l.status === 'active' || l.status === 'completed';
                 return (
@@ -1263,12 +1352,16 @@ export function AdminTab({ initialSubTab = null }) {
           {matchSubTab === '2v2' && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "8px", textTransform: "uppercase" }}>Admin: Detaljeret Kamp-overblik</h3>
-          {matches.map(m => {
+          {matches.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen kampe fundet.</div>}
+          {matches.length > 0 && filteredMatches.length === 0 && (
+            <div style={{ color: theme.textLight, fontSize: '13px' }}>Ingen kampe i denne kategori.</div>
+          )}
+          {filteredMatches.map(m => {
             const t1 = (m.match_players || []).filter(p => p.team === 1);
             const t2 = (m.match_players || []).filter(p => p.team === 2);
             const status = m.status;
             const statusColor = status === 'completed' ? theme.accent : status === 'in_progress' ? theme.warm : theme.textMid;
-            const statusLabel = status === 'completed' ? 'Afsluttet' : status === 'in_progress' ? 'I gang' : 'Åben';
+            const statusLabel = status === 'completed' ? 'Afsluttet' : status === 'in_progress' ? 'I gang' : status === 'full' ? 'Fuld' : 'Åben';
             const confirmedResult = (m.match_results || []).find((r) => r.confirmed) || null;
             const canEditResult = status === 'completed' && confirmedResult;
 
