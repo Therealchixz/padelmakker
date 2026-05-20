@@ -1,0 +1,7 @@
+# PadelMakker Supabase CLI config (migrations + edge functions deploy)
+# Project ref: hzmrsqrerkoftcppfklu
+
+project_id = "hzmrsqrerkoftcppfklu"
+
+[db]
+major_version = 17
