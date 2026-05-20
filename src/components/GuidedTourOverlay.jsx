@@ -75,9 +75,9 @@ export function GuidedTourOverlay({
       Math.max(12, window.innerWidth - TOOLTIP_WIDTH - 12)
     );
 
-    const placeBelow = targetRect.top < window.innerHeight * 0.55;
+    const placeBelow = targetRect.top < window.innerHeight * 0.45;
     const top = placeBelow
-      ? Math.min(window.innerHeight - 210, targetRect.top + targetRect.height + 14)
+      ? Math.min(window.innerHeight - 220, targetRect.top + targetRect.height + 16)
       : Math.max(14, targetRect.top - 198);
 
     return { left, top };
@@ -86,13 +86,19 @@ export function GuidedTourOverlay({
   if (!open || !step) return null;
 
   const isLast = stepIndex >= steps.length - 1;
+  const interactive = Boolean(step.interactive);
 
   return createPortal(
     <div
       aria-live="polite"
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: OVERLAY_Z_INDEX }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: OVERLAY_Z_INDEX,
+        pointerEvents: interactive ? 'none' : 'auto',
+      }}
     >
       {!targetRect && (
         <div
@@ -135,6 +141,7 @@ export function GuidedTourOverlay({
           padding: '14px 14px 12px',
           color: theme.text,
           fontFamily: font,
+          pointerEvents: 'auto',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>

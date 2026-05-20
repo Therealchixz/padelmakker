@@ -10,6 +10,19 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
+/** Er appen åbnet som installeret PWA (hjemmeskærm)? */
+export function isStandalonePwa() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return (
+      window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Er push understøttet i denne browser? */
 export function isPushSupported() {
   return (
@@ -19,6 +32,21 @@ export function isPushSupported() {
   );
 }
 
+/** Kort forklaring når isPushSupported() er false (til UI-tekst). */
+export function getPushUnsupportedHint() {
+  if (typeof window === 'undefined') return '';
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    if (isStandalonePwa()) {
+      return 'Push API mangler på denne enhed. Prøv at opdatere iOS/Android og genåbn appen fra hjemmeskærmen.';
+    }
+    return 'Åbn PadelMakker i Safari/Chrome eller som app på hjemmeskærmen (ikke via Instagram/Facebook).';
+  }
+  if (!VAPID_PUBLIC_KEY) {
+    return 'Push er midlertidigt utilgængelig (manglende serverkonfiguration). In-app beskeder i klokken virker stadig.';
+  }
+  return 'Push er ikke tilgængelig her. Du får stadig beskeder i klokken.';
+}
+
 /** Hent nuværende push-tilladelse ('granted' | 'denied' | 'default') */
 export function getPushPermission() {
   return Notification.permission;
@@ -26,11 +54,17 @@ export function getPushPermission() {
 
 /**
  * Tilmeld denne browser til push-notifikationer.
- * Returnerer 'granted' | 'denied' | 'blocked' | 'unsupported' | 'error' | 'timeout'.
+ * Returnerer 'granted' | 'denied' | 'blocked' | 'unsupported' | 'error' | 'timeout' | 'default'.
  * DB-gemning fejler stille — browser-subscription er sandheden.
+ *
+ * @param {string} userId
+ * @param {{ requestPermission?: boolean }} [options]
+ *   requestPermission=false: kun subscribe når Notification.permission allerede er 'granted'.
  */
-export async function subscribeToPush(userId) {
+export async function subscribeToPush(userId, options = {}) {
   if (!isPushSupported()) return 'unsupported';
+
+  const requestPermission = options.requestPermission !== false;
 
   // 15 sek. timeout — forhindrer at requestPermission hænger i Brave/Firefox
   let timeoutId;
@@ -41,10 +75,13 @@ export async function subscribeToPush(userId) {
   try {
     const registration = await navigator.serviceWorker.ready;
 
-    const permission = await Promise.race([
-      Notification.requestPermission(),
-      timeoutPromise,
-    ]);
+    let permission = getPushPermission();
+    if (permission === 'default' && requestPermission) {
+      permission = await Promise.race([
+        Notification.requestPermission(),
+        timeoutPromise,
+      ]);
+    }
     clearTimeout(timeoutId);
 
     if (permission !== 'granted') return permission; // 'denied' eller 'default'
@@ -112,4 +149,15 @@ export async function isPushSubscribed() {
   } catch {
     return false;
   }
+}
+
+/**
+ * Auto-tilmeld når brugeren allerede har givet browser-tilladelse (fx tidligere besøg).
+ * Kalder ikke requestPermission — undgår uønsket prompt.
+ */
+export async function tryAutoSubscribePush(userId) {
+  if (!isPushSupported() || !userId) return 'unsupported';
+  if (getPushPermission() !== 'granted') return 'not_granted';
+  if (await isPushSubscribed()) return 'already_subscribed';
+  return subscribeToPush(userId, { requestPermission: false });
 }

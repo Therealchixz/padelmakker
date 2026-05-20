@@ -31,7 +31,15 @@ import {
   adminAttentionTotal,
   fetchAdminSubTabBadges,
 } from '../lib/userModeration';
-import { subscribeToPush, isPushSupported } from '../lib/pushNotifications';
+import {
+  isPushSupported,
+  isPushSubscribed,
+  getPushPermission,
+  tryAutoSubscribePush,
+  subscribeToPush,
+} from '../lib/pushNotifications';
+import { shouldShowPushOnboardingPrompt } from '../lib/pushOnboardingStorage';
+import { PushOnboardingModal } from '../components/PushOnboardingModal';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -441,79 +449,6 @@ function useAdminAttentionBadge(userId, isAdminRole = false) {
   return useRealtimeCount(userId, createController);
 }
 
-function useUnreadNotificationsCount(userId) {
-  const createController = useCallback((api) => {
-    const syncCount = async () => {
-      try {
-        const { count: c } = await supabase
-          .from("notifications")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", api.userId)
-          .eq("read", false);
-        api.setCountSafe(c || 0);
-      } catch (e) {
-        console.warn("notif badge refetch:", e);
-      }
-    };
-
-    return {
-      refetch: syncCount,
-      subscriptions: [
-        {
-          name: "notif-badge-" + api.userId,
-          table: "notifications",
-          filter: "user_id=eq." + api.userId,
-          onEvent: ({ payload, api: runtime }) => {
-            const event = payload?.eventType;
-            const next = payload?.new || {};
-            const prev = payload?.old || {};
-            const nextUnread = next?.read === false;
-            const prevHasReadField = Object.prototype.hasOwnProperty.call(prev, "read");
-            const prevUnread = prev?.read === false;
-
-            if (event === "INSERT") {
-              if (nextUnread) runtime.setCountSafe((v) => v + 1);
-              return;
-            }
-            if (event === "UPDATE") {
-              if (!prevHasReadField) {
-                runtime.scheduleRefetch({ delay: 80 });
-                return;
-              }
-              if (prevUnread === nextUnread) return;
-              runtime.setCountSafe((v) => Math.max(0, v + (nextUnread ? 1 : -1)));
-              return;
-            }
-            if (event === "DELETE") {
-              if (!prevHasReadField) {
-                runtime.scheduleRefetch({ delay: 80 });
-                return;
-              }
-              if (prevUnread) runtime.setCountSafe((v) => Math.max(0, v - 1));
-            }
-          },
-        },
-      ],
-      intervalMs: 10000,
-      onInterval: (runtime) => {
-        if (runtime.isPageVisible()) runtime.scheduleRefetch({ delay: 50 });
-      },
-      listenVisibility: true,
-      onVisibility: (runtime) => {
-        if (!runtime.isPageVisible()) return;
-        runtime.scheduleRefetch({ delay: 80 });
-      },
-      windowEvents: ["focus", "pageshow", "online", "pm-notifications-sync"],
-      onWindowEvent: (runtime) => {
-        if (!runtime.isPageVisible()) return;
-        runtime.scheduleRefetch({ delay: 80 });
-      },
-    };
-  }, []);
-
-  return useRealtimeCount(userId, createController);
-}
-
 function useUnreadKampeNotificationsCount(userId) {
   const createController = useCallback((api) => {
     let shouldRefreshIds = true;
@@ -700,7 +635,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const pendingKampe = usePendingKampeBadge(user?.id, isAdmin);
   const adminAttentionCount = useAdminAttentionBadge(user?.id, isAdmin);
   const [adminInitialSubTab, setAdminInitialSubTab] = useState(null);
-  const unreadNotifs = useUnreadNotificationsCount(user?.id);
   const unreadKampeNotifs = useUnreadKampeNotificationsCount(user?.id);
   const hasKampeAttention = pendingKampe > 0 || unreadKampeNotifs > 0;
   const pathTab = location.pathname.split("/")[2] || "hjem";
@@ -728,9 +662,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const lastNonAdminTabRef = useRef(tab !== "admin" ? tab : "hjem");
   const wasInAdminTabRef = useRef(false);
   const hasAutoStartedTourRef = useRef(false);
+  const pushOnboardingTimerRef = useRef(null);
   const accountBtnRef = useRef(null);
   const accountDropRef = useRef(null);
   const tourStorageKey = user?.id ? `pm_dash_tour_v${TOUR_VERSION}_done_${user.id}` : null;
+  const [pushOnboardingOpen, setPushOnboardingOpen] = useState(false);
 
   const tabTourSelector = useCallback((tabId) => {
     return isMobileView ? `[data-tour="mobile-tab-${tabId}"]` : `[data-tour="tab-${tabId}"]`;
@@ -746,15 +682,16 @@ export function DashboardPage({ user, onLogout, showToast }) {
       {
         id: 'push-notifications',
         title: 'Hold dig opdateret',
-        description: 'Tryk Næste for at aktivere push-notifikationer – du får besked om resultater, kampe og makker-svar selv når appen er lukket. Du kan til enhver tid slå dem til eller fra igen.',
+        description:
+          'På næste trin åbner vi notifikationspanelet. Der kan du trykke Aktiver for push — så får du besked om kampe og invitationer, også når appen er lukket.',
       },
       {
         id: 'notification-bell',
-        selector: isMobileView ? '[data-tour="notification-bell"]' : '[data-tour="account-menu-btn"]',
-        title: 'Notifikationer & push-indstillinger',
-        description: isMobileView
-          ? 'Her finder du alle dine notifikationer. Øverst i panelet kan du slå push-beskeder til og fra når som helst.'
-          : 'Åbn konto-menuen øverst til højre – der finder du alle dine notifikationer og kan slå push-beskeder til og fra når som helst.',
+        selector: '[data-tour="notification-panel"]',
+        interactive: true,
+        title: 'Aktiver push i klokken',
+        description:
+          'Klokken øverst er åben. Tryk Aktiver i panelet (browseren kan bede om tilladelse). Du kan altid finde notifikationer og indstillinger i klokken bagefter.',
       },
       {
         id: 'home',
@@ -844,6 +781,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
     return base;
   }, [isMobileView, tabTourSelector]);
 
+  const tourOnNotificationStep =
+    tourOpen && tourSteps[tourStepIndex]?.id === 'notification-bell';
+
   const persistTourCompleted = useCallback(() => {
     if (!tourStorageKey) return;
     try {
@@ -860,6 +800,31 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setTourOpen(true);
   }, []);
 
+  const maybeOpenPushOnboarding = useCallback(async () => {
+    if (!user?.id || !isPushSupported() || tourOpen) return;
+    const subscribed = await isPushSubscribed();
+    if (
+      !shouldShowPushOnboardingPrompt(user.id, {
+        isSubscribed: subscribed,
+        permission: getPushPermission(),
+        pushSupported: true,
+      })
+    ) {
+      return;
+    }
+    setPushOnboardingOpen(true);
+  }, [user?.id, tourOpen]);
+
+  const schedulePushOnboarding = useCallback(() => {
+    if (pushOnboardingTimerRef.current) {
+      window.clearTimeout(pushOnboardingTimerRef.current);
+    }
+    pushOnboardingTimerRef.current = window.setTimeout(() => {
+      pushOnboardingTimerRef.current = null;
+      void maybeOpenPushOnboarding();
+    }, 1200);
+  }, [maybeOpenPushOnboarding]);
+
   const closeTour = useCallback((withToastMessage) => {
     persistTourCompleted();
     setTourOpen(false);
@@ -867,7 +832,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setMobileMoreOpen(false);
     setAccountOpen(false);
     if (withToastMessage) showToast(withToastMessage);
-  }, [persistTourCompleted, showToast]);
+    schedulePushOnboarding();
+  }, [persistTourCompleted, showToast, schedulePushOnboarding]);
 
   const handleTourBack = useCallback(() => {
     setTourStepIndex((prev) => Math.max(0, prev - 1));
@@ -875,7 +841,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const handleTourNext = useCallback(() => {
     if (tourSteps[tourStepIndex]?.id === 'push-notifications' && user?.id && isPushSupported()) {
-      subscribeToPush(user.id).catch(() => {});
+      void subscribeToPush(user.id);
     }
     setTourStepIndex((prev) => Math.min(tourSteps.length - 1, prev + 1));
   }, [tourSteps, tourStepIndex, user?.id]);
@@ -946,8 +912,43 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [tourStorageKey]);
 
   useEffect(() => {
+    if (!user?.id || !isPushSupported()) return undefined;
+    let cancelled = false;
+    void tryAutoSubscribePush(user.id).then((result) => {
+      if (!cancelled && result === 'granted') {
+        /* stille auto-tilmelding når browser allerede har granted */
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!tourStorageKey || !user?.id || tourOpen) return undefined;
+    let tourDone = false;
+    try {
+      tourDone = localStorage.getItem(tourStorageKey) === '1';
+    } catch {
+      tourDone = false;
+    }
+    if (!tourDone) return undefined;
+    schedulePushOnboarding();
+    return () => {
+      if (pushOnboardingTimerRef.current) {
+        window.clearTimeout(pushOnboardingTimerRef.current);
+        pushOnboardingTimerRef.current = null;
+      }
+    };
+  }, [tourStorageKey, user?.id, tourOpen, schedulePushOnboarding]);
+
+  useEffect(() => {
     if (!tourOpen) return;
     const step = tourSteps[tourStepIndex];
+    if (step?.id === 'notification-bell') {
+      setAccountOpen(false);
+      return;
+    }
     const shouldOpenAccountMenu = Boolean(step?.openAccountMenu);
     setAccountOpen((isOpen) => (isOpen === shouldOpenAccountMenu ? isOpen : shouldOpenAccountMenu));
   }, [tourOpen, tourStepIndex, tourSteps]);
@@ -1240,9 +1241,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
           </picture>
         </button>
         <div className="pm-dash-header-actions pm-dash-header-actions-mobile">
-          {isMobileView && <NotificationBell />}
+          {isMobileView && <NotificationBell tourForceOpen={tourOnNotificationStep} />}
         </div>
         <div className="pm-dash-account-desktop">
+          {!isMobileView && <NotificationBell tourForceOpen={tourOnNotificationStep} />}
           <button
             ref={accountBtnRef}
             type="button"
@@ -1259,31 +1261,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
               position: "relative",
             }}
           >
-            {unreadNotifs > 0 && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: "-4px",
-                  right: "-4px",
-                  minWidth: "18px",
-                  height: "18px",
-                  padding: "0 5px",
-                  borderRadius: "999px",
-                  background: theme.red,
-                  color: theme.onAccent,
-                  fontSize: "10px",
-                  fontWeight: 800,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  lineHeight: 1,
-                  boxSizing: "border-box",
-                  border: "2px solid " + theme.surface,
-                }}
-              >
-                {unreadNotifs > 9 ? "9+" : unreadNotifs}
-              </span>
-            )}
             <span style={{ width: "22px", height: "22px", borderRadius: "999px", background: theme.accentBg, color: theme.accent, fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
               {userInitial}
             </span>
@@ -1364,10 +1341,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 )}
               </button>
             )}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", borderBottom: "1px solid " + theme.border }}>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: theme.textMid }}>Notifikationer</span>
-              {!isMobileView && <NotificationBell />}
-            </div>
             <button
               type="button"
               data-tour="account-menu-profile-btn"
@@ -1558,6 +1531,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
           closeTour("Guide gennemført. God fornøjelse!");
           setTab("hjem");
         }}
+      />
+
+      <PushOnboardingModal
+        open={pushOnboardingOpen}
+        userId={user?.id}
+        showToast={showToast}
+        onClose={() => setPushOnboardingOpen(false)}
       />
 
       <PendingResultConfirmModal user={user} />
