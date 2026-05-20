@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react"
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
-import { isOnboardingComplete } from "./lib/profileUtils";
-import { shouldRequirePhoneVerification } from "./lib/phoneVerification";
+import { canAccessDashboard } from "./lib/profileUtils";
+import { isPhoneVerificationExempt, shouldRequirePhoneVerification } from "./lib/phoneVerification";
 import { font, theme } from "./lib/platformTheme";
 import { ConfirmDialogProvider } from "./lib/ConfirmDialogProvider";
 import { LandingPage } from "./pages/LandingPage";
@@ -36,7 +36,8 @@ const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPa
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, signOut } = useAuth();
   const hasProfile = Boolean(user && profile);
-  const onboardingComplete = hasProfile && isOnboardingComplete(user, profile);
+  const phoneExempt = hasProfile && isPhoneVerificationExempt(user, profile);
+  const onboardingComplete = hasProfile && canAccessDashboard(user, profile, { phoneExempt });
   const canUseApp = onboardingComplete;
   const requiresPhoneVerification = canUseApp && shouldRequirePhoneVerification(user, profile);
   const defaultAuthedPath = requiresPhoneVerification ? "/opret/bekraeft-telefon" : "/dashboard";
