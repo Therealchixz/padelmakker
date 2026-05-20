@@ -36,6 +36,7 @@ import {
   isPushSubscribed,
   getPushPermission,
   tryAutoSubscribePush,
+  subscribeToPush,
 } from '../lib/pushNotifications';
 import { shouldShowPushOnboardingPrompt } from '../lib/pushOnboardingStorage';
 import { PushOnboardingModal } from '../components/PushOnboardingModal';
@@ -839,8 +840,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, []);
 
   const handleTourNext = useCallback(() => {
+    if (tourSteps[tourStepIndex]?.id === 'push-notifications' && user?.id && isPushSupported()) {
+      void subscribeToPush(user.id);
+    }
     setTourStepIndex((prev) => Math.min(tourSteps.length - 1, prev + 1));
-  }, [tourSteps.length]);
+  }, [tourSteps, tourStepIndex, user?.id]);
 
   useEffect(() => {
     if (!accountOpen) return;

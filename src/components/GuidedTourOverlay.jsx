@@ -75,9 +75,9 @@ export function GuidedTourOverlay({
       Math.max(12, window.innerWidth - TOOLTIP_WIDTH - 12)
     );
 
-    const placeBelow = targetRect.top < window.innerHeight * 0.55;
+    const placeBelow = targetRect.top < window.innerHeight * 0.45;
     const top = placeBelow
-      ? Math.min(window.innerHeight - 210, targetRect.top + targetRect.height + 14)
+      ? Math.min(window.innerHeight - 220, targetRect.top + targetRect.height + 16)
       : Math.max(14, targetRect.top - 198);
 
     return { left, top };

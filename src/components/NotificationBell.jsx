@@ -75,8 +75,8 @@ export function NotificationBell({ tourForceOpen = false }) {
   const panelRef = useRef(null);
   const realtimeRetryTimerRef = useRef(null);
 
-  // Push notification opt-in state
-  const [pushSupported, setPushSupported] = useState(false);
+  // Push notification opt-in state (init sync — undgår tour viser "ikke tilgængelig" før useEffect)
+  const [pushSupported, setPushSupported] = useState(() => isPushSupported());
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [pushTestLoading, setPushTestLoading] = useState(false);
@@ -262,6 +262,8 @@ export function NotificationBell({ tourForceOpen = false }) {
   useEffect(() => {
     if (tourForceOpen) {
       tourOpenedPanelRef.current = true;
+      setPushSupported(isPushSupported());
+      setPushBannerHidden(isPushPermanentlyBlocked());
       setOpen(true);
       setShowPrefToggles(false);
       isPushSubscribed().then(setPushSubscribed);
@@ -273,14 +275,23 @@ export function NotificationBell({ tourForceOpen = false }) {
     }
   }, [tourForceOpen]);
 
-  const showPushOptInBanner =
+  const pushCapable =
+    isPushSupported() &&
     pushSupported &&
     !pushBannerHidden &&
+    getPushPermission() !== 'denied';
+
+  const showPushOptInBanner =
+    pushCapable &&
     shouldShowPushBellBanner({
       isSubscribed: pushSubscribed,
       permission: getPushPermission(),
       pushSupported: true,
     });
+
+  /** Tour: vis altid Aktiver når browseren understøtter push (uafhængigt af subscribe-state race). */
+  const showTourPushActivate = tourForceOpen && pushCapable && !pushSubscribed;
+  const showTourPushAlreadyOn = tourForceOpen && pushCapable && pushSubscribed;
 
   // Fallback refresh på mobil: fokus/synlighed/online + let polling mens siden er synlig.
   useEffect(() => {
@@ -689,15 +700,19 @@ export function NotificationBell({ tourForceOpen = false }) {
           </div>
           )}
 
-          {showPushOptInBanner ? (
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
+          {showTourPushAlreadyOn ? (
+            <div style={{ padding: "12px 14px", borderBottom: "1px solid " + theme.border, background: "#DCFCE7", fontSize: "12px", color: "#166534", lineHeight: 1.5, fontWeight: 600 }}>
+              Push er allerede aktiveret på denne enhed. Tryk Næste for at fortsætte guiden.
+            </div>
+          ) : showTourPushActivate || showPushOptInBanner ? (
+            <div style={{ padding: "10px 14px", borderBottom: tourCompact ? "none" : "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
               <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
               <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
-                {pushMessage || (pushSubscribed ? "Push-beskeder er aktiveret" : "Få push-beskeder selv når du ikke er på siden")}
+                {pushMessage || (pushSubscribed ? "Push-beskeder er aktiveret" : tourCompact ? "Tryk Aktiver — browseren kan bede om tilladelse" : "Få push-beskeder selv når du ikke er på siden")}
               </span>
               {!pushMessage && (
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  {pushSubscribed && (
+                  {pushSubscribed && !tourCompact && (
                     <button
                       type="button"
                       onClick={handleSendPushTest}
@@ -719,9 +734,9 @@ export function NotificationBell({ tourForceOpen = false }) {
               )}
             </div>
           ) : (
-            <div style={{ padding: "12px 14px", borderBottom: "1px solid " + theme.border, fontSize: "12px", color: theme.textMid, lineHeight: 1.5 }}>
+            <div style={{ padding: "12px 14px", borderBottom: tourCompact ? "none" : "1px solid " + theme.border, fontSize: "12px", color: theme.textMid, lineHeight: 1.5 }}>
               {tourCompact
-                ? "Push virker bedst i Chrome, Edge eller Firefox (ikke in-app-browsere). Du får stadig alle beskeder her i klokken."
+                ? "Push kræver Safari/Chrome (ikke Instagram/Facebook-browser). Åbn padelmakker.dk i browseren eller som app på hjemmeskærmen — beskeder i klokken virker altid her."
                 : "Push er ikke tilgængelig i denne browser. Du får stadig beskeder i klokken."}
             </div>
           )}
