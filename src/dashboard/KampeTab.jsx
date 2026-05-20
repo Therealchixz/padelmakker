@@ -28,6 +28,12 @@ import { buildMatchCardState } from '../lib/matchCardState';
 import { buildKampeMatchLists } from '../lib/matchListFilters';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { buildMatchLevelRange, clampElo, parseMatchLevelRange } from '../lib/matchLevelRange';
+import {
+  parseKampeFocusFromSearch,
+  KAMPE_FORMAT_PADEL,
+  KAMPE_FORMAT_AMERICANO,
+  KAMPE_FORMAT_LIGA,
+} from '../lib/kampeFocusNavigation';
 import { DateTime } from 'luxon';
 import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarDays, CalendarPlus, Share2 } from 'lucide-react';
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
@@ -726,30 +732,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     [user.id]
   );
 
-  /* Notifikation: ?focus=<matchId> — vælg underfane, scroll til kort, fjern query */
-  useEffect(() => {
-    if (!tabActive || loadingMatches) return;
-    const params = new URLSearchParams(location.search);
-    const mid = params.get("focus");
-    if (!mid) return;
-    if (!matches.length) return;
-    const m = matches.find((x) => String(x.id) === String(mid));
-    if (!m) {
-      navigate("/dashboard/kampe", { replace: true });
-      return;
-    }
-    const st = (m.status ?? "open").toString().toLowerCase();
-    const mp = matchPlayers[m.id] || [];
-    const imIn = mp.some((p) => p.user_id === user.id);
-    if (st === "in_progress" && imIn) setViewTab("active");
-    else if (st === "completed" && imIn) setViewTab("completed");
-    else setViewTab("open");
-    navigate("/dashboard/kampe", { replace: true });
-    const t = window.setTimeout(() => {
-      document.getElementById("pm-match-" + String(mid))?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 200);
-    return () => window.clearTimeout(t);
-  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
+  /** Deep link scroll-mål (state så ny notifikation trigger scroll på samme underfane). */
+  const [focusScrollMatchId, setFocusScrollMatchId] = useState(null);
+  const [focusScrollAmericanoId, setFocusScrollAmericanoId] = useState(null);
+  const [focusScrollLeagueId, setFocusScrollLeagueId] = useState(null);
 
   const createMatch = async () => {
     const startM = timeToMinutes(newMatch.time);
@@ -1483,6 +1469,117 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     searchQuery,
     completedSortMs: matchCompletedSortMs,
   }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery]);
+
+  /* Notifikation: ?format=americano|liga&focus=<id> eller ?focus=<matchId> (padel) */
+  useEffect(() => {
+    if (!tabActive) return;
+    const { format, focusId } = parseKampeFocusFromSearch(location.search);
+    if (!focusId) return;
+
+    const clearFocusInUrl = (keepFormat) => {
+      const params = new URLSearchParams();
+      if (keepFormat && keepFormat !== KAMPE_FORMAT_PADEL) params.set("format", keepFormat);
+      const q = params.toString();
+      navigate({ pathname: "/dashboard/kampe", search: q ? `?${q}` : "" }, { replace: true });
+    };
+
+    if (format === KAMPE_FORMAT_AMERICANO) {
+      setKampeFormat(KAMPE_FORMAT_AMERICANO);
+      setFocusScrollAmericanoId(focusId);
+      clearFocusInUrl(KAMPE_FORMAT_AMERICANO);
+      return;
+    }
+
+    if (format === KAMPE_FORMAT_LIGA) {
+      setKampeFormat(KAMPE_FORMAT_LIGA);
+      setFocusScrollLeagueId(focusId);
+      clearFocusInUrl(KAMPE_FORMAT_LIGA);
+      return;
+    }
+
+    if (loadingMatches || !matches.length) return;
+    const m = matches.find((x) => String(x.id) === String(focusId));
+    if (!m) {
+      clearFocusInUrl(KAMPE_FORMAT_PADEL);
+      return;
+    }
+    setKampeFormat(KAMPE_FORMAT_PADEL);
+    setFocusScrollMatchId(focusId);
+    const st = (m.status ?? "open").toString().toLowerCase();
+    const mp = matchPlayers[m.id] || [];
+    const imIn = mp.some((p) => p.user_id === user.id);
+    if (st === "in_progress" && imIn) setViewTab("active");
+    else if (st === "completed" && imIn) setViewTab("completed");
+    else setViewTab("open");
+    clearFocusInUrl(KAMPE_FORMAT_PADEL);
+  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
+
+  useEffect(() => {
+    const mid = focusScrollMatchId;
+    if (!mid || !tabActive || loadingMatches) return;
+
+    const matchInRenderedList = () => {
+      if (viewTab === "open") {
+        return openMatches.some((x) => String(x.id) === String(mid));
+      }
+      if (viewTab === "active") {
+        return activeMatches.some((x) => String(x.id) === String(mid));
+      }
+      if (viewTab === "completed") {
+        return completedMatches.slice(0, completedLimit).some((x) => String(x.id) === String(mid));
+      }
+      return false;
+    };
+
+    if (viewTab === "completed") {
+      const idx = completedMatches.findIndex((x) => String(x.id) === String(mid));
+      if (idx >= 0 && idx >= completedLimit) {
+        setCompletedLimit(idx + 1);
+        return;
+      }
+    }
+
+    if (!matchInRenderedList()) return;
+
+    const scrollToCard = () => {
+      const el = document.getElementById("pm-match-" + String(mid));
+      if (!el) return false;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setFocusScrollMatchId(null);
+      return true;
+    };
+
+    if (scrollToCard()) return undefined;
+
+    let cancelled = false;
+    let attempts = 0;
+    const retry = () => {
+      if (cancelled) return;
+      if (scrollToCard() || attempts >= 15) {
+        if (attempts >= 15) setFocusScrollMatchId(null);
+        return;
+      }
+      attempts += 1;
+      window.setTimeout(retry, 80);
+    };
+    const raf = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(retry);
+    });
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(raf);
+    };
+  }, [
+    tabActive,
+    loadingMatches,
+    matches,
+    focusScrollMatchId,
+    viewTab,
+    openMatches,
+    activeMatches,
+    completedMatches,
+    completedLimit,
+  ]);
 
   const matchTeamStatsById = useMemo(() => {
     const stats = {};
@@ -2484,6 +2581,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             createOpen={showLigaCreate}
             onCreateOpenChange={setShowLigaCreate}
             embedInKampe
+            tabActive={tabActive && kampeFormat === "liga"}
+            focusLeagueId={focusScrollLeagueId}
+            onFocusLeagueHandled={() => setFocusScrollLeagueId(null)}
             scope={kampeScope}
             onScopeChange={onScopeChange}
             searchQuery={searchQuery}
@@ -2527,10 +2627,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           profile={user}
           showToast={showToast}
           embedInKampe
+          tabActive={tabActive && kampeFormat === "americano"}
           createOpen={showAmericanoCreate}
           onCreateOpenChange={setShowAmericanoCreate}
           scope={kampeScope}
           searchQuery={searchQuery}
+          focusTournamentId={focusScrollAmericanoId}
+          onFocusTournamentHandled={() => setFocusScrollAmericanoId(null)}
           initialSubTab={(() => {
             const s = readKampeSessionPrefs(user.id);
             if (s?.americanoView === "open" || s?.americanoView === "playing" || s?.americanoView === "completed") {

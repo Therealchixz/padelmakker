@@ -14,6 +14,7 @@ import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import { PillTabs } from '../../components/PillTabs'
 import { btn, theme } from '../../lib/platformTheme'
+import { notifyAmericanoTournamentFull } from '../../lib/notifyKampeEntityFull'
 
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
@@ -62,6 +63,11 @@ type Props = {
   onAmericanoSubTabChange?: (tab: AmericanoSubTab) => void
   /** Indlejret under Kampe — skjul egen top-række; "Opret turnering" styres udefra */
   embedInKampe?: boolean
+  /** Kampe-fanen er aktiv (til notifikations-deep-link) */
+  tabActive?: boolean
+  /** Scroll til denne turnering (fra notifikation) */
+  focusTournamentId?: string | null
+  onFocusTournamentHandled?: () => void
   /** Styret opret-formular (sammen med onCreateOpenChange) */
   createOpen?: boolean
   onCreateOpenChange?: (open: boolean) => void
@@ -101,10 +107,13 @@ export function AmericanoTab({
   initialSubTab,
   onAmericanoSubTabChange,
   embedInKampe,
+  tabActive = true,
   createOpen,
   onCreateOpenChange,
   scope = 'mine',
   searchQuery = '',
+  focusTournamentId = null,
+  onFocusTournamentHandled,
 }: Props) {
   const { user: authUser, refreshProfileQuiet } = useAuth()
   const ask = useConfirm()
@@ -247,6 +256,49 @@ export function AmericanoTab({
   }, [initialSubTab])
 
   useEffect(() => {
+    const tid = focusTournamentId
+    if (!tid || !tabActive || loading) return
+    const t = rows.find((x) => String(x.id) === String(tid))
+    if (!t) {
+      onFocusTournamentHandled?.()
+      return
+    }
+    const st = String(t.status || '').toLowerCase()
+    if (st === 'registration') setAmericanoView('open')
+    else if (st === 'playing') setAmericanoView('playing')
+    else setAmericanoView('completed')
+
+    const scrollToCard = () => {
+      const el = document.getElementById(`pm-americano-${tid}`)
+      if (!el) return false
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      onFocusTournamentHandled?.()
+      return true
+    }
+
+    if (scrollToCard()) return undefined
+
+    let cancelled = false
+    let attempts = 0
+    const retry = () => {
+      if (cancelled) return
+      if (scrollToCard() || attempts >= 15) {
+        if (attempts >= 15) onFocusTournamentHandled?.()
+        return
+      }
+      attempts += 1
+      window.setTimeout(retry, 80)
+    }
+    const raf = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(retry)
+    })
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(raf)
+    }
+  }, [focusTournamentId, tabActive, loading, rows, onFocusTournamentHandled])
+
+  useEffect(() => {
     if (americanoView !== 'completed') setOpenCompletedSummaryId(null)
   }, [americanoView])
 
@@ -375,7 +427,9 @@ export function AmericanoTab({
     }
   }
 
-  const joinTournament = async (tournamentId: string, maxSlots: number) => {
+  const joinTournament = async (tournament: AmericanoTournament) => {
+    const tournamentId = tournament.id
+    const maxSlots = tournament.player_slots
     setBusyId(tournamentId)
     try {
       const { count, error: cErr } = await supabase
@@ -393,6 +447,10 @@ export function AmericanoTab({
         display_name: displayName,
       })
       if (error) throw error
+      const newCount = (count ?? 0) + 1
+      if (newCount >= maxSlots) {
+        void notifyAmericanoTournamentFull(tournament, profileId)
+      }
       showToast('Du er tilmeldt!')
       await load()
     } catch (e: unknown) {
@@ -706,6 +764,7 @@ export function AmericanoTab({
               return (
                 <AmericanoCompletedCard
                   key={t.id}
+                  domId={`pm-americano-${t.id}`}
                   tournament={t}
                   dateLabel={dateLabel}
                   participants={enrichedParts}
@@ -750,7 +809,7 @@ export function AmericanoTab({
                     <button
                       type="button"
                       disabled={busyId === t.id}
-                      onClick={() => joinTournament(t.id, t.player_slots)}
+                      onClick={() => joinTournament(t)}
                       style={{
                         ...btn(true),
                         width: '100%',
@@ -904,7 +963,7 @@ export function AmericanoTab({
             }
 
             return (
-            <div key={t.id} className="pm-ui-card pm-match-surface-card">
+            <div key={t.id} id={`pm-americano-${t.id}`} className="pm-ui-card pm-match-surface-card" style={{ scrollMarginTop: '88px' }}>
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t.name}</div>
               <div className="pm-card-meta-row" style={{ marginBottom: 6 }}>
                 <span className={`pm-status-badge pm-status-badge--${statusMeta.tone}`}>{statusMeta.label}</span>

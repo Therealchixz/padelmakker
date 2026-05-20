@@ -118,6 +118,38 @@ const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
     urgency: "normal",
     cooldownSeconds: 60,
   },
+  americano_full: {
+    channel: "kampe",
+    level: "normal",
+    sendPush: true,
+    silent: false,
+    urgency: "normal",
+    cooldownSeconds: 60,
+  },
+  americano_completed: {
+    channel: "kampe",
+    level: "normal",
+    sendPush: true,
+    silent: false,
+    urgency: "normal",
+    cooldownSeconds: 60,
+  },
+  league_full: {
+    channel: "liga",
+    level: "normal",
+    sendPush: true,
+    silent: false,
+    urgency: "normal",
+    cooldownSeconds: 60,
+  },
+  league_completed: {
+    channel: "liga",
+    level: "normal",
+    sendPush: true,
+    silent: false,
+    urgency: "normal",
+    cooldownSeconds: 60,
+  },
   elo_change: {
     channel: "elo",
     level: "quiet",
@@ -368,6 +400,8 @@ Deno.serve(async (req: Request) => {
       title,
       body,
       matchId,
+      entityType,
+      entityId,
       type,
       channel,
       level,
@@ -409,14 +443,20 @@ Deno.serve(async (req: Request) => {
     }
 
     const normalizedMatchId = matchId ? String(matchId) : null;
+    const normalizedEntityType = entityType ? String(entityType) : null;
+    const normalizedEntityId = entityId ? String(entityId) : null;
     const callerId = user.id;
     if (String(targetUserId) !== String(callerId)) {
-      if (!normalizedMatchId) {
-        return new Response(JSON.stringify({ error: "Forbidden: matchId is required for cross-user push" }), {
+      const hasEntityFocus =
+        (normalizedEntityType === "americano" || normalizedEntityType === "league") &&
+        normalizedEntityId;
+      if (!normalizedMatchId && !hasEntityFocus) {
+        return new Response(JSON.stringify({ error: "Forbidden: matchId or entity focus required for cross-user push" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      if (normalizedMatchId) {
       const [{ data: callerInMatch }, { data: isCreator }, { data: targetInMatch }] = await Promise.all([
         adminClient
           .from("match_players")
@@ -444,6 +484,7 @@ Deno.serve(async (req: Request) => {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+      }
       }
     }
 
@@ -536,6 +577,8 @@ Deno.serve(async (req: Request) => {
       title: effectiveTitle,
       body: effectiveBody,
       matchId: normalizedMatchId,
+      entityType: normalizedEntityType,
+      entityId: normalizedEntityId,
       type: policy.type,
       channel: policy.channel,
       level: policy.level,

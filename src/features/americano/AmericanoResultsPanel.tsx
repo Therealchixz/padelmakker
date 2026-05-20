@@ -9,6 +9,7 @@ import {
   americanoViewerStatusLabel,
   userIsOnCourtInAmericanoMatch,
 } from './americanoOutcomeColors'
+import { notifyAmericanoTournamentCompleted } from '../../lib/notifyKampeEntityComplete'
 
 const font = 'var(--pm-font)'
 
@@ -497,6 +498,7 @@ export function AmericanoResultsPanel({
         showToast('Turnering afsluttet.')
       }
       onProfileStatsRefresh?.()
+      void notifyAmericanoTournamentCompleted(tournament, currentUserId)
       onSaved()
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)

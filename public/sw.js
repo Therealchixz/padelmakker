@@ -93,10 +93,18 @@ self.addEventListener('push', (event) => {
 /* ── Bruger trykker på en push-notifikation ── */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const matchId = event.notification.data?.matchId;
-  const url = matchId
-    ? '/dashboard/kampe?focus=' + encodeURIComponent(String(matchId))
-    : '/dashboard';
+  const d = event.notification.data || {};
+  const matchId = d.matchId;
+  const entityType = d.entityType;
+  const entityId = d.entityId;
+  let url = '/dashboard';
+  if (entityType === 'americano' && entityId) {
+    url = '/dashboard/kampe?format=americano&focus=' + encodeURIComponent(String(entityId));
+  } else if (entityType === 'league' && entityId) {
+    url = '/dashboard/kampe?format=liga&focus=' + encodeURIComponent(String(entityId));
+  } else if (matchId) {
+    url = '/dashboard/kampe?focus=' + encodeURIComponent(String(matchId));
+  }
 
   event.waitUntil(
     Promise.all([
