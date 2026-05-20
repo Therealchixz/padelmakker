@@ -9,6 +9,7 @@ import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import {
   isPushSupported,
   getPushPermission,
+  getPushUnsupportedHint,
   subscribeToPush,
   unsubscribeFromPush,
   isPushSubscribed,
@@ -288,6 +289,9 @@ export function NotificationBell({ tourForceOpen = false }) {
       permission: getPushPermission(),
       pushSupported: true,
     });
+
+  /** Opt-in eller allerede tilmeldt — undgå "ikke tilgængelig" når pushSubscribed er true. */
+  const showPushBanner = pushCapable && (pushSubscribed || showPushOptInBanner);
 
   /** Tour: vis altid Aktiver når browseren understøtter push (uafhængigt af subscribe-state race). */
   const showTourPushActivate = tourForceOpen && pushCapable && !pushSubscribed;
@@ -704,7 +708,7 @@ export function NotificationBell({ tourForceOpen = false }) {
             <div style={{ padding: "12px 14px", borderBottom: "1px solid " + theme.border, background: "#DCFCE7", fontSize: "12px", color: "#166534", lineHeight: 1.5, fontWeight: 600 }}>
               Push er allerede aktiveret på denne enhed. Tryk Næste for at fortsætte guiden.
             </div>
-          ) : showTourPushActivate || showPushOptInBanner ? (
+          ) : showTourPushActivate || showPushBanner ? (
             <div style={{ padding: "10px 14px", borderBottom: tourCompact ? "none" : "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
               <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
               <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
@@ -735,9 +739,7 @@ export function NotificationBell({ tourForceOpen = false }) {
             </div>
           ) : (
             <div style={{ padding: "12px 14px", borderBottom: tourCompact ? "none" : "1px solid " + theme.border, fontSize: "12px", color: theme.textMid, lineHeight: 1.5 }}>
-              {tourCompact
-                ? "Push kræver Safari/Chrome (ikke Instagram/Facebook-browser). Åbn padelmakker.dk i browseren eller som app på hjemmeskærmen — beskeder i klokken virker altid her."
-                : "Push er ikke tilgængelig i denne browser. Du får stadig beskeder i klokken."}
+              {getPushUnsupportedHint()}
             </div>
           )}
 

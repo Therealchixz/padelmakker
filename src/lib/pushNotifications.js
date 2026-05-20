@@ -10,6 +10,19 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
+/** Er appen åbnet som installeret PWA (hjemmeskærm)? */
+export function isStandalonePwa() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return (
+      window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Er push understøttet i denne browser? */
 export function isPushSupported() {
   return (
@@ -17,6 +30,21 @@ export function isPushSupported() {
     'PushManager' in window &&
     Boolean(VAPID_PUBLIC_KEY)
   );
+}
+
+/** Kort forklaring når isPushSupported() er false (til UI-tekst). */
+export function getPushUnsupportedHint() {
+  if (typeof window === 'undefined') return '';
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    if (isStandalonePwa()) {
+      return 'Push API mangler på denne enhed. Prøv at opdatere iOS/Android og genåbn appen fra hjemmeskærmen.';
+    }
+    return 'Åbn PadelMakker i Safari/Chrome eller som app på hjemmeskærmen (ikke via Instagram/Facebook).';
+  }
+  if (!VAPID_PUBLIC_KEY) {
+    return 'Push er midlertidigt utilgængelig (manglende serverkonfiguration). In-app beskeder i klokken virker stadig.';
+  }
+  return 'Push er ikke tilgængelig her. Du får stadig beskeder i klokken.';
 }
 
 /** Hent nuværende push-tilladelse ('granted' | 'denied' | 'default') */
