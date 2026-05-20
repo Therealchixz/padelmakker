@@ -726,30 +726,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     [user.id]
   );
 
-  /* Notifikation: ?focus=<matchId> — vælg underfane, scroll til kort, fjern query */
-  useEffect(() => {
-    if (!tabActive || loadingMatches) return;
-    const params = new URLSearchParams(location.search);
-    const mid = params.get("focus");
-    if (!mid) return;
-    if (!matches.length) return;
-    const m = matches.find((x) => String(x.id) === String(mid));
-    if (!m) {
-      navigate("/dashboard/kampe", { replace: true });
-      return;
-    }
-    const st = (m.status ?? "open").toString().toLowerCase();
-    const mp = matchPlayers[m.id] || [];
-    const imIn = mp.some((p) => p.user_id === user.id);
-    if (st === "in_progress" && imIn) setViewTab("active");
-    else if (st === "completed" && imIn) setViewTab("completed");
-    else setViewTab("open");
-    navigate("/dashboard/kampe", { replace: true });
-    const t = window.setTimeout(() => {
-      document.getElementById("pm-match-" + String(mid))?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 200);
-    return () => window.clearTimeout(t);
-  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
+  /** Bevares efter ?focus= er fjernet fra URL — scroll-effekt nedenfor bruger den. */
+  const pendingFocusMatchIdRef = useRef(null);
 
   const createMatch = async () => {
     const startM = timeToMinutes(newMatch.time);
@@ -1483,6 +1461,94 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     searchQuery,
     completedSortMs: matchCompletedSortMs,
   }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery]);
+
+  /* Notifikation: ?focus=<matchId> — vælg underfane, udvid afsluttet-liste, scroll til kort */
+  useEffect(() => {
+    if (!tabActive || loadingMatches) return;
+    const params = new URLSearchParams(location.search);
+    const mid = params.get("focus");
+    if (!mid) return;
+    if (!matches.length) return;
+    const m = matches.find((x) => String(x.id) === String(mid));
+    if (!m) {
+      navigate("/dashboard/kampe", { replace: true });
+      return;
+    }
+    pendingFocusMatchIdRef.current = mid;
+    const st = (m.status ?? "open").toString().toLowerCase();
+    const mp = matchPlayers[m.id] || [];
+    const imIn = mp.some((p) => p.user_id === user.id);
+    if (st === "in_progress" && imIn) setViewTab("active");
+    else if (st === "completed" && imIn) setViewTab("completed");
+    else setViewTab("open");
+    navigate("/dashboard/kampe", { replace: true });
+  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
+
+  useEffect(() => {
+    const mid = pendingFocusMatchIdRef.current;
+    if (!mid || !tabActive || loadingMatches) return;
+
+    const matchInRenderedList = () => {
+      if (viewTab === "open") {
+        return openMatches.some((x) => String(x.id) === String(mid));
+      }
+      if (viewTab === "active") {
+        return activeMatches.some((x) => String(x.id) === String(mid));
+      }
+      if (viewTab === "completed") {
+        return completedMatches.slice(0, completedLimit).some((x) => String(x.id) === String(mid));
+      }
+      return false;
+    };
+
+    if (viewTab === "completed") {
+      const idx = completedMatches.findIndex((x) => String(x.id) === String(mid));
+      if (idx >= 0 && idx >= completedLimit) {
+        setCompletedLimit(idx + 1);
+        return;
+      }
+    }
+
+    if (!matchInRenderedList()) return;
+
+    const scrollToCard = () => {
+      const el = document.getElementById("pm-match-" + String(mid));
+      if (!el) return false;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      pendingFocusMatchIdRef.current = null;
+      return true;
+    };
+
+    if (scrollToCard()) return undefined;
+
+    let cancelled = false;
+    let attempts = 0;
+    const retry = () => {
+      if (cancelled || pendingFocusMatchIdRef.current !== mid) return;
+      if (scrollToCard() || attempts >= 15) {
+        if (attempts >= 15) pendingFocusMatchIdRef.current = null;
+        return;
+      }
+      attempts += 1;
+      window.setTimeout(retry, 80);
+    };
+    const raf = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(retry);
+    });
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(raf);
+    };
+  }, [
+    tabActive,
+    loadingMatches,
+    matches,
+    viewTab,
+    openMatches,
+    activeMatches,
+    completedMatches,
+    completedLimit,
+  ]);
 
   const matchTeamStatsById = useMemo(() => {
     const stats = {};
