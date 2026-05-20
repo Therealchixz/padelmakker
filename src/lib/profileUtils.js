@@ -400,3 +400,34 @@ export function isOnboardingComplete(user, profile) {
   const availOk = normalizeStringArrayField(profile.availability).length > 0
   return birthOk && styleOk && availOk
 }
+
+function isGenericProfileName(name) {
+  const t = String(name || '').trim().toLowerCase()
+  return !t || t === 'ny spiller' || t === 'ny' || t === 'spiller'
+}
+
+/** Profil med reelt indhold (fx nået til telefon-trinnet men ikke gemt onboarding_completed). */
+export function hasSubstantialProfileProgress(profile) {
+  if (!profile) return false
+  const name = String(profile.full_name || profile.name || '').trim()
+  if (!name || isGenericProfileName(name)) return false
+
+  const availOk = normalizeStringArrayField(profile.availability).length > 0
+  const areaOk = String(profile.area || profile.city || '').trim() !== ''
+  const birthOk = profile.birth_year != null && String(profile.birth_year).trim() !== ''
+  const style = String(profile.play_style || '').trim()
+  const styleOk = style !== '' && style !== 'Ved ikke endnu'
+
+  return (availOk && areaOk) || (birthOk && styleOk)
+}
+
+/**
+ * Må brugeren bruge dashboard (ikke sendes til /opret)?
+ * SMS-undtagelse fjerner kun telefonkrav — genbruger ikke onboarding hvis profilen allerede er udfyldt.
+ */
+export function canAccessDashboard(user, profile, options = {}) {
+  if (!user || !profile) return false
+  if (isOnboardingComplete(user, profile)) return true
+  if (options.phoneExempt !== true) return false
+  return hasSubstantialProfileProgress(profile)
+}

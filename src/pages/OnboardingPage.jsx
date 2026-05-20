@@ -9,7 +9,7 @@ import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platfo
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
-import { validateFirstLastName } from '../lib/profileUtils';
+import { validateFirstLastName, canAccessDashboard } from '../lib/profileUtils';
 import { isPhoneVerificationExempt, fetchPhoneVerificationExemptFromServer } from '../lib/phoneVerification';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
 
@@ -100,6 +100,17 @@ export function OnboardingPage() {
             : f.birth_day,
     }));
   }, [profile]);
+
+  useEffect(() => {
+    if (!user || !profile || !phoneExemptResolved) return;
+    if (
+      canAccessDashboard(user, profile, {
+        phoneExempt: phoneExempt || serverPhoneExempt === true,
+      })
+    ) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, profile, phoneExempt, phoneExemptResolved, serverPhoneExempt, navigate]);
 
   useEffect(() => {
     if (!user) return;
