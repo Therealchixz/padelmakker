@@ -1,0 +1,1 @@
+-- Se supabase/migrations/20260520150000_notifications_remaining.sql
