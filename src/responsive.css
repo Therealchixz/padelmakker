@@ -1475,8 +1475,13 @@ button,
 }
 
 /* Panel: på smal skærm vises i toppen under headeren */
+/* Guided tour: ét kompakt push-panel — ikke konto-menu + fuld klokke */
+.pm-notification-panel--tour {
+  max-height: none !important;
+}
+
 @media (max-width: 480px) {
-  .pm-notification-panel {
+  .pm-notification-panel:not(.pm-notification-panel--tour) {
     position: fixed !important;
     top: calc(env(safe-area-inset-top, 0px) + 58px) !important;
     right: 8px !important;

@@ -761,11 +761,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
       {
         id: 'notification-bell',
         selector: '[data-tour="notification-panel"]',
-        openAccountMenu: true,
         interactive: true,
         title: 'Aktiver push her',
         description:
-          'Tryk Aktiver i panelet (browseren kan bede om tilladelse). Under Push-kanaler kan du vælge hvilke typer beskeder du vil have. Alt i klokken vises stadig i appen.',
+          'Tryk Aktiver i feltet herover (browseren kan bede om tilladelse). Bagefter finder du alle notifikationer og kanal-indstillinger i klokken.',
       },
       {
         id: 'home',
@@ -1016,6 +1015,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
   useEffect(() => {
     if (!tourOpen) return;
     const step = tourSteps[tourStepIndex];
+    if (step?.id === 'notification-bell') {
+      setAccountOpen(false);
+      return;
+    }
     const shouldOpenAccountMenu = Boolean(step?.openAccountMenu);
     setAccountOpen((isOpen) => (isOpen === shouldOpenAccountMenu ? isOpen : shouldOpenAccountMenu));
   }, [tourOpen, tourStepIndex, tourSteps]);
@@ -1372,7 +1375,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               border: "1px solid " + theme.border,
               borderRadius: "12px",
               boxShadow: theme.menuShadow,
-              zIndex: tourOnNotificationStep ? 10050 : 9999,
+              zIndex: 9999,
               overflow: "visible",
             }}
           >

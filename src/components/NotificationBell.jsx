@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -259,10 +260,9 @@ export function NotificationBell({ tourForceOpen = false }) {
 
   useEffect(() => {
     if (!tourForceOpen) return;
-    setOpen(true);
-    setShowPrefToggles(true);
-    void load();
-  }, [tourForceOpen, load]);
+    setOpen(false);
+    isPushSubscribed().then(setPushSubscribed);
+  }, [tourForceOpen]);
 
   const showPushOptInBanner =
     pushSupported &&
@@ -566,8 +566,109 @@ export function NotificationBell({ tourForceOpen = false }) {
     }
   };
 
+  const pushOptInBlock = showPushOptInBanner ? (
+    <div
+      style={{
+        padding: "12px 14px",
+        background: pushMessage
+          ? pushSubscribed
+            ? "#DCFCE7"
+            : theme.surface
+          : pushSubscribed
+            ? theme.accentBg + "30"
+            : theme.warmBg + "40",
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+      }}
+    >
+      <span style={{ fontSize: "16px" }} aria-hidden>
+        {pushMessage && pushSubscribed ? "✅" : "🔔"}
+      </span>
+      <span
+        style={{
+          flex: 1,
+          fontSize: "12px",
+          color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid,
+          lineHeight: 1.45,
+          fontWeight: pushMessage ? 600 : 400,
+        }}
+      >
+        {pushMessage
+          || (pushSubscribed
+            ? "Push-beskeder er aktiveret"
+            : "Få besked om kampe og invitationer — også når appen er lukket")}
+      </span>
+      {!pushMessage && (
+        <button
+          type="button"
+          onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
+          disabled={pushLoading || pushTestLoading}
+          style={{
+            background: pushSubscribed ? theme.border : theme.accent,
+            color: pushSubscribed ? theme.textMid : "#fff",
+            border: "none",
+            borderRadius: "6px",
+            padding: "6px 12px",
+            fontSize: "11px",
+            fontWeight: 700,
+            cursor: pushLoading || pushTestLoading ? "default" : "pointer",
+            opacity: pushLoading || pushTestLoading ? 0.6 : 1,
+            whiteSpace: "nowrap",
+            fontFamily: font,
+          }}
+        >
+          {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
+        </button>
+      )}
+    </div>
+  ) : (
+    <div style={{ padding: "14px", fontSize: "12px", color: theme.textMid, lineHeight: 1.45 }}>
+      Push er ikke tilgængelig i denne browser. Du får stadig beskeder i klokken under dashboard.
+    </div>
+  );
+
+  const tourPushPanel =
+    tourForceOpen && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            data-tour="notification-panel"
+            className="pm-notification-panel pm-notification-panel--tour"
+            style={{
+              position: "fixed",
+              top: "max(64px, calc(env(safe-area-inset-top, 0px) + 56px))",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "min(360px, calc(100vw - 24px))",
+              background: theme.surface,
+              borderRadius: "12px",
+              boxShadow: theme.shadowLg,
+              border: "1px solid " + theme.border,
+              zIndex: 10050,
+              overflow: "hidden",
+              fontFamily: font,
+            }}
+          >
+            <div
+              style={{
+                padding: "12px 14px",
+                borderBottom: "1px solid " + theme.border,
+                fontSize: "14px",
+                fontWeight: 700,
+                color: theme.text,
+              }}
+            >
+              Push-beskeder
+            </div>
+            {pushOptInBlock}
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
     <>
+    {tourPushPanel}
     {confirmClear && (
       <ConfirmDialog
         message="Vil du slette alle notifikationer?"
@@ -594,9 +695,8 @@ export function NotificationBell({ tourForceOpen = false }) {
         )}
       </button>
 
-      {open && (
+      {open && !tourForceOpen && (
         <div
-          data-tour="notification-panel"
           className="pm-notification-panel"
           style={{
             position: "absolute",
@@ -609,7 +709,7 @@ export function NotificationBell({ tourForceOpen = false }) {
             borderRadius: "12px",
             boxShadow: theme.shadowLg,
             border: "1px solid " + theme.border,
-            zIndex: tourForceOpen ? 10050 : 200,
+            zIndex: 200,
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
