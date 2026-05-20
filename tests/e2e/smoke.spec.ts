@@ -74,7 +74,9 @@ test.describe('Public smoke flows', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
 
-    const firstStat = page.getByText('Find jævnbyrdige spillere').first()
+    // Label from the stats banner grid only (not hero / mockup cards). Copy stays stable in both
+    // RPC-backed and fallback `statsBannerItems` layouts in `LandingPage.jsx`.
+    const firstStat = page.getByText('Opret profil uden betaling').first()
     await expect(firstStat).toBeVisible()
 
     const box = await firstStat.boundingBox()
