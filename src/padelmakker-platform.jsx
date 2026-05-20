@@ -38,7 +38,7 @@ export default function PadelMakker() {
   const hasProfile = Boolean(user && profile);
   const onboardingComplete = hasProfile && isOnboardingComplete(user, profile);
   const canUseApp = onboardingComplete;
-  const requiresPhoneVerification = canUseApp && shouldRequirePhoneVerification(user);
+  const requiresPhoneVerification = canUseApp && shouldRequirePhoneVerification(user, profile);
   const defaultAuthedPath = requiresPhoneVerification ? "/opret/bekraeft-telefon" : "/dashboard";
   const [toast, setToast] = useState(null);
   const [resetMode, setResetMode] = useState(false);
