@@ -88,11 +88,14 @@ async function sendPushNotification(userId, type, title, body, matchId, options 
   }
 }
 
+/** Altid send entity-args (null når ingen) — ellers vælger Postgres forkert overload af create_notification_for_user. */
 function entityRpcArgs(options = {}) {
   const entityType = options.entityType ? String(options.entityType) : null;
   const entityId = options.entityId ? String(options.entityId) : null;
-  if (!entityType || !entityId) return {};
-  return { p_entity_type: entityType, p_entity_id: entityId };
+  return {
+    p_entity_type: entityType,
+    p_entity_id: entityId,
+  };
 }
 
 async function insertNotificationRpc(userId, type, title, body, matchId, options = {}) {
