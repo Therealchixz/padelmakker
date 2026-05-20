@@ -26,6 +26,79 @@ const isSeekingActive = (p) =>
   p.seeking_match_at != null &&
   Date.now() - new Date(p.seeking_match_at).getTime() < SEEK_TTL_MS;
 
+/** Maks. synlige linjer før "Vis mere" på Find makker-kort. */
+const BIO_COLLAPSED_LINES = 3;
+/** Lange tekster uden linjeskift foldes også ud ved tegn-grænse. */
+const BIO_COLLAPSE_MIN_CHARS = 200;
+
+function bioNeedsCollapse(text) {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return false;
+  if (trimmed.length >= BIO_COLLAPSE_MIN_CHARS) return true;
+  const lines = trimmed.split('\n');
+  return lines.length > BIO_COLLAPSED_LINES;
+}
+
+function PlayerBioPreview({ bio }) {
+  const [expanded, setExpanded] = useState(false);
+  const trimmed = String(bio || '').trim();
+  if (!trimmed) return null;
+
+  const collapsible = bioNeedsCollapse(trimmed);
+
+  return (
+    <div
+      style={{ marginTop: '8px' }}
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
+      <p
+        style={{
+          fontSize: '12px',
+          color: theme.textMid,
+          lineHeight: 1.5,
+          margin: 0,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          ...(collapsible && !expanded
+            ? {
+                display: '-webkit-box',
+                WebkitLineClamp: BIO_COLLAPSED_LINES,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }
+            : {}),
+        }}
+      >
+        {trimmed}
+      </p>
+      {collapsible && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          style={{
+            marginTop: '6px',
+            padding: 0,
+            border: 'none',
+            background: 'none',
+            color: theme.accent,
+            fontSize: '12px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+          }}
+        >
+          {expanded ? 'Vis mindre' : 'Vis mere'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function favoritesKeyForUser(userId) {
   return userId != null && String(userId).trim() !== ''
     ? `pm_favorites_${String(userId)}`
@@ -589,7 +662,7 @@ export function MakkereTab({ user, showToast }) {
                     <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>
                     {isSeekingActive(p) && <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>}
                   </div>
-                  {p.bio && <p style={{ fontSize: '12px', color: theme.textMid, marginTop: '8px', lineHeight: 1.5 }}>{p.bio}</p>}
+                  {p.bio && <PlayerBioPreview bio={p.bio} />}
                 </div>
               </div>
               <div className="pm-makker-card-actions">
