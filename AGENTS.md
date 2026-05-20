@@ -52,6 +52,25 @@ Under **Authentication** → **URL configuration**, add redirect URLs:
 
 The app uses `signInWithOAuth` with PKCE; no extra env vars beyond `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
+### Supabase SQL og deploy (obligatorisk for agents)
+
+**Når du tilføjer eller ændrer produktions-SQL** (`supabase/sql/` eller RPC/schema):
+
+1. **Kør det med det samme** via Supabase MCP `apply_migration` på project `hzmrsqrerkoftcppfklu` (ikke vent på brugeren).
+2. **Tilføj en migrationsfil**: `npm run db:migration:new <snake_name>` og kopier SQL ind i `supabase/migrations/<timestamp>_<name>.sql`.
+3. **Verificer** med MCP `list_migrations` eller en kort `execute_sql`-smoke-test.
+4. **Commit + push** begge (`supabase/sql/` + `supabase/migrations/`).
+
+Ved merge til `main` kører GitHub Actions automatisk:
+
+- `apply-supabase-migrations.yml` → `supabase db push` (nye migrations)
+- `deploy-supabase-functions.yml` → edge functions
+- Vercel → frontend (GitHub-integration; ingen ekstra step)
+
+**Afslut PRs:** Efter grøn CI merges `auto-merge-cursor-prs.yml` PRs fra `cursor/*` til `main`. Sæt PR til **ready for review** (ikke draft). Eller tilføj label `auto-merge` på andre branches.
+
+Krav i GitHub repo: secret `SUPABASE_ACCESS_TOKEN` (samme som edge-function deploy).
+
 ### Supabase dependency
 
 The app requires two environment variables for full functionality:

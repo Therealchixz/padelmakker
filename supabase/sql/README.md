@@ -41,9 +41,10 @@ patches. De er nyttige som reference, men ikke noedvendigvis "koer denne foerst"
 ## 5) Anbefalet arbejdsflow
 
 1. Lav aendring i ny SQL-fil med tydelig header.
-2. Test i staging foerst.
-3. Koer i prod i kontrolleret raekkefolge.
-4. Dokumenter kort i commit-besked hvad scriptet goer.
+2. Opret tilsvarende fil i `supabase/migrations/` (`npm run db:migration:new <navn>`).
+3. **Cloud Agent:** koer straks i prod via Supabase MCP `apply_migration` (se `AGENTS.md`).
+4. Ved merge til `main` koer GitHub Actions `supabase db push` for nye migrationsfiler.
+5. Dokumenter kort i commit-besked hvad scriptet goer.
 
 ## 6) Naming guideline (fremadrettet)
 
