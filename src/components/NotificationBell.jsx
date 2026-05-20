@@ -63,7 +63,7 @@ function addDismissedIds(userId, ids) {
   }
 }
 
-export function NotificationBell() {
+export function NotificationBell({ tourForceOpen = false }) {
   const { user: authUser, profile } = useAuth();
   const navigate = useNavigate();
   const userId = authUser?.id;
@@ -256,6 +256,13 @@ export function NotificationBell() {
     setPushBannerHidden(isPushPermanentlyBlocked());
     isPushSubscribed().then(setPushSubscribed);
   }, [userId]);
+
+  useEffect(() => {
+    if (!tourForceOpen) return;
+    setOpen(true);
+    setShowPrefToggles(true);
+    void load();
+  }, [tourForceOpen, load]);
 
   const showPushOptInBanner =
     pushSupported &&
@@ -589,6 +596,7 @@ export function NotificationBell() {
 
       {open && (
         <div
+          data-tour="notification-panel"
           className="pm-notification-panel"
           style={{
             position: "absolute",
@@ -601,7 +609,7 @@ export function NotificationBell() {
             borderRadius: "12px",
             boxShadow: theme.shadowLg,
             border: "1px solid " + theme.border,
-            zIndex: 200,
+            zIndex: tourForceOpen ? 10050 : 200,
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",

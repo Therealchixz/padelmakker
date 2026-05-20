@@ -32,7 +32,6 @@ import {
   fetchAdminSubTabBadges,
 } from '../lib/userModeration';
 import {
-  subscribeToPush,
   isPushSupported,
   isPushSubscribed,
   getPushPermission,
@@ -756,15 +755,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
       {
         id: 'push-notifications',
         title: 'Hold dig opdateret',
-        description: 'Tryk Næste for at aktivere push-notifikationer – du får besked om resultater, kampe og makker-svar selv når appen er lukket. Du kan til enhver tid slå dem til eller fra igen.',
+        description:
+          'På næste trin åbner vi notifikationspanelet. Der kan du trykke Aktiver for push — så får du besked om kampe og invitationer, også når appen er lukket.',
       },
       {
         id: 'notification-bell',
-        selector: isMobileView ? '[data-tour="notification-bell"]' : '[data-tour="account-menu-btn"]',
-        title: 'Notifikationer & push-indstillinger',
-        description: isMobileView
-          ? 'Her finder du alle dine notifikationer. Øverst i panelet kan du slå push-beskeder til og fra når som helst.'
-          : 'Åbn konto-menuen øverst til højre – der finder du alle dine notifikationer og kan slå push-beskeder til og fra når som helst.',
+        selector: '[data-tour="notification-panel"]',
+        openAccountMenu: true,
+        interactive: true,
+        title: 'Aktiver push her',
+        description:
+          'Tryk Aktiver i panelet (browseren kan bede om tilladelse). Under Push-kanaler kan du vælge hvilke typer beskeder du vil have. Alt i klokken vises stadig i appen.',
       },
       {
         id: 'home',
@@ -854,6 +855,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
     return base;
   }, [isMobileView, tabTourSelector]);
 
+  const tourOnNotificationStep =
+    tourOpen && tourSteps[tourStepIndex]?.id === 'notification-bell';
+
   const persistTourCompleted = useCallback(() => {
     if (!tourStorageKey) return;
     try {
@@ -910,11 +914,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, []);
 
   const handleTourNext = useCallback(() => {
-    if (tourSteps[tourStepIndex]?.id === 'push-notifications' && user?.id && isPushSupported()) {
-      subscribeToPush(user.id).catch(() => {});
-    }
     setTourStepIndex((prev) => Math.min(tourSteps.length - 1, prev + 1));
-  }, [tourSteps, tourStepIndex, user?.id]);
+  }, [tourSteps.length]);
 
   useEffect(() => {
     if (!accountOpen) return;
@@ -1307,7 +1308,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           </picture>
         </button>
         <div className="pm-dash-header-actions pm-dash-header-actions-mobile">
-          {isMobileView && <NotificationBell />}
+          {isMobileView && <NotificationBell tourForceOpen={tourOnNotificationStep} />}
         </div>
         <div className="pm-dash-account-desktop">
           <button
@@ -1371,7 +1372,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               border: "1px solid " + theme.border,
               borderRadius: "12px",
               boxShadow: theme.menuShadow,
-              zIndex: 9999,
+              zIndex: tourOnNotificationStep ? 10050 : 9999,
               overflow: "visible",
             }}
           >
@@ -1433,7 +1434,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             )}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", borderBottom: "1px solid " + theme.border }}>
               <span style={{ fontSize: "13px", fontWeight: 600, color: theme.textMid }}>Notifikationer</span>
-              {!isMobileView && <NotificationBell />}
+              {!isMobileView && <NotificationBell tourForceOpen={tourOnNotificationStep} />}
             </div>
             <button
               type="button"
