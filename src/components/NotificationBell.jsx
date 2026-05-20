@@ -344,12 +344,16 @@ export function NotificationBell() {
 
   const openNotificationTarget = async (n) => {
     if (!userId) return;
-    const isAdminResultError =
-      n?.type === "result_error_report" && profile?.role === "admin";
-    if (isAdminResultError) {
+    if (n?.type === "result_error_report" && profile?.role === "admin") {
       await markNotifRead(n);
       setOpen(false);
       navigate("/dashboard/admin?adminSub=result_errors");
+      return;
+    }
+    if (n?.type === "user_report" && profile?.role === "admin") {
+      await markNotifRead(n);
+      setOpen(false);
+      navigate("/dashboard/admin?adminSub=reports");
       return;
     }
     const kampeTarget = notificationKampeTarget(n);
@@ -393,7 +397,13 @@ export function NotificationBell() {
       case "match_cancelled": return "\u274C";
       case "welcome": return "\uD83D\uDC4B";
       case "team_invite": return "\uD83C\uDFBE";
+      case "team_invite_accepted": return "\u2705";
+      case "team_invite_declined": return "\u274C";
       case "americano_full": return "\u2705";
+      case "americano_started": return "\uD83C\uDFBE";
+      case "americano_spot_open": return "\uD83D\uDD14";
+      case "league_started": return "\uD83C\uDFBE";
+      case "user_report": return "\uD83D\uDEA8";
       case "americano_completed": return "\uD83C\uDFC6";
       case "league_full": return "\u2705";
       case "league_completed": return "\uD83C\uDFC6";
@@ -604,8 +614,10 @@ export function NotificationBell() {
             ) : displayNotifs.map(n => {
               const isAdminResultError =
                 n.type === "result_error_report" && profile?.role === "admin";
+              const isAdminUserReport =
+                n.type === "user_report" && profile?.role === "admin";
               const kampeTarget = notificationKampeTarget(n);
-              const isClickable = Boolean(kampeTarget) || isAdminResultError;
+              const isClickable = Boolean(kampeTarget) || isAdminResultError || isAdminUserReport;
               const isMatchChatGroup = n.type === "match_chat_group";
               const itemTitle = isMatchChatGroup
                 ? (n.unreadCount > 0 ? "Nye beskeder i kamp-chat" : "Beskeder i kamp-chat")
@@ -643,7 +655,9 @@ export function NotificationBell() {
                       <div style={{ fontSize: "10px", color: theme.accent, marginTop: "6px", fontWeight: 600 }}>
                         {isAdminResultError
                           ? "Tryk for at åbne Admin (PIN) → Fejl →"
-                          : kampeTarget
+                          : isAdminUserReport
+                            ? "Tryk for at åbne Admin (PIN) → Anmeldelser →"
+                            : kampeTarget
                             ? kampeFocusFooterLabel(kampeTarget.format, n.type)
                             : "Tryk for at åbne →"}
                       </div>

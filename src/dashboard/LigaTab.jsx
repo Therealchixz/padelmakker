@@ -14,6 +14,7 @@ import { formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { LigaOpenCard } from './LigaOpenCard';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
+import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
 
 function isTiebreakScore(scoreText) {
   return !!(scoreText && /7-6|6-7/.test(scoreText));
@@ -848,6 +849,7 @@ export function LigaTab({
       const leagueName = leagues.find(l => l.id === leagueId)?.name || 'ligaen';
       await supabase.rpc('notify_league_invite', {
         p_user_id: selectedPartner.id,
+        p_league_id: leagueId,
         p_title: 'Holdinvitation 🎾',
         p_body: `${user.full_name || user.name || 'En spiller'} inviterer dig til holdet "${teamName.trim()}" i ${leagueName}`,
       });
@@ -889,6 +891,11 @@ export function LigaTab({
     if (!ok) return;
     setBusyId(team.id + '-decline');
     try {
+      await supabase.rpc('notify_league_invite_declined', {
+        p_team_id: team.id,
+        p_title: 'Invitation afvist',
+        p_body: `${user.full_name || user.name || 'Din makker'} har afvist invitationen til holdet "${team.name}".`,
+      });
       const { error } = await supabase.from('league_teams').delete().eq('id', team.id);
       if (error) throw error;
       showToast('Invitation afvist.');
@@ -1007,6 +1014,7 @@ export function LigaTab({
       if (mErr) throw mErr;
       const { error: uErr } = await supabase.from('leagues').update({ status: 'active', current_round: 1, total_rounds: totalRounds }).eq('id', league.id);
       if (uErr) throw uErr;
+      void notifyLeagueStarted(league, user.id);
       showToast(`Liga startet — runde 1 af ${totalRounds} genereret!`);
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }

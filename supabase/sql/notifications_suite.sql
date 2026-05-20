@@ -1,0 +1,1 @@
+-- Se supabase/migrations/20260520143000_notifications_suite.sql (samme indhold til reference)

@@ -562,7 +562,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const refreshTarget = shouldRefreshKampeUnreadForNotificationType(type);
           if (refreshTarget === "chat") {
             void loadUnreadMatchChatNotifs();
-          } else if (refreshTarget === "match") {
+          } else if (refreshTarget === "match" || refreshTarget === "entity") {
             void loadMatchUnreadCounts();
           }
         }

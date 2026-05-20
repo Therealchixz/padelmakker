@@ -15,6 +15,8 @@ import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils
 import { PillTabs } from '../../components/PillTabs'
 import { btn, theme } from '../../lib/platformTheme'
 import { notifyAmericanoTournamentFull } from '../../lib/notifyKampeEntityFull'
+import { notifyAmericanoTournamentStarted } from '../../lib/notifyKampeEntityStarted'
+import { notifyAmericanoSpotOpened } from '../../lib/notifyKampeEntityRoster'
 
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
@@ -417,6 +419,7 @@ export function AmericanoTab({
         .eq('id', t.id)
       if (uErr) throw uErr
 
+      void notifyAmericanoTournamentStarted(t, profileId)
       showToast('Turnering startet — runder genereret.')
       await load()
     } catch (e: unknown) {
@@ -462,6 +465,8 @@ export function AmericanoTab({
   }
 
   const leaveTournament = async (tournamentId: string) => {
+    const tournament = rows.find((x) => x.id === tournamentId)
+    const countBefore = (participantsByTournament[tournamentId] || []).length
     setBusyId(tournamentId)
     try {
       const { error } = await supabase
@@ -470,6 +475,12 @@ export function AmericanoTab({
         .eq('tournament_id', tournamentId)
         .eq('user_id', profileId)
       if (error) throw error
+      if (tournament) {
+        void notifyAmericanoSpotOpened(tournament, profileId, {
+          countBeforeLeave: countBefore,
+          maxSlots: tournament.player_slots,
+        })
+      }
       showToast('Du er afmeldt.')
       await load()
     } catch (e: unknown) {
@@ -481,6 +492,8 @@ export function AmericanoTab({
   }
 
   const kickParticipant = async (tournamentId: string, participantId: string) => {
+    const tournament = rows.find((x) => x.id === tournamentId)
+    const countBefore = (participantsByTournament[tournamentId] || []).length
     setBusyId(tournamentId + '-kick-' + participantId)
     try {
       const { error } = await supabase
@@ -489,6 +502,12 @@ export function AmericanoTab({
         .eq('id', participantId)
         .eq('tournament_id', tournamentId)
       if (error) throw error
+      if (tournament) {
+        void notifyAmericanoSpotOpened(tournament, profileId, {
+          countBeforeLeave: countBefore,
+          maxSlots: tournament.player_slots,
+        })
+      }
       showToast('Spiller fjernet.')
       await load()
     } catch (e: unknown) {

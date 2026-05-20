@@ -47,12 +47,14 @@ export function notificationKampeTarget(notif) {
 export function kampeFocusFooterLabel(format, notifType) {
   const type = String(notifType || '').toLowerCase();
   if (format === KAMPE_FORMAT_AMERICANO) {
-    if (type === 'americano_full') return 'Tryk for at åbne Americano → Åbne →';
-    return 'Tryk for at åbne Americano → Afsluttede →';
+    if (type === 'americano_completed') return 'Tryk for at åbne Americano → Afsluttede →';
+    if (type === 'americano_started') return 'Tryk for at åbne Americano → I gang →';
+    return 'Tryk for at åbne Americano → Åbne →';
   }
   if (format === KAMPE_FORMAT_LIGA) {
-    if (type === 'league_full') return 'Tryk for at åbne Liga → Åbne →';
-    return 'Tryk for at åbne Liga → Afsluttede →';
+    if (type === 'league_completed') return 'Tryk for at åbne Liga → Afsluttede →';
+    if (type === 'league_started') return 'Tryk for at åbne Liga → I gang →';
+    return 'Tryk for at åbne Liga → Åbne →';
   }
   return 'Tryk for at gå til kampen →';
 }
