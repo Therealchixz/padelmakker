@@ -10,6 +10,7 @@ import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName } from '../lib/profileUtils';
+import { isPhoneVerificationExempt } from '../lib/phoneVerification';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
 
 import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
@@ -19,8 +20,9 @@ import { TurnstileWidget } from '../components/TurnstileWidget';
 import { ArrowRight } from 'lucide-react';
 
 export function OnboardingPage() {
-  const { signUpWithPhone, user, updateProfile } = useAuth();
+  const { signUpWithPhone, user, profile, updateProfile, refreshProfileQuiet } = useAuth();
   const oauthSession = Boolean(user);
+  const phoneExempt = isPhoneVerificationExempt(user, profile);
   const navigate = useNavigate();
   const ask = useConfirm();
   const onboardingTopRef = useRef(null);
@@ -38,6 +40,10 @@ export function OnboardingPage() {
   useEffect(() => {
     onboardingTopRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
   }, [step]);
+
+  useEffect(() => {
+    if (user?.id) refreshProfileQuiet();
+  }, [user?.id, refreshProfileQuiet]);
 
   useEffect(() => {
     if (!user) return;
@@ -88,7 +94,10 @@ export function OnboardingPage() {
         if (form.password.length < 8) missing.push("adgangskode på mindst 8 tegn");
         if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
       }
-      if (!isValidSignupPhone(form.phone) || !normalizePhoneToE164(form.phone)) {
+      if (
+        !phoneExempt &&
+        (!isValidSignupPhone(form.phone) || !normalizePhoneToE164(form.phone))
+      ) {
         missing.push("gyldigt telefonnummer");
       }
       if (!(form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== "")) missing.push("fødselsdato");
@@ -189,8 +198,8 @@ export function OnboardingPage() {
         setErr(nameCheck.message);
         return;
       }
-      const normalizedPhone = normalizePhoneToE164(form.phone);
-      if (!normalizedPhone) {
+      const normalizedPhone = phoneExempt ? '' : normalizePhoneToE164(form.phone);
+      if (!phoneExempt && !normalizedPhone) {
         setErr("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
         return;
       }
@@ -220,6 +229,20 @@ export function OnboardingPage() {
       if (oauthSession) {
         if (avatarFile) await savePendingAvatar(avatarFile);
         await updateProfile(profilePayload);
+        if (phoneExempt) {
+          const { error: metaErr } = await supabase.auth.updateUser({
+            data: {
+              ...profilePayload,
+              onboarding_completed: true,
+              onboarding_applied_to_profile: true,
+              phone_verification_required: false,
+            },
+          });
+          if (metaErr) throw metaErr;
+          if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(avatarPreviewUrl);
+          navigate('/dashboard', { replace: true });
+          return;
+        }
         const { error: phoneErr } = await supabase.auth.updateUser({
           phone: normalizedPhone,
           data: {
@@ -362,6 +385,23 @@ export function OnboardingPage() {
       )}
         </>
       )}
+      {phoneExempt ? (
+        <div
+          style={{
+            background: theme.accentBg,
+            border: '1px solid ' + theme.accent + '26',
+            borderRadius: '12px',
+            padding: '12px 14px',
+            marginBottom: '14px',
+            fontSize: '13px',
+            color: theme.textMid,
+            lineHeight: 1.5,
+          }}
+        >
+          Denne konto er undtaget fra telefon-SMS (sat af admin). Du behøver ikke tilføje telefonnummer.
+        </div>
+      ) : (
+        <>
       <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer</label>
       <p style={{ color: theme.textMid, fontSize: '12px', margin: '0 0 8px', lineHeight: 1.45 }}>
         Vi sender en SMS-kode for at bekræfte nummeret og mindske falske konti.
@@ -384,6 +424,8 @@ export function OnboardingPage() {
         <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
           Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).
         </p>
+      )}
+        </>
       )}
       {!oauthSession && (
         <>
