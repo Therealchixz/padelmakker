@@ -13,6 +13,11 @@ import {
   unsubscribeFromPush,
   isPushSubscribed,
 } from '../lib/pushNotifications';
+import {
+  isPushPermanentlyBlocked,
+  markPushPermanentlyBlocked,
+  shouldShowPushBellBanner,
+} from '../lib/pushOnboardingStorage';
 import { createNotification } from '../lib/notifications';
 import {
   mergeNotificationPrefToggle,
@@ -76,9 +81,7 @@ export function NotificationBell() {
   const [pushLoading, setPushLoading] = useState(false);
   const [pushTestLoading, setPushTestLoading] = useState(false);
   const [pushMessage, setPushMessage] = useState(null); // kortvarig bekræftelsesbesked
-  const [pushBlocked, setPushBlocked] = useState(() => {
-    try { return localStorage.getItem('pm_push_blocked') === '1'; } catch { return false; }
-  });
+  const [pushBannerHidden, setPushBannerHidden] = useState(() => isPushPermanentlyBlocked());
   const [notifPrefs, setNotifPrefs] = useState(() => normalizeNotificationPrefs(profile?.notification_prefs));
   const [prefsSaving, setPrefsSaving] = useState(false);
   const [showPrefToggles, setShowPrefToggles] = useState(false);
@@ -250,8 +253,18 @@ export function NotificationBell() {
   useEffect(() => {
     if (!isPushSupported()) return;
     setPushSupported(true);
+    setPushBannerHidden(isPushPermanentlyBlocked());
     isPushSubscribed().then(setPushSubscribed);
   }, [userId]);
+
+  const showPushOptInBanner =
+    pushSupported &&
+    !pushBannerHidden &&
+    shouldShowPushBellBanner({
+      isSubscribed: pushSubscribed,
+      permission: getPushPermission(),
+      pushSupported: true,
+    });
 
   // Fallback refresh på mobil: fokus/synlighed/online + let polling mens siden er synlig.
   useEffect(() => {
@@ -461,10 +474,12 @@ export function NotificationBell() {
       if (subscribed) {
         showPushMessage('Push-beskeder aktiveret!');
       } else if (result === 'denied') {
+        markPushPermanentlyBlocked();
+        setPushBannerHidden(true);
         showPushMessage('Tilladelse afvist — tjek browserindstillinger');
       } else if (result === 'blocked') {
-        try { localStorage.setItem('pm_push_blocked', '1'); } catch { /* ignore */ }
-        setPushBlocked(true);
+        markPushPermanentlyBlocked();
+        setPushBannerHidden(true);
       } else if (result === 'timeout') {
         showPushMessage('Timeout — prøv igen');
       } else {
@@ -647,7 +662,7 @@ export function NotificationBell() {
           </div>
 
           {/* Push opt-in / opt-out banner */}
-          {pushSupported && !pushBlocked && getPushPermission() !== 'denied' && (
+          {showPushOptInBanner && (
             <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
               <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
               <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>

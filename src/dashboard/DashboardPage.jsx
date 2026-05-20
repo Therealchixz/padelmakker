@@ -31,7 +31,15 @@ import {
   adminAttentionTotal,
   fetchAdminSubTabBadges,
 } from '../lib/userModeration';
-import { subscribeToPush, isPushSupported } from '../lib/pushNotifications';
+import {
+  subscribeToPush,
+  isPushSupported,
+  isPushSubscribed,
+  getPushPermission,
+  tryAutoSubscribePush,
+} from '../lib/pushNotifications';
+import { shouldShowPushOnboardingPrompt } from '../lib/pushOnboardingStorage';
+import { PushOnboardingModal } from '../components/PushOnboardingModal';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -728,9 +736,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const lastNonAdminTabRef = useRef(tab !== "admin" ? tab : "hjem");
   const wasInAdminTabRef = useRef(false);
   const hasAutoStartedTourRef = useRef(false);
+  const pushOnboardingTimerRef = useRef(null);
   const accountBtnRef = useRef(null);
   const accountDropRef = useRef(null);
   const tourStorageKey = user?.id ? `pm_dash_tour_v${TOUR_VERSION}_done_${user.id}` : null;
+  const [pushOnboardingOpen, setPushOnboardingOpen] = useState(false);
 
   const tabTourSelector = useCallback((tabId) => {
     return isMobileView ? `[data-tour="mobile-tab-${tabId}"]` : `[data-tour="tab-${tabId}"]`;
@@ -860,6 +870,31 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setTourOpen(true);
   }, []);
 
+  const maybeOpenPushOnboarding = useCallback(async () => {
+    if (!user?.id || !isPushSupported() || tourOpen) return;
+    const subscribed = await isPushSubscribed();
+    if (
+      !shouldShowPushOnboardingPrompt(user.id, {
+        isSubscribed: subscribed,
+        permission: getPushPermission(),
+        pushSupported: true,
+      })
+    ) {
+      return;
+    }
+    setPushOnboardingOpen(true);
+  }, [user?.id, tourOpen]);
+
+  const schedulePushOnboarding = useCallback(() => {
+    if (pushOnboardingTimerRef.current) {
+      window.clearTimeout(pushOnboardingTimerRef.current);
+    }
+    pushOnboardingTimerRef.current = window.setTimeout(() => {
+      pushOnboardingTimerRef.current = null;
+      void maybeOpenPushOnboarding();
+    }, 1200);
+  }, [maybeOpenPushOnboarding]);
+
   const closeTour = useCallback((withToastMessage) => {
     persistTourCompleted();
     setTourOpen(false);
@@ -867,7 +902,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setMobileMoreOpen(false);
     setAccountOpen(false);
     if (withToastMessage) showToast(withToastMessage);
-  }, [persistTourCompleted, showToast]);
+    schedulePushOnboarding();
+  }, [persistTourCompleted, showToast, schedulePushOnboarding]);
 
   const handleTourBack = useCallback(() => {
     setTourStepIndex((prev) => Math.max(0, prev - 1));
@@ -944,6 +980,37 @@ export function DashboardPage({ user, onLogout, showToast }) {
     }, 900);
     return () => window.clearTimeout(timer);
   }, [tourStorageKey]);
+
+  useEffect(() => {
+    if (!user?.id || !isPushSupported()) return undefined;
+    let cancelled = false;
+    void tryAutoSubscribePush(user.id).then((result) => {
+      if (!cancelled && result === 'granted') {
+        /* stille auto-tilmelding når browser allerede har granted */
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!tourStorageKey || !user?.id || tourOpen) return undefined;
+    let tourDone = false;
+    try {
+      tourDone = localStorage.getItem(tourStorageKey) === '1';
+    } catch {
+      tourDone = false;
+    }
+    if (!tourDone) return undefined;
+    schedulePushOnboarding();
+    return () => {
+      if (pushOnboardingTimerRef.current) {
+        window.clearTimeout(pushOnboardingTimerRef.current);
+        pushOnboardingTimerRef.current = null;
+      }
+    };
+  }, [tourStorageKey, user?.id, tourOpen, schedulePushOnboarding]);
 
   useEffect(() => {
     if (!tourOpen) return;
@@ -1558,6 +1625,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
           closeTour("Guide gennemført. God fornøjelse!");
           setTab("hjem");
         }}
+      />
+
+      <PushOnboardingModal
+        open={pushOnboardingOpen}
+        userId={user?.id}
+        showToast={showToast}
+        onClose={() => setPushOnboardingOpen(false)}
       />
 
       <PendingResultConfirmModal user={user} />
