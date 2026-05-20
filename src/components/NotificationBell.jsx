@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -258,10 +257,20 @@ export function NotificationBell({ tourForceOpen = false }) {
     isPushSubscribed().then(setPushSubscribed);
   }, [userId]);
 
+  const tourOpenedPanelRef = useRef(false);
+
   useEffect(() => {
-    if (!tourForceOpen) return;
-    setOpen(false);
-    isPushSubscribed().then(setPushSubscribed);
+    if (tourForceOpen) {
+      tourOpenedPanelRef.current = true;
+      setOpen(true);
+      setShowPrefToggles(false);
+      isPushSubscribed().then(setPushSubscribed);
+      return;
+    }
+    if (tourOpenedPanelRef.current) {
+      tourOpenedPanelRef.current = false;
+      setOpen(false);
+    }
   }, [tourForceOpen]);
 
   const showPushOptInBanner =
@@ -305,7 +314,7 @@ export function NotificationBell({ tourForceOpen = false }) {
   }, [load]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || tourForceOpen) return;
     const closeIfOutside = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false);
     };
@@ -315,7 +324,7 @@ export function NotificationBell({ tourForceOpen = false }) {
       document.removeEventListener("mousedown", closeIfOutside);
       document.removeEventListener("touchstart", closeIfOutside);
     };
-  }, [open]);
+  }, [open, tourForceOpen]);
 
   const markAllRead = async () => {
     const unread = notifs.filter(n => !n.read).map(n => n.id);
@@ -566,109 +575,10 @@ export function NotificationBell({ tourForceOpen = false }) {
     }
   };
 
-  const pushOptInBlock = showPushOptInBanner ? (
-    <div
-      style={{
-        padding: "12px 14px",
-        background: pushMessage
-          ? pushSubscribed
-            ? "#DCFCE7"
-            : theme.surface
-          : pushSubscribed
-            ? theme.accentBg + "30"
-            : theme.warmBg + "40",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-      }}
-    >
-      <span style={{ fontSize: "16px" }} aria-hidden>
-        {pushMessage && pushSubscribed ? "✅" : "🔔"}
-      </span>
-      <span
-        style={{
-          flex: 1,
-          fontSize: "12px",
-          color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid,
-          lineHeight: 1.45,
-          fontWeight: pushMessage ? 600 : 400,
-        }}
-      >
-        {pushMessage
-          || (pushSubscribed
-            ? "Push-beskeder er aktiveret"
-            : "Få besked om kampe og invitationer — også når appen er lukket")}
-      </span>
-      {!pushMessage && (
-        <button
-          type="button"
-          onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
-          disabled={pushLoading || pushTestLoading}
-          style={{
-            background: pushSubscribed ? theme.border : theme.accent,
-            color: pushSubscribed ? theme.textMid : "#fff",
-            border: "none",
-            borderRadius: "6px",
-            padding: "6px 12px",
-            fontSize: "11px",
-            fontWeight: 700,
-            cursor: pushLoading || pushTestLoading ? "default" : "pointer",
-            opacity: pushLoading || pushTestLoading ? 0.6 : 1,
-            whiteSpace: "nowrap",
-            fontFamily: font,
-          }}
-        >
-          {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
-        </button>
-      )}
-    </div>
-  ) : (
-    <div style={{ padding: "14px", fontSize: "12px", color: theme.textMid, lineHeight: 1.45 }}>
-      Push er ikke tilgængelig i denne browser. Du får stadig beskeder i klokken under dashboard.
-    </div>
-  );
-
-  const tourPushPanel =
-    tourForceOpen && typeof document !== "undefined"
-      ? createPortal(
-          <div
-            data-tour="notification-panel"
-            className="pm-notification-panel pm-notification-panel--tour"
-            style={{
-              position: "fixed",
-              top: "max(64px, calc(env(safe-area-inset-top, 0px) + 56px))",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "min(360px, calc(100vw - 24px))",
-              background: theme.surface,
-              borderRadius: "12px",
-              boxShadow: theme.shadowLg,
-              border: "1px solid " + theme.border,
-              zIndex: 10050,
-              overflow: "hidden",
-              fontFamily: font,
-            }}
-          >
-            <div
-              style={{
-                padding: "12px 14px",
-                borderBottom: "1px solid " + theme.border,
-                fontSize: "14px",
-                fontWeight: 700,
-                color: theme.text,
-              }}
-            >
-              Push-beskeder
-            </div>
-            {pushOptInBlock}
-          </div>,
-          document.body,
-        )
-      : null;
+  const tourCompact = tourForceOpen;
 
   return (
     <>
-    {tourPushPanel}
     {confirmClear && (
       <ConfirmDialog
         message="Vil du slette alle notifikationer?"
@@ -695,42 +605,51 @@ export function NotificationBell({ tourForceOpen = false }) {
         )}
       </button>
 
-      {open && !tourForceOpen && (
+      {open && (
         <div
-          className="pm-notification-panel"
+          data-tour={tourCompact ? "notification-panel" : undefined}
+          className={
+            "pm-notification-panel"
+            + (tourCompact ? " pm-notification-panel--tour-compact" : "")
+          }
           style={{
-            position: "absolute",
-            top: "100%",
-            right: 0,
-            marginTop: "8px",
+            position: tourCompact ? "fixed" : "absolute",
+            top: tourCompact ? undefined : "100%",
+            right: tourCompact ? undefined : 0,
+            marginTop: tourCompact ? 0 : "8px",
             width: "min(360px, calc(100vw - 24px))",
-            maxHeight: "min(420px, 70dvh)",
+            maxHeight: tourCompact ? undefined : "min(420px, 70dvh)",
             background: theme.surface,
             borderRadius: "12px",
             boxShadow: theme.shadowLg,
             border: "1px solid " + theme.border,
-            zIndex: 200,
+            zIndex: tourCompact ? 10050 : 200,
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
           }}
         >
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "12px 14px", borderBottom: "1px solid " + theme.border }}>
-            <span style={{ fontSize: "14px", fontWeight: 700, color: theme.text, flex: "1 1 auto", minWidth: "100px" }}>Notifikationer</span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", marginLeft: "auto" }}>
-              {unreadCount > 0 && (
-                <button type="button" onClick={markAllRead} style={{ background: "none", border: "none", color: theme.accent, fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontFamily: font, padding: "4px 6px" }}>
-                  <CheckCheck size={13} /> Læst
-                </button>
-              )}
-              {notifs.length > 0 && (
-                <button type="button" onClick={() => setConfirmClear(true)} style={{ background: "none", border: "none", color: theme.textMid, fontSize: "11px", fontWeight: 600, cursor: "pointer", fontFamily: font, padding: "4px 6px" }}>
-                  Ryd alle
-                </button>
-              )}
-            </div>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: theme.text, flex: "1 1 auto", minWidth: "100px" }}>
+              {tourCompact ? "Push-beskeder" : "Notifikationer"}
+            </span>
+            {!tourCompact && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", marginLeft: "auto" }}>
+                {unreadCount > 0 && (
+                  <button type="button" onClick={markAllRead} style={{ background: "none", border: "none", color: theme.accent, fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontFamily: font, padding: "4px 6px" }}>
+                    <CheckCheck size={13} /> Læst
+                  </button>
+                )}
+                {notifs.length > 0 && (
+                  <button type="button" onClick={() => setConfirmClear(true)} style={{ background: "none", border: "none", color: theme.textMid, fontSize: "11px", fontWeight: 600, cursor: "pointer", fontFamily: font, padding: "4px 6px" }}>
+                    Ryd alle
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
+          {!tourCompact && (
           <div style={{ padding: "8px 14px", borderBottom: "1px solid " + theme.border, background: theme.surface }}>
             <button
               type="button"
@@ -768,9 +687,9 @@ export function NotificationBell({ tourForceOpen = false }) {
               </div>
             )}
           </div>
+          )}
 
-          {/* Push opt-in / opt-out banner */}
-          {showPushOptInBanner && (
+          {showPushOptInBanner ? (
             <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
               <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
               <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
@@ -799,8 +718,15 @@ export function NotificationBell({ tourForceOpen = false }) {
                 </div>
               )}
             </div>
+          ) : (
+            <div style={{ padding: "12px 14px", borderBottom: "1px solid " + theme.border, fontSize: "12px", color: theme.textMid, lineHeight: 1.5 }}>
+              {tourCompact
+                ? "Push virker bedst i Chrome, Edge eller Firefox (ikke in-app-browsere). Du får stadig alle beskeder her i klokken."
+                : "Push er ikke tilgængelig i denne browser. Du får stadig beskeder i klokken."}
+            </div>
           )}
 
+          {!tourCompact && (
           <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
             {displayNotifs.length === 0 ? (
               <div style={{ padding: "32px 16px", textAlign: "center", color: theme.textLight, fontSize: "13px" }}>
@@ -879,6 +805,7 @@ export function NotificationBell({ tourForceOpen = false }) {
               </div>
             );})}
           </div>
+          )}
         </div>
       )}
     </div>

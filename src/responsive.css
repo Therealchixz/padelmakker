@@ -1445,6 +1445,7 @@ button,
   margin-left: auto;
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .pm-dash-account-name {
@@ -1475,13 +1476,19 @@ button,
 }
 
 /* Panel: på smal skærm vises i toppen under headeren */
-/* Guided tour: ét kompakt push-panel — ikke konto-menu + fuld klokke */
-.pm-notification-panel--tour {
-  max-height: none !important;
+/* Guided tour: klokke åben med kompakt push-panel under header */
+.pm-notification-panel--tour-compact {
+  position: fixed !important;
+  top: calc(env(safe-area-inset-top, 0px) + 58px) !important;
+  right: 12px !important;
+  left: auto !important;
+  margin-top: 0 !important;
+  max-height: min(240px, 45dvh) !important;
+  z-index: 10050 !important;
 }
 
 @media (max-width: 480px) {
-  .pm-notification-panel:not(.pm-notification-panel--tour) {
+  .pm-notification-panel:not(.pm-notification-panel--tour-compact) {
     position: fixed !important;
     top: calc(env(safe-area-inset-top, 0px) + 58px) !important;
     right: 8px !important;

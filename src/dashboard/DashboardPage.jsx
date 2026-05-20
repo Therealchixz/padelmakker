@@ -707,7 +707,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const pendingKampe = usePendingKampeBadge(user?.id, isAdmin);
   const adminAttentionCount = useAdminAttentionBadge(user?.id, isAdmin);
   const [adminInitialSubTab, setAdminInitialSubTab] = useState(null);
-  const unreadNotifs = useUnreadNotificationsCount(user?.id);
   const unreadKampeNotifs = useUnreadKampeNotificationsCount(user?.id);
   const hasKampeAttention = pendingKampe > 0 || unreadKampeNotifs > 0;
   const pathTab = location.pathname.split("/")[2] || "hjem";
@@ -762,9 +761,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
         id: 'notification-bell',
         selector: '[data-tour="notification-panel"]',
         interactive: true,
-        title: 'Aktiver push her',
+        title: 'Aktiver push i klokken',
         description:
-          'Tryk Aktiver i feltet herover (browseren kan bede om tilladelse). Bagefter finder du alle notifikationer og kanal-indstillinger i klokken.',
+          'Klokken øverst er åben. Tryk Aktiver i panelet (browseren kan bede om tilladelse). Du kan altid finde notifikationer og indstillinger i klokken bagefter.',
       },
       {
         id: 'home',
@@ -1314,6 +1313,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           {isMobileView && <NotificationBell tourForceOpen={tourOnNotificationStep} />}
         </div>
         <div className="pm-dash-account-desktop">
+          {!isMobileView && <NotificationBell tourForceOpen={tourOnNotificationStep} />}
           <button
             ref={accountBtnRef}
             type="button"
@@ -1330,31 +1330,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
               position: "relative",
             }}
           >
-            {unreadNotifs > 0 && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: "-4px",
-                  right: "-4px",
-                  minWidth: "18px",
-                  height: "18px",
-                  padding: "0 5px",
-                  borderRadius: "999px",
-                  background: theme.red,
-                  color: theme.onAccent,
-                  fontSize: "10px",
-                  fontWeight: 800,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  lineHeight: 1,
-                  boxSizing: "border-box",
-                  border: "2px solid " + theme.surface,
-                }}
-              >
-                {unreadNotifs > 9 ? "9+" : unreadNotifs}
-              </span>
-            )}
             <span style={{ width: "22px", height: "22px", borderRadius: "999px", background: theme.accentBg, color: theme.accent, fontSize: "11px", fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
               {userInitial}
             </span>
@@ -1435,10 +1410,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 )}
               </button>
             )}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", borderBottom: "1px solid " + theme.border }}>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: theme.textMid }}>Notifikationer</span>
-              {!isMobileView && <NotificationBell tourForceOpen={tourOnNotificationStep} />}
-            </div>
             <button
               type="button"
               data-tour="account-menu-profile-btn"
