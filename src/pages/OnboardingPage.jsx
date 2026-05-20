@@ -39,6 +39,8 @@ export function OnboardingPage() {
   const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false, preferred_partner_level: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
+  /** Undgå gentaget auto-spring fra trin 1 → 0 → 1 når brugeren går tilbage. */
+  const didAutoSkipAccountStepRef = useRef(false);
 
   useEffect(() => {
     onboardingTopRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
@@ -47,6 +49,10 @@ export function OnboardingPage() {
   useEffect(() => {
     if (user?.id) refreshProfileQuiet();
   }, [user?.id, refreshProfileQuiet]);
+
+  useEffect(() => {
+    didAutoSkipAccountStepRef.current = false;
+  }, [user?.id]);
 
   useEffect(() => {
     if (!oauthSession || !user?.id) {
@@ -61,6 +67,39 @@ export function OnboardingPage() {
       cancelled = true;
     };
   }, [oauthSession, user?.id]);
+
+  // Udfyld navn og fødselsdato fra DB-profil (fx efter tidligere forsøg eller admin-redigering)
+  useEffect(() => {
+    if (!profile) return;
+    const full = String(profile.full_name || profile.name || '').trim();
+    if (!full) return;
+    const parts = full.split(/\s+/).filter(Boolean);
+    const first = parts[0] || '';
+    const last = parts.slice(1).join(' ') || '';
+    setForm((f) => ({
+      ...f,
+      first_name: f.first_name.trim() ? f.first_name : first,
+      last_name: f.last_name.trim() ? f.last_name : last,
+      birth_year:
+        f.birth_year.length === 4
+          ? f.birth_year
+          : profile.birth_year != null
+            ? String(profile.birth_year)
+            : f.birth_year,
+      birth_month:
+        f.birth_month !== ''
+          ? f.birth_month
+          : profile.birth_month != null
+            ? String(profile.birth_month)
+            : f.birth_month,
+      birth_day:
+        f.birth_day !== ''
+          ? f.birth_day
+          : profile.birth_day != null
+            ? String(profile.birth_day)
+            : f.birth_day,
+    }));
+  }, [profile]);
 
   useEffect(() => {
     if (!user) return;
@@ -140,6 +179,32 @@ export function OnboardingPage() {
     return true;
   };
   const missingRequirements = missingStepRequirements();
+
+  const missingStepRequirementsRef = useRef(missingStepRequirements);
+  missingStepRequirementsRef.current = missingStepRequirements;
+
+  useEffect(() => {
+    if (!phoneExemptResolved || !phoneExempt || step !== 0) return;
+    if (didAutoSkipAccountStepRef.current) return;
+    if (missingStepRequirementsRef.current(0).length > 0) return;
+    didAutoSkipAccountStepRef.current = true;
+    setStep(1);
+  }, [
+    phoneExemptResolved,
+    phoneExempt,
+    step,
+    oauthSession,
+    form.first_name,
+    form.last_name,
+    form.birth_year,
+    form.birth_month,
+    form.birth_day,
+    form.email,
+    form.email_confirm,
+    form.password,
+    form.password_confirm,
+    form.phone,
+  ]);
 
   const stepMeta = [
     { title: "Konto", hint: "Kontaktinfo, adgangskode og aldersbekræftelse." },
