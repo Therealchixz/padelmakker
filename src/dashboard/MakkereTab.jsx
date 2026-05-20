@@ -31,20 +31,29 @@ const BIO_COLLAPSED_LINES = 3;
 /** Lange tekster uden linjeskift foldes også ud ved tegn-grænse. */
 const BIO_COLLAPSE_MIN_CHARS = 200;
 
-function bioNeedsCollapse(text) {
-  const trimmed = String(text || '').trim();
-  if (!trimmed) return false;
-  if (trimmed.length >= BIO_COLLAPSE_MIN_CHARS) return true;
-  const lines = trimmed.split('\n');
-  return lines.length > BIO_COLLAPSED_LINES;
+/** Fjerner tomme linjer fra textarea (\\n\\n) så udfoldet tekst ikke får “blank” mellemrum. */
+function normalizeBioParagraphs(text) {
+  return String(text || '')
+    .trim()
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function bioNeedsCollapse(paragraphs) {
+  if (!paragraphs.length) return false;
+  const joined = paragraphs.join('\n');
+  if (joined.length >= BIO_COLLAPSE_MIN_CHARS) return true;
+  return paragraphs.length > BIO_COLLAPSED_LINES;
 }
 
 function PlayerBioPreview({ bio }) {
   const [expanded, setExpanded] = useState(false);
-  const trimmed = String(bio || '').trim();
-  if (!trimmed) return null;
+  const paragraphs = normalizeBioParagraphs(bio);
+  if (!paragraphs.length) return null;
 
-  const collapsible = bioNeedsCollapse(trimmed);
+  const collapsible = bioNeedsCollapse(paragraphs);
 
   return (
     <div
@@ -52,13 +61,11 @@ function PlayerBioPreview({ bio }) {
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
     >
-      <p
+      <div
         style={{
           fontSize: '12px',
           color: theme.textMid,
           lineHeight: 1.5,
-          margin: 0,
-          whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
           ...(collapsible && !expanded
             ? {
@@ -70,8 +77,18 @@ function PlayerBioPreview({ bio }) {
             : {}),
         }}
       >
-        {trimmed}
-      </p>
+        {paragraphs.map((part, index) => (
+          <p
+            key={index}
+            style={{
+              margin: 0,
+              marginTop: index === 0 ? 0 : '6px',
+            }}
+          >
+            {part}
+          </p>
+        ))}
+      </div>
       {collapsible && (
         <button
           type="button"
