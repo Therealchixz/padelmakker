@@ -22,6 +22,8 @@ import {
 import {
   levelRangeForMakkerPartnerPref,
   normalizeMakkerPartnerLevel,
+  MAKKER_AVAILABILITY_FLEXIBLE,
+  availabilityMeansAllTimeSlots,
 } from '../lib/makkerFilterMatch';
 import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
 import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
@@ -95,11 +97,17 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   };
 
   const toggleAvailability = (slot) => {
+    if (slot === MAKKER_AVAILABILITY_FLEXIBLE) {
+      set({ availability: [] });
+      return;
+    }
     const cur = normalizeStringArrayField(prefs.availability);
     set({
       availability: cur.includes(slot) ? cur.filter((x) => x !== slot) : [...cur, slot],
     });
   };
+
+  const allTimeSlots = availabilityMeansAllTimeSlots(prefs.availability);
 
   const description = describeMakkerFilter(prefs, user);
   const regionOk = Boolean(resolveMakkerFilterRegion(prefs, user) || prefs.region);
@@ -463,11 +471,14 @@ export function MakkerSearchFilterPage({ user, showToast }) {
 
       <div style={labelStyle}>Hvornår kan du spille? (valgfrit)</div>
       <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
-        Overlap med spillerens profil. Tom = alle tidsrum.
+        Vælg konkrete tidsrum, eller <strong>Flexibel</strong> / intet valg for alle tidsrum.
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
         {AVAILABILITY.map((slot) => {
-          const active = normalizeStringArrayField(prefs.availability).includes(slot);
+          const active =
+            slot === MAKKER_AVAILABILITY_FLEXIBLE
+              ? allTimeSlots
+              : !allTimeSlots && normalizeStringArrayField(prefs.availability).includes(slot);
           return (
             <button
               key={slot}

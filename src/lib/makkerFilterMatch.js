@@ -99,10 +99,30 @@ function intentCompatScore(myIntent, theirIntent) {
   return INTENT_COMPAT[mine]?.[theirs] ?? 0.4;
 }
 
+export const MAKKER_AVAILABILITY_FLEXIBLE = 'Flexibel';
+
 function normalizeAvailabilityList(value) {
   const list = normalizeStringArrayField(value);
   const allowed = new Set(AVAILABILITY.map((a) => normalizeText(a)));
   return list.filter((x) => allowed.has(normalizeText(x)));
+}
+
+function isFlexibleAvailabilitySlot(slot) {
+  return normalizeText(slot) === normalizeText(MAKKER_AVAILABILITY_FLEXIBLE);
+}
+
+/** Tom liste eller kun Flexibel = alle tidsrum (samme som intet valg). */
+export function availabilityMeansAllTimeSlots(filterAvailability) {
+  const f = normalizeAvailabilityList(filterAvailability);
+  if (!f.length) return true;
+  return f.some(isFlexibleAvailabilitySlot);
+}
+
+/** Gemmes som [] når Flexibel er valgt — så filter og opsummering er entydige. */
+export function normalizeMakkerAvailabilityFilter(value) {
+  const f = normalizeAvailabilityList(value);
+  if (!f.length || f.some(isFlexibleAvailabilitySlot)) return [];
+  return f;
 }
 
 export function normalizeMakkerPartnerLevel(raw, profile = {}) {
@@ -187,8 +207,8 @@ export function intentMatchesMakkerFilter(selectedIntents, intentMode, subjectIn
 }
 
 export function availabilityMatchesMakkerFilter(filterAvailability, subjectAvailability) {
+  if (availabilityMeansAllTimeSlots(filterAvailability)) return true;
   const f = normalizeAvailabilityList(filterAvailability);
-  if (!f.length) return true;
   const s = normalizeAvailabilityList(subjectAvailability);
   if (!s.length) return true;
   const sNorm = s.map(normalizeText);
@@ -207,6 +227,6 @@ export function normalizeMakkerFilterExtras(parsed = {}, profile = {}) {
   ];
   const intentMode = VALID_INTENT_MODES.has(parsed.intentMode) ? parsed.intentMode : 'compatible';
   const partnerLevel = normalizeMakkerPartnerLevel(parsed.partnerLevel, profile);
-  const availability = normalizeAvailabilityList(parsed.availability);
+  const availability = normalizeMakkerAvailabilityFilter(parsed.availability);
   return { partnerCourtSide, playStyle, intents, intentMode, partnerLevel, availability };
 }

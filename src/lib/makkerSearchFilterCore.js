@@ -24,6 +24,7 @@ import {
   playStyleMatchesMakkerFilter,
   intentMatchesMakkerFilter,
   availabilityMatchesMakkerFilter,
+  availabilityMeansAllTimeSlots,
   partnerCourtSideLabel,
   MAKKER_PARTNER_COURT_SIDES,
   MAKKER_COURT_SIDE_MODES,
@@ -224,8 +225,10 @@ export function describeMakkerFilter(prefs, profile = {}) {
 
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
-  const avail = normalizeStringArrayField(prefs.availability);
-  if (avail.length > 0) parts.push(`${avail.length} tidsrum`);
+  if (!availabilityMeansAllTimeSlots(prefs.availability)) {
+    const avail = normalizeStringArrayField(prefs.availability);
+    if (avail.length > 0) parts.push(`${avail.length} tidsrum`);
+  }
 
   const channels = [];
   if (prefs.notify) channels.push('notifikationer');
