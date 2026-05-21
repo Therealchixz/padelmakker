@@ -3,6 +3,7 @@
  */
 
 import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
+import { resolveSeekingMatchVisible } from './discoveryFeedSync';
 import { levelLabel } from './platformConstants';
 import {
   profilePlaytomicLevel,
@@ -192,8 +193,8 @@ export function buildProfilePatchFromMatchSearchPrefs(prefs, profile = {}) {
   const normalized = normalizeMatchSearchPrefs(prefs, profile);
   const configured = isMatchFilterConfigured(normalized, profile);
   const notifyOn = configured && normalized.notify;
-  const feedOn = configured && normalized.feedVisible;
   const region = resolveFilterRegion(normalized, profile);
+  const feedOn = resolveSeekingMatchVisible(normalized, profile?.makker_search_prefs, profile);
 
   return {
     match_search_prefs: {
@@ -205,7 +206,7 @@ export function buildProfilePatchFromMatchSearchPrefs(prefs, profile = {}) {
     match_watch_enabled: notifyOn,
     match_watch_at: notifyOn ? new Date().toISOString() : null,
     seeking_match: feedOn,
-    seeking_match_at: feedOn ? new Date().toISOString() : null,
+    seeking_match_at: feedOn ? (profile.seeking_match_at || new Date().toISOString()) : null,
     ...(region && region !== profile.area ? { area: region } : {}),
   };
 }

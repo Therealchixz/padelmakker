@@ -96,6 +96,14 @@ export function matchPassesLevelFilter(myLevel, levelWindow, creatorProfile, mat
   return true;
 }
 
+/** Om en spillers profilniveau ligger inden for filterets tolerance. */
+export function profilePassesLevelFilter(myLevel, levelWindow, subjectProfile) {
+  const center = clampPlaytomicLevel(myLevel);
+  const { min: filtMin, max: filtMax } = levelRangeForWindow(center, levelWindow);
+  const subjectLevel = profilePlaytomicLevel(subjectProfile);
+  return levelsOverlap(filtMin, filtMax, subjectLevel, subjectLevel);
+}
+
 /** Migrér ældre eloWindow (±ELO) til niveau-tolerance. */
 export function migrateEloWindowToLevelWindow(eloWindow) {
   const w = Number(eloWindow);

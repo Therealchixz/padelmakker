@@ -198,6 +198,11 @@ export function normalizeProfileRow(p) {
       p.match_search_prefs != null && typeof p.match_search_prefs === 'object' && !Array.isArray(p.match_search_prefs)
         ? p.match_search_prefs
         : {},
+    makker_watch_enabled: p.makker_watch_enabled === true,
+    makker_search_prefs:
+      p.makker_search_prefs != null && typeof p.makker_search_prefs === 'object' && !Array.isArray(p.makker_search_prefs)
+        ? p.makker_search_prefs
+        : {},
     intent_now:     p.intent_now     != null ? String(p.intent_now) : null,
     preferred_partner_level: p.preferred_partner_level != null ? String(p.preferred_partner_level) : null,
     last_active_at: p.last_active_at ?? null,

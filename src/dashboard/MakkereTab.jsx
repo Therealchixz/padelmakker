@@ -20,6 +20,11 @@ import {
   recordInviteSent,
   recordSuggestionExposure,
 } from '../lib/matchmakingTelemetry';
+import {
+  normalizeMakkerSearchPrefs,
+  isMakkerFilterActive,
+  countSeekersMatchingMakkerFilter,
+} from '../lib/makkerSearchFilterUtils';
 
 const isSeekingActive = (p) =>
   p.seeking_match === true &&
@@ -265,6 +270,31 @@ export function MakkereTab({ user, showToast }) {
   const hasScrolledToSeekingRef = useRef(false);
 
   const myElo = eloOf(user);
+  const makkerFilterPrefs = useMemo(
+    () => normalizeMakkerSearchPrefs(user?.makker_search_prefs, user),
+    [user],
+  );
+  const makkerFilterOn = isMakkerFilterActive(makkerFilterPrefs, user);
+  const [filterSeekerCount, setFilterSeekerCount] = useState(null);
+
+  useEffect(() => {
+    if (!user?.id || !makkerFilterOn) {
+      setFilterSeekerCount(null);
+      return;
+    }
+    let cancelled = false;
+    countSeekersMatchingMakkerFilter(user, makkerFilterPrefs, user.id)
+      .then((n) => { if (!cancelled) setFilterSeekerCount(n); })
+      .catch(() => { if (!cancelled) setFilterSeekerCount(0); });
+    return () => { cancelled = true; };
+  }, [user, makkerFilterPrefs, makkerFilterOn]);
+
+  useEffect(() => {
+    const pid = new URLSearchParams(location.search).get('profile');
+    if (!pid || players.length === 0) return;
+    const p = players.find((row) => String(row.id) === String(pid));
+    if (p) setViewPlayer(p);
+  }, [location.search, players]);
 
   useEffect(() => {
     if (!shouldShowSeekingFromUrl) return;
@@ -539,6 +569,36 @@ export function MakkereTab({ user, showToast }) {
   return (
     <div>
       <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Find makker</h2>
+
+      {makkerFilterOn && filterSeekerCount != null && filterSeekerCount > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            setFilterSeeking(true);
+            setShowFilters(true);
+            setPage(0);
+            seekingResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+          style={{
+            width: '100%',
+            textAlign: 'left',
+            background: theme.blueBg,
+            border: `1px solid ${theme.accent}`,
+            borderRadius: 10,
+            padding: '12px 14px',
+            marginBottom: 16,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>
+            {filterSeekerCount} {filterSeekerCount === 1 ? 'spiller' : 'spillere'} matcher dit makker-filter
+          </div>
+          <div style={{ fontSize: 11, color: theme.textMid, marginTop: 4 }}>
+            Vis spillere der søger makker nu
+          </div>
+        </button>
+      )}
 
       {/* Foreslåede makkere */}
       {suggestions.length > 0 && (

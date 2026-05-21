@@ -416,6 +416,12 @@ export function NotificationBell() {
       navigate("/dashboard/admin?adminSub=reports");
       return;
     }
+    if (n?.type === 'makker_suggestion' && n?.entity_id) {
+      await markNotifRead(n);
+      setOpen(false);
+      navigate(`/dashboard/makkere?profile=${encodeURIComponent(String(n.entity_id))}`);
+      return;
+    }
     const kampeTarget = notificationKampeTarget(n);
     if (!kampeTarget) {
       if (n?.type === 'elo_change') {
@@ -471,6 +477,7 @@ export function NotificationBell() {
       case "americano_started": return "\uD83C\uDFBE";
       case "americano_spot_open": return "\uD83D\uDD14";
       case "match_watch_match": return "\uD83D\uDD0D";
+      case "makker_suggestion": return "\uD83E\uDD1D";
       case "league_started": return "\uD83C\uDFBE";
       case "user_report": return "\uD83D\uDEA8";
       case "americano_completed": return "\uD83C\uDFC6";

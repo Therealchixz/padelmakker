@@ -11,6 +11,7 @@ test('padelLevelUtils maps niveau 1 and 7 to expected ELO band', () => {
   assert.match(src, /levelToElo/);
   assert.match(src, /eloToLevel/);
   assert.match(src, /matchPassesLevelFilter/);
+  assert.match(src, /profilePassesLevelFilter/);
 });
 
 test('match filter UI uses niveau not ELO window', () => {

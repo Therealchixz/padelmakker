@@ -9,8 +9,11 @@ import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { normalizeMatchSearchPrefs, describeMatchFilter } from '../lib/matchSearchFilterUtils';
+import { normalizeMakkerSearchPrefs, describeMakkerFilter } from '../lib/makkerSearchFilterUtils';
+import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
+import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
 import { useNavigate } from 'react-router-dom';
-import { Filter, ChevronRight } from 'lucide-react';
+import { Filter, Users, ChevronRight } from 'lucide-react';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
@@ -67,7 +70,63 @@ function MatchFilterProfileCard({ user }) {
               <span style={{ color: theme.textMid }}>{info.detail}</span>
             </>
           ) : (
-            'Indstil region, ELO og hvornår du vil have besked om åbne kampe.'
+            'Indstil region, niveau og hvornår du vil have besked om åbne kampe.'
+          )}
+        </div>
+      </span>
+      <ChevronRight size={18} color={theme.textLight} aria-hidden style={{ flexShrink: 0 }} />
+    </button>
+  );
+}
+
+function MakkerFilterProfileCard({ user }) {
+  const navigate = useNavigate();
+  const prefs = normalizeMakkerSearchPrefs(user?.makker_search_prefs, user);
+  const info = describeMakkerFilter(prefs, user);
+
+  return (
+    <button
+      type="button"
+      onClick={() => navigate('/dashboard/makker-filter')}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        width: '100%',
+        textAlign: 'left',
+        background: theme.surfaceAlt,
+        border: `1px solid ${info.active ? theme.accent : theme.border}`,
+        borderRadius: 10,
+        padding: '12px 14px',
+        marginBottom: 16,
+        cursor: 'pointer',
+      }}
+    >
+      <span
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: theme.blueBg,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <Users size={18} color={theme.accent} aria-hidden />
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Mit makker-filter</div>
+        <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2, lineHeight: 1.4 }}>
+          {info.configured ? (
+            <>
+              {info.summary}
+              <br />
+              <span style={{ color: theme.textMid }}>{info.detail}</span>
+            </>
+          ) : (
+            'Få besked når spillere på dit niveau søger makker i dit område.'
           )}
         </div>
       </span>
@@ -389,6 +448,8 @@ export function ProfilTab({ user, showToast, setTab }) {
       }
       setAvatarUploading(false);
     }
+    const wasSeeking = isSeekingActiveProfile(user) || user?.seeking_match === true;
+    const willSeeking = form.seeking_match === true;
     try {
       await updateProfile({
         area: region,
@@ -415,6 +476,9 @@ export function ProfilTab({ user, showToast, setTab }) {
       setAvatarPreviewUrl(null);
       setEditing(false);
       showToast("Profil opdateret! ✅");
+      if (willSeeking && !wasSeeking && user?.id) {
+        void notifyMakkerWatchersForProfile(user.id);
+      }
     } catch (e) {
       console.error(e);
       showToast("Kunne ikke gemme. Prøv igen.");
@@ -532,6 +596,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
           <MatchFilterProfileCard user={user} />
+          <MakkerFilterProfileCard user={user} />
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading || (overviewMode === "liga" && ligaLoading) ? (

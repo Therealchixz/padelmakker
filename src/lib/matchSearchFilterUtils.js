@@ -4,6 +4,8 @@
 
 import { supabase } from './supabase';
 import { notifyMatchWatchersForMatch } from './matchWatchUtils';
+import { notifyMakkerWatchersForProfile } from './makkerWatchUtils';
+import { isSeekingActiveProfile } from './makkerSearchFilterCore';
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterConfigured,
@@ -44,12 +46,20 @@ export async function saveMatchSearchPrefs(prefs, profile = {}) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.id) throw new Error('Ikke logget ind');
 
+  const wasSeeking = isSeekingActiveProfile(profile) || profile?.seeking_match === true;
+  const willSeeking = patch.seeking_match === true;
+
   const { error } = await supabase
     .from('profiles')
     .update(patch)
     .eq('id', user.id);
 
   if (error) throw error;
+
+  if (willSeeking && !wasSeeking) {
+    void notifyMakkerWatchersForProfile(user.id);
+  }
+
   return patch;
 }
 
