@@ -23,6 +23,7 @@ import {
   sendPushNotificationsForUsers,
 } from '../lib/notifications';
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
+import { notifyMatchWatchersForMatch } from '../lib/matchWatchUtils';
 import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { canConfirmPadelMatchResult, confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
@@ -768,6 +769,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         match_id: created.id, user_id: user.id, user_name: myDisplayName,
         user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾", team: 1,
       });
+      if (row.match_type !== "closed" && row.status === "open") {
+        void notifyMatchWatchersForMatch(created.id);
+      }
       setShowCreate(false);
       showToast(newMatch.match_type === "closed" ? "Lukket kamp oprettet! Du er på Hold 1 🔒" : "Kamp oprettet! Du er på Hold 1 🎾");
       await loadData();

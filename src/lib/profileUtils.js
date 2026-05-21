@@ -193,6 +193,7 @@ export function normalizeProfileRow(p) {
     longitude:      p.longitude != null ? Number(p.longitude) : null,
     travel_willing: p.travel_willing === true,
     seeking_match:  p.seeking_match  === true,
+    match_watch_enabled: p.match_watch_enabled === true,
     intent_now:     p.intent_now     != null ? String(p.intent_now) : null,
     preferred_partner_level: p.preferred_partner_level != null ? String(p.preferred_partner_level) : null,
     last_active_at: p.last_active_at ?? null,

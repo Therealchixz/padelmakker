@@ -485,6 +485,33 @@ export function ProfilTab({ user, showToast, setTab }) {
             </button>
           </div>
 
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: theme.surfaceAlt, border: '1px solid ' + (user.match_watch_enabled ? theme.accent : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>🔔 Kamp-watch</div>
+              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
+                Få besked når en åben kamp i din region passer dit ELO (max 2 push om dagen).
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const enabling = !user.match_watch_enabled;
+                  await updateProfile({
+                    match_watch_enabled: enabling,
+                    match_watch_at: enabling ? new Date().toISOString() : null,
+                  });
+                  showToast(enabling ? 'Kamp-watch er slået til' : 'Kamp-watch er slået fra');
+                } catch {
+                  showToast('Kunne ikke gemme. Prøv igen.');
+                }
+              }}
+              style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: user.match_watch_enabled ? theme.accent : theme.border, position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+            >
+              <div style={{ position: 'absolute', top: 3, left: user.match_watch_enabled ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+            </button>
+          </div>
+
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading || (overviewMode === "liga" && ligaLoading) ? (
             <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px", marginBottom: "20px" }}>Indlæser statistik…</div>

@@ -1,6 +1,7 @@
 /** Push-kanaler (matcher notificationPolicy.channel). */
 export const NOTIFICATION_PUSH_CHANNELS = Object.freeze([
   { id: 'kampe', label: 'Kampe & turneringer' },
+  { id: 'opdagelse', label: 'Nye kampe der passer' },
   { id: 'resultat', label: 'Resultater & bekræftelser' },
   { id: 'liga', label: 'Liga & hold' },
   { id: 'chat', label: 'Kamp-chat' },
@@ -11,6 +12,7 @@ export const NOTIFICATION_PUSH_CHANNELS = Object.freeze([
 const DEFAULT_PREFS = Object.freeze({
   push: {
     kampe: true,
+    opdagelse: true,
     resultat: true,
     liga: true,
     chat: true,

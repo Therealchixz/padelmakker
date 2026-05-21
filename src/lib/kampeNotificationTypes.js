@@ -8,6 +8,7 @@ export const KAMPE_NON_CHAT_NOTIFICATION_TYPES = Object.freeze([
   'result_submitted',
   'result_confirmed',
   'seeking_player',
+  'match_watch_match',
 ]);
 
 /** Americano/liga + holdinvitationer (entity_type + entity_id). */

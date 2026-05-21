@@ -90,6 +90,14 @@ const TYPE_POLICIES = Object.freeze({
     urgency: "low",
     cooldownSeconds: 300,
   },
+  match_watch_match: {
+    channel: "opdagelse",
+    level: "normal",
+    sendPush: true,
+    silent: true,
+    urgency: "low",
+    cooldownSeconds: 7200,
+  },
   team_invite: {
     channel: "liga",
     level: "critical",

@@ -109,11 +109,18 @@ export async function activateSeekingPlayer(match, creatorProfile, playerIds, op
       const eloDiff = Math.abs(elo - matchElo);
       const eloScore = Math.max(0, 1 - eloDiff / ELO_WINDOW);
       const areaScore = matchArea && p.area === matchArea ? 1 : 0.3;
-      const seekScore = p.seeking_match ? 1 : 0;
-      const total = eloScore * 0.7 + areaScore * 0.2 + seekScore * 0.1;
+      const watchBoost = p.match_watch_enabled ? 0.12 : 0;
+      const seekScore = p.seeking_match ? 0.05 : 0;
+      const total = eloScore * 0.65 + areaScore * 0.18 + watchBoost + seekScore;
       return { profile: p, score: total };
     })
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (Boolean(b.profile.match_watch_enabled) !== Boolean(a.profile.match_watch_enabled)) {
+        return (b.profile.match_watch_enabled ? 1 : 0) - (a.profile.match_watch_enabled ? 1 : 0);
+      }
+      return 0;
+    })
     .slice(0, MAX_NOTIFY);
 
   if (candidates.length === 0) {
