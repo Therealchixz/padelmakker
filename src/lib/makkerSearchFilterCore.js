@@ -4,7 +4,6 @@
 
 import { SEEK_TTL_MS } from './platformConstants';
 import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
-import { levelLabel } from './platformConstants';
 import {
   profilePlaytomicLevel,
   migrateEloWindowToLevelWindow,
@@ -112,6 +111,9 @@ export function resolveMakkerFilterRegion(prefs, profile = {}) {
 }
 
 export function resolveMakkerFilterLevel(prefs, profile = {}) {
+  if (profile?.level != null && profile.level !== '') {
+    return profilePlaytomicLevel(profile);
+  }
   const n = Number(prefs?.myLevel);
   if (Number.isFinite(n) && n >= 1 && n <= 7) return Math.round(n * 10) / 10;
   return profilePlaytomicLevel(profile);
@@ -169,8 +171,7 @@ export function describeMakkerFilter(prefs, profile = {}) {
   const lvl = resolveMakkerFilterLevel(prefs, profile);
   const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
   const { min, max } = levelRangeForWindow(lvl, win);
-  const short = levelLabel(lvl) || formatPlaytomicLevel(lvl);
-  parts.push(`${short} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
+  parts.push(`Niveau ${formatPlaytomicLevel(lvl)} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
   const channels = [];
@@ -197,7 +198,7 @@ export function buildProfilePatchFromMakkerSearchPrefs(prefs, profile = {}) {
       ...normalized,
       version: MAKKER_FILTER_PREFS_VERSION,
       region: region || normalized.region,
-      myLevel: resolveMakkerFilterLevel(normalized, profile),
+      myLevel: profilePlaytomicLevel(profile),
     },
     makker_watch_enabled: notifyOn,
     makker_watch_at: notifyOn ? new Date().toISOString() : null,

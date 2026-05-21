@@ -4,7 +4,6 @@
 
 import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
 import { resolveSeekingMatchVisible } from './discoveryFeedSync';
-import { levelLabel } from './platformConstants';
 import {
   profilePlaytomicLevel,
   migrateEloWindowToLevelWindow,
@@ -109,6 +108,10 @@ export function resolveFilterRegion(prefs, profile = {}) {
 }
 
 export function resolveFilterLevel(prefs, profile = {}) {
+  // Profilens niveau (fx 3,3) er sandheden — ikke band-label eller gammel myLevel i prefs.
+  if (profile?.level != null && profile.level !== '') {
+    return profilePlaytomicLevel(profile);
+  }
   const n = Number(prefs?.myLevel);
   if (Number.isFinite(n) && n >= 1 && n <= 7) return Math.round(n * 10) / 10;
   return profilePlaytomicLevel(profile);
@@ -173,8 +176,7 @@ export function describeMatchFilter(prefs, profile = {}) {
   const lvl = resolveFilterLevel(prefs, profile);
   const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
   const { min, max } = levelRangeForWindow(lvl, win);
-  const short = levelLabel(lvl) || formatPlaytomicLevel(lvl);
-  parts.push(`${short} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
+  parts.push(`Niveau ${formatPlaytomicLevel(lvl)} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
   const channels = [];
@@ -201,7 +203,7 @@ export function buildProfilePatchFromMatchSearchPrefs(prefs, profile = {}) {
       ...normalized,
       version: MATCH_FILTER_PREFS_VERSION,
       region: region || normalized.region,
-      myLevel: resolveFilterLevel(normalized, profile),
+      myLevel: profilePlaytomicLevel(profile),
     },
     match_watch_enabled: notifyOn,
     match_watch_at: notifyOn ? new Date().toISOString() : null,

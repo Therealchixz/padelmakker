@@ -50,8 +50,8 @@ IMMUTABLE
 AS $$
   SELECT GREATEST(1.0, LEAST(7.0,
     COALESCE(
-      NULLIF(trim(p_prefs->>'myLevel'), '')::numeric,
       NULLIF(p_profile_level, 0),
+      NULLIF(trim(p_prefs->>'myLevel'), '')::numeric,
       3.0
     )
   ));
