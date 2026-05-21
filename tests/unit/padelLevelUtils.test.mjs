@@ -15,7 +15,8 @@ test('padelLevelUtils maps niveau 1 and 7 to expected ELO band', () => {
 
 test('match filter UI uses niveau not ELO window', () => {
   const page = readFileSync(join(root, 'src/dashboard/MatchSearchFilterPage.jsx'), 'utf8');
-  assert.match(page, /LEVEL_WINDOW_OPTIONS/);
+  assert.match(page, /LEVEL_WINDOW_CHOICES/);
+  assert.match(page, /tolLabel/);
   assert.match(page, /Dit niveau/);
   assert.doesNotMatch(page, /ELO-vindue/);
   assert.match(page, /ELO i appen er kun til rangliste/);

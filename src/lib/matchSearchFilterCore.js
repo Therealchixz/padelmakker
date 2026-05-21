@@ -20,11 +20,11 @@ export const DEFAULT_LEVEL_WINDOW = 0.2;
  * Tolerance i niveau (±). Max ±0,5 — større spring giver ufair kampe (fx 3,3 vs 4,3).
  */
 export const LEVEL_WINDOW_CHOICES = [
-  { value: 0.1, label: 'Næsten samme', hint: '±0,1' },
-  { value: 0.2, label: 'Snævert', hint: 'Anbefalet · ±0,2' },
-  { value: 0.3, label: 'Normalt', hint: '±0,3' },
-  { value: 0.4, label: 'Lidt bredere', hint: '±0,4' },
-  { value: 0.5, label: 'Maks. bredde', hint: '±0,5 · øvre grænse' },
+  { value: 0.1, label: 'Næsten samme', hint: 'Tættest på dig' },
+  { value: 0.2, label: 'Snævert', hint: 'Anbefalet' },
+  { value: 0.3, label: 'Normalt', hint: 'Lidt mere spænd' },
+  { value: 0.4, label: 'Lidt bredere', hint: 'Bredere pulje' },
+  { value: 0.5, label: 'Maks. bredde', hint: 'Øvre grænse' },
 ];
 
 export const LEVEL_WINDOW_OPTIONS = LEVEL_WINDOW_CHOICES.map((c) => c.value);

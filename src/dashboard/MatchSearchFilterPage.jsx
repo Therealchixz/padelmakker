@@ -172,6 +172,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
         {LEVEL_WINDOW_CHOICES.map(({ value, label, hint }) => {
           const active = (prefs.levelWindow ?? DEFAULT_LEVEL_WINDOW) === value;
+          const tolLabel = `±${String(value).replace('.', ',')}`;
           return (
             <button
               key={value}
@@ -181,18 +182,36 @@ export function MatchSearchFilterPage({ user, showToast }) {
                 ...btn(active),
                 textAlign: 'left',
                 padding: '10px 12px',
-                fontSize: 12,
+                fontSize: 13,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                gap: 8,
+                gap: 10,
               }}
             >
-              <span>
-                <strong>{label}</strong>
-                <span style={{ color: theme.textMid, marginLeft: 6 }}>±{value}</span>
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                <strong style={{ color: active ? theme.onAccent : theme.text }}>{label}</strong>
+                <span style={{ fontSize: 11, color: active ? 'rgba(255,255,255,0.85)' : theme.textLight }}>
+                  {hint}
+                </span>
               </span>
-              <span style={{ fontSize: 11, color: active ? theme.accent : theme.textLight }}>{hint}</span>
+              <span
+                style={{
+                  flexShrink: 0,
+                  fontSize: 16,
+                  fontWeight: 800,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '0.02em',
+                  lineHeight: 1,
+                  padding: '6px 10px',
+                  borderRadius: 8,
+                  color: active ? theme.accent : theme.onAccent,
+                  background: active ? '#fff' : theme.accent,
+                }}
+                aria-hidden
+              >
+                {tolLabel}
+              </span>
             </button>
           );
         })}
