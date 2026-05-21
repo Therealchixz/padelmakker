@@ -11,6 +11,7 @@ import { AppModal } from '../components/AppModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS, levelLabel, SEEK_TTL_MS } from '../lib/platformConstants';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
+import { seekingActivityLabel } from '../lib/seekingActivityLabel';
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterActive,
@@ -224,7 +225,7 @@ export function HomeTab({ user, setTab }) {
           .select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration')
           .order('created_at', { ascending: false }).limit(5),
         supabase.from('profiles')
-          .select('id, full_name, name, avatar, level, area, intent_now, seeking_match_at')
+          .select('id, full_name, name, avatar, level, area, intent_now, seeking_match_at, match_search_prefs, makker_search_prefs')
           .eq('seeking_match', true).gt('seeking_match_at', sinceSeeking)
           .order('seeking_match_at', { ascending: false, nullsFirst: false }).limit(5),
         supabase.from('leagues')
@@ -425,7 +426,18 @@ export function HomeTab({ user, setTab }) {
       // Søger kamp (seeking_match)
       const seekingFeed_ = seeking
         .filter(p => String(p.id) !== String(user.id)).slice(0, 3)
-        .map(p => ({ type: 'seeking_player', userId: p.id, name: p.full_name || p.name || 'En spiller', avatar: p.avatar || '🎾', level: p.level, area: p.area, intent: p.intent_now, created_at: p.seeking_match_at }));
+        .map((p) => ({
+          type: 'seeking_player',
+          userId: p.id,
+          name: p.full_name || p.name || 'En spiller',
+          avatar: p.avatar || '🎾',
+          level: p.level,
+          area: p.area,
+          intent: p.intent_now,
+          created_at: p.seeking_match_at,
+          match_search_prefs: p.match_search_prefs,
+          makker_search_prefs: p.makker_search_prefs,
+        }));
 
       // Nye/aktive ligaer
       const lgTeamCounts = {};
@@ -1082,7 +1094,7 @@ export function HomeTab({ user, setTab }) {
                   ),
                   tag: "Spiller",
                   meta: formatTimeAgo(row.created_at),
-                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> søger kamp</>,
+                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> {seekingActivityLabel(row)}</>,
                   subtitle: sub || "Klar til kamp",
                   action: <button onClick={() => setViewPlayer(player)} style={activityActionBtnStyle(theme.blue)}>Detaljer</button>,
                 });

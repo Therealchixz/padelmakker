@@ -4,7 +4,7 @@ import { fetchRowsInChunks } from './supabaseChunkFetch';
 
 /** Kolonner til Find makker — undgår select('*') på hele profiles. */
 export const PROFILE_MAKKERE_SELECT =
-  'id, full_name, name, avatar, area, city, level, elo_rating, games_played, games_won, play_style, court_side, intent_now, seeking_match, seeking_match_at, match_watch_enabled, available_days, birth_year, birth_month, birth_day, bio, is_banned, last_active_at';
+  'id, full_name, name, avatar, area, city, level, elo_rating, games_played, games_won, play_style, court_side, intent_now, seeking_match, seeking_match_at, match_watch_enabled, match_search_prefs, makker_search_prefs, available_days, birth_year, birth_month, birth_day, bio, is_banned, last_active_at';
 
 /** Kolonner til kampe-kort og profil-modal fra Kampe. */
 export const PROFILE_KAMPE_SELECT =

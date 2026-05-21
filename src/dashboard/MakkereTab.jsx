@@ -20,6 +20,7 @@ import {
   recordInviteSent,
   recordSuggestionExposure,
 } from '../lib/matchmakingTelemetry';
+import { seekingActivityLabelDisplay } from '../lib/seekingActivityLabel';
 import {
   normalizeMakkerSearchPrefs,
   isMakkerFilterActive,
@@ -199,7 +200,7 @@ function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
               <span style={tag('#F0FDF4', '#15803D')}>{INTENT_LABELS[p.intent_now]}</span>
             )}
             {isSeekingActive(p) && (
-              <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>
+              <span style={tag('#FEF3C7', '#B45309')}>{seekingActivityLabelDisplay(p)}</span>
             )}
           </div>
         </div>
@@ -750,7 +751,9 @@ export function MakkereTab({ user, showToast }) {
                     <span style={tag(theme.blueBg, theme.blue)}>{p.play_style || '?'}</span>
                     {p.court_side && <span style={tag(theme.blueBg, theme.blue)}>{p.court_side}</span>}
                     <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>
-                    {isSeekingActive(p) && <span style={tag('#FEF3C7', '#B45309')}>Søger kamp</span>}
+                    {isSeekingActive(p) && (
+                      <span style={tag('#FEF3C7', '#B45309')}>{seekingActivityLabelDisplay(p)}</span>
+                    )}
                   </div>
                   {p.bio && <PlayerBioPreview bio={p.bio} />}
                 </div>
