@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { createNotification } from '../lib/notifications';
 import { theme, btn } from '../lib/platformTheme';
+import { AppModal } from '../components/AppModal';
 import { formatMatchDateDa, fmtClock } from '../lib/matchDisplayUtils';
 
 export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, onInviteSent }) {
@@ -100,33 +101,14 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
   const hasAnything = matches.length > 0 || tournaments.length > 0;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '16px',
-      }}
-      onClick={onClose}
+    <AppModal
+      open
+      onClose={onClose}
+      ariaLabel={`Inviter ${inviteeName}`}
+      maxWidthPreset="sm"
+      contentStyle={{ maxHeight: '80vh' }}
     >
-      <div
-        style={{
-          background: theme.surface,
-          borderRadius: '14px',
-          padding: '24px',
-          maxWidth: '420px',
-          width: '100%',
-          maxHeight: '80vh',
-          overflowY: 'auto',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-          border: '1px solid ' + theme.border,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="pm-modal-body pm-modal-body--compact" style={{ overflowY: 'auto' }}>
         <h3 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '4px' }}>
           Inviter {inviteeName}
         </h3>
@@ -248,10 +230,10 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
           </div>
         )}
 
-        <button onClick={onClose} style={{ ...btn(false), width: '100%', justifyContent: 'center' }}>
+        <button type="button" onClick={onClose} style={{ ...btn(false), width: '100%', justifyContent: 'center' }}>
           Luk
         </button>
       </div>
-    </div>
+    </AppModal>
   );
 }

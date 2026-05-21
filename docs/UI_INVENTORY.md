@@ -1,6 +1,6 @@
 # UI-migrationsinventar
 
-Genereret som reference for UI-konsistens. Opdater ved større refactors.
+Opdater ved større refactors. Senest: smoke-test OK på prod; hex i JSX er ryddet.
 
 ## Modaler → `AppModal`
 
@@ -11,17 +11,21 @@ Genereret som reference for UI-konsistens. Opdater ved større refactors.
 | `src/dashboard/PlayerProfileModal.jsx` | Migreret |
 | `src/dashboard/ResultModal.jsx` | Migreret |
 | `src/dashboard/TeamSelectModal.jsx` | Migreret |
+| `src/dashboard/InviteToMatchModal.jsx` | Migreret |
+| `src/components/PendingResultConfirmModal.jsx` | Migreret |
+| `src/components/BanNoticeModal.jsx` | Migreret |
 | `src/components/ConfirmDialog.jsx` | Egen dialog (behold) |
 | `src/dashboard/LigaTab.jsx` | Delvise overlays — evaluer ved behov |
+| `src/components/Admin*Editor.jsx` | Admin — lav prioritet |
 
-## Hex i JSX (reducer gradvist)
+## Hex i JSX
 
-Prioritet (dashboard): `ProfilTab`, `MakkereTab`, `PlayerProfileModal`, `KampeTab`, `RankingTab`, `LigaOpenCard`.
+**Status:** OK (`npm run check:ui-hex`). Undtagelse: `OAuthButtons.jsx` (Google brand).
 
-Tilladt i `variables.css` og `responsive.css`. Undgå i `src/**/*.jsx` og `src/**/*.tsx`.
+CI kører med `STRICT=1`. Lokalt: `STRICT=1 npm run check:ui-hex` før PR.
 
-## Tjek nye hex
+## Næste UI-bølger (valgfrit)
 
-```bash
-npm run check:ui-hex
-```
+1. **Beskeder / Baner / Admin** — reducer inline `style={{}}`, brug `pm-ui-card` / state-kort
+2. **LigaTab** + admin-modaler → `AppModal`
+3. **PillTabs** andre steder med gamle `btn()`-filterrækker

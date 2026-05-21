@@ -70,6 +70,10 @@ Presets: `sm` (380px), `md` (520px), `lg` (640px).
 
 Alt nyt UI skal virke med `[data-theme="dark"]` via tokens — test Profil, Hjem og Kampe efter større ændringer.
 
+## CI
+
+GitHub Actions kører `STRICT=1 npm run check:ui-hex` — nye `#hex` i JSX fejler build.
+
 ## Inventar
 
-Se [`docs/UI_INVENTORY.md`](UI_INVENTORY.md) for modal-kandidater og hex-filer under migration.
+Se [`docs/UI_INVENTORY.md`](UI_INVENTORY.md) for modal-status og næste bølger.

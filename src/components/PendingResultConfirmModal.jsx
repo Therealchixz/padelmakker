@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { theme, btn, font } from '../lib/platformTheme';
+import { theme, btn } from '../lib/platformTheme';
+import { AppModal } from './AppModal';
 import { supabase } from '../lib/supabase';
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification, createNotificationsForUsers } from '../lib/notifications';
@@ -327,33 +328,16 @@ export function PendingResultConfirmModal({ user }) {
   const timeLabel = match ? matchTimeLabel(match) : '';
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="pm-pending-result-title"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.55)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2900,
-        padding: '20px',
-        fontFamily: font,
-      }}
+    <AppModal
+      open
+      onClose={() => {}}
+      ariaLabel="Bekræft kampresultat"
+      maxWidthPreset="sm"
+      zIndex={2900}
+      closeOnBackdrop={false}
+      closeOnEscape={false}
     >
-      <div
-        style={{
-          background: theme.surface,
-          borderRadius: '14px',
-          padding: '22px',
-          maxWidth: '380px',
-          width: '100%',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          border: '1px solid ' + theme.border,
-        }}
-      >
+      <div className="pm-modal-body pm-modal-body--compact">
         <p
           id="pm-pending-result-title"
           style={{ fontSize: '16px', fontWeight: 700, color: theme.text, marginBottom: '6px' }}
@@ -452,6 +436,6 @@ export function PendingResultConfirmModal({ user }) {
           </p>
         )}
       </div>
-    </div>
+    </AppModal>
   );
 }

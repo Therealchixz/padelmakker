@@ -36,3 +36,8 @@ jobs:
 
       - name: Unit tests
         run: npm run test:unit
+
+      - name: UI hex (no hardcoded colors in JSX)
+        run: npm run check:ui-hex
+        env:
+          STRICT: 1
