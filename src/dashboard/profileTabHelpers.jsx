@@ -1,5 +1,4 @@
 import { normalizeStringArrayField, canonicalRegionForForm } from '../lib/profileUtils';
-import { DEFAULT_REGION } from '../lib/platformConstants';
 import { profilePlaytomicLevel } from '../lib/padelLevelUtils';
 
 export function splitDisplayNameToFirstLast(full) {
@@ -15,7 +14,7 @@ export function profileFormState(p) {
     first_name,
     last_name,
     full_name: p.full_name || p.name || "",
-    area: canonicalRegionForForm(p.area || p.region || '') || DEFAULT_REGION,
+    area: canonicalRegionForForm(p.area || p.region || ''),
     city: p.city != null ? String(p.city).trim() : '',
     levelNumeric: profilePlaytomicLevel(p),
     play_style: p.play_style || "Ved ikke endnu",

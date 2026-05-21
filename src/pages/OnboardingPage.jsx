@@ -11,7 +11,7 @@ import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, INTENTS,
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { sanitizeText } from '../lib/platformUtils';
-import { validateFirstLastName, canAccessDashboard } from '../lib/profileUtils';
+import { validateFirstLastName, canAccessDashboard, isValidProfileRegion } from '../lib/profileUtils';
 import { isPhoneVerificationExempt, fetchPhoneVerificationExemptFromServer } from '../lib/phoneVerification';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
 
@@ -180,7 +180,7 @@ export function OnboardingPage() {
     }
 
     if (targetStep === 2) {
-      if (!form.area) missing.push("region");
+      if (!isValidProfileRegion(form.area)) missing.push("region");
       if (form.availability.length === 0) missing.push("hvornår du kan spille");
     }
 
@@ -304,6 +304,10 @@ export function OnboardingPage() {
         return;
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
+      if (!isValidProfileRegion(form.area)) {
+        setErr("Vælg din region — by er valgfri.");
+        return;
+      }
       const levelNum = Number(form.levelNumeric);
       const profilePayload = {
         full_name: sanitizeText(displayName),
@@ -663,8 +667,10 @@ export function OnboardingPage() {
 
     <div key={2}>
       <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Hvor og hvornår?</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>Vælg region og by — så kan andre finde dig nemt.</p>
-      <div style={labelStyle}>Region</div>
+      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>
+        Vælg din region (påkrævet). Tilføj gerne din by — regioner er store, og det gør det nemmere at finde dig.
+      </p>
+      <div style={labelStyle}>Region <span style={{ color: theme.red }}>*</span></div>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "14px" }}>
         {REGIONS.map((r) => (
           <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "8px 14px", fontSize: "13px" }}>{r}</button>

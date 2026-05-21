@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './supabase'
 import { signInWithOAuthProvider } from './authOAuth'
-import { normalizeProfileRow, buildOnboardingProfileRowPatch } from './profileUtils'
+import { normalizeProfileRow, buildOnboardingProfileRowPatch, canonicalRegionForForm } from './profileUtils'
 import { applyPendingAvatar } from './avatarUpload'
 import { DEFAULT_REGION } from './platformConstants'
 import { isSeekingActiveProfile } from './seekingFeedTtl'
@@ -114,7 +114,7 @@ async function fetchOrCreateProfileCore(userRow) {
   const meta = userRow.user_metadata || {}
   const email = userRow.email || ''
   const regionFromMeta =
-    meta.region || meta.area || meta.city || DEFAULT_REGION
+    canonicalRegionForForm(meta.region || meta.area || '') || DEFAULT_REGION
   const { data: row, error } = await supabase.from('profiles').upsert(
     {
       id: userRow.id,
@@ -395,7 +395,7 @@ export function AuthProvider({ children }) {
         email.trim().split('@')[0] ||
         'Spiller'
       const region =
-        metadata.region || metadata.area || metadata.city || DEFAULT_REGION
+        canonicalRegionForForm(metadata.region || metadata.area || '') || DEFAULT_REGION
       const { error: upErr } = await supabase.from('profiles').upsert({
         id: data.user.id,
         email: email,
@@ -457,7 +457,7 @@ export function AuthProvider({ children }) {
         normalizedEmail.split('@')[0] ||
         'Spiller'
       const region =
-        metadata.region || metadata.area || metadata.city || DEFAULT_REGION
+        canonicalRegionForForm(metadata.region || metadata.area || '') || DEFAULT_REGION
       const { error: upErr } = await supabase.from('profiles').upsert({
         id: data.user.id,
         email: normalizedEmail,

@@ -33,6 +33,12 @@ export function canonicalRegionForForm(stored) {
   return raw
 }
 
+/** Er `area` en af de fem danske regioner (REGIONS)? */
+export function isValidProfileRegion(area) {
+  const canonical = canonicalRegionForForm(area)
+  return REGIONS.includes(canonical)
+}
+
 /**
  * Supabase/Postgres kan returnere text[] som:
  * - JSON array ["a","b"]
@@ -118,7 +124,8 @@ export function buildOnboardingProfileRowPatch(meta, existingProfile = null) {
   const metaAvail = normalizeStringArrayField(meta.availability)
   const birthNum = meta.birth_year != null && meta.birth_year !== "" ? Number(meta.birth_year) : null
   const metaArea =
-    canonicalRegionForForm(meta.area || meta.region || meta.city || "") || DEFAULT_REGION
+    canonicalRegionForForm(meta.area || meta.region || "") || DEFAULT_REGION
+  const metaCity = meta.city != null ? String(meta.city).trim() : ""
 
   if (existingProfile && typeof existingProfile === "object") {
     const p = existingProfile
@@ -156,6 +163,7 @@ export function buildOnboardingProfileRowPatch(meta, existingProfile = null) {
     level: !Number.isNaN(levelNum) ? levelNum : 5,
     play_style: String(meta.play_style || "Ved ikke endnu").trim() || "Ved ikke endnu",
     area: metaArea,
+    city: metaCity || null,
     availability: metaAvail,
     bio: String(meta.bio || "").trim(),
     birth_year: birthNum != null && !Number.isNaN(Number(birthNum)) ? Number(birthNum) : null,
@@ -178,10 +186,8 @@ export function normalizeProfileRow(p) {
       ? p.area
       : p.region != null && String(p.region).trim() !== ""
         ? p.region
-        : p.city != null && String(p.city).trim() !== ""
-          ? p.city
-          : ""
-  const region = rawRegion ? canonicalRegionForForm(rawRegion) : rawRegion
+        : ""
+  const region = rawRegion ? canonicalRegionForForm(rawRegion) : ""
   return {
     ...p,
     area:           region,
@@ -423,7 +429,7 @@ export function hasSubstantialProfileProgress(profile) {
   if (!name || isGenericProfileName(name)) return false
 
   const availOk = normalizeStringArrayField(profile.availability).length > 0
-  const areaOk = String(profile.area || profile.city || '').trim() !== ''
+  const areaOk = isValidProfileRegion(profile.area)
   const birthOk = profile.birth_year != null && String(profile.birth_year).trim() !== ''
   const style = String(profile.play_style || '').trim()
   const styleOk = style !== '' && style !== 'Ved ikke endnu'

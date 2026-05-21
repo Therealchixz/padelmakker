@@ -122,9 +122,11 @@ export function resolveSeekingMatchAtForProfile(matchPrefs, makkerPrefs, profile
   return new Date(Math.max(...stamps)).toISOString();
 }
 
-function compactRegionLine(region) {
-  if (!region) return null;
-  return String(region).replace(/^Region /, '').trim() || null;
+function compactRegionLine(region, city) {
+  const regionPart = region ? String(region).replace(/^Region /, '').trim() : '';
+  const cityPart = city != null ? String(city).trim() : '';
+  if (cityPart && regionPart) return `${cityPart} · ${regionPart}`;
+  return cityPart || regionPart || null;
 }
 
 function compactLevelLine(prefs, profile, levelResolver, rangeFn) {
@@ -178,8 +180,8 @@ function makkerAvailabilitySummary(prefs) {
 export function compactMatchSeekingDetails(prefs, profile = {}) {
   const normalized = normalizeMatchSearchPrefs(prefs, profile);
   const lines = [];
-  const region = compactRegionLine(resolveFilterRegion(normalized, profile));
-  pushSeekingDetail(lines, 'Region', region);
+  const region = compactRegionLine(resolveFilterRegion(normalized, profile), profile.city);
+  pushSeekingDetail(lines, 'Område', region);
   pushSeekingDetail(lines, 'Niveau', compactLevelLine(
     normalized,
     profile,
@@ -198,8 +200,8 @@ export function compactMatchSeekingDetails(prefs, profile = {}) {
 export function compactMakkerSeekingDetails(prefs, profile = {}) {
   const normalized = normalizeMakkerSearchPrefs(prefs, profile);
   const lines = [];
-  const region = compactRegionLine(resolveMakkerFilterRegion(normalized, profile));
-  pushSeekingDetail(lines, 'Region', region);
+  const region = compactRegionLine(resolveMakkerFilterRegion(normalized, profile), profile.city);
+  pushSeekingDetail(lines, 'Område', region);
   pushSeekingDetail(lines, 'Niveau', compactLevelLine(
     normalized,
     profile,

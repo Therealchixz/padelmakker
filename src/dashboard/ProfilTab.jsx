@@ -22,6 +22,7 @@ import { americanoOutcomeColors } from '../features/americano/americanoOutcomeCo
 import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
+import { isValidProfileRegion } from '../lib/profileUtils';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
@@ -272,10 +273,30 @@ export function ProfilTab({ user, showToast, setTab }) {
   const { ligaRelationStats, ligaRelationLoading } = useLigaPartnerOpponentStats(user?.id, !!user?.id);
 
   const [form, setForm] = useState(() => profileFormState(user));
+  const [quickCity, setQuickCity] = useState(() => user?.city || '');
+  const [quickCitySaving, setQuickCitySaving] = useState(false);
 
   useEffect(() => {
     if (!editing) setForm(profileFormState(user));
   }, [user, editing]);
+
+  useEffect(() => {
+    if (!editing) setQuickCity(user?.city || '');
+  }, [user?.city, editing]);
+
+  const handleQuickCitySave = async () => {
+    const trimmed = quickCity.trim();
+    if (trimmed === String(user?.city || '').trim()) return;
+    setQuickCitySaving(true);
+    try {
+      await updateProfile({ city: trimmed || null });
+      showToast(trimmed ? 'By gemt' : 'By fjernet');
+    } catch (e) {
+      showToast(e?.message || 'Kunne ikke gemme by');
+    } finally {
+      setQuickCitySaving(false);
+    }
+  };
 
   /* Automatisk upload af billede valgt under oprettelse — gemmes i sessionStorage */
   useEffect(() => {
@@ -489,6 +510,10 @@ export function ProfilTab({ user, showToast, setTab }) {
 
   const handleSave = async () => {
     const region = canonicalRegionForForm(form.area) || form.area;
+    if (!isValidProfileRegion(region)) {
+      showToast('Vælg din region — by er valgfri.');
+      return;
+    }
     setSaving(true);
     let avatarValue = form.avatar;
     if (pendingAvatarFile) {
@@ -686,6 +711,65 @@ export function ProfilTab({ user, showToast, setTab }) {
           </div>
 
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
+
+          {!editing && !isValidProfileRegion(user.area) ? (
+            <div
+              style={{
+                marginBottom: '16px',
+                padding: '12px 14px',
+                background: '#FEF3C7',
+                borderRadius: '10px',
+                border: '1px solid #FDE68A',
+              }}
+            >
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#B45309', marginBottom: '4px' }}>Vælg region</div>
+              <p style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.45, marginBottom: '10px' }}>
+                Din profil mangler en region. Det er påkrævet, så andre kan finde dig i det rigtige område.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setForm(profileFormState(user)); setEditing(true); }}
+                style={{ ...btn(true), padding: '8px 14px', fontSize: '12px' }}
+              >
+                Vælg region under Rediger
+              </button>
+            </div>
+          ) : null}
+
+          {!editing && isValidProfileRegion(user.area) && !String(user.city || '').trim() ? (
+            <div
+              style={{
+                marginBottom: '16px',
+                padding: '12px 14px',
+                background: theme.surfaceAlt,
+                borderRadius: '10px',
+                border: `1px solid ${theme.border}`,
+              }}
+            >
+              <div style={{ fontSize: '13px', fontWeight: 700, color: theme.text, marginBottom: '4px' }}>
+                Tilføj din by <span style={{ fontWeight: 500, color: theme.textLight }}>(valgfri)</span>
+              </div>
+              <p style={{ fontSize: '12px', color: theme.textLight, lineHeight: 1.45, marginBottom: '10px' }}>
+                {user.area} er en stor region. Med din by kan andre finde dig nemmere.
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  value={quickCity}
+                  onChange={(e) => setQuickCity(e.target.value)}
+                  placeholder="F.eks. Aalborg, Aarhus, Odense..."
+                  style={{ ...inputStyle, flex: '1 1 160px', marginBottom: 0 }}
+                />
+                <button
+                  type="button"
+                  onClick={handleQuickCitySave}
+                  disabled={quickCitySaving}
+                  style={{ ...btn(true), padding: '8px 14px', fontSize: '12px', opacity: quickCitySaving ? 0.6 : 1 }}
+                >
+                  {quickCitySaving ? 'Gemmer…' : 'Gem by'}
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <MatchFilterProfileCard user={user} />
           <MakkerFilterProfileCard user={user} />
@@ -1167,7 +1251,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         </div>
 
         {/* Area + City */}
-        <div style={labelStyle}>Region</div>
+        <div style={labelStyle}>Region <span style={{ color: theme.red }}>*</span></div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
           {REGIONS.map((r) => (
             <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "6px 12px", fontSize: "12px" }}>{r}</button>
