@@ -6,7 +6,8 @@ import { filterRatedEloHistoryRows, statsFromEloHistoryRows, winStreaksFromEloHi
 import { eloOf } from '../lib/matchDisplayUtils';
 import { MapPin, MessageCircle } from 'lucide-react';
 import { calcAge, normalizeStringArrayField } from '../lib/profileUtils';
-import { levelLabel, DAYS_OF_WEEK } from '../lib/platformConstants';
+import { DAYS_OF_WEEK } from '../lib/platformConstants';
+import { profileLevelDisplayText, formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { getPlayerSeekingDetails } from '../lib/seekingActivityLabel';
 import { AvatarCircle } from '../components/AvatarCircle';
 
@@ -175,6 +176,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
           ];
 
   const age = calcAge(pRef.birth_year, pRef.birth_month, pRef.birth_day);
+  const levelDisplay = profileLevelDisplayText(pRef.level);
+  const locationDisplay = [pRef.city, pRef.area].filter(Boolean).join(', ') || null;
   const seekingChannel = player?.seekingChannel === 'kamp' || player?.seekingChannel === 'makker'
     ? player.seekingChannel
     : null;
@@ -196,11 +199,14 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
               {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>2v2 ELO {elo}</span>}
               {!dataLoading && <span style={tag(theme.blueBg, theme.blue)}>Americano ELO {americanoElo}</span>}
               {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
-              {(pRef.city || pRef.area) && (
+              {locationDisplay ? (
                 <span style={tag(theme.warmBg, theme.warm)}>
-                  <MapPin size={9} /> {pRef.city || pRef.area}
+                  <MapPin size={9} /> {locationDisplay}
                 </span>
-              )}
+              ) : null}
+              {levelDisplay ? (
+                <span style={tag(theme.blueBg, theme.blue)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -354,12 +360,12 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
         ) : null}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-          {pRef.level && (
+          {levelDisplay ? (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
               <span style={{ color: theme.textLight }}>Niveau</span>
-              <span style={{ fontWeight: 600 }}>{levelLabel(pRef.level)}</span>
+              <span style={{ fontWeight: 600 }}>{levelDisplay}</span>
             </div>
-          )}
+          ) : null}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
             <span style={{ color: theme.textLight }}>Spillestil</span>
             <span style={{ fontWeight: 600 }}>{pRef.play_style || 'Ikke angivet'}</span>
@@ -371,8 +377,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-            <span style={{ color: theme.textLight }}>Region</span>
-            <span style={{ fontWeight: 600 }}>{pRef.area || pRef.city || 'Ikke angivet'}</span>
+            <span style={{ color: theme.textLight }}>Område</span>
+            <span style={{ fontWeight: 600 }}>{locationDisplay || 'Ikke angivet'}</span>
           </div>
           {age && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>

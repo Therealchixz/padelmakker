@@ -9,7 +9,8 @@ import { Users, MapPin, Swords, Trophy, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
-import { HOME_FEED_CACHE_TTL_MS, levelLabel } from '../lib/platformConstants';
+import { HOME_FEED_CACHE_TTL_MS } from '../lib/platformConstants';
+import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
@@ -1077,7 +1078,7 @@ export function HomeTab({ user, setTab }) {
                   seekingChannel: row.seekingChannel === 'makker' ? 'makker' : row.seekingChannel === 'kamp' ? 'kamp' : undefined,
                 };
                 const openSeekingPlayer = () => setViewPlayer(player);
-                const levelStr = row.level ? levelLabel(row.level) : null;
+                const levelStr = row.level != null && row.level !== '' ? formatPlaytomicLevel(row.level) : null;
                 const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                 return renderActivityRowCard({
                   key: `seek-${row.userId}-${row.seekingChannel || 'x'}-${i}`,

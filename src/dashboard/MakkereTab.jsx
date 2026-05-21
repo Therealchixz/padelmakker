@@ -8,7 +8,7 @@ import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin, Zap, SlidersHorizontal } from 'lucide-react';
 import { calcAge } from '../lib/profileUtils';
-import { levelLabel } from '../lib/platformConstants';
+import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
 import { AvatarCircle } from '../components/AvatarCircle';
@@ -745,7 +745,9 @@ export function MakkereTab({ user, showToast }) {
                   <div style={{ display: 'flex', gap: '5px', marginTop: '7px', flexWrap: 'wrap' }}>
                     <span style={tag(theme.accentBg, theme.accent)}>ELO {displayElo(p)}</span>
                     {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
-                    {p.level && <span style={tag(theme.accentBg, theme.accent)}>{levelLabel(p.level)}</span>}
+                    {p.level != null && p.level !== '' ? (
+                      <span style={tag(theme.accentBg, theme.accent)}>Niveau {formatPlaytomicLevel(p.level)}</span>
+                    ) : null}
                     <span style={tag(theme.blueBg, theme.blue)}>{p.play_style || '?'}</span>
                     {p.court_side && <span style={tag(theme.blueBg, theme.blue)}>{p.court_side}</span>}
                     <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>

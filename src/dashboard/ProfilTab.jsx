@@ -6,8 +6,8 @@ import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { mergeLigaSessionPrefs, openMineLigaerFromProfile } from '../lib/ligaSessionPrefs';
 import { useLigaPartnerOpponentStats } from '../lib/ligaRelationStats';
-import { REGIONS, PLAY_STYLES, COURT_SIDES, levelLabel, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
-import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
+import { REGIONS, PLAY_STYLES, COURT_SIDES, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
+import { profileLevelDisplayText } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { normalizeMatchSearchPrefs, describeMatchFilter } from '../lib/matchSearchFilterUtils';
@@ -697,12 +697,11 @@ export function ProfilTab({ user, showToast, setTab }) {
                   <span style={tag(theme.blueBg, theme.blue)}>{ligaStats.matches} ligakampe</span>
                 )}
                 {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
-                {user.level != null && (
+                {profileLevelDisplayText(user.level) ? (
                   <span style={tag(theme.blueBg, theme.blue)}>
-                    {formatPlaytomicLevel(user.level)}
-                    {levelLabel(user.level) ? ` · ${levelLabel(user.level)}` : ''}
+                    Niveau {profileLevelDisplayText(user.level)}
                   </span>
-                )}
+                ) : null}
                 <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
                 {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
                 <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.city ? `${user.city}, ` : ""}{user.area || "?"}</span>

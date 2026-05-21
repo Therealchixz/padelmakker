@@ -4,6 +4,7 @@
  */
 
 import { parseMatchLevelRange } from './matchLevelRange';
+import { levelLabel } from './platformConstants';
 
 export const PLAYTOMIC_LEVEL_MIN = 1;
 export const PLAYTOMIC_LEVEL_MAX = 7;
@@ -48,6 +49,14 @@ export function eloToLevel(elo) {
 
 export function formatPlaytomicLevel(level) {
   return clampPlaytomicLevel(level).toFixed(1);
+}
+
+/** Visning af profilniveau: Playtomic-tal (fx 2,3), evt. med band-label i parentes. */
+export function profileLevelDisplayText(level) {
+  if (level == null || level === '') return null;
+  const num = formatPlaytomicLevel(level);
+  const band = levelLabel(level);
+  return band ? `${num} (${band})` : num;
 }
 
 export function levelRangeForWindow(center, window) {
