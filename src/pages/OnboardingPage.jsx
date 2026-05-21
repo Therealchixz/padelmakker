@@ -7,7 +7,7 @@ import { OAuthButtons, AuthDivider } from '../components/OAuthButtons';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, INTENTS, PARTNER_LEVELS, levelLabel } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, levelLabel } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { sanitizeText } from '../lib/platformUtils';
@@ -38,7 +38,7 @@ export function OnboardingPage() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false, preferred_partner_level: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
   /** Undgå gentaget auto-spring fra trin 1 → 0 → 1 når brugeren går tilbage. */
@@ -222,7 +222,7 @@ export function OnboardingPage() {
   const stepMeta = [
     { title: "Konto", hint: "Kontaktinfo, adgangskode og aldersbekræftelse." },
     { title: "Niveau", hint: "Træk slideren, læs beskrivelsen og vælg ærligt — samme som under profil senere." },
-    { title: "Område", hint: "Område og tidspunkter du spiller." },
+    { title: "Område", hint: "Region, by og hvornår du typisk kan spille." },
     { title: "Profil", hint: "Gør profilen klar til andre spillere." },
   ];
   const totalSteps = stepMeta.length;
@@ -258,9 +258,6 @@ export function OnboardingPage() {
       form.birth_year ||
       form.birth_month ||
       form.birth_day ||
-      form.intent_now ||
-      form.seeking_match ||
-      form.travel_willing ||
       avatarFile ||
       avatarPreviewUrl
     );
@@ -324,10 +321,6 @@ export function OnboardingPage() {
         birth_year: parseInt(form.birth_year, 10) || null,
         birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
         birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
-        intent_now: form.intent_now || null,
-        preferred_partner_level: form.preferred_partner_level || null,
-        seeking_match: form.seeking_match,
-        travel_willing: form.travel_willing,
       };
 
       if (oauthSession) {
@@ -624,45 +617,6 @@ export function OnboardingPage() {
           </div>
         </div>
       </div>
-
-      {/* Intention — 2×2 gitter */}
-      <div style={labelStyle}>Hvad søger du primært? <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-        {INTENTS.map(i => {
-          const active = form.intent_now === i.value;
-          return (
-            <button key={i.value} onClick={() => set("intent_now", active ? "" : i.value)} style={{
-              padding: "10px 12px", borderRadius: "10px", textAlign: "left",
-              border: "1.5px solid " + (active ? theme.accent : theme.border),
-              background: active ? theme.accentBg : theme.surface,
-              cursor: "pointer", display: "flex", flexDirection: "column", gap: "3px",
-              fontFamily: "inherit",
-            }}>
-              <span style={{ fontWeight: 700, fontSize: "13px", color: active ? theme.accent : theme.text }}>{i.label}</span>
-              <span style={{ fontSize: "11px", color: active ? theme.accent : theme.textMid, lineHeight: 1.35, opacity: 0.85 }}>{i.desc}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div style={{ ...labelStyle, marginTop: "20px" }}>Hvilket niveau modspiller foretrækker du? <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-        {PARTNER_LEVELS.map((p) => {
-          const active = form.preferred_partner_level === p.value;
-          return (
-            <button key={p.value} type="button" onClick={() => set("preferred_partner_level", active ? "" : p.value)} style={{
-              padding: "10px 12px", borderRadius: "10px", textAlign: "left",
-              border: "1.5px solid " + (active ? theme.accent : theme.border),
-              background: active ? theme.accentBg : theme.surface,
-              cursor: "pointer", display: "flex", flexDirection: "column", gap: "3px",
-              fontFamily: "inherit",
-            }}>
-              <span style={{ fontWeight: 700, fontSize: "13px", color: active ? theme.accent : theme.text }}>{p.label}</span>
-              <span style={{ fontSize: "11px", color: active ? theme.accent : theme.textMid, lineHeight: 1.35, opacity: 0.85 }}>{p.desc}</span>
-            </button>
-          );
-        })}
-      </div>
     </div>,
 
     <div key={2}>
@@ -716,17 +670,20 @@ export function OnboardingPage() {
           );
         })}
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: theme.surfaceAlt, borderRadius: "10px", padding: "14px 16px", border: "1px solid " + theme.border }}>
-        <div>
-          <div style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>Søger kamp aktivt</div>
-          <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "2px" }}>Vis mig i foreslåede makkere for andre</div>
+      <div
+        style={{
+          background: theme.surfaceAlt,
+          borderRadius: "10px",
+          padding: "14px 16px",
+          border: "1px solid " + theme.border,
+        }}
+      >
+        <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, marginBottom: "6px" }}>
+          Søger kamp eller makker?
         </div>
-        <button
-          onClick={() => set("seeking_match", !form.seeking_match)}
-          style={{ width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer", background: form.seeking_match ? theme.accent : theme.border, position: "relative", transition: "background 0.2s", flexShrink: 0 }}
-        >
-          <div style={{ position: "absolute", top: "3px", left: form.seeking_match ? "23px" : "3px", width: "18px", height: "18px", borderRadius: "50%", background: theme.surface, transition: "left 0.2s", boxShadow: theme.shadowSoft }} />
-        </button>
+        <p style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.45, margin: 0 }}>
+          Det sætter du op bagefter under <strong>Min profil</strong> via <strong>Mit kamp-filter</strong> og <strong>Mit makker-filter</strong> — med synlighed, intention og niveau for hver type.
+        </p>
       </div>
     </div>,
 
@@ -758,7 +715,7 @@ export function OnboardingPage() {
         Billedet gemmes lokalt indtil du er logget ind (også hvis du åbner bekræftelses-link i en ny fane). Upload sker automatisk ved første login.
       </p>
       <label htmlFor="onb-bio" style={labelStyle}>Kort bio</label>
-      <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl kort hvad du søger i en makker" style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "18px" }} />
+      <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl kort om dig som spiller" style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "18px" }} />
       <div style={{ border: "1px solid " + theme.border, borderRadius: "12px", background: theme.surfaceAlt, padding: "14px" }}>
         <div style={{ fontSize: "11px", letterSpacing: "0.05em", textTransform: "uppercase", color: theme.textLight, fontWeight: 700, marginBottom: "10px" }}>
           Sådan ser andre dig
