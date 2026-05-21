@@ -56,9 +56,19 @@ export function defaultLevelForPreset(levelString) {
   return Math.round(nums[0] * 10) / 10;
 }
 
-/** Kort beskrivelse for et vilkårligt niveau-tal (fx 3.3). */
+/** Fuld kategori-titel for et niveau-tal (fx 3.3 → "Avanceret øvet (3.5)"). */
+export function levelBandTitleForNum(num) {
+  const n = Number(num);
+  if (!Number.isFinite(n)) return '';
+  for (const l of LEVELS) {
+    if (levelMatchesPreset(n, l)) return l;
+  }
+  return '';
+}
+
+/** Detaljeret beskrivelse mens bruger trækker slideren (opdateres live). */
 export function levelDescriptionForNum(num) {
-  const key = levelStringFromNum(num);
+  const key = levelBandTitleForNum(num);
   return key ? LEVEL_DESCS[key] : null;
 }
 

@@ -1,9 +1,7 @@
-import { theme, btn } from '../lib/platformTheme';
+import { theme } from '../lib/platformTheme';
 import {
-  LEVELS,
-  defaultLevelForPreset,
+  levelBandTitleForNum,
   levelDescriptionForNum,
-  levelLabel,
 } from '../lib/platformConstants';
 import {
   clampPlaytomicLevel,
@@ -13,17 +11,10 @@ import {
   DEFAULT_PLAYTOMIC_LEVEL,
 } from '../lib/padelLevelUtils';
 
-const PRESET_SHORT = {
-  'Begynder (1.0–1.9)': 'Begynder',
-  'Let øvet (2.0–2.9)': 'Let øvet',
-  'Øvet (3.0)': '3.0',
-  'Avanceret øvet (3.5)': '3.5',
-  'Meget øvet (4.0–4.9)': '4–5',
-  'Elite (5.0–7.0)': 'Elite',
-};
+const SCALE_MARKS = [1, 2, 3, 4, 5, 6, 7];
 
 /**
- * Ét samlet niveau-valg: slider/tal + kompakte genveje (ingen dobbelt liste).
+ * Ét niveau-felt: træk slideren og læs beskrivelsen undervejs.
  * @param {number|null|undefined} value
  * @param {(n: number) => void} onChange
  */
@@ -31,8 +22,8 @@ export function PlaytomicLevelPicker({ value, onChange }) {
   const level = clampPlaytomicLevel(
     value != null && value !== '' && Number.isFinite(Number(value)) ? value : DEFAULT_PLAYTOMIC_LEVEL,
   );
+  const bandTitle = levelBandTitleForNum(level);
   const desc = levelDescriptionForNum(level);
-  const shortLabel = levelLabel(level);
 
   const setLevel = (n) => onChange(clampPlaytomicLevel(n));
 
@@ -45,16 +36,11 @@ export function PlaytomicLevelPicker({ value, onChange }) {
         padding: '14px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 28, fontWeight: 800, color: theme.accent, lineHeight: 1 }}>
-          {formatPlaytomicLevel(level)}
-        </span>
-        {shortLabel && (
-          <span style={{ fontSize: 14, fontWeight: 600, color: theme.textMid }}>{shortLabel}</span>
-        )}
-      </div>
+      <p style={{ fontSize: 12, color: theme.textLight, margin: '0 0 14px', lineHeight: 1.45 }}>
+        Træk linjen og læs beskrivelsen — passer den til dig lige nu?
+      </p>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
         <input
           type="range"
           min={PLAYTOMIC_LEVEL_MIN}
@@ -62,8 +48,10 @@ export function PlaytomicLevelPicker({ value, onChange }) {
           step={0.1}
           value={level}
           onChange={(e) => setLevel(Number(e.target.value))}
+          onInput={(e) => setLevel(Number(e.target.value))}
           style={{ flex: 1, accentColor: theme.accent }}
-          aria-label="Træk for at justere niveau"
+          aria-valuetext={`Niveau ${formatPlaytomicLevel(level)}${bandTitle ? `, ${bandTitle}` : ''}`}
+          aria-label="Træk for at vælge dit padel-niveau"
         />
         <input
           type="number"
@@ -85,39 +73,51 @@ export function PlaytomicLevelPicker({ value, onChange }) {
             borderRadius: 8,
             border: `1px solid ${theme.border}`,
             fontFamily: 'inherit',
+            color: theme.accent,
           }}
           aria-label="Niveau med ét decimal"
         />
       </div>
 
-      {desc && (
-        <p style={{ fontSize: 12, color: theme.textMid, margin: '0 0 14px', lineHeight: 1.45 }}>{desc}</p>
-      )}
-
-      <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, marginBottom: 8 }}>
-        Hurtig valg
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontSize: 10,
+          fontWeight: 600,
+          color: theme.textLight,
+          marginBottom: 14,
+          padding: '0 2px',
+        }}
+        aria-hidden
+      >
+        {SCALE_MARKS.map((m) => (
+          <span key={m}>{m}</span>
+        ))}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {LEVELS.map((l) => {
-          const preset = defaultLevelForPreset(l);
-          const active = Math.abs(level - preset) < 0.05;
-          const chip = PRESET_SHORT[l] || l;
-          return (
-            <button
-              key={l}
-              type="button"
-              title={l}
-              onClick={() => setLevel(preset)}
-              style={{
-                ...btn(active),
-                padding: '6px 10px',
-                fontSize: 12,
-              }}
-            >
-              {chip}
-            </button>
-          );
-        })}
+
+      <div
+        style={{
+          background: theme.surface,
+          border: `1px solid ${theme.border}`,
+          borderRadius: 8,
+          padding: '12px 14px',
+        }}
+        aria-live="polite"
+      >
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+          <span style={{ fontSize: 22, fontWeight: 800, color: theme.accent, lineHeight: 1 }}>
+            {formatPlaytomicLevel(level)}
+          </span>
+          {bandTitle && (
+            <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{bandTitle}</span>
+          )}
+        </div>
+        {desc ? (
+          <p style={{ fontSize: 13, color: theme.textMid, margin: 0, lineHeight: 1.55 }}>{desc}</p>
+        ) : (
+          <p style={{ fontSize: 13, color: theme.textLight, margin: 0 }}>Træk slideren for at se beskrivelse.</p>
+        )}
       </div>
     </div>
   );
