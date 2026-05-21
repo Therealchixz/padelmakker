@@ -3693,6 +3693,23 @@ button,
   gap: 12px;
 }
 
+.pm-form-2col > .pm-form-field,
+.pm-form-2col > * {
+  min-width: 0;
+}
+
+.pm-form-2col input,
+.pm-form-2col select {
+  max-width: 100%;
+}
+
+/* Dato-inputs har stor min-bredde på mobil — stak felter under 640px */
+@media (max-width: 640px) {
+  .pm-form-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 520px) {
   .pm-form-2col {
     grid-template-columns: 1fr;

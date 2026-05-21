@@ -1981,14 +1981,14 @@ export function LigaTab({
             size="sm"
             style={{ marginBottom: '10px' }}
           />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-            <div>
+          <div className="pm-form-2col" style={{ marginBottom: '10px' }}>
+            <div className="pm-form-field">
               <label style={labelStyle}>Startdato</label>
-              <input type="date" value={createForm.start_date} onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))} style={inputStyle} />
+              <input type="date" value={createForm.start_date} onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))} style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} />
             </div>
-            <div>
+            <div className="pm-form-field">
               <label style={labelStyle}>Slutdato</label>
-              <input type="date" value={createForm.end_date} onChange={e => setCreateForm(f => ({ ...f, end_date: e.target.value }))} style={inputStyle} />
+              <input type="date" value={createForm.end_date} onChange={e => setCreateForm(f => ({ ...f, end_date: e.target.value }))} style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} />
             </div>
           </div>
           <label style={labelStyle}>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
