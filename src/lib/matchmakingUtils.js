@@ -8,7 +8,7 @@
  * - Lokal fairness via exposure penalty (samme profiler vises ikke konstant)
  */
 
-import { SEEK_MAKKER_TTL_DAYS } from './platformConstants';
+import { SEEK_MAKKER_TTL_DAYS } from './platformConstants.js';
 
 const INACTIVE_DAYS = 14;
 const SEEKING_FRESH_HOURS = SEEK_MAKKER_TTL_DAYS * 24;

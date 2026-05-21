@@ -82,7 +82,7 @@ test('home seeking CTA opens Makkere with the active seeking filter', async () =
   const homeTab = await readFile(HOME_TAB_URL, 'utf8')
   const makkereTab = await readFile(MAKKERE_TAB_URL, 'utf8')
 
-  assert.match(homeTab, /setTab\(seekingCount > 0 \? 'makkere\?seeking=1' : 'makkere'\)/)
+  assert.match(homeTab, /setTab\("makkere",\s*\{\s*search:\s*seekingByChannel\.total > 0 \? "seeking=1" : ""/)
   assert.match(makkereTab, /useLocation/)
   assert.match(makkereTab, /useRef/)
   assert.match(makkereTab, /new URLSearchParams\(location\.search\)/)
