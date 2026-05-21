@@ -198,10 +198,10 @@ export function MatchSearchFilterPage({ user, showToast }) {
         })}
       </div>
       <p style={{ fontSize: 11, color: theme.textLight, marginBottom: 18, lineHeight: 1.45 }}>
-        Med dit niveau {formatPlaytomicLevel(filterLevel)} matcher vi kampe mellem{' '}
+        Med niveau {formatPlaytomicLevel(filterLevel)} matcher vi kampe mellem{' '}
         <strong>{formatPlaytomicLevel(levelSpan.min)}</strong> og{' '}
         <strong>{formatPlaytomicLevel(levelSpan.max)}</strong>.
-        Snævert (±0,3) giver de mest fair kampe.
+        I padel er selv 0,3–0,4 en tydelig forskel — vælg snævert for de mest fair kampe.
       </p>
 
       <div style={labelStyle}>Ugedage (valgfrit)</div>

@@ -13,16 +13,18 @@ import {
 } from './padelLevelUtils';
 
 export const MATCH_FILTER_PREFS_VERSION = 2;
-/** Standard: snævert interval — fair kampe uden stor niveauforskel. */
-export const DEFAULT_LEVEL_WINDOW = 0.3;
+/** Standard: ±0,2 — i padel mærkes selv 0,3–0,4 tydeligt. */
+export const DEFAULT_LEVEL_WINDOW = 0.2;
 
-/** Tolerance i niveau (±), ikke længere store 0,5-spring som minimum. */
+/**
+ * Tolerance i niveau (±). Max ±0,5 — større spring giver ufair kampe (fx 3,3 vs 4,3).
+ */
 export const LEVEL_WINDOW_CHOICES = [
-  { value: 0.2, label: 'Meget snævert', hint: 'Næsten samme niveau' },
-  { value: 0.3, label: 'Snævert', hint: 'Anbefalet' },
-  { value: 0.5, label: 'Normalt', hint: 'Lidt bredere' },
-  { value: 0.7, label: 'Bredt', hint: 'Fleksibel' },
-  { value: 1.0, label: 'Meget bredt', hint: 'Alle omkring dig' },
+  { value: 0.1, label: 'Næsten samme', hint: '±0,1' },
+  { value: 0.2, label: 'Snævert', hint: 'Anbefalet · ±0,2' },
+  { value: 0.3, label: 'Normalt', hint: '±0,3' },
+  { value: 0.4, label: 'Lidt bredere', hint: '±0,4' },
+  { value: 0.5, label: 'Maks. bredde', hint: '±0,5 · øvre grænse' },
 ];
 
 export const LEVEL_WINDOW_OPTIONS = LEVEL_WINDOW_CHOICES.map((c) => c.value);
@@ -65,8 +67,8 @@ export function normalizeMatchSearchPrefs(raw, profile = {}) {
   if (!Number.isFinite(levelWindow) && parsed.eloWindow != null) {
     levelWindow = migrateEloWindowToLevelWindow(parsed.eloWindow);
   }
-  if (!Number.isFinite(levelWindow) || levelWindow < 0.15 || levelWindow > 1.5) {
-    levelWindow = levelWindow > 1.5 ? 1 : base.levelWindow;
+  if (!Number.isFinite(levelWindow) || levelWindow < 0.1 || levelWindow > 0.5) {
+    levelWindow = levelWindow > 0.5 ? 0.5 : base.levelWindow;
   }
   levelWindow = Math.round(levelWindow * 10) / 10;
   if (!LEVEL_WINDOW_OPTIONS.includes(levelWindow)) {
