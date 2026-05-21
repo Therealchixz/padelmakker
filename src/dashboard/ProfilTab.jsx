@@ -835,7 +835,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         {isAmericanoMode && !americanoRelationLoading && americanoRelationStats
           && !showAmericanoRelationsSection && americanoRounds > 0 && (
           <div style={{ fontSize: "12px", color: theme.textMid, marginBottom: "16px", lineHeight: 1.45 }}>
-            Spil mindst 2 runder på banen med samme makker eller modstander i afsluttede turneringer — så vises dine relationer her.
+            Spil kampe på banen med makkere og modstandere i afsluttede turneringer — så vises dine relationer her.
           </div>
         )}
         {isLigaMode && ligaRelationLoading && (
@@ -846,7 +846,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         {isLigaMode && !ligaRelationLoading && ligaRelationStats
           && !showLigaRelationsSection && ligaStats.matches > 0 && (
           <div style={{ fontSize: "12px", color: theme.textMid, marginBottom: "16px", lineHeight: 1.45 }}>
-            Spil mindst 2 rapporterede ligakampe med samme makker eller modstander — så vises dine relationer her.
+            Spil rapporterede ligakampe med makkere og modstandere — så vises dine relationer her.
           </div>
         )}
         {/* Relationer — kun 2v2 */}

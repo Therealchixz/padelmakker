@@ -1,4 +1,4 @@
-const MIN_ROUNDS_TOGETHER = 2;
+const MIN_ROUNDS_TOGETHER = 1;
 const TOP_N = 3;
 
 /**

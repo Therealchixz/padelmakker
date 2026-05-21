@@ -256,6 +256,23 @@ export function useProfileEloBundle(userId, syncKey) {
   };
 }
 
+/** Mindst én fælles kamp/runder for at vises under Relationer på profilen. */
+export const MIN_RELATION_GAMES_TOGETHER = 1;
+
+function sortByPartnerWinRateDesc(a, b) {
+  const rateA = a.asPartner.wins / a.asPartner.games;
+  const rateB = b.asPartner.wins / b.asPartner.games;
+  if (rateB !== rateA) return rateB - rateA;
+  return b.asPartner.games - a.asPartner.games;
+}
+
+function sortByOpponentWinRateAsc(a, b) {
+  const rateA = a.asOpponent.wins / a.asOpponent.games;
+  const rateB = b.asOpponent.wins / b.asOpponent.games;
+  if (rateA !== rateB) return rateA - rateB;
+  return b.asOpponent.games - a.asOpponent.games;
+}
+
 /**
  * Henter og beregner partner- og modstander-statistik for en spiller.
  * Joiner elo_history (resultater) med match_players (hold-sammensætning).
@@ -329,14 +346,13 @@ export function usePartnerOpponentStats(userId, ratedRows) {
         const all = Object.values(statsMap);
 
         const partners = all
-          .filter(p => p.asPartner.games >= 2)
-          .sort((a, b) => (b.asPartner.wins / b.asPartner.games) - (a.asPartner.wins / a.asPartner.games))
+          .filter((p) => p.asPartner.games >= MIN_RELATION_GAMES_TOGETHER)
+          .sort(sortByPartnerWinRateDesc)
           .slice(0, 3);
 
-        // Hårdeste: laveste sejrsprocent mod dem
         const opponents = all
-          .filter(p => p.asOpponent.games >= 2)
-          .sort((a, b) => (a.asOpponent.wins / a.asOpponent.games) - (b.asOpponent.wins / b.asOpponent.games))
+          .filter((p) => p.asOpponent.games >= MIN_RELATION_GAMES_TOGETHER)
+          .sort(sortByOpponentWinRateAsc)
           .slice(0, 3);
 
         setStats({ partners, opponents });

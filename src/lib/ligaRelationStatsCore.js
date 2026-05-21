@@ -1,4 +1,4 @@
-const MIN_MATCHES_TOGETHER = 2;
+const MIN_MATCHES_TOGETHER = 1;
 const TOP_N = 3;
 
 function winRate(wins, games) {
