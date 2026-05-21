@@ -54,6 +54,8 @@ import { calculate2v2MatchWinPrediction } from '../lib/matchWinPrediction';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
+import { SeekingFilterShortcutCard } from '../components/SeekingFilterShortcutCard';
+import { FILTER_RETURN_KAMPE } from '../lib/filterReturnNavigation';
 import {
   getMatchVenueOptions,
   courtIdFromVenueSelection,
@@ -2604,6 +2606,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         )}
         cardStyle={{ marginBottom: "18px" }}
       />
+      {kampeFormat === "padel" && (
+        <SeekingFilterShortcutCard
+          channel="kamp"
+          user={user}
+          showToast={showToast}
+          returnTo={FILTER_RETURN_KAMPE}
+        />
+      )}
       {kampeFormat === "liga" && (
         <Suspense
           fallback={

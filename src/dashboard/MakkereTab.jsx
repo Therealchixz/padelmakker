@@ -27,6 +27,8 @@ import {
   isMakkerFilterActive,
   countSeekersMatchingMakkerFilter,
 } from '../lib/makkerSearchFilterUtils';
+import { SeekingFilterShortcutCard } from '../components/SeekingFilterShortcutCard';
+import { FILTER_RETURN_MAKKERE } from '../lib/filterReturnNavigation';
 
 const isSeekingActive = (p) => isSeekingActiveProfile(p);
 
@@ -568,6 +570,13 @@ export function MakkereTab({ user, showToast }) {
   return (
     <div>
       <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Find makker</h2>
+
+      <SeekingFilterShortcutCard
+        channel="makker"
+        user={user}
+        showToast={showToast}
+        returnTo={FILTER_RETURN_MAKKERE}
+      />
 
       {makkerFilterOn && filterSeekerCount != null && filterSeekerCount > 0 && (
         <button

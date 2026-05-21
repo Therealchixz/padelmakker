@@ -8,6 +8,9 @@ const dir = dirname(fileURLToPath(import.meta.url));
 const profileUtils = readFileSync(join(dir, '../../src/lib/profileUtils.js'), 'utf8');
 const onboarding = readFileSync(join(dir, '../../src/pages/OnboardingPage.jsx'), 'utf8');
 const profilTab = readFileSync(join(dir, '../../src/dashboard/ProfilTab.jsx'), 'utf8');
+const makkereTab = readFileSync(join(dir, '../../src/dashboard/MakkereTab.jsx'), 'utf8');
+const kampeTab = readFileSync(join(dir, '../../src/dashboard/KampeTab.jsx'), 'utf8');
+const seekingShortcut = readFileSync(join(dir, '../../src/components/SeekingFilterShortcutCard.jsx'), 'utf8');
 
 test('region påkrævet og by valgfri i onboarding og profil', () => {
   assert.match(profileUtils, /isValidProfileRegion/);
@@ -16,10 +19,19 @@ test('region påkrævet og by valgfri i onboarding og profil', () => {
   assert.match(onboarding, /isValidProfileRegion\(form\.area\)/);
   assert.match(onboarding, /Region.*\*.*valgfri/s);
   assert.match(onboarding, /Mit kamp-filter/);
+  assert.match(onboarding, /Find makker/);
   assert.doesNotMatch(onboarding, /seeking_match/);
   assert.doesNotMatch(onboarding, /intent_now/);
   assert.doesNotMatch(onboarding, /Matchmaking-præferencer/);
   assert.match(profilTab, /Tilføj din by/);
   assert.match(profilTab, /handleQuickCitySave/);
   assert.match(profilTab, /isValidProfileRegion\(region\)/);
+});
+
+test('søge-filter genveje i Find makker og Kampe', () => {
+  assert.match(makkereTab, /SeekingFilterShortcutCard/);
+  assert.match(makkereTab, /channel="makker"/);
+  assert.match(kampeTab, /SeekingFilterShortcutCard/);
+  assert.match(kampeTab, /channel="kamp"/);
+  assert.match(seekingShortcut, /Ikke det samme som/);
 });

@@ -21,6 +21,7 @@ import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
 import { isValidProfileRegion } from '../lib/profileUtils';
+import { FILTER_RETURN_PROFIL } from '../lib/filterReturnNavigation';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
@@ -33,7 +34,7 @@ function MatchFilterProfileCard({ user }) {
   return (
     <button
       type="button"
-      onClick={() => navigate('/dashboard/kamp-filter')}
+      onClick={() => navigate('/dashboard/kamp-filter', { state: { filterReturnTo: FILTER_RETURN_PROFIL } })}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -105,7 +106,7 @@ function MakkerFilterProfileCard({ user }) {
   return (
     <button
       type="button"
-      onClick={() => navigate('/dashboard/makker-filter')}
+      onClick={() => navigate('/dashboard/makker-filter', { state: { filterReturnTo: FILTER_RETURN_PROFIL } })}
       style={{
         display: 'flex',
         alignItems: 'center',

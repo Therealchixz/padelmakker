@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
 import {
@@ -25,6 +25,7 @@ import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUt
 import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
 import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
 import { ChevronLeft, Bell, Zap } from 'lucide-react';
+import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
 
 const labelStyle = {
   fontSize: '12px',
@@ -38,6 +39,9 @@ const labelStyle = {
 
 export function MatchSearchFilterPage({ user, showToast }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = filterReturnFromState(location.state);
+  const returnLabel = filterReturnBackLabel(returnTo);
   const { updateProfile } = useAuth();
   const initial = useMemo(
     () => normalizeMatchSearchPrefs(user?.match_search_prefs, user),
@@ -98,7 +102,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
     <div style={{ fontFamily: font, maxWidth: 520, margin: '0 auto' }}>
       <button
         type="button"
-        onClick={() => navigate('/dashboard/profil')}
+        onClick={() => navigate(returnTo)}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -113,7 +117,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
         }}
       >
         <ChevronLeft size={18} aria-hidden />
-        Tilbage til profil
+        Tilbage til {returnLabel}
       </button>
 
       <h1 style={{ fontSize: 22, fontWeight: 800, color: theme.text, margin: '0 0 6px' }}>
