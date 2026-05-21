@@ -2,8 +2,8 @@ import {
   isProfileMatchFeedVisible,
   isProfileMakkerFeedVisible,
   isSeekingActiveProfile,
-  compactMatchSeekingLine,
-  compactMakkerSeekingLine,
+  compactMatchSeekingDetails,
+  compactMakkerSeekingDetails,
   seekingChannelDurationLabel,
   channelFeedSince,
 } from './seekingFeedTtl.js';
@@ -85,7 +85,7 @@ export function getPlayerSeekingDetails(profile, opts = {}) {
     blocks.push({
       type: 'kamp',
       label: 'Søger kamp',
-      line: compactMatchSeekingLine(prefs, profile),
+      details: compactMatchSeekingDetails(prefs, profile),
       duration: seekingChannelDurationLabel('kamp'),
       sinceLabel: formatSeekingSince(sinceIso),
     });
@@ -97,7 +97,7 @@ export function getPlayerSeekingDetails(profile, opts = {}) {
     blocks.push({
       type: 'makker',
       label: 'Søger makker',
-      line: compactMakkerSeekingLine(prefs, profile),
+      details: compactMakkerSeekingDetails(prefs, profile),
       duration: seekingChannelDurationLabel('makker'),
       sinceLabel: formatSeekingSince(sinceIso),
     });

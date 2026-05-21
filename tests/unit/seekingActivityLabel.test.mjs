@@ -15,8 +15,9 @@ test('seekingActivityLabel skelner kamp, makker og begge', () => {
   assert.match(src, /if \(matchOn\) return 'søger kamp'/);
   assert.match(src, /getPlayerSeekingDetails\(profile, opts/);
   assert.match(src, /opts\.channel/);
-  assert.match(src, /compactMatchSeekingLine/);
-  assert.match(src, /compactMakkerSeekingLine/);
+  assert.match(src, /compactMatchSeekingDetails/);
+  assert.match(src, /compactMakkerSeekingDetails/);
+  assert.match(src, /details:/);
   assert.doesNotMatch(src, /describeMatchFilter/);
   assert.doesNotMatch(src, /intentLabel/);
 });
@@ -27,6 +28,14 @@ test('adskilt TTL: kamp 24 timer, makker 7 dage', () => {
   assert.match(ttlSrc, /SEEK_KAMP_TTL_MS/);
   assert.match(ttlSrc, /SEEK_MAKKER_TTL_MS/);
   assert.match(ttlSrc, /feedVisibleSince/);
+});
+
+test('makker-detaljer inkluderer filterfelter', () => {
+  assert.match(ttlSrc, /compactMakkerSeekingDetails/);
+  assert.match(ttlSrc, /Banehalvdel/);
+  assert.match(ttlSrc, /Intention/);
+  assert.match(ttlSrc, /Alle tidsrum/);
+  assert.match(ttlSrc, /Tidsrum/);
 });
 
 test('aktivitetsfeed: én række pr. kanal', () => {

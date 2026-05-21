@@ -223,7 +223,26 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
               Synlig {block.duration}
               {block.sinceLabel ? ` · ${block.sinceLabel}` : ''}
             </div>
-            <div style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.45, fontWeight: 500 }}>{block.line}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {(block.details?.length ? block.details : block.line ? [block.line] : []).map((detail, detailIdx) => {
+                const colon = detail.indexOf(':');
+                const hasLabel = colon > 0;
+                const detailLabel = hasLabel ? detail.slice(0, colon) : null;
+                const detailValue = hasLabel ? detail.slice(colon + 1).trim() : detail;
+                return (
+                  <div key={detailIdx} style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.45 }}>
+                    {detailLabel ? (
+                      <>
+                        <span style={{ color: theme.textLight, fontWeight: 600 }}>{detailLabel}: </span>
+                        <span style={{ fontWeight: 500 }}>{detailValue}</span>
+                      </>
+                    ) : (
+                      <span style={{ fontWeight: 500 }}>{detailValue}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ))}
 

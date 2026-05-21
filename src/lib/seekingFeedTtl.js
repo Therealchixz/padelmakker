@@ -6,7 +6,10 @@ import {
   SEEK_KAMP_TTL_MS,
   SEEK_MAKKER_TTL_MS,
   seekingVisibleDurationLabel,
+  DAYS_OF_WEEK,
+  INTENT_LABELS,
 } from './platformConstants';
+import { normalizeStringArrayField } from './profileUtils';
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterConfigured,
@@ -21,7 +24,12 @@ import {
 } from './makkerSearchFilterCore';
 import { DEFAULT_LEVEL_WINDOW } from './matchSearchFilterCore';
 import { formatPlaytomicLevel, levelRangeForWindow } from './padelLevelUtils';
-import { levelRangeForMakkerPartnerPref } from './makkerFilterMatch';
+import {
+  levelRangeForMakkerPartnerPref,
+  partnerCourtSideLabel,
+  availabilityMeansAllTimeSlots,
+  MAKKER_PARTNER_LEVEL_FILTERS,
+} from './makkerFilterMatch';
 
 export { SEEK_KAMP_TTL_MS, SEEK_MAKKER_TTL_MS };
 
@@ -125,28 +133,102 @@ function compactLevelLine(prefs, profile, levelResolver, rangeFn) {
   return `Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`;
 }
 
-/** Én kort linje til profil-modal — kun region + niveau. */
-export function compactMatchSeekingLine(prefs, profile = {}) {
-  const normalized = normalizeMatchSearchPrefs(prefs, profile);
-  const parts = [];
-  const region = compactRegionLine(resolveFilterRegion(normalized, profile));
-  if (region) parts.push(region);
-  parts.push(compactLevelLine(normalized, profile, resolveFilterLevel, (lvl, win) => levelRangeForWindow(lvl, win)));
-  return parts.join(' · ');
+function pushSeekingDetail(lines, label, value) {
+  const v = value == null ? '' : String(value).trim();
+  if (!v) return;
+  lines.push(`${label}: ${v}`);
 }
 
-export function compactMakkerSeekingLine(prefs, profile = {}) {
+function formatSeekingDayKeys(dayKeys) {
+  const keys = normalizeStringArrayField(dayKeys);
+  if (!keys.length) return null;
+  return keys
+    .map((k) => DAYS_OF_WEEK.find((d) => d.key === k)?.label || k)
+    .join(', ');
+}
+
+function makkerIntentLabel(key) {
+  if (key === 'traening') return 'Træning';
+  return INTENT_LABELS[key] || key;
+}
+
+function makkerIntentSummary(intents) {
+  const labels = normalizeStringArrayField(intents)
+    .map((k) => makkerIntentLabel(k))
+    .filter(Boolean);
+  return labels.length ? labels.join(', ') : null;
+}
+
+function makkerAvailabilitySummary(prefs) {
+  const raw = normalizeStringArrayField(prefs?.availability);
+  if (!raw.length || availabilityMeansAllTimeSlots(prefs?.availability)) {
+    return 'Alle tidsrum';
+  }
+  return raw.join(', ');
+}
+
+/** Strukturerede detaljer til profil-modal (søger kamp). */
+export function compactMatchSeekingDetails(prefs, profile = {}) {
+  const normalized = normalizeMatchSearchPrefs(prefs, profile);
+  const lines = [];
+  const region = compactRegionLine(resolveFilterRegion(normalized, profile));
+  pushSeekingDetail(lines, 'Region', region);
+  pushSeekingDetail(lines, 'Niveau', compactLevelLine(
+    normalized,
+    profile,
+    resolveFilterLevel,
+    (lvl, win) => levelRangeForWindow(lvl, win),
+  ));
+  const days = formatSeekingDayKeys(normalized.days);
+  if (days) pushSeekingDetail(lines, 'Spilledage', days);
+  if (normalized.openOnly !== false) {
+    pushSeekingDetail(lines, 'Kampe', 'Kun åbne kampe');
+  }
+  return lines;
+}
+
+/** Strukturerede detaljer til profil-modal (søger makker). */
+export function compactMakkerSeekingDetails(prefs, profile = {}) {
   const normalized = normalizeMakkerSearchPrefs(prefs, profile);
-  const parts = [];
+  const lines = [];
   const region = compactRegionLine(resolveMakkerFilterRegion(normalized, profile));
-  if (region) parts.push(region);
-  parts.push(compactLevelLine(
+  pushSeekingDetail(lines, 'Region', region);
+  pushSeekingDetail(lines, 'Niveau', compactLevelLine(
     normalized,
     profile,
     resolveMakkerFilterLevel,
     (lvl, win, p, prof) => levelRangeForMakkerPartnerPref(lvl, win, p.partnerLevel, prof),
   ));
-  return parts.join(' · ');
+
+  const partnerLevelLabel = MAKKER_PARTNER_LEVEL_FILTERS.find(
+    (p) => p.value === normalized.partnerLevel,
+  )?.label;
+  if (partnerLevelLabel) pushSeekingDetail(lines, 'Makker-niveau', partnerLevelLabel);
+
+  pushSeekingDetail(lines, 'Banehalvdel', partnerCourtSideLabel(normalized.partnerCourtSide));
+
+  if (normalized.playStyle && normalized.playStyle !== 'all') {
+    pushSeekingDetail(lines, 'Spillestil', normalized.playStyle);
+  }
+
+  const intents = makkerIntentSummary(normalized.intents);
+  if (intents) pushSeekingDetail(lines, 'Intention', intents);
+
+  const days = formatSeekingDayKeys(normalized.days);
+  if (days) pushSeekingDetail(lines, 'Spilledage', days);
+
+  pushSeekingDetail(lines, 'Tidsrum', makkerAvailabilitySummary(normalized));
+
+  return lines;
+}
+
+/** Én linje (feed m.m.) — fuld tekst joined. */
+export function compactMatchSeekingLine(prefs, profile = {}) {
+  return compactMatchSeekingDetails(prefs, profile).join(' · ');
+}
+
+export function compactMakkerSeekingLine(prefs, profile = {}) {
+  return compactMakkerSeekingDetails(prefs, profile).join(' · ');
 }
 
 export function seekingChannelDurationLabel(channel) {
