@@ -27,5 +27,11 @@ test('onboarding and profil use levelNumeric', () => {
 test('levelBandTitleForNum maps slider values to full band text', () => {
   const constants = readFileSync(join(root, 'src/lib/platformConstants.js'), 'utf8');
   assert.match(constants, /levelBandTitleForNum/);
-  assert.match(constants, /levelDescriptionForNum/);
+  assert.match(constants, /LEVEL_FINE_DESCS/);
+  assert.match(constants, /Fair match/);
+});
+
+test('picker has no 1-7 scale marks under slider', () => {
+  const src = readFileSync(join(root, 'src/components/PlaytomicLevelPicker.jsx'), 'utf8');
+  assert.doesNotMatch(src, /SCALE_MARKS/);
 });

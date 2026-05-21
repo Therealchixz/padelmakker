@@ -7,14 +7,58 @@ export const LEVELS = [
   'Elite (5.0–7.0)',
 ];
 
+/**
+ * Korte band-tekster (fallback). Detaljer pr. 0,5-trin: LEVEL_FINE_DESCS.
+ * Niveau-skala inspireret af almindelig padel/Playtomic 1–7 (tekster er PadelMakkers egne).
+ */
 export const LEVEL_DESCS = {
-  'Begynder (1.0–1.9)':    'Ny til padel — ingen/lidt erfaring fra ketchersport',
-  'Let øvet (2.0–2.9)':    'Kan returnere boldene, evt. erfaring fra anden ketchersport',
-  'Øvet (3.0)':            'Spiller jævnligt med god kontrol på grundslagene. Kan holde længere dueller, men laver stadig en del uprovokerede fejl. Har niveau til DPF 25/50-turneringer eller 3. division.',
-  'Avanceret øvet (3.5)':  'Spiller ugentligt med færre fejl og god boldkontrol. Dine dueller bliver længere, og du har forståelse for taktik. Har niveau til DPF 50/100-turneringer eller 2./3. division.',
-  'Meget øvet (4.0–4.9)':  'Spiller 1. division, DPF200 eller DPF400 turneringer',
-  'Elite (5.0–7.0)':       'DPF1000, landsholdsniveau eller professionel spiller',
+  'Begynder (1.0–1.9)':
+    'Helt ny eller få gange på banen. Fokus på regler, grundslag og at få bolden i spil.',
+  'Let øvet (2.0–2.9)':
+    'Kan holde banespil i roligt tempo, bruger væggene mere og forstår enkle positioner.',
+  'Øvet (3.0)':
+    'Jævnlig spiller med solid grundteknik. Længere dueller, men stadig mange uprovokerede fejl.',
+  'Avanceret øvet (3.5)':
+    'Ugentlig spil med bedre boldvalg, taktik og kontrol i tempo. Klar til stærkere klubkampe.',
+  'Meget øvet (4.0–4.9)':
+    'Stærk teknik og taktik i højt tempo. Svært at finde svage sider i almindelige klubkampe.',
+  'Elite (5.0–7.0)':
+    'Turnerings- eller professionelt niveau med konstant høj intensitet og få fejl.',
 };
+
+/** Finere trin på slideren (0,5) — opdateres live når brugeren trækker. */
+export const LEVEL_FINE_STEPS = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7];
+
+export const LEVEL_FINE_DESCS = {
+  1: 'Du er helt ny i padel eller har kun prøvet det et par gange. Du lærer stadig regler, scoring og grundslag (serve, return, enkle volleys). Boldkontrol og placering på banen er ustabil, og du har svært ved hurtige bolde og vægge. Fair match: andre begyndere i roligt tempo.',
+  1.5: 'Du har spillet lidt og kender reglerne, men teknikken er ikke automatiseret endnu. Du kan returnere langsomme bolde og begynder at bruge glasvæggene, men dueller er korte og fejl kommer ofte under pres. Fair match: spillere omkring 1,0–2,0 der vil øve uden højt pres.',
+  2: 'Du spiller med begyndende kontrol og kan deltage i hyggelige kampe i lavt tempo. Du rammer de fleste grundslag i ro, men har begrænset taktik og positionering. Serve og netspil er uforudsigelige under pres. Fair match: 1,5–2,5 — gerne hygge eller let træning.',
+  2.5: 'Du har udviklet mere stabilt banespil og forstår hvornår du skal stå højt eller dybt. Du kan holde længere dueller i moderat tempo og bruger væggene bevidst. Stadig taktiske huller og fejl når tempoet stiger. Fair match: 2,0–3,0 i klubkampe eller sociale turneringer.',
+  3: 'Du spiller jævnligt med god sikkerhed i grundslagene og kan styre retning i normalt tempo. Du forstår double-positioner og simple taktikker (lob, drop, angreb på net). Du laver stadig mange uprovokerede fejl og kan blive for offensiv. Fair match: DPF 25/50-niveau eller stærk 3. division — typisk 2,5–3,5.',
+  3.5: 'Du spiller ugentligt med færre fejl, bedre boldkontrol og længere dueller. Du varierer tempo, bruger væggene taktisk og har styr på netspil i de fleste situationer. Du kan stadig miste fokus mod stærkere pres. Fair match: DPF 50/100 eller 2./3. division — typisk 3,0–4,0.',
+  4: 'Du mestrer de fleste slag med retningskontrol og kan spille fladt, med slice og i højere tempo. Du forstår kampens rytme, teamwork og hvornår du skal angribe eller forsvare. Du har svært ved at lukke point mod meget stærke modstandere. Fair match: erfarne klubspillere og regionale turneringer — typisk 3,5–4,5.',
+  4.5: 'Du har stærk teknik og taktik, god fysik og få lette fejl i normale kampe. Du spiller bandeja/vibora-lignende slag med rimelig sikkerhed og læser modstanderens spil. Du kan stadig blive presset af top-amatører. Fair match: stærke divisionshold og DPF200-klasser — typisk 4,0–5,0.',
+  5: 'Du har høj teknisk og taktisk standard, spiller hurtigt og konsekvent med få uprovokerede fejl. Du dominerer net og vægge i de fleste kampe og tænker flere slag frem. Fair match: landsholds- eller elite-amatørniveau i turneringer — typisk 4,5–5,5.',
+  5.5: 'Du er blandt de stærkeste amatører i regionen med turneringserfaring og høj intensitet hele kampen. Du har avancerede slag, mental styrke og fysisk kapacitet til lange kampe. Fair match: nationale turneringer og top divisionsniveau — typisk 5,0–6,0.',
+  6: 'Du spiller på meget højt amatør- eller semi-professionelt niveau med dyb taktisk forståelse, kraft og præcision. Du forsvares solidt på vægge og afslutter point ved nettet. Fair match: elite turneringer og erfarne pro-træningsgrupper — typisk 5,5–6,5.',
+  6.5: 'Du er tæt på professionelt niveau med konstant høj kvalitet under pres, få svage sider og stærk turneringserfaring. Fair match: nationale/elite turneringer og WPT-niveau træningskampe — typisk 6,0–7,0.',
+  7: 'Professionelt niveau (landshold, WPT eller tilsvarende). Du konkurrerer for resultater på højeste plan med fuld fysisk og mental kapacitet. Fair match: kun andre professionelle eller top 50 WPT.',
+};
+
+export function nearestFineLevelStep(num) {
+  const x = Number(num);
+  if (!Number.isFinite(x)) return 3;
+  let best = LEVEL_FINE_STEPS[0];
+  let bestDist = Infinity;
+  for (const step of LEVEL_FINE_STEPS) {
+    const d = Math.abs(x - step);
+    if (d < bestDist) {
+      bestDist = d;
+      best = step;
+    }
+  }
+  return best;
+}
 
 /** Konvertér gemt tal (fx 1.0, 3.5) til kort visningsnavn */
 export function levelLabel(num) {
@@ -66,10 +110,10 @@ export function levelBandTitleForNum(num) {
   return '';
 }
 
-/** Detaljeret beskrivelse mens bruger trækker slideren (opdateres live). */
+/** Detaljeret beskrivelse mens bruger trækker slideren (nærmeste 0,5-trin). */
 export function levelDescriptionForNum(num) {
-  const key = levelBandTitleForNum(num);
-  return key ? LEVEL_DESCS[key] : null;
+  const step = nearestFineLevelStep(num);
+  return LEVEL_FINE_DESCS[step] || LEVEL_DESCS[levelBandTitleForNum(num)] || null;
 }
 
 /** Konvertér gemt tal til fuld LEVELS-streng til brug i formular */

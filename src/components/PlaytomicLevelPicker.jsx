@@ -11,8 +11,6 @@ import {
   DEFAULT_PLAYTOMIC_LEVEL,
 } from '../lib/padelLevelUtils';
 
-const SCALE_MARKS = [1, 2, 3, 4, 5, 6, 7];
-
 /**
  * Ét niveau-felt: træk slideren og læs beskrivelsen undervejs.
  * @param {number|null|undefined} value
@@ -37,10 +35,10 @@ export function PlaytomicLevelPicker({ value, onChange }) {
       }}
     >
       <p style={{ fontSize: 12, color: theme.textLight, margin: '0 0 14px', lineHeight: 1.45 }}>
-        Træk linjen og læs beskrivelsen — passer den til dig lige nu?
+        Træk linjen og læs beskrivelsen — passer den til dig lige nu? Vær ærlig, så kampe bliver fair.
       </p>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
         <input
           type="range"
           min={PLAYTOMIC_LEVEL_MIN}
@@ -77,23 +75,6 @@ export function PlaytomicLevelPicker({ value, onChange }) {
           }}
           aria-label="Niveau med ét decimal"
         />
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontSize: 10,
-          fontWeight: 600,
-          color: theme.textLight,
-          marginBottom: 14,
-          padding: '0 2px',
-        }}
-        aria-hidden
-      >
-        {SCALE_MARKS.map((m) => (
-          <span key={m}>{m}</span>
-        ))}
       </div>
 
       <div
