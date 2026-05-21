@@ -39,6 +39,7 @@ export function RankingTab({ user }) {
   const [eloHistory, setEloHistory] = useState([]);
   const [americanoHistory, setAmericanoHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [visibleCount, setVisibleCount] = useState(RANKING_PAGE_SIZE);
@@ -180,6 +181,7 @@ export function RankingTab({ user }) {
     setProfileById({});
     profileOffsetRef.current = 0;
     setMyGlobalRank(null);
+    setLoadError(null);
 
     try {
       if (period === 'all') {
@@ -192,6 +194,9 @@ export function RankingTab({ user }) {
       }
     } catch (e) {
       console.error(e);
+      if (gen === profileFetchGenRef.current) {
+        setLoadError('Kunne ikke hente ranking. Tjek din forbindelse og prøv igen.');
+      }
     } finally {
       if (gen === profileFetchGenRef.current) setLoading(false);
     }
@@ -447,8 +452,28 @@ export function RankingTab({ user }) {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>
-        Indlæser ranking...
+      <div className="pm-state-card" style={{ textAlign: 'center', padding: '32px 20px' }}>
+        <div className="pm-state-copy" style={{ color: theme.textLight, fontSize: '14px' }}>
+          Indlæser ranking...
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError && sorted.length === 0) {
+    return (
+      <div>
+        <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Ranking</h2>
+        <div className="pm-state-card pm-state-card--error">
+          <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+          <div className="pm-state-title">Kunne ikke hente ranking</div>
+          <div className="pm-state-copy">{loadError}</div>
+          <div className="pm-state-actions">
+            <button type="button" onClick={() => void resetAndLoad()} style={{ ...btn(true), fontSize: '13px' }}>
+              Prøv igen
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -456,6 +481,29 @@ export function RankingTab({ user }) {
   return (
     <div>
       <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Ranking</h2>
+
+      {loadError ? (
+        <div
+          className="pm-ui-card"
+          style={{
+            padding: '12px 14px',
+            marginBottom: '14px',
+            border: `1px solid ${theme.warm}`,
+            background: theme.warmBg,
+            fontSize: '12px',
+            color: theme.textMid,
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: '10px',
+          }}
+        >
+          <span>{loadError}</span>
+          <button type="button" onClick={() => void resetAndLoad()} style={{ ...btn(false), padding: '6px 12px', fontSize: '12px' }}>
+            Prøv igen
+          </button>
+        </div>
+      ) : null}
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
         <button

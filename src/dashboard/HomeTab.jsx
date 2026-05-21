@@ -127,6 +127,7 @@ export function HomeTab({ user, setTab }) {
   const [seekingFeed, setSeekingFeed] = useState([]);
   const [leagueNewFeed, setLeagueNewFeed] = useState([]);
   const [feedLoading, setFeedLoading] = useState(true);
+  const [feedLoadError, setFeedLoadError] = useState(null);
   const [viewLeague, setViewLeague] = useState(null);
   const [viewMatch, setViewMatch] = useState(null);
   const closeViewTournament = useCallback(() => setViewTournament(null), []);
@@ -198,7 +199,10 @@ export function HomeTab({ user, setTab }) {
 
   const fetchFeed = useCallback(async ({ silent = false } = {}) => {
     const fetchId = ++fetchIdRef.current;
-    if (!silent) setFeedLoading(true);
+    if (!silent) {
+      setFeedLoading(true);
+      setFeedLoadError(null);
+    }
     try {
       const today = new Date().toISOString().split('T')[0];
       const sinceSeeking = new Date(Date.now() - SEEK_FEED_QUERY_TTL_MS).toISOString();
@@ -239,6 +243,10 @@ export function HomeTab({ user, setTab }) {
       };
       for (const [key, result] of Object.entries(round1Results)) {
         if (result.status === 'rejected') console.warn('[home-feed] Round1 query fejlede:', key, result.reason);
+      }
+      const anyRound1Ok = Object.values(round1Results).some((r) => r.status === 'fulfilled');
+      if (!anyRound1Ok) {
+        throw new Error('Kunne ikke hente aktivitet');
       }
 
       const eloFull     = (eloRes.value?.data         || []).filter(r => Number(r.change) !== 0);
@@ -447,8 +455,12 @@ export function HomeTab({ user, setTab }) {
       };
       applyFeedPayload(payload);
       HOME_FEED_CACHE_BY_USER.set(String(user.id), { at: Date.now(), payload });
+      if (fetchIdRef.current === fetchId) setFeedLoadError(null);
     } catch (e) {
-      if (fetchIdRef.current === fetchId) console.warn('Feed error:', e);
+      if (fetchIdRef.current === fetchId) {
+        console.warn('Feed error:', e);
+        setFeedLoadError('Kunne ikke hente aktivitet. Tjek din forbindelse og prøv igen.');
+      }
     } finally {
       if (fetchIdRef.current === fetchId && !silent) setFeedLoading(false);
     }
@@ -892,8 +904,46 @@ export function HomeTab({ user, setTab }) {
             ))}
           </div>
         </div>
+      ) : feedLoadError && allFeedRows.length === 0 ? (
+        <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
+            Seneste aktivitet
+          </div>
+          <div className="pm-state-card pm-state-card--error">
+            <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+            <div className="pm-state-title">Kunne ikke hente aktivitet</div>
+            <div className="pm-state-copy">{feedLoadError}</div>
+            <div className="pm-state-actions">
+              <button type="button" onClick={() => void fetchFeed()} style={{ ...btn(true), fontSize: "13px" }}>
+                Prøv igen
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
         <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
+          {feedLoadError ? (
+            <div
+              className="pm-ui-card"
+              style={{
+                padding: "12px 14px",
+                marginBottom: "10px",
+                border: `1px solid ${theme.warm}`,
+                background: theme.warmBg,
+                fontSize: "12px",
+                color: theme.textMid,
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <span>Kunne ikke opdatere aktivitet — viser sidst hentede data.</span>
+              <button type="button" onClick={() => void fetchFeed()} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
+                Prøv igen
+              </button>
+            </div>
+          ) : null}
           <div className="pm-feed-filters-header">
             <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Seneste aktivitet

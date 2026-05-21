@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
+import { mapAuthErrorMessage } from '../lib/authErrorMessages';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { TurnstileWidget } from '../components/TurnstileWidget';
 import { OAuthButtons, AuthDivider } from '../components/OAuthButtons';
@@ -28,7 +29,7 @@ export function LoginPage() {
     try {
       await signIn(email.trim(), password, turnstileEnabled ? captchaToken : "");
     } catch (e) {
-      setErr(e.message || "Login fejlede. Tjek email og adgangskode.");
+      setErr(mapAuthErrorMessage(e?.message, 'login'));
       if (turnstileEnabled) setCaptchaResetNonce((n) => n + 1);
     } finally {
       setSubmitting(false);
@@ -49,7 +50,7 @@ export function LoginPage() {
       setForgotSent(true);
       if (turnstileEnabled) setCaptchaResetNonce((n) => n + 1);
     } catch (e) {
-      setErr(e.message || "Kunne ikke sende nulstillingsmail.");
+      setErr(mapAuthErrorMessage(e?.message, 'forgot'));
       if (turnstileEnabled) setCaptchaResetNonce((n) => n + 1);
     } finally { setSubmitting(false); }
   };
@@ -58,7 +59,7 @@ export function LoginPage() {
     return (
       <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
         <div className="pm-auth-narrow">
-          <button onClick={() => { setForgotMode(false); setForgotSent(false); setErr(""); }} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage til login</button>
+          <button type="button" onClick={() => { setForgotMode(false); setForgotSent(false); setErr(""); }} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage til login</button>
           <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Glemt adgangskode</h1>
           {forgotSent ? (
             <div style={{ background: theme.accentBg, padding: "20px", borderRadius: theme.radius, marginTop: "20px" }}>
@@ -66,7 +67,12 @@ export function LoginPage() {
               <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5 }}>Tjek din indbakke på <strong>{email}</strong> og følg linket for at nulstille din adgangskode.</p>
             </div>
           ) : (
-            <>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleForgotPassword();
+              }}
+            >
               <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "28px", lineHeight: 1.5 }}>Indtast din email, så sender vi et link til at nulstille din adgangskode.</p>
               <label htmlFor="forgot-email" style={labelStyle}>Email</label>
               <input id="forgot-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
@@ -80,10 +86,10 @@ export function LoginPage() {
                 </div>
               )}
               {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
-              <button onClick={handleForgotPassword} disabled={submitting || (turnstileEnabled && !captchaToken)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
+              <button type="submit" disabled={submitting || (turnstileEnabled && !captchaToken)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
                 {submitting ? "Sender..." : "Send nulstillingslink"}
               </button>
-            </>
+            </form>
           )}
           <PublicLegalFooter />
         </div>
@@ -94,31 +100,44 @@ export function LoginPage() {
   return (
     <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
       <div className="pm-auth-narrow">
-        <button onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
+        <button type="button" onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
         <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Velkommen tilbage</h1>
         <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "20px", lineHeight: 1.5 }}>Log ind med Google eller email.</p>
         <OAuthButtons redirectPath="/login" disabled={submitting} onError={setErr} />
         <AuthDivider />
-        <label htmlFor="login-email" style={labelStyle}>Email</label>
-        <input id="login-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
-        <label htmlFor="login-password" style={labelStyle}>Adgangskode</label>
-        <input id="login-password" autoComplete="current-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
-        {turnstileEnabled && (
-          <div style={{ marginBottom: "14px" }}>
-            <TurnstileWidget
-              siteKey={turnstileSiteKey}
-              onTokenChange={setCaptchaToken}
-              resetNonce={captchaResetNonce}
-            />
-          </div>
-        )}
-        {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
-        <button onClick={handleLogin} disabled={submitting || (turnstileEnabled && !captchaToken)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
-          {submitting ? "Logger ind..." : "Log ind"}
-        </button>
-        <button onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", color: theme.accent, fontSize: "13px", marginTop: "16px", cursor: "pointer", fontFamily: font, fontWeight: 500, width: "100%", textAlign: "center" }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleLogin();
+          }}
+        >
+          <label htmlFor="login-email" style={labelStyle}>Email</label>
+          <input id="login-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
+          <label htmlFor="login-password" style={labelStyle}>Adgangskode</label>
+          <input id="login-password" autoComplete="current-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+          {turnstileEnabled && (
+            <div style={{ marginBottom: "14px" }}>
+              <TurnstileWidget
+                siteKey={turnstileSiteKey}
+                onTokenChange={setCaptchaToken}
+                resetNonce={captchaResetNonce}
+              />
+            </div>
+          )}
+          {err && <p style={{ color: theme.red, fontSize: "13px", marginBottom: "14px" }}>{err}</p>}
+          <button type="submit" disabled={submitting || (turnstileEnabled && !captchaToken)} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>
+            {submitting ? "Logger ind..." : "Log ind"}
+          </button>
+        </form>
+        <button type="button" onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", color: theme.accent, fontSize: "13px", marginTop: "16px", cursor: "pointer", fontFamily: font, fontWeight: 500, width: "100%", textAlign: "center" }}>
           Glemt adgangskode?
         </button>
+        <p style={{ textAlign: "center", marginTop: "20px", fontSize: "14px", color: theme.textMid }}>
+          Har du ikke en konto?{" "}
+          <Link to="/opret" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
+            Opret profil
+          </Link>
+        </p>
         <PublicLegalFooter />
       </div>
     </div>
