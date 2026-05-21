@@ -15,6 +15,8 @@ import {
   resultErrorSourceLabel,
 } from '../lib/resultErrorReports';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { PillTabs } from '../components/PillTabs';
+import { AppModal } from '../components/AppModal';
 import { AdminReportDmViewer } from '../components/AdminReportDmViewer';
 import { AdminMatchResultEditor } from '../components/AdminMatchResultEditor';
 import { AdminAmericanoResultEditor } from '../components/AdminAmericanoResultEditor';
@@ -873,15 +875,6 @@ export function AdminTab({ initialSubTab = null }) {
       : <ChevronDown size={12} style={{ marginLeft: '4px', color: theme.accent }} />;
   };
 
-  const thStyle = () => ({
-    padding: "12px", 
-    fontSize: "12px", 
-    color: theme.textMid, 
-    cursor: "pointer", 
-    userSelect: "none",
-    transition: "background 0.2s"
-  });
-
   const formatCreatedAt = (createdAt) => {
     if (!createdAt) return 'Ukendt';
     const date = new Date(createdAt);
@@ -997,120 +990,104 @@ export function AdminTab({ initialSubTab = null }) {
     { id: 'console', label: 'Konsol', shortLabel: 'Konsol', icon: AlertTriangle, badgeKey: 'console' },
   ];
 
-  const subTabBadgeStyle = {
-    marginLeft: '6px',
-    minWidth: '16px',
-    height: '16px',
-    padding: '0 4px',
-    borderRadius: '999px',
-    background: theme.red,
-    color: theme.onAccent,
-    fontSize: '10px',
-    fontWeight: 800,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    lineHeight: 1,
-    flexShrink: 0,
-  };
+  const adminSubTabPills = useMemo(
+    () =>
+      adminSubTabs.map((t) => {
+        const Icon = t.icon;
+        const badgeCount = subTabBadges[t.badgeKey] || 0;
+        return {
+          id: t.id,
+          label: (
+            <span className="pm-admin-subtab-label">
+              <Icon size={14} aria-hidden />
+              {isMobile ? t.shortLabel : t.label}
+              {badgeCount > 0 ? (
+                <span className="pm-admin-subtab-badge" aria-hidden>
+                  {badgeCount > 9 ? '9+' : badgeCount}
+                </span>
+              ) : null}
+            </span>
+          ),
+        };
+      }),
+    [isMobile, subTabBadges],
+  );
 
-  const subTabBtnStyle = (active) => ({
-    ...btn(active),
-    padding: isMobile ? '8px 12px' : '6px 16px',
-    fontSize: isMobile ? '12px' : '13px',
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-    display: 'inline-flex',
-    alignItems: 'center',
-  });
+  const matchTypePills = [
+    { id: '2v2', label: '2v2-kampe' },
+    { id: 'americano', label: 'Americano' },
+    { id: 'liga', label: '🏆 Liga' },
+  ];
+
+  const matchStatusPills = ADMIN_MATCH_STATUS_FILTERS.map((f) => ({
+    id: f.id,
+    label: f.label,
+  }));
+
+  const reportStatusPills = [
+    { id: 'open', label: 'Åbne' },
+    { id: 'reviewed', label: 'Gennemgået' },
+    { id: 'dismissed', label: 'Afvist' },
+    { id: 'all', label: 'Alle' },
+  ];
+
+  const resultErrorStatusPills = [
+    { id: 'open', label: 'Åbne' },
+    { id: 'resolved', label: 'Løst' },
+    { id: 'dismissed', label: 'Afvist' },
+    { id: 'all', label: 'Alle' },
+  ];
 
   return (
-    <div style={{ padding: isMobile ? '12px' : '16px', maxWidth: '1000px', margin: '0 auto', fontFamily: font }}>
-      <div
-        style={{
-          marginBottom: '20px',
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          justifyContent: 'space-between',
-          alignItems: isMobile ? 'stretch' : 'center',
-          gap: isMobile ? '10px' : '12px',
-        }}
-      >
-        <h2 style={{ ...heading('20px'), margin: 0, flexShrink: 0 }}>Admin Panel</h2>
-        <div
-          style={{
-            display: 'flex',
-            gap: '6px',
-            background: theme.bg,
-            padding: '4px',
-            borderRadius: '10px',
-            overflowX: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            maxWidth: '100%',
-            scrollbarWidth: 'thin',
-          }}
-        >
-          {adminSubTabs.map((t) => {
-            const Icon = t.icon;
-            const active = activeSubTab === t.id;
-            const badgeCount = subTabBadges[t.badgeKey] || 0;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setActiveSubTab(t.id)}
-                style={subTabBtnStyle(active)}
-                aria-current={active ? 'page' : undefined}
-                aria-label={
-                  badgeCount > 0
-                    ? `${t.label}, ${badgeCount} kræver opmærksomhed`
-                    : t.label
-                }
-              >
-                <Icon size={14} style={{ marginRight: isMobile ? 4 : 6, flexShrink: 0 }} />
-                {isMobile ? t.shortLabel : t.label}
-                {badgeCount > 0 && (
-                  <span style={subTabBadgeStyle} aria-hidden>
-                    {badgeCount > 9 ? '9+' : badgeCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+    <div className="pm-admin-page">
+      <div className="pm-admin-header">
+        <h2 style={{ ...heading('20px') }}>Admin Panel</h2>
+        <PillTabs
+          tabs={adminSubTabPills}
+          value={activeSubTab}
+          onChange={setActiveSubTab}
+          ariaLabel="Admin sektion"
+          size="sm"
+          className="pm-admin-subtabs"
+        />
       </div>
 
       {activeSubTab === 'users' ? (
         <>
-          <div style={{ position: "relative", marginBottom: "16px" }}>
-            <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: theme.textMid }} />
-            <input 
+          <div className="pm-admin-search">
+            <Search size={16} className="pm-admin-search-icon" aria-hidden />
+            <input
               type="text"
               placeholder="Søg..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ ...inputStyle, paddingLeft: "38px" }}
+              style={inputStyle}
             />
           </div>
 
-          {/* Sorterings-bar til mobil */}
           {isMobile && (
-            <div style={{ display: "flex", gap: "8px", marginBottom: "12px", overflowX: "auto", paddingBottom: "4px" }}>
-              <button 
+            <div className="pm-admin-sort-row">
+              <button
+                type="button"
                 onClick={() => requestSort('full_name')}
-                style={{ ...btn(sortConfig.key === 'full_name'), fontSize: "11px", padding: "4px 10px", whiteSpace: "nowrap" }}
+                className="pm-admin-sort-btn"
+                style={btn(sortConfig.key === 'full_name')}
               >
                 Navn <SortIcon columnKey="full_name" />
               </button>
-              <button 
+              <button
+                type="button"
                 onClick={() => requestSort('elo_rating')}
-                style={{ ...btn(sortConfig.key === 'elo_rating'), fontSize: "11px", padding: "4px 10px", whiteSpace: "nowrap" }}
+                className="pm-admin-sort-btn"
+                style={btn(sortConfig.key === 'elo_rating')}
               >
                 ELO <SortIcon columnKey="elo_rating" />
               </button>
-              <button 
+              <button
+                type="button"
                 onClick={() => requestSort('role')}
-                style={{ ...btn(sortConfig.key === 'role'), fontSize: "11px", padding: "4px 10px", whiteSpace: "nowrap" }}
+                className="pm-admin-sort-btn"
+                style={btn(sortConfig.key === 'role')}
               >
                 Rolle <SortIcon columnKey="role" />
               </button>
@@ -1118,66 +1095,68 @@ export function AdminTab({ initialSubTab = null }) {
           )}
 
           {!isMobile ? (
-            <div style={{ background: theme.surface, borderRadius: "12px", border: "1px solid " + theme.border, overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div className="pm-ui-card pm-admin-table-wrap">
+              <table className="pm-admin-table">
                 <thead>
-                  <tr style={{ textAlign: "left", background: theme.surfaceAlt, borderBottom: "1px solid " + theme.border }}>
-                    <th style={thStyle()} onClick={() => requestSort('full_name')}>
-                      <div style={{ display: "flex", alignItems: "center" }}>SPILLER <SortIcon columnKey="full_name" /></div>
+                  <tr>
+                    <th className="pm-admin-th" onClick={() => requestSort('full_name')}>
+                      <div className="pm-admin-th-inner">SPILLER <SortIcon columnKey="full_name" /></div>
                     </th>
-                    <th style={thStyle()} onClick={() => requestSort('elo_rating')}>
-                      <div style={{ display: "flex", alignItems: "center" }}>ELO <SortIcon columnKey="elo_rating" /></div>
+                    <th className="pm-admin-th" onClick={() => requestSort('elo_rating')}>
+                      <div className="pm-admin-th-inner">ELO <SortIcon columnKey="elo_rating" /></div>
                     </th>
-                    <th style={thStyle()} onClick={() => requestSort('role')}>
-                      <div style={{ display: "flex", alignItems: "center" }}>ROLLE <SortIcon columnKey="role" /></div>
+                    <th className="pm-admin-th" onClick={() => requestSort('role')}>
+                      <div className="pm-admin-th-inner">ROLLE <SortIcon columnKey="role" /></div>
                     </th>
-                    <th style={{ padding: "12px", fontSize: "12px", color: theme.textMid, textAlign: "right" }}>HANDLING</th>
+                    <th className="pm-admin-th pm-admin-th--static">HANDLING</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map(u => (
-                    <tr key={u.id} style={{ borderBottom: "1px solid " + theme.border }}>
-                      <td style={{ padding: "12px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  {filteredUsers.map((u) => (
+                    <tr key={u.id}>
+                      <td>
+                        <div className="pm-admin-user-cell">
                           <AvatarCircle avatar={u.avatar || '🎾'} size={32} />
                           <div>
-                            <div style={{ fontSize: "14px", fontWeight: 600 }}>{adminDisplayName(u)}</div>
-                            <div style={{ fontSize: "11px", color: theme.textMid }}>{u.email}</div>
+                            <div className="pm-admin-user-name">{adminDisplayName(u)}</div>
+                            <div className="pm-admin-user-email">{u.email}</div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: "12px", fontSize: "14px", fontWeight: 700 }}>{u.elo_rating || 1000}</td>
-                      <td style={{ padding: "12px" }}>
-                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                          <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : theme.surfaceAlt, border: "1px solid " + theme.border, color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
+                      <td className="pm-admin-elo-cell">{u.elo_rating || 1000}</td>
+                      <td>
+                        <div className="pm-admin-badge-row">
+                          <span className={u.role === 'admin' ? 'pm-admin-badge pm-admin-badge--admin' : 'pm-admin-badge'}>
                             {u.role}
                           </span>
-                          {u.is_banned && (
-                            <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: theme.redBg, color: theme.red, textTransform: "uppercase" }}>
-                              Bannet
-                            </span>
-                          )}
+                          {u.is_banned && <span className="pm-admin-badge pm-admin-badge--danger">Bannet</span>}
                           {u.phone_verification_exempt && (
-                            <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "100px", background: theme.surfaceAlt, border: "1px solid " + theme.border, color: theme.textMid, textTransform: "uppercase" }}>
-                              Ingen SMS-krav
-                            </span>
+                            <span className="pm-admin-badge pm-admin-badge--muted">Ingen SMS-krav</span>
                           )}
                         </div>
                       </td>
-                      <td style={{ padding: "12px", textAlign: "right" }}>
-                        <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                          <button onClick={() => setEditingUser({ ...u })} style={{ background: "none", border: "none", cursor: "pointer", color: theme.accent }}><Edit2 size={18} /></button>
+                      <td style={{ textAlign: 'right' }}>
+                        <div className="pm-admin-actions">
+                          <button type="button" onClick={() => setEditingUser({ ...u })} className="pm-admin-icon-btn pm-admin-icon-btn--accent" title="Rediger">
+                            <Edit2 size={18} />
+                          </button>
                           <button
+                            type="button"
                             onClick={() => togglePhoneExempt(u)}
-                            style={{ background: "none", border: "none", cursor: "pointer", color: u.phone_verification_exempt ? theme.accent : theme.textLight }}
+                            className={`pm-admin-icon-btn ${u.phone_verification_exempt ? 'pm-admin-icon-btn--accent' : ''}`}
                             title={u.phone_verification_exempt ? 'Kræv telefon-SMS igen' : 'Undtag fra telefon-SMS (testkonto)'}
                           >
                             <Smartphone size={18} />
                           </button>
-                          <button onClick={() => toggleAdmin(u)} style={{ background: "none", border: "none", cursor: "pointer", color: u.role === 'admin' ? theme.red : theme.accent }}>
+                          <button
+                            type="button"
+                            onClick={() => toggleAdmin(u)}
+                            className={`pm-admin-icon-btn ${u.role === 'admin' ? 'pm-admin-icon-btn--danger' : 'pm-admin-icon-btn--accent'}`}
+                            title={u.role === 'admin' ? 'Fjern admin' : 'Gør til admin'}
+                          >
                             {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
                           </button>
-                          <button onClick={() => deleteUser(u)} style={{ background: "none", border: "none", cursor: "pointer", color: theme.red }} title="Slet spiller">
+                          <button type="button" onClick={() => deleteUser(u)} className="pm-admin-icon-btn pm-admin-icon-btn--danger" title="Slet spiller">
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -1188,65 +1167,58 @@ export function AdminTab({ initialSubTab = null }) {
               </table>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {filteredUsers.map(u => (
-                <div key={u.id} style={{ background: theme.surface, borderRadius: "12px", border: "1px solid " + theme.border, padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                    <div style={{ display: "flex", gap: "12px" }}>
+            <div className="pm-admin-card-list">
+              {filteredUsers.map((u) => (
+                <div key={u.id} className="pm-ui-card pm-admin-card">
+                  <div className="pm-admin-card-top">
+                    <div className="pm-admin-card-user">
                       <AvatarCircle avatar={u.avatar || '🎾'} size={40} />
                       <div>
-                        <div style={{ fontSize: "15px", fontWeight: 700 }}>{adminDisplayName(u)}</div>
-                        <div style={{ fontSize: "12px", color: theme.textMid }}>{u.email}</div>
+                        <div className="pm-admin-user-name" style={{ fontSize: '15px' }}>{adminDisplayName(u)}</div>
+                        <div className="pm-admin-user-email" style={{ fontSize: '12px' }}>{u.email}</div>
                       </div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: "18px", fontWeight: 800, color: theme.accent }}>{u.elo_rating || 1000}</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase" }}>ELO</div>
+                    <div className="pm-admin-card-elo">
+                      <div className="pm-admin-card-elo-value">{u.elo_rating || 1000}</div>
+                      <div className="pm-admin-card-elo-label">ELO</div>
                     </div>
                   </div>
-                  
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "100px", background: u.role === 'admin' ? theme.accentBg : theme.surfaceAlt, border: "1px solid " + theme.border, color: u.role === 'admin' ? theme.accent : theme.textMid, textTransform: "uppercase" }}>
+                  <div className="pm-admin-card-footer">
+                    <div className="pm-admin-badge-row">
+                      <span className={u.role === 'admin' ? 'pm-admin-badge pm-admin-badge--admin pm-admin-badge--sm' : 'pm-admin-badge pm-admin-badge--sm'}>
                         {u.role}
                       </span>
-                      {u.is_banned && (
-                        <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "100px", background: theme.redBg, color: theme.red, textTransform: "uppercase" }}>
-                          Bannet
-                        </span>
-                      )}
+                      {u.is_banned && <span className="pm-admin-badge pm-admin-badge--danger pm-admin-badge--sm">Bannet</span>}
                       {u.phone_verification_exempt && (
-                        <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "100px", background: theme.surfaceAlt, border: "1px solid " + theme.border, color: theme.textMid, textTransform: "uppercase" }}>
-                          Ingen SMS
-                        </span>
+                        <span className="pm-admin-badge pm-admin-badge--muted pm-admin-badge--sm">Ingen SMS</span>
                       )}
                     </div>
-                    <div style={{ display: "flex", gap: "8px" }}>
+                    <div className="pm-admin-actions pm-admin-actions--tight">
                       <button
+                        type="button"
                         onClick={() => togglePhoneExempt(u)}
-                        style={{ background: theme.surfaceAlt, border: "none", borderRadius: "8px", padding: "8px", color: u.phone_verification_exempt ? theme.accent : theme.textLight, display: "flex", alignItems: "center" }}
+                        className={`pm-admin-mobile-action pm-admin-mobile-action--neutral ${u.phone_verification_exempt ? 'pm-admin-mobile-action--accent' : ''}`}
                         title={u.phone_verification_exempt ? 'Kræv telefon-SMS' : 'Undtag telefon-SMS (testkonto)'}
                       >
                         <Smartphone size={18} />
                       </button>
                       <button
+                        type="button"
                         onClick={() => deleteUser(u)}
-                        style={{ background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", color: theme.red, display: "flex", alignItems: "center" }}
+                        className="pm-admin-mobile-action pm-admin-mobile-action--danger"
                         title="Slet spiller"
                       >
                         <Trash2 size={18} />
                       </button>
-                      <button 
-                        onClick={() => toggleAdmin(u)} 
-                        style={{ background: u.role === 'admin' ? theme.redBg : theme.accentBg, border: "none", borderRadius: "8px", padding: "8px", color: u.role === 'admin' ? theme.red : theme.accent, display: "flex", alignItems: "center" }}
-                        title={u.role === 'admin' ? "Fjern admin" : "Gør til admin"}
+                      <button
+                        type="button"
+                        onClick={() => toggleAdmin(u)}
+                        className={u.role === 'admin' ? 'pm-admin-mobile-action pm-admin-mobile-action--admin-off' : 'pm-admin-mobile-action pm-admin-mobile-action--accent'}
+                        title={u.role === 'admin' ? 'Fjern admin' : 'Gør til admin'}
                       >
                         {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
                       </button>
-                      <button 
-                        onClick={() => setEditingUser({ ...u })} 
-                        style={{ background: theme.accent, border: "none", borderRadius: "8px", padding: "8px 16px", color: theme.onAccent, display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 600 }}
-                      >
+                      <button type="button" onClick={() => setEditingUser({ ...u })} className="pm-admin-mobile-edit">
                         <Edit2 size={16} /> Rediger
                       </button>
                     </div>
@@ -1258,115 +1230,67 @@ export function AdminTab({ initialSubTab = null }) {
         </>
       ) : activeSubTab === 'matches' ? (
         <div>
-          {/* Match type sub-tabs */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '6px',
-              marginBottom: '16px',
-              overflowX: 'auto',
-              WebkitOverflowScrolling: 'touch',
-              paddingBottom: '4px',
+          <PillTabs
+            tabs={matchTypePills}
+            value={matchSubTab}
+            onChange={(id) => {
+              setMatchSubTab(id);
+              setMatchStatusFilter('all');
             }}
-          >
-            {[
-              { id: '2v2', label: '2v2-kampe' },
-              { id: 'americano', label: 'Americano' },
-              { id: 'liga', label: '🏆 Liga' },
-            ].map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => {
-                  setMatchSubTab(t.id);
-                  setMatchStatusFilter('all');
-                }}
-                style={{
-                  ...btn(matchSubTab === t.id),
-                  padding: '7px 14px',
-                  fontSize: '13px',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+            ariaLabel="Kamp-type"
+            size="sm"
+            className="pm-admin-filter-tabs"
+            style={{ marginBottom: '10px' }}
+          />
 
-          <div
-            style={{
-              display: 'flex',
-              gap: '6px',
-              flexWrap: 'wrap',
-              marginBottom: '16px',
-              alignItems: 'center',
-            }}
-          >
-            {ADMIN_MATCH_STATUS_FILTERS.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setMatchStatusFilter(f.id)}
-                style={{
-                  ...btn(matchStatusFilter === f.id),
-                  padding: '5px 10px',
-                  fontSize: '12px',
-                }}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+          <PillTabs
+            tabs={matchStatusPills}
+            value={matchStatusFilter}
+            onChange={setMatchStatusFilter}
+            ariaLabel="Kamp-status"
+            size="sm"
+            className="pm-admin-filter-tabs"
+          />
 
           {/* ── Americano ── */}
           {matchSubTab === 'americano' && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "4px", textTransform: "uppercase" }}>Americano-turneringer</h3>
-              {americanoTournaments.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen turneringer fundet.</div>}
+            <div className="pm-admin-list">
+              <h3 className="pm-admin-section-title">Americano-turneringer</h3>
+              {americanoTournaments.length === 0 && <div className="pm-admin-empty">Ingen turneringer fundet.</div>}
               {americanoTournaments.length > 0 && filteredAmericano.length === 0 && (
-                <div style={{ color: theme.textLight, fontSize: '13px' }}>Ingen turneringer i denne kategori.</div>
+                <div className="pm-admin-empty">Ingen turneringer i denne kategori.</div>
               )}
               {filteredAmericano.map(t => {
                 const statusLabel = t.status === 'completed' ? 'Afsluttet' : t.status === 'playing' || t.status === 'active' ? 'I gang' : 'Åben';
                 const statusColor = t.status === 'completed' ? theme.accent : t.status === 'playing' || t.status === 'active' ? theme.green : theme.textMid;
                 const canEditResults = t.status === 'completed';
                 return (
-                  <div key={t.id} style={{ background: theme.surface, padding: "14px 16px", borderRadius: "12px", border: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "14px", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "2px" }}>
-                        {t.tournament_date || formatEloHistoryDate(t.created_at)}
-                        <span style={{ marginLeft: "8px", fontWeight: 700, color: statusColor, background: statusColor + '15', padding: "1px 6px", borderRadius: "4px", textTransform: "uppercase", fontSize: "10px" }}>{statusLabel}</span>
+                  <div key={t.id} className="pm-ui-card pm-admin-row-card">
+                    <div className="pm-admin-row-card-body">
+                      <div className="pm-admin-row-card-title">{t.name}</div>
+                      <div className="pm-admin-row-card-meta">
+                        <span>{t.tournament_date || formatEloHistoryDate(t.created_at)}</span>
+                        <span className="pm-admin-status-pill" style={{ color: statusColor, background: `${statusColor}15` }}>{statusLabel}</span>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    <div className="pm-admin-row-actions">
                       {canEditResults ? (
                         <button
                           type="button"
                           onClick={() => setEditAmericanoTarget(t)}
-                          style={{
-                            color: theme.accent,
-                            background: theme.accentBg,
-                            border: 'none',
-                            borderRadius: '8px',
-                            padding: '8px 10px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            fontSize: 12,
-                            fontWeight: 700,
-                          }}
+                          className="pm-admin-action-btn pm-admin-action-btn--edit"
                           title="Ret resultater og genberegn Americano-ELO"
                         >
                           <Edit2 size={16} />
                           Ret resultater
                         </button>
                       ) : null}
-                      <button type="button" onClick={() => deleteAmericano(t.id, t.name)}
-                        style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer" }}
-                        title="Slet turnering">
+                      <button
+                        type="button"
+                        onClick={() => deleteAmericano(t.id, t.name)}
+                        className="pm-admin-action-btn pm-admin-action-btn--delete"
+                        title="Slet turnering"
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -1378,54 +1302,45 @@ export function AdminTab({ initialSubTab = null }) {
 
           {/* ── Liga ── */}
           {matchSubTab === 'liga' && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "4px", textTransform: "uppercase" }}>Ligaer</h3>
-              {ligaLeagues.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen ligaer fundet.</div>}
+            <div className="pm-admin-list">
+              <h3 className="pm-admin-section-title">Ligaer</h3>
+              {ligaLeagues.length === 0 && <div className="pm-admin-empty">Ingen ligaer fundet.</div>}
               {ligaLeagues.length > 0 && filteredLiga.length === 0 && (
-                <div style={{ color: theme.textLight, fontSize: '13px' }}>Ingen ligaer i denne kategori.</div>
+                <div className="pm-admin-empty">Ingen ligaer i denne kategori.</div>
               )}
               {filteredLiga.map(l => {
                 const statusLabel = l.status === 'completed' ? 'Afsluttet' : l.status === 'active' ? 'I gang' : 'Åben';
                 const statusColor = l.status === 'completed' ? theme.textMid : l.status === 'active' ? theme.green : theme.warm;
                 const canEditLigaResults = l.status === 'active' || l.status === 'completed';
                 return (
-                  <div key={l.id} style={{ background: theme.surface, padding: "14px 16px", borderRadius: "12px", border: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "14px", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "2px", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-                        <span style={{ fontWeight: 700, color: statusColor, background: statusColor + '18', padding: "1px 6px", borderRadius: "4px", textTransform: "uppercase", fontSize: "10px" }}>{statusLabel}</span>
+                  <div key={l.id} className="pm-ui-card pm-admin-row-card">
+                    <div className="pm-admin-row-card-body">
+                      <div className="pm-admin-row-card-title">{l.name}</div>
+                      <div className="pm-admin-row-card-meta">
+                        <span className="pm-admin-status-pill" style={{ color: statusColor, background: `${statusColor}18` }}>{statusLabel}</span>
                         <span>{l.team_count} hold</span>
                         {l.status === 'active' && <span>Runde {l.current_round}{l.total_rounds ? `/${l.total_rounds}` : ''}</span>}
                         <span>{formatEloHistoryDate(l.start_date)} – {formatEloHistoryDate(l.end_date)}</span>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    <div className="pm-admin-row-actions">
                       {canEditLigaResults ? (
                         <button
                           type="button"
                           onClick={() => setEditLigaTarget(l)}
-                          style={{
-                            color: theme.accent,
-                            background: theme.accentBg,
-                            border: 'none',
-                            borderRadius: '8px',
-                            padding: '8px 10px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            fontSize: 12,
-                            fontWeight: 700,
-                          }}
+                          className="pm-admin-action-btn pm-admin-action-btn--edit"
                           title="Ret rapporterede kampresultater"
                         >
                           <Edit2 size={16} />
                           Ret resultater
                         </button>
                       ) : null}
-                      <button type="button" onClick={() => deleteLiga(l.id, l.name)}
-                        style={{ color: theme.red, background: theme.redBg, border: "none", borderRadius: "8px", padding: "8px", cursor: "pointer" }}
-                        title="Slet liga">
+                      <button
+                        type="button"
+                        onClick={() => deleteLiga(l.id, l.name)}
+                        className="pm-admin-action-btn pm-admin-action-btn--delete"
+                        title="Slet liga"
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -1437,121 +1352,100 @@ export function AdminTab({ initialSubTab = null }) {
 
           {/* ── 2v2 kampe ── */}
           {matchSubTab === '2v2' && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, marginBottom: "8px", textTransform: "uppercase" }}>Admin: Detaljeret Kamp-overblik</h3>
-          {matches.length === 0 && <div style={{ color: theme.textLight, fontSize: "13px" }}>Ingen kampe fundet.</div>}
-          {matches.length > 0 && filteredMatches.length === 0 && (
-            <div style={{ color: theme.textLight, fontSize: '13px' }}>Ingen kampe i denne kategori.</div>
-          )}
-          {filteredMatches.map(m => {
-            const t1 = (m.match_players || []).filter(p => p.team === 1);
-            const t2 = (m.match_players || []).filter(p => p.team === 2);
-            const status = m.status;
-            const statusColor = status === 'completed' ? theme.accent : status === 'in_progress' ? theme.warm : theme.textMid;
-            const statusLabel = status === 'completed' ? 'Afsluttet' : status === 'in_progress' ? 'I gang' : status === 'full' ? 'Fuld' : 'Åben';
-            const confirmedResult = (m.match_results || []).find((r) => r.confirmed) || null;
-            const canEditResult = status === 'completed' && confirmedResult;
+            <div className="pm-admin-list">
+              <h3 className="pm-admin-section-title">Admin: Detaljeret Kamp-overblik</h3>
+              {matches.length === 0 && <div className="pm-admin-empty">Ingen kampe fundet.</div>}
+              {matches.length > 0 && filteredMatches.length === 0 && (
+                <div className="pm-admin-empty">Ingen kampe i denne kategori.</div>
+              )}
+              {filteredMatches.map((m) => {
+                const t1 = (m.match_players || []).filter((p) => p.team === 1);
+                const t2 = (m.match_players || []).filter((p) => p.team === 2);
+                const status = m.status;
+                const statusColor = status === 'completed' ? theme.accent : status === 'in_progress' ? theme.warm : theme.textMid;
+                const statusLabel = status === 'completed' ? 'Afsluttet' : status === 'in_progress' ? 'I gang' : status === 'full' ? 'Fuld' : 'Åben';
+                const confirmedResult = (m.match_results || []).find((r) => r.confirmed) || null;
+                const canEditResult = status === 'completed' && confirmedResult;
 
-            return (
-              <div key={m.id} style={{ background: theme.surface, padding: "16px", borderRadius: "12px", border: "1px solid " + theme.border, boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
-                  <div>
-                    <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "8px", lineHeight: "1.4" }}>
-                       <div style={{ color: theme.text }}>Oprettet: {formatEloHistoryDate(m.created_at)}</div>
-                       {m.completed_at ? (
-                         <div style={{ marginTop: "2px", color: theme.accent }}>Spillet: {formatEloHistoryDate(m.completed_at)} • {m.court_name || "Ukendt bane"}</div>
-                       ) : (
-                         <div style={{ marginTop: "2px" }}>{m.court_name || "Ukendt bane"}</div>
-                       )}
+                return (
+                  <div key={m.id} className="pm-ui-card pm-admin-match-card">
+                    <div className="pm-admin-match-card-head">
+                      <div>
+                        <div className="pm-admin-match-dates">
+                          <div>
+                            <strong>Oprettet:</strong> {formatEloHistoryDate(m.created_at)}
+                          </div>
+                          {m.completed_at ? (
+                            <div className="pm-admin-match-played">
+                              Spillet: {formatEloHistoryDate(m.completed_at)} • {m.court_name || 'Ukendt bane'}
+                            </div>
+                          ) : (
+                            <div style={{ marginTop: '2px' }}>{m.court_name || 'Ukendt bane'}</div>
+                          )}
+                        </div>
+                        <div className="pm-admin-match-score-row">
+                          <span className="pm-admin-status-pill" style={{ color: statusColor, background: `${statusColor}15` }}>
+                            {statusLabel}
+                          </span>
+                          <div className="pm-admin-match-score">
+                            {m.match_results?.[0]?.score_display || 'Ingen score'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="pm-admin-row-actions">
+                        {canEditResult ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditMatchTarget({
+                                match: m,
+                                matchResult: confirmedResult,
+                                players: m.match_players || [],
+                              })
+                            }
+                            className="pm-admin-action-btn pm-admin-action-btn--edit"
+                            title="Ret resultat og genberegn ELO"
+                          >
+                            <Edit2 size={16} />
+                            Ret resultat
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => deleteMatch(m.id)}
+                          className="pm-admin-action-btn pm-admin-action-btn--delete"
+                          title="Slet kamp"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 800, padding: "3px 8px", borderRadius: "5px", background: statusColor + "15", color: statusColor, textTransform: "uppercase" }}>
-                        {statusLabel}
-                      </span>
-                      <div style={{ fontSize: "16px", fontWeight: 800, color: theme.text }}>
-                        {m.match_results?.[0]?.score_display || "Ingen score"}
+
+                    <div className={`pm-admin-match-teams ${isMobile ? 'pm-admin-match-teams--stack' : ''}`}>
+                      <div className={`pm-admin-match-team ${isMobile ? 'pm-admin-match-team--center' : 'pm-admin-match-team--right'}`}>
+                        {t1.length > 0 ? (
+                          t1.map((p) => (
+                            <div key={p.user_id}>{p.profiles?.full_name || 'Ukendt'}</div>
+                          ))
+                        ) : (
+                          <div className="pm-admin-match-empty-team">Ingen spillere</div>
+                        )}
+                      </div>
+                      <div className="pm-admin-match-vs">VS</div>
+                      <div className={`pm-admin-match-team ${isMobile ? 'pm-admin-match-team--center' : 'pm-admin-match-team--left'}`}>
+                        {t2.length > 0 ? (
+                          t2.map((p) => (
+                            <div key={p.user_id}>{p.profiles?.full_name || 'Ukendt'}</div>
+                          ))
+                        ) : (
+                          <div className="pm-admin-match-empty-team">Ingen spillere</div>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                    {canEditResult ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditMatchTarget({
-                            match: m,
-                            matchResult: confirmedResult,
-                            players: m.match_players || [],
-                          })
-                        }
-                        style={{
-                          color: theme.accent,
-                          background: theme.accentBg,
-                          border: 'none',
-                          borderRadius: '10px',
-                          padding: '10px 12px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          fontSize: 12,
-                          fontWeight: 700,
-                        }}
-                        title="Ret resultat og genberegn ELO"
-                      >
-                        <Edit2 size={16} />
-                        Ret resultat
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => deleteMatch(m.id)}
-                      style={{ color: theme.red, background: theme.redBg, border: 'none', borderRadius: '10px', padding: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}
-                      title="Slet kamp"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ 
-                  display: "flex", 
-                  flexDirection: isMobile ? "column" : "row",
-                  alignItems: isMobile ? "stretch" : "center", 
-                  gap: isMobile ? "8px" : "12px", 
-                  background: theme.surfaceAlt, 
-                  padding: "12px", 
-                  borderRadius: "10px",
-                  border: "1px solid " + theme.border + "40"
-                }}>
-                  <div style={{ flex: 1, textAlign: isMobile ? "center" : "right" }}>
-                    {t1.length > 0 ? t1.map(p => (
-                      <div key={p.user_id} style={{ fontSize: "13px", fontWeight: 600, color: theme.text }}>{p.profiles?.full_name || "Ukendt"}</div>
-                    )) : <div style={{ fontSize: "12px", color: theme.textLight, fontStyle: "italic" }}>Ingen spillere</div>}
-                  </div>
-                  
-                  <div style={{ 
-                    fontSize: "10px", 
-                    fontWeight: 900, 
-                    color: theme.textLight, 
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center",
-                    padding: isMobile ? "4px 0" : "0",
-                    background: isMobile ? theme.border + "30" : "transparent",
-                    borderRadius: "4px"
-                  }}>VS</div>
-                  
-                  <div style={{ flex: 1, textAlign: isMobile ? "center" : "left" }}>
-                    {t2.length > 0 ? t2.map(p => (
-                      <div key={p.user_id} style={{ fontSize: "13px", fontWeight: 600, color: theme.text }}>{p.profiles?.full_name || "Ukendt"}</div>
-                    )) : <div style={{ fontSize: "12px", color: theme.textLight, fontStyle: "italic" }}>Ingen spillere</div>}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
           )}
           {editMatchTarget ? (
             <AdminMatchResultEditor
@@ -1589,31 +1483,23 @@ export function AdminTab({ initialSubTab = null }) {
           ) : null}
         </div>
       ) : activeSubTab === 'reports' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 800, color: theme.accent, textTransform: 'uppercase' }}>
-              Spilleranmeldelser
-            </h3>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {[
-                { id: 'open', label: 'Åbne' },
-                { id: 'reviewed', label: 'Gennemgået' },
-                { id: 'dismissed', label: 'Afvist' },
-                { id: 'all', label: 'Alle' },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setReportStatusFilter(f.id)}
-                  style={{ ...btn(reportStatusFilter === f.id), padding: '5px 10px', fontSize: '12px' }}
-                >
-                  {f.label}
-                </button>
-              ))}
+        <div className="pm-admin-list">
+          <div className="pm-admin-toolbar">
+            <h3 className="pm-admin-section-title">Spilleranmeldelser</h3>
+            <div className="pm-admin-toolbar-actions">
+              <PillTabs
+                tabs={reportStatusPills}
+                value={reportStatusFilter}
+                onChange={setReportStatusFilter}
+                ariaLabel="Anmeldelsesstatus"
+                size="sm"
+                className="pm-admin-filter-tabs"
+              />
               <button
                 type="button"
                 onClick={() => { void fetchUserReports(); }}
-                style={{ ...btn(false), padding: '5px 10px', fontSize: '12px' }}
+                className="pm-admin-refresh-btn"
+                style={btn(false)}
                 disabled={reportsLoading}
               >
                 <RefreshCw size={13} style={{ marginRight: 4, opacity: reportsLoading ? 0.6 : 1 }} />
@@ -1622,17 +1508,13 @@ export function AdminTab({ initialSubTab = null }) {
             </div>
           </div>
 
-          {reportsError && (
-            <div style={{ fontSize: 13, color: theme.red }}>{reportsError}</div>
-          )}
+          {reportsError ? <div className="pm-admin-error-msg">{reportsError}</div> : null}
           {reportsLoading ? (
-            <div style={{ padding: 24, textAlign: 'center', color: theme.textMid }}>Indlæser anmeldelser…</div>
+            <div className="pm-admin-loading">Indlæser anmeldelser…</div>
           ) : userReports.length === 0 ? (
-            <div className="pm-ui-card" style={{ padding: 16, color: theme.textMid, fontSize: 13 }}>
-              Ingen anmeldelser i denne visning.
-            </div>
+            <div className="pm-ui-card pm-admin-empty">Ingen anmeldelser i denne visning.</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="pm-admin-list">
               {userReports.map((report) => {
                 const reporterName = adminDisplayName(report.reporter);
                 const reportedName = adminDisplayName(report.reported);
@@ -1643,29 +1525,14 @@ export function AdminTab({ initialSubTab = null }) {
                       ? { text: theme.green, bg: theme.greenBg }
                       : { text: theme.textMid, bg: theme.surfaceAlt };
                 return (
-                  <div
-                    key={report.id}
-                    style={{
-                      background: theme.surface,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: 12,
-                      padding: 14,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>
+                  <div key={report.id} className="pm-ui-card pm-admin-report-card">
+                    <div className="pm-admin-report-head">
+                      <div className="pm-admin-report-title">
                         {reporterName} → {reportedName}
                       </div>
                       <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: 999,
-                          color: statusColors.text,
-                          background: statusColors.bg,
-                          textTransform: 'uppercase',
-                        }}
+                        className="pm-admin-status-pill"
+                        style={{ color: statusColors.text, background: statusColors.bg, borderRadius: 999 }}
                       >
                         {report.status === 'open'
                           ? 'Åben'
@@ -1674,30 +1541,19 @@ export function AdminTab({ initialSubTab = null }) {
                             : 'Afvist'}
                       </span>
                     </div>
-                    <div style={{ fontSize: 12, color: theme.textMid, marginBottom: 6 }}>
+                    <div className="pm-admin-report-meta">
                       {formatDateTimeDa(report.created_at)} · {reportReasonLabel(report.reason)} ·{' '}
                       {report.context || 'dm'}
                     </div>
-                    {report.details ? (
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: theme.text,
-                          lineHeight: 1.45,
-                          marginBottom: 10,
-                          whiteSpace: 'pre-wrap',
-                        }}
-                      >
-                        {report.details}
-                      </div>
-                    ) : null}
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {report.details ? <div className="pm-admin-report-body">{report.details}</div> : null}
+                    <div className="pm-admin-report-actions">
                       {report.status !== 'reviewed' && (
                         <button
                           type="button"
                           disabled={reportBusyId === report.id}
                           onClick={() => { void updateUserReportStatus(report, 'reviewed'); }}
-                          style={{ ...btn(true), padding: '6px 12px', fontSize: 12 }}
+                          className="pm-admin-action-chip"
+                          style={btn(true)}
                         >
                           <CheckCircle2 size={13} style={{ marginRight: 4 }} />
                           Marker gennemgået
@@ -1708,7 +1564,8 @@ export function AdminTab({ initialSubTab = null }) {
                           type="button"
                           disabled={reportBusyId === report.id}
                           onClick={() => { void updateUserReportStatus(report, 'dismissed'); }}
-                          style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                          className="pm-admin-action-chip"
+                          style={btn(false)}
                         >
                           Afvis
                         </button>
@@ -1718,7 +1575,8 @@ export function AdminTab({ initialSubTab = null }) {
                           type="button"
                           disabled={reportBusyId === report.id}
                           onClick={() => { void updateUserReportStatus(report, 'open'); }}
-                          style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                          className="pm-admin-action-chip"
+                          style={btn(false)}
                         >
                           Genåbn
                         </button>
@@ -1727,7 +1585,8 @@ export function AdminTab({ initialSubTab = null }) {
                         <button
                           type="button"
                           onClick={() => setDmViewerReport(report)}
-                          style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                          className="pm-admin-action-chip"
+                          style={btn(false)}
                         >
                           <MessageCircle size={13} style={{ marginRight: 4 }} />
                           Vis DM-samtale
@@ -1744,7 +1603,8 @@ export function AdminTab({ initialSubTab = null }) {
                           if (data) setEditingUser(data);
                           else await ask({ message: 'Kunne ikke hente profilen', notice: true });
                         }}
-                        style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                        className="pm-admin-action-chip"
+                        style={btn(false)}
                       >
                         Åbn anmeldt profil
                       </button>
@@ -1756,31 +1616,23 @@ export function AdminTab({ initialSubTab = null }) {
           )}
         </div>
       ) : activeSubTab === 'result_errors' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 800, color: theme.accent, textTransform: 'uppercase' }}>
-              Fejl i resultater
-            </h3>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {[
-                { id: 'open', label: 'Åbne' },
-                { id: 'resolved', label: 'Løst' },
-                { id: 'dismissed', label: 'Afvist' },
-                { id: 'all', label: 'Alle' },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setResultErrorStatusFilter(f.id)}
-                  style={{ ...btn(resultErrorStatusFilter === f.id), padding: '5px 10px', fontSize: '12px' }}
-                >
-                  {f.label}
-                </button>
-              ))}
+        <div className="pm-admin-list">
+          <div className="pm-admin-toolbar">
+            <h3 className="pm-admin-section-title">Fejl i resultater</h3>
+            <div className="pm-admin-toolbar-actions">
+              <PillTabs
+                tabs={resultErrorStatusPills}
+                value={resultErrorStatusFilter}
+                onChange={setResultErrorStatusFilter}
+                ariaLabel="Fejlindberetningsstatus"
+                size="sm"
+                className="pm-admin-filter-tabs"
+              />
               <button
                 type="button"
                 onClick={() => { void fetchResultErrorReports(); }}
-                style={{ ...btn(false), padding: '5px 10px', fontSize: '12px' }}
+                className="pm-admin-refresh-btn"
+                style={btn(false)}
                 disabled={resultErrorsLoading}
               >
                 <RefreshCw size={13} style={{ marginRight: 4, opacity: resultErrorsLoading ? 0.6 : 1 }} />
@@ -1788,20 +1640,16 @@ export function AdminTab({ initialSubTab = null }) {
               </button>
             </div>
           </div>
-          <p style={{ fontSize: 12, color: theme.textMid, margin: 0, lineHeight: 1.45 }}>
+          <p className="pm-admin-help-copy">
             Oprettere kan indberette fejl inden 24 timer efter afslutning. Gå til Kampe for at rette data.
           </p>
-          {resultErrorsError ? (
-            <div style={{ fontSize: 13, color: theme.red }}>{resultErrorsError}</div>
-          ) : null}
+          {resultErrorsError ? <div className="pm-admin-error-msg">{resultErrorsError}</div> : null}
           {resultErrorsLoading ? (
-            <div style={{ padding: 24, textAlign: 'center', color: theme.textMid }}>Indlæser fejlindberetninger…</div>
+            <div className="pm-admin-loading">Indlæser fejlindberetninger…</div>
           ) : resultErrorReports.length === 0 ? (
-            <div className="pm-ui-card" style={{ padding: 16, color: theme.textMid, fontSize: 13 }}>
-              Ingen fejlindberetninger i denne visning.
-            </div>
+            <div className="pm-ui-card pm-admin-empty">Ingen fejlindberetninger i denne visning.</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="pm-admin-list">
               {resultErrorReports.map((report) => {
                 const reporterName = adminDisplayName(report.reporter);
                 const statusColors =
@@ -1811,29 +1659,14 @@ export function AdminTab({ initialSubTab = null }) {
                       ? { text: theme.green, bg: theme.greenBg }
                       : { text: theme.textMid, bg: theme.surfaceAlt };
                 return (
-                  <div
-                    key={report.id}
-                    style={{
-                      background: theme.surface,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: 12,
-                      padding: 14,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>
+                  <div key={report.id} className="pm-ui-card pm-admin-report-card">
+                    <div className="pm-admin-report-head">
+                      <div className="pm-admin-report-title">
                         {reporterName} · {resultErrorSourceLabel(report.source_type)}
                       </div>
                       <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: 999,
-                          color: statusColors.text,
-                          background: statusColors.bg,
-                          textTransform: 'uppercase',
-                        }}
+                        className="pm-admin-status-pill"
+                        style={{ color: statusColors.text, background: statusColors.bg, borderRadius: 999 }}
                       >
                         {report.status === 'open'
                           ? 'Åben'
@@ -1842,35 +1675,22 @@ export function AdminTab({ initialSubTab = null }) {
                             : 'Afvist'}
                       </span>
                     </div>
-                    <div style={{ fontSize: 12, color: theme.textMid, marginBottom: 6 }}>
+                    <div className="pm-admin-report-meta">
                       {formatDateTimeDa(report.created_at)} · {resultErrorReasonLabel(report.reason)}
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: theme.text, marginBottom: 6 }}>
-                      {report.entityLabel}
-                    </div>
-                    {report.details ? (
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: theme.text,
-                          lineHeight: 1.45,
-                          marginBottom: 10,
-                          whiteSpace: 'pre-wrap',
-                        }}
-                      >
-                        {report.details}
-                      </div>
-                    ) : null}
-                    <div style={{ fontSize: 11, color: theme.textLight, marginBottom: 10 }}>
+                    <div className="pm-admin-report-entity">{report.entityLabel}</div>
+                    {report.details ? <div className="pm-admin-report-body">{report.details}</div> : null}
+                    <div className="pm-admin-report-foot">
                       Afsluttet: {formatDateTimeDa(report.entity_completed_at)} · ID: {report.entity_id}
                     </div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <div className="pm-admin-report-actions">
                       {report.status !== 'resolved' ? (
                         <button
                           type="button"
                           disabled={resultErrorBusyId === report.id}
                           onClick={() => updateResultErrorReportStatus(report, 'resolved')}
-                          style={{ ...btn(true), padding: '6px 12px', fontSize: 12 }}
+                          className="pm-admin-action-chip"
+                          style={btn(true)}
                         >
                           <CheckCircle2 size={13} style={{ marginRight: 4 }} />
                           Marker løst
@@ -1881,7 +1701,8 @@ export function AdminTab({ initialSubTab = null }) {
                           type="button"
                           disabled={resultErrorBusyId === report.id}
                           onClick={() => updateResultErrorReportStatus(report, 'dismissed')}
-                          style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                          className="pm-admin-action-chip"
+                          style={btn(false)}
                         >
                           Afvis
                         </button>
@@ -1891,7 +1712,8 @@ export function AdminTab({ initialSubTab = null }) {
                           type="button"
                           disabled={resultErrorBusyId === report.id}
                           onClick={() => updateResultErrorReportStatus(report, 'open')}
-                          style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                          className="pm-admin-action-chip"
+                          style={btn(false)}
                         >
                           Genåbn
                         </button>
@@ -1904,7 +1726,8 @@ export function AdminTab({ initialSubTab = null }) {
                           else if (report.source_type === 'americano') setMatchSubTab('americano');
                           else setMatchSubTab('liga');
                         }}
-                        style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}
+                        className="pm-admin-action-chip"
+                        style={btn(false)}
                       >
                         Gå til Kampe
                       </button>
@@ -1916,22 +1739,22 @@ export function AdminTab({ initialSubTab = null }) {
           )}
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <h3 style={{ fontSize: "14px", fontWeight: 800, color: theme.accent, textTransform: "uppercase" }}>
-              Admin-konsol
-            </h3>
+        <div className="pm-admin-console-stack">
+          <div className="pm-admin-toolbar">
+            <h3 className="pm-admin-section-title">Admin-konsol</h3>
             <button
+              type="button"
               onClick={() => { void fetchAdminConsole(); }}
-              style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}
+              className="pm-admin-refresh-btn"
+              style={btn(false)}
               disabled={consoleLoading}
             >
-              <RefreshCw size={13} style={{ marginRight: "6px", opacity: consoleLoading ? 0.6 : 1 }} />
+              <RefreshCw size={13} style={{ marginRight: '6px', opacity: consoleLoading ? 0.6 : 1 }} />
               Opdater
             </button>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5, 1fr)", gap: "10px" }}>
+          <div className="pm-admin-stat-grid">
             {[
               { key: 'openFlags', label: 'Åbne flags', value: consoleStats.openFlags, color: theme.red },
               { key: 'highFlags', label: 'Høje flags', value: consoleStats.highFlags, color: theme.warm },
@@ -1939,53 +1762,49 @@ export function AdminTab({ initialSubTab = null }) {
               { key: 'inProgressMatches', label: 'Kampe i gang', value: consoleStats.inProgressMatches, color: theme.text },
               { key: 'bannedPlayers', label: 'Bannede spillere', value: consoleStats.bannedPlayers, color: theme.textMid },
             ].map((card) => (
-              <div
-                key={card.key}
-                style={{
-                  background: theme.surface,
-                  border: "1px solid " + theme.border,
-                  borderRadius: "12px",
-                  padding: "12px",
-                }}
-              >
-                <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>
-                  {card.label}
-                </div>
-                <div style={{ fontSize: "24px", fontWeight: 900, color: card.color, marginTop: "6px" }}>
+              <div key={card.key} className="pm-ui-card pm-admin-stat-card">
+                <div className="pm-admin-stat-label">{card.label}</div>
+                <div className="pm-admin-stat-value" style={{ color: card.color }}>
                   {card.value}
                 </div>
               </div>
             ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr 1fr", gap: "10px" }}>
-            <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
-              <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>Spillere</div>
-              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.totalPlayers} total, {consoleStats.bannedPlayers} bannet</div>
+          <div className="pm-admin-info-grid">
+            <div className="pm-ui-card pm-admin-info-card">
+              <div className="pm-admin-info-label">Spillere</div>
+              <div className="pm-admin-info-value">
+                {consoleStats.totalPlayers} total, {consoleStats.bannedPlayers} bannet
+              </div>
             </div>
-            <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
-              <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>2v2 matcher</div>
-              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.openMatches} åbne, {consoleStats.inProgressMatches} i gang, {consoleStats.completedMatches24h} afsluttet (24t)</div>
+            <div className="pm-ui-card pm-admin-info-card">
+              <div className="pm-admin-info-label">2v2 matcher</div>
+              <div className="pm-admin-info-value">
+                {consoleStats.openMatches} åbne, {consoleStats.inProgressMatches} i gang, {consoleStats.completedMatches24h} afsluttet (24t)
+              </div>
             </div>
-            <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
-              <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>Americano</div>
-              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.americanoOpen} åbne, {consoleStats.americanoActive} aktive, {consoleStats.americanoCompleted7d} afsluttet (7 dage)</div>
+            <div className="pm-ui-card pm-admin-info-card">
+              <div className="pm-admin-info-label">Americano</div>
+              <div className="pm-admin-info-value">
+                {consoleStats.americanoOpen} åbne, {consoleStats.americanoActive} aktive, {consoleStats.americanoCompleted7d} afsluttet (7 dage)
+              </div>
             </div>
-            <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "10px", padding: "10px 12px" }}>
-              <div style={{ fontSize: "11px", color: theme.textMid, textTransform: "uppercase", fontWeight: 700 }}>Resultater</div>
-              <div style={{ fontSize: "13px", color: theme.text, marginTop: "4px" }}>{consoleStats.pendingResults} venter på bekræftelse</div>
+            <div className="pm-ui-card pm-admin-info-card">
+              <div className="pm-admin-info-label">Resultater</div>
+              <div className="pm-admin-info-value">{consoleStats.pendingResults} venter på bekræftelse</div>
             </div>
           </div>
 
-          <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "12px", padding: "14px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "10px", flexWrap: "wrap" }}>
-              <div style={{ fontSize: "13px", fontWeight: 800, color: theme.text }}>ELO-/Americano-flags</div>
-              <div style={{ fontSize: "11px", color: theme.textMid }}>
+          <div className="pm-ui-card pm-admin-console-panel">
+            <div className="pm-admin-console-panel-head">
+              <div className="pm-admin-console-panel-title">ELO-/Americano-flags</div>
+              <div className="pm-admin-console-panel-meta">
                 {consoleLoading ? 'Indlæser...' : `${filteredFlags.length} vist / ${ratingFlags.length} i alt`}
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr 1fr", gap: "8px", marginBottom: "10px" }}>
+            <div className="pm-admin-flag-filters">
               <input
                 type="text"
                 placeholder="Søg i årsag, data, kamp-id..."
@@ -2012,174 +1831,170 @@ export function AdminTab({ initialSubTab = null }) {
               </select>
             </div>
 
-            {consoleError && (
-              <div style={{ marginBottom: "10px", background: theme.redBg, color: theme.red, border: "1px solid " + theme.red + "44", borderRadius: "8px", padding: "10px 12px", fontSize: "12px" }}>
-                {consoleError}
-              </div>
-            )}
+            {consoleError ? <div className="pm-admin-alert-box">{consoleError}</div> : null}
 
-            {!consoleError && filteredFlags.length === 0 && (
-              <div style={{ color: theme.textMid, fontSize: "13px", padding: "8px 2px" }}>
-                Ingen flags med nuværende filter.
-              </div>
-            )}
+            {!consoleError && filteredFlags.length === 0 ? (
+              <div className="pm-admin-empty">Ingen flags med nuværende filter.</div>
+            ) : null}
 
-            {!consoleError && filteredFlags.map((flag) => {
-              const explanation = explainRatingAdminFlag(flag);
-              const statusBadge = flagStatusBadgeColor(flag.status);
-              const severityBadge = flagSeverityBadgeColor(flag.severity);
-              const expanded = !!expandedFlags[flag.id];
-              const hasReviewMeta = flag.reviewed_at || flag.reviewed_by || flag.review_note;
-              return (
-                <div key={flag.id} style={{ border: "1px solid " + theme.border, borderRadius: "10px", marginBottom: "10px", overflow: "hidden" }}>
-                  <div style={{ padding: "10px 12px", background: theme.surfaceAlt, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1.2fr 1fr", gap: "8px", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text }}>{explanation.title || 'Ukendt årsag'}</div>
-                      <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "3px" }}>
-                        {explanation.description}
-                      </div>
-                      <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "2px" }}>
-                        {formatDateTimeDa(flag.created_at)} · {String(flag.source || '').toUpperCase()}
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 700, borderRadius: "999px", padding: "3px 8px", color: statusBadge.text, background: statusBadge.bg, textTransform: "uppercase" }}>
-                        {statusLabelDa(flag.status)}
-                      </span>
-                      <span style={{ fontSize: "10px", fontWeight: 700, borderRadius: "999px", padding: "3px 8px", color: severityBadge.text, background: severityBadge.bg, textTransform: "uppercase" }}>
-                        {severityLabelDa(flag.severity)}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: isMobile ? "flex-start" : "flex-end", gap: "6px", flexWrap: "wrap" }}>
-                      <button
-                        type="button"
-                        onClick={() => setExpandedFlags((prev) => ({ ...prev, [flag.id]: !prev[flag.id] }))}
-                        style={{ ...btn(false), padding: "5px 10px", fontSize: "11px" }}
-                      >
-                        {expanded ? 'Skjul' : 'Detaljer'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { void updateFlag(flag, 'reviewed'); }}
-                        disabled={flagBusyId === flag.id}
-                        style={{ ...btn(flag.status === 'reviewed'), padding: "5px 10px", fontSize: "11px" }}
-                      >
-                        <CheckCircle2 size={12} style={{ marginRight: "4px" }} />
-                        Gennemgået
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { void updateFlag(flag, 'closed'); }}
-                        disabled={flagBusyId === flag.id}
-                        style={{ ...btn(flag.status === 'closed'), padding: "5px 10px", fontSize: "11px" }}
-                      >
-                        Luk
-                      </button>
-                    </div>
-                  </div>
-
-                  {expanded && (
-                    <div style={{ padding: "10px 12px", borderTop: "1px solid " + theme.border, background: theme.surface }}>
-                      <div style={{ marginBottom: "12px", background: theme.accentBg, border: "1px solid " + theme.accent + "33", borderRadius: "8px", padding: "10px" }}>
-                        <div style={{ fontSize: "11px", fontWeight: 800, color: theme.accent, marginBottom: "5px", textTransform: "uppercase" }}>
-                          Forslag til handling
-                        </div>
-                        <div style={{ fontSize: "12px", color: theme.text, lineHeight: 1.45 }}>
-                          {explanation.suggestion}
+            {!consoleError &&
+              filteredFlags.map((flag) => {
+                const explanation = explainRatingAdminFlag(flag);
+                const statusBadge = flagStatusBadgeColor(flag.status);
+                const severityBadge = flagSeverityBadgeColor(flag.severity);
+                const expanded = !!expandedFlags[flag.id];
+                const hasReviewMeta = flag.reviewed_at || flag.reviewed_by || flag.review_note;
+                return (
+                  <div key={flag.id} className="pm-admin-flag-card">
+                    <div className="pm-admin-flag-card-head">
+                      <div>
+                        <div className="pm-admin-flag-title">{explanation.title || 'Ukendt årsag'}</div>
+                        <div className="pm-admin-flag-desc">{explanation.description}</div>
+                        <div className="pm-admin-flag-desc">
+                          {formatDateTimeDa(flag.created_at)} · {String(flag.source || '').toUpperCase()}
                         </div>
                       </div>
-
-                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
-                        <div style={{ fontSize: "12px", color: theme.textMid }}>
-                          <div><strong style={{ color: theme.text }}>Kamp:</strong> {flag.match_id || '-'}</div>
-                          <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Turnering:</strong> {flag.tournament_id || '-'}</div>
-                          <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Teknisk kode:</strong> {explanation.technicalReason || '-'}</div>
-                        </div>
-                        <div style={{ fontSize: "12px", color: theme.textMid }}>
-                          <div><strong style={{ color: theme.text }}>Gennemgået af:</strong> {reviewerMap[flag.reviewed_by] || '-'}</div>
-                          <div style={{ marginTop: "4px" }}><strong style={{ color: theme.text }}>Gennemgået tid:</strong> {formatDateTimeDa(flag.reviewed_at)}</div>
-                        </div>
+                      <div className="pm-admin-flag-badges">
+                        <span
+                          className="pm-admin-status-pill"
+                          style={{ color: statusBadge.text, background: statusBadge.bg, borderRadius: 999 }}
+                        >
+                          {statusLabelDa(flag.status)}
+                        </span>
+                        <span
+                          className="pm-admin-status-pill"
+                          style={{ color: severityBadge.text, background: severityBadge.bg, borderRadius: 999 }}
+                        >
+                          {severityLabelDa(flag.severity)}
+                        </span>
                       </div>
-
-                      <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>Adminnote</label>
-                      <textarea
-                        value={flagNotes[flag.id] ?? flag.review_note ?? ''}
-                        onChange={(e) => setFlagNotes((prev) => ({ ...prev, [flag.id]: e.target.value }))}
-                        placeholder="Skriv note om vurdering af flag..."
-                        style={{ ...inputStyle, minHeight: "54px", resize: "vertical", marginBottom: "10px" }}
-                      />
-                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px" }}>
+                      <div className="pm-admin-flag-actions">
                         <button
                           type="button"
-                          onClick={() => { void updateFlag(flag, flag.status || 'open'); }}
-                          disabled={flagBusyId === flag.id}
-                          style={{ ...btn(true), padding: "6px 12px", fontSize: "11px" }}
+                          onClick={() => setExpandedFlags((prev) => ({ ...prev, [flag.id]: !prev[flag.id] }))}
+                          className="pm-admin-action-chip"
+                          style={btn(false)}
                         >
-                          Gem note
+                          {expanded ? 'Skjul' : 'Detaljer'}
                         </button>
-                        {flag.status !== 'open' && (
+                        <button
+                          type="button"
+                          onClick={() => { void updateFlag(flag, 'reviewed'); }}
+                          disabled={flagBusyId === flag.id}
+                          className="pm-admin-action-chip"
+                          style={btn(flag.status === 'reviewed')}
+                        >
+                          <CheckCircle2 size={12} style={{ marginRight: '4px' }} />
+                          Gennemgået
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { void updateFlag(flag, 'closed'); }}
+                          disabled={flagBusyId === flag.id}
+                          className="pm-admin-action-chip"
+                          style={btn(flag.status === 'closed')}
+                        >
+                          Luk
+                        </button>
+                      </div>
+                    </div>
+
+                    {expanded ? (
+                      <div className="pm-admin-flag-expand">
+                        <div className="pm-admin-panel-box pm-admin-panel-box--accent pm-admin-flag-suggestion">
+                          <div className="pm-admin-panel-title pm-admin-panel-title--accent">Forslag til handling</div>
+                          <div className="pm-admin-panel-copy">{explanation.suggestion}</div>
+                        </div>
+
+                        <div className="pm-admin-flag-detail-grid">
+                          <div className="pm-admin-flag-detail-copy">
+                            <div>
+                              <strong>Kamp:</strong> {flag.match_id || '-'}
+                            </div>
+                            <div style={{ marginTop: '4px' }}>
+                              <strong>Turnering:</strong> {flag.tournament_id || '-'}
+                            </div>
+                            <div style={{ marginTop: '4px' }}>
+                              <strong>Teknisk kode:</strong> {explanation.technicalReason || '-'}
+                            </div>
+                          </div>
+                          <div className="pm-admin-flag-detail-copy">
+                            <div>
+                              <strong>Gennemgået af:</strong> {reviewerMap[flag.reviewed_by] || '-'}
+                            </div>
+                            <div style={{ marginTop: '4px' }}>
+                              <strong>Gennemgået tid:</strong> {formatDateTimeDa(flag.reviewed_at)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <label style={{ ...labelStyle, marginBottom: '6px', display: 'block' }}>Adminnote</label>
+                        <textarea
+                          value={flagNotes[flag.id] ?? flag.review_note ?? ''}
+                          onChange={(e) => setFlagNotes((prev) => ({ ...prev, [flag.id]: e.target.value }))}
+                          placeholder="Skriv note om vurdering af flag..."
+                          style={{ ...inputStyle, minHeight: '54px', resize: 'vertical', marginBottom: '10px' }}
+                        />
+                        <div className="pm-admin-report-actions" style={{ marginBottom: '10px' }}>
                           <button
                             type="button"
-                            onClick={() => { void updateFlag(flag, 'open'); }}
+                            onClick={() => { void updateFlag(flag, flag.status || 'open'); }}
                             disabled={flagBusyId === flag.id}
-                            style={{ ...btn(false), padding: "6px 12px", fontSize: "11px" }}
+                            className="pm-admin-action-chip"
+                            style={btn(true)}
                           >
-                            Genåbn
+                            Gem note
                           </button>
-                        )}
-                      </div>
-
-                      <div style={{ fontSize: "11px", color: theme.textMid, marginBottom: "6px" }}>Datafelt</div>
-                      <pre style={{ margin: 0, background: theme.surfaceAlt, border: "1px solid " + theme.border, borderRadius: "8px", padding: "10px", fontSize: "11px", lineHeight: 1.4, whiteSpace: "pre-wrap", wordBreak: "break-word", color: theme.text }}>
-                        {JSON.stringify(flag.payload || {}, null, 2)}
-                      </pre>
-                      {hasReviewMeta && (
-                        <div style={{ marginTop: "8px", fontSize: "11px", color: theme.textMid }}>
-                          Seneste note: {flag.review_note || '(ingen)'}
+                          {flag.status !== 'open' ? (
+                            <button
+                              type="button"
+                              onClick={() => { void updateFlag(flag, 'open'); }}
+                              disabled={flagBusyId === flag.id}
+                              className="pm-admin-action-chip"
+                              style={btn(false)}
+                            >
+                              Genåbn
+                            </button>
+                          ) : null}
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+
+                        <div className="pm-admin-flag-detail-copy" style={{ marginBottom: '6px' }}>
+                          Datafelt
+                        </div>
+                        <pre className="pm-admin-flag-pre">{JSON.stringify(flag.payload || {}, null, 2)}</pre>
+                        {hasReviewMeta ? (
+                          <div className="pm-admin-flag-detail-copy" style={{ marginTop: '8px' }}>
+                            Seneste note: {flag.review_note || '(ingen)'}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
           </div>
 
-          <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "12px", padding: "14px", marginTop: "14px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "10px", flexWrap: "wrap" }}>
-              <div style={{ fontSize: "13px", fontWeight: 800, color: theme.text }}>Admin-log (seneste handlinger)</div>
-              <div style={{ fontSize: "11px", color: theme.textMid }}>
+          <div className="pm-ui-card pm-admin-console-panel">
+            <div className="pm-admin-console-panel-head">
+              <div className="pm-admin-console-panel-title">Admin-log (seneste handlinger)</div>
+              <div className="pm-admin-console-panel-meta">
                 {consoleLoading ? 'Indlæser...' : `${auditLog.length} poster`}
               </div>
             </div>
-            {auditLogError ? (
-              <div style={{ fontSize: "12px", color: theme.red }}>{auditLogError}</div>
-            ) : null}
+            {auditLogError ? <div className="pm-admin-error-msg">{auditLogError}</div> : null}
             {!auditLogError && auditLog.length === 0 && !consoleLoading ? (
-              <div style={{ fontSize: "12px", color: theme.textMid }}>Ingen logposter endnu.</div>
+              <div className="pm-admin-empty">Ingen logposter endnu.</div>
             ) : null}
             {auditLog.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "280px", overflowY: "auto" }}>
+              <div className="pm-admin-audit-list">
                 {auditLog.map((entry) => (
-                  <div
-                    key={entry.id}
-                    style={{
-                      border: "1px solid " + theme.border,
-                      borderRadius: "8px",
-                      padding: "10px 12px",
-                      background: theme.surfaceAlt,
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: "12px", fontWeight: 700, color: theme.text }}>
-                        {adminAuditActionLabel(entry.action)}
-                      </span>
-                      <span style={{ fontSize: "11px", color: theme.textMid }}>
-                        {formatDateTimeDa(entry.created_at)}
-                      </span>
+                  <div key={entry.id} className="pm-admin-audit-entry">
+                    <div className="pm-admin-audit-entry-head">
+                      <span className="pm-admin-audit-action">{adminAuditActionLabel(entry.action)}</span>
+                      <span className="pm-admin-audit-time">{formatDateTimeDa(entry.created_at)}</span>
                     </div>
                     {entry.target_user_id ? (
-                      <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>
+                      <div className="pm-admin-audit-target">
                         Bruger: {String(entry.target_user_id).slice(0, 8)}…
                       </div>
                     ) : null}
@@ -2190,17 +2005,28 @@ export function AdminTab({ initialSubTab = null }) {
           </div>
         </div>
       )}
-      {/* Edit User Modal */}
-      {editingUser && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(4px)" }}>
-          <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "16px", padding: "24px", maxWidth: "450px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.18)", position: "relative", maxHeight: "90vh", overflowY: "auto" }}>
-            <button onClick={() => setEditingUser(null)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", color: theme.textLight, cursor: "pointer" }}>
+      <AppModal
+        open={Boolean(editingUser)}
+        onClose={() => setEditingUser(null)}
+        ariaLabel="Rediger spiller"
+        maxWidthPreset="sm"
+        zIndex={1000}
+        contentStyle={{ maxHeight: '90vh', overflow: 'hidden' }}
+      >
+        {editingUser ? (
+          <div className="pm-admin-modal-scroll pm-admin-modal-body">
+            <button
+              type="button"
+              onClick={() => setEditingUser(null)}
+              className="pm-admin-modal-close"
+              aria-label="Luk redigering"
+            >
               <X size={20} />
             </button>
-            <h3 style={{ ...heading("18px"), marginBottom: "20px" }}>Rediger Spiller</h3>
-            
-            <form onSubmit={handleUpdateUser} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <h3 style={{ ...heading('18px'), marginBottom: '20px' }}>Rediger Spiller</h3>
+
+            <form onSubmit={handleUpdateUser} className="pm-admin-form-stack">
+              <div className="pm-admin-form-grid-2">
                 <div>
                   <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Fulde Navn</label>
                   <input 
@@ -2221,18 +2047,11 @@ export function AdminTab({ initialSubTab = null }) {
                 </div>
               </div>
 
-              <div style={{
-                fontSize: "12px",
-                color: theme.textMid,
-                background: theme.surfaceAlt,
-                border: "1px solid " + theme.border,
-                borderRadius: "10px",
-                padding: "10px 12px"
-              }}>
+              <div className="pm-admin-meta-box">
                 Oprettet: <strong style={{ color: theme.text }}>{formatCreatedAt(editingUser.created_at)}</strong>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div className="pm-admin-form-grid-2">
                 <div>
                   <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Niveau</label>
                   <select
@@ -2301,71 +2120,92 @@ export function AdminTab({ initialSubTab = null }) {
                 />
               </div>
               
-              <div style={{ marginTop: "8px", padding: "12px", background: editingUser.is_banned ? theme.redBg : theme.surfaceAlt, borderRadius: "10px", border: "1px solid " + (editingUser.is_banned ? "var(--pm-danger-border)" : theme.border) }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className={`pm-admin-panel-box ${editingUser.is_banned ? 'pm-admin-panel-box--danger' : ''}`}>
+                <div className="pm-admin-panel-head">
                   <div>
-                    <div style={{ fontSize: "13px", fontWeight: 700, color: editingUser.is_banned ? theme.red : theme.text }}>
-                      {editingUser.is_banned ? "Brugeren er UDELUKKET" : "Status: Aktiv"}
+                    <div className={`pm-admin-panel-title ${editingUser.is_banned ? 'pm-admin-panel-title--danger' : ''}`}>
+                      {editingUser.is_banned ? 'Brugeren er UDELUKKET' : 'Status: Aktiv'}
                     </div>
-                    <div style={{ fontSize: "11px", color: theme.textMid }}>
-                      {editingUser.is_banned ? "Brugeren kan ikke logge ind." : "Brugeren har normal adgang."}
-                    </div>
-                  </div>
-                  <button 
-                    type="button"
-                    onClick={() => setEditingUser({ ...editingUser, is_banned: !editingUser.is_banned })}
-                    style={{ ...btn(editingUser.is_banned), background: editingUser.is_banned ? theme.accent : theme.red, borderColor: editingUser.is_banned ? theme.accent : theme.red, fontSize: "12px", padding: "6px 12px" }}
-                  >
-                    {editingUser.is_banned ? "Ophæv ban" : "Udeluk spiller"}
-                  </button>
-                </div>
-                
-                {editingUser.is_banned && (
-                  <div style={{ marginTop: "12px" }}>
-                    <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Begrundelse (vises til spilleren)</label>
-                    <textarea 
-                      value={editingUser.ban_reason || ''} 
-                      onChange={(e) => setEditingUser({ ...editingUser, ban_reason: e.target.value })}
-                      placeholder="Skriv hvorfor spilleren er udelukket..."
-                      style={{ ...inputStyle, minHeight: "50px", fontSize: "12px", background: theme.surface, borderColor: theme.red + "40" }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div style={{ marginTop: "8px", padding: "12px", background: editingUser.phone_verification_exempt ? theme.accentBg : theme.surfaceAlt, borderRadius: "10px", border: "1px solid " + (editingUser.phone_verification_exempt ? theme.accent + "40" : theme.border) }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", minWidth: 0 }}>
-                    <Smartphone size={16} style={{ color: editingUser.phone_verification_exempt ? theme.accent : theme.textLight, flexShrink: 0, marginTop: "2px" }} />
-                    <div>
-                      <div style={{ fontSize: "13px", fontWeight: 700, color: editingUser.phone_verification_exempt ? theme.accent : theme.text }}>
-                        {editingUser.phone_verification_exempt ? "Ingen telefon-SMS påkrævet" : "Telefon-SMS påkrævet ved login"}
-                      </div>
-                      <div style={{ fontSize: "11px", color: theme.textMid, lineHeight: 1.4 }}>
-                        {editingUser.phone_verification_exempt
-                          ? "Brugeren kan bruge appen uden bekræftet telefonnummer (fx testkonto)."
-                          : "Brugeren skal bekræfte telefonnummer med SMS, hvis de mangler det ved login."}
-                      </div>
+                    <div className="pm-admin-panel-copy">
+                      {editingUser.is_banned ? 'Brugeren kan ikke logge ind.' : 'Brugeren har normal adgang.'}
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setEditingUser({ ...editingUser, phone_verification_exempt: !editingUser.phone_verification_exempt })}
-                    style={{ ...btn(editingUser.phone_verification_exempt), background: editingUser.phone_verification_exempt ? theme.textMid : theme.accent, borderColor: editingUser.phone_verification_exempt ? theme.textMid : theme.accent, fontSize: "12px", padding: "6px 12px", flexShrink: 0 }}
+                    onClick={() => setEditingUser({ ...editingUser, is_banned: !editingUser.is_banned })}
+                    className="pm-admin-action-chip"
+                    style={{
+                      ...btn(editingUser.is_banned),
+                      background: editingUser.is_banned ? theme.accent : theme.red,
+                      borderColor: editingUser.is_banned ? theme.accent : theme.red,
+                    }}
                   >
-                    {editingUser.phone_verification_exempt ? "Kræv telefon igen" : "Undtag (test)"}
+                    {editingUser.is_banned ? 'Ophæv ban' : 'Udeluk spiller'}
+                  </button>
+                </div>
+
+                {editingUser.is_banned ? (
+                  <div style={{ marginTop: '12px' }}>
+                    <label style={{ ...labelStyle, marginBottom: '4px', display: 'block' }}>Begrundelse (vises til spilleren)</label>
+                    <textarea
+                      value={editingUser.ban_reason || ''}
+                      onChange={(e) => setEditingUser({ ...editingUser, ban_reason: e.target.value })}
+                      placeholder="Skriv hvorfor spilleren er udelukket..."
+                      style={{ ...inputStyle, minHeight: '50px', fontSize: '12px', background: theme.surface, borderColor: `${theme.red}40` }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className={`pm-admin-panel-box ${editingUser.phone_verification_exempt ? 'pm-admin-panel-box--accent' : ''}`}>
+                <div className="pm-admin-panel-head pm-admin-panel-head--start">
+                  <Smartphone
+                    size={16}
+                    style={{ color: editingUser.phone_verification_exempt ? theme.accent : theme.textLight, flexShrink: 0, marginTop: '2px' }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className={`pm-admin-panel-title ${editingUser.phone_verification_exempt ? 'pm-admin-panel-title--accent' : ''}`}>
+                      {editingUser.phone_verification_exempt ? 'Ingen telefon-SMS påkrævet' : 'Telefon-SMS påkrævet ved login'}
+                    </div>
+                    <div className="pm-admin-panel-copy">
+                      {editingUser.phone_verification_exempt
+                        ? 'Brugeren kan bruge appen uden bekræftet telefonnummer (fx testkonto).'
+                        : 'Brugeren skal bekræfte telefonnummer med SMS, hvis de mangler det ved login.'}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingUser({
+                        ...editingUser,
+                        phone_verification_exempt: !editingUser.phone_verification_exempt,
+                      })
+                    }
+                    className="pm-admin-action-chip"
+                    style={{
+                      ...btn(editingUser.phone_verification_exempt),
+                      background: editingUser.phone_verification_exempt ? theme.textMid : theme.accent,
+                      borderColor: editingUser.phone_verification_exempt ? theme.textMid : theme.accent,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {editingUser.phone_verification_exempt ? 'Kræv telefon igen' : 'Undtag (test)'}
                   </button>
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
-                <button type="button" onClick={() => setEditingUser(null)} style={{ ...btn(false), flex: 1 }}>Annuller</button>
-                <button type="submit" style={{ ...btn(true), flex: 1 }}>Gem ændringer</button>
+              <div className="pm-admin-form-actions">
+                <button type="button" onClick={() => setEditingUser(null)} style={{ ...btn(false), flex: 1 }}>
+                  Annuller
+                </button>
+                <button type="submit" style={{ ...btn(true), flex: 1 }}>
+                  Gem ændringer
+                </button>
               </div>
             </form>
           </div>
-        </div>
-      )}
+        ) : null}
+      </AppModal>
       <AdminReportDmViewer
         open={!!dmViewerReport}
         onClose={() => setDmViewerReport(null)}
@@ -2373,60 +2213,60 @@ export function AdminTab({ initialSubTab = null }) {
         reporterName={dmViewerReport ? adminDisplayName(dmViewerReport.reporter) : ''}
         reportedName={dmViewerReport ? adminDisplayName(dmViewerReport.reported) : ''}
       />
-      {deletePinOpen && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1001, backdropFilter: "blur(4px)" }}>
-          <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "14px", padding: "20px", maxWidth: "420px", width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }}>
-            <h3 style={{ ...heading("18px"), marginBottom: "8px" }}>Bekræft med admin-kode</h3>
-            <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.5, marginBottom: "12px" }}>
-              Sletning af <strong style={{ color: theme.text }}>{adminDisplayName(deleteTargetUser)}</strong> kræver din 6-cifrede admin-kode.
-            </div>
+      <AppModal
+        open={deletePinOpen}
+        onClose={closeDeletePinModal}
+        ariaLabel="Bekræft sletning med admin-kode"
+        maxWidth="420px"
+        zIndex={1001}
+      >
+        <div className="pm-admin-modal-body">
+          <h3 style={{ ...heading('18px'), marginBottom: '8px' }}>Bekræft med admin-kode</h3>
+          <div className="pm-admin-panel-copy" style={{ marginBottom: '12px' }}>
+            Sletning af <strong style={{ color: theme.text }}>{adminDisplayName(deleteTargetUser)}</strong> kræver din 6-cifrede admin-kode.
+          </div>
 
-            <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>Admin-kode (6 tal)</label>
-            <input
-              type="password"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              value={deletePin}
-              onChange={(e) => {
-                setDeletePin(digitsOnly(e.target.value));
-                if (deletePinError) setDeletePinError('');
-              }}
-              style={{
-                ...inputStyle,
-                letterSpacing: "0.2em",
-                fontFamily: font,
-              }}
+          <label style={{ ...labelStyle, marginBottom: '6px', display: 'block' }}>Admin-kode (6 tal)</label>
+          <input
+            type="password"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={deletePin}
+            onChange={(e) => {
+              setDeletePin(digitsOnly(e.target.value));
+              if (deletePinError) setDeletePinError('');
+            }}
+            style={{
+              ...inputStyle,
+              letterSpacing: '0.2em',
+              fontFamily: font,
+            }}
+            disabled={deletePinBusy}
+          />
+
+          {deletePinError ? <div className="pm-admin-error-msg" style={{ marginTop: '8px' }}>{deletePinError}</div> : null}
+
+          <div className="pm-admin-form-actions">
+            <button
+              type="button"
+              onClick={() => closeDeletePinModal()}
+              style={{ ...btn(false), flex: 1 }}
               disabled={deletePinBusy}
-            />
-
-            {deletePinError && (
-              <div style={{ marginTop: "8px", fontSize: "12px", color: theme.red }}>
-                {deletePinError}
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
-              <button
-                type="button"
-                onClick={() => closeDeletePinModal()}
-                style={{ ...btn(false), flex: 1 }}
-                disabled={deletePinBusy}
-              >
-                Annuller
-              </button>
-              <button
-                type="button"
-                onClick={() => { void confirmDeleteWithPin(); }}
-                style={{ ...btn(true), flex: 1, background: theme.red, borderColor: theme.red }}
-                disabled={deletePinBusy}
-              >
-                {deletePinBusy ? 'Sletter...' : 'Slet spiller'}
-              </button>
-            </div>
+            >
+              Annuller
+            </button>
+            <button
+              type="button"
+              onClick={() => { void confirmDeleteWithPin(); }}
+              style={{ ...btn(true), flex: 1, background: theme.red, borderColor: theme.red }}
+              disabled={deletePinBusy}
+            >
+              {deletePinBusy ? 'Sletter...' : 'Slet spiller'}
+            </button>
           </div>
         </div>
-      )}
+      </AppModal>
     </div>
   );
 }
