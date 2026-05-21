@@ -220,6 +220,13 @@ const PROFILE_MODE_LABELS = {
   liga: "Liga",
 };
 
+const RELATION_SECTION_LABELS = {
+  winMostWith: "Vinder mest med",
+  loseMostWith: "Taber mest med",
+  winMostAgainst: "Vinder mest mod",
+  loseMostAgainst: "Taber mest mod",
+};
+
 export function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
@@ -842,12 +849,12 @@ export function ProfilTab({ user, showToast, setTab }) {
             Spil mindst 2 rapporterede ligakampe med samme makker eller modstander — så vises dine relationer her.
           </div>
         )}
-        {/* Bedste makker + Hårdeste modstandere — kun 2v2 */}
+        {/* Relationer — kun 2v2 */}
         {show2v2RelationsSection && partnerOpponentStats && (
           <>
             {partnerOpponentStats.partners.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Bedste makker</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostWith}</div>
                 {partnerOpponentStats.partners.map((p, i) => (
                   <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.partners.length - 1 ? "10px" : 0 }}>
                     <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
@@ -868,7 +875,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               if (hardOpponents.length === 0) return null;
               return (
                 <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
-                  <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Hårdeste modstandere</div>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostAgainst}</div>
                   {hardOpponents.map((p, i) => {
                     const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.games) * 100);
                     return (
@@ -896,7 +903,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           <>
             {americanoRelationStats.bestPartners.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Bedste makker</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostWith}</div>
                 {americanoRelationStats.bestPartners.map((p, i) => (
                   <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
                     <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
@@ -914,7 +921,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             )}
             {americanoRelationStats.toughestPartners.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Taber mest med</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostWith}</div>
                 {americanoRelationStats.toughestPartners.map((p, i) => (
                   <div key={`tough-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
                     <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
@@ -932,7 +939,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             )}
             {americanoRelationStats.hardestOpponents.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Hårdeste modstandere</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostAgainst}</div>
                 {americanoRelationStats.hardestOpponents.map((p, i) => {
                   const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.rounds) * 100);
                   return (
@@ -953,7 +960,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             )}
             {americanoRelationStats.easiestOpponents.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Nemmeste modstandere</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostAgainst}</div>
                 {americanoRelationStats.easiestOpponents.map((p, i) => (
                   <div key={`easy-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
                     <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
@@ -976,7 +983,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           <>
             {ligaRelationStats.bestPartners.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Bedste makker</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostWith}</div>
                 {ligaRelationStats.bestPartners.map((p, i) => (
                   <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
                     <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
@@ -994,7 +1001,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             )}
             {ligaRelationStats.toughestPartners.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Taber mest med</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostWith}</div>
                 {ligaRelationStats.toughestPartners.map((p, i) => (
                   <div key={`liga-tough-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
                     <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
@@ -1012,7 +1019,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             )}
             {ligaRelationStats.hardestOpponents.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Hårdeste modstandere</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostAgainst}</div>
                 {ligaRelationStats.hardestOpponents.map((p, i) => {
                   const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.matches) * 100);
                   return (
@@ -1033,7 +1040,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             )}
             {ligaRelationStats.easiestOpponents.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Nemmeste modstandere</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostAgainst}</div>
                 {ligaRelationStats.easiestOpponents.map((p, i) => (
                   <div key={`liga-easy-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
                     <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
