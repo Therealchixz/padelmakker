@@ -39,6 +39,7 @@ test('saveMatchSearchPrefs syncs legacy watch and seeking flags', () => {
   assert.match(src, /match_watch_enabled: notifyOn/);
   assert.match(src, /seeking_match: feedOn/);
   assert.match(src, /match_search_prefs/);
+  assert.match(src, /levelWindow/);
 });
 
 test('seeking player prioritizes filter notify over legacy watch only', () => {

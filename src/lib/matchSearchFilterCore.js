@@ -3,12 +3,17 @@
  */
 
 import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
-import { parseMatchLevelRange } from './matchLevelRange';
-import { resolveElo } from './matchmakingUtils';
+import { levelLabel } from './platformConstants';
+import {
+  profilePlaytomicLevel,
+  migrateEloWindowToLevelWindow,
+  matchPassesLevelFilter,
+  formatPlaytomicLevel,
+} from './padelLevelUtils';
 
-export const MATCH_FILTER_PREFS_VERSION = 1;
-export const DEFAULT_ELO_WINDOW = 250;
-export const ELO_WINDOW_OPTIONS = [150, 200, 250, 300, 400];
+export const MATCH_FILTER_PREFS_VERSION = 2;
+export const DEFAULT_LEVEL_WINDOW = 1;
+export const LEVEL_WINDOW_OPTIONS = [0.5, 1, 1.5, 2];
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
@@ -20,7 +25,8 @@ export function defaultMatchSearchPrefs(profile = {}) {
     notify: false,
     feedVisible: false,
     region: region || '',
-    eloWindow: DEFAULT_ELO_WINDOW,
+    myLevel: profilePlaytomicLevel(profile),
+    levelWindow: DEFAULT_LEVEL_WINDOW,
     days,
     openOnly: true,
   };
@@ -42,7 +48,24 @@ export function normalizeMatchSearchPrefs(raw, profile = {}) {
 
   const region = canonicalRegionForForm(parsed.region) || parsed.region || base.region;
   const days = normalizeStringArrayField(parsed.days).filter((d) => DAY_KEYS.includes(d));
-  const eloWindow = Number(parsed.eloWindow);
+
+  let levelWindow = Number(parsed.levelWindow);
+  if (!Number.isFinite(levelWindow) && parsed.eloWindow != null) {
+    levelWindow = migrateEloWindowToLevelWindow(parsed.eloWindow);
+  }
+  if (!Number.isFinite(levelWindow) || levelWindow < 0.25 || levelWindow > 3) {
+    levelWindow = base.levelWindow;
+  } else {
+    levelWindow = Math.round(levelWindow * 10) / 10;
+  }
+
+  let myLevel = Number(parsed.myLevel);
+  if (!Number.isFinite(myLevel) || myLevel < 1 || myLevel > 7) {
+    myLevel = profilePlaytomicLevel(profile);
+  } else {
+    myLevel = Math.round(myLevel * 10) / 10;
+  }
+
   const notify = parsed.notify === true
     || (parsed.notify == null && profile.match_watch_enabled === true && Object.keys(parsed).length === 0);
   const feedVisible = parsed.feedVisible === true
@@ -53,9 +76,8 @@ export function normalizeMatchSearchPrefs(raw, profile = {}) {
     notify,
     feedVisible,
     region: region || '',
-    eloWindow: Number.isFinite(eloWindow) && eloWindow >= 50 && eloWindow <= 500
-      ? Math.round(eloWindow)
-      : base.eloWindow,
+    myLevel,
+    levelWindow,
     days,
     openOnly: parsed.openOnly !== false,
   };
@@ -65,6 +87,12 @@ export function resolveFilterRegion(prefs, profile = {}) {
   const fromPrefs = canonicalRegionForForm(prefs?.region) || (prefs?.region ? String(prefs.region).trim() : '');
   if (fromPrefs) return fromPrefs;
   return canonicalRegionForForm(profile.area) || profile.area || '';
+}
+
+export function resolveFilterLevel(prefs, profile = {}) {
+  const n = Number(prefs?.myLevel);
+  if (Number.isFinite(n) && n >= 1 && n <= 7) return Math.round(n * 10) / 10;
+  return profilePlaytomicLevel(profile);
 }
 
 export function isMatchFilterConfigured(prefs, profile = {}) {
@@ -80,12 +108,11 @@ export function dayKeyFromDate(dateStr) {
   if (!dateStr) return null;
   const d = new Date(`${String(dateStr).slice(0, 10)}T12:00:00`);
   if (Number.isNaN(d.getTime())) return null;
-  const iso = d.getDay();
   const map = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-  return map[iso] || null;
+  return map[d.getDay()] || null;
 }
 
-export function openMatchMatchesFilter(match, creatorProfile, myElo, prefs, profile, myUserId) {
+export function openMatchMatchesFilter(match, creatorProfile, prefs, profile, myUserId) {
   if (!match || !isMatchFilterConfigured(prefs, profile)) return false;
   if (myUserId && String(match.creator_id) === String(myUserId)) return false;
   if (prefs.openOnly !== false) {
@@ -102,13 +129,10 @@ export function openMatchMatchesFilter(match, creatorProfile, myElo, prefs, prof
     return false;
   }
 
-  const window = Number(prefs.eloWindow) || DEFAULT_ELO_WINDOW;
-  const creatorElo = resolveElo(creatorProfile || {}, {});
-  if (Math.abs(myElo - creatorElo) > window) return false;
-
-  const range = parseMatchLevelRange(match.level_range);
-  if (range.min != null && range.max != null) {
-    if (myElo < range.min || myElo > range.max) return false;
+  const myLevel = resolveFilterLevel(prefs, profile);
+  const levelWindow = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
+  if (!matchPassesLevelFilter(myLevel, levelWindow, creatorProfile, match)) {
+    return false;
   }
 
   const days = normalizeStringArrayField(prefs.days);
@@ -127,7 +151,10 @@ export function describeMatchFilter(prefs, profile = {}) {
   const parts = [];
   const region = resolveFilterRegion(prefs, profile);
   if (region) parts.push(region.replace(/^Region /, ''));
-  parts.push(`ELO ±${prefs.eloWindow || DEFAULT_ELO_WINDOW}`);
+  const lvl = resolveFilterLevel(prefs, profile);
+  const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
+  const short = levelLabel(lvl) || formatPlaytomicLevel(lvl);
+  parts.push(`${short} (±${win})`);
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
   const channels = [];
@@ -152,7 +179,9 @@ export function buildProfilePatchFromMatchSearchPrefs(prefs, profile = {}) {
   return {
     match_search_prefs: {
       ...normalized,
+      version: MATCH_FILTER_PREFS_VERSION,
       region: region || normalized.region,
+      myLevel: resolveFilterLevel(normalized, profile),
     },
     match_watch_enabled: notifyOn,
     match_watch_at: notifyOn ? new Date().toISOString() : null,

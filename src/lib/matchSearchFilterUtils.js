@@ -3,8 +3,6 @@
  */
 
 import { supabase } from './supabase';
-import { fetchEloByUserIdFromHistory } from './eloHistoryUtils';
-import { resolveElo } from './matchmakingUtils';
 import { notifyMatchWatchersForMatch } from './matchWatchUtils';
 import {
   normalizeMatchSearchPrefs,
@@ -12,10 +10,11 @@ import {
   openMatchMatchesFilter,
   buildProfilePatchFromMatchSearchPrefs,
   MATCH_FILTER_PREFS_VERSION,
-  DEFAULT_ELO_WINDOW,
-  ELO_WINDOW_OPTIONS,
+  DEFAULT_LEVEL_WINDOW,
+  LEVEL_WINDOW_OPTIONS,
   defaultMatchSearchPrefs,
   resolveFilterRegion,
+  resolveFilterLevel,
   isMatchFilterActive,
   describeMatchFilter,
   dayKeyFromDate,
@@ -23,11 +22,12 @@ import {
 
 export {
   MATCH_FILTER_PREFS_VERSION,
-  DEFAULT_ELO_WINDOW,
-  ELO_WINDOW_OPTIONS,
+  DEFAULT_LEVEL_WINDOW,
+  LEVEL_WINDOW_OPTIONS,
   defaultMatchSearchPrefs,
   normalizeMatchSearchPrefs,
   resolveFilterRegion,
+  resolveFilterLevel,
   isMatchFilterConfigured,
   isMatchFilterActive,
   describeMatchFilter,
@@ -74,15 +74,13 @@ export async function countOpenMatchesMatchingFilter(profile, prefs, userId) {
   const creatorIds = [...new Set(rows.map((m) => m.creator_id).filter(Boolean))];
   const { data: creators } = await supabase
     .from('profiles')
-    .select('id, area, elo_rating, level')
+    .select('id, area, level')
     .in('id', creatorIds);
 
   const creatorById = Object.fromEntries((creators || []).map((p) => [String(p.id), p]));
-  const eloByUserId = await fetchEloByUserIdFromHistory([userId, ...creatorIds]);
-  const myElo = resolveElo(profile, eloByUserId);
 
   return rows.filter((m) => {
     const creator = creatorById[String(m.creator_id)] || null;
-    return openMatchMatchesFilter(m, creator, myElo, prefs, profile, userId);
+    return openMatchMatchesFilter(m, creator, prefs, profile, userId);
   }).length;
 }

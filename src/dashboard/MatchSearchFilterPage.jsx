@@ -2,17 +2,19 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
-import { REGIONS, DAYS_OF_WEEK } from '../lib/platformConstants';
+import { REGIONS, DAYS_OF_WEEK, levelLabel } from '../lib/platformConstants';
 import { normalizeStringArrayField } from '../lib/profileUtils';
 import {
   normalizeMatchSearchPrefs,
   describeMatchFilter,
   isMatchFilterConfigured,
   resolveFilterRegion,
+  resolveFilterLevel,
   saveMatchSearchPrefs,
-  ELO_WINDOW_OPTIONS,
-  DEFAULT_ELO_WINDOW,
+  LEVEL_WINDOW_OPTIONS,
+  DEFAULT_LEVEL_WINDOW,
 } from '../lib/matchSearchFilterUtils';
+import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
 import { ChevronLeft, Bell, Zap } from 'lucide-react';
 
 const labelStyle = {
@@ -34,6 +36,10 @@ export function MatchSearchFilterPage({ user, showToast }) {
   );
   const [prefs, setPrefs] = useState(initial);
   const [saving, setSaving] = useState(false);
+
+  const profileLevel = profilePlaytomicLevel(user);
+  const filterLevel = resolveFilterLevel(prefs, user);
+  const levelDisplay = levelLabel(filterLevel) || formatPlaytomicLevel(filterLevel);
 
   const set = (patch) => setPrefs((p) => ({ ...p, ...patch }));
 
@@ -58,7 +64,10 @@ export function MatchSearchFilterPage({ user, showToast }) {
     }
     setSaving(true);
     try {
-      const patch = await saveMatchSearchPrefs(prefs, user);
+      const patch = await saveMatchSearchPrefs(
+        { ...prefs, myLevel: profileLevel },
+        user,
+      );
       await updateProfile(patch);
       showToast('Mit kamp-filter er gemt');
       navigate('/dashboard/profil');
@@ -95,7 +104,8 @@ export function MatchSearchFilterPage({ user, showToast }) {
         Mit kamp-filter
       </h1>
       <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 20 }}>
-        Indstil hvilke åbne kampe du vil se og få besked om. Tomme ugedage betyder alle dage.
+        Filtrér åbne kampe efter det niveau du kender fra padel (fx Playtomic-skalaen).
+        ELO i appen er kun til rangliste og konkurrence efter kampe.
       </p>
 
       <div
@@ -134,19 +144,47 @@ export function MatchSearchFilterPage({ user, showToast }) {
         ))}
       </div>
 
-      <div style={labelStyle}>ELO-vindue om kampens niveau</div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
-        {ELO_WINDOW_OPTIONS.map((w) => (
+      <div style={labelStyle}>Dit niveau</div>
+      <div
+        style={{
+          background: theme.surfaceAlt,
+          border: `1px solid ${theme.border}`,
+          borderRadius: 10,
+          padding: '12px 14px',
+          marginBottom: 8,
+          fontSize: 13,
+          color: theme.text,
+        }}
+      >
+        <strong>{formatPlaytomicLevel(profileLevel)}</strong>
+        {levelDisplay ? (
+          <span style={{ color: theme.textMid, marginLeft: 8 }}>{levelDisplay}</span>
+        ) : null}
+        <div style={{ fontSize: 11, color: theme.textLight, marginTop: 6 }}>
+          Hentes fra din profil. Opdater niveau under Profil → Rediger, hvis det er forkert.
+        </div>
+      </div>
+
+      <div style={labelStyle}>Hvor bredt søger du kampe?</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+        {LEVEL_WINDOW_OPTIONS.map((w) => (
           <button
             key={w}
             type="button"
-            onClick={() => set({ eloWindow: w })}
-            style={{ ...btn((prefs.eloWindow || DEFAULT_ELO_WINDOW) === w), padding: '8px 12px', fontSize: 12 }}
+            onClick={() => set({ levelWindow: w })}
+            style={{
+              ...btn((prefs.levelWindow || DEFAULT_LEVEL_WINDOW) === w),
+              padding: '8px 12px',
+              fontSize: 12,
+            }}
           >
             ±{w}
           </button>
         ))}
       </div>
+      <p style={{ fontSize: 11, color: theme.textLight, marginBottom: 18, lineHeight: 1.45 }}>
+        Fx ±1,0 om niveau 3,5 = kampe med spillere omkring 2,5–4,5.
+      </p>
 
       <div style={labelStyle}>Ugedage (valgfrit)</div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
