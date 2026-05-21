@@ -417,7 +417,7 @@ export function HomeTab({ user, setTab }) {
         if (milestoneItems.length >= 3) break;
       }
 
-      // Søger makker
+      // Søger kamp (seeking_match)
       const seekingFeed_ = seeking
         .filter(p => String(p.id) !== String(user.id)).slice(0, 3)
         .map(p => ({ type: 'seeking_player', userId: p.id, name: p.full_name || p.name || 'En spiller', avatar: p.avatar || '🎾', level: p.level, area: p.area, intent: p.intent_now, created_at: p.seeking_match_at }));
@@ -732,9 +732,9 @@ export function HomeTab({ user, setTab }) {
   }, [activeHistoryRows]);
   const seekingCount = seekingFeed.length;
   const seekingTitle = feedLoading
-    ? "Finder spillere der søger makker"
+    ? "Finder spillere der søger kamp"
     : seekingCount > 0
-      ? `${seekingCount} ${seekingCount === 1 ? "spiller" : "spillere"} søger makker`
+      ? `${seekingCount} ${seekingCount === 1 ? "spiller" : "spillere"} søger kamp`
       : "Find en makker";
   const seekingSubtitle = seekingCount > 0 ? "I dit område lige nu" : "Se spillere på dit niveau";
   return (
@@ -1036,7 +1036,7 @@ export function HomeTab({ user, setTab }) {
                   ),
                   tag: "Spiller",
                   meta: formatTimeAgo(row.created_at),
-                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> søger makker</>,
+                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> søger kamp</>,
                   subtitle: sub || "Klar til kamp",
                   action: <button onClick={() => setViewPlayer(player)} style={activityActionBtnStyle(theme.blue)}>Detaljer</button>,
                 });
