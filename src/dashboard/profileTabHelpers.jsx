@@ -1,5 +1,6 @@
 import { normalizeStringArrayField, canonicalRegionForForm } from '../lib/profileUtils';
-import { DEFAULT_REGION, levelStringFromNum } from '../lib/platformConstants';
+import { DEFAULT_REGION } from '../lib/platformConstants';
+import { profilePlaytomicLevel } from '../lib/padelLevelUtils';
 
 export function splitDisplayNameToFirstLast(full) {
   const t = String(full || "").trim();
@@ -16,7 +17,7 @@ export function profileFormState(p) {
     full_name: p.full_name || p.name || "",
     area: canonicalRegionForForm(p.area || p.region || '') || DEFAULT_REGION,
     city: p.city != null ? String(p.city).trim() : '',
-    level: levelStringFromNum(p.level) || "",
+    levelNumeric: profilePlaytomicLevel(p),
     play_style: p.play_style || "Ved ikke endnu",
     court_side: p.court_side || "",
     bio: p.bio || "",

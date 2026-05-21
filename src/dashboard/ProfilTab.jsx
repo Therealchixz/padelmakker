@@ -4,7 +4,9 @@ import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
-import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, levelLabel, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
+import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
+import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { normalizeMatchSearchPrefs, describeMatchFilter } from '../lib/matchSearchFilterUtils';
 import { useNavigate } from 'react-router-dom';
@@ -391,7 +393,7 @@ export function ProfilTab({ user, showToast, setTab }) {
       await updateProfile({
         area: region,
         city: form.city.trim() || null,
-        level: form.level ? parseFloat(form.level.match(/[\d.]+/)?.[0] || "3") : undefined,
+        level: form.levelNumeric,
         play_style: form.play_style,
         court_side: form.court_side || null,
         bio: sanitizeText(form.bio.trim()),
@@ -514,7 +516,12 @@ export function ProfilTab({ user, showToast, setTab }) {
                 {!statsLoading && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
                 {!statsLoading && <span style={tag(theme.blueBg, theme.blue)}>Americano ELO {americanoElo}</span>}
                 {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
-                {user.level && <span style={tag(theme.blueBg, theme.blue)}>{levelLabel(user.level)}</span>}
+                {user.level != null && (
+                  <span style={tag(theme.blueBg, theme.blue)}>
+                    {formatPlaytomicLevel(user.level)}
+                    {levelLabel(user.level) ? ` · ${levelLabel(user.level)}` : ''}
+                  </span>
+                )}
                 <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
                 {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
                 <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.city ? `${user.city}, ` : ""}{user.area || "?"}</span>
@@ -840,15 +847,12 @@ export function ProfilTab({ user, showToast, setTab }) {
           style={{ ...inputStyle, marginBottom: "14px" }}
         />
 
-        {/* Niveau */}
         <div style={labelStyle}>Niveau</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "14px" }}>
-          {LEVELS.map(l => (
-            <button key={l} onClick={() => set("level", l)} style={{ ...btn(form.level === l), textAlign: "left", padding: "8px 14px", display: "flex", flexDirection: "column", gap: "2px" }}>
-              <span style={{ fontWeight: 700, fontSize: "13px" }}>{l}</span>
-              <span style={{ fontSize: "11px", fontWeight: 400, opacity: 0.7 }}>{LEVEL_DESCS[l]}</span>
-            </button>
-          ))}
+        <div style={{ marginBottom: 14 }}>
+          <PlaytomicLevelPicker
+            value={form.levelNumeric}
+            onChange={(n) => set('levelNumeric', n)}
+          />
         </div>
 
         {/* Play style */}

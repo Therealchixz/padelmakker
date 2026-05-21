@@ -161,7 +161,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
           <span style={{ color: theme.textMid, marginLeft: 8 }}>{levelDisplay}</span>
         ) : null}
         <div style={{ fontSize: 11, color: theme.textLight, marginTop: 6 }}>
-          Hentes fra din profil. Opdater niveau under Profil → Rediger, hvis det er forkert.
+          Hentes fra din profil. Under Profil → Rediger kan du finjustere (fx 3,3 i stedet for 3,0 eller 3,5).
         </div>
       </div>
 

@@ -19,6 +19,17 @@ export function clampPlaytomicLevel(value, fallback = DEFAULT_PLAYTOMIC_LEVEL) {
   return Math.round(Math.max(PLAYTOMIC_LEVEL_MIN, Math.min(PLAYTOMIC_LEVEL_MAX, n)) * 10) / 10;
 }
 
+/** Parse niveau fra formular (tal eller legacy LEVELS-streng). */
+export function parsePlaytomicLevelField(raw) {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return clampPlaytomicLevel(raw);
+  }
+  const fromStr = parseFloat(String(raw).match(/[\d.]+/)?.[0] || '');
+  if (!Number.isFinite(fromStr)) return null;
+  return clampPlaytomicLevel(fromStr);
+}
+
 export function profilePlaytomicLevel(profile) {
   return clampPlaytomicLevel(profile?.level, DEFAULT_PLAYTOMIC_LEVEL);
 }

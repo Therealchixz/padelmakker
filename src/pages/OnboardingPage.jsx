@@ -7,7 +7,9 @@ import { OAuthButtons, AuthDivider } from '../components/OAuthButtons';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, LEVELS, LEVEL_DESCS, COURT_SIDES, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, INTENTS, PARTNER_LEVELS, levelLabel } from '../lib/platformConstants';
+import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
+import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName, canAccessDashboard } from '../lib/profileUtils';
 import { isPhoneVerificationExempt, fetchPhoneVerificationExemptFromServer } from '../lib/phoneVerification';
@@ -36,7 +38,7 @@ export function OnboardingPage() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", level: "", style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false, preferred_partner_level: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: null, style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false, preferred_partner_level: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
   /** Undgå gentaget auto-spring fra trin 1 → 0 → 1 når brugeren går tilbage. */
@@ -172,7 +174,7 @@ export function OnboardingPage() {
     }
 
     if (targetStep === 1) {
-      if (!form.level) missing.push("niveau");
+      if (form.levelNumeric == null || !Number.isFinite(Number(form.levelNumeric))) missing.push("niveau");
       if (!form.style) missing.push("spillestil");
       if (!form.court_side) missing.push("side på banen");
     }
@@ -226,7 +228,11 @@ export function OnboardingPage() {
   const totalSteps = stepMeta.length;
   const activeStepMeta = stepMeta[step];
   const profilePreviewName = `${form.first_name.trim()} ${form.last_name.trim()}`.trim() || "Dit navn";
-  const profilePreviewLevel = [form.level, form.style, form.court_side].filter(Boolean).join(" - ") || "Niveau ikke valgt endnu";
+  const profilePreviewLevel = [
+    form.levelNumeric != null ? `${formatPlaytomicLevel(form.levelNumeric)}${levelLabel(form.levelNumeric) ? ` (${levelLabel(form.levelNumeric)})` : ''}` : '',
+    form.style,
+    form.court_side,
+  ].filter(Boolean).join(" - ") || "Niveau ikke valgt endnu";
   const profilePreviewLocation = [form.city.trim(), form.area].filter(Boolean).join(", ") || "Område ikke valgt endnu";
   const profilePreviewBio = form.bio.trim() || "Tilføj en kort bio, så andre bedre forstår hvem du er som makker.";
 
@@ -241,7 +247,7 @@ export function OnboardingPage() {
       form.phone.trim() ||
       form.password ||
       form.password_confirm ||
-      form.level ||
+      form.levelNumeric != null ||
       form.style ||
       form.court_side ||
       form.area ||
@@ -298,7 +304,7 @@ export function OnboardingPage() {
         return;
       }
       const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
-      const levelNum = parseFloat(form.level.match(/[\d.]+/)?.[0] || "3");
+      const levelNum = Number(form.levelNumeric);
       const profilePayload = {
         full_name: sanitizeText(displayName),
         name: sanitizeText(displayName),
@@ -581,30 +587,15 @@ export function OnboardingPage() {
         Ikke sikker? Vælg det niveau der passer bedst lige nu. Du kan justere det senere.
       </p>
 
-      {/* Niveau — beskrivelse vises kun for valgt */}
       <div style={labelStyle}>Niveau</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "24px" }}>
-        {LEVELS.map(l => {
-          const active = form.level === l;
-          return (
-            <button key={l} onClick={() => set("level", l)} style={{
-              textAlign: "left", padding: "10px 14px",
-              borderRadius: "8px", border: "1.5px solid " + (active ? theme.accent : theme.border),
-              background: active ? theme.accentBg : theme.surface,
-              cursor: "pointer", transition: "all 0.15s",
-              display: "flex", flexDirection: "column", gap: active ? "4px" : 0,
-              fontFamily: "inherit",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontWeight: 700, fontSize: "14px", color: active ? theme.accent : theme.text }}>{l}</span>
-                {active && <span style={{ fontSize: "13px", color: theme.accent, fontWeight: 700 }}>✓</span>}
-              </div>
-              {active && (
-                <span style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.45 }}>{LEVEL_DESCS[l]}</span>
-              )}
-            </button>
-          );
-        })}
+      <p style={{ fontSize: 13, color: theme.textLight, marginBottom: 12, lineHeight: 1.45 }}>
+        Vælg et udgangspunkt og finjustér — fx 3,3 hvis du ligger mellem 3,0 og 3,5.
+      </p>
+      <div style={{ marginBottom: 24 }}>
+        <PlaytomicLevelPicker
+          value={form.levelNumeric}
+          onChange={(n) => set('levelNumeric', n)}
+        />
       </div>
 
       {/* Spillestil + Side på banen — 2 kolonner */}

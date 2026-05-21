@@ -28,6 +28,40 @@ export function levelLabel(num) {
   return 'Elite';
 }
 
+/** Interval for hvornår et preset anses som valgt (fx 3.3 → Avanceret øvet). */
+export function levelPresetBand(levelString) {
+  const matches = String(levelString || '').match(/[\d.]+/g);
+  if (!matches?.length) return { min: 1, max: 7 };
+  const nums = matches.map((m) => parseFloat(m));
+  if (nums.length >= 2) return { min: nums[0], max: nums[1] };
+  const c = nums[0];
+  return { min: Math.max(1, c - 0.25), max: Math.min(7, c + 0.24) };
+}
+
+export function levelMatchesPreset(level, levelString) {
+  const n = Number(level);
+  if (!Number.isFinite(n)) return false;
+  const { min, max } = levelPresetBand(levelString);
+  return n >= min && n <= max;
+}
+
+/** Standardværdi når bruger vælger et niveau-preset (midtpunkt i intervallet). */
+export function defaultLevelForPreset(levelString) {
+  const matches = String(levelString || '').match(/[\d.]+/g);
+  if (!matches?.length) return 3;
+  const nums = matches.map((m) => parseFloat(m));
+  if (nums.length >= 2) {
+    return Math.round(((nums[0] + nums[1]) / 2) * 10) / 10;
+  }
+  return Math.round(nums[0] * 10) / 10;
+}
+
+/** Kort beskrivelse for et vilkårligt niveau-tal (fx 3.3). */
+export function levelDescriptionForNum(num) {
+  const key = levelStringFromNum(num);
+  return key ? LEVEL_DESCS[key] : null;
+}
+
 /** Konvertér gemt tal til fuld LEVELS-streng til brug i formular */
 export function levelStringFromNum(num) {
   if (!num) return '';
