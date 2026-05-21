@@ -37,7 +37,7 @@ test('makker-detaljer inkluderer filterfelter', () => {
   assert.match(ttlSrc, /Alle tidsrum/);
   assert.match(ttlSrc, /Tidsrum/);
   assert.match(ttlSrc, /makkerPartnerLevelDisplayLabel/);
-  assert.doesNotMatch(ttlSrc, /Fra min profil/);
+  assert.match(ttlSrc, /PARTNER_LEVEL_LABELS\[effective\]/);
 });
 
 test('aktivitetsfeed: én række pr. kanal', () => {
