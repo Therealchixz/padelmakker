@@ -24,9 +24,9 @@ export const MAKKER_INTENT_MODES = [
 
 export const MAKKER_PARTNER_LEVEL_FILTERS = [
   { value: '', label: 'Fra min profil', hint: 'Bruger “ønsket makkerniveau” under Rediger' },
+  { value: 'weaker', label: 'Lidt svagere', hint: 'Mest under dit niveau' },
   { value: 'same', label: 'Samme niveau', hint: 'Omkring dit niveau' },
   { value: 'stronger', label: 'Lidt stærkere', hint: 'Mest over dit niveau' },
-  { value: 'weaker', label: 'Lidt svagere', hint: 'Mest under dit niveau' },
   { value: 'wide', label: 'Bredt', hint: 'Alle niveauer i regionen' },
 ];
 
