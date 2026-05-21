@@ -11,4 +11,7 @@ test('seekingActivityLabel skelner kamp, makker og begge', () => {
   assert.match(src, /søger kamp og makker/);
   assert.match(src, /if \(makkerOn\) return 'søger makker'/);
   assert.match(src, /if \(matchOn\) return 'søger kamp'/);
+  assert.match(src, /getPlayerSeekingDetails/);
+  assert.match(src, /describeMatchFilter/);
+  assert.match(src, /describeMakkerFilter/);
 });

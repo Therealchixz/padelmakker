@@ -7,6 +7,7 @@ import { eloOf } from '../lib/matchDisplayUtils';
 import { MapPin, MessageCircle } from 'lucide-react';
 import { calcAge, normalizeStringArrayField } from '../lib/profileUtils';
 import { levelLabel, DAYS_OF_WEEK } from '../lib/platformConstants';
+import { getPlayerSeekingDetails } from '../lib/seekingActivityLabel';
 import { AvatarCircle } from '../components/AvatarCircle';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
@@ -174,6 +175,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
           ];
 
   const age = calcAge(pRef.birth_year, pRef.birth_month, pRef.birth_day);
+  const seekingDetails = useMemo(() => getPlayerSeekingDetails(pRef), [pRef]);
 
   if (!player) return null;
 
@@ -196,6 +198,63 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
             </div>
           </div>
         </div>
+
+        {seekingDetails && (
+          <div
+            style={{
+              marginBottom: '16px',
+              padding: '14px',
+              background: '#FEF3C7',
+              borderRadius: '10px',
+              border: '1px solid #FDE68A',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                color: '#B45309',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                marginBottom: '6px',
+              }}
+            >
+              Lige nu
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: '#B45309', marginBottom: '10px', letterSpacing: '-0.02em' }}>
+              {seekingDetails.headline}
+            </div>
+            {seekingDetails.blocks.map((block, idx) => (
+              <div
+                key={block.type}
+                style={{
+                  marginBottom: idx < seekingDetails.blocks.length - 1 ? '10px' : 0,
+                  paddingBottom: idx < seekingDetails.blocks.length - 1 ? '10px' : 0,
+                  borderBottom: idx < seekingDetails.blocks.length - 1 ? '1px solid #FDE68A' : 'none',
+                }}
+              >
+                <div style={{ fontSize: '12px', fontWeight: 700, color: theme.text, marginBottom: '4px' }}>
+                  {block.label}
+                </div>
+                <div style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.45 }}>{block.summary}</div>
+                {block.detail ? (
+                  <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '4px' }}>{block.detail}</div>
+                ) : null}
+              </div>
+            ))}
+            {seekingDetails.intentLabel ? (
+              <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '8px' }}>
+                <span style={{ color: theme.textLight }}>Spillestil lige nu: </span>
+                <span style={{ fontWeight: 600 }}>{seekingDetails.intentLabel}</span>
+              </div>
+            ) : null}
+            <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '8px', lineHeight: 1.4 }}>
+              {seekingDetails.sinceLabel ? `Aktiv siden ${seekingDetails.sinceLabel}` : 'Aktiv nu'}
+              {' · '}
+              Synlig i {seekingDetails.visibleFor}
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
           <button onClick={() => setStatsMode('2v2')} style={{ ...btn(statsMode === '2v2'), padding: '5px 10px', fontSize: '11px' }}>
