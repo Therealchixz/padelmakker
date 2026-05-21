@@ -29,6 +29,24 @@ export function seekingActivityLabelDisplay(profile) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/** Profil-form til TTL/labels fra aktivitetsfeed-række. */
+export function profileShapeForSeekingRow(row) {
+  return {
+    area: row?.area,
+    level: row?.level,
+    seeking_match_at: row?.seeking_match_at ?? row?.created_at,
+    match_search_prefs: row?.match_search_prefs,
+    makker_search_prefs: row?.makker_search_prefs,
+  };
+}
+
+/** Label til feed-række (én kanal ad gangen når seekingChannel er sat). */
+export function seekingActivityLabelForRow(row) {
+  if (row?.seekingChannel === 'kamp') return 'søger kamp';
+  if (row?.seekingChannel === 'makker') return 'søger makker';
+  return seekingActivityLabel(profileShapeForSeekingRow(row));
+}
+
 function formatSeekingSince(iso) {
   if (!iso) return null;
   const ms = Date.now() - new Date(iso).getTime();

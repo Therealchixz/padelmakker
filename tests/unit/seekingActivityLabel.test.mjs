@@ -27,3 +27,10 @@ test('adskilt TTL: kamp 24 timer, makker 7 dage', () => {
   assert.match(ttlSrc, /SEEK_MAKKER_TTL_MS/);
   assert.match(ttlSrc, /feedVisibleSince/);
 });
+
+test('aktivitetsfeed: én række pr. kanal', () => {
+  assert.match(ttlSrc, /expandProfilesToSeekingFeedRows/);
+  assert.match(ttlSrc, /seekingChannel: 'kamp'/);
+  assert.match(ttlSrc, /seekingChannel: 'makker'/);
+  assert.match(src, /seekingActivityLabelForRow/);
+});

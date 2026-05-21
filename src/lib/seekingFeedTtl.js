@@ -152,3 +152,62 @@ export function compactMakkerSeekingLine(prefs, profile = {}) {
 export function seekingChannelDurationLabel(channel) {
   return seekingVisibleDurationLabel(channel);
 }
+
+/** ISO-tidspunkt for hvornår kanalen blev synlig (til sortering i feed). */
+export function channelFeedCreatedAtIso(prefs, profile = {}) {
+  const sinceMs = channelFeedSince(prefs, profile.seeking_match_at);
+  if (sinceMs == null) return null;
+  return new Date(sinceMs).toISOString();
+}
+
+/**
+ * Én aktivitetsrække pr. aktiv kanal (kamp / makker), så begge vises i seneste aktivitet.
+ * @param {Array<object>} profiles
+ * @param {{ excludeUserId?: string }} [opts]
+ */
+export function expandProfilesToSeekingFeedRows(profiles, opts = {}) {
+  const { excludeUserId } = opts;
+  const rows = [];
+
+  for (const p of profiles || []) {
+    if (!p?.id) continue;
+    if (excludeUserId && String(p.id) === String(excludeUserId)) continue;
+    if (!isSeekingActiveProfile(p)) continue;
+
+    const base = {
+      userId: p.id,
+      name: p.full_name || p.name || 'En spiller',
+      avatar: p.avatar || '🎾',
+      level: p.level,
+      area: p.area,
+      intent: p.intent_now,
+      seeking_match_at: p.seeking_match_at,
+      match_search_prefs: p.match_search_prefs,
+      makker_search_prefs: p.makker_search_prefs,
+    };
+
+    if (isProfileMatchFeedVisible(p)) {
+      const prefs = normalizeMatchSearchPrefs(p.match_search_prefs, p);
+      rows.push({
+        type: 'seeking_player',
+        seekingChannel: 'kamp',
+        ...base,
+        created_at: channelFeedCreatedAtIso(prefs, p) || p.seeking_match_at,
+      });
+    }
+
+    if (isProfileMakkerFeedVisible(p)) {
+      const prefs = normalizeMakkerSearchPrefs(p.makker_search_prefs, p);
+      rows.push({
+        type: 'seeking_player',
+        seekingChannel: 'makker',
+        ...base,
+        created_at: channelFeedCreatedAtIso(prefs, p) || p.seeking_match_at,
+      });
+    }
+  }
+
+  return rows.sort(
+    (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+  );
+}

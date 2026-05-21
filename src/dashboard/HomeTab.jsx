@@ -11,8 +11,8 @@ import { AppModal } from '../components/AppModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS, levelLabel } from '../lib/platformConstants';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
-import { seekingActivityLabel, isSeekingActiveProfile } from '../lib/seekingActivityLabel';
-import { SEEK_FEED_QUERY_TTL_MS } from '../lib/seekingFeedTtl';
+import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
+import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterActive,
@@ -424,22 +424,8 @@ export function HomeTab({ user, setTab }) {
         if (milestoneItems.length >= 3) break;
       }
 
-      // Søger kamp (seeking_match)
-      const seekingFeed_ = seeking
-        .filter((p) => String(p.id) !== String(user.id) && isSeekingActiveProfile(p))
-        .slice(0, 3)
-        .map((p) => ({
-          type: 'seeking_player',
-          userId: p.id,
-          name: p.full_name || p.name || 'En spiller',
-          avatar: p.avatar || '🎾',
-          level: p.level,
-          area: p.area,
-          intent: p.intent_now,
-          created_at: p.seeking_match_at,
-          match_search_prefs: p.match_search_prefs,
-          makker_search_prefs: p.makker_search_prefs,
-        }));
+      // Søger kamp/makker — én feed-række pr. aktiv kanal
+      const seekingFeed_ = expandProfilesToSeekingFeedRows(seeking, { excludeUserId: user?.id }).slice(0, 6);
 
       // Nye/aktive ligaer
       const lgTeamCounts = {};
@@ -768,7 +754,10 @@ export function HomeTab({ user, setTab }) {
     return () => { cancelled = true; };
   }, [user, matchFilterPrefs, matchFilterOn]);
 
-  const seekingCount = seekingFeed.length;
+  const seekingCount = useMemo(
+    () => new Set(seekingFeed.map((r) => r.userId)).size,
+    [seekingFeed],
+  );
   const seekingTitle = feedLoading
     ? "Finder spillere der søger kamp"
     : seekingCount > 0
@@ -1086,7 +1075,7 @@ export function HomeTab({ user, setTab }) {
                 const levelStr = row.level ? levelLabel(row.level) : null;
                 const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                 return renderActivityRowCard({
-                  key: `seek-${i}`,
+                  key: `seek-${row.userId}-${row.seekingChannel || 'x'}-${i}`,
                   isHighlight,
                   tone: theme.blue,
                   leading: (
@@ -1096,7 +1085,7 @@ export function HomeTab({ user, setTab }) {
                   ),
                   tag: "Spiller",
                   meta: formatTimeAgo(row.created_at),
-                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> {seekingActivityLabel(row)}</>,
+                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> {seekingActivityLabelForRow(row)}</>,
                   subtitle: sub || "Klar til kamp",
                   action: <button onClick={() => setViewPlayer(player)} style={activityActionBtnStyle(theme.blue)}>Detaljer</button>,
                 });
