@@ -662,9 +662,6 @@ export function ProfilTab({ user, showToast, setTab }) {
               Liga
             </button>
           </div>
-          <div style={{ fontSize: "11px", color: theme.textMid, marginBottom: "10px", lineHeight: 1.45 }}>
-            Alt under profilen (performance, relationer og genveje) følger <strong style={{ color: theme.text }}>{activeModeLabel}</strong>.
-          </div>
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading || (overviewMode === "liga" && ligaLoading) ? (
