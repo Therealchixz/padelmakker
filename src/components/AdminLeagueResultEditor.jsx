@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { theme, btn, inputStyle } from '../lib/platformTheme';
+import { AppModal } from './AppModal';
 import { supabase } from '../lib/supabase';
 import { adminCorrectLeagueMatch } from '../lib/adminCorrectLeagueMatch';
 import { validatePadelScore } from '../lib/ligaScore';
@@ -86,37 +87,17 @@ export function AdminLeagueResultEditor({ league, onClose, onSaved }) {
   };
 
   return (
-    <div
-      role="presentation"
-      onClick={() => !busyId && onClose?.()}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1100,
-        background: 'rgba(15,23,42,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-        overflowY: 'auto',
-      }}
+    <AppModal
+      open
+      onClose={onClose}
+      ariaLabel="Ret liga-resultater (admin)"
+      maxWidth={520}
+      zIndex={1100}
+      closeOnBackdrop={!busyId}
+      closeOnEscape={!busyId}
+      contentStyle={{ maxHeight: '92vh' }}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: theme.surface,
-          borderRadius: 14,
-          padding: 20,
-          maxWidth: 520,
-          width: '100%',
-          maxHeight: '92vh',
-          overflowY: 'auto',
-          border: `1px solid ${theme.border}`,
-          boxShadow: theme.shadowLg,
-        }}
-      >
+      <div className="pm-modal-body pm-modal-body--compact" style={{ overflowY: 'auto', maxHeight: '92vh' }}>
         <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: theme.text }}>
           Ret liga-resultater (admin)
         </h3>
@@ -213,6 +194,6 @@ export function AdminLeagueResultEditor({ league, onClose, onSaved }) {
           Luk
         </button>
       </div>
-    </div>
+    </AppModal>
   );
 }

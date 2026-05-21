@@ -15,9 +15,13 @@ Opdater ved større refactors. Senest: smoke-test OK på prod; hex i JSX er rydd
 | `src/components/PendingResultConfirmModal.jsx` | Migreret |
 | `src/components/BanNoticeModal.jsx` | Migreret |
 | `src/components/ConfirmDialog.jsx` | Egen dialog (behold) |
-| `src/dashboard/LigaTab.jsx` | Delvise overlays — evaluer ved behov |
+| `src/dashboard/LigaTab.jsx` | `MatchDetailModal` via AppModal |
 | `src/dashboard/AdminTab.jsx` | Rediger/slet-spiller via AppModal |
-| `src/components/Admin*Editor.jsx` | Admin — lav prioritet |
+| `src/components/AdminMatchResultEditor.jsx` | AppModal |
+| `src/components/AdminAmericanoResultEditor.jsx` | AppModal |
+| `src/components/AdminLeagueResultEditor.jsx` | AppModal |
+| `src/components/AdminReportDmViewer.jsx` | AppModal |
+| `src/components/AdminPinGate.jsx` | Fuldskærms-gate (behold) |
 
 ## Hex i JSX
 
@@ -30,5 +34,5 @@ CI kører med `STRICT=1`. Lokalt: `STRICT=1 npm run check:ui-hex` før PR.
 1. ~~**Beskeder**~~ — `pm-besked-*` CSS, `pm-ui-card`, state-kort (færdig)
 2. ~~**Baner**~~ — `pm-baner-*` CSS, `pm-help-box`, tids-chips via tokens (færdig)
 3. ~~**Admin**~~ — `pm-admin-*` CSS, PillTabs, `pm-ui-card`, AppModal for rediger/slet (færdig)
-4. **LigaTab** + admin-resultateditorer → `AppModal` (lav prioritet)
+4. ~~**LigaTab** + admin-resultateditorer~~ → `AppModal` (færdig; `AdminPinGate` beholdes)
 5. **PillTabs** andre steder med gamle `btn()`-filterrækker

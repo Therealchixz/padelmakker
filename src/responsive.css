@@ -4992,6 +4992,14 @@ button,
 .pm-admin-empty {
   color: var(--pm-text-light);
   font-size: 13px;
+  line-height: 1.45;
+}
+
+/* Undgå flad “stribe” hvis pm-ui-card bruges ved en fejl */
+.pm-ui-card.pm-admin-empty {
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--pm-text-mid);
 }
 
 .pm-admin-modal-body {

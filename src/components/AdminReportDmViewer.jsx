@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, MessageCircle } from 'lucide-react';
 import { theme, btn } from '../lib/platformTheme';
+import { AppModal } from './AppModal';
 import { fetchAdminDmThread } from '../lib/userModeration';
 
 function formatMsgTime(value) {
@@ -61,35 +62,25 @@ export function AdminReportDmViewer({
   const reportAt = report.created_at ? new Date(report.created_at).getTime() : null;
 
   return (
-    <div
-      role="presentation"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1100,
-        background: 'rgba(15,23,42,0.5)',
+    <AppModal
+      open={open}
+      onClose={onClose}
+      ariaLabel="DM-samtale"
+      maxWidth={520}
+      zIndex={1100}
+      contentStyle={{
+        maxHeight: 'min(85vh, 720px)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
+        flexDirection: 'column',
+        overflow: 'hidden',
+        padding: 0,
       }}
     >
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="admin-dm-viewer-title"
-        onClick={(e) => e.stopPropagation()}
         style={{
-          background: theme.surface,
-          border: `1px solid ${theme.border}`,
-          borderRadius: 14,
-          width: '100%',
-          maxWidth: 520,
-          maxHeight: 'min(85vh, 720px)',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: theme.shadowLg,
+          maxHeight: 'min(85vh, 720px)',
           overflow: 'hidden',
         }}
       >
@@ -216,6 +207,6 @@ export function AdminReportDmViewer({
           {!loading && messages.length > 0 && ` Viser ${messages.length} besked${messages.length === 1 ? '' : 'er'} (max. 300).`}
         </div>
       </div>
-    </div>
+    </AppModal>
   );
 }

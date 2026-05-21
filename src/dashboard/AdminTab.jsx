@@ -1512,7 +1512,7 @@ export function AdminTab({ initialSubTab = null }) {
           {reportsLoading ? (
             <div className="pm-admin-loading">Indlæser anmeldelser…</div>
           ) : userReports.length === 0 ? (
-            <div className="pm-ui-card pm-admin-empty">Ingen anmeldelser i denne visning.</div>
+            <div className="pm-state-card pm-state-card--empty">Ingen anmeldelser i denne visning.</div>
           ) : (
             <div className="pm-admin-list">
               {userReports.map((report) => {
@@ -1647,7 +1647,7 @@ export function AdminTab({ initialSubTab = null }) {
           {resultErrorsLoading ? (
             <div className="pm-admin-loading">Indlæser fejlindberetninger…</div>
           ) : resultErrorReports.length === 0 ? (
-            <div className="pm-ui-card pm-admin-empty">Ingen fejlindberetninger i denne visning.</div>
+            <div className="pm-state-card pm-state-card--empty">Ingen fejlindberetninger i denne visning.</div>
           ) : (
             <div className="pm-admin-list">
               {resultErrorReports.map((report) => {

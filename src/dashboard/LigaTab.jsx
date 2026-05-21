@@ -11,6 +11,7 @@ import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
 import { formatMatchDateDa } from '../lib/matchDisplayUtils';
+import { AppModal } from '../components/AppModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { LigaOpenCard } from './LigaOpenCard';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
@@ -213,14 +214,15 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }
   const resultLabel = !t2 ? `${t1?.name} — fri runde (automatisk sejr)` : !reported ? '—' : `${winner?.name} vinder ${Math.max(+t1Score || 0, +t2Score || 0)}–${Math.min(+t1Score || 0, +t2Score || 0)}`;
 
   return (
-    <div
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'grid', placeItems: 'center', padding: '20px', animation: 'fadein .2s ease' }}
+    <AppModal
+      open
+      onClose={onClose}
+      ariaLabel={`Ligakamp runde ${rn}`}
+      maxWidth={520}
+      zIndex={200}
+      contentStyle={{ padding: 0, overflow: 'hidden' }}
     >
-      <style>{`@keyframes fadein{from{opacity:0}to{opacity:1}}@keyframes popin{from{opacity:0;transform:translateY(10px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>
-      <div onClick={e => e.stopPropagation()}
-        style={{ background: theme.surface, borderRadius: '20px', width: '100%', maxWidth: '520px', boxShadow: theme.shadowLg, overflow: 'hidden', animation: 'popin .24s cubic-bezier(.2,.9,.3,1)', border: '1px solid ' + theme.border }}
-      >
+      <div style={{ overflow: 'hidden' }}>
         {/* Header */}
         <div style={{ padding: '22px 26px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: theme.textLight, fontWeight: 600 }}>
@@ -284,7 +286,7 @@ function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }
           </table>
         </div>
       </div>
-    </div>
+    </AppModal>
   );
 }
 
