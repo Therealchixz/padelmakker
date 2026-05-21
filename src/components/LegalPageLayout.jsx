@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from './PublicLegalFooter';
 
@@ -7,6 +8,9 @@ import { PublicLegalFooter } from './PublicLegalFooter';
  */
 export function LegalPageLayout({ title, children }) {
   const navigate = useNavigate();
+  const { session } = useAuth();
+  const backPath = session ? '/dashboard/hjem' : '/';
+  const backLabel = session ? '← Til dashboard' : '← Til forsiden';
 
   return (
     <div
@@ -23,10 +27,10 @@ export function LegalPageLayout({ title, children }) {
       <div style={{ maxWidth: '720px', margin: '0 auto' }}>
         <button
           type="button"
-          onClick={() => navigate('/')}
+          onClick={() => navigate(backPath)}
           style={{ ...btn(false), marginBottom: '24px', padding: '8px 14px', fontSize: '13px' }}
         >
-          ← Til forsiden
+          {backLabel}
         </button>
         <article
           style={{

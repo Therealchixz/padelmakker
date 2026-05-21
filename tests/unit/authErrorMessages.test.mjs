@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapAuthErrorMessage } from '../../src/lib/authErrorMessages.js';
+import { mapAuthErrorMessage, mapPhoneAuthErrorMessage } from '../../src/lib/authErrorMessages.js';
 
 describe('mapAuthErrorMessage', () => {
   it('maps invalid login credentials', () => {
@@ -21,6 +21,13 @@ describe('mapAuthErrorMessage', () => {
     assert.equal(
       mapAuthErrorMessage('something_went_wrong', 'forgot'),
       'Kunne ikke sende nulstillingsmail. Prøv igen.',
+    );
+  });
+
+  it('maps expired OTP for phone', () => {
+    assert.equal(
+      mapPhoneAuthErrorMessage('Token has expired or is invalid'),
+      'Koden er udløbet. Send en ny SMS-kode og prøv igen.',
     );
   });
 });

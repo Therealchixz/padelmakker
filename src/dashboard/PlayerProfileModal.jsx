@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { theme, btn, tag } from '../lib/platformTheme';
 import { availabilityTags } from '../lib/platformUtils';
@@ -13,6 +13,7 @@ import { AvatarCircle } from '../components/AvatarCircle';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
   const [dataLoading, setDataLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [statsMode, setStatsMode] = useState('2v2');
   const [streakError, setStreakError] = useState(false);
   const [streakStats, setStreakStats] = useState({ currentStreak: 0, bestStreak: 0 });
@@ -21,20 +22,22 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
   const [profileRow, setProfileRow] = useState(null);
   const [ligaStats, setLigaStats] = useState(null);
 
-  useEffect(() => {
+  const loadProfileData = useCallback(async () => {
     if (!player?.id) {
       setDataLoading(false);
+      setLoadError(null);
       setStatsMode('2v2');
       setStreakStats({ currentStreak: 0, bestStreak: 0 });
       setRatedHistoryRows([]);
       setAmericanoHistoryRows([]);
       setProfileRow(null);
       setLigaStats(null);
+      setStreakError(false);
       return;
     }
 
-    let cancelled = false;
     setDataLoading(true);
+    setLoadError(null);
     setStatsMode('2v2');
     setStreakError(false);
     setRatedHistoryRows([]);
@@ -42,26 +45,35 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
     setProfileRow(null);
     setLigaStats(null);
 
-    (async () => {
-      try {
-        const [pr, hist, amHist, teamsRes] = await Promise.all([
-          supabase.from('profiles').select('*').eq('id', player.id).maybeSingle(),
-          supabase.from('elo_history').select('*').eq('user_id', player.id).order('date', { ascending: true }),
-          supabase
-            .from('americano_elo_history')
-            .select('id, old_rating, new_rating, change, created_at')
-            .eq('user_id', player.id)
-            .order('created_at', { ascending: true }),
-          supabase.from('league_teams').select('id, league_id').or(`player1_id.eq.${player.id},player2_id.eq.${player.id}`),
-        ]);
+    try {
+      const [pr, hist, amHist, teamsRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', player.id).maybeSingle(),
+        supabase.from('elo_history').select('*').eq('user_id', player.id).order('date', { ascending: true }),
+        supabase
+          .from('americano_elo_history')
+          .select('id, old_rating, new_rating, change, created_at')
+          .eq('user_id', player.id)
+          .order('created_at', { ascending: true }),
+        supabase.from('league_teams').select('id, league_id').or(`player1_id.eq.${player.id},player2_id.eq.${player.id}`),
+      ]);
 
-        if (cancelled) return;
-        if (hist.error) throw hist.error;
-        if (amHist.error) throw amHist.error;
+      if (pr.error) throw pr.error;
 
+      setProfileRow(pr.data || player);
+
+      if (hist.error) {
+        setStreakError(true);
+        setStreakStats({ currentStreak: 0, bestStreak: 0 });
+        setRatedHistoryRows([]);
+      } else {
         const rows = filterRatedEloHistoryRows(hist.data || []);
         setStreakStats(winStreaksFromEloHistory(rows));
         setRatedHistoryRows(rows);
+      }
+
+      if (amHist.error) {
+        setAmericanoHistoryRows([]);
+      } else {
         setAmericanoHistoryRows(
           (amHist.data || []).map((row) => ({
             ...row,
@@ -70,51 +82,49 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
             result: Number(row.change) > 0 ? 'win' : Number(row.change) < 0 ? 'loss' : 'draw',
           }))
         );
-        setProfileRow(pr.data || player);
-
-        const teams = teamsRes.data || [];
-        const teamIds = teams.map((t) => t.id);
-        const leagueIds = [...new Set(teams.map((t) => t.league_id).filter(Boolean))];
-        if (teamIds.length > 0) {
-          const { data: leagueMatches } = await supabase
-            .from('league_matches')
-            .select('winner_id, team1_id, team2_id')
-            .eq('status', 'reported')
-            .or(`team1_id.in.(${teamIds.join(',')}),team2_id.in.(${teamIds.join(',')})`);
-          let wins = 0;
-          let played = 0;
-          for (const m of leagueMatches || []) {
-            const mine = teamIds.includes(m.team1_id) || teamIds.includes(m.team2_id);
-            if (!mine) continue;
-            played++;
-            if (m.winner_id && teamIds.includes(m.winner_id)) wins++;
-          }
-          const losses = played - wins;
-          const winPct = played > 0 ? Math.round((wins / played) * 100) : 0;
-          if (!cancelled) {
-            setLigaStats({ wins, losses, played, leagues: leagueIds.length, winPct });
-          }
-        } else if (!cancelled) {
-          setLigaStats({ wins: 0, losses: 0, played: 0, leagues: 0, winPct: 0 });
-        }
-      } catch {
-        if (!cancelled) {
-          setStreakError(true);
-          setStreakStats({ currentStreak: 0, bestStreak: 0 });
-          setRatedHistoryRows([]);
-          setAmericanoHistoryRows([]);
-          setProfileRow(player);
-          setLigaStats({ wins: 0, losses: 0, played: 0, leagues: 0, winPct: 0 });
-        }
-      } finally {
-        if (!cancelled) setDataLoading(false);
       }
-    })();
 
-    return () => {
-      cancelled = true;
-    };
+      const teams = teamsRes.data || [];
+      const teamIds = teams.map((t) => t.id);
+      const leagueIds = [...new Set(teams.map((t) => t.league_id).filter(Boolean))];
+      if (teamIds.length > 0) {
+        const { data: leagueMatches, error: lmErr } = await supabase
+          .from('league_matches')
+          .select('winner_id, team1_id, team2_id')
+          .eq('status', 'reported')
+          .or(`team1_id.in.(${teamIds.join(',')}),team2_id.in.(${teamIds.join(',')})`);
+        if (lmErr) throw lmErr;
+        let wins = 0;
+        let played = 0;
+        for (const m of leagueMatches || []) {
+          const mine = teamIds.includes(m.team1_id) || teamIds.includes(m.team2_id);
+          if (!mine) continue;
+          played++;
+          if (m.winner_id && teamIds.includes(m.winner_id)) wins++;
+        }
+        const losses = played - wins;
+        const winPct = played > 0 ? Math.round((wins / played) * 100) : 0;
+        setLigaStats({ wins, losses, played, leagues: leagueIds.length, winPct });
+      } else {
+        setLigaStats({ wins: 0, losses: 0, played: 0, leagues: 0, winPct: 0 });
+      }
+    } catch (e) {
+      console.warn('[PlayerProfileModal] load failed:', e);
+      setLoadError('Kunne ikke hente profil og statistik. Tjek forbindelsen og prøv igen.');
+      setStreakError(true);
+      setStreakStats({ currentStreak: 0, bestStreak: 0 });
+      setRatedHistoryRows([]);
+      setAmericanoHistoryRows([]);
+      setProfileRow(player);
+      setLigaStats({ wins: 0, losses: 0, played: 0, leagues: 0, winPct: 0 });
+    } finally {
+      setDataLoading(false);
+    }
   }, [player]);
+
+  useEffect(() => {
+    void loadProfileData();
+  }, [loadProfileData]);
 
   const pRef = profileRow || player || {};
   const histStatsModal = statsFromEloHistoryRows(ratedHistoryRows);
@@ -211,6 +221,19 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
           </div>
         </div>
 
+        {loadError && !dataLoading ? (
+          <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '14px' }}>
+            <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+            <div className="pm-state-title">Kunne ikke hente alle data</div>
+            <div className="pm-state-copy">{loadError}</div>
+            <div className="pm-state-actions">
+              <button type="button" onClick={() => void loadProfileData()} style={{ ...btn(true), fontSize: '13px' }}>
+                Prøv igen
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {seekingDetails?.blocks?.map((block) => (
           <div
             key={block.type}
@@ -253,13 +276,13 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
         ))}
 
         <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
-          <button onClick={() => setStatsMode('2v2')} style={{ ...btn(statsMode === '2v2'), padding: '5px 10px', fontSize: '11px' }}>
+          <button type="button" onClick={() => setStatsMode('2v2')} style={{ ...btn(statsMode === '2v2'), padding: '5px 10px', fontSize: '11px' }}>
             2v2
           </button>
-          <button onClick={() => setStatsMode('americano')} style={{ ...btn(statsMode === 'americano'), padding: '5px 10px', fontSize: '11px' }}>
+          <button type="button" onClick={() => setStatsMode('americano')} style={{ ...btn(statsMode === 'americano'), padding: '5px 10px', fontSize: '11px' }}>
             Americano
           </button>
-          <button onClick={() => setStatsMode('liga')} style={{ ...btn(statsMode === 'liga'), padding: '5px 10px', fontSize: '11px' }}>
+          <button type="button" onClick={() => setStatsMode('liga')} style={{ ...btn(statsMode === 'liga'), padding: '5px 10px', fontSize: '11px' }}>
             Liga
           </button>
         </div>
@@ -347,7 +370,12 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
             {dataLoading ? (
               <div style={{ fontSize: '13px', color: theme.textMid, marginTop: '8px' }}>Indlæser...</div>
             ) : streakError ? (
-              <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '6px', lineHeight: 1.4 }}>Kunne ikke hente kamphistorik.</div>
+              <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '6px', lineHeight: 1.4 }}>
+                Kamphistorik kunne ikke hentes.
+                <button type="button" onClick={() => void loadProfileData()} style={{ ...btn(false), display: 'block', marginTop: '8px', padding: '6px 12px', fontSize: '12px' }}>
+                  Prøv igen
+                </button>
+              </div>
             ) : (
               <>
                 <div style={{ fontSize: '22px', fontWeight: 800, color: theme.warm, marginTop: '4px', letterSpacing: '-0.02em' }}>
@@ -424,11 +452,11 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
         )}
 
         {onMessage && (
-          <button onClick={onMessage} style={{ ...btn(true), width: '100%', justifyContent: 'center', marginBottom: '8px' }}>
+          <button type="button" onClick={onMessage} style={{ ...btn(true), width: '100%', justifyContent: 'center', marginBottom: '8px' }}>
             <MessageCircle size={15} /> Send besked
           </button>
         )}
-        <button onClick={onClose} style={{ ...btn(false), width: '100%', justifyContent: 'center' }}>Luk</button>
+        <button type="button" onClick={onClose} style={{ ...btn(false), width: '100%', justifyContent: 'center' }}>Luk</button>
       </div>
     </div>
   );

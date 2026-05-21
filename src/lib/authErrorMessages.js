@@ -37,3 +37,26 @@ export function mapAuthErrorMessage(message, context = 'login') {
   }
   return raw;
 }
+
+/** SMS / OTP under oprettelse og telefonbekræftelse */
+export function mapPhoneAuthErrorMessage(message) {
+  const m = String(message || '').toLowerCase();
+
+  if ((m.includes('expired') || m.includes('expire')) && (m.includes('otp') || m.includes('token') || m.includes('sms'))) {
+    return 'Koden er udløbet. Send en ny SMS-kode og prøv igen.';
+  }
+  if (m.includes('invalid') && (m.includes('otp') || m.includes('token') || m.includes('code'))) {
+    return 'Forkert kode. Tjek de 6 cifre fra SMS’en og prøv igen.';
+  }
+  if (m.includes('phone') && m.includes('already')) {
+    return 'Telefonnummeret er allerede knyttet til en konto.';
+  }
+  if (m.includes('sms') && (m.includes('send') || m.includes('deliver'))) {
+    return 'Kunne ikke sende SMS lige nu. Prøv igen om et øjeblik.';
+  }
+  if (m.includes('signups') && m.includes('disabled')) {
+    return 'SMS-oprettelse er midlertidigt lukket. Prøv igen senere.';
+  }
+
+  return mapAuthErrorMessage(message, 'login');
+}

@@ -5,6 +5,7 @@ import { useAuth } from '../lib/AuthContext'
 import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme'
 import { PublicLegalFooter } from '../components/PublicLegalFooter'
 import { normalizePhoneToE164 } from '../lib/validationHelpers'
+import { mapPhoneAuthErrorMessage } from '../lib/authErrorMessages'
 import { TurnstileWidget } from '../components/TurnstileWidget'
 
 const PHONE_SIGNUP_PENDING_KEY = 'pm_phone_signup_pending_v1'
@@ -178,7 +179,7 @@ export function PhoneVerificationPage() {
         setCaptchaResetNonce((n) => n + 1)
       }
     } catch (e) {
-      setErr(e?.message || 'Kunne ikke sende SMS-kode lige nu.')
+      setErr(mapPhoneAuthErrorMessage(e?.message))
       if (turnstileEnabled) {
         setCaptchaToken('')
         setCaptchaResetNonce((n) => n + 1)
@@ -256,10 +257,12 @@ export function PhoneVerificationPage() {
       clearPendingSignup()
       try { await signOut() } catch { /* ignore */ }
 
-      setInfo('Telefon bekræftet. Tjek nu din e-mail for sidste bekræftelse.')
+      setInfo(
+        'Telefon bekræftet. Du bliver logget ud nu, så du kan bekræfte email på en sikker måde — tjek din indbakke på næste trin.',
+      )
       navigate('/opret/bekraeft-email', { replace: true, state: { email: effectiveEmail } })
     } catch (e) {
-      setErr(e?.message || 'Koden kunne ikke verificeres.')
+      setErr(mapPhoneAuthErrorMessage(e?.message))
     } finally {
       setSubmitting(false)
     }
@@ -297,7 +300,7 @@ export function PhoneVerificationPage() {
         <p style={{ color: theme.textMid, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>
           {mode === 'phone_change'
             ? 'Indtast telefonnummer og SMS-koden for at fortsætte.'
-            : 'Vi har sendt en 6-cifret kode til dit nummer. Indtast den her for at bekræfte kontoen.'}
+            : 'Vi sender en 6-cifret kode på SMS. Indtast den herunder — den udløber efter kort tid.'}
         </p>
 
         {noPendingSignup && (
@@ -315,74 +318,89 @@ export function PhoneVerificationPage() {
           </div>
         )}
 
-        <label htmlFor="verify-phone" style={labelStyle}>Telefonnummer</label>
-        <input
-          id="verify-phone"
-          type="tel"
-          autoComplete="tel"
-          inputMode="tel"
-          value={phoneInput}
-          onChange={(e) => {
-            setPhoneInput(e.target.value)
-            setErr('')
-          }}
-          placeholder="Fx 20112233 eller +4520112233"
-          style={{
-            ...inputStyle,
-            marginBottom: normalizedDraftPhone ? '14px' : '6px',
-            border: '1px solid ' + (normalizedDraftPhone || phoneInput.trim().length === 0 ? theme.border : theme.red),
-          }}
-        />
-        {!normalizedDraftPhone && phoneInput.trim().length > 0 && (
-          <p style={{ color: theme.red, fontSize: '12px', marginBottom: '12px', fontWeight: 600 }}>
-            Ugyldigt nummer. Brug fx 20112233 eller +4520112233.
-          </p>
-        )}
-
-        {mode === 'signup' && turnstileEnabled && (
-          <div style={{ marginBottom: '14px' }}>
-            <TurnstileWidget
-              siteKey={turnstileSiteKey}
-              onTokenChange={setCaptchaToken}
-              resetNonce={captchaResetNonce}
-            />
-          </div>
-        )}
-        <button
-          onClick={sendCode}
-          disabled={
-            submitting ||
-            !normalizedDraftPhone ||
-            (!canResend && otpSent) ||
-            (mode === 'signup' && turnstileEnabled && !captchaToken)
-          }
-          style={{
-            ...btn(true),
-            width: '100%',
-            justifyContent: 'center',
-            marginBottom: '14px',
-            opacity:
-              submitting ||
-              !normalizedDraftPhone ||
-              (!canResend && otpSent) ||
-              (mode === 'signup' && turnstileEnabled && !captchaToken)
-                ? 0.55
-                : 1,
-            cursor:
-              submitting ||
-              !normalizedDraftPhone ||
-              (!canResend && otpSent) ||
-              (mode === 'signup' && turnstileEnabled && !captchaToken)
-                ? 'not-allowed'
-                : 'pointer',
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            void sendCode()
           }}
         >
-          {!otpSent ? 'Send SMS-kode' : canResend ? 'Send kode igen' : `Send igen om ${resendSeconds}s`}
-        </button>
+          <label htmlFor="verify-phone" style={labelStyle}>Telefonnummer</label>
+          <input
+            id="verify-phone"
+            type="tel"
+            autoComplete="tel"
+            inputMode="tel"
+            value={phoneInput}
+            onChange={(e) => {
+              setPhoneInput(e.target.value)
+              setErr('')
+            }}
+            placeholder="Fx 20112233 eller +4520112233"
+            style={{
+              ...inputStyle,
+              marginBottom: normalizedDraftPhone ? '14px' : '6px',
+              border: '1px solid ' + (normalizedDraftPhone || phoneInput.trim().length === 0 ? theme.border : theme.red),
+            }}
+          />
+          {!normalizedDraftPhone && phoneInput.trim().length > 0 && (
+            <p style={{ color: theme.red, fontSize: '12px', marginBottom: '12px', fontWeight: 600 }}>
+              Ugyldigt nummer. Brug fx 20112233 eller +4520112233.
+            </p>
+          )}
+
+          {mode === 'signup' && turnstileEnabled && (
+            <div style={{ marginBottom: '14px' }}>
+              <TurnstileWidget
+                siteKey={turnstileSiteKey}
+                onTokenChange={setCaptchaToken}
+                resetNonce={captchaResetNonce}
+              />
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={
+              submitting ||
+              !normalizedDraftPhone ||
+              (!canResend && otpSent) ||
+              (mode === 'signup' && turnstileEnabled && !captchaToken)
+            }
+            style={{
+              ...btn(true),
+              width: '100%',
+              justifyContent: 'center',
+              marginBottom: '14px',
+              opacity:
+                submitting ||
+                !normalizedDraftPhone ||
+                (!canResend && otpSent) ||
+                (mode === 'signup' && turnstileEnabled && !captchaToken)
+                  ? 0.55
+                  : 1,
+              cursor:
+                submitting ||
+                !normalizedDraftPhone ||
+                (!canResend && otpSent) ||
+                (mode === 'signup' && turnstileEnabled && !captchaToken)
+                  ? 'not-allowed'
+                  : 'pointer',
+            }}
+          >
+            {!otpSent ? 'Send SMS-kode' : canResend ? 'Send kode igen' : `Send igen om ${resendSeconds}s`}
+          </button>
+        </form>
 
         {otpSent && (
-          <>
-            <label htmlFor="verify-otp" style={labelStyle}>SMS-kode</label>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void verifyCode()
+            }}
+          >
+            <label htmlFor="verify-otp" style={labelStyle}>SMS-kode (6 cifre)</label>
+            <p style={{ fontSize: '12px', color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
+              Koden står i SMS’en fra os. Kommer den ikke frem, vent et minut og tryk «Send kode igen».
+            </p>
             <input
               id="verify-otp"
               type="text"
@@ -393,11 +411,12 @@ export function PhoneVerificationPage() {
                 setOtpCode(cleanOtp(e.target.value))
                 setErr('')
               }}
-              placeholder="6 cifre"
-              style={{ ...inputStyle, marginBottom: '14px', letterSpacing: '0.22em', textAlign: 'center' }}
+              placeholder="000000"
+              maxLength={6}
+              style={{ ...inputStyle, marginBottom: '14px', letterSpacing: '0.22em', textAlign: 'center', fontSize: '18px' }}
             />
             <button
-              onClick={verifyCode}
+              type="submit"
               disabled={submitting || cleanOtp(otpCode).length !== 6}
               style={{
                 ...btn(true),
@@ -409,18 +428,38 @@ export function PhoneVerificationPage() {
             >
               {submitting ? 'Bekræfter...' : 'Bekræft telefonnummer'}
             </button>
-          </>
+          </form>
+        )}
+
+        {mode === 'signup' && otpSent && (
+          <div
+            style={{
+              marginTop: '16px',
+              padding: '12px',
+              background: theme.surfaceAlt,
+              borderRadius: '10px',
+              border: '1px solid ' + theme.border,
+              fontSize: '12px',
+              color: theme.textMid,
+              lineHeight: 1.5,
+            }}
+          >
+            <strong style={{ color: theme.text }}>Efter bekræftelse:</strong> Du logges kort ud, så du kan bekræfte email på
+            næste side. Det er med vilje — så login først virker, når både telefon og email er bekræftet.
+          </div>
         )}
 
         {err && <p style={{ color: theme.red, fontSize: '13px', marginTop: '14px' }}>{err}</p>}
-        {info && <p style={{ color: theme.accent, fontSize: '13px', marginTop: '14px', fontWeight: 600 }}>{info}</p>}
+        {info && <p style={{ color: theme.accent, fontSize: '13px', marginTop: '14px', fontWeight: 600, lineHeight: 1.45 }}>{info}</p>}
 
         <button
+          type="button"
           onClick={async () => {
             clearPendingSignup()
             try { await signOut() } catch { /* ignore */ }
             navigate('/login', { replace: true })
           }}
+          title="Brug dette hvis du vil starte forfra med en anden email eller telefon"
           style={{
             marginTop: '18px',
             border: 'none',
@@ -432,7 +471,7 @@ export function PhoneVerificationPage() {
             width: '100%',
           }}
         >
-          Log ud
+          Log ud og start forfra
         </button>
       </div>
 

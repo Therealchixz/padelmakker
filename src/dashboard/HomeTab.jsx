@@ -948,7 +948,7 @@ export function HomeTab({ user, setTab }) {
             <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Seneste aktivitet
             </div>
-            <div className="pm-feed-filters-scroll">
+            <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
               <div className="pm-feed-filters-row">
                 <button
                   onClick={enableAllFilters}
@@ -982,7 +982,7 @@ export function HomeTab({ user, setTab }) {
                       className="pm-ui-btn-chip pm-feed-filter-chip"
                       style={{ marginLeft: "10px" }}
                     >
-                      Vis alle filtre
+                      Vis alle typer
                     </button>
                   </>
                 ) : (

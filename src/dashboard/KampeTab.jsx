@@ -2696,6 +2696,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {kampeFormat === "padel" && !loadingMatches && !loadError && (
       <>
+      <PillTabs
+        tabs={padelViewTabs}
+        value={viewTab}
+        onChange={(nextView) => setViewTab(nextView)}
+        ariaLabel="Kampestatus"
+        size="sm"
+        style={{ marginBottom: "16px" }}
+      />
+
       <div className="pm-help-box" style={{ marginBottom: "14px" }}>
         <button
           type="button"
@@ -2704,7 +2713,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           className="pm-help-box-toggle"
           style={{ cursor: "pointer" }}
         >
-          <span className="pm-help-box-title">Sådan fungerer 2v2 (padel)</span>
+          <span className="pm-help-box-title">Regler for 2v2 (padel)</span>
           <span className="pm-help-box-chevron">
             {padelHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </span>
@@ -2720,15 +2729,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
         ) : null}
       </div>
-
-      <PillTabs
-        tabs={padelViewTabs}
-        value={viewTab}
-        onChange={(nextView) => setViewTab(nextView)}
-        ariaLabel="Kampestatus"
-        size="sm"
-        style={{ marginBottom: "16px" }}
-      />
 
       {/* Create match form */}
       {showCreate && (
