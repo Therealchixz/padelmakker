@@ -61,10 +61,10 @@ const FEEDBACK_DEFAULT_CATEGORY = "bug";
 const FEEDBACK_DEFAULT_PRIORITY = "normal";
 
 const FEEDBACK_CATEGORY_OPTIONS = [
-  { value: "bug", label: "Bug" },
-  { value: "performance", label: "Performance" },
-  { value: "ui", label: "UI / UX" },
-  { value: "match-chat", label: "Match chat" },
+  { value: "bug", label: "Fejl" },
+  { value: "performance", label: "Ydeevne" },
+  { value: "ui", label: "Udseende / brug" },
+  { value: "match-chat", label: "Kamp-chat" },
   { value: "notifications", label: "Notifikationer" },
   { value: "other", label: "Andet" },
 ];
@@ -712,7 +712,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const pathTab = location.pathname.split("/")[2] || "hjem";
   const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "makker-filter", "admin"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
-  const setTab = useCallback((t) => navigate("/dashboard/" + t), [navigate]);
+  const setTab = useCallback((tabId, opts = {}) => {
+    const raw = opts.search != null ? String(opts.search) : "";
+    const q = raw ? (raw.startsWith("?") ? raw : `?${raw}`) : "";
+    navigate(`/dashboard/${tabId}${q}`);
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!validTabs.includes(pathTab)) {
+      navigate("/dashboard/hjem", { replace: true });
+    }
+  }, [pathTab, navigate]);
 
   const [dark, setDark] = useDarkMode();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
@@ -983,12 +993,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
     lastNonAdminTabRef.current = tab;
   }, [tab]);
 
-  /** Deep link fra admin-notifikation: /dashboard/admin?adminSub=result_errors */
+  /** Deep link fra admin-notifikation: ?adminSub=result_errors | reports */
   useEffect(() => {
     if (!isAdmin || tab !== "admin") return;
     const params = new URLSearchParams(location.search);
     const raw = params.get("adminSub");
-    if (raw !== "result_errors") {
+    const allowed = raw === "result_errors" || raw === "reports";
+    if (!allowed) {
       if (params.has("adminSub")) {
         params.delete("adminSub");
         const next = params.toString();
@@ -996,7 +1007,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       }
       return;
     }
-    setAdminInitialSubTab("result_errors");
+    setAdminInitialSubTab(raw);
     params.delete("adminSub");
     const next = params.toString();
     navigate({ pathname: location.pathname, search: next ? `?${next}` : "" }, { replace: true });
@@ -1187,7 +1198,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const allTabs = [
     { id: "hjem",     label: "Hjem",        icon: <Home          size={15} /> },
-    { id: "makkere",  label: "Find Makker",  icon: <Users         size={15} /> },
+    { id: "makkere",  label: "Find makker",  icon: <Users         size={15} /> },
     { id: "baner",    label: "Book Bane",    icon: <MapPin        size={15} /> },
     { id: "kampe",    label: "Kampe",        icon: <Swords        size={15} />, badge: pendingKampe > 0 ? pendingKampe : null, attention: hasKampeAttention },
     { id: "ranking",  label: "Ranking",      icon: <Trophy        size={15} /> },
@@ -1222,7 +1233,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const primaryTabs = allTabs.filter(t => PRIMARY_TAB_IDS.includes(t.id));
   const mobilePrimaryTabs = allTabs.filter(t => ["hjem", "makkere", "baner", "kampe"].includes(t.id));
-  const mobileMoreTabs = allTabs.filter(t => !["hjem", "makkere", "baner", "kampe"].includes(t.id) && t.id !== "liga");
+  const mobileMoreTabs = allTabs.filter(t => !["hjem", "makkere", "baner", "kampe"].includes(t.id));
   const mobileMoreIsActive = mobileMoreTabs.some(t => t.id === tab);
   const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const userInitial = (displayName || "?").trim().charAt(0).toUpperCase();
@@ -1522,7 +1533,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
             {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive />}
             {tab === "ranking"  && <RankingTabLazy user={user} />}
             {tab === "liga"     && <LigaTabLazy user={user} showToast={showToast} />}
-            {tab === "beskeder" && <BeskedTabLazy user={user} onMobileConversationStateChange={setMobileConversationOpen} />}
+            {tab === "beskeder" && (
+              <BeskedTabLazy
+                user={user}
+                showToast={showToast}
+                onMobileConversationStateChange={setMobileConversationOpen}
+              />
+            )}
             {tab === "profil"   && <ProfilTabLazy user={user} showToast={showToast} setTab={setTab} />}
             {tab === "kamp-filter" && <MatchSearchFilterPageLazy user={user} showToast={showToast} />}
             {tab === "makker-filter" && <MakkerSearchFilterPageLazy user={user} showToast={showToast} />}

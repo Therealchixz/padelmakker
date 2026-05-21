@@ -153,7 +153,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         void notifyMakkerWatchersForProfile(user.id);
       }
       showToast('Mit makker-filter er gemt');
-      navigate('/dashboard/profil');
+      navigate(returnTo);
     } catch (err) {
       console.warn('save makker filter:', err?.message || err);
       showToast('Kunne ikke gemme. Prøv igen.');

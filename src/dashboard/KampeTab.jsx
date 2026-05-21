@@ -2792,7 +2792,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               </div>
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Hvilket niveau søger du? (ELO)</label>
+              <label style={labelStyle}>Hvilket spiller-niveau søger du? (ELO til kampen)</label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "4px" }}>
                 <input
                   type="number"

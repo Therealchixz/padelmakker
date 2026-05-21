@@ -19,5 +19,5 @@ export function filterReturnFromState(state) {
 export function filterReturnBackLabel(path) {
   if (path === FILTER_RETURN_MAKKERE) return 'Find makker';
   if (path === FILTER_RETURN_KAMPE) return 'Kampe';
-  return 'profil';
+  return 'Profil';
 }

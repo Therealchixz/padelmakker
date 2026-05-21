@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import {
   filterReturnFromState,
   filterReturnBackLabel,
@@ -19,5 +22,11 @@ test('filterReturnFromState accepterer kendte faner', () => {
 test('filterReturnBackLabel', () => {
   assert.equal(filterReturnBackLabel(FILTER_RETURN_MAKKERE), 'Find makker');
   assert.equal(filterReturnBackLabel(FILTER_RETURN_KAMPE), 'Kampe');
-  assert.equal(filterReturnBackLabel(FILTER_RETURN_PROFIL), 'profil');
+  assert.equal(filterReturnBackLabel(FILTER_RETURN_PROFIL), 'Profil');
+});
+
+test('adminSub deep link values', () => {
+  const dash = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../src/dashboard/DashboardPage.jsx'), 'utf8');
+  assert.match(dash, /raw === "result_errors" \|\| raw === "reports"/);
+  assert.match(dash, /setAdminInitialSubTab\(raw\)/);
 });

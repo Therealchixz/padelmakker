@@ -755,16 +755,29 @@ export function HomeTab({ user, setTab }) {
     return () => { cancelled = true; };
   }, [user, matchFilterPrefs, matchFilterOn]);
 
-  const seekingCount = useMemo(
-    () => new Set(seekingFeed.map((r) => r.userId)).size,
-    [seekingFeed],
-  );
+  const seekingByChannel = useMemo(() => {
+    const makkerIds = new Set();
+    const kampIds = new Set();
+    for (const row of seekingFeed) {
+      if (row.seekingChannel === "makker") makkerIds.add(row.userId);
+      else if (row.seekingChannel === "kamp") kampIds.add(row.userId);
+    }
+    const total = new Set(seekingFeed.map((r) => r.userId)).size;
+    return { makker: makkerIds.size, kamp: kampIds.size, total };
+  }, [seekingFeed]);
+
   const seekingTitle = feedLoading
-    ? "Finder spillere der søger kamp"
-    : seekingCount > 0
-      ? `${seekingCount} ${seekingCount === 1 ? "spiller" : "spillere"} søger kamp`
-      : "Find en makker";
-  const seekingSubtitle = seekingCount > 0 ? "I dit område lige nu" : "Se spillere på dit niveau";
+    ? "Finder spillere der søger"
+    : seekingByChannel.makker > 0 && seekingByChannel.kamp === 0
+      ? `${seekingByChannel.makker} ${seekingByChannel.makker === 1 ? "spiller" : "spillere"} søger makker`
+      : seekingByChannel.kamp > 0 && seekingByChannel.makker === 0
+        ? `${seekingByChannel.kamp} ${seekingByChannel.kamp === 1 ? "spiller" : "spillere"} søger kamp`
+        : seekingByChannel.total > 0
+          ? `${seekingByChannel.total} ${seekingByChannel.total === 1 ? "spiller" : "spillere"} søger makker eller kamp`
+          : "Find en makker";
+  const seekingSubtitle = seekingByChannel.total > 0
+    ? "Se dem under Find makker"
+    : "Se spillere på dit niveau";
   return (
     <div>
       {/* Premium ELO hero: vent på frisk DB (undgå flash af forældede tal fra React) */}
@@ -853,7 +866,11 @@ export function HomeTab({ user, setTab }) {
         </button>
       )}
 
-      <button type="button" className="pm-home-seeking-cta" onClick={() => setTab(seekingCount > 0 ? 'makkere?seeking=1' : 'makkere')}>
+      <button
+        type="button"
+        className="pm-home-seeking-cta"
+        onClick={() => setTab("makkere", { search: seekingByChannel.total > 0 ? "seeking=1" : "" })}
+      >
         <span className="pm-home-seeking-cta-icon" aria-hidden="true">
           <Users size={20} />
         </span>

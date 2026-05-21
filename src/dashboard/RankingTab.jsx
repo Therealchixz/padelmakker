@@ -429,7 +429,7 @@ export function RankingTab({ user }) {
   const periodLabels = {
     week: 'Denne uge',
     month: 'Denne måned',
-    all: 'All-time',
+    all: 'Alle tider',
   };
 
   const periodInfo = {
@@ -482,7 +482,7 @@ export function RankingTab({ user }) {
             onClick={() => setPeriod(p)}
             style={{ ...btn(period === p), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}
           >
-            {p === 'week' ? 'Uge' : p === 'month' ? 'Måned' : 'All-time'}
+            {p === 'week' ? 'Uge' : p === 'month' ? 'Måned' : 'Alle tider'}
           </button>
         ))}
       </div>

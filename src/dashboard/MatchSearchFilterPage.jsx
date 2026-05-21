@@ -89,7 +89,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
         void notifyMakkerWatchersForProfile(user.id);
       }
       showToast('Mit kamp-filter er gemt');
-      navigate('/dashboard/profil');
+      navigate(returnTo);
     } catch (err) {
       console.warn('save match filter:', err?.message || err);
       showToast('Kunne ikke gemme. Prøv igen.');

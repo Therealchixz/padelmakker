@@ -19,6 +19,8 @@ test('region påkrævet og by valgfri i onboarding og profil', () => {
   assert.match(onboarding, /Region.*\*.*valgfri/s);
   assert.match(onboarding, /Mit kamp-filter/);
   assert.match(onboarding, /Find makker/);
+  assert.match(makkereTab, /loadError/);
+  assert.match(makkereTab, /pm-state-card--error/);
   assert.doesNotMatch(onboarding, /seeking_match/);
   assert.doesNotMatch(onboarding, /intent_now/);
   assert.doesNotMatch(onboarding, /Matchmaking-præferencer/);

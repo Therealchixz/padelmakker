@@ -48,7 +48,7 @@ function formatTime(dateStr) {
   return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) + ' ' + timeStr;
 }
 
-export function BeskedTab({ user, onMobileConversationStateChange }) {
+export function BeskedTab({ user, showToast, onMobileConversationStateChange }) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -61,7 +61,9 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [loadingConvos, setLoadingConvos] = useState(true);
+  const [convoLoadError, setConvoLoadError] = useState(null);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const [messageLoadError, setMessageLoadError] = useState(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeQuery, setComposeQuery] = useState('');
   const [composeResults, setComposeResults] = useState([]);
@@ -203,6 +205,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       setLoadingConvos(false);
       if (Date.now() - cached.at < CONVO_CACHE_TTL_MS) return;
     }
+    setConvoLoadError(null);
     try {
       const convos = await fetchConversations(user.id);
       setConversations(convos);
@@ -233,10 +236,15 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
         conversations: convos,
         profiles: profilesRef.current,
       });
+    } catch (e) {
+      console.warn('load conversations:', e);
+      const msg = 'Kunne ikke hente samtaler. Tjek din forbindelse og prøv igen.';
+      setConvoLoadError(msg);
+      showToast?.(msg);
     } finally {
       setLoadingConvos(false);
     }
-  }, [user?.id, initWithUser]);
+  }, [user?.id, initWithUser, showToast]);
 
   useEffect(() => { loadConversations(); }, [loadConversations]);
 
@@ -247,7 +255,11 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
 
   // Indlæs beskeder + real-time subscription når samtale vælges
   useEffect(() => {
-    if (!selectedId || !user?.id) { setMessages([]); return; }
+    if (!selectedId || !user?.id) {
+      setMessages([]);
+      setMessageLoadError(null);
+      return;
+    }
     const threadKey = `${user.id}:${selectedId}`;
     const cachedThread = MESSAGE_CACHE_BY_THREAD.get(threadKey);
     const hasCachedThread = cachedThread?.ok === true;
@@ -264,6 +276,7 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
 
     if (!isCacheFresh) {
       setLoadingMsgs(true);
+      setMessageLoadError(null);
       fetchMessages(user.id, selectedId)
         .then(msgs => {
           setMessages(msgs);
@@ -272,6 +285,12 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
           if (lastMsg) upsertConversationFromMessage(lastMsg, { incomingRead: true });
           scheduleMarkRead(selectedId, 60);
           clearConversationUnread(selectedId);
+        })
+        .catch((e) => {
+          console.warn('load messages:', e);
+          const msg = 'Kunne ikke hente beskeder. Prøv igen.';
+          setMessageLoadError(msg);
+          showToast?.(msg);
         })
         .finally(() => setLoadingMsgs(false));
     }
@@ -360,6 +379,10 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       const errMsg = String(e?.message || '');
       if (errMsg.toLowerCase().includes('bloker')) {
         void refreshBlockState();
+        showToast?.('Du kan ikke sende beskeder til denne bruger.');
+      } else {
+        const msg = 'Kunne ikke sende besked. Prøv igen.';
+        showToast?.(msg);
       }
     } finally {
       setSending(false);
@@ -572,10 +595,39 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
         >
           {loadingMsgs && (
             <div style={{ textAlign: 'center', color: theme.textLight, fontSize: '13px', padding: '20px' }}>
-              Indlæser…
+              Indlæser beskeder…
             </div>
           )}
-          {!loadingMsgs && messages.length === 0 && (
+          {!loadingMsgs && messageLoadError && (
+            <div className="pm-state-card pm-state-card--error" style={{ margin: '8px 0' }}>
+              <div className="pm-state-title">Kunne ikke hente beskeder</div>
+              <div className="pm-state-copy">{messageLoadError}</div>
+              <div className="pm-state-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessageLoadError(null);
+                    setLoadingMsgs(true);
+                    fetchMessages(user.id, selectedId)
+                      .then((msgs) => {
+                        setMessages(msgs);
+                        setMessageThreadCache(`${user.id}:${selectedId}`, msgs);
+                      })
+                      .catch(() => {
+                        const msg = 'Kunne ikke hente beskeder. Prøv igen.';
+                        setMessageLoadError(msg);
+                        showToast?.(msg);
+                      })
+                      .finally(() => setLoadingMsgs(false));
+                  }}
+                  style={{ ...btn(true), fontSize: '13px' }}
+                >
+                  Prøv igen
+                </button>
+              </div>
+            </div>
+          )}
+          {!loadingMsgs && !messageLoadError && messages.length === 0 && (
             <div style={{ textAlign: 'center', color: theme.textLight, fontSize: '13px', marginTop: '28px', lineHeight: 1.6 }}>
               Start samtalen med {getName(selectedId)}
             </div>
@@ -721,8 +773,20 @@ export function BeskedTab({ user, onMobileConversationStateChange }) {
       )}
 
       {loadingConvos ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>
-          Indlæser samtaler…
+        <div className="pm-state-card pm-state-card--loading">
+          <div className="pm-spinner pm-state-spinner" />
+          <div className="pm-state-title">Indlæser samtaler…</div>
+        </div>
+      ) : convoLoadError ? (
+        <div className="pm-state-card pm-state-card--error">
+          <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+          <div className="pm-state-title">Kunne ikke hente samtaler</div>
+          <div className="pm-state-copy">{convoLoadError}</div>
+          <div className="pm-state-actions">
+            <button type="button" onClick={() => void loadConversations()} style={{ ...btn(true), fontSize: '13px' }}>
+              Prøv igen
+            </button>
+          </div>
         </div>
       ) : conversations.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '52px 20px', color: theme.textLight }}>

@@ -258,6 +258,7 @@ export function MakkereTab({ user, showToast }) {
   const [players, setPlayers]         = useState([]);
   const [statsById, setStatsById]     = useState({});
   const [loading, setLoading]         = useState(true);
+  const [loadError, setLoadError]     = useState(null);
   const [page, setPage]               = useState(0);
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [inviteTarget, setInviteTarget] = useState(null);
@@ -336,6 +337,7 @@ export function MakkereTab({ user, showToast }) {
 
   const loadPlayers = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await fetchMakkerePlayerProfiles();
       const list = (data || []).filter((p) => p.id !== user.id);
@@ -345,7 +347,9 @@ export function MakkereTab({ user, showToast }) {
       setStatsById(batch);
     } catch (e) {
       console.error(e);
-      showToast('Kunne ikke hente data. Tjek din forbindelse og prøv igen.');
+      const msg = 'Kunne ikke hente spillere. Tjek din forbindelse og prøv igen.';
+      setLoadError(msg);
+      showToast(msg);
     } finally {
       setLoading(false);
     }
@@ -562,8 +566,10 @@ export function MakkereTab({ user, showToast }) {
   }, [user.id]);
 
   if (loading) return (
-    <div style={{ textAlign: 'center', padding: '40px', color: theme.textLight, fontSize: '14px' }}>
-      Indlæser spillere...
+    <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: '14px' }}>
+      <div className="pm-spinner pm-state-spinner" />
+      <div className="pm-state-title">Indlæser spillere…</div>
+      <div className="pm-state-copy">Vi henter spillere du kan finde som makker.</div>
     </div>
   );
 
@@ -577,6 +583,19 @@ export function MakkereTab({ user, showToast }) {
         showToast={showToast}
         returnTo={FILTER_RETURN_MAKKERE}
       />
+
+      {loadError ? (
+        <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '16px' }}>
+          <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+          <div className="pm-state-title">Kunne ikke hente spillere</div>
+          <div className="pm-state-copy">{loadError}</div>
+          <div className="pm-state-actions">
+            <button type="button" onClick={() => void loadPlayers()} style={{ ...btn(true), fontSize: '13px' }}>
+              Prøv igen
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {makkerFilterOn && filterSeekerCount != null && filterSeekerCount > 0 && (
         <button
@@ -788,10 +807,12 @@ export function MakkereTab({ user, showToast }) {
             </div>
           );
         })}
-        {filtered.length === 0 && (
+        {filtered.length === 0 && !loadError && (
           <div style={{ textAlign: 'center', padding: '48px 20px', color: theme.textLight }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</div>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>Ingen spillere fundet</div>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
+              {activeFilterCount > 0 ? 'Ingen spillere matcher dine filtre' : 'Ingen spillere at vise'}
+            </div>
             <div style={{ fontSize: '13px', lineHeight: 1.5 }}>Prøv at ændre filtre eller søg med et andet navn.</div>
           </div>
         )}
