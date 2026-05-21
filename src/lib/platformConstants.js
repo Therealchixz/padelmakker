@@ -180,13 +180,20 @@ export const INTENT_LABELS = Object.fromEntries(INTENTS.map((i) => [i.value, i.l
 // Shared UI/data refresh timings
 export const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
 export const HOME_FEED_CACHE_TTL_MS = 45_000;
-/** Hvor længe "søger makker/kamp" (feedVisible) er aktivt fra seeking_match_at. */
-export const SEEK_TTL_DAYS = 7;
-export const SEEK_TTL_MS = SEEK_TTL_DAYS * 24 * 60 * 60 * 1000;
+/** Kamp: synlig i feed 24 timer. Makker: 7 dage. */
+export const SEEK_KAMP_TTL_DAYS = 1;
+export const SEEK_MAKKER_TTL_DAYS = 7;
+export const SEEK_KAMP_TTL_MS = SEEK_KAMP_TTL_DAYS * 24 * 60 * 60 * 1000;
+export const SEEK_MAKKER_TTL_MS = SEEK_MAKKER_TTL_DAYS * 24 * 60 * 60 * 1000;
 
-/** Bruger-tekst: "7 dage" / "24 timer" */
-export function seekingVisibleDurationLabel() {
-  return SEEK_TTL_DAYS === 1 ? '24 timer' : `${SEEK_TTL_DAYS} dage`;
+/** Legacy — længste kanal-TTL (makker). */
+export const SEEK_TTL_DAYS = SEEK_MAKKER_TTL_DAYS;
+export const SEEK_TTL_MS = SEEK_MAKKER_TTL_MS;
+
+/** Bruger-tekst pr. kanal: 'kamp' | 'makker'. */
+export function seekingVisibleDurationLabel(channel = 'makker') {
+  const days = channel === 'kamp' ? SEEK_KAMP_TTL_DAYS : SEEK_MAKKER_TTL_DAYS;
+  return days === 1 ? '24 timer' : `${days} dage`;
 }
 
 /** Max discovery-push/in-app pr. kanal (kamp og makker hver for sig). */

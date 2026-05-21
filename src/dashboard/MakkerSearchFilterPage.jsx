@@ -600,7 +600,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Vis at jeg søger makker</div>
               <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
-                Du vises i Find makker i {seekingVisibleDurationLabel()}. Slå selv fra når du har fundet makker.
+                Du vises i Find makker i {seekingVisibleDurationLabel('makker')}. Slå selv fra når du har fundet makker.
               </div>
             </div>
           </div>

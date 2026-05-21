@@ -8,10 +8,10 @@
  * - Lokal fairness via exposure penalty (samme profiler vises ikke konstant)
  */
 
-import { SEEK_TTL_DAYS } from './platformConstants';
+import { SEEK_MAKKER_TTL_DAYS } from './platformConstants';
 
 const INACTIVE_DAYS = 14;
-const SEEKING_FRESH_HOURS = SEEK_TTL_DAYS * 24;
+const SEEKING_FRESH_HOURS = SEEK_MAKKER_TTL_DAYS * 24;
 
 const DIRECTIONAL_WEIGHTS = {
   skill: 0.32,

@@ -3,7 +3,6 @@
  */
 
 import {
-  SEEK_TTL_MS,
   seekingVisibleDurationLabel,
   INTENTS,
   PLAY_STYLES,
@@ -22,7 +21,12 @@ import {
   LEVEL_WINDOW_CHOICES,
   LEVEL_WINDOW_OPTIONS,
 } from './matchSearchFilterCore';
-import { resolveSeekingMatchVisible } from './discoveryFeedSync';
+import {
+  isSeekingActiveProfile,
+  mergeFeedVisibleSince,
+  resolveSeekingMatchAtForProfile,
+  resolveSeekingMatchVisible,
+} from './seekingFeedTtl';
 import {
   normalizeMakkerFilterExtras,
   levelRangeForMakkerPartnerPref,
@@ -57,13 +61,7 @@ export const MAKKER_FILTER_PREFS_VERSION = 2;
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
-export function isSeekingActiveProfile(p) {
-  return (
-    p?.seeking_match === true
-    && p?.seeking_match_at != null
-    && Date.now() - new Date(p.seeking_match_at).getTime() < SEEK_TTL_MS
-  );
-}
+export { isSeekingActiveProfile };
 
 export function defaultMakkerSearchPrefs(profile = {}) {
   const region = canonicalRegionForForm(profile.area) || profile.area || '';
@@ -123,12 +121,16 @@ export function normalizeMakkerSearchPrefs(raw, profile = {}) {
     || (parsed.notify == null && profile.makker_watch_enabled === true && Object.keys(parsed).length === 0);
 
   const feedVisible = parsed.feedVisible === true;
+  const feedVisibleSince = typeof parsed.feedVisibleSince === 'string' && parsed.feedVisibleSince.trim()
+    ? parsed.feedVisibleSince.trim()
+    : null;
   const extras = normalizeMakkerFilterExtras(parsed, profile);
 
   return {
     version: MAKKER_FILTER_PREFS_VERSION,
     notify,
     feedVisible,
+    feedVisibleSince,
     region: region || '',
     myLevel,
     levelWindow,
@@ -239,7 +241,7 @@ export function describeMakkerFilter(prefs, profile = {}) {
 
   const channels = [];
   if (prefs.notify) channels.push('notifikationer');
-  if (prefs.feedVisible) channels.push(`synlig ${seekingVisibleDurationLabel()}`);
+  if (prefs.feedVisible) channels.push(`synlig ${seekingVisibleDurationLabel('makker')}`);
   const channelText = channels.length ? channels.join(' + ') : 'ingen kanal aktiv';
   return {
     configured: true,
@@ -250,23 +252,28 @@ export function describeMakkerFilter(prefs, profile = {}) {
 }
 
 export function buildProfilePatchFromMakkerSearchPrefs(prefs, profile = {}) {
+  const prev = normalizeMakkerSearchPrefs(profile?.makker_search_prefs, profile);
   const normalized = normalizeMakkerSearchPrefs(prefs, profile);
+  const feedVisibleSince = mergeFeedVisibleSince(normalized, prev, profile);
   const configured = isMakkerFilterConfigured(normalized, profile);
   const notifyOn = configured && normalized.notify;
   const region = resolveMakkerFilterRegion(normalized, profile);
-  const feedOn = resolveSeekingMatchVisible(profile?.match_search_prefs, normalized, profile);
+  const prefsOut = {
+    ...normalized,
+    feedVisibleSince,
+    version: MAKKER_FILTER_PREFS_VERSION,
+    region: region || normalized.region,
+    myLevel: profilePlaytomicLevel(profile),
+  };
+  const feedOn = resolveSeekingMatchVisible(profile?.match_search_prefs, prefsOut, profile);
+  const seekingAt = resolveSeekingMatchAtForProfile(profile?.match_search_prefs, prefsOut, profile);
 
   return {
-    makker_search_prefs: {
-      ...normalized,
-      version: MAKKER_FILTER_PREFS_VERSION,
-      region: region || normalized.region,
-      myLevel: profilePlaytomicLevel(profile),
-    },
+    makker_search_prefs: prefsOut,
     makker_watch_enabled: notifyOn,
     makker_watch_at: notifyOn ? new Date().toISOString() : null,
     seeking_match: feedOn,
-    seeking_match_at: feedOn ? new Date().toISOString() : null,
+    seeking_match_at: seekingAt,
     ...(region && region !== profile.area ? { area: region } : {}),
   };
 }

@@ -339,7 +339,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Vis at jeg søger kamp</div>
               <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
-                Synlig i {seekingVisibleDurationLabel()}. Slå selv fra når du har fundet kamp.
+                Synlig i {seekingVisibleDurationLabel('kamp')}. Slå selv fra når du har fundet kamp.
               </div>
             </div>
           </div>

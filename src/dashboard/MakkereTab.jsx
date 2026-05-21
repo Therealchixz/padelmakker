@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchMakkerePlayerProfiles } from '../lib/profileQueries';
 import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
-import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS, COURT_SIDES, SEEK_TTL_MS } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS, COURT_SIDES } from '../lib/platformConstants';
+import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin, Zap, SlidersHorizontal } from 'lucide-react';
@@ -27,10 +28,7 @@ import {
   countSeekersMatchingMakkerFilter,
 } from '../lib/makkerSearchFilterUtils';
 
-const isSeekingActive = (p) =>
-  p.seeking_match === true &&
-  p.seeking_match_at != null &&
-  Date.now() - new Date(p.seeking_match_at).getTime() < SEEK_TTL_MS;
+const isSeekingActive = (p) => isSeekingActiveProfile(p);
 
 /** Maks. synlige linjer før "Vis mere" på Find makker-kort. */
 const BIO_COLLAPSED_LINES = 3;

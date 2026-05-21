@@ -9,9 +9,10 @@ import { Users, MapPin, Swords, Trophy, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
-import { HOME_FEED_CACHE_TTL_MS, levelLabel, SEEK_TTL_MS } from '../lib/platformConstants';
+import { HOME_FEED_CACHE_TTL_MS, levelLabel } from '../lib/platformConstants';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
-import { seekingActivityLabel } from '../lib/seekingActivityLabel';
+import { seekingActivityLabel, isSeekingActiveProfile } from '../lib/seekingActivityLabel';
+import { SEEK_FEED_QUERY_TTL_MS } from '../lib/seekingFeedTtl';
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterActive,
@@ -199,7 +200,7 @@ export function HomeTab({ user, setTab }) {
     if (!silent) setFeedLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      const sinceSeeking = new Date(Date.now() - SEEK_TTL_MS).toISOString();
+      const sinceSeeking = new Date(Date.now() - SEEK_FEED_QUERY_TTL_MS).toISOString();
       const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
       // Round 1: alle primære queries i parallel
@@ -425,7 +426,8 @@ export function HomeTab({ user, setTab }) {
 
       // Søger kamp (seeking_match)
       const seekingFeed_ = seeking
-        .filter(p => String(p.id) !== String(user.id)).slice(0, 3)
+        .filter((p) => String(p.id) !== String(user.id) && isSeekingActiveProfile(p))
+        .slice(0, 3)
         .map((p) => ({
           type: 'seeking_player',
           userId: p.id,

@@ -199,62 +199,27 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
           </div>
         </div>
 
-        {seekingDetails && (
+        {seekingDetails?.blocks?.map((block) => (
           <div
+            key={block.type}
             style={{
-              marginBottom: '16px',
+              marginBottom: '12px',
               padding: '14px',
               background: '#FEF3C7',
               borderRadius: '10px',
               border: '1px solid #FDE68A',
             }}
           >
-            <div
-              style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                color: '#B45309',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                marginBottom: '6px',
-              }}
-            >
-              Lige nu
+            <div style={{ fontSize: '15px', fontWeight: 800, color: '#B45309', marginBottom: '4px', letterSpacing: '-0.02em' }}>
+              {block.label}
             </div>
-            <div style={{ fontSize: '16px', fontWeight: 800, color: '#B45309', marginBottom: '10px', letterSpacing: '-0.02em' }}>
-              {seekingDetails.headline}
+            <div style={{ fontSize: '11px', color: theme.textLight, marginBottom: '8px' }}>
+              Synlig {block.duration}
+              {block.sinceLabel ? ` · ${block.sinceLabel}` : ''}
             </div>
-            {seekingDetails.blocks.map((block, idx) => (
-              <div
-                key={block.type}
-                style={{
-                  marginBottom: idx < seekingDetails.blocks.length - 1 ? '10px' : 0,
-                  paddingBottom: idx < seekingDetails.blocks.length - 1 ? '10px' : 0,
-                  borderBottom: idx < seekingDetails.blocks.length - 1 ? '1px solid #FDE68A' : 'none',
-                }}
-              >
-                <div style={{ fontSize: '12px', fontWeight: 700, color: theme.text, marginBottom: '4px' }}>
-                  {block.label}
-                </div>
-                <div style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.45 }}>{block.summary}</div>
-                {block.detail ? (
-                  <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '4px' }}>{block.detail}</div>
-                ) : null}
-              </div>
-            ))}
-            {seekingDetails.intentLabel ? (
-              <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '8px' }}>
-                <span style={{ color: theme.textLight }}>Spillestil lige nu: </span>
-                <span style={{ fontWeight: 600 }}>{seekingDetails.intentLabel}</span>
-              </div>
-            ) : null}
-            <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '8px', lineHeight: 1.4 }}>
-              {seekingDetails.sinceLabel ? `Aktiv siden ${seekingDetails.sinceLabel}` : 'Aktiv nu'}
-              {' · '}
-              Synlig i {seekingDetails.visibleFor}
-            </div>
+            <div style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.45, fontWeight: 500 }}>{block.line}</div>
           </div>
-        )}
+        ))}
 
         <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
           <button onClick={() => setStatsMode('2v2')} style={{ ...btn(statsMode === '2v2'), padding: '5px 10px', fontSize: '11px' }}>

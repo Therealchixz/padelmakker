@@ -1,21 +1,17 @@
-import { normalizeMatchSearchPrefs, isMatchFilterConfigured, describeMatchFilter } from './matchSearchFilterCore.js';
 import {
-  normalizeMakkerSearchPrefs,
-  isMakkerFilterConfigured,
-  describeMakkerFilter,
+  isProfileMatchFeedVisible,
+  isProfileMakkerFeedVisible,
   isSeekingActiveProfile,
-} from './makkerSearchFilterCore.js';
-import { seekingVisibleDurationLabel, INTENT_LABELS } from './platformConstants.js';
+  compactMatchSeekingLine,
+  compactMakkerSeekingLine,
+  seekingChannelDurationLabel,
+  channelFeedSince,
+} from './seekingFeedTtl.js';
+import { normalizeMatchSearchPrefs } from './matchSearchFilterCore.js';
+import { normalizeMakkerSearchPrefs } from './makkerSearchFilterCore.js';
+import { SEEK_KAMP_TTL_MS, SEEK_MAKKER_TTL_MS } from './platformConstants.js';
 
-export function isProfileMatchFeedVisible(profile) {
-  const prefs = normalizeMatchSearchPrefs(profile?.match_search_prefs, profile);
-  return isMatchFilterConfigured(prefs, profile) && prefs.feedVisible === true;
-}
-
-export function isProfileMakkerFeedVisible(profile) {
-  const prefs = normalizeMakkerSearchPrefs(profile?.makker_search_prefs, profile);
-  return isMakkerFilterConfigured(prefs, profile) && prefs.feedVisible === true;
-}
+export { isProfileMatchFeedVisible, isProfileMakkerFeedVisible, isSeekingActiveProfile };
 
 /** Tekst til aktivitetsfeed, makkerliste m.m. */
 export function seekingActivityLabel(profile) {
@@ -46,60 +42,45 @@ function formatSeekingSince(iso) {
   return `${d} d siden`;
 }
 
+function channelSinceIso(prefs, profile, ttlMs) {
+  const normalized = prefs;
+  const sinceMs = channelFeedSince(normalized, profile?.seeking_match_at);
+  if (sinceMs == null || Date.now() - sinceMs >= ttlMs) return null;
+  return new Date(sinceMs).toISOString();
+}
+
 /**
- * Detaljer til profil-modal når spilleren aktivt søger kamp/makker.
- * @returns {null | { headline: string, blocks: Array<{ type: string, label: string, summary: string, detail: string }>, intentLabel: string | null, sinceLabel: string | null, visibleFor: string }}
+ * Detaljer til profil-modal — én tydelig blok pr. aktiv kanal (kamp / makker).
+ * @returns {null | { blocks: Array<{ type: 'kamp'|'makker', label: string, line: string, duration: string, sinceLabel: string | null }> }}
  */
 export function getPlayerSeekingDetails(profile) {
   if (!profile || !isSeekingActiveProfile(profile)) return null;
 
-  const headline = seekingActivityLabelDisplay(profile);
   const blocks = [];
 
   if (isProfileMatchFeedVisible(profile)) {
     const prefs = normalizeMatchSearchPrefs(profile.match_search_prefs, profile);
-    const info = describeMatchFilter(prefs, profile);
-    if (info.configured) {
-      blocks.push({
-        type: 'kamp',
-        label: 'Søger kamp',
-        summary: info.summary,
-        detail: info.detail,
-      });
-    }
+    const sinceIso = channelSinceIso(prefs, profile, SEEK_KAMP_TTL_MS);
+    blocks.push({
+      type: 'kamp',
+      label: 'Søger kamp',
+      line: compactMatchSeekingLine(prefs, profile),
+      duration: seekingChannelDurationLabel('kamp'),
+      sinceLabel: formatSeekingSince(sinceIso),
+    });
   }
 
   if (isProfileMakkerFeedVisible(profile)) {
     const prefs = normalizeMakkerSearchPrefs(profile.makker_search_prefs, profile);
-    const info = describeMakkerFilter(prefs, profile);
-    if (info.configured) {
-      blocks.push({
-        type: 'makker',
-        label: 'Søger makker',
-        summary: info.summary,
-        detail: info.detail,
-      });
-    }
-  }
-
-  if (blocks.length === 0) {
+    const sinceIso = channelSinceIso(prefs, profile, SEEK_MAKKER_TTL_MS);
     blocks.push({
-      type: 'generic',
-      label: headline,
-      summary: profile.area || profile.city || '—',
-      detail: `Synlig i feed i ${seekingVisibleDurationLabel()}`,
+      type: 'makker',
+      label: 'Søger makker',
+      line: compactMakkerSeekingLine(prefs, profile),
+      duration: seekingChannelDurationLabel('makker'),
+      sinceLabel: formatSeekingSince(sinceIso),
     });
   }
 
-  const intentKey = profile.intent_now;
-  const intentLabel = intentKey && INTENT_LABELS[intentKey] ? INTENT_LABELS[intentKey] : null;
-  const sinceLabel = formatSeekingSince(profile.seeking_match_at);
-
-  return {
-    headline,
-    blocks,
-    intentLabel,
-    sinceLabel,
-    visibleFor: seekingVisibleDurationLabel(),
-  };
+  return blocks.length > 0 ? { blocks } : null;
 }

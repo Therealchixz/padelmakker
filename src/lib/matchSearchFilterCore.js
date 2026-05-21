@@ -4,7 +4,11 @@
 
 import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
 import { seekingVisibleDurationLabel } from './platformConstants';
-import { resolveSeekingMatchVisible } from './discoveryFeedSync';
+import {
+  mergeFeedVisibleSince,
+  resolveSeekingMatchAtForProfile,
+  resolveSeekingMatchVisible,
+} from './seekingFeedTtl';
 import {
   profilePlaytomicLevel,
   migrateEloWindowToLevelWindow,
@@ -90,10 +94,15 @@ export function normalizeMatchSearchPrefs(raw, profile = {}) {
   const feedVisible = parsed.feedVisible === true
     || (parsed.feedVisible == null && profile.seeking_match === true && Object.keys(parsed).length === 0);
 
+  const feedVisibleSince = typeof parsed.feedVisibleSince === 'string' && parsed.feedVisibleSince.trim()
+    ? parsed.feedVisibleSince.trim()
+    : null;
+
   return {
     version: MATCH_FILTER_PREFS_VERSION,
     notify,
     feedVisible,
+    feedVisibleSince,
     region: region || '',
     myLevel,
     levelWindow,
@@ -182,7 +191,7 @@ export function describeMatchFilter(prefs, profile = {}) {
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
   const channels = [];
   if (prefs.notify) channels.push('notifikationer');
-  if (prefs.feedVisible) channels.push(`feed ${seekingVisibleDurationLabel()}`);
+  if (prefs.feedVisible) channels.push(`feed ${seekingVisibleDurationLabel('kamp')}`);
   const channelText = channels.length ? channels.join(' + ') : 'ingen kanal aktiv';
   return {
     configured: true,
@@ -193,23 +202,28 @@ export function describeMatchFilter(prefs, profile = {}) {
 }
 
 export function buildProfilePatchFromMatchSearchPrefs(prefs, profile = {}) {
+  const prev = normalizeMatchSearchPrefs(profile?.match_search_prefs, profile);
   const normalized = normalizeMatchSearchPrefs(prefs, profile);
+  const feedVisibleSince = mergeFeedVisibleSince(normalized, prev, profile);
   const configured = isMatchFilterConfigured(normalized, profile);
   const notifyOn = configured && normalized.notify;
   const region = resolveFilterRegion(normalized, profile);
-  const feedOn = resolveSeekingMatchVisible(normalized, profile?.makker_search_prefs, profile);
+  const prefsOut = {
+    ...normalized,
+    feedVisibleSince,
+    version: MATCH_FILTER_PREFS_VERSION,
+    region: region || normalized.region,
+    myLevel: profilePlaytomicLevel(profile),
+  };
+  const feedOn = resolveSeekingMatchVisible(prefsOut, profile?.makker_search_prefs, profile);
+  const seekingAt = resolveSeekingMatchAtForProfile(prefsOut, profile?.makker_search_prefs, profile);
 
   return {
-    match_search_prefs: {
-      ...normalized,
-      version: MATCH_FILTER_PREFS_VERSION,
-      region: region || normalized.region,
-      myLevel: profilePlaytomicLevel(profile),
-    },
+    match_search_prefs: prefsOut,
     match_watch_enabled: notifyOn,
     match_watch_at: notifyOn ? new Date().toISOString() : null,
     seeking_match: feedOn,
-    seeking_match_at: feedOn ? new Date().toISOString() : null,
+    seeking_match_at: seekingAt,
     ...(region && region !== profile.area ? { area: region } : {}),
   };
 }

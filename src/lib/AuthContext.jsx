@@ -3,7 +3,8 @@ import { supabase, isSupabaseConfigured } from './supabase'
 import { signInWithOAuthProvider } from './authOAuth'
 import { normalizeProfileRow, buildOnboardingProfileRowPatch } from './profileUtils'
 import { applyPendingAvatar } from './avatarUpload'
-import { DEFAULT_REGION, SEEK_TTL_MS } from './platformConstants'
+import { DEFAULT_REGION } from './platformConstants'
+import { isSeekingActiveProfile } from './seekingFeedTtl'
 import { BanNoticeModal } from '../components/BanNoticeModal'
 
 const AuthContext = createContext(null)
@@ -226,21 +227,18 @@ export function AuthProvider({ children }) {
 
         setProfile(profileRow)
 
-        // Auto-expire seeking_match after SEEK_TTL (see platformConstants)
-        if (profileRow?.seeking_match && profileRow?.seeking_match_at) {
-          const age = Date.now() - new Date(profileRow.seeking_match_at).getTime();
-          if (age >= SEEK_TTL_MS) {
-            supabase.from('profiles')
-              .update({ seeking_match: false, seeking_match_at: null })
-              .eq('id', profileRow.id)
-              .select()
-              .single()
-              .then(({ data, error }) => {
-                if (error || !data) return;
-                setProfile(normalizeProfileRow(data));
-              })
-              .catch(() => {});
-          }
+        // Auto-expire feed-synlighed når begge kanaler er udløbet (kamp 24 t, makker 7 d)
+        if (profileRow?.seeking_match && !isSeekingActiveProfile(profileRow)) {
+          supabase.from('profiles')
+            .update({ seeking_match: false, seeking_match_at: null })
+            .eq('id', profileRow.id)
+            .select()
+            .single()
+            .then(({ data, error }) => {
+              if (error || !data) return;
+              setProfile(normalizeProfileRow(data));
+            })
+            .catch(() => {});
         }
 
         /**

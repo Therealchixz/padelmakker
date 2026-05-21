@@ -6,12 +6,24 @@ import { dirname, join } from 'node:path';
 
 const dir = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(dir, '../../src/lib/seekingActivityLabel.js'), 'utf8');
+const ttlSrc = readFileSync(join(dir, '../../src/lib/seekingFeedTtl.js'), 'utf8');
+const constantsSrc = readFileSync(join(dir, '../../src/lib/platformConstants.js'), 'utf8');
 
 test('seekingActivityLabel skelner kamp, makker og begge', () => {
   assert.match(src, /søger kamp og makker/);
   assert.match(src, /if \(makkerOn\) return 'søger makker'/);
   assert.match(src, /if \(matchOn\) return 'søger kamp'/);
   assert.match(src, /getPlayerSeekingDetails/);
-  assert.match(src, /describeMatchFilter/);
-  assert.match(src, /describeMakkerFilter/);
+  assert.match(src, /compactMatchSeekingLine/);
+  assert.match(src, /compactMakkerSeekingLine/);
+  assert.doesNotMatch(src, /describeMatchFilter/);
+  assert.doesNotMatch(src, /intentLabel/);
+});
+
+test('adskilt TTL: kamp 24 timer, makker 7 dage', () => {
+  assert.match(constantsSrc, /SEEK_KAMP_TTL_DAYS = 1/);
+  assert.match(constantsSrc, /SEEK_MAKKER_TTL_DAYS = 7/);
+  assert.match(ttlSrc, /SEEK_KAMP_TTL_MS/);
+  assert.match(ttlSrc, /SEEK_MAKKER_TTL_MS/);
+  assert.match(ttlSrc, /feedVisibleSince/);
 });
