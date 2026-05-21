@@ -175,7 +175,13 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
           ];
 
   const age = calcAge(pRef.birth_year, pRef.birth_month, pRef.birth_day);
-  const seekingDetails = useMemo(() => getPlayerSeekingDetails(pRef), [pRef]);
+  const seekingChannel = player?.seekingChannel === 'kamp' || player?.seekingChannel === 'makker'
+    ? player.seekingChannel
+    : null;
+  const seekingDetails = useMemo(
+    () => getPlayerSeekingDetails(pRef, seekingChannel ? { channel: seekingChannel } : {}),
+    [pRef, seekingChannel],
+  );
 
   if (!player) return null;
 

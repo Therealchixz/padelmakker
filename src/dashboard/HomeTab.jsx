@@ -1071,7 +1071,12 @@ export function HomeTab({ user, setTab }) {
               }
 
               if (row.type === 'seeking_player') {
-                const player = { id: row.userId, name: row.name };
+                const player = {
+                  id: row.userId,
+                  name: row.name,
+                  seekingChannel: row.seekingChannel === 'makker' ? 'makker' : row.seekingChannel === 'kamp' ? 'kamp' : undefined,
+                };
+                const openSeekingPlayer = () => setViewPlayer(player);
                 const levelStr = row.level ? levelLabel(row.level) : null;
                 const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                 return renderActivityRowCard({
@@ -1079,15 +1084,15 @@ export function HomeTab({ user, setTab }) {
                   isHighlight,
                   tone: theme.blue,
                   leading: (
-                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
+                    <div onClick={openSeekingPlayer} style={{ cursor: "pointer" }}>
                       <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                     </div>
                   ),
                   tag: "Spiller",
                   meta: formatTimeAgo(row.created_at),
-                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> {seekingActivityLabelForRow(row)}</>,
+                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={openSeekingPlayer}>{row.name}</span> {seekingActivityLabelForRow(row)}</>,
                   subtitle: sub || "Klar til kamp",
-                  action: <button onClick={() => setViewPlayer(player)} style={activityActionBtnStyle(theme.blue)}>Detaljer</button>,
+                  action: <button onClick={openSeekingPlayer} style={activityActionBtnStyle(theme.blue)}>Detaljer</button>,
                 });
               }
 

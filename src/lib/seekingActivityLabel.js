@@ -69,14 +69,17 @@ function channelSinceIso(prefs, profile, ttlMs) {
 
 /**
  * Detaljer til profil-modal — én tydelig blok pr. aktiv kanal (kamp / makker).
+ * @param {{ channel?: 'kamp'|'makker' }} [opts] — vis kun den kanal (fx fra aktivitetsfeed «Detaljer»).
  * @returns {null | { blocks: Array<{ type: 'kamp'|'makker', label: string, line: string, duration: string, sinceLabel: string | null }> }}
  */
-export function getPlayerSeekingDetails(profile) {
-  if (!profile || !isSeekingActiveProfile(profile)) return null;
+export function getPlayerSeekingDetails(profile, opts = {}) {
+  if (!profile) return null;
+  const channel = opts.channel === 'kamp' || opts.channel === 'makker' ? opts.channel : null;
+  if (!channel && !isSeekingActiveProfile(profile)) return null;
 
   const blocks = [];
 
-  if (isProfileMatchFeedVisible(profile)) {
+  if ((!channel || channel === 'kamp') && isProfileMatchFeedVisible(profile)) {
     const prefs = normalizeMatchSearchPrefs(profile.match_search_prefs, profile);
     const sinceIso = channelSinceIso(prefs, profile, SEEK_KAMP_TTL_MS);
     blocks.push({
@@ -88,7 +91,7 @@ export function getPlayerSeekingDetails(profile) {
     });
   }
 
-  if (isProfileMakkerFeedVisible(profile)) {
+  if ((!channel || channel === 'makker') && isProfileMakkerFeedVisible(profile)) {
     const prefs = normalizeMakkerSearchPrefs(profile.makker_search_prefs, profile);
     const sinceIso = channelSinceIso(prefs, profile, SEEK_MAKKER_TTL_MS);
     blocks.push({
