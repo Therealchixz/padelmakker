@@ -35,14 +35,13 @@ test('kamp-detaljer inkluderer tidsrum', () => {
   assert.match(ttlSrc, /pushSeekingDetail\(lines, 'Tidsrum', seekingAvailabilitySummary/);
 });
 
-test('makker-detaljer inkluderer filterfelter', () => {
-  assert.match(ttlSrc, /compactMakkerSeekingDetails/);
+test('makker-detaljer: ét niveau-felt, ikke Makker-niveau separat', () => {
+  assert.match(ttlSrc, /compactMakkerSeekingLevelDetail/);
+  assert.match(ttlSrc, /pushSeekingDetail\(lines, 'Niveau', compactMakkerSeekingLevelDetail/);
+  assert.doesNotMatch(ttlSrc, /pushSeekingDetail\(\s*lines,\s*'Makker-niveau'/);
   assert.match(ttlSrc, /Banehalvdel/);
   assert.match(ttlSrc, /Intention/);
-  assert.match(ttlSrc, /Alle tidsrum/);
   assert.match(ttlSrc, /Tidsrum/);
-  assert.match(ttlSrc, /makkerPartnerLevelDisplayLabel/);
-  assert.match(ttlSrc, /PARTNER_LEVEL_LABELS\[effective\]/);
 });
 
 test('aktivitetsfeed: én række pr. kanal', () => {

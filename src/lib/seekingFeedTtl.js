@@ -129,11 +129,34 @@ function compactRegionLine(region, city) {
   return cityPart || regionPart || null;
 }
 
+function formatLevelRange(min, max) {
+  return `${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`;
+}
+
 function compactLevelLine(prefs, profile, levelResolver, rangeFn) {
   const lvl = levelResolver(prefs, profile);
   const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
   const { min, max } = rangeFn(lvl, win, prefs, profile);
-  return `Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`;
+  return formatLevelRange(min, max);
+}
+
+/** Én niveau-linje til søger makker: præference + interval (undgår «Niveau» + «Makker-niveau»). */
+export function compactMakkerSeekingLevelDetail(prefs, profile = {}) {
+  const normalized = normalizeMakkerSearchPrefs(prefs, profile);
+  const partnerLabel = makkerPartnerLevelDisplayLabel(normalized.partnerLevel, profile);
+  const pref = normalizeMakkerPartnerLevel(normalized.partnerLevel, profile) || 'same';
+  if (pref === 'wide') {
+    return `${partnerLabel} · alle niveauer i regionen`;
+  }
+  const lvl = resolveMakkerFilterLevel(normalized, profile);
+  const win = Number(normalized.levelWindow) || DEFAULT_LEVEL_WINDOW;
+  const { min, max } = levelRangeForMakkerPartnerPref(
+    lvl,
+    win,
+    normalized.partnerLevel,
+    profile,
+  );
+  return `${partnerLabel} (${formatLevelRange(min, max)})`;
 }
 
 function pushSeekingDetail(lines, label, value) {
@@ -204,18 +227,7 @@ export function compactMakkerSeekingDetails(prefs, profile = {}) {
   const lines = [];
   const region = compactRegionLine(resolveMakkerFilterRegion(normalized, profile), profile.city);
   pushSeekingDetail(lines, 'Område', region);
-  pushSeekingDetail(lines, 'Niveau', compactLevelLine(
-    normalized,
-    profile,
-    resolveMakkerFilterLevel,
-    (lvl, win, p, prof) => levelRangeForMakkerPartnerPref(lvl, win, p.partnerLevel, prof),
-  ));
-
-  pushSeekingDetail(
-    lines,
-    'Makker-niveau',
-    makkerPartnerLevelDisplayLabel(normalized.partnerLevel, profile),
-  );
+  pushSeekingDetail(lines, 'Niveau', compactMakkerSeekingLevelDetail(normalized, profile));
 
   pushSeekingDetail(lines, 'Banehalvdel', partnerCourtSideLabel(normalized.partnerCourtSide));
 
