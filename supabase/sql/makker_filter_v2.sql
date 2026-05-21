@@ -199,7 +199,7 @@ DECLARE
   v_max_per_subject constant integer := 8;
   v_max_per_day constant integer := 2;
   v_inactive_days constant integer := 21;
-  v_seek_ttl interval := interval '24 hours';
+  v_seek_ttl interval := interval '7 days';
 BEGIN
   IF v_caller IS NULL THEN
     RETURN jsonb_build_object('ok', false, 'error', 'Ikke logget ind');

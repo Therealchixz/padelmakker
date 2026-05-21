@@ -3,6 +3,7 @@
  */
 
 import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
+import { seekingVisibleDurationLabel } from './platformConstants';
 import { resolveSeekingMatchVisible } from './discoveryFeedSync';
 import {
   profilePlaytomicLevel,
@@ -181,7 +182,7 @@ export function describeMatchFilter(prefs, profile = {}) {
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
   const channels = [];
   if (prefs.notify) channels.push('notifikationer');
-  if (prefs.feedVisible) channels.push('feed 24t');
+  if (prefs.feedVisible) channels.push(`feed ${seekingVisibleDurationLabel()}`);
   const channelText = channels.length ? channels.join(' + ') : 'ingen kanal aktiv';
   return {
     configured: true,
@@ -208,7 +209,7 @@ export function buildProfilePatchFromMatchSearchPrefs(prefs, profile = {}) {
     match_watch_enabled: notifyOn,
     match_watch_at: notifyOn ? new Date().toISOString() : null,
     seeking_match: feedOn,
-    seeking_match_at: feedOn ? (profile.seeking_match_at || new Date().toISOString()) : null,
+    seeking_match_at: feedOn ? new Date().toISOString() : null,
     ...(region && region !== profile.area ? { area: region } : {}),
   };
 }

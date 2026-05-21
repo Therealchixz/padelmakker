@@ -180,4 +180,11 @@ export const INTENT_LABELS = Object.fromEntries(INTENTS.map((i) => [i.value, i.l
 // Shared UI/data refresh timings
 export const PROFILE_REFRESH_COOLDOWN_MS = 30_000;
 export const HOME_FEED_CACHE_TTL_MS = 45_000;
-export const SEEK_TTL_MS = 24 * 60 * 60 * 1000;
+/** Hvor længe "søger makker/kamp" (feedVisible) er aktivt fra seeking_match_at. */
+export const SEEK_TTL_DAYS = 7;
+export const SEEK_TTL_MS = SEEK_TTL_DAYS * 24 * 60 * 60 * 1000;
+
+/** Bruger-tekst: "7 dage" / "24 timer" */
+export function seekingVisibleDurationLabel() {
+  return SEEK_TTL_DAYS === 1 ? '24 timer' : `${SEEK_TTL_DAYS} dage`;
+}

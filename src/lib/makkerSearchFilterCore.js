@@ -2,7 +2,14 @@
  * Mit makker-filter — ren logik (ingen Supabase-import).
  */
 
-import { SEEK_TTL_MS, INTENTS, PLAY_STYLES, AVAILABILITY, INTENT_LABELS } from './platformConstants';
+import {
+  SEEK_TTL_MS,
+  seekingVisibleDurationLabel,
+  INTENTS,
+  PLAY_STYLES,
+  AVAILABILITY,
+  INTENT_LABELS,
+} from './platformConstants';
 import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
 import {
   profilePlaytomicLevel,
@@ -232,7 +239,7 @@ export function describeMakkerFilter(prefs, profile = {}) {
 
   const channels = [];
   if (prefs.notify) channels.push('notifikationer');
-  if (prefs.feedVisible) channels.push('synlig 24t');
+  if (prefs.feedVisible) channels.push(`synlig ${seekingVisibleDurationLabel()}`);
   const channelText = channels.length ? channels.join(' + ') : 'ingen kanal aktiv';
   return {
     configured: true,
@@ -259,7 +266,7 @@ export function buildProfilePatchFromMakkerSearchPrefs(prefs, profile = {}) {
     makker_watch_enabled: notifyOn,
     makker_watch_at: notifyOn ? new Date().toISOString() : null,
     seeking_match: feedOn,
-    seeking_match_at: feedOn ? (profile.seeking_match_at || new Date().toISOString()) : null,
+    seeking_match_at: feedOn ? new Date().toISOString() : null,
     ...(region && region !== profile.area ? { area: region } : {}),
   };
 }

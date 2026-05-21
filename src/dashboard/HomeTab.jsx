@@ -9,7 +9,7 @@ import { Users, MapPin, Swords, Trophy, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
-import { HOME_FEED_CACHE_TTL_MS, levelLabel } from '../lib/platformConstants';
+import { HOME_FEED_CACHE_TTL_MS, levelLabel, SEEK_TTL_MS } from '../lib/platformConstants';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import {
   normalizeMatchSearchPrefs,
@@ -198,7 +198,7 @@ export function HomeTab({ user, setTab }) {
     if (!silent) setFeedLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const sinceSeeking = new Date(Date.now() - SEEK_TTL_MS).toISOString();
       const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
       // Round 1: alle primære queries i parallel
@@ -225,7 +225,7 @@ export function HomeTab({ user, setTab }) {
           .order('created_at', { ascending: false }).limit(5),
         supabase.from('profiles')
           .select('id, full_name, name, avatar, level, area, intent_now, seeking_match_at')
-          .eq('seeking_match', true).gt('seeking_match_at', since24h)
+          .eq('seeking_match', true).gt('seeking_match_at', sinceSeeking)
           .order('seeking_match_at', { ascending: false, nullsFirst: false }).limit(5),
         supabase.from('leagues')
           .select('id, name, status, created_at').in('status', ['registration', 'active'])

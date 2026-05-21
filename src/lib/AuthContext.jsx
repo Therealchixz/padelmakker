@@ -3,7 +3,7 @@ import { supabase, isSupabaseConfigured } from './supabase'
 import { signInWithOAuthProvider } from './authOAuth'
 import { normalizeProfileRow, buildOnboardingProfileRowPatch } from './profileUtils'
 import { applyPendingAvatar } from './avatarUpload'
-import { DEFAULT_REGION } from './platformConstants'
+import { DEFAULT_REGION, SEEK_TTL_MS } from './platformConstants'
 import { BanNoticeModal } from '../components/BanNoticeModal'
 
 const AuthContext = createContext(null)
@@ -226,10 +226,10 @@ export function AuthProvider({ children }) {
 
         setProfile(profileRow)
 
-        // Auto-expire seeking_match after 24h from activation
+        // Auto-expire seeking_match after SEEK_TTL (see platformConstants)
         if (profileRow?.seeking_match && profileRow?.seeking_match_at) {
           const age = Date.now() - new Date(profileRow.seeking_match_at).getTime();
-          if (age >= 24 * 60 * 60 * 1000) {
+          if (age >= SEEK_TTL_MS) {
             supabase.from('profiles')
               .update({ seeking_match: false, seeking_match_at: null })
               .eq('id', profileRow.id)

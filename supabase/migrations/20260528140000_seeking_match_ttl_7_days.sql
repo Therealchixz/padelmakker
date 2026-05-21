@@ -1,24 +1,4 @@
--- Mit makker-filter: makker_search_prefs + notify_makker_watchers (niveau + region).
--- Deler discovery_notifications_today_count med kamp-watch (max 2/dag).
-
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS makker_search_prefs jsonb NOT NULL DEFAULT '{}'::jsonb;
-
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS makker_watch_enabled boolean NOT NULL DEFAULT false;
-
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS makker_watch_at timestamptz;
-
-COMMENT ON COLUMN public.profiles.makker_search_prefs IS
-  'Mit makker-filter: notify, feedVisible, region, myLevel, levelWindow, days (version 1).';
-
-COMMENT ON COLUMN public.profiles.makker_watch_enabled IS
-  'Synkroniseret fra makker_search_prefs.notify — modtag makker_suggestion.';
-
-CREATE INDEX IF NOT EXISTS idx_profiles_makker_watch_active
-  ON public.profiles (makker_watch_enabled)
-  WHERE makker_watch_enabled = true AND COALESCE(is_banned, false) = false;
+-- SEEK_TTL: 7 dage (platformConstants SEEK_TTL_DAYS)
 
 CREATE OR REPLACE FUNCTION public.notify_makker_watchers(p_subject_user_id uuid)
 RETURNS jsonb
@@ -41,8 +21,6 @@ DECLARE
   v_watcher_region text;
   v_watcher_days jsonb;
   v_subject_days jsonb;
-  v_watcher_level numeric;
-  v_watcher_window numeric;
   v_filt_lo numeric;
   v_filt_hi numeric;
   v_max_per_subject constant integer := 8;
@@ -95,7 +73,7 @@ BEGIN
   );
 
   FOR v_row IN
-    SELECT p.id AS user_id, p.makker_search_prefs AS prefs, p.area, p.level,
+    SELECT p.id AS user_id, p.makker_search_prefs AS prefs, p.area, p.level, p.court_side,
            p.match_watch_enabled, p.last_active_at
     FROM public.profiles p
     WHERE COALESCE(p.is_banned, false) = false
@@ -128,12 +106,43 @@ BEGIN
       END IF;
     END IF;
 
-    v_watcher_level := public.match_filter_prefs_level(v_row.prefs, v_row.level);
-    v_watcher_window := public.match_filter_level_window_from_prefs(v_row.prefs);
-    v_filt_lo := GREATEST(1.0, v_watcher_level - v_watcher_window);
-    v_filt_hi := LEAST(7.0, v_watcher_level + v_watcher_window);
+    SELECT b.level_min, b.level_max INTO v_filt_lo, v_filt_hi
+    FROM public.makker_filter_level_bounds(
+      COALESCE(v_row.prefs, '{}'::jsonb),
+      public.match_filter_prefs_level(COALESCE(v_row.prefs, '{}'::jsonb), v_row.level)
+    ) b;
 
     IF v_subject_level < v_filt_lo OR v_subject_level > v_filt_hi THEN
+      CONTINUE;
+    END IF;
+
+    IF NOT public.makker_filter_partner_court_side_ok(
+      COALESCE(v_row.prefs, '{}'::jsonb),
+      v_row.court_side,
+      v_subject.court_side
+    ) THEN
+      CONTINUE;
+    END IF;
+
+    IF NOT public.makker_filter_play_style_ok(
+      COALESCE(v_row.prefs->>'playStyle', 'all'),
+      v_subject.play_style
+    ) THEN
+      CONTINUE;
+    END IF;
+
+    IF NOT public.makker_filter_intent_ok(
+      COALESCE(v_row.prefs->'intents', '[]'::jsonb),
+      COALESCE(v_row.prefs->>'intentMode', 'compatible'),
+      v_subject.intent_now
+    ) THEN
+      CONTINUE;
+    END IF;
+
+    IF NOT public.makker_filter_availability_overlap(
+      COALESCE(v_row.prefs->'availability', '[]'::jsonb),
+      v_subject.availability
+    ) THEN
       CONTINUE;
     END IF;
 
@@ -178,5 +187,5 @@ EXCEPTION
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.notify_makker_watchers(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.notify_makker_watchers(uuid) TO authenticated;
+COMMENT ON COLUMN public.profiles.makker_search_prefs IS
+  'Mit makker-filter v2: notify, feedVisible, region, levelWindow, days, partnerCourtSide, playStyle, intents, intentMode, partnerLevel, availability.';

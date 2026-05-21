@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
-import { REGIONS, DAYS_OF_WEEK, INTENTS } from '../lib/platformConstants';
+import { REGIONS, DAYS_OF_WEEK, INTENTS, seekingVisibleDurationLabel } from '../lib/platformConstants';
 import { normalizeStringArrayField } from '../lib/profileUtils';
 import {
   normalizeMakkerSearchPrefs,
@@ -591,9 +591,9 @@ export function MakkerSearchFilterPage({ user, showToast }) {
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <Zap size={18} color={theme.warm} style={{ flexShrink: 0, marginTop: 2 }} />
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Vis at jeg søger makker (24t)</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Vis at jeg søger makker</div>
               <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
-                Du vises som aktiv i Find makker. Slås automatisk fra efter 24 timer.
+                Du vises i Find makker i {seekingVisibleDurationLabel()}. Slå selv fra når du har fundet makker.
               </div>
             </div>
           </div>

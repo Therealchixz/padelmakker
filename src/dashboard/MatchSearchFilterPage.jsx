@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
-import { REGIONS, DAYS_OF_WEEK, levelLabel } from '../lib/platformConstants';
+import { REGIONS, DAYS_OF_WEEK, levelLabel, seekingVisibleDurationLabel } from '../lib/platformConstants';
 import { normalizeStringArrayField } from '../lib/profileUtils';
 import {
   normalizeMatchSearchPrefs,
@@ -330,9 +330,9 @@ export function MatchSearchFilterPage({ user, showToast }) {
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <Zap size={18} color={theme.warm} style={{ flexShrink: 0, marginTop: 2 }} />
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Vis i feed 24 timer</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Vis at jeg søger kamp</div>
               <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
-                Andre spillere ser at du søger kamp (som før &ldquo;Søger kamp nu&rdquo;).
+                Synlig i {seekingVisibleDurationLabel()}. Slå selv fra når du har fundet kamp.
               </div>
             </div>
           </div>
