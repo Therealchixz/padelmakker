@@ -4022,3 +4022,341 @@ button,
   line-height: 1.1;
 }
 
+/* ── Beskeder-fane ── */
+.pm-besked-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--pm-space-3);
+  gap: var(--pm-space-2);
+}
+
+.pm-besked-compose {
+  margin-bottom: var(--pm-space-3);
+  overflow: hidden;
+}
+
+.pm-besked-compose-search {
+  display: flex;
+  align-items: center;
+  gap: var(--pm-space-2);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--pm-border);
+}
+
+.pm-besked-compose-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+  font-family: var(--pm-font);
+  color: var(--pm-text);
+}
+
+.pm-besked-compose-search-clear {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 2px;
+  color: var(--pm-text-light);
+  display: flex;
+}
+
+.pm-besked-compose-hint {
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--pm-text-light);
+}
+
+.pm-besked-compose-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-top: 1px solid var(--pm-border);
+  transition: background-color 0.1s;
+}
+
+.pm-besked-compose-row:first-child {
+  border-top: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pm-besked-compose-row:hover {
+    background: var(--pm-accent-bg);
+  }
+}
+
+.pm-besked-compose-row-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pm-text);
+}
+
+.pm-besked-convo-list {
+  overflow: hidden;
+}
+
+.pm-besked-convo-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  border-top: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  transition: background-color 0.1s;
+}
+
+.pm-besked-convo-row:first-child {
+  border-top: none;
+}
+
+.pm-besked-convo-row--unread {
+  background: var(--pm-accent-bg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pm-besked-convo-row:hover {
+    background: color-mix(in srgb, var(--pm-accent-bg) 55%, var(--pm-surface));
+  }
+
+  .pm-besked-convo-row--unread:hover {
+    background: color-mix(in srgb, var(--pm-accent-bg) 85%, var(--pm-surface));
+  }
+}
+
+.pm-besked-convo-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pm-besked-unread-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: var(--pm-accent);
+  color: var(--pm-on-accent);
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border: 2px solid var(--pm-surface);
+}
+
+.pm-besked-convo-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.pm-besked-convo-topline {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3px;
+  gap: var(--pm-space-2);
+}
+
+.pm-besked-convo-name {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-besked-convo-name--unread {
+  font-weight: 800;
+}
+
+.pm-besked-convo-name--read {
+  font-weight: 600;
+}
+
+.pm-besked-convo-time {
+  font-size: 11px;
+  color: var(--pm-text-light);
+  flex-shrink: 0;
+}
+
+.pm-besked-convo-preview {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-besked-convo-preview--unread {
+  color: var(--pm-text-mid);
+  font-weight: 600;
+}
+
+.pm-besked-convo-preview--read {
+  color: var(--pm-text-light);
+  font-weight: 400;
+}
+
+.pm-besked-chat-shell {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 130px);
+  max-height: 720px;
+}
+
+.pm-besked-chat-shell--mobile {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: auto;
+  max-height: none;
+  background: var(--pm-bg);
+  z-index: 30;
+}
+
+.pm-besked-chat-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  flex-shrink: 0;
+}
+
+.pm-besked-chat-topbar-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-besked-chat-blocked {
+  padding: 10px 14px;
+  background: var(--pm-warning-bg);
+  border-bottom: 1px solid var(--pm-border);
+  font-size: 12px;
+  color: var(--pm-text-mid);
+  line-height: 1.45;
+  flex-shrink: 0;
+}
+
+.pm-besked-messages-pane {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--pm-bg);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.pm-besked-messages-status {
+  text-align: center;
+  color: var(--pm-text-light);
+  font-size: 13px;
+  padding: 20px;
+}
+
+.pm-besked-messages-empty {
+  text-align: center;
+  color: var(--pm-text-light);
+  font-size: 13px;
+  margin-top: 28px;
+  line-height: 1.6;
+}
+
+.pm-besked-load-older {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.pm-besked-bubble-row {
+  display: flex;
+}
+
+.pm-besked-bubble-row--me {
+  justify-content: flex-end;
+}
+
+.pm-besked-bubble-row--them {
+  justify-content: flex-start;
+}
+
+.pm-besked-bubble {
+  max-width: 76%;
+  border-radius: 14px;
+  padding: 9px 13px;
+  font-size: 14px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.pm-besked-bubble--me {
+  background: var(--pm-accent);
+  color: var(--pm-on-accent);
+  border-radius: 14px 14px 4px 14px;
+}
+
+.pm-besked-bubble--them {
+  background: var(--pm-surface-alt);
+  color: var(--pm-text);
+  border-radius: 4px 14px 14px 14px;
+  border: 1px solid var(--pm-border);
+  box-shadow: var(--pm-shadow-soft);
+}
+
+.pm-besked-bubble-time {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+
+.pm-besked-bubble-time--me {
+  text-align: right;
+}
+
+.pm-besked-bubble-time--them {
+  text-align: left;
+}
+
+.pm-besked-input-bar {
+  display: flex;
+  gap: var(--pm-space-2);
+  padding: 10px 12px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  flex-shrink: 0;
+}
+
+.pm-besked-input-bar textarea {
+  flex: 1;
+  resize: none;
+  padding: 10px 12px;
+  line-height: 1.4;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.pm-besked-input-bar textarea:disabled {
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .pm-besked-input-bar textarea {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 769px) {
+  .pm-besked-input-bar textarea {
+    font-size: 14px;
+  }
+}
+

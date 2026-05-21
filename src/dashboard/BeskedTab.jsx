@@ -504,34 +504,12 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
     const iBlockedThem = blockedByMeIds.has(String(selectedId));
     const hiddenMessageCount = Math.max(0, messages.length - chatVisibleCount);
     const visibleMessages = hiddenMessageCount > 0 ? messages.slice(-chatVisibleCount) : messages;
-    const chatShellStyle = mobileChatActive
-      ? {
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          top: `${mobileChatOffsets.top || 64}px`,
-          bottom: '0px',
-          height: 'auto',
-          maxHeight: 'none',
-          background: theme.bg,
-          zIndex: 30,
-        }
-      : {
-          display: 'flex',
-          flexDirection: 'column',
-          height: 'calc(100dvh - 130px)',
-          maxHeight: '720px',
-        };
     return (
-      <div style={chatShellStyle}>
-        {/* Topbar */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '10px 14px', borderBottom: '1px solid ' + theme.border,
-          background: theme.surface, flexShrink: 0,
-        }}>
+      <div
+        className={mobileChatActive ? 'pm-besked-chat-shell pm-besked-chat-shell--mobile' : 'pm-besked-chat-shell'}
+        style={mobileChatActive ? { top: `${mobileChatOffsets.top || 64}px` } : undefined}
+      >
+        <div className="pm-besked-chat-topbar">
           <button
             onClick={() => { setSelectedId(null); navigate('/dashboard/beskeder', { replace: true }); }}
             style={{ ...btn(false), padding: '6px 10px', fontSize: '13px' }}
@@ -544,9 +522,7 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
               style={{ background: theme.accentBg, border: '1px solid ' + theme.border, flexShrink: 0 }}
             />
           )}
-          <span style={{ fontWeight: 700, fontSize: '15px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {getName(selectedId)}
-          </span>
+          <span className="pm-besked-chat-topbar-title">{getName(selectedId)}</span>
           <BeskedChatActions
             otherUserId={selectedId}
             otherName={getName(selectedId)}
@@ -565,38 +541,20 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
         </div>
 
         {chatIsBlocked && (
-          <div
-            style={{
-              padding: '10px 14px',
-              background: theme.warmBg,
-              borderBottom: `1px solid ${theme.border}`,
-              fontSize: 12,
-              color: theme.textMid,
-              lineHeight: 1.45,
-              flexShrink: 0,
-            }}
-          >
+          <div className="pm-besked-chat-blocked">
             {iBlockedThem
               ? `Du har blokeret ${getName(selectedId)}. Fjern blokeringen via ⋮ for at skrive igen.`
               : `Du kan ikke sende beskeder til ${getName(selectedId)} i denne samtale.`}
           </div>
         )}
 
-        {/* Beskeder */}
-        <div style={{
-          flex: 1, overflowY: 'auto', padding: '14px 14px 8px',
-          display: 'flex', flexDirection: 'column', gap: '6px',
-          background: theme.bg,
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehavior: 'contain',
-        }}
-        ref={messagesPaneRef}
-        onScroll={updateStickToBottom}
+        <div
+          className="pm-besked-messages-pane"
+          ref={messagesPaneRef}
+          onScroll={updateStickToBottom}
         >
           {loadingMsgs && (
-            <div style={{ textAlign: 'center', color: theme.textLight, fontSize: '13px', padding: '20px' }}>
-              Indlæser beskeder…
-            </div>
+            <div className="pm-besked-messages-status">Indlæser beskeder…</div>
           )}
           {!loadingMsgs && messageLoadError && (
             <div className="pm-state-card pm-state-card--error" style={{ margin: '8px 0' }}>
@@ -628,21 +586,16 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
             </div>
           )}
           {!loadingMsgs && !messageLoadError && messages.length === 0 && (
-            <div style={{ textAlign: 'center', color: theme.textLight, fontSize: '13px', marginTop: '28px', lineHeight: 1.6 }}>
+            <div className="pm-besked-messages-empty">
               Start samtalen med {getName(selectedId)}
             </div>
           )}
           {hiddenMessageCount > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
+            <div className="pm-besked-load-older">
               <button
                 type="button"
+                className="pm-ui-btn-chip"
                 onClick={() => setChatVisibleCount((prev) => Math.min(messages.length, prev + CHAT_WINDOW_SIZE))}
-                style={{
-                  ...btn(false),
-                  fontSize: '12px',
-                  padding: '6px 10px',
-                  borderRadius: '999px',
-                }}
               >
                 Vis {Math.min(CHAT_WINDOW_SIZE, hiddenMessageCount)} tidligere beskeder
               </button>
@@ -651,21 +604,13 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
           {visibleMessages.map((msg) => {
             const isMe = msg.sender_id === user.id;
             return (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
-                <div style={{
-                  maxWidth: '76%',
-                  background: isMe ? theme.accent : theme.surfaceAlt,
-                  color: isMe ? theme.onAccent : theme.text,
-                  borderRadius: isMe ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
-                  padding: '9px 13px',
-                  fontSize: '14px',
-                  lineHeight: 1.45,
-                  wordBreak: 'break-word',
-                  border: isMe ? 'none' : '1px solid ' + theme.border,
-                  boxShadow: isMe ? 'none' : '0 1px 2px rgba(0,0,0,0.07)',
-                }}>
+              <div
+                key={msg.id}
+                className={isMe ? 'pm-besked-bubble-row pm-besked-bubble-row--me' : 'pm-besked-bubble-row pm-besked-bubble-row--them'}
+              >
+                <div className={isMe ? 'pm-besked-bubble pm-besked-bubble--me' : 'pm-besked-bubble pm-besked-bubble--them'}>
                   <div>{msg.content}</div>
-                  <div style={{ fontSize: '10px', opacity: 0.6, marginTop: '4px', textAlign: isMe ? 'right' : 'left' }}>
+                  <div className={isMe ? 'pm-besked-bubble-time pm-besked-bubble-time--me' : 'pm-besked-bubble-time pm-besked-bubble-time--them'}>
                     {formatTime(msg.created_at)}
                   </div>
                 </div>
@@ -675,13 +620,7 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
-        <div style={{
-          display: 'flex', gap: '8px', padding: '10px 12px',
-          borderTop: '1px solid ' + theme.border,
-          background: theme.surface, flexShrink: 0,
-          paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
-        }}>
+        <div className="pm-besked-input-bar">
           <textarea
             ref={inputRef}
             value={inputText}
@@ -690,12 +629,7 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
             placeholder={chatIsBlocked ? 'Beskeder er blokeret' : 'Skriv en besked...'}
             rows={1}
             disabled={chatIsBlocked}
-            style={{
-              ...inputStyle, flex: 1, resize: 'none',
-              padding: '10px 12px', fontSize: isMobileView ? '16px' : '14px', lineHeight: 1.4,
-              maxHeight: '100px', overflowY: 'auto',
-              opacity: chatIsBlocked ? 0.6 : 1,
-            }}
+            style={inputStyle}
           />
           <button
             onClick={handleSend}
@@ -714,10 +648,11 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
 
   // ── Samtaleliste ──────────────────────────────────────────────────────────
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+    <div className="pm-besked-page">
+      <div className="pm-besked-page-header">
         <h2 style={{ ...heading('clamp(20px,4.5vw,24px)') }}>Beskeder</h2>
         <button
+          type="button"
           onClick={() => setComposeOpen(o => !o)}
           style={{ ...btn(composeOpen), padding: '8px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
         >
@@ -725,48 +660,51 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
         </button>
       </div>
 
-      {/* Compose-panel */}
       {composeOpen && (
-        <div style={{ background: theme.surface, borderRadius: theme.radius, border: '1px solid ' + theme.border, boxShadow: theme.shadow, marginBottom: '16px', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderBottom: '1px solid ' + theme.border }}>
+        <div className="pm-ui-card pm-besked-compose">
+          <div className="pm-besked-compose-search">
             <Search size={15} color={theme.textLight} style={{ flexShrink: 0 }} />
             <input
               ref={composeRef}
               value={composeQuery}
               onChange={e => setComposeQuery(e.target.value)}
               placeholder="Søg efter spiller..."
-              style={{ flex: 1, border: 'none', outline: 'none', fontSize: '14px', background: 'transparent', fontFamily: 'inherit', color: theme.text }}
             />
             {composeQuery && (
-              <button onClick={() => { setComposeQuery(''); setComposeResults([]); }} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '2px', color: theme.textLight, display: 'flex' }}>
+              <button
+                type="button"
+                className="pm-besked-compose-search-clear"
+                onClick={() => { setComposeQuery(''); setComposeResults([]); }}
+              >
                 <X size={14} />
               </button>
             )}
           </div>
           {composeSearching && (
-            <div style={{ padding: '14px 16px', fontSize: '13px', color: theme.textLight }}>Søger…</div>
+            <div className="pm-besked-compose-hint">Søger…</div>
           )}
           {!composeSearching && composeQuery && composeResults.length === 0 && (
-            <div style={{ padding: '14px 16px', fontSize: '13px', color: theme.textLight }}>Ingen spillere fundet.</div>
+            <div className="pm-besked-compose-hint">Ingen spillere fundet.</div>
           )}
           {!composeSearching && !composeQuery && (
-            <div style={{ padding: '14px 16px', fontSize: '13px', color: theme.textLight }}>Skriv et navn for at søge.</div>
+            <div className="pm-besked-compose-hint">Skriv et navn for at søge.</div>
           )}
-          {composeResults.map((p, idx) => (
+          {composeResults.map((p) => (
             <div
               key={p.id}
+              role="button"
+              tabIndex={0}
+              className="pm-besked-compose-row"
               onClick={() => openConversation(p.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '12px 14px', cursor: 'pointer',
-                borderTop: idx > 0 ? '1px solid ' + theme.border : 'none',
-                transition: 'background 0.1s',
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openConversation(p.id);
+                }
               }}
-              onMouseEnter={e => e.currentTarget.style.background = theme.accentBg}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
-              <AvatarCircle avatar={p.avatar} size={38} emojiSize="18px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border, flexShrink: 0 }} />
-              <span style={{ fontSize: '14px', fontWeight: 600, color: theme.text }}>{p.full_name || p.name || 'Spiller'}</span>
+              <AvatarCircle avatar={p.avatar} size={38} emojiSize="18px" style={{ background: theme.accentBg, border: `1px solid ${theme.border}`, flexShrink: 0 }} />
+              <span className="pm-besked-compose-row-name">{p.full_name || p.name || 'Spiller'}</span>
             </div>
           ))}
         </div>
@@ -789,62 +727,54 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
           </div>
         </div>
       ) : conversations.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '52px 20px', color: theme.textLight }}>
-          <MessageCircle size={48} color={theme.border} style={{ marginBottom: '14px' }} />
-          <div style={{ fontSize: '15px', fontWeight: 700, color: theme.text, marginBottom: '6px' }}>
-            Ingen samtaler endnu
-          </div>
-          <div style={{ fontSize: '13px', lineHeight: 1.6 }}>
+        <div className="pm-state-card pm-state-card--empty">
+          <MessageCircle size={48} color={theme.border} style={{ marginBottom: '14px' }} aria-hidden />
+          <div className="pm-state-title">Ingen samtaler endnu</div>
+          <div className="pm-state-copy">
             Tryk <strong>Ny besked</strong> for at starte en samtale.
           </div>
         </div>
       ) : (
-        <div style={{ borderRadius: theme.radius, overflow: 'hidden', border: '1px solid ' + theme.border, background: theme.surface, boxShadow: theme.shadow }}>
-          {conversations.map((convo, idx) => {
+        <div className="pm-ui-card pm-besked-convo-list">
+          {conversations.map((convo) => {
             const p = profiles[convo.otherId];
             const isFromMe = convo.lastMessage.sender_id === user.id;
             const hasUnread = convo.unread > 0;
             return (
               <div
                 key={convo.otherId}
+                role="button"
+                tabIndex={0}
+                className={hasUnread ? 'pm-besked-convo-row pm-besked-convo-row--unread' : 'pm-besked-convo-row'}
                 onClick={() => openConversation(convo.otherId)}
-                style={{
-                  display: 'flex', gap: '12px', alignItems: 'center',
-                  padding: '14px 16px', cursor: 'pointer',
-                  borderTop: idx > 0 ? '1px solid ' + theme.border : 'none',
-                  background: hasUnread ? theme.accentBg : theme.surface,
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openConversation(convo.otherId);
+                  }
                 }}
               >
-                <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div className="pm-besked-convo-avatar-wrap">
                   <AvatarCircle
-                    avatar={p?.avatar} size={46} emojiSize="21px"
-                    style={{ background: theme.accentBg, border: '1px solid ' + theme.border }}
+                    avatar={p?.avatar}
+                    size={46}
+                    emojiSize="21px"
+                    style={{ background: theme.accentBg, border: `1px solid ${theme.border}` }}
                   />
                   {hasUnread && (
-                    <span style={{
-                      position: 'absolute', top: -2, right: -2,
-                      background: theme.accent, color: theme.onAccent,
-                      borderRadius: '10px', fontSize: '9px', fontWeight: 800,
-                      padding: '1px 5px', border: '2px solid ' + theme.surface,
-                    }}>
-                      {convo.unread}
-                    </span>
+                    <span className="pm-besked-unread-badge">{convo.unread}</span>
                   )}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px', gap: '8px' }}>
-                    <span style={{ fontWeight: hasUnread ? 800 : 600, fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div className="pm-besked-convo-meta">
+                  <div className="pm-besked-convo-topline">
+                    <span className={hasUnread ? 'pm-besked-convo-name pm-besked-convo-name--unread' : 'pm-besked-convo-name pm-besked-convo-name--read'}>
                       {p?.full_name || p?.name || 'Spiller'}
                     </span>
-                    <span style={{ fontSize: '11px', color: theme.textLight, flexShrink: 0 }}>
+                    <span className="pm-besked-convo-time">
                       {formatTime(convo.lastMessage.created_at)}
                     </span>
                   </div>
-                  <div style={{
-                    fontSize: '13px', color: hasUnread ? theme.textMid : theme.textLight,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    fontWeight: hasUnread ? 600 : 400,
-                  }}>
+                  <div className={hasUnread ? 'pm-besked-convo-preview pm-besked-convo-preview--unread' : 'pm-besked-convo-preview pm-besked-convo-preview--read'}>
                     {isFromMe ? 'Dig: ' : ''}{convo.lastMessage.content}
                   </div>
                 </div>
