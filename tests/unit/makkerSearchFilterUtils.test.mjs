@@ -21,11 +21,19 @@ test('makkerWatchUtils calls RPC and push type', () => {
   assert.match(client, /makker_suggestion/);
 });
 
-test('makker filter core matches seeking profiles by level', () => {
+test('makker filter core matches seeking profiles by level and extras', () => {
   const core = readFileSync(join(root, 'src/lib/makkerSearchFilterCore.js'), 'utf8');
   assert.match(core, /seekingProfileMatchesFilter/);
-  assert.match(core, /profilePassesLevelFilter/);
-  assert.match(core, /MAKKER_FILTER_PREFS_VERSION/);
+  assert.match(core, /subjectPassesMakkerLevelFilter/);
+  assert.match(core, /MAKKER_FILTER_PREFS_VERSION = 2/);
+  assert.match(core, /courtSideMatchesMakkerFilter/);
+});
+
+test('makker filter v2 SQL helpers and notify', () => {
+  const sql = readFileSync(join(root, 'supabase/sql/makker_filter_v2.sql'), 'utf8');
+  assert.match(sql, /makker_filter_court_side_ok/);
+  assert.match(sql, /makker_filter_intent_ok/);
+  assert.match(sql, /makker_filter_level_bounds/);
 });
 
 test('notification policy routes makker_suggestion to opdagelse', () => {

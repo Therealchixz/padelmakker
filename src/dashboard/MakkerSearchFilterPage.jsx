@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
-import { REGIONS, DAYS_OF_WEEK, levelLabel } from '../lib/platformConstants';
+import { REGIONS, DAYS_OF_WEEK, INTENTS } from '../lib/platformConstants';
 import { normalizeStringArrayField } from '../lib/profileUtils';
 import {
   normalizeMakkerSearchPrefs,
@@ -10,12 +10,19 @@ import {
   isMakkerFilterConfigured,
   resolveMakkerFilterRegion,
   resolveMakkerFilterLevel,
-  saveMakkerSearchPrefs,
+  buildProfilePatchFromMakkerSearchPrefs,
   LEVEL_WINDOW_CHOICES,
   DEFAULT_LEVEL_WINDOW,
+  MAKKER_COURT_SIDE_MODES,
+  MAKKER_INTENT_MODES,
+  MAKKER_PARTNER_LEVEL_FILTERS,
+  PLAY_STYLES,
+  AVAILABILITY,
 } from '../lib/makkerSearchFilterUtils';
-import { levelRangeForWindow } from '../lib/padelLevelUtils';
+import { levelRangeForMakkerPartnerPref } from '../lib/makkerFilterMatch';
 import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
+import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
+import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
 import { ChevronLeft, Bell, Zap } from 'lucide-react';
 
 const labelStyle = {
@@ -27,6 +34,16 @@ const labelStyle = {
   marginBottom: '8px',
   display: 'block',
 };
+
+function canonicalIntentKey(value) {
+  const v = String(value || '').trim().toLowerCase();
+  if (v.includes('traening') || v.includes('træning')) return 'traening';
+  if (v.includes('konkurrence')) return 'konkurrence';
+  if (v.includes('hygge')) return 'hygge';
+  if (v.includes('fast')) return 'fast_makker';
+  if (v.includes('turnering')) return 'turnering';
+  return v.replace(/\s+/g, '_');
+}
 
 export function MakkerSearchFilterPage({ user, showToast }) {
   const navigate = useNavigate();
@@ -40,7 +57,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
 
   const profileLevel = profilePlaytomicLevel(user);
   const filterLevel = resolveMakkerFilterLevel(prefs, user);
-  const levelDisplay = levelLabel(filterLevel) || formatPlaytomicLevel(filterLevel);
+  const watcherCourtSide = user?.court_side || '';
 
   const set = (patch) => setPrefs((p) => ({ ...p, ...patch }));
 
@@ -51,10 +68,30 @@ export function MakkerSearchFilterPage({ user, showToast }) {
     });
   };
 
+  const toggleIntent = (value) => {
+    const key = canonicalIntentKey(value);
+    const cur = normalizeStringArrayField(prefs.intents);
+    set({
+      intents: cur.includes(key) ? cur.filter((x) => x !== key) : [...cur, key],
+    });
+  };
+
+  const toggleAvailability = (slot) => {
+    const cur = normalizeStringArrayField(prefs.availability);
+    set({
+      availability: cur.includes(slot) ? cur.filter((x) => x !== slot) : [...cur, slot],
+    });
+  };
+
   const description = describeMakkerFilter(prefs, user);
   const regionOk = Boolean(resolveMakkerFilterRegion(prefs, user) || prefs.region);
   const levelWindow = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  const levelSpan = levelRangeForWindow(filterLevel, levelWindow);
+  const levelSpan = levelRangeForMakkerPartnerPref(
+    filterLevel,
+    levelWindow,
+    prefs.partnerLevel,
+    user,
+  );
 
   const handleSave = async () => {
     if (!isMakkerFilterConfigured(prefs, user) && !prefs.region) {
@@ -67,19 +104,26 @@ export function MakkerSearchFilterPage({ user, showToast }) {
     }
     setSaving(true);
     try {
-      const patch = await saveMakkerSearchPrefs(
+      const wasSeeking = isSeekingActiveProfile(user) || user?.seeking_match === true;
+      const patch = buildProfilePatchFromMakkerSearchPrefs(
         { ...prefs, myLevel: profileLevel },
         user,
       );
       await updateProfile(patch);
+      if (patch.seeking_match && !wasSeeking && user?.id) {
+        void notifyMakkerWatchersForProfile(user.id);
+      }
       showToast('Mit makker-filter er gemt');
       navigate('/dashboard/profil');
-    } catch {
+    } catch (err) {
+      console.warn('save makker filter:', err?.message || err);
       showToast('Kunne ikke gemme. Prøv igen.');
     } finally {
       setSaving(false);
     }
   };
+
+  const selectedIntents = normalizeStringArrayField(prefs.intents);
 
   return (
     <div style={{ fontFamily: font, maxWidth: 520, margin: '0 auto' }}>
@@ -107,8 +151,8 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         Mit makker-filter
       </h1>
       <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 20 }}>
-        Få besked når spillere på dit niveau slår &ldquo;søger makker&rdquo; til i Find makker.
-        Samme niveau-skala som i kamp-filteret.
+        Beskriv hvilken makker du leder efter — baneside, spillestil, intention og tid — og få besked
+        når spillere slår &ldquo;søger makker&rdquo; til i Find makker.
       </p>
 
       <div
@@ -147,6 +191,93 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         ))}
       </div>
 
+      <div style={labelStyle}>Baneside (double)</div>
+      <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
+        {watcherCourtSide
+          ? `Din profil: ${watcherCourtSide}. Vi matcher mod andres baneside.`
+          : 'Angiv baneside under Profil → Rediger for præcis match.'}
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+        {MAKKER_COURT_SIDE_MODES.map(({ value, label, hint }) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => set({ courtSideMode: value })}
+            style={{
+              ...btn((prefs.courtSideMode || 'complementary') === value),
+              textAlign: 'left',
+              padding: '8px 12px',
+              fontSize: 12,
+            }}
+          >
+            <span style={{ fontWeight: 600 }}>{label}</span>
+            {hint ? (
+              <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.85 }}>{hint}</span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+
+      <div style={labelStyle}>Spillestil</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
+        {[{ value: 'all', label: 'Alle' }, ...PLAY_STYLES.map((s) => ({ value: s, label: s }))].map(
+          ({ value, label }) => {
+            const active = (prefs.playStyle || 'all') === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => set({ playStyle: value })}
+                style={{ ...btn(active), padding: '6px 12px', fontSize: 12 }}
+              >
+                {label}
+              </button>
+            );
+          },
+        )}
+      </div>
+
+      <div style={labelStyle}>Intention (valgfrit)</div>
+      <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
+        Tom = alle intentioner. Vælg én eller flere.
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+        {INTENTS.map(({ value, label }) => {
+          const key = canonicalIntentKey(value);
+          const active = selectedIntents.includes(key);
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => toggleIntent(value)}
+              style={{ ...btn(active), padding: '6px 12px', fontSize: 12 }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      {selectedIntents.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+          {MAKKER_INTENT_MODES.map(({ value, label, hint }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => set({ intentMode: value })}
+              style={{
+                ...btn((prefs.intentMode || 'compatible') === value),
+                textAlign: 'left',
+                padding: '8px 12px',
+                fontSize: 12,
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>{label}</span>
+              {hint ? <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.85 }}>{hint}</span> : null}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div style={labelStyle}>Dit niveau</div>
       <div
         style={{
@@ -160,71 +291,118 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         }}
       >
         <strong>{formatPlaytomicLevel(profileLevel)}</strong>
-        {levelDisplay ? (
-          <span style={{ color: theme.textMid, marginLeft: 8 }}>{levelDisplay}</span>
-        ) : null}
         <div style={{ fontSize: 11, color: theme.textLight, marginTop: 6 }}>
           Hentes fra din profil. Under Profil → Rediger kan du finjustere.
         </div>
       </div>
 
-      <div style={labelStyle}>Hvor tæt på dit niveau skal makkere være?</div>
+      <div style={labelStyle}>Ønsket makkerniveau</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-        {LEVEL_WINDOW_CHOICES.map(({ value, label, hint }) => {
-          const active = (prefs.levelWindow ?? DEFAULT_LEVEL_WINDOW) === value;
-          const tolLabel = `±${String(value).replace('.', ',')}`;
+        {MAKKER_PARTNER_LEVEL_FILTERS.map(({ value, label, hint }) => {
+          const active = (prefs.partnerLevel ?? '') === value;
           return (
             <button
-              key={value}
+              key={value || 'profile'}
               type="button"
-              onClick={() => set({ levelWindow: value })}
+              onClick={() => set({ partnerLevel: value })}
               style={{
                 ...btn(active),
                 textAlign: 'left',
                 padding: '8px 12px',
                 fontSize: 12,
-                fontWeight: 500,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 8,
               }}
             >
-              <span style={{ minWidth: 0 }}>
-                <span style={{ fontWeight: 600, color: active ? theme.onAccent : theme.text }}>{label}</span>
-                {hint ? (
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 400,
-                      marginLeft: 6,
-                      color: active ? 'rgba(255,255,255,0.82)' : theme.textLight,
-                    }}
-                  >
-                    {hint}
-                  </span>
-                ) : null}
-              </span>
-              <span
-                style={{
-                  flexShrink: 0,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  fontVariantNumeric: 'tabular-nums',
-                  color: active ? theme.onAccent : theme.textMid,
-                }}
-              >
-                {tolLabel}
-              </span>
+              <span style={{ fontWeight: 600 }}>{label}</span>
+              {hint ? <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.85 }}>{hint}</span> : null}
             </button>
           );
         })}
       </div>
+
+      {(prefs.partnerLevel === '' || prefs.partnerLevel === 'same') && (
+        <>
+          <div style={labelStyle}>Tolerance (±)</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+            {LEVEL_WINDOW_CHOICES.map(({ value, label, hint }) => {
+              const active = (prefs.levelWindow ?? DEFAULT_LEVEL_WINDOW) === value;
+              const tolLabel = `±${String(value).replace('.', ',')}`;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => set({ levelWindow: value })}
+                  style={{
+                    ...btn(active),
+                    textAlign: 'left',
+                    padding: '8px 12px',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ fontWeight: 600, color: active ? theme.onAccent : theme.text }}>
+                      {label}
+                    </span>
+                    {hint ? (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 400,
+                          marginLeft: 6,
+                          color: active ? 'rgba(255,255,255,0.82)' : theme.textLight,
+                        }}
+                      >
+                        {hint}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      fontVariantNumeric: 'tabular-nums',
+                      color: active ? theme.onAccent : theme.textMid,
+                    }}
+                  >
+                    {tolLabel}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
       <p style={{ fontSize: 11, color: theme.textLight, marginBottom: 18, lineHeight: 1.45 }}>
         Med niveau {formatPlaytomicLevel(filterLevel)} matcher vi spillere mellem{' '}
         <strong>{formatPlaytomicLevel(levelSpan.min)}</strong> og{' '}
         <strong>{formatPlaytomicLevel(levelSpan.max)}</strong> der søger makker.
       </p>
+
+      <div style={labelStyle}>Hvornår kan du spille? (valgfrit)</div>
+      <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
+        Overlap med spillerens profil. Tom = alle tidsrum.
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
+        {AVAILABILITY.map((slot) => {
+          const active = normalizeStringArrayField(prefs.availability).includes(slot);
+          return (
+            <button
+              key={slot}
+              type="button"
+              onClick={() => toggleAvailability(slot)}
+              style={{ ...btn(active), padding: '6px 12px', fontSize: 12 }}
+            >
+              {slot}
+            </button>
+          );
+        })}
+      </div>
 
       <div style={labelStyle}>Ugedage du vil spille (valgfrit)</div>
       <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>

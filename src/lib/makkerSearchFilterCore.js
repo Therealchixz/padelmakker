@@ -2,12 +2,11 @@
  * Mit makker-filter — ren logik (ingen Supabase-import).
  */
 
-import { SEEK_TTL_MS } from './platformConstants';
+import { SEEK_TTL_MS, INTENTS, PLAY_STYLES, AVAILABILITY, INTENT_LABELS } from './platformConstants';
 import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
 import {
   profilePlaytomicLevel,
   migrateEloWindowToLevelWindow,
-  profilePassesLevelFilter,
   formatPlaytomicLevel,
   levelRangeForWindow,
 } from './padelLevelUtils';
@@ -17,14 +16,33 @@ import {
   LEVEL_WINDOW_OPTIONS,
 } from './matchSearchFilterCore';
 import { resolveSeekingMatchVisible } from './discoveryFeedSync';
+import {
+  normalizeMakkerFilterExtras,
+  levelRangeForMakkerPartnerPref,
+  subjectPassesMakkerLevelFilter,
+  courtSideMatchesMakkerFilter,
+  playStyleMatchesMakkerFilter,
+  intentMatchesMakkerFilter,
+  availabilityMatchesMakkerFilter,
+  MAKKER_COURT_SIDE_MODES,
+  MAKKER_INTENT_MODES,
+  MAKKER_PARTNER_LEVEL_FILTERS,
+} from './makkerFilterMatch';
 
 export {
   DEFAULT_LEVEL_WINDOW,
   LEVEL_WINDOW_CHOICES,
   LEVEL_WINDOW_OPTIONS,
+  MAKKER_COURT_SIDE_MODES,
+  MAKKER_INTENT_MODES,
+  MAKKER_PARTNER_LEVEL_FILTERS,
+  INTENTS,
+  PLAY_STYLES,
+  AVAILABILITY,
+  INTENT_LABELS,
 };
 
-export const MAKKER_FILTER_PREFS_VERSION = 1;
+export const MAKKER_FILTER_PREFS_VERSION = 2;
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
@@ -39,6 +57,7 @@ export function isSeekingActiveProfile(p) {
 export function defaultMakkerSearchPrefs(profile = {}) {
   const region = canonicalRegionForForm(profile.area) || profile.area || '';
   const days = normalizeStringArrayField(profile.available_days);
+  const extras = normalizeMakkerFilterExtras({}, profile);
   return {
     version: MAKKER_FILTER_PREFS_VERSION,
     notify: false,
@@ -47,6 +66,7 @@ export function defaultMakkerSearchPrefs(profile = {}) {
     myLevel: profilePlaytomicLevel(profile),
     levelWindow: DEFAULT_LEVEL_WINDOW,
     days,
+    ...extras,
   };
 }
 
@@ -92,6 +112,7 @@ export function normalizeMakkerSearchPrefs(raw, profile = {}) {
     || (parsed.notify == null && profile.makker_watch_enabled === true && Object.keys(parsed).length === 0);
 
   const feedVisible = parsed.feedVisible === true;
+  const extras = normalizeMakkerFilterExtras(parsed, profile);
 
   return {
     version: MAKKER_FILTER_PREFS_VERSION,
@@ -101,6 +122,7 @@ export function normalizeMakkerSearchPrefs(raw, profile = {}) {
     myLevel,
     levelWindow,
     days,
+    ...extras,
   };
 }
 
@@ -136,29 +158,48 @@ export function daysOverlap(watcherDays, subjectDays) {
   return w.some((d) => s.includes(d));
 }
 
-export function seekingProfileMatchesFilter(subjectProfile, prefs, profile, myUserId) {
-  if (!subjectProfile || !isMakkerFilterConfigured(prefs, profile)) return false;
-  if (myUserId && String(subjectProfile.id) === String(myUserId)) return false;
+export function seekingProfileMatchesFilter(subjectProfile, prefs, watcherProfile, watcherUserId) {
+  if (!subjectProfile || !isMakkerFilterConfigured(prefs, watcherProfile)) return false;
+  if (watcherUserId && String(subjectProfile.id) === String(watcherUserId)) return false;
   if (!isSeekingActiveProfile(subjectProfile)) return false;
 
-  const filterRegion = resolveMakkerFilterRegion(prefs, profile);
+  const filterRegion = resolveMakkerFilterRegion(prefs, watcherProfile);
   const subjectRegion = canonicalRegionForForm(subjectProfile?.area) || subjectProfile?.area || '';
   if (filterRegion && subjectRegion && filterRegion.toLowerCase() !== subjectRegion.toLowerCase()) {
     return false;
   }
 
-  const myLevel = resolveMakkerFilterLevel(prefs, profile);
+  const myLevel = resolveMakkerFilterLevel(prefs, watcherProfile);
   const levelWindow = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  if (!profilePassesLevelFilter(myLevel, levelWindow, subjectProfile)) {
+  if (!subjectPassesMakkerLevelFilter(myLevel, levelWindow, prefs.partnerLevel, watcherProfile, subjectProfile)) {
     return false;
   }
 
-  const days = normalizeStringArrayField(prefs.days);
-  if (!daysOverlap(days, subjectProfile.available_days)) {
+  if (!daysOverlap(prefs.days, subjectProfile.available_days)) {
+    return false;
+  }
+
+  if (!availabilityMatchesMakkerFilter(prefs.availability, subjectProfile.availability)) {
+    return false;
+  }
+
+  if (!playStyleMatchesMakkerFilter(prefs.playStyle, subjectProfile.play_style)) {
+    return false;
+  }
+
+  if (!intentMatchesMakkerFilter(prefs.intents, prefs.intentMode, subjectProfile.intent_now)) {
+    return false;
+  }
+
+  if (!courtSideMatchesMakkerFilter(watcherProfile?.court_side, prefs.courtSideMode, subjectProfile.court_side)) {
     return false;
   }
 
   return true;
+}
+
+function courtSideModeLabel(mode) {
+  return MAKKER_COURT_SIDE_MODES.find((m) => m.value === mode)?.label || mode;
 }
 
 export function describeMakkerFilter(prefs, profile = {}) {
@@ -170,10 +211,23 @@ export function describeMakkerFilter(prefs, profile = {}) {
   if (region) parts.push(region.replace(/^Region /, ''));
   const lvl = resolveMakkerFilterLevel(prefs, profile);
   const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
-  const { min, max } = levelRangeForWindow(lvl, win);
+  const { min, max } = levelRangeForMakkerPartnerPref(lvl, win, prefs.partnerLevel, profile);
   parts.push(`Niveau ${formatPlaytomicLevel(lvl)} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
+
+  if (prefs.playStyle && prefs.playStyle !== 'all') parts.push(prefs.playStyle);
+  if (normalizeStringArrayField(prefs.intents).length > 0) {
+    const labels = normalizeStringArrayField(prefs.intents)
+      .map((k) => INTENT_LABELS[k] || k)
+      .slice(0, 2);
+    parts.push(labels.join(', ') + (prefs.intents.length > 2 ? '…' : ''));
+  }
+  parts.push(courtSideModeLabel(prefs.courtSideMode));
+
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
+  const avail = normalizeStringArrayField(prefs.availability);
+  if (avail.length > 0) parts.push(`${avail.length} tidsrum`);
+
   const channels = [];
   if (prefs.notify) channels.push('notifikationer');
   if (prefs.feedVisible) channels.push('synlig 24t');

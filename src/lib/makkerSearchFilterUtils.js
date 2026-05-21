@@ -19,6 +19,12 @@ import {
   resolveMakkerFilterLevel,
   isMakkerFilterActive,
   describeMakkerFilter,
+  MAKKER_COURT_SIDE_MODES,
+  MAKKER_INTENT_MODES,
+  MAKKER_PARTNER_LEVEL_FILTERS,
+  INTENTS,
+  PLAY_STYLES,
+  AVAILABILITY,
 } from './makkerSearchFilterCore';
 
 export {
@@ -26,6 +32,12 @@ export {
   DEFAULT_LEVEL_WINDOW,
   LEVEL_WINDOW_OPTIONS,
   LEVEL_WINDOW_CHOICES,
+  MAKKER_COURT_SIDE_MODES,
+  MAKKER_INTENT_MODES,
+  MAKKER_PARTNER_LEVEL_FILTERS,
+  INTENTS,
+  PLAY_STYLES,
+  AVAILABILITY,
   defaultMakkerSearchPrefs,
   normalizeMakkerSearchPrefs,
   resolveMakkerFilterRegion,
@@ -60,12 +72,14 @@ export async function saveMakkerSearchPrefs(prefs, profile = {}) {
   return patch;
 }
 
-export async function countSeekersMatchingMakkerFilter(profile, prefs, userId) {
-  if (!isMakkerFilterConfigured(prefs, profile)) return 0;
+export async function countSeekersMatchingMakkerFilter(watcherProfile, prefs, userId) {
+  if (!isMakkerFilterConfigured(prefs, watcherProfile)) return 0;
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, area, level, seeking_match, seeking_match_at, available_days')
+    .select(
+      'id, area, level, seeking_match, seeking_match_at, available_days, availability, play_style, court_side, intent_now',
+    )
     .eq('seeking_match', true)
     .eq('is_banned', false)
     .limit(200);
@@ -75,8 +89,7 @@ export async function countSeekersMatchingMakkerFilter(profile, prefs, userId) {
     return 0;
   }
 
-  return (data || []).filter((row) => {
-    const p = { ...row, available_days: row.available_days };
-    return seekingProfileMatchesFilter(p, prefs, profile, userId);
-  }).length;
+  return (data || []).filter((row) =>
+    seekingProfileMatchesFilter(row, prefs, watcherProfile, userId),
+  ).length;
 }
