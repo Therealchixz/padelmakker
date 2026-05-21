@@ -1,171 +1,47 @@
--- Mit makker-filter v2: baneside, spillestil, intention, niveau-retning, tilgængelighed.
+-- Eksplicit partnerCourtSide (venstre / hojre / any) i stedet for courtSideMode.
 
-CREATE OR REPLACE FUNCTION public.makker_filter_normalize_side(p_side text)
-RETURNS text
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE
-    WHEN lower(coalesce(p_side, '')) LIKE '%venstre%' THEN 'venstre'
-    WHEN lower(coalesce(p_side, '')) LIKE '%højre%' OR lower(coalesce(p_side, '')) LIKE '%hojre%' THEN 'hojre'
-    WHEN lower(coalesce(p_side, '')) LIKE '%begge%' THEN 'begge'
-    ELSE ''
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.makker_filter_court_side_ok(
-  p_mode text,
-  p_watcher_side text,
-  p_subject_side text
-)
-RETURNS boolean
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE COALESCE(NULLIF(trim(p_mode), ''), 'complementary')
-    WHEN 'any' THEN true
-    WHEN 'complementary' THEN (
-      (public.makker_filter_normalize_side(p_watcher_side) = 'venstre'
-        AND public.makker_filter_normalize_side(p_subject_side) = 'hojre')
-      OR (public.makker_filter_normalize_side(p_watcher_side) = 'hojre'
-        AND public.makker_filter_normalize_side(p_subject_side) = 'venstre')
-      OR public.makker_filter_normalize_side(p_watcher_side) = 'begge'
-      OR public.makker_filter_normalize_side(p_subject_side) = 'begge'
-    )
-    WHEN 'same' THEN (
-      public.makker_filter_normalize_side(p_watcher_side) <> ''
-      AND public.makker_filter_normalize_side(p_watcher_side) = public.makker_filter_normalize_side(p_subject_side)
-    )
-    ELSE true
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.makker_filter_normalize_intent(p_intent text)
-RETURNS text
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE
-    WHEN lower(coalesce(p_intent, '')) LIKE '%konkurrence%' THEN 'konkurrence'
-    WHEN lower(coalesce(p_intent, '')) LIKE '%træning%' OR lower(coalesce(p_intent, '')) LIKE '%traening%' THEN 'traening'
-    WHEN lower(coalesce(p_intent, '')) LIKE '%hygge%' THEN 'hygge'
-    WHEN lower(coalesce(p_intent, '')) LIKE '%fast%' THEN 'fast_makker'
-    WHEN lower(coalesce(p_intent, '')) LIKE '%turnering%' THEN 'turnering'
-    ELSE lower(trim(coalesce(p_intent, '')))
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.makker_filter_intent_compat_score(p_a text, p_b text)
-RETURNS numeric
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE public.makker_filter_normalize_intent(p_a)
-    WHEN 'konkurrence' THEN CASE public.makker_filter_normalize_intent(p_b)
-      WHEN 'konkurrence' THEN 1.0 WHEN 'traening' THEN 0.6 WHEN 'hygge' THEN 0.2
-      WHEN 'fast_makker' THEN 0.5 WHEN 'turnering' THEN 0.8 ELSE 0.4 END
-    WHEN 'traening' THEN CASE public.makker_filter_normalize_intent(p_b)
-      WHEN 'konkurrence' THEN 0.6 WHEN 'traening' THEN 1.0 WHEN 'hygge' THEN 0.5
-      WHEN 'fast_makker' THEN 0.7 WHEN 'turnering' THEN 0.5 ELSE 0.4 END
-    WHEN 'hygge' THEN CASE public.makker_filter_normalize_intent(p_b)
-      WHEN 'konkurrence' THEN 0.2 WHEN 'traening' THEN 0.5 WHEN 'hygge' THEN 1.0
-      WHEN 'fast_makker' THEN 0.8 WHEN 'turnering' THEN 0.3 ELSE 0.4 END
-    WHEN 'fast_makker' THEN CASE public.makker_filter_normalize_intent(p_b)
-      WHEN 'konkurrence' THEN 0.5 WHEN 'traening' THEN 0.7 WHEN 'hygge' THEN 0.8
-      WHEN 'fast_makker' THEN 1.0 WHEN 'turnering' THEN 0.4 ELSE 0.4 END
-    WHEN 'turnering' THEN CASE public.makker_filter_normalize_intent(p_b)
-      WHEN 'konkurrence' THEN 0.8 WHEN 'traening' THEN 0.5 WHEN 'hygge' THEN 0.3
-      WHEN 'fast_makker' THEN 0.4 WHEN 'turnering' THEN 1.0 ELSE 0.4 END
-    ELSE 0.4
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.makker_filter_intent_ok(
-  p_intents jsonb,
-  p_mode text,
-  p_subject_intent text
-)
-RETURNS boolean
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE
-    WHEN p_intents IS NULL OR jsonb_array_length(p_intents) = 0 THEN true
-    WHEN NULLIF(trim(coalesce(p_subject_intent, '')), '') IS NULL THEN true
-    WHEN COALESCE(NULLIF(trim(p_mode), ''), 'compatible') = 'exact' THEN
-      EXISTS (
-        SELECT 1
-        FROM jsonb_array_elements_text(p_intents) AS i(key)
-        WHERE public.makker_filter_normalize_intent(i.key)
-          = public.makker_filter_normalize_intent(p_subject_intent)
-      )
-    ELSE EXISTS (
-      SELECT 1
-      FROM jsonb_array_elements_text(p_intents) AS i(key)
-      WHERE public.makker_filter_intent_compat_score(i.key, p_subject_intent) >= 0.6
-    )
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.makker_filter_play_style_ok(p_filter_style text, p_subject_style text)
-RETURNS boolean
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT
-    COALESCE(NULLIF(trim(p_filter_style), ''), 'all') = 'all'
-    OR NULLIF(trim(coalesce(p_subject_style, '')), '') IS NULL
-    OR trim(p_subject_style) = 'Ved ikke endnu'
-    OR trim(p_subject_style) = trim(p_filter_style);
-$$;
-
-CREATE OR REPLACE FUNCTION public.makker_filter_availability_overlap(p_filter jsonb, p_subject text[])
-RETURNS boolean
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE
-    WHEN p_filter IS NULL OR jsonb_array_length(p_filter) = 0 THEN true
-    WHEN p_subject IS NULL OR array_length(p_subject, 1) IS NULL OR array_length(p_subject, 1) = 0 THEN true
-    ELSE EXISTS (
-      SELECT 1
-      FROM jsonb_array_elements_text(p_filter) AS f(slot)
-      WHERE lower(trim(f.slot)) = ANY (
-        SELECT lower(trim(x)) FROM unnest(p_subject) AS x
-      )
-    )
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.makker_filter_level_bounds(
+CREATE OR REPLACE FUNCTION public.makker_filter_resolve_partner_court_side(
   p_prefs jsonb,
-  p_watcher_level numeric
+  p_watcher_court_side text
 )
-RETURNS TABLE (level_min numeric, level_max numeric)
+RETURNS text
 LANGUAGE sql
 IMMUTABLE
 AS $$
-  SELECT
-    CASE COALESCE(NULLIF(trim(p_prefs->>'partnerLevel'), ''), '')
-      WHEN 'wide' THEN 1.0
-      WHEN 'stronger' THEN GREATEST(1.0, public.match_filter_prefs_level(p_prefs, p_watcher_level))
-      WHEN 'weaker' THEN GREATEST(1.0,
-        public.match_filter_prefs_level(p_prefs, p_watcher_level)
-        - public.match_filter_level_window_from_prefs(p_prefs) - 0.15)
-      ELSE GREATEST(1.0,
-        public.match_filter_prefs_level(p_prefs, p_watcher_level)
-        - public.match_filter_level_window_from_prefs(p_prefs))
-    END AS level_min,
-    CASE COALESCE(NULLIF(trim(p_prefs->>'partnerLevel'), ''), '')
-      WHEN 'wide' THEN 7.0
-      WHEN 'stronger' THEN LEAST(7.0,
-        public.match_filter_prefs_level(p_prefs, p_watcher_level)
-        + public.match_filter_level_window_from_prefs(p_prefs) + 0.15)
-      WHEN 'weaker' THEN LEAST(7.0, public.match_filter_prefs_level(p_prefs, p_watcher_level))
-      ELSE LEAST(7.0,
-        public.match_filter_prefs_level(p_prefs, p_watcher_level)
-        + public.match_filter_level_window_from_prefs(p_prefs))
-    END AS level_max;
+  SELECT CASE
+    WHEN NULLIF(trim(p_prefs->>'partnerCourtSide'), '') IN ('venstre', 'hojre', 'any')
+      THEN trim(p_prefs->>'partnerCourtSide')
+    WHEN COALESCE(NULLIF(trim(p_prefs->>'courtSideMode'), ''), 'complementary') = 'any' THEN 'any'
+    WHEN trim(p_prefs->>'courtSideMode') = 'same' THEN
+      CASE public.makker_filter_normalize_side(p_watcher_court_side)
+        WHEN 'venstre' THEN 'venstre'
+        WHEN 'hojre' THEN 'hojre'
+        ELSE 'any'
+      END
+    WHEN public.makker_filter_normalize_side(p_watcher_court_side) = 'venstre' THEN 'hojre'
+    WHEN public.makker_filter_normalize_side(p_watcher_court_side) = 'hojre' THEN 'venstre'
+    ELSE 'any'
+  END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.makker_filter_partner_court_side_ok(
+  p_prefs jsonb,
+  p_watcher_court_side text,
+  p_subject_court_side text
+)
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT CASE public.makker_filter_resolve_partner_court_side(p_prefs, p_watcher_court_side)
+    WHEN 'any' THEN true
+    ELSE (
+      public.makker_filter_normalize_side(p_subject_court_side) = ''
+      OR public.makker_filter_normalize_side(p_subject_court_side) = 'begge'
+      OR public.makker_filter_normalize_side(p_subject_court_side)
+        = public.makker_filter_resolve_partner_court_side(p_prefs, p_watcher_court_side)
+    )
+  END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.notify_makker_watchers(p_subject_user_id uuid)

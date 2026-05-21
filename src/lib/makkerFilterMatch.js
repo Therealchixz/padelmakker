@@ -11,10 +11,17 @@ import {
   levelRangeForWindow,
 } from './padelLevelUtils';
 
+/** @deprecated Legacy modes — brug partnerCourtSide */
 export const MAKKER_COURT_SIDE_MODES = [
   { value: 'complementary', label: 'Komplementær', hint: 'Venstre + højre — typisk i double' },
   { value: 'same', label: 'Samme side som mig', hint: 'Fx begge venstre' },
   { value: 'any', label: 'Ligegyldigt', hint: 'Alle banesider' },
+];
+
+export const MAKKER_PARTNER_COURT_SIDES = [
+  { value: 'venstre', label: 'Venstreside-spiller', hint: 'Makker der primært spiller venstre' },
+  { value: 'hojre', label: 'Højreside-spiller', hint: 'Makker der primært spiller højre' },
+  { value: 'any', label: 'Ligegyldigt', hint: 'Venstre, højre eller begge sider' },
 ];
 
 export const MAKKER_INTENT_MODES = [
@@ -31,6 +38,7 @@ export const MAKKER_PARTNER_LEVEL_FILTERS = [
 ];
 
 const VALID_COURT_MODES = new Set(MAKKER_COURT_SIDE_MODES.map((m) => m.value));
+const VALID_PARTNER_COURT_SIDES = new Set(MAKKER_PARTNER_COURT_SIDES.map((m) => m.value));
 const VALID_INTENT_MODES = new Set(MAKKER_INTENT_MODES.map((m) => m.value));
 const VALID_PARTNER_LEVELS = new Set(MAKKER_PARTNER_LEVEL_FILTERS.map((p) => p.value));
 const VALID_PLAY_STYLES = new Set(['all', 'Offensiv', 'Defensiv', 'Allround']);
@@ -132,13 +140,30 @@ export function subjectPassesMakkerLevelFilter(watcherLevel, levelWindow, partne
   return subjectLevel >= min && subjectLevel <= max;
 }
 
-export function courtSideMatchesMakkerFilter(watcherCourtSide, mode, subjectCourtSide) {
-  const m = VALID_COURT_MODES.has(mode) ? mode : 'complementary';
-  if (m === 'any') return true;
-  const score = courtSideScore(watcherCourtSide, subjectCourtSide);
-  if (m === 'complementary') return score >= 0.9;
-  if (m === 'same') return score < 0.5;
-  return true;
+export function resolvePartnerCourtSide(parsed = {}, profile = {}) {
+  if (VALID_PARTNER_COURT_SIDES.has(parsed.partnerCourtSide)) {
+    return parsed.partnerCourtSide;
+  }
+  const mode = VALID_COURT_MODES.has(parsed.courtSideMode) ? parsed.courtSideMode : 'complementary';
+  const mine = normalizeCourtSide(profile?.court_side);
+  if (mode === 'any') return 'any';
+  if (mode === 'same') return mine && mine !== 'begge' ? mine : 'any';
+  if (mine === 'venstre') return 'hojre';
+  if (mine === 'hojre') return 'venstre';
+  return 'any';
+}
+
+export function courtSideMatchesMakkerFilter(partnerCourtSide, subjectCourtSide) {
+  const want = VALID_PARTNER_COURT_SIDES.has(partnerCourtSide) ? partnerCourtSide : 'any';
+  if (want === 'any') return true;
+  const theirs = normalizeCourtSide(subjectCourtSide);
+  if (!theirs || theirs === 'begge') return true;
+  return theirs === want;
+}
+
+export function partnerCourtSideLabel(side) {
+  return MAKKER_PARTNER_COURT_SIDES.find((m) => m.value === side)?.label
+    || (side === 'any' ? 'Ligegyldigt' : side);
 }
 
 export function playStyleMatchesMakkerFilter(filterStyle, subjectPlayStyle) {
@@ -171,7 +196,7 @@ export function availabilityMatchesMakkerFilter(filterAvailability, subjectAvail
 }
 
 export function normalizeMakkerFilterExtras(parsed = {}, profile = {}) {
-  const courtSideMode = VALID_COURT_MODES.has(parsed.courtSideMode) ? parsed.courtSideMode : 'complementary';
+  const partnerCourtSide = resolvePartnerCourtSide(parsed, profile);
   const playStyle = VALID_PLAY_STYLES.has(parsed.playStyle) ? parsed.playStyle : 'all';
   const intents = [
     ...new Set(
@@ -183,5 +208,5 @@ export function normalizeMakkerFilterExtras(parsed = {}, profile = {}) {
   const intentMode = VALID_INTENT_MODES.has(parsed.intentMode) ? parsed.intentMode : 'compatible';
   const partnerLevel = normalizeMakkerPartnerLevel(parsed.partnerLevel, profile);
   const availability = normalizeAvailabilityList(parsed.availability);
-  return { courtSideMode, playStyle, intents, intentMode, partnerLevel, availability };
+  return { partnerCourtSide, playStyle, intents, intentMode, partnerLevel, availability };
 }

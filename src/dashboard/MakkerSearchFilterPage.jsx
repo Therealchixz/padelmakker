@@ -13,7 +13,7 @@ import {
   buildProfilePatchFromMakkerSearchPrefs,
   LEVEL_WINDOW_CHOICES,
   DEFAULT_LEVEL_WINDOW,
-  MAKKER_COURT_SIDE_MODES,
+  MAKKER_PARTNER_COURT_SIDES,
   MAKKER_INTENT_MODES,
   MAKKER_PARTNER_LEVEL_FILTERS,
   PLAY_STYLES,
@@ -76,7 +76,6 @@ export function MakkerSearchFilterPage({ user, showToast }) {
 
   const profileLevel = profilePlaytomicLevel(user);
   const filterLevel = resolveMakkerFilterLevel(prefs, user);
-  const watcherCourtSide = user?.court_side || '';
 
   const set = (patch) => setPrefs((p) => ({ ...p, ...patch }));
 
@@ -213,31 +212,40 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         ))}
       </div>
 
-      <div style={labelStyle}>Baneside (double)</div>
+      <div style={labelStyle}>Baneside på makker</div>
       <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
-        {watcherCourtSide
-          ? `Din profil: ${watcherCourtSide}. Vi matcher mod andres baneside.`
-          : 'Angiv baneside under Profil → Rediger for præcis match.'}
+        Hvilken side skal din makker primært spille i double?
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
-        {MAKKER_COURT_SIDE_MODES.map(({ value, label, hint }) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => set({ courtSideMode: value })}
-            style={{
-              ...btn((prefs.courtSideMode || 'complementary') === value),
-              textAlign: 'left',
-              padding: '8px 12px',
-              fontSize: 12,
-            }}
-          >
-            <span style={{ fontWeight: 600 }}>{label}</span>
-            {hint ? (
-              <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.85 }}>{hint}</span>
-            ) : null}
-          </button>
-        ))}
+        {MAKKER_PARTNER_COURT_SIDES.map(({ value, label, hint }) => {
+          const active = (prefs.partnerCourtSide || 'any') === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => set({ partnerCourtSide: value })}
+              style={{
+                ...btn(active),
+                textAlign: 'left',
+                padding: '10px 12px',
+                fontSize: 12,
+              }}
+            >
+              <span style={{ fontWeight: 600, display: 'block' }}>{label}</span>
+              {hint ? (
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 400,
+                    color: active ? 'rgba(255,255,255,0.82)' : theme.textLight,
+                  }}
+                >
+                  {hint}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
       </div>
 
       <div style={labelStyle}>Spillestil</div>

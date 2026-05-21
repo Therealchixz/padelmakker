@@ -24,6 +24,8 @@ import {
   playStyleMatchesMakkerFilter,
   intentMatchesMakkerFilter,
   availabilityMatchesMakkerFilter,
+  partnerCourtSideLabel,
+  MAKKER_PARTNER_COURT_SIDES,
   MAKKER_COURT_SIDE_MODES,
   MAKKER_INTENT_MODES,
   MAKKER_PARTNER_LEVEL_FILTERS,
@@ -33,6 +35,7 @@ export {
   DEFAULT_LEVEL_WINDOW,
   LEVEL_WINDOW_CHOICES,
   LEVEL_WINDOW_OPTIONS,
+  MAKKER_PARTNER_COURT_SIDES,
   MAKKER_COURT_SIDE_MODES,
   MAKKER_INTENT_MODES,
   MAKKER_PARTNER_LEVEL_FILTERS,
@@ -191,15 +194,11 @@ export function seekingProfileMatchesFilter(subjectProfile, prefs, watcherProfil
     return false;
   }
 
-  if (!courtSideMatchesMakkerFilter(watcherProfile?.court_side, prefs.courtSideMode, subjectProfile.court_side)) {
+  if (!courtSideMatchesMakkerFilter(prefs.partnerCourtSide, subjectProfile.court_side)) {
     return false;
   }
 
   return true;
-}
-
-function courtSideModeLabel(mode) {
-  return MAKKER_COURT_SIDE_MODES.find((m) => m.value === mode)?.label || mode;
 }
 
 export function describeMakkerFilter(prefs, profile = {}) {
@@ -221,7 +220,7 @@ export function describeMakkerFilter(prefs, profile = {}) {
       .slice(0, 2);
     parts.push(labels.join(', ') + (prefs.intents.length > 2 ? '…' : ''));
   }
-  parts.push(courtSideModeLabel(prefs.courtSideMode));
+  parts.push(partnerCourtSideLabel(prefs.partnerCourtSide));
 
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);

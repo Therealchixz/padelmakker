@@ -10,6 +10,8 @@ const coreSrc = readFileSync(join(root, 'src/lib/makkerSearchFilterCore.js'), 'u
 
 test('makkerFilterMatch exports v2 matching helpers', () => {
   assert.match(matchSrc, /courtSideMatchesMakkerFilter/);
+  assert.match(matchSrc, /MAKKER_PARTNER_COURT_SIDES/);
+  assert.match(matchSrc, /partnerCourtSide/);
   assert.match(matchSrc, /playStyleMatchesMakkerFilter/);
   assert.match(matchSrc, /intentMatchesMakkerFilter/);
   assert.match(matchSrc, /availabilityMatchesMakkerFilter/);
