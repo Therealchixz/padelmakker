@@ -6,14 +6,12 @@ import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { mergeLigaSessionPrefs, openMineLigaerFromProfile } from '../lib/ligaSessionPrefs';
 import { useLigaPartnerOpponentStats } from '../lib/ligaRelationStats';
-import { REGIONS, PLAY_STYLES, COURT_SIDES, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, COURT_SIDES } from '../lib/platformConstants';
 import { profileLevelDisplayText } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { normalizeMatchSearchPrefs, describeMatchFilter } from '../lib/matchSearchFilterUtils';
 import { normalizeMakkerSearchPrefs, describeMakkerFilter } from '../lib/makkerSearchFilterUtils';
-import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
-import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Users, ChevronRight } from 'lucide-react';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
@@ -528,8 +526,6 @@ export function ProfilTab({ user, showToast, setTab }) {
       }
       setAvatarUploading(false);
     }
-    const wasSeeking = isSeekingActiveProfile(user) || user?.seeking_match === true;
-    const willSeeking = form.seeking_match === true;
     try {
       await updateProfile({
         area: region,
@@ -542,21 +538,12 @@ export function ProfilTab({ user, showToast, setTab }) {
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
         birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
         birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
-        // Matchmaking
-        seeking_match:     form.seeking_match,
-        seeking_match_at:  form.seeking_match && !user.seeking_match ? new Date().toISOString() : form.seeking_match ? user.seeking_match_at : null,
-        intent_now:        form.intent_now || null,
-        preferred_partner_level: form.preferred_partner_level || null,
-        travel_willing:    form.travel_willing,
       });
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
       setPendingAvatarFile(null);
       setAvatarPreviewUrl(null);
       setEditing(false);
       showToast("Profil opdateret! ✅");
-      if (willSeeking && !wasSeeking && user?.id) {
-        void notifyMakkerWatchersForProfile(user.id);
-      }
     } catch (e) {
       console.error(e);
       showToast("Kunne ikke gemme. Prøv igen.");
@@ -1293,100 +1280,14 @@ export function ProfilTab({ user, showToast, setTab }) {
         <label htmlFor="profil-bio" style={labelStyle}>Bio</label>
         <textarea id="profil-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl lidt om dig som spiller..." style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "20px" }} />
 
-        {/* Matchmaking */}
-        <div style={{ borderTop: "1px solid " + theme.border, paddingTop: "20px", marginBottom: "20px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "14px" }}>
-            Matchmaking-præferencer
-          </div>
-
-          {/* Søger kamp nu */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-            <div>
-              <div style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>Søger kamp aktivt</div>
-              <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "2px" }}>Vis mig i foreslåede makkere for andre spillere</div>
-            </div>
-            <button
-              onClick={() => set("seeking_match", !form.seeking_match)}
-              style={{
-                width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer",
-                background: form.seeking_match ? theme.accent : theme.border,
-                position: "relative", transition: "background 0.2s", flexShrink: 0,
-              }}
-            >
-              <div style={{
-                position: "absolute", top: "3px",
-                left: form.seeking_match ? "23px" : "3px",
-                width: "18px", height: "18px", borderRadius: "50%",
-                background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-              }} />
-            </button>
-          </div>
-
-          {/* Intention */}
-          <div style={labelStyle}>Hvad søger du?</div>
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
-            <button
-              onClick={() => set("intent_now", "")}
-              style={{ ...btn(!form.intent_now), padding: "6px 12px", fontSize: "12px" }}
-            >
-              Ikke angivet
-            </button>
-            {INTENTS.map(i => (
-              <button
-                key={i.value}
-                onClick={() => set("intent_now", i.value)}
-                style={{ ...btn(form.intent_now === i.value), padding: "6px 12px", fontSize: "12px" }}
-                title={i.desc}
-              >
-                {i.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Foretrukket modspiller-niveau */}
-          <div style={labelStyle}>Hvilket niveau modspiller foretrækker du?</div>
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
-            <button
-              onClick={() => set("preferred_partner_level", "")}
-              style={{ ...btn(!form.preferred_partner_level), padding: "6px 12px", fontSize: "12px" }}
-            >
-              Ikke angivet
-            </button>
-            {PARTNER_LEVELS.map(p => (
-              <button
-                key={p.value}
-                onClick={() => set("preferred_partner_level", p.value)}
-                style={{ ...btn(form.preferred_partner_level === p.value), padding: "6px 12px", fontSize: "12px" }}
-                title={p.desc}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Vil rejse */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>Vil gerne rejse lidt</div>
-              <div style={{ fontSize: "12px", color: theme.textLight, marginTop: "2px" }}>Åben for spillere uden for dit nærområde</div>
-            </div>
-            <button
-              onClick={() => set("travel_willing", !form.travel_willing)}
-              style={{
-                width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer",
-                background: form.travel_willing ? theme.accent : theme.border,
-                position: "relative", transition: "background 0.2s", flexShrink: 0,
-              }}
-            >
-              <div style={{
-                position: "absolute", top: "3px",
-                left: form.travel_willing ? "23px" : "3px",
-                width: "18px", height: "18px", borderRadius: "50%",
-                background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-              }} />
-            </button>
-          </div>
+        <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
+          Søger kamp eller makker
         </div>
+        <p style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.45, margin: "0 0 12px" }}>
+          Synlighed, intention, niveau og tidsrum styres i dine to filtre — ikke her under basisprofil.
+        </p>
+        <MatchFilterProfileCard user={user} />
+        <MakkerFilterProfileCard user={user} />
 
         <button onClick={handleSave} disabled={saving} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Gemmer..." : <><Save size={14} /> Gem ændringer</>}
