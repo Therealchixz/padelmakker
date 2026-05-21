@@ -113,7 +113,7 @@ export function normalizeMatchSearchPrefs(raw, profile = {}) {
     levelWindow,
     days,
     availability,
-    openOnly: parsed.openOnly !== false,
+    openOnly: true,
   };
 }
 
@@ -199,7 +199,6 @@ export function describeMatchFilter(prefs, profile = {}) {
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
   const avail = normalizeStringArrayField(prefs.availability);
   if (avail.length > 0) parts.push(avail.join(', '));
-  parts.push(prefs.openOnly !== false ? 'kun kampe med plads' : 'alle kampe');
   const channels = [];
   if (prefs.notify) channels.push('notifikationer');
   if (prefs.feedVisible) channels.push(`feed ${seekingVisibleDurationLabel('kamp')}`);
