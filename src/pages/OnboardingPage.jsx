@@ -221,7 +221,7 @@ export function OnboardingPage() {
 
   const stepMeta = [
     { title: "Konto", hint: "Kontaktinfo, adgangskode og aldersbekræftelse." },
-    { title: "Niveau", hint: "Vælg ærligt - du kan justere senere." },
+    { title: "Niveau", hint: "Træk slideren, læs beskrivelsen og vælg ærligt — samme som under profil senere." },
     { title: "Område", hint: "Område og tidspunkter du spiller." },
     { title: "Profil", hint: "Gør profilen klar til andre spillere." },
   ];
@@ -581,16 +581,7 @@ export function OnboardingPage() {
     </div>,
 
     <div key={1}>
-      <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Dit padel-niveau</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "10px", lineHeight: 1.5 }}>Vær ærlig - vi matcher dig bedre!</p>
-      <p style={{ color: theme.textLight, fontSize: "13px", marginBottom: "24px", lineHeight: 1.5 }}>
-        Ikke sikker? Vælg det niveau der passer bedst lige nu. Du kan justere det senere.
-      </p>
-
-      <div style={labelStyle}>Niveau</div>
-      <p style={{ fontSize: 13, color: theme.textLight, marginBottom: 12, lineHeight: 1.45 }}>
-        Træk slideren eller skriv dit niveau — fx 3,3 hvis du ligger mellem 3,0 og 3,5.
-      </p>
+      <h2 style={{ ...heading("24px"), marginBottom: "12px" }}>Dit padel-niveau</h2>
       <div style={{ marginBottom: 24 }}>
         <PlaytomicLevelPicker
           value={form.levelNumeric}

@@ -15,13 +15,15 @@ test('PlaytomicLevelPicker supports fine-tuned decimal level', () => {
   assert.match(src, /type="number"/);
 });
 
-test('onboarding and profil use levelNumeric', () => {
+test('onboarding and profil use same PlaytomicLevelPicker', () => {
   const onboarding = readFileSync(join(root, 'src/pages/OnboardingPage.jsx'), 'utf8');
   const profil = readFileSync(join(root, 'src/dashboard/ProfilTab.jsx'), 'utf8');
   assert.match(onboarding, /levelNumeric/);
   assert.match(onboarding, /PlaytomicLevelPicker/);
   assert.match(profil, /levelNumeric/);
   assert.match(profil, /PlaytomicLevelPicker/);
+  assert.doesNotMatch(onboarding, /Ikke sikker\? Vælg det niveau/);
+  assert.doesNotMatch(onboarding, /ELO-vindue/);
 });
 
 test('levelBandTitleForNum maps slider values to full band text', () => {
