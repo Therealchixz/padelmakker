@@ -252,7 +252,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   useScrollIntoViewWhen(showCreate, padelCreateFormRef, {
     enabled: kampeFormat === 'padel' && !loadingMatches,
-    block: 'end',
+    block: 'start',
   });
 
   useEffect(() => {

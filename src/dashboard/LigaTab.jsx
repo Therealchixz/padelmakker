@@ -750,7 +750,7 @@ export function LigaTab({
   const createOpen = createOpenProp !== undefined ? createOpenProp : createOpenLocal;
   const setCreateOpen = onCreateOpenChange !== undefined ? onCreateOpenChange : setCreateOpenLocal;
   const ligaCreateFormRef = useRef(null);
-  useScrollIntoViewWhen(createOpen, ligaCreateFormRef, { enabled: isAdmin, block: 'end' });
+  useScrollIntoViewWhen(createOpen, ligaCreateFormRef, { enabled: isAdmin, block: 'start' });
   const [createForm, setCreateForm] = useState({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
 
   // Create team form

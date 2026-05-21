@@ -144,7 +144,7 @@ export function AmericanoTab({
     if (!createControlled) setCreateOpenInternal(open)
   }
   const createFormRef = useRef<HTMLDivElement>(null)
-  useScrollIntoViewWhen(showCreate, createFormRef, { block: 'end' })
+  useScrollIntoViewWhen(showCreate, createFormRef, { block: 'start' })
 
   useEffect(() => {
     if (showCreate) setAmericanoHelpOpen(false)
