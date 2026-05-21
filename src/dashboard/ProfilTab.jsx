@@ -15,6 +15,7 @@ import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Users, ChevronRight } from 'lucide-react';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
+import { useAmericanoPartnerOpponentStats } from '../lib/americanoRelationStats';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
@@ -250,6 +251,15 @@ export function ProfilTab({ user, showToast, setTab }) {
   const recentForm = ratedRows.slice(-5).reverse();
 
   const { partnerOpponentStats, partnerOpponentLoading } = usePartnerOpponentStats(user.id, ratedRows);
+  const americanoStatsEnabled =
+    (Number(pStats?.americano_played) || 0) > 0
+    || (Number(pStats?.americano_wins) || 0)
+      + (Number(pStats?.americano_draws) || 0)
+      + (Number(pStats?.americano_losses) || 0) > 0;
+  const { americanoRelationStats, americanoRelationLoading } = useAmericanoPartnerOpponentStats(
+    user?.id,
+    americanoStatsEnabled,
+  );
 
   const [form, setForm] = useState(() => profileFormState(user));
 
@@ -567,12 +577,23 @@ export function ProfilTab({ user, showToast, setTab }) {
     ? "Afslut mindst 2 Americano-turneringer for at se din Americano-ELO graf."
     : "Spil mindst 2 kampe for at se din ELO-graf.";
   const showPerformanceSection = is2v2Mode || isAmericanoMode;
-  const showRelationsSection =
+  const show2v2RelationsSection =
     is2v2Mode
     && !statsLoading
     && !partnerOpponentLoading
     && partnerOpponentStats
     && (partnerOpponentStats.partners.length > 0 || partnerOpponentStats.opponents.length > 0);
+  const showAmericanoRelationsSection =
+    isAmericanoMode
+    && !americanoRelationLoading
+    && americanoRelationStats
+    && (
+      americanoRelationStats.bestPartners.length > 0
+      || americanoRelationStats.toughestPartners.length > 0
+      || americanoRelationStats.hardestOpponents.length > 0
+      || americanoRelationStats.easiestOpponents.length > 0
+    );
+  const showRelationsSection = show2v2RelationsSection || showAmericanoRelationsSection;
   const activeOverviewSource =
     overviewMode === "americano"
       ? "Datakilde: Americano-turneringer"
@@ -782,11 +803,22 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {showRelationsSection && (
           <div ref={relationsRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Relationer · 2v2
+            Relationer · {activeModeLabel}
+          </div>
+        )}
+        {isAmericanoMode && americanoRelationLoading && (
+          <div style={{ textAlign: "center", padding: "16px", color: theme.textLight, fontSize: "13px", marginBottom: "16px" }}>
+            Indlæser makker- og modstander-statistik…
+          </div>
+        )}
+        {isAmericanoMode && !americanoRelationLoading && americanoRelationStats
+          && !showAmericanoRelationsSection && americanoRounds > 0 && (
+          <div style={{ fontSize: "12px", color: theme.textMid, marginBottom: "16px", lineHeight: 1.45 }}>
+            Spil mindst 2 runder på banen med samme makker eller modstander i afsluttede turneringer — så vises dine relationer her.
           </div>
         )}
         {/* Bedste makker + Hårdeste modstandere — kun 2v2 */}
-        {showRelationsSection && partnerOpponentStats && (
+        {show2v2RelationsSection && partnerOpponentStats && (
           <>
             {partnerOpponentStats.partners.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
@@ -831,6 +863,87 @@ export function ProfilTab({ user, showToast, setTab }) {
                 </div>
               );
             })()}
+          </>
+        )}
+
+        {/* Americano: makker/modstander pr. runde */}
+        {showAmericanoRelationsSection && americanoRelationStats && (
+          <>
+            {americanoRelationStats.bestPartners.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Bedste makker</div>
+                {americanoRelationStats.bestPartners.map((p, i) => (
+                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.rounds} runder sammen</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: americanoOutcomeColors.win.text }}>{Math.round((p.asPartner.wins / p.asPartner.rounds) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr på banen</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {americanoRelationStats.toughestPartners.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Sværeste makker</div>
+                {americanoRelationStats.toughestPartners.map((p, i) => (
+                  <div key={`tough-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.rounds} runder sammen</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((p.asPartner.wins / p.asPartner.rounds) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr på banen</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {americanoRelationStats.hardestOpponents.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Hårdeste modstandere</div>
+                {americanoRelationStats.hardestOpponents.map((p, i) => {
+                  const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.rounds) * 100);
+                  return (
+                    <div key={`hard-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
+                      <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: "#FEF2F2", border: "1px solid #FECACA", flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                        <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.rounds} runder imod</div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: "15px", fontWeight: 800, color: americanoOutcomeColors.loss.text }}>{theirWinPct}%</div>
+                        <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {americanoRelationStats.easiestOpponents.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Nemmeste modstandere</div>
+                {americanoRelationStats.easiestOpponents.map((p, i) => (
+                  <div key={`easy-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.rounds} runder imod</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: americanoOutcomeColors.win.text }}>{Math.round((p.asOpponent.wins / p.asOpponent.rounds) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>din sejr</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
