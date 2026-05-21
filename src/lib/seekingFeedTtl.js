@@ -8,6 +8,7 @@ import {
   seekingVisibleDurationLabel,
   DAYS_OF_WEEK,
   INTENT_LABELS,
+  PARTNER_LEVEL_LABELS,
 } from './platformConstants';
 import { normalizeStringArrayField } from './profileUtils';
 import {
@@ -28,7 +29,7 @@ import {
   levelRangeForMakkerPartnerPref,
   partnerCourtSideLabel,
   availabilityMeansAllTimeSlots,
-  MAKKER_PARTNER_LEVEL_FILTERS,
+  normalizeMakkerPartnerLevel,
 } from './makkerFilterMatch';
 
 export { SEEK_KAMP_TTL_MS, SEEK_MAKKER_TTL_MS };
@@ -159,6 +160,12 @@ function makkerIntentSummary(intents) {
   return labels.length ? labels.join(', ') : null;
 }
 
+/** Læsbar tekst for hvilken slags makker-niveau spilleren søger (ikke filter-UI «Fra min profil»). */
+export function makkerPartnerLevelDisplayLabel(partnerLevelPref, profile = {}) {
+  const effective = normalizeMakkerPartnerLevel(partnerLevelPref, profile) || 'same';
+  return PARTNER_LEVEL_LABELS[effective] || 'Samme niveau';
+}
+
 function makkerAvailabilitySummary(prefs) {
   const raw = normalizeStringArrayField(prefs?.availability);
   if (!raw.length || availabilityMeansAllTimeSlots(prefs?.availability)) {
@@ -200,10 +207,11 @@ export function compactMakkerSeekingDetails(prefs, profile = {}) {
     (lvl, win, p, prof) => levelRangeForMakkerPartnerPref(lvl, win, p.partnerLevel, prof),
   ));
 
-  const partnerLevelLabel = MAKKER_PARTNER_LEVEL_FILTERS.find(
-    (p) => p.value === normalized.partnerLevel,
-  )?.label;
-  if (partnerLevelLabel) pushSeekingDetail(lines, 'Makker-niveau', partnerLevelLabel);
+  pushSeekingDetail(
+    lines,
+    'Makker-niveau',
+    makkerPartnerLevelDisplayLabel(normalized.partnerLevel, profile),
+  );
 
   pushSeekingDetail(lines, 'Banehalvdel', partnerCourtSideLabel(normalized.partnerCourtSide));
 
