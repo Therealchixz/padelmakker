@@ -537,7 +537,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
             alignItems: 'center',
             justifyContent: 'space-between',
             background: theme.surfaceAlt,
-            border: `1px solid ${prefs.notify ? theme.accent : theme.border}`,
+            border: `1px solid ${theme.border}`,
             borderRadius: 10,
             padding: '10px 14px',
             marginBottom: 10,
@@ -590,7 +590,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
             alignItems: 'center',
             justifyContent: 'space-between',
             background: theme.surfaceAlt,
-            border: `1px solid ${prefs.feedVisible ? theme.accent : theme.border}`,
+            border: `1px solid ${theme.border}`,
             borderRadius: 10,
             padding: '10px 14px',
           }}
