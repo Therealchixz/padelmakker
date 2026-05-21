@@ -1121,8 +1121,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const creatorProfile = profilesById[String(match.creator_id)] || user;
       const playerIds = (matchPlayers[match.id] || []).map(p => p.user_id);
 
-      const { notified, error } = await activateSeekingPlayer(
-        match, creatorProfile, playerIds
+      const { notified, error, matchElo, matchArea } = await activateSeekingPlayer(
+        match,
+        creatorProfile,
+        playerIds,
+        { eloByUserId: eloFromHistoryByUserId },
       );
 
       if (error) {
@@ -1131,9 +1134,19 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       }
 
       if (notified > 0) {
-        showToast(`⚡ ${notified} spillere er notificeret!`);
+        const eloMin = Math.max(0, (matchElo ?? 1000) - 250);
+        const eloMax = (matchElo ?? 1000) + 250;
+        const regionBit = matchArea ? ` · ${matchArea}` : '';
+        showToast(
+          `⚡ ${notified} spillere notificeret (ELO ${eloMin}–${eloMax}${regionBit})`,
+        );
       } else {
-        showToast('Kampen er markeret som "søger spiller" — ingen matchende spillere fundet lige nu.');
+        const eloMin = Math.max(0, (matchElo ?? 1000) - 250);
+        const eloMax = (matchElo ?? 1000) + 250;
+        const regionBit = matchArea ? ` i ${matchArea}` : '';
+        showToast(
+          `Kampen søger spiller (ELO ${eloMin}–${eloMax}${regionBit}) — ingen matchende spillere lige nu.`,
+        );
       }
       await loadData();
     } catch (e) { showToast('Fejl: ' + (e.message || 'Prøv igen')); }
