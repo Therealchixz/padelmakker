@@ -9,11 +9,23 @@ import {
   migrateEloWindowToLevelWindow,
   matchPassesLevelFilter,
   formatPlaytomicLevel,
+  levelRangeForWindow,
 } from './padelLevelUtils';
 
 export const MATCH_FILTER_PREFS_VERSION = 2;
-export const DEFAULT_LEVEL_WINDOW = 1;
-export const LEVEL_WINDOW_OPTIONS = [0.5, 1, 1.5, 2];
+/** Standard: snævert interval — fair kampe uden stor niveauforskel. */
+export const DEFAULT_LEVEL_WINDOW = 0.3;
+
+/** Tolerance i niveau (±), ikke længere store 0,5-spring som minimum. */
+export const LEVEL_WINDOW_CHOICES = [
+  { value: 0.2, label: 'Meget snævert', hint: 'Næsten samme niveau' },
+  { value: 0.3, label: 'Snævert', hint: 'Anbefalet' },
+  { value: 0.5, label: 'Normalt', hint: 'Lidt bredere' },
+  { value: 0.7, label: 'Bredt', hint: 'Fleksibel' },
+  { value: 1.0, label: 'Meget bredt', hint: 'Alle omkring dig' },
+];
+
+export const LEVEL_WINDOW_OPTIONS = LEVEL_WINDOW_CHOICES.map((c) => c.value);
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
@@ -53,10 +65,14 @@ export function normalizeMatchSearchPrefs(raw, profile = {}) {
   if (!Number.isFinite(levelWindow) && parsed.eloWindow != null) {
     levelWindow = migrateEloWindowToLevelWindow(parsed.eloWindow);
   }
-  if (!Number.isFinite(levelWindow) || levelWindow < 0.25 || levelWindow > 3) {
-    levelWindow = base.levelWindow;
-  } else {
-    levelWindow = Math.round(levelWindow * 10) / 10;
+  if (!Number.isFinite(levelWindow) || levelWindow < 0.15 || levelWindow > 1.5) {
+    levelWindow = levelWindow > 1.5 ? 1 : base.levelWindow;
+  }
+  levelWindow = Math.round(levelWindow * 10) / 10;
+  if (!LEVEL_WINDOW_OPTIONS.includes(levelWindow)) {
+    const nearest = LEVEL_WINDOW_OPTIONS.reduce((best, v) =>
+      (Math.abs(v - levelWindow) < Math.abs(best - levelWindow) ? v : best), DEFAULT_LEVEL_WINDOW);
+    levelWindow = nearest;
   }
 
   let myLevel = Number(parsed.myLevel);
@@ -153,8 +169,9 @@ export function describeMatchFilter(prefs, profile = {}) {
   if (region) parts.push(region.replace(/^Region /, ''));
   const lvl = resolveFilterLevel(prefs, profile);
   const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
+  const { min, max } = levelRangeForWindow(lvl, win);
   const short = levelLabel(lvl) || formatPlaytomicLevel(lvl);
-  parts.push(`${short} (±${win})`);
+  parts.push(`${short} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
   const channels = [];

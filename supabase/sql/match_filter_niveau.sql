@@ -29,16 +29,16 @@ RETURNS numeric
 LANGUAGE sql
 IMMUTABLE
 AS $$
-  SELECT GREATEST(0.25, LEAST(3.0,
+  SELECT GREATEST(0.15, LEAST(1.5,
     COALESCE(
       NULLIF(trim(p_prefs->>'levelWindow'), '')::numeric,
       CASE
-        WHEN COALESCE((p_prefs->>'eloWindow')::integer, 0) <= 175 THEN 0.5
-        WHEN COALESCE((p_prefs->>'eloWindow')::integer, 0) <= 275 THEN 1.0
-        WHEN COALESCE((p_prefs->>'eloWindow')::integer, 0) <= 350 THEN 1.5
-        ELSE 2.0
+        WHEN COALESCE((p_prefs->>'eloWindow')::integer, 0) <= 175 THEN 0.3
+        WHEN COALESCE((p_prefs->>'eloWindow')::integer, 0) <= 275 THEN 0.5
+        WHEN COALESCE((p_prefs->>'eloWindow')::integer, 0) <= 350 THEN 0.7
+        ELSE 1.0
       END,
-      1.0
+      0.3
     )
   ));
 $$;

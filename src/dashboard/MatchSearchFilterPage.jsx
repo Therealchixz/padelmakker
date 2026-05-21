@@ -11,9 +11,10 @@ import {
   resolveFilterRegion,
   resolveFilterLevel,
   saveMatchSearchPrefs,
-  LEVEL_WINDOW_OPTIONS,
+  LEVEL_WINDOW_CHOICES,
   DEFAULT_LEVEL_WINDOW,
 } from '../lib/matchSearchFilterUtils';
+import { levelRangeForWindow } from '../lib/padelLevelUtils';
 import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
 import { ChevronLeft, Bell, Zap } from 'lucide-react';
 
@@ -52,6 +53,8 @@ export function MatchSearchFilterPage({ user, showToast }) {
 
   const description = describeMatchFilter(prefs, user);
   const regionOk = Boolean(resolveFilterRegion(prefs, user) || prefs.region);
+  const levelWindow = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
+  const levelSpan = levelRangeForWindow(filterLevel, levelWindow);
 
   const handleSave = async () => {
     if (!isMatchFilterConfigured(prefs, user) && !prefs.region) {
@@ -165,25 +168,40 @@ export function MatchSearchFilterPage({ user, showToast }) {
         </div>
       </div>
 
-      <div style={labelStyle}>Hvor bredt søger du kampe?</div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-        {LEVEL_WINDOW_OPTIONS.map((w) => (
-          <button
-            key={w}
-            type="button"
-            onClick={() => set({ levelWindow: w })}
-            style={{
-              ...btn((prefs.levelWindow || DEFAULT_LEVEL_WINDOW) === w),
-              padding: '8px 12px',
-              fontSize: 12,
-            }}
-          >
-            ±{w}
-          </button>
-        ))}
+      <div style={labelStyle}>Hvor tæt på dit niveau skal kampe være?</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+        {LEVEL_WINDOW_CHOICES.map(({ value, label, hint }) => {
+          const active = (prefs.levelWindow ?? DEFAULT_LEVEL_WINDOW) === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => set({ levelWindow: value })}
+              style={{
+                ...btn(active),
+                textAlign: 'left',
+                padding: '10px 12px',
+                fontSize: 12,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <span>
+                <strong>{label}</strong>
+                <span style={{ color: theme.textMid, marginLeft: 6 }}>±{value}</span>
+              </span>
+              <span style={{ fontSize: 11, color: active ? theme.accent : theme.textLight }}>{hint}</span>
+            </button>
+          );
+        })}
       </div>
       <p style={{ fontSize: 11, color: theme.textLight, marginBottom: 18, lineHeight: 1.45 }}>
-        Fx ±1,0 om niveau 3,5 = kampe med spillere omkring 2,5–4,5.
+        Med dit niveau {formatPlaytomicLevel(filterLevel)} matcher vi kampe mellem{' '}
+        <strong>{formatPlaytomicLevel(levelSpan.min)}</strong> og{' '}
+        <strong>{formatPlaytomicLevel(levelSpan.max)}</strong>.
+        Snævert (±0,3) giver de mest fair kampe.
       </p>
 
       <div style={labelStyle}>Ugedage (valgfrit)</div>

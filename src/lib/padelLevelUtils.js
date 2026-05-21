@@ -52,7 +52,7 @@ export function formatPlaytomicLevel(level) {
 
 export function levelRangeForWindow(center, window) {
   const c = clampPlaytomicLevel(center);
-  const w = Math.max(0.25, Math.min(3, Number(window) || 1));
+  const w = Math.max(0.15, Math.min(1.5, Number(window) || 0.3));
   return {
     min: clampPlaytomicLevel(c - w),
     max: clampPlaytomicLevel(c + w),
@@ -99,9 +99,9 @@ export function matchPassesLevelFilter(myLevel, levelWindow, creatorProfile, mat
 /** Migrér ældre eloWindow (±ELO) til niveau-tolerance. */
 export function migrateEloWindowToLevelWindow(eloWindow) {
   const w = Number(eloWindow);
-  if (!Number.isFinite(w)) return 1;
-  if (w <= 175) return 0.5;
-  if (w <= 275) return 1;
-  if (w <= 350) return 1.5;
-  return 2;
+  if (!Number.isFinite(w)) return 0.3;
+  if (w <= 175) return 0.3;
+  if (w <= 275) return 0.5;
+  if (w <= 350) return 0.7;
+  return 1;
 }
