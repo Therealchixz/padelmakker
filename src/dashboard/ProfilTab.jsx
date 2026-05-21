@@ -847,7 +847,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             </button>
           ) : null}
           {isAmericanoMode ? (
-            <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: "americano", view: "completed", scope: "mine" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+            <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: "americano", americanoView: "completed", scope: "mine" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
               <Swords size={18} color={theme.accent} />
               <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine turneringer</div>
               <div style={{ fontSize: "11px", color: theme.textLight }}>{americanoPlayed} deltaget</div>
