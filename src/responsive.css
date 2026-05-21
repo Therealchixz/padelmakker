@@ -4670,8 +4670,26 @@ button,
   pointer-events: none;
 }
 
-.pm-admin-search input {
-  padding-left: 38px;
+.pm-admin-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--pm-font);
+  font-size: 14px;
+  padding: 10px 12px 10px 38px;
+  border-radius: var(--pm-radius-md);
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.pm-admin-search-input::placeholder {
+  color: var(--pm-text-light);
+}
+
+.pm-admin-search-input:focus {
+  border-color: var(--pm-accent);
 }
 
 .pm-admin-sort-row {

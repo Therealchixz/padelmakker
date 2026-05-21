@@ -1058,10 +1058,10 @@ export function AdminTab({ initialSubTab = null }) {
             <Search size={16} className="pm-admin-search-icon" aria-hidden />
             <input
               type="text"
+              className="pm-admin-search-input"
               placeholder="Søg..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={inputStyle}
             />
           </div>
 
