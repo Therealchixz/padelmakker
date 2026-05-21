@@ -35,4 +35,4 @@ CI kører med `STRICT=1`. Lokalt: `STRICT=1 npm run check:ui-hex` før PR.
 2. ~~**Baner**~~ — `pm-baner-*` CSS, `pm-help-box`, tids-chips via tokens (færdig)
 3. ~~**Admin**~~ — `pm-admin-*` CSS, PillTabs, `pm-ui-card`, AppModal for rediger/slet (færdig)
 4. ~~**LigaTab** + admin-resultateditorer~~ → `AppModal` (færdig; `AdminPinGate` beholdes)
-5. **PillTabs** andre steder med gamle `btn()`-filterrækker
+5. ~~**PillTabs**~~ — Profil, Kampe (opret), Liga (opret), Makkere (færdig)

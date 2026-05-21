@@ -26,6 +26,13 @@ import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avata
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { SeekingCallout } from '../components/SeekingCallout';
+import { PillTabs } from '../components/PillTabs';
+
+const PROFILE_OVERVIEW_TABS = [
+  { id: '2v2', label: '2v2' },
+  { id: 'americano', label: 'Americano' },
+  { id: 'liga', label: 'Liga' },
+];
 
 function MatchFilterProfileCard({ user }) {
   const navigate = useNavigate();
@@ -320,6 +327,7 @@ export function ProfilTab({ user, showToast, setTab }) {
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
   const [avatarUploading, setAvatarUploading]       = useState(false);
   const [overviewMode, setOverviewMode] = useState("2v2");
+  const [activeProfileSection, setActiveProfileSection] = useState("overview");
   const [americanoEloHistoryRows, setAmericanoEloHistoryRows] = useState([]);
   const [americanoEloHistoryLoading, setAmericanoEloHistoryLoading] = useState(true);
   const [ligaLoading, setLigaLoading] = useState(true);
@@ -641,21 +649,43 @@ export function ProfilTab({ user, showToast, setTab }) {
     ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const profileSectionTabs = useMemo(() => {
+    const tabs = [{ id: "overview", label: "Overblik" }];
+    if (showPerformanceSection) tabs.push({ id: "performance", label: "Performance" });
+    if (showRelationsSection) tabs.push({ id: "relations", label: "Relationer" });
+    tabs.push({ id: "actions", label: "Handlinger" });
+    return tabs;
+  }, [showPerformanceSection, showRelationsSection]);
+
+  const profileSectionValue = profileSectionTabs.some((t) => t.id === activeProfileSection)
+    ? activeProfileSection
+    : "overview";
+
+  const handleProfileSectionChange = (id) => {
+    setActiveProfileSection(id);
+    const refs = {
+      overview: overviewRef,
+      performance: performanceRef,
+      relations: relationsRef,
+      actions: actionsRef,
+    };
+    jumpToSection(refs[id]);
+  };
+
   return (
     <div data-tour="profile-main">
       {!editing ? (
       <div>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
-          <button onClick={() => jumpToSection(overviewRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Overblik</button>
-          {showPerformanceSection ? (
-            <button onClick={() => jumpToSection(performanceRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Performance</button>
-          ) : null}
-          {showRelationsSection ? (
-            <button onClick={() => jumpToSection(relationsRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Relationer</button>
-          ) : null}
-          <button onClick={() => jumpToSection(actionsRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Handlinger</button>
-        </div>
+        <PillTabs
+          tabs={profileSectionTabs}
+          value={profileSectionValue}
+          onChange={handleProfileSectionChange}
+          ariaLabel="Profil-sektioner"
+          size="sm"
+          className="pm-pill-tabs--wrap"
+          style={{ marginBottom: "12px" }}
+        />
 
         {/* Profile card */}
         <div ref={overviewRef} className="pm-profile-card" style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
@@ -756,17 +786,14 @@ export function ProfilTab({ user, showToast, setTab }) {
           <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Overblik
           </div>
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "6px" }}>
-            <button type="button" onClick={() => setOverviewMode("2v2")} style={{ ...btn(overviewMode === "2v2"), padding: "5px 10px", fontSize: "11px" }}>
-              2v2
-            </button>
-            <button type="button" onClick={() => setOverviewMode("americano")} style={{ ...btn(overviewMode === "americano"), padding: "5px 10px", fontSize: "11px" }}>
-              Americano
-            </button>
-            <button type="button" onClick={() => setOverviewMode("liga")} style={{ ...btn(overviewMode === "liga"), padding: "5px 10px", fontSize: "11px" }}>
-              Liga
-            </button>
-          </div>
+          <PillTabs
+            tabs={PROFILE_OVERVIEW_TABS}
+            value={overviewMode}
+            onChange={setOverviewMode}
+            ariaLabel="Statistik-type"
+            size="sm"
+            style={{ marginBottom: "6px" }}
+          />
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading || (overviewMode === "liga" && ligaLoading) ? (
@@ -1231,9 +1258,16 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {/* Area + City */}
         <div style={labelStyle}>Region <span style={{ color: theme.red }}>*</span></div>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
+        <div className="pm-choice-chips">
           {REGIONS.map((r) => (
-            <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "6px 12px", fontSize: "12px" }}>{r}</button>
+            <button
+              key={r}
+              type="button"
+              onClick={() => set("area", r)}
+              className={`pm-ui-btn-chip ${form.area === r ? "pm-ui-btn-chip-active" : ""}`}
+            >
+              {r}
+            </button>
           ))}
         </div>
         <label htmlFor="profil-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
@@ -1255,19 +1289,26 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {/* Play style */}
         <div style={labelStyle}>Spillestil</div>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
-          {PLAY_STYLES.map(s => (
-            <button key={s} onClick={() => set("play_style", s)} style={{ ...btn(form.play_style === s), padding: "6px 12px", fontSize: "12px" }}>{s}</button>
-          ))}
-        </div>
+        <PillTabs
+          tabs={PLAY_STYLES.map((s) => ({ id: s, label: s }))}
+          value={PLAY_STYLES.includes(form.play_style) ? form.play_style : ""}
+          onChange={(id) => set("play_style", id)}
+          ariaLabel="Spillestil"
+          size="sm"
+          className="pm-pill-tabs--wrap"
+          style={{ marginBottom: "14px" }}
+        />
 
         {/* Court side */}
         <div style={labelStyle}>Foretrukken side på banen</div>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
-          {COURT_SIDES.map(s => (
-            <button key={s} onClick={() => set("court_side", s)} style={{ ...btn(form.court_side === s), padding: "6px 12px", fontSize: "12px" }}>{s}</button>
-          ))}
-        </div>
+        <PillTabs
+          tabs={COURT_SIDES.map((s) => ({ id: s, label: s }))}
+          value={COURT_SIDES.includes(form.court_side) ? form.court_side : ""}
+          onChange={(id) => set("court_side", id)}
+          ariaLabel="Foretrukken baneside"
+          size="sm"
+          style={{ marginBottom: "14px" }}
+        />
 
         {/* Bio */}
         <label htmlFor="profil-bio" style={labelStyle}>Bio</label>

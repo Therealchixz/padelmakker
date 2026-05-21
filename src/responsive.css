@@ -3012,6 +3012,28 @@ button,
   width: 100%;
 }
 
+.pm-pill-tabs--wrap {
+  flex-wrap: wrap;
+  width: auto;
+  max-width: 100%;
+}
+
+.pm-pill-tabs--wrap .pm-pill-tab {
+  flex: 0 1 auto;
+  min-width: max-content;
+}
+
+.pm-choice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.pm-choice-chips--spaced {
+  margin-bottom: 14px;
+}
+
 .pm-pill-tab {
   flex: 1 1 0;
   min-width: 0;

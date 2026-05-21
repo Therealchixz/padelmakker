@@ -1285,13 +1285,17 @@ export function LigaTab({
           <label style={labelStyle}>Beskrivelse <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
           <input value={createForm.description} onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))} placeholder="Kort beskrivelse..." style={{ ...inputStyle, marginBottom: '10px' }} />
           <label style={labelStyle}>Type</label>
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-            {['weekly', 'monthly'].map(t => (
-              <button key={t} onClick={() => setCreateForm(f => ({ ...f, season_type: t }))} style={{ ...btn(createForm.season_type === t), padding: '6px 14px', fontSize: '12px' }}>
-                {SEASON_LABELS[t]}
-              </button>
-            ))}
-          </div>
+          <PillTabs
+            tabs={[
+              { id: 'weekly', label: SEASON_LABELS.weekly },
+              { id: 'monthly', label: SEASON_LABELS.monthly },
+            ]}
+            value={createForm.season_type}
+            onChange={(id) => setCreateForm((f) => ({ ...f, season_type: id }))}
+            ariaLabel="Liga-type"
+            size="sm"
+            style={{ marginBottom: '10px' }}
+          />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
             <div>
               <label style={labelStyle}>Startdato</label>

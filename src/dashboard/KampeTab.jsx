@@ -2539,6 +2539,47 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     { id: "active", label: <>I gang ({activeMatches.length})<TabBadge count={padelUnreadCounts.active} /></> },
     { id: "completed", label: <>Afsluttede ({completedMatches.length})<TabBadge count={padelUnreadCounts.completed} /></> },
   ];
+  const courtBookedTabs = [
+    { id: "yes", label: "Ja, booket" },
+    { id: "no", label: "Nej, ikke endnu" },
+  ];
+  const eloPresetTabs = [
+    { id: "tight", label: "Tæt på mig (±100)" },
+    { id: "flex", label: "Fleksibel (±200)" },
+    { id: "open", label: "Åben (±350)" },
+  ];
+  const matchTypeTabs = [
+    { id: "open", label: "🔓 Åben kamp" },
+    { id: "closed", label: "🔒 Lukket kamp" },
+  ];
+  const eloPresetValue = useMemo(() => {
+    const min = Number(newMatch.level_min);
+    const max = Number(newMatch.level_max);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return "";
+    const presets = [
+      { id: "tight", delta: 100 },
+      { id: "flex", delta: 200 },
+      { id: "open", delta: 350 },
+    ];
+    for (const preset of presets) {
+      if (
+        min === clampElo(myElo - preset.delta, myElo)
+        && max === clampElo(myElo + preset.delta, myElo)
+      ) {
+        return preset.id;
+      }
+    }
+    return "";
+  }, [newMatch.level_min, newMatch.level_max, myElo]);
+  const applyEloPreset = (presetId) => {
+    const delta = { tight: 100, flex: 200, open: 350 }[presetId];
+    if (!delta) return;
+    setNewMatch((m) => ({
+      ...m,
+      level_min: String(clampElo(myElo - delta, myElo)),
+      level_max: String(clampElo(myElo + delta, myElo)),
+    }));
+  };
   const onScopeChange = (nextScope) => {
     setKampeScope(nextScope);
     mergeKampeSessionPrefs(user.id, { scope: nextScope });
@@ -2760,30 +2801,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               </select></div>
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={labelStyle}>Har du booket en bane?</label>
-              <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                <button
-                  type="button"
-                  onClick={() => setNewMatch(m => ({ ...m, court_booked: true }))}
-                  style={{
-                    ...btn(newMatch.court_booked === true),
-                    flex: 1, fontSize: "13px", justifyContent: "center", padding: "9px 12px",
-                    opacity: newMatch.court_booked === true ? 1 : 0.65,
-                  }}
-                >
-                  Ja, booket
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNewMatch(m => ({ ...m, court_booked: false }))}
-                  style={{
-                    ...btn(newMatch.court_booked === false),
-                    flex: 1, fontSize: "13px", justifyContent: "center", padding: "9px 12px",
-                    opacity: newMatch.court_booked === false ? 1 : 0.65,
-                  }}
-                >
-                  Nej, ikke endnu
-                </button>
-              </div>
+              <PillTabs
+                tabs={courtBookedTabs}
+                value={newMatch.court_booked === true ? "yes" : "no"}
+                onChange={(id) => setNewMatch((m) => ({ ...m, court_booked: id === "yes" }))}
+                ariaLabel="Bane booket"
+                size="sm"
+                style={{ marginTop: "4px" }}
+              />
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={labelStyle}>Hvilket spiller-niveau søger du? (ELO til kampen)</label>
@@ -2807,50 +2832,29 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   style={{ ...inputStyle, fontSize: "13px" }}
                 />
               </div>
-              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "8px" }}>
-                <button type="button" onClick={() => setNewMatch(m => ({ ...m, level_min: String(clampElo(myElo - 100, myElo)), level_max: String(clampElo(myElo + 100, myElo)) }))} style={{ ...btn(false), fontSize: "12px", padding: "6px 10px" }}>
-                  Tæt på mig (±100)
-                </button>
-                <button type="button" onClick={() => setNewMatch(m => ({ ...m, level_min: String(clampElo(myElo - 200, myElo)), level_max: String(clampElo(myElo + 200, myElo)) }))} style={{ ...btn(false), fontSize: "12px", padding: "6px 10px" }}>
-                  Fleksibel (±200)
-                </button>
-                <button type="button" onClick={() => setNewMatch(m => ({ ...m, level_min: String(clampElo(myElo - 350, myElo)), level_max: String(clampElo(myElo + 350, myElo)) }))} style={{ ...btn(false), fontSize: "12px", padding: "6px 10px" }}>
-                  Åben (±350)
-                </button>
-              </div>
+              <PillTabs
+                tabs={eloPresetTabs}
+                value={eloPresetValue}
+                onChange={applyEloPreset}
+                ariaLabel="ELO-interval"
+                size="sm"
+                className="pm-pill-tabs--wrap"
+                style={{ marginTop: "8px" }}
+              />
             </div>
           </div>
           <label style={{ ...labelStyle, marginTop: "12px" }}>Beskrivelse (valgfrit)</label>
           <textarea value={newMatch.description} onChange={e => setNewMatch(m => ({ ...m, description: e.target.value }))} placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'" style={{ ...inputStyle, fontSize: "13px", height: "60px", resize: "vertical" }} />
 
-          {/* Open / Closed toggle */}
           <label style={{ ...labelStyle, marginTop: "14px" }}>Kamptyp</label>
-          <div style={{ display: "flex", gap: "0", borderRadius: "8px", overflow: "hidden", border: "1px solid " + theme.border, marginTop: "4px" }}>
-            <button
-              type="button"
-              onClick={() => setNewMatch(m => ({ ...m, match_type: "open" }))}
-              style={{
-                flex: 1, padding: "10px 12px", fontSize: "13px", fontWeight: newMatch.match_type === "open" ? 700 : 500,
-                background: newMatch.match_type === "open" ? theme.accent : theme.surface,
-                color: newMatch.match_type === "open" ? theme.onAccent : theme.textMid,
-                border: "none", cursor: "pointer", transition: "all 0.15s",
-              }}
-            >
-              🔓 Åben kamp
-            </button>
-            <button
-              type="button"
-              onClick={() => setNewMatch(m => ({ ...m, match_type: "closed" }))}
-              style={{
-                flex: 1, padding: "10px 12px", fontSize: "13px", fontWeight: newMatch.match_type === "closed" ? 700 : 500,
-                background: newMatch.match_type === "closed" ? theme.textMid : theme.surface,
-                color: newMatch.match_type === "closed" ? theme.onAccent : theme.textMid,
-                border: "none", borderLeft: "1px solid " + theme.border, cursor: "pointer", transition: "all 0.15s",
-              }}
-            >
-              🔒 Lukket kamp
-            </button>
-          </div>
+          <PillTabs
+            tabs={matchTypeTabs}
+            value={newMatch.match_type === "closed" ? "closed" : "open"}
+            onChange={(id) => setNewMatch((m) => ({ ...m, match_type: id }))}
+            ariaLabel="Kamptyp"
+            size="sm"
+            style={{ marginTop: "4px" }}
+          />
           <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
             {newMatch.match_type === "open"
               ? "Alle kan tilmelde sig direkte."

@@ -28,6 +28,7 @@ import {
   countSeekersMatchingMakkerFilter,
 } from '../lib/makkerSearchFilterUtils';
 import { SeekingFilterShortcutCard } from '../components/SeekingFilterShortcutCard';
+import { PillTabs } from '../components/PillTabs';
 import { FILTER_RETURN_MAKKERE } from '../lib/filterReturnNavigation';
 
 const isSeekingActive = (p) => isSeekingActiveProfile(p);
@@ -669,23 +670,40 @@ export function MakkereTab({ user, showToast }) {
       {/* Filterknap + aktive filtre */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
         <button
-          onClick={() => setShowFilters(v => !v)}
-          style={{ ...btn(showFilters || activeFilterCount > 0), padding: '8px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          type="button"
+          onClick={() => setShowFilters((v) => !v)}
+          className={`pm-ui-btn-chip ${showFilters || activeFilterCount > 0 ? 'pm-ui-btn-chip-active' : ''}`}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', fontSize: '13px' }}
         >
           <SlidersHorizontal size={13} />
           Filtre
           {activeFilterCount > 0 && (
-            <span style={{ background: showFilters ? 'color-mix(in srgb, var(--pm-on-accent) 30%, transparent)' : theme.accent, color: theme.onAccent, borderRadius: '10px', fontSize: '10px', fontWeight: 800, padding: '1px 6px', marginLeft: '2px' }}>
+            <span
+              style={{
+                background: showFilters || activeFilterCount > 0 ? 'color-mix(in srgb, var(--pm-on-accent) 30%, transparent)' : theme.accent,
+                color: theme.onAccent,
+                borderRadius: '10px',
+                fontSize: '10px',
+                fontWeight: 800,
+                padding: '1px 6px',
+                marginLeft: '2px',
+              }}
+            >
               {activeFilterCount}
             </span>
           )}
         </button>
-        <button
-          onClick={() => handleFilterChange(() => setFilterFav(f => !f))}
-          style={{ ...btn(filterFav), padding: '8px 12px', fontSize: '13px' }}
-        >
-          {filterFav ? '★ Favoritter' : '☆ Favoritter'}
-        </button>
+        <PillTabs
+          tabs={[
+            { id: 'all', label: 'Alle spillere' },
+            { id: 'fav', label: '★ Favoritter' },
+          ]}
+          value={filterFav ? 'fav' : 'all'}
+          onChange={(id) => handleFilterChange(() => setFilterFav(id === 'fav'))}
+          ariaLabel="Vis favoritter"
+          size="sm"
+          style={{ width: 'auto', flex: '1 1 200px', maxWidth: '320px' }}
+        />
         {activeFilterCount > 0 && (
           <button
             onClick={() => { setFilterElo('all'); setFilterArea('all'); setFilterStyle('all'); setFilterIntent('all'); setFilterCourtSide('all'); setFilterSeeking(false); setFilterFav(false); setPage(0); }}
@@ -725,8 +743,10 @@ export function MakkereTab({ user, showToast }) {
             </select>
           </div>
           <button
-            onClick={() => handleFilterChange(() => setFilterSeeking(v => !v))}
-            style={{ ...btn(filterSeeking), padding: '8px 14px', fontSize: '13px', alignSelf: 'flex-start' }}
+            type="button"
+            onClick={() => handleFilterChange(() => setFilterSeeking((v) => !v))}
+            className={`pm-ui-btn-chip ${filterSeeking ? 'pm-ui-btn-chip-active' : ''}`}
+            style={{ padding: '8px 14px', fontSize: '13px', alignSelf: 'flex-start' }}
           >
             ⚡ {filterSeeking ? 'Kun søgende spillere' : 'Vis kun søgende spillere'}
           </button>
