@@ -24,7 +24,7 @@ export function TabbedFilterCard({
           ariaLabel={tabAriaLabel}
           className={tabsClassName}
         />
-        <div className={actionClassName}>{action}</div>
+        {action ? <div className={actionClassName}>{action}</div> : null}
       </div>
 
       {bottom ? (

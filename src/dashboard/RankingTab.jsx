@@ -11,6 +11,8 @@ import {
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { PillTabs } from '../components/PillTabs';
+import { TabbedFilterCard } from '../components/TabbedFilterCard';
 
 const RANKING_PAGE_SIZE = 50;
 const PERIOD_HISTORY_LIMIT = 5000;
@@ -450,6 +452,16 @@ export function RankingTab({ user }) {
         : String(sorted.length)
       : String(totalRanked ?? sorted.length);
 
+  const rankModeTabs = [
+    { id: '2v2', label: '2v2 ELO' },
+    { id: 'americano', label: 'Americano ELO' },
+  ];
+  const periodTabs = [
+    { id: 'week', label: 'Uge' },
+    { id: 'month', label: 'Måned' },
+    { id: 'all', label: 'Alle tider' },
+  ];
+
   if (loading) {
     return (
       <div className="pm-state-card" style={{ textAlign: 'center', padding: '32px 20px' }}>
@@ -505,35 +517,24 @@ export function RankingTab({ user }) {
         </div>
       ) : null}
 
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-        <button
-          type="button"
-          onClick={() => setRankMode('2v2')}
-          style={{ ...btn(rankMode === '2v2'), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}
-        >
-          2v2 ELO
-        </button>
-        <button
-          type="button"
-          onClick={() => setRankMode('americano')}
-          style={{ ...btn(rankMode === 'americano'), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}
-        >
-          Americano ELO
-        </button>
-      </div>
+      <TabbedFilterCard
+        tabs={rankModeTabs}
+        value={rankMode}
+        onTabChange={setRankMode}
+        tabAriaLabel="Ranking-type"
+        cardClassName="pm-ui-card pm-kampe-controls pm-filter-card"
+        tabsClassName="pm-kampe-segment pm-filter-card-tabs"
+        cardStyle={{ marginBottom: '10px' }}
+      />
 
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
-        {['week', 'month', 'all'].map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => setPeriod(p)}
-            style={{ ...btn(period === p), padding: '8px 14px', fontSize: '12px', flex: 1, justifyContent: 'center' }}
-          >
-            {p === 'week' ? 'Uge' : p === 'month' ? 'Måned' : 'Alle tider'}
-          </button>
-        ))}
-      </div>
+      <PillTabs
+        tabs={periodTabs}
+        value={period}
+        onChange={setPeriod}
+        ariaLabel="Ranking-periode"
+        size="sm"
+        style={{ marginBottom: '16px' }}
+      />
 
       <div style={{ fontSize: '12px', color: theme.textLight, marginBottom: '16px', textAlign: 'center' }}>
         {rankModeLabel} · {periodLabels[period]} · {periodInfo[period]}
