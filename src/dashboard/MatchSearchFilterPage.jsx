@@ -181,34 +181,38 @@ export function MatchSearchFilterPage({ user, showToast }) {
               style={{
                 ...btn(active),
                 textAlign: 'left',
-                padding: '10px 12px',
-                fontSize: 13,
+                padding: '8px 12px',
+                fontSize: 12,
+                fontWeight: 500,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                gap: 10,
+                gap: 8,
               }}
             >
-              <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                <strong style={{ color: active ? theme.onAccent : theme.text }}>{label}</strong>
-                <span style={{ fontSize: 11, color: active ? 'rgba(255,255,255,0.85)' : theme.textLight }}>
-                  {hint}
-                </span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ fontWeight: 600, color: active ? theme.onAccent : theme.text }}>{label}</span>
+                {hint ? (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 400,
+                      marginLeft: 6,
+                      color: active ? 'rgba(255,255,255,0.82)' : theme.textLight,
+                    }}
+                  >
+                    {hint}
+                  </span>
+                ) : null}
               </span>
               <span
                 style={{
                   flexShrink: 0,
-                  fontSize: 16,
-                  fontWeight: 800,
+                  fontSize: 12,
+                  fontWeight: 600,
                   fontVariantNumeric: 'tabular-nums',
-                  letterSpacing: '0.02em',
-                  lineHeight: 1,
-                  padding: '6px 10px',
-                  borderRadius: 8,
-                  color: active ? theme.accent : theme.onAccent,
-                  background: active ? '#fff' : theme.accent,
+                  color: active ? theme.onAccent : theme.textMid,
                 }}
-                aria-hidden
               >
                 {tolLabel}
               </span>
