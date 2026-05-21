@@ -2915,9 +2915,22 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               : "Alle kan se kampen, men skal anmode om at deltage — du godkender selv."}
           </p>
 
-          <div className="pm-form-submit" style={{ marginTop: "16px" }}>
-            <button onClick={createMatch} disabled={creating || !newMatch.court_id || venueOptions.length === 0} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: creating ? 0.55 : 1 }}>
+          <div className="pm-form-submit" style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "16px" }}>
+            <button
+              type="button"
+              onClick={createMatch}
+              disabled={creating || !newMatch.court_id || venueOptions.length === 0}
+              style={{ ...btn(true), fontSize: "13px", opacity: creating ? 0.55 : 1 }}
+            >
               {creating ? "Opretter..." : "Opret kamp"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCreate(false)}
+              disabled={creating}
+              style={{ ...btn(false), fontSize: "13px" }}
+            >
+              Annullér
             </button>
           </div>
         </div>
