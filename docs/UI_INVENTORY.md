@@ -27,6 +27,7 @@ CI kører med `STRICT=1`. Lokalt: `STRICT=1 npm run check:ui-hex` før PR.
 ## Næste UI-bølger (valgfrit)
 
 1. ~~**Beskeder**~~ — `pm-besked-*` CSS, `pm-ui-card`, state-kort (færdig)
-2. **Baner / Admin** — reducer inline `style={{}}`, brug `pm-ui-card` / state-kort
-3. **LigaTab** + admin-modaler → `AppModal`
-4. **PillTabs** andre steder med gamle `btn()`-filterrækker
+2. ~~**Baner**~~ — `pm-baner-*` CSS, `pm-help-box`, tids-chips via tokens (færdig)
+3. **Admin** — reducer inline `style={{}}`, brug `pm-ui-card` / state-kort
+4. **LigaTab** + admin-modaler → `AppModal`
+5. **PillTabs** andre steder med gamle `btn()`-filterrækker
