@@ -16,6 +16,7 @@ import { LigaOpenCard } from './LigaOpenCard';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
+import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
 
 function isTiebreakScore(scoreText) {
   return !!(scoreText && /7-6|6-7/.test(scoreText));
@@ -711,8 +712,18 @@ export function LigaTab({
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
   const ask = useConfirm();
-  const [view, setView] = useState('registration');
-  const [scopeLocal, setScopeLocal] = useState('alle');
+  const [view, setView] = useState(() => {
+    const s = readLigaSessionPrefs(user?.id);
+    if (s?.ligaView === 'registration' || s?.ligaView === 'active' || s?.ligaView === 'completed') {
+      return s.ligaView;
+    }
+    return 'registration';
+  });
+  const [scopeLocal, setScopeLocal] = useState(() => {
+    const s = readLigaSessionPrefs(user?.id);
+    if (s?.ligaScope === 'mine' || s?.ligaScope === 'alle') return s.ligaScope;
+    return 'alle';
+  });
   const [searchLocal, setSearchLocal] = useState('');
   const scope = scopeProp ?? scopeLocal;
   const search = searchQueryProp ?? searchLocal;
@@ -807,6 +818,11 @@ export function LigaTab({
   }, [user?.id, showToast]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    mergeLigaSessionPrefs(user.id, { ligaView: view, ligaScope: scope });
+  }, [user?.id, view, scope]);
 
   const openProfile = (id, name, avatar) => setViewPlayer({ id, full_name: name, avatar });
 
@@ -1241,6 +1257,7 @@ export function LigaTab({
               onTabChange={(nextScope) => {
                 setScope(nextScope);
                 setSearch('');
+                if (user?.id) mergeLigaSessionPrefs(user.id, { ligaScope: nextScope });
               }}
               searchValue={search}
               onSearchChange={setSearch}
@@ -1340,7 +1357,10 @@ export function LigaTab({
       <PillTabs
         tabs={leagueStatusTabs}
         value={view}
-        onChange={(nextView) => setView(nextView)}
+        onChange={(nextView) => {
+          setView(nextView);
+          if (user?.id) mergeLigaSessionPrefs(user.id, { ligaView: nextView });
+        }}
         ariaLabel="Liga status"
         size="sm"
         style={{ marginBottom: '16px' }}

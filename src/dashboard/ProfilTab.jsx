@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
+import { mergeLigaSessionPrefs, openMineLigaerFromProfile } from '../lib/ligaSessionPrefs';
+import { useLigaPartnerOpponentStats } from '../lib/ligaRelationStats';
 import { REGIONS, PLAY_STYLES, COURT_SIDES, levelLabel, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
@@ -260,6 +262,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     user?.id,
     americanoStatsEnabled,
   );
+  const { ligaRelationStats, ligaRelationLoading } = useLigaPartnerOpponentStats(user?.id, !!user?.id);
 
   const [form, setForm] = useState(() => profileFormState(user));
 
@@ -593,7 +596,18 @@ export function ProfilTab({ user, showToast, setTab }) {
       || americanoRelationStats.hardestOpponents.length > 0
       || americanoRelationStats.easiestOpponents.length > 0
     );
-  const showRelationsSection = show2v2RelationsSection || showAmericanoRelationsSection;
+  const showLigaRelationsSection =
+    isLigaMode
+    && !ligaRelationLoading
+    && ligaRelationStats
+    && (
+      ligaRelationStats.bestPartners.length > 0
+      || ligaRelationStats.toughestPartners.length > 0
+      || ligaRelationStats.hardestOpponents.length > 0
+      || ligaRelationStats.easiestOpponents.length > 0
+    );
+  const showRelationsSection =
+    show2v2RelationsSection || showAmericanoRelationsSection || showLigaRelationsSection;
   const activeOverviewSource =
     overviewMode === "americano"
       ? "Datakilde: Americano-turneringer"
@@ -817,6 +831,17 @@ export function ProfilTab({ user, showToast, setTab }) {
             Spil mindst 2 runder på banen med samme makker eller modstander i afsluttede turneringer — så vises dine relationer her.
           </div>
         )}
+        {isLigaMode && ligaRelationLoading && (
+          <div style={{ textAlign: "center", padding: "16px", color: theme.textLight, fontSize: "13px", marginBottom: "16px" }}>
+            Indlæser hold- og modstander-statistik…
+          </div>
+        )}
+        {isLigaMode && !ligaRelationLoading && ligaRelationStats
+          && !showLigaRelationsSection && ligaStats.matches > 0 && (
+          <div style={{ fontSize: "12px", color: theme.textMid, marginBottom: "16px", lineHeight: 1.45 }}>
+            Spil mindst 2 rapporterede ligakampe med samme makker eller modstander — så vises dine relationer her.
+          </div>
+        )}
         {/* Bedste makker + Hårdeste modstandere — kun 2v2 */}
         {show2v2RelationsSection && partnerOpponentStats && (
           <>
@@ -947,6 +972,86 @@ export function ProfilTab({ user, showToast, setTab }) {
           </>
         )}
 
+        {showLigaRelationsSection && ligaRelationStats && (
+          <>
+            {ligaRelationStats.bestPartners.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Bedste makker</div>
+                {ligaRelationStats.bestPartners.map((p, i) => (
+                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.matches} kampe sammen</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asPartner.wins / p.asPartner.matches) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {ligaRelationStats.toughestPartners.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Sværeste makker</div>
+                {ligaRelationStats.toughestPartners.map((p, i) => (
+                  <div key={`liga-tough-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.matches} kampe sammen</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((p.asPartner.wins / p.asPartner.matches) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {ligaRelationStats.hardestOpponents.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Hårdeste modstandere</div>
+                {ligaRelationStats.hardestOpponents.map((p, i) => {
+                  const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.matches) * 100);
+                  return (
+                    <div key={`liga-hard-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
+                      <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: "#FEF2F2", border: "1px solid #FECACA", flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                        <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.matches} kampe imod</div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: "15px", fontWeight: 800, color: theme.red }}>{theirWinPct}%</div>
+                        <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {ligaRelationStats.easiestOpponents.length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Nemmeste modstandere</div>
+                {ligaRelationStats.easiestOpponents.map((p, i) => (
+                  <div key={`liga-easy-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.matches} kampe imod</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asOpponent.wins / p.asOpponent.matches) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>din sejr</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
         <div ref={actionsRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           Handlinger · {activeModeLabel}
         </div>
@@ -967,7 +1072,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             </button>
           ) : null}
           {isLigaMode ? (
-            <button onClick={() => setTab("liga")} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+            <button onClick={() => openMineLigaerFromProfile(user.id, setTab)} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
               <Swords size={18} color={theme.accent} />
               <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine ligaer</div>
               <div style={{ fontSize: "11px", color: theme.textLight }}>{ligaStats.leagues} liga{ligaStats.leagues === 1 ? "" : "er"}</div>
@@ -988,7 +1093,11 @@ export function ProfilTab({ user, showToast, setTab }) {
             </button>
           ) : null}
           {isLigaMode ? (
-            <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: "liga" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+            <button onClick={() => {
+              mergeLigaSessionPrefs(user.id, { ligaView: 'completed', ligaScope: 'mine' });
+              mergeKampeSessionPrefs(user.id, { format: 'liga', scope: 'mine' });
+              setTab('kampe');
+            }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
               <Trophy size={18} color={theme.warm} />
               <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Liga i Kampe</div>
               <div style={{ fontSize: "11px", color: theme.textLight }}>{ligaStats.matches} kampe</div>
