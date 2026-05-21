@@ -316,6 +316,64 @@ export function MatchSearchFilterPage({ user, showToast }) {
       </div>
 
       <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: 16, marginBottom: 20 }}>
+        <div style={{ ...labelStyle, marginBottom: 12 }}>Hvilke kampe?</div>
+        <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 10px', lineHeight: 1.45 }}>
+          Gælder <strong>notifikationer</strong> og tælleren «kampe matcher dit filter» på Hjem — ikke hvad andre
+          ser, når du vises som søger kamp.
+        </p>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: theme.surfaceAlt,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 10,
+            padding: '10px 14px',
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>
+              Kun kampe med ledige pladser
+            </div>
+            <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2, lineHeight: 1.45 }}>
+              {prefs.openOnly !== false
+                ? 'Kun åbne kampe i din region på dit niveau, der stadig mangler spillere.'
+                : 'Inkluder også fulde eller lukkede kampe i beskeder (sjældent relevant).'}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => set({ openOnly: !prefs.openOnly })}
+            aria-pressed={prefs.openOnly !== false}
+            style={{
+              width: 44,
+              height: 24,
+              borderRadius: 12,
+              border: 'none',
+              cursor: 'pointer',
+              background: prefs.openOnly !== false ? theme.accent : theme.border,
+              position: 'relative',
+              flexShrink: 0,
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: 3,
+                left: prefs.openOnly !== false ? 23 : 3,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: '#fff',
+                transition: 'left 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }}
+            />
+          </button>
+        </div>
+
         <div style={{ ...labelStyle, marginBottom: 12 }}>Kanaler</div>
 
         <div
@@ -335,7 +393,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Notifikationer</div>
               <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
-                Push og in-app når en ny åben kamp passer (max{' '}
+                Push og in-app når en ny kamp passer dit filter (max{' '}
                 {DISCOVERY_NOTIFY_DAILY_PER_CHANNEL} kamp-beskeder om dagen — uafhængigt af makker-filter).
               </div>
             </div>

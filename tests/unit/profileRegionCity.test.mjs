@@ -38,4 +38,6 @@ test('søge-filter genveje i Find makker og Kampe', () => {
   assert.match(kampeTab, /channel="kamp"/);
   assert.match(dash, /t\.id !== "liga"/);
   assert.match(matchFilterPage, /Hvornår søger du kamp/);
+  assert.match(matchFilterPage, /Kun kampe med ledige pladser/);
+  assert.match(matchFilterPage, /openOnly/);
 });

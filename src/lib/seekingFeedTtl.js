@@ -214,9 +214,6 @@ export function compactMatchSeekingDetails(prefs, profile = {}) {
   const days = formatSeekingDayKeys(normalized.days);
   if (days) pushSeekingDetail(lines, 'Spilledage', days);
   pushSeekingDetail(lines, 'Tidsrum', seekingAvailabilitySummary(normalized));
-  if (normalized.openOnly !== false) {
-    pushSeekingDetail(lines, 'Kampe', 'Kun åbne kampe');
-  }
   return lines;
 }
 

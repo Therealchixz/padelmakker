@@ -30,9 +30,10 @@ test('adskilt TTL: kamp 24 timer, makker 7 dage', () => {
   assert.match(ttlSrc, /feedVisibleSince/);
 });
 
-test('kamp-detaljer inkluderer tidsrum', () => {
+test('kamp-detaljer inkluderer tidsrum, ikke skjult openOnly', () => {
   assert.match(ttlSrc, /compactMatchSeekingDetails/);
   assert.match(ttlSrc, /pushSeekingDetail\(lines, 'Tidsrum', seekingAvailabilitySummary/);
+  assert.doesNotMatch(ttlSrc, /Kun åbne kampe/);
 });
 
 test('makker-detaljer: ét niveau-felt, kun interval (ikke Samme niveau)', () => {
