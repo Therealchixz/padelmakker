@@ -35,9 +35,11 @@ test('kamp-detaljer inkluderer tidsrum', () => {
   assert.match(ttlSrc, /pushSeekingDetail\(lines, 'Tidsrum', seekingAvailabilitySummary/);
 });
 
-test('makker-detaljer: ét niveau-felt, ikke Makker-niveau separat', () => {
+test('makker-detaljer: ét niveau-felt, kun interval (ikke Samme niveau)', () => {
   assert.match(ttlSrc, /compactMakkerSeekingLevelDetail/);
-  assert.match(ttlSrc, /pushSeekingDetail\(lines, 'Niveau', compactMakkerSeekingLevelDetail/);
+  assert.match(ttlSrc, /return formatLevelRange\(min, max\)/);
+  assert.match(ttlSrc, /return 'Alle niveauer'/);
+  assert.doesNotMatch(ttlSrc, /partnerLabel.*formatLevelRange/);
   assert.doesNotMatch(ttlSrc, /pushSeekingDetail\(\s*lines,\s*'Makker-niveau'/);
   assert.match(ttlSrc, /Banehalvdel/);
   assert.match(ttlSrc, /Intention/);

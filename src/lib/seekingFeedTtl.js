@@ -140,13 +140,12 @@ function compactLevelLine(prefs, profile, levelResolver, rangeFn) {
   return formatLevelRange(min, max);
 }
 
-/** Én niveau-linje til søger makker: præference + interval (undgår «Niveau» + «Makker-niveau»). */
+/** Niveau-interval som andre ser ved søger makker (kun tal, ikke «Samme niveau» osv.). */
 export function compactMakkerSeekingLevelDetail(prefs, profile = {}) {
   const normalized = normalizeMakkerSearchPrefs(prefs, profile);
-  const partnerLabel = makkerPartnerLevelDisplayLabel(normalized.partnerLevel, profile);
   const pref = normalizeMakkerPartnerLevel(normalized.partnerLevel, profile) || 'same';
   if (pref === 'wide') {
-    return `${partnerLabel} · alle niveauer i regionen`;
+    return 'Alle niveauer';
   }
   const lvl = resolveMakkerFilterLevel(normalized, profile);
   const win = Number(normalized.levelWindow) || DEFAULT_LEVEL_WINDOW;
@@ -156,7 +155,7 @@ export function compactMakkerSeekingLevelDetail(prefs, profile = {}) {
     normalized.partnerLevel,
     profile,
   );
-  return `${partnerLabel} (${formatLevelRange(min, max)})`;
+  return formatLevelRange(min, max);
 }
 
 function pushSeekingDetail(lines, label, value) {
