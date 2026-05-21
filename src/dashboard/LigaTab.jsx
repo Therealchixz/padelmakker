@@ -750,7 +750,7 @@ export function LigaTab({
   const createOpen = createOpenProp !== undefined ? createOpenProp : createOpenLocal;
   const setCreateOpen = onCreateOpenChange !== undefined ? onCreateOpenChange : setCreateOpenLocal;
   const ligaCreateFormRef = useRef(null);
-  useScrollIntoViewWhen(createOpen, ligaCreateFormRef, { enabled: isAdmin });
+  useScrollIntoViewWhen(createOpen, ligaCreateFormRef, { enabled: isAdmin, block: 'end' });
   const [createForm, setCreateForm] = useState({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
 
   // Create team form
@@ -1279,58 +1279,6 @@ export function LigaTab({
         />
       )}
 
-      {/* Admin: opret-formular */}
-      {isAdmin && createOpen && (
-        <div
-          ref={ligaCreateFormRef}
-          className="pm-ui-card pm-create-form-anchor"
-          style={{ padding: '20px', marginBottom: '16px' }}
-        >
-          <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Ny liga</div>
-          <label style={labelStyle}>Navn</label>
-          <input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder="F.eks. Forårssæson 2026" style={{ ...inputStyle, marginBottom: '10px' }} />
-          <label style={labelStyle}>Beskrivelse <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-          <input value={createForm.description} onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))} placeholder="Kort beskrivelse..." style={{ ...inputStyle, marginBottom: '10px' }} />
-          <label style={labelStyle}>Type</label>
-          <PillTabs
-            tabs={[
-              { id: 'weekly', label: SEASON_LABELS.weekly },
-              { id: 'monthly', label: SEASON_LABELS.monthly },
-            ]}
-            value={createForm.season_type}
-            onChange={(id) => setCreateForm((f) => ({ ...f, season_type: id }))}
-            ariaLabel="Liga-type"
-            size="sm"
-            style={{ marginBottom: '10px' }}
-          />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-            <div>
-              <label style={labelStyle}>Startdato</label>
-              <input type="date" value={createForm.start_date} onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Slutdato</label>
-              <input type="date" value={createForm.end_date} onChange={e => setCreateForm(f => ({ ...f, end_date: e.target.value }))} style={inputStyle} />
-            </div>
-          </div>
-          <label style={labelStyle}>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-          <input
-            type="number"
-            min="2"
-            value={createForm.max_teams}
-            onChange={e => setCreateForm(f => ({ ...f, max_teams: e.target.value }))}
-            placeholder="Ubegrænset"
-            style={{ ...inputStyle, marginBottom: '14px', width: '140px' }}
-          />
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={createLeague} disabled={busyId === 'create'} style={{ ...btn(true), fontSize: '13px' }}>
-              {busyId === 'create' ? 'Opretter…' : 'Opret liga'}
-            </button>
-            <button onClick={() => setCreateOpen(false)} style={{ ...btn(false), fontSize: '13px' }}>Annullér</button>
-          </div>
-        </div>
-      )}
-
       <div style={{ marginBottom: '14px' }}>
         <SwissRulesBox collapsible />
       </div>
@@ -1403,7 +1351,7 @@ export function LigaTab({
             {view === 'registration' ? 'Ingen åbne ligaer' : view === 'active' ? 'Ingen aktive ligaer' : 'Ingen afsluttede ligaer'}
           </div>
           {isAdmin && view === 'registration' ? (
-            <div className="pm-state-copy">Opret en ny liga via knappen ovenfor.</div>
+            <div className="pm-state-copy">Opret en ny liga via knappen i toppen — formularen vises nederst på siden.</div>
           ) : !isAdmin && view === 'registration' ? (
             <div style={{ marginTop: '14px' }}>
               <div className="pm-state-copy" style={{ marginBottom: '14px' }}>
@@ -2007,6 +1955,57 @@ export function LigaTab({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {isAdmin && createOpen && (
+        <div
+          ref={ligaCreateFormRef}
+          className="pm-ui-card pm-create-form-anchor"
+          style={{ padding: '20px', marginTop: '20px', marginBottom: '16px' }}
+        >
+          <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Ny liga</div>
+          <label style={labelStyle}>Navn</label>
+          <input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder="F.eks. Forårssæson 2026" style={{ ...inputStyle, marginBottom: '10px' }} />
+          <label style={labelStyle}>Beskrivelse <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
+          <input value={createForm.description} onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))} placeholder="Kort beskrivelse..." style={{ ...inputStyle, marginBottom: '10px' }} />
+          <label style={labelStyle}>Type</label>
+          <PillTabs
+            tabs={[
+              { id: 'weekly', label: SEASON_LABELS.weekly },
+              { id: 'monthly', label: SEASON_LABELS.monthly },
+            ]}
+            value={createForm.season_type}
+            onChange={(id) => setCreateForm((f) => ({ ...f, season_type: id }))}
+            ariaLabel="Liga-type"
+            size="sm"
+            style={{ marginBottom: '10px' }}
+          />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+            <div>
+              <label style={labelStyle}>Startdato</label>
+              <input type="date" value={createForm.start_date} onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))} style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Slutdato</label>
+              <input type="date" value={createForm.end_date} onChange={e => setCreateForm(f => ({ ...f, end_date: e.target.value }))} style={inputStyle} />
+            </div>
+          </div>
+          <label style={labelStyle}>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
+          <input
+            type="number"
+            min="2"
+            value={createForm.max_teams}
+            onChange={e => setCreateForm(f => ({ ...f, max_teams: e.target.value }))}
+            placeholder="Ubegrænset"
+            style={{ ...inputStyle, marginBottom: '14px', width: '140px' }}
+          />
+          <div className="pm-form-submit" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={createLeague} disabled={busyId === 'create'} style={{ ...btn(true), fontSize: '13px' }}>
+              {busyId === 'create' ? 'Opretter…' : 'Opret liga'}
+            </button>
+            <button onClick={() => setCreateOpen(false)} style={{ ...btn(false), fontSize: '13px' }}>Annullér</button>
+          </div>
         </div>
       )}
     </div>

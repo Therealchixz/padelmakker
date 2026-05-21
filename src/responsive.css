@@ -2787,29 +2787,10 @@ button,
   }
 }
 
-/* Form-submit wrapper.
-   På desktop: lille margin-top som en normal action-bar.
-   På mobil: sticky til bunden af viewport så submit altid er én klik væk
-   uden at brugeren skal scrolle til bunden af en lang form. Plads i bunden
-   så knappen ikke overlapper .pm-mobile-bottom-nav. */
+/* Form-submit — normal flow (ikke sticky på mobil; følger formularen i bunden). */
+.pm-form-submit,
 .pm-form-submit-sticky {
   margin-top: 16px;
-}
-
-@media (max-width: 720px) {
-  .pm-form-submit-sticky {
-    position: sticky;
-    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-    z-index: 5;
-    margin-top: 16px;
-    padding: 10px 0 0 0;
-    background: linear-gradient(
-      to bottom,
-      transparent 0%,
-      var(--pm-surface) 30%,
-      var(--pm-surface) 100%
-    );
-  }
 }
 
 /* AvatarCircle — gør klikbare avatars tydeligt interaktive */
@@ -3036,6 +3017,7 @@ button,
 
 .pm-create-form-anchor {
   scroll-margin-top: 88px;
+  scroll-margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
 }
 
 .pm-pill-tab {

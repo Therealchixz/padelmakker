@@ -144,7 +144,7 @@ export function AmericanoTab({
     if (!createControlled) setCreateOpenInternal(open)
   }
   const createFormRef = useRef<HTMLDivElement>(null)
-  useScrollIntoViewWhen(showCreate, createFormRef)
+  useScrollIntoViewWhen(showCreate, createFormRef, { block: 'end' })
 
   useEffect(() => {
     if (showCreate) setAmericanoHelpOpen(false)
@@ -661,22 +661,6 @@ export function AmericanoTab({
         </div>
       )}
 
-      {showCreate && (
-        <div ref={createFormRef} className="pm-create-form-anchor" style={{ marginBottom: 24 }}>
-          <CreateAmericanoTournamentForm
-            userId={profileId}
-            displayName={displayName}
-            courts={courts}
-            onCreated={async () => {
-              setShowCreate(false)
-              showToast('Americano oprettet — del link eller invitér spillere.')
-              await load()
-            }}
-            onCancel={() => setShowCreate(false)}
-          />
-        </div>
-      )}
-
       <div className="pm-help-box" style={{ marginBottom: 16 }}>
         <button
           type="button"
@@ -1159,6 +1143,23 @@ export function AmericanoTab({
           );})}
         </div>
       )}
+
+      {showCreate && (
+        <div ref={createFormRef} className="pm-create-form-anchor" style={{ marginTop: 20, marginBottom: 24 }}>
+          <CreateAmericanoTournamentForm
+            userId={profileId}
+            displayName={displayName}
+            courts={courts}
+            onCreated={async () => {
+              setShowCreate(false)
+              showToast('Americano oprettet — del link eller invitér spillere.')
+              await load()
+            }}
+            onCancel={() => setShowCreate(false)}
+          />
+        </div>
+      )}
+
       {participantStatsPick && (
         <PlayerStatsModal
           userId={participantStatsPick.userId}
