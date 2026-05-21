@@ -168,7 +168,8 @@ export function makkerPartnerLevelDisplayLabel(partnerLevelPref, profile = {}) {
   return PARTNER_LEVEL_LABELS[effective] || 'Samme niveau';
 }
 
-function makkerAvailabilitySummary(prefs) {
+/** Tidsrum fra kamp- eller makker-filter (availability-felt). */
+export function seekingAvailabilitySummary(prefs) {
   const raw = normalizeStringArrayField(prefs?.availability);
   if (!raw.length || availabilityMeansAllTimeSlots(prefs?.availability)) {
     return 'Alle tidsrum';
@@ -190,6 +191,7 @@ export function compactMatchSeekingDetails(prefs, profile = {}) {
   ));
   const days = formatSeekingDayKeys(normalized.days);
   if (days) pushSeekingDetail(lines, 'Spilledage', days);
+  pushSeekingDetail(lines, 'Tidsrum', seekingAvailabilitySummary(normalized));
   if (normalized.openOnly !== false) {
     pushSeekingDetail(lines, 'Kampe', 'Kun åbne kampe');
   }
@@ -227,7 +229,7 @@ export function compactMakkerSeekingDetails(prefs, profile = {}) {
   const days = formatSeekingDayKeys(normalized.days);
   if (days) pushSeekingDetail(lines, 'Spilledage', days);
 
-  pushSeekingDetail(lines, 'Tidsrum', makkerAvailabilitySummary(normalized));
+  pushSeekingDetail(lines, 'Tidsrum', seekingAvailabilitySummary(normalized));
 
   return lines;
 }

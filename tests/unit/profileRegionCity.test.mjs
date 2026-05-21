@@ -10,6 +10,8 @@ const onboarding = readFileSync(join(dir, '../../src/pages/OnboardingPage.jsx'),
 const profilTab = readFileSync(join(dir, '../../src/dashboard/ProfilTab.jsx'), 'utf8');
 const makkereTab = readFileSync(join(dir, '../../src/dashboard/MakkereTab.jsx'), 'utf8');
 const kampeTab = readFileSync(join(dir, '../../src/dashboard/KampeTab.jsx'), 'utf8');
+const dash = readFileSync(join(dir, '../../src/dashboard/DashboardPage.jsx'), 'utf8');
+const matchFilterPage = readFileSync(join(dir, '../../src/dashboard/MatchSearchFilterPage.jsx'), 'utf8');
 
 test('region påkrævet og by valgfri i onboarding og profil', () => {
   assert.match(profileUtils, /isValidProfileRegion/);
@@ -34,4 +36,6 @@ test('søge-filter genveje i Find makker og Kampe', () => {
   assert.match(makkereTab, /channel="makker"/);
   assert.match(kampeTab, /SeekingFilterShortcutCard/);
   assert.match(kampeTab, /channel="kamp"/);
+  assert.match(dash, /t\.id !== "liga"/);
+  assert.match(matchFilterPage, /Hvornår søger du kamp/);
 });

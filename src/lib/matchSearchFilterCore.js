@@ -3,7 +3,8 @@
  */
 
 import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
-import { seekingVisibleDurationLabel } from './platformConstants';
+import { seekingVisibleDurationLabel, AVAILABILITY } from './platformConstants';
+import { normalizeMakkerAvailabilityFilter } from './makkerFilterMatch';
 import {
   mergeFeedVisibleSince,
   resolveSeekingMatchAtForProfile,
@@ -39,6 +40,7 @@ const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 export function defaultMatchSearchPrefs(profile = {}) {
   const region = canonicalRegionForForm(profile.area) || profile.area || '';
   const days = normalizeStringArrayField(profile.available_days);
+  const availability = normalizeMakkerAvailabilityFilter(profile?.availability);
   return {
     version: MATCH_FILTER_PREFS_VERSION,
     notify: false,
@@ -47,6 +49,7 @@ export function defaultMatchSearchPrefs(profile = {}) {
     myLevel: profilePlaytomicLevel(profile),
     levelWindow: DEFAULT_LEVEL_WINDOW,
     days,
+    availability,
     openOnly: true,
   };
 }
@@ -98,6 +101,8 @@ export function normalizeMatchSearchPrefs(raw, profile = {}) {
     ? parsed.feedVisibleSince.trim()
     : null;
 
+  const availability = normalizeMakkerAvailabilityFilter(parsed.availability);
+
   return {
     version: MATCH_FILTER_PREFS_VERSION,
     notify,
@@ -107,9 +112,12 @@ export function normalizeMatchSearchPrefs(raw, profile = {}) {
     myLevel,
     levelWindow,
     days,
+    availability,
     openOnly: parsed.openOnly !== false,
   };
 }
+
+export { AVAILABILITY };
 
 export function resolveFilterRegion(prefs, profile = {}) {
   const fromPrefs = canonicalRegionForForm(prefs?.region) || (prefs?.region ? String(prefs.region).trim() : '');
@@ -189,6 +197,8 @@ export function describeMatchFilter(prefs, profile = {}) {
   parts.push(`Niveau ${formatPlaytomicLevel(lvl)} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
+  const avail = normalizeStringArrayField(prefs.availability);
+  if (avail.length > 0) parts.push(avail.join(', '));
   const channels = [];
   if (prefs.notify) channels.push('notifikationer');
   if (prefs.feedVisible) channels.push(`feed ${seekingVisibleDurationLabel('kamp')}`);

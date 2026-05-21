@@ -5,10 +5,15 @@ import { theme, btn, font } from '../lib/platformTheme';
 import {
   REGIONS,
   DAYS_OF_WEEK,
+  AVAILABILITY,
   levelLabel,
   seekingVisibleDurationLabel,
   DISCOVERY_NOTIFY_DAILY_PER_CHANNEL,
 } from '../lib/platformConstants';
+import {
+  MAKKER_AVAILABILITY_FLEXIBLE,
+  availabilityMeansAllTimeSlots,
+} from '../lib/makkerFilterMatch';
 import { normalizeStringArrayField } from '../lib/profileUtils';
 import {
   normalizeMatchSearchPrefs,
@@ -62,6 +67,19 @@ export function MatchSearchFilterPage({ user, showToast }) {
       days: cur.includes(key) ? cur.filter((x) => x !== key) : [...cur, key],
     });
   };
+
+  const toggleAvailability = (slot) => {
+    if (slot === MAKKER_AVAILABILITY_FLEXIBLE) {
+      set({ availability: [] });
+      return;
+    }
+    const cur = normalizeStringArrayField(prefs.availability);
+    set({
+      availability: cur.includes(slot) ? cur.filter((x) => x !== slot) : [...cur, slot],
+    });
+  };
+
+  const allTimeSlots = availabilityMeansAllTimeSlots(prefs.availability);
 
   const description = describeMatchFilter(prefs, user);
   const regionOk = Boolean(resolveFilterRegion(prefs, user) || prefs.region);
@@ -244,7 +262,33 @@ export function MatchSearchFilterPage({ user, showToast }) {
         I padel er selv 0,3–0,4 en tydelig forskel — vælg snævert for de mest fair kampe.
       </p>
 
+      <div style={labelStyle}>Hvornår søger du kamp? (valgfrit)</div>
+      <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
+        Vælg tidsrum på dagen — andre ser det når du vises som søger kamp. Flexibel / intet valg = alle tidsrum.
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
+        {AVAILABILITY.map((slot) => {
+          const active =
+            slot === MAKKER_AVAILABILITY_FLEXIBLE
+              ? allTimeSlots
+              : !allTimeSlots && normalizeStringArrayField(prefs.availability).includes(slot);
+          return (
+            <button
+              key={slot}
+              type="button"
+              onClick={() => toggleAvailability(slot)}
+              style={{ ...btn(active), padding: '6px 12px', fontSize: 12 }}
+            >
+              {slot}
+            </button>
+          );
+        })}
+      </div>
+
       <div style={labelStyle}>Ugedage (valgfrit)</div>
+      <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
+        Vi viser kun spillere der har mindst én af disse dage. Tom = alle dage.
+      </p>
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
         {DAYS_OF_WEEK.map(({ key, label }) => {
           const active = normalizeStringArrayField(prefs.days).includes(key);
