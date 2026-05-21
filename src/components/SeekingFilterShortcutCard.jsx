@@ -143,11 +143,6 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
                 ? `Slå synlighed til for at blive fundet (${durationLabel}).`
                 : info.detail}
           </p>
-          {isKamp ? (
-            <p style={{ fontSize: 10, color: theme.textLight, lineHeight: 1.4, margin: '6px 0 0' }}>
-              Ikke det samme som «Råb op» på en enkelt kamp.
-            </p>
-          ) : null}
         </div>
         <button
           type="button"
