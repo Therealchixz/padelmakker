@@ -728,7 +728,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
           <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
             <TrendingUp size={16} color={theme.accent} />
-            <span>{activeEloGraphLabel} over tid</span>
+            <span>ELO over tid</span>
             <span style={{ fontSize: "11px", fontWeight: 500, color: theme.textLight }}>({activeModeLabel})</span>
           </div>
           {activeEloGraphLoading ? (
