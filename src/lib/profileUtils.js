@@ -194,6 +194,10 @@ export function normalizeProfileRow(p) {
     travel_willing: p.travel_willing === true,
     seeking_match:  p.seeking_match  === true,
     match_watch_enabled: p.match_watch_enabled === true,
+    match_search_prefs:
+      p.match_search_prefs != null && typeof p.match_search_prefs === 'object' && !Array.isArray(p.match_search_prefs)
+        ? p.match_search_prefs
+        : {},
     intent_now:     p.intent_now     != null ? String(p.intent_now) : null,
     preferred_partner_level: p.preferred_partner_level != null ? String(p.preferred_partner_level) : null,
     last_active_at: p.last_active_at ?? null,

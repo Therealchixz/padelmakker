@@ -6,6 +6,9 @@ import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platf
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, LEVELS, LEVEL_DESCS, levelLabel, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
 import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
+import { normalizeMatchSearchPrefs, describeMatchFilter } from '../lib/matchSearchFilterUtils';
+import { useNavigate } from 'react-router-dom';
+import { Filter, ChevronRight } from 'lucide-react';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
 import { EloGraph } from '../components/EloGraph';
@@ -14,6 +17,62 @@ import { profileFormState } from './profileTabHelpers';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
+
+function MatchFilterProfileCard({ user }) {
+  const navigate = useNavigate();
+  const prefs = normalizeMatchSearchPrefs(user?.match_search_prefs, user);
+  const info = describeMatchFilter(prefs, user);
+
+  return (
+    <button
+      type="button"
+      onClick={() => navigate('/dashboard/kamp-filter')}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        width: '100%',
+        textAlign: 'left',
+        background: theme.surfaceAlt,
+        border: `1px solid ${info.active ? theme.accent : theme.border}`,
+        borderRadius: 10,
+        padding: '12px 14px',
+        marginBottom: 16,
+        cursor: 'pointer',
+      }}
+    >
+      <span
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: theme.blueBg,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <Filter size={18} color={theme.accent} aria-hidden />
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Mit kamp-filter</div>
+        <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2, lineHeight: 1.4 }}>
+          {info.configured ? (
+            <>
+              {info.summary}
+              <br />
+              <span style={{ color: theme.textMid }}>{info.detail}</span>
+            </>
+          ) : (
+            'Indstil region, ELO og hvornår du vil have besked om åbne kampe.'
+          )}
+        </div>
+      </span>
+      <ChevronRight size={18} color={theme.textLight} aria-hidden style={{ flexShrink: 0 }} />
+    </button>
+  );
+}
 
 const PROFILE_OVERVIEW_MODE_PREFIX = "pm-profile-overview-mode:";
 const PROFILE_OVERVIEW_MODES = new Set(["2v2", "americano", "liga"]);
@@ -465,52 +524,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
-          {/* Søger kamp — standalone toggle der gemmer øjeblikkeligt */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: theme.surfaceAlt, border: '1px solid ' + (user.seeking_match ? theme.accent : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>⚡ Søger kamp nu</div>
-              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>Vises i andres feed. Slukker automatisk 24 timer efter du aktiverede det.</div>
-            </div>
-            <button
-              onClick={async () => {
-                try {
-                  const enabling = !user.seeking_match;
-                  await updateProfile({ seeking_match: enabling, seeking_match_at: enabling ? new Date().toISOString() : null });
-                  showToast(enabling ? 'Du søger nu kamp! ⚡' : 'Du søger ikke længere kamp.');
-                } catch { showToast('Kunne ikke gemme. Prøv igen.'); }
-              }}
-              style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: user.seeking_match ? theme.accent : theme.border, position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
-            >
-              <div style={{ position: 'absolute', top: 3, left: user.seeking_match ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-            </button>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: theme.surfaceAlt, border: '1px solid ' + (user.match_watch_enabled ? theme.accent : theme.border), borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>🔔 Kamp-watch</div>
-              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
-                Få besked når en åben kamp i din region passer dit ELO (max 2 push om dagen).
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  const enabling = !user.match_watch_enabled;
-                  await updateProfile({
-                    match_watch_enabled: enabling,
-                    match_watch_at: enabling ? new Date().toISOString() : null,
-                  });
-                  showToast(enabling ? 'Kamp-watch er slået til' : 'Kamp-watch er slået fra');
-                } catch {
-                  showToast('Kunne ikke gemme. Prøv igen.');
-                }
-              }}
-              style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: user.match_watch_enabled ? theme.accent : theme.border, position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
-            >
-              <div style={{ position: 'absolute', top: 3, left: user.match_watch_enabled ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-            </button>
-          </div>
+          <MatchFilterProfileCard user={user} />
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading || (overviewMode === "liga" && ligaLoading) ? (

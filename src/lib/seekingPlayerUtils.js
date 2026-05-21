@@ -21,6 +21,7 @@ import { fetchEloByUserIdFromHistory } from './eloHistoryUtils';
 import { resolveElo } from './matchmakingUtils';
 import { PROFILE_KAMPE_SELECT } from './profileQueries';
 import { normalizeProfileRow } from './profileUtils';
+import { normalizeMatchSearchPrefs } from './matchSearchFilterCore';
 
 const MAX_NOTIFY       = 10;
 const ELO_WINDOW       = 250;
@@ -109,15 +110,18 @@ export async function activateSeekingPlayer(match, creatorProfile, playerIds, op
       const eloDiff = Math.abs(elo - matchElo);
       const eloScore = Math.max(0, 1 - eloDiff / ELO_WINDOW);
       const areaScore = matchArea && p.area === matchArea ? 1 : 0.3;
-      const watchBoost = p.match_watch_enabled ? 0.12 : 0;
-      const seekScore = p.seeking_match ? 0.05 : 0;
+      const filterPrefs = normalizeMatchSearchPrefs(p.match_search_prefs, p);
+      const watchBoost = (filterPrefs.notify || p.match_watch_enabled) ? 0.12 : 0;
+      const seekScore = (filterPrefs.feedVisible || p.seeking_match) ? 0.05 : 0;
       const total = eloScore * 0.65 + areaScore * 0.18 + watchBoost + seekScore;
       return { profile: p, score: total };
     })
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      if (Boolean(b.profile.match_watch_enabled) !== Boolean(a.profile.match_watch_enabled)) {
-        return (b.profile.match_watch_enabled ? 1 : 0) - (a.profile.match_watch_enabled ? 1 : 0);
+      const bNotify = normalizeMatchSearchPrefs(b.profile.match_search_prefs, b.profile).notify || b.profile.match_watch_enabled;
+      const aNotify = normalizeMatchSearchPrefs(a.profile.match_search_prefs, a.profile).notify || a.profile.match_watch_enabled;
+      if (Boolean(bNotify) !== Boolean(aNotify)) {
+        return (bNotify ? 1 : 0) - (aNotify ? 1 : 0);
       }
       return 0;
     })

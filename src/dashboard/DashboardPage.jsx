@@ -40,6 +40,7 @@ const loadBanerTab = () => import('./BanerTab');
 const loadKampeTab = () => import('./KampeTab');
 const loadRankingTab = () => import('./RankingTab');
 const loadProfilTab = () => import('./ProfilTab');
+const loadMatchSearchFilterPage = () => import('./MatchSearchFilterPage');
 const loadAdminTab = () => import('./AdminTab');
 const loadBeskedTab = () => import('./BeskedTab');
 const loadLigaTab = () => import('./LigaTab');
@@ -49,6 +50,7 @@ const BanerTabLazy = lazy(() => loadBanerTab().then((m) => ({ default: m.BanerTa
 const KampeTabLazy = lazy(() => loadKampeTab().then((m) => ({ default: m.KampeTab })));
 const RankingTabLazy = lazy(() => loadRankingTab().then((m) => ({ default: m.RankingTab })));
 const ProfilTabLazy = lazy(() => loadProfilTab().then((m) => ({ default: m.ProfilTab })));
+const MatchSearchFilterPageLazy = lazy(() => loadMatchSearchFilterPage().then((m) => ({ default: m.MatchSearchFilterPage })));
 const AdminTabLazy = lazy(() => loadAdminTab().then((m) => ({ default: m.AdminTab })));
 const BeskedTabLazy = lazy(() => loadBeskedTab().then((m) => ({ default: m.BeskedTab })));
 const LigaTabLazy = lazy(() => loadLigaTab().then((m) => ({ default: m.LigaTab })));
@@ -706,7 +708,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const unreadKampeNotifs = useUnreadKampeNotificationsCount(user?.id);
   const hasKampeAttention = pendingKampe > 0 || unreadKampeNotifs > 0;
   const pathTab = location.pathname.split("/")[2] || "hjem";
-  const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "admin"];
+  const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "admin"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
   const setTab = useCallback((t) => navigate("/dashboard/" + t), [navigate]);
 
@@ -1520,6 +1522,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             {tab === "liga"     && <LigaTabLazy user={user} showToast={showToast} />}
             {tab === "beskeder" && <BeskedTabLazy user={user} onMobileConversationStateChange={setMobileConversationOpen} />}
             {tab === "profil"   && <ProfilTabLazy user={user} showToast={showToast} setTab={setTab} />}
+            {tab === "kamp-filter" && <MatchSearchFilterPageLazy user={user} showToast={showToast} />}
             {tab === "admin"    && isAdmin && adminPinUnlocked && (
               <AdminTabLazy initialSubTab={adminInitialSubTab} />
             )}

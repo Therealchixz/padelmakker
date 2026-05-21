@@ -11,6 +11,11 @@ import { AppModal } from '../components/AppModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS, levelLabel } from '../lib/platformConstants';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
+import {
+  normalizeMatchSearchPrefs,
+  isMatchFilterActive,
+  countOpenMatchesMatchingFilter,
+} from '../lib/matchSearchFilterUtils';
 
 const HOME_FEED_CACHE_BY_USER = new Map();
 const HOME_ELO_MODE_STORAGE_PREFIX = "pm-home-elo-mode:";
@@ -730,6 +735,25 @@ export function HomeTab({ user, setTab }) {
         result: row.result,
       }));
   }, [activeHistoryRows]);
+  const matchFilterPrefs = useMemo(
+    () => normalizeMatchSearchPrefs(user?.match_search_prefs, user),
+    [user],
+  );
+  const matchFilterOn = isMatchFilterActive(matchFilterPrefs, user);
+  const [filterMatchCount, setFilterMatchCount] = useState(null);
+
+  useEffect(() => {
+    if (!user?.id || !matchFilterOn) {
+      setFilterMatchCount(null);
+      return;
+    }
+    let cancelled = false;
+    countOpenMatchesMatchingFilter(user, matchFilterPrefs, user.id)
+      .then((n) => { if (!cancelled) setFilterMatchCount(n); })
+      .catch(() => { if (!cancelled) setFilterMatchCount(0); });
+    return () => { cancelled = true; };
+  }, [user, matchFilterPrefs, matchFilterOn]);
+
   const seekingCount = seekingFeed.length;
   const seekingTitle = feedLoading
     ? "Finder spillere der søger kamp"
@@ -801,6 +825,28 @@ export function HomeTab({ user, setTab }) {
             </div>
           </div>
         </section>
+      )}
+
+      {matchFilterOn && filterMatchCount != null && filterMatchCount > 0 && (
+        <button
+          type="button"
+          className="pm-home-seeking-cta"
+          style={{ marginBottom: 10 }}
+          onClick={() => setTab('kampe')}
+        >
+          <span className="pm-home-seeking-cta-icon" aria-hidden="true">
+            <Swords size={20} />
+          </span>
+          <span className="pm-home-seeking-cta-copy">
+            <strong>
+              {filterMatchCount === 1
+                ? '1 kamp matcher dit filter'
+                : `${filterMatchCount} kampe matcher dit filter`}
+            </strong>
+            <small>Åbne kampe i din region på dit niveau</small>
+          </span>
+          <ChevronRight size={18} aria-hidden="true" />
+        </button>
       )}
 
       <button type="button" className="pm-home-seeking-cta" onClick={() => setTab(seekingCount > 0 ? 'makkere?seeking=1' : 'makkere')}>
