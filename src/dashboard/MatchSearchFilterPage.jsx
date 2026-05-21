@@ -127,7 +127,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
       <div
         style={{
           background: theme.surfaceAlt,
-          border: `1px solid ${description.active ? theme.accent : theme.border}`,
+          border: `1px solid ${theme.border}`,
           borderRadius: 10,
           padding: '12px 14px',
           marginBottom: 20,

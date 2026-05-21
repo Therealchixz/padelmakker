@@ -39,7 +39,7 @@ function MatchFilterProfileCard({ user }) {
         width: '100%',
         textAlign: 'left',
         background: theme.surfaceAlt,
-        border: `1px solid ${info.active ? theme.accent : theme.border}`,
+        border: `1px solid ${theme.border}`,
         borderRadius: 10,
         padding: '12px 14px',
         marginBottom: 16,
@@ -51,7 +51,7 @@ function MatchFilterProfileCard({ user }) {
           width: 36,
           height: 36,
           borderRadius: 10,
-          background: theme.blueBg,
+          background: info.active ? theme.accentBg : theme.blueBg,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -61,7 +61,23 @@ function MatchFilterProfileCard({ user }) {
         <Filter size={18} color={theme.accent} aria-hidden />
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Mit kamp-filter</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Mit kamp-filter</span>
+          {info.active ? (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 100,
+                background: theme.accentBg,
+                color: theme.accent,
+              }}
+            >
+              Aktiv
+            </span>
+          ) : null}
+        </div>
         <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2, lineHeight: 1.4 }}>
           {info.configured ? (
             <>
@@ -95,7 +111,7 @@ function MakkerFilterProfileCard({ user }) {
         width: '100%',
         textAlign: 'left',
         background: theme.surfaceAlt,
-        border: `1px solid ${info.active ? theme.accent : theme.border}`,
+        border: `1px solid ${theme.border}`,
         borderRadius: 10,
         padding: '12px 14px',
         marginBottom: 16,
@@ -107,7 +123,7 @@ function MakkerFilterProfileCard({ user }) {
           width: 36,
           height: 36,
           borderRadius: 10,
-          background: theme.blueBg,
+          background: info.active ? theme.accentBg : theme.blueBg,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -117,7 +133,23 @@ function MakkerFilterProfileCard({ user }) {
         <Users size={18} color={theme.accent} aria-hidden />
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Mit makker-filter</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Mit makker-filter</span>
+          {info.active ? (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 100,
+                background: theme.accentBg,
+                color: theme.accent,
+              }}
+            >
+              Aktiv
+            </span>
+          ) : null}
+        </div>
         <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2, lineHeight: 1.4 }}>
           {info.configured ? (
             <>
