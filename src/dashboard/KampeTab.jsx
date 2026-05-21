@@ -6,6 +6,7 @@ import { Court } from '../api/base44Client';
 import { fetchProfilesByIdMap } from '../lib/profileQueries';
 import { supabase } from '../lib/supabase';
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
+import { useScrollIntoViewWhen } from '../lib/useScrollIntoViewWhen';
 const AmericanoTab = lazy(() =>
   import('../features/americano/AmericanoTab').then(m => ({ default: m.AmericanoTab }))
 );
@@ -214,6 +215,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [showCreate, setShowCreate]   = useState(false);
   const [showAmericanoCreate, setShowAmericanoCreate] = useState(false);
   const [showLigaCreate, setShowLigaCreate] = useState(false);
+  const padelCreateFormRef = useRef(null);
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
   const [matchPlayers, setMatchPlayers] = useState({});
@@ -247,6 +249,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return "alle";
   }); // "mine" | "alle"
   const [padelHelpOpen, setPadelHelpOpen] = useState(false);
+
+  useScrollIntoViewWhen(showCreate, padelCreateFormRef, {
+    enabled: kampeFormat === 'padel' && !loadingMatches,
+  });
+
+  useEffect(() => {
+    if (showCreate) setPadelHelpOpen(false);
+  }, [showCreate]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [joinRequests, setJoinRequests] = useState({}); // { [matchId]: [{ id, user_id, user_name, user_emoji, status }] }
   const [matchChatOpenById, setMatchChatOpenById] = useState({});
@@ -2740,34 +2751,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         style={{ marginBottom: "16px" }}
       />
 
-      <div className="pm-help-box" style={{ marginBottom: "14px" }}>
-        <button
-          type="button"
-          onClick={() => setPadelHelpOpen((v) => !v)}
-          aria-expanded={padelHelpOpen}
-          className="pm-help-box-toggle"
-          style={{ cursor: "pointer" }}
-        >
-          <span className="pm-help-box-title">Regler for 2v2 (padel)</span>
-          <span className="pm-help-box-chevron">
-            {padelHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          </span>
-        </button>
-        {padelHelpOpen ? (
-          <div className="pm-help-box-content" style={{ marginTop: "8px" }}>
-            {PADEL_RULE_SUMMARY.map((item) => (
-              <div key={item.icon} className="pm-help-box-item">
-                <span style={{ flexShrink: 0 }}>{item.icon}</span>
-                <span>{item.text}</span>
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Create match form */}
       {showCreate && (
-        <div className="pm-ui-card" style={{ padding: "clamp(16px,3vw,20px)", marginBottom: "20px" }}>
+        <div
+          ref={padelCreateFormRef}
+          className="pm-ui-card pm-create-form-anchor"
+          style={{ padding: "clamp(16px,3vw,20px)", marginBottom: "20px" }}
+        >
           <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px" }}>Opret ny kamp</h3>
           <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px" }}>Din ELO <strong>{myElo}</strong> — du sættes automatisk på Hold 1.</p>
           <div className="pm-form-2col">
@@ -2868,6 +2857,31 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
         </div>
       )}
+
+      <div className="pm-help-box" style={{ marginBottom: "14px" }}>
+        <button
+          type="button"
+          onClick={() => setPadelHelpOpen((v) => !v)}
+          aria-expanded={padelHelpOpen}
+          className="pm-help-box-toggle"
+          style={{ cursor: "pointer" }}
+        >
+          <span className="pm-help-box-title">Regler for 2v2 (padel)</span>
+          <span className="pm-help-box-chevron">
+            {padelHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </span>
+        </button>
+        {padelHelpOpen ? (
+          <div className="pm-help-box-content" style={{ marginTop: "8px" }}>
+            {PADEL_RULE_SUMMARY.map((item) => (
+              <div key={item.icon} className="pm-help-box-item">
+                <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                <span>{item.text}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {viewTab === "open" && openMatches.map((m) => renderMatchCard(m, "open"))}

@@ -18,6 +18,7 @@ import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
+import { useScrollIntoViewWhen } from '../lib/useScrollIntoViewWhen';
 
 function isTiebreakScore(scoreText) {
   return !!(scoreText && /7-6|6-7/.test(scoreText));
@@ -748,6 +749,8 @@ export function LigaTab({
   const [createOpenLocal, setCreateOpenLocal] = useState(false);
   const createOpen = createOpenProp !== undefined ? createOpenProp : createOpenLocal;
   const setCreateOpen = onCreateOpenChange !== undefined ? onCreateOpenChange : setCreateOpenLocal;
+  const ligaCreateFormRef = useRef(null);
+  useScrollIntoViewWhen(createOpen, ligaCreateFormRef, { enabled: isAdmin });
   const [createForm, setCreateForm] = useState({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
 
   // Create team form
@@ -1278,7 +1281,11 @@ export function LigaTab({
 
       {/* Admin: opret-formular */}
       {isAdmin && createOpen && (
-        <div style={{ background: theme.surface, borderRadius: theme.radius, padding: '20px', border: '1px solid ' + theme.border, boxShadow: theme.shadow, marginBottom: '16px' }}>
+        <div
+          ref={ligaCreateFormRef}
+          className="pm-ui-card pm-create-form-anchor"
+          style={{ padding: '20px', marginBottom: '16px' }}
+        >
           <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Ny liga</div>
           <label style={labelStyle}>Navn</label>
           <input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder="F.eks. Forårssæson 2026" style={{ ...inputStyle, marginBottom: '10px' }} />

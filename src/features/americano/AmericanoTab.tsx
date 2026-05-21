@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
@@ -17,6 +17,7 @@ import { btn, theme } from '../../lib/platformTheme'
 import { notifyAmericanoTournamentFull } from '../../lib/notifyKampeEntityFull'
 import { notifyAmericanoTournamentStarted } from '../../lib/notifyKampeEntityStarted'
 import { notifyAmericanoSpotOpened } from '../../lib/notifyKampeEntityRoster'
+import { useScrollIntoViewWhen } from '../../lib/useScrollIntoViewWhen'
 
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
@@ -142,6 +143,13 @@ export function AmericanoTab({
     onCreateOpenChange?.(open)
     if (!createControlled) setCreateOpenInternal(open)
   }
+  const createFormRef = useRef<HTMLDivElement>(null)
+  useScrollIntoViewWhen(showCreate, createFormRef)
+
+  useEffect(() => {
+    if (showCreate) setAmericanoHelpOpen(false)
+  }, [showCreate])
+
   const [busyId, setBusyId] = useState<string | null>(null)
   const [americanoView, setAmericanoView] = useState<AmericanoSubTab>(() => initialSubTab ?? 'open')
   /** Afsluttede: kun én "Resultater og stilling" åben ad gangen (som Baner-accordion) */
@@ -654,7 +662,7 @@ export function AmericanoTab({
       )}
 
       {showCreate && (
-        <div style={{ marginBottom: 24 }}>
+        <div ref={createFormRef} className="pm-create-form-anchor" style={{ marginBottom: 24 }}>
           <CreateAmericanoTournamentForm
             userId={profileId}
             displayName={displayName}
