@@ -2915,12 +2915,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               : "Alle kan se kampen, men skal anmode om at deltage — du godkender selv."}
           </p>
 
-          <div className="pm-form-submit" style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "16px" }}>
+          <div className="pm-form-submit pm-form-submit-actions">
             <button
               type="button"
               onClick={createMatch}
               disabled={creating || !newMatch.court_id || venueOptions.length === 0}
-              style={{ ...btn(true), fontSize: "13px", opacity: creating ? 0.55 : 1 }}
+              style={{ ...btn(true, { size: "md", fontWeight: 600 }), opacity: creating ? 0.55 : 1 }}
             >
               {creating ? "Opretter..." : "Opret kamp"}
             </button>
@@ -2928,7 +2928,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               type="button"
               onClick={() => setShowCreate(false)}
               disabled={creating}
-              style={{ ...btn(false), fontSize: "13px" }}
+              style={btn(false, { size: "md", fontWeight: 600 })}
             >
               Annullér
             </button>

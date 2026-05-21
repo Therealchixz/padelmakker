@@ -2005,11 +2005,22 @@ export function LigaTab({
             placeholder="Ubegrænset"
             style={{ ...inputStyle, marginBottom: '14px' }}
           />
-          <div className="pm-form-submit" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={createLeague} disabled={busyId === 'create'} style={{ ...btn(true), fontSize: '13px' }}>
+          <div className="pm-form-submit pm-form-submit-actions">
+            <button
+              type="button"
+              onClick={createLeague}
+              disabled={busyId === 'create'}
+              style={btn(true, { size: 'md', fontWeight: 600 })}
+            >
               {busyId === 'create' ? 'Opretter…' : 'Opret liga'}
             </button>
-            <button onClick={() => setCreateOpen(false)} style={{ ...btn(false), fontSize: '13px' }}>Annullér</button>
+            <button
+              type="button"
+              onClick={() => setCreateOpen(false)}
+              style={btn(false, { size: 'md', fontWeight: 600 })}
+            >
+              Annullér
+            </button>
           </div>
         </div>
       )}

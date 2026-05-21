@@ -244,36 +244,26 @@ export function CreateAmericanoTournamentForm({
         <p style={{ color: theme.red, fontSize: 13, marginTop: 12 }}>{error}</p>
       )}
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+      <div className="pm-form-submit pm-form-submit-actions">
         <button
           type="submit"
           disabled={submitting}
           style={{
-            ...btn(true),
+            ...btn(true, { size: 'md', fontWeight: 600 }),
             cursor: submitting ? 'wait' : 'pointer',
           }}
         >
           {submitting ? 'Opretter…' : 'Opret turnering'}
         </button>
-        {onCancel && (
+        {onCancel ? (
           <button
             type="button"
             onClick={onCancel}
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 14,
-              fontWeight: 600,
-              padding: '10px 20px',
-              borderRadius: 10,
-              border: '1px solid var(--pm-border)',
-              background: 'var(--pm-surface)',
-              color: 'var(--pm-text-mid)',
-              cursor: 'pointer',
-            }}
+            style={btn(false, { size: 'md', fontWeight: 600 })}
           >
             Annullér
           </button>
-        )}
+        ) : null}
       </div>
     </form>
   )

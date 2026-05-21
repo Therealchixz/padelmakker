@@ -2793,6 +2793,22 @@ button,
   margin-top: 16px;
 }
 
+/* Opret + Annullér — samme størrelse på 2v2, Americano og liga */
+.pm-form-submit-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  align-items: stretch;
+}
+
+.pm-form-submit-actions > button {
+  flex: 1 1 0;
+  min-width: min(100%, 8rem);
+  min-height: var(--pm-control-h);
+  justify-content: center;
+}
+
 /* AvatarCircle — gør klikbare avatars tydeligt interaktive */
 .pm-avatar-circle--clickable {
   cursor: pointer;
