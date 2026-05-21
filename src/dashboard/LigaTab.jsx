@@ -19,6 +19,7 @@ import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
 import { useScrollIntoViewWhen } from '../lib/useScrollIntoViewWhen';
+import { DateInputField } from '../components/DateInputField';
 
 function isTiebreakScore(scoreText) {
   return !!(scoreText && /7-6|6-7/.test(scoreText));
@@ -1981,15 +1982,21 @@ export function LigaTab({
             size="sm"
             style={{ marginBottom: '10px' }}
           />
-          <div className="pm-form-2col" style={{ marginBottom: '10px' }}>
-            <div className="pm-form-field">
-              <label style={labelStyle}>Startdato</label>
-              <input type="date" value={createForm.start_date} onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))} style={inputStyle} />
-            </div>
-            <div className="pm-form-field">
-              <label style={labelStyle}>Slutdato</label>
-              <input type="date" value={createForm.end_date} onChange={e => setCreateForm(f => ({ ...f, end_date: e.target.value }))} style={inputStyle} />
-            </div>
+          <div className="pm-form-2col pm-form-2col--dates" style={{ marginBottom: '10px' }}>
+            <DateInputField
+              label="Startdato"
+              value={createForm.start_date}
+              onChange={(e) => setCreateForm((f) => ({ ...f, start_date: e.target.value }))}
+              labelStyle={labelStyle}
+              inputStyle={inputStyle}
+            />
+            <DateInputField
+              label="Slutdato"
+              value={createForm.end_date}
+              onChange={(e) => setCreateForm((f) => ({ ...f, end_date: e.target.value }))}
+              labelStyle={labelStyle}
+              inputStyle={inputStyle}
+            />
           </div>
           <label style={labelStyle}>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
           <input

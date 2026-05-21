@@ -3018,6 +3018,8 @@ button,
 .pm-create-form-anchor {
   scroll-margin-top: 88px;
   scroll-margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 .pm-pill-tab {
@@ -3703,11 +3705,58 @@ button,
   max-width: 100%;
 }
 
-.pm-form-field input[type="date"] {
+.pm-date-input-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.pm-date-input-inner {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pm-date-input-inner input[type="date"] {
   display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: var(--pm-control-h);
   box-sizing: border-box;
+  margin: 0;
+}
+
+/* Tom dato: skjul browserens tomme visning, vis dd-mm-åååå-hint */
+.pm-date-input-inner--empty input[type="date"] {
+  color: transparent;
+}
+
+.pm-date-input-inner--empty input[type="date"]:focus {
+  color: var(--pm-text);
+}
+
+.pm-date-input-hint {
+  position: absolute;
+  left: calc(var(--pm-space-2) + 2px);
+  right: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--pm-font);
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--pm-text-light);
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pm-form-2col--dates {
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Dato-inputs har stor min-bredde på mobil — stak felter under 640px */
