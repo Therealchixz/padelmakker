@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - supabase/migrations/**
-      - supabase/config.toml
-      - .github/workflows/apply-supabase-migrations.yml
   workflow_dispatch:
 
 concurrency:
@@ -27,6 +23,13 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 20
+
+      - name: Check migration drift (repo vs prod)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        continue-on-error: true
+        run: node scripts/check-migration-drift.mjs --repair-hint
 
       - name: Push pending migrations to Supabase
         env:
