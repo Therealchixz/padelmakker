@@ -188,3 +188,6 @@ export const SEEK_TTL_MS = SEEK_TTL_DAYS * 24 * 60 * 60 * 1000;
 export function seekingVisibleDurationLabel() {
   return SEEK_TTL_DAYS === 1 ? '24 timer' : `${SEEK_TTL_DAYS} dage`;
 }
+
+/** Max discovery-push/in-app pr. kanal (kamp og makker hver for sig). */
+export const DISCOVERY_NOTIFY_DAILY_PER_CHANNEL = 2;

@@ -161,7 +161,10 @@ BEGIN
       END IF;
     END IF;
 
-    v_daily := public.discovery_notifications_today_count(v_row.user_id);
+    v_daily := public.discovery_notifications_today_count(
+      v_row.user_id,
+      ARRAY['makker_suggestion']::text[]
+    );
     IF v_daily >= v_max_per_day THEN
       CONTINUE;
     END IF;

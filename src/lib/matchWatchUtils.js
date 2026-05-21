@@ -1,6 +1,6 @@
 /**
  * Kamp-watch: notifikation når ny åben kamp passer (region + ELO).
- * Backend: notify_match_watchers RPC. Max 8/modtager-batch, 2 discovery-push/dag.
+ * Backend: notify_match_watchers RPC. Max 8/modtager-batch, 2 kamp-discovery/dag (makker har egne 2).
  */
 
 import { supabase } from './supabase';

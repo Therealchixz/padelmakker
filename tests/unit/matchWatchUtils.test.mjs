@@ -11,6 +11,7 @@ test('match watch RPC and client helper exist', () => {
   assert.match(sql, /match_watch_enabled/);
   assert.match(sql, /notify_match_watchers/);
   assert.match(sql, /discovery_notifications_today_count/);
+  assert.match(readFileSync(join(root, 'supabase/sql/discovery_notification_limits.sql'), 'utf8'), /p_types text\[\]/);
 
   const client = readFileSync(join(root, 'src/lib/matchWatchUtils.js'), 'utf8');
   assert.match(client, /notify_match_watchers/);

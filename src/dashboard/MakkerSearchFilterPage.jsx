@@ -2,7 +2,13 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
-import { REGIONS, DAYS_OF_WEEK, INTENTS, seekingVisibleDurationLabel } from '../lib/platformConstants';
+import {
+  REGIONS,
+  DAYS_OF_WEEK,
+  INTENTS,
+  seekingVisibleDurationLabel,
+  DISCOVERY_NOTIFY_DAILY_PER_CHANNEL,
+} from '../lib/platformConstants';
 import { normalizeStringArrayField } from '../lib/profileUtils';
 import {
   normalizeMakkerSearchPrefs,
@@ -542,7 +548,8 @@ export function MakkerSearchFilterPage({ user, showToast }) {
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Notifikationer</div>
               <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
-                Push og in-app når en spiller søger makker og passer (max 2 om dagen i alt med kamp-filter).
+                Push og in-app når en spiller søger makker og passer (max{' '}
+                {DISCOVERY_NOTIFY_DAILY_PER_CHANNEL} makker-beskeder om dagen — uafhængigt af kamp-filter).
               </div>
             </div>
           </div>

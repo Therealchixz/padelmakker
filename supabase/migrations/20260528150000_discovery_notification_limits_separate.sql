@@ -1,177 +1,167 @@
--- Mit makker-filter v2: baneside, spillestil, intention, niveau-retning, tilgængelighed.
+-- Discovery-notifikationer: separat daglig cap for kamp og makker (2 + 2, ikke 2 i alt).
 
-CREATE OR REPLACE FUNCTION public.makker_filter_normalize_side(p_side text)
-RETURNS text
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE
-    WHEN lower(coalesce(p_side, '')) LIKE '%venstre%' THEN 'venstre'
-    WHEN lower(coalesce(p_side, '')) LIKE '%højre%' OR lower(coalesce(p_side, '')) LIKE '%hojre%' THEN 'hojre'
-    WHEN lower(coalesce(p_side, '')) LIKE '%begge%' THEN 'begge'
-    ELSE ''
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.makker_filter_court_side_ok(
-  p_mode text,
-  p_watcher_side text,
-  p_subject_side text
+CREATE OR REPLACE FUNCTION public.discovery_notifications_today_count(
+  p_user_id uuid,
+  p_types text[] DEFAULT ARRAY['match_watch_match', 'makker_suggestion']::text[]
 )
-RETURNS boolean
+RETURNS integer
 LANGUAGE sql
-IMMUTABLE
+STABLE
+SECURITY DEFINER
+SET search_path = public
 AS $$
-  SELECT CASE COALESCE(NULLIF(trim(p_mode), ''), 'complementary')
-    WHEN 'any' THEN true
-    WHEN 'complementary' THEN (
-      (public.makker_filter_normalize_side(p_watcher_side) = 'venstre'
-        AND public.makker_filter_normalize_side(p_subject_side) = 'hojre')
-      OR (public.makker_filter_normalize_side(p_watcher_side) = 'hojre'
-        AND public.makker_filter_normalize_side(p_subject_side) = 'venstre')
-      OR public.makker_filter_normalize_side(p_watcher_side) = 'begge'
-      OR public.makker_filter_normalize_side(p_subject_side) = 'begge'
-    )
-    WHEN 'same' THEN (
-      public.makker_filter_normalize_side(p_watcher_side) <> ''
-      AND public.makker_filter_normalize_side(p_watcher_side) = public.makker_filter_normalize_side(p_subject_side)
-    )
-    ELSE true
-  END;
+  SELECT count(*)::integer
+  FROM public.notifications n
+  WHERE n.user_id = p_user_id
+    AND n.type = ANY (p_types)
+    AND n.created_at >= date_trunc('day', now() AT TIME ZONE 'Europe/Copenhagen');
 $$;
 
-CREATE OR REPLACE FUNCTION public.makker_filter_normalize_intent(p_intent text)
-RETURNS text
+REVOKE ALL ON FUNCTION public.discovery_notifications_today_count(uuid, text[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.discovery_notifications_today_count(uuid, text[]) TO authenticated;
+
+-- Bagudkompatibilitet: én-parameter = begge typer (undgås i nye notify-kald).
+CREATE OR REPLACE FUNCTION public.discovery_notifications_today_count(p_user_id uuid)
+RETURNS integer
 LANGUAGE sql
-IMMUTABLE
+STABLE
+SECURITY DEFINER
+SET search_path = public
 AS $$
-  SELECT CASE
-    WHEN lower(coalesce(p_intent, '')) LIKE '%konkurrence%' THEN 'konkurrence'
-    WHEN lower(coalesce(p_intent, '')) LIKE '%træning%' OR lower(coalesce(p_intent, '')) LIKE '%traening%' THEN 'traening'
-    WHEN lower(coalesce(p_intent, '')) LIKE '%hygge%' THEN 'hygge'
-    WHEN lower(coalesce(p_intent, '')) LIKE '%fast%' THEN 'fast_makker'
-    WHEN lower(coalesce(p_intent, '')) LIKE '%turnering%' THEN 'turnering'
-    ELSE lower(trim(coalesce(p_intent, '')))
-  END;
+  SELECT public.discovery_notifications_today_count(
+    p_user_id,
+    ARRAY['match_watch_match', 'makker_suggestion']::text[]
+  );
 $$;
 
-CREATE OR REPLACE FUNCTION public.makker_filter_intent_compat_score(p_a text, p_b text)
-RETURNS numeric
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE public.makker_filter_normalize_intent(p_a)
-    WHEN 'konkurrence' THEN CASE public.makker_filter_normalize_intent(p_b)
-      WHEN 'konkurrence' THEN 1.0 WHEN 'traening' THEN 0.6 WHEN 'hygge' THEN 0.2
-      WHEN 'fast_makker' THEN 0.5 WHEN 'turnering' THEN 0.8 ELSE 0.4 END
-    WHEN 'traening' THEN CASE public.makker_filter_normalize_intent(p_b)
-      WHEN 'konkurrence' THEN 0.6 WHEN 'traening' THEN 1.0 WHEN 'hygge' THEN 0.5
-      WHEN 'fast_makker' THEN 0.7 WHEN 'turnering' THEN 0.5 ELSE 0.4 END
-    WHEN 'hygge' THEN CASE public.makker_filter_normalize_intent(p_b)
-      WHEN 'konkurrence' THEN 0.2 WHEN 'traening' THEN 0.5 WHEN 'hygge' THEN 1.0
-      WHEN 'fast_makker' THEN 0.8 WHEN 'turnering' THEN 0.3 ELSE 0.4 END
-    WHEN 'fast_makker' THEN CASE public.makker_filter_normalize_intent(p_b)
-      WHEN 'konkurrence' THEN 0.5 WHEN 'traening' THEN 0.7 WHEN 'hygge' THEN 0.8
-      WHEN 'fast_makker' THEN 1.0 WHEN 'turnering' THEN 0.4 ELSE 0.4 END
-    WHEN 'turnering' THEN CASE public.makker_filter_normalize_intent(p_b)
-      WHEN 'konkurrence' THEN 0.8 WHEN 'traening' THEN 0.5 WHEN 'hygge' THEN 0.3
-      WHEN 'fast_makker' THEN 0.4 WHEN 'turnering' THEN 1.0 ELSE 0.4 END
-    ELSE 0.4
-  END;
-$$;
+REVOKE ALL ON FUNCTION public.discovery_notifications_today_count(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.discovery_notifications_today_count(uuid) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.makker_filter_intent_ok(
-  p_intents jsonb,
-  p_mode text,
-  p_subject_intent text
-)
-RETURNS boolean
-LANGUAGE sql
-IMMUTABLE
+
+CREATE OR REPLACE FUNCTION public.notify_match_watchers(p_match_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+SET row_security = off
 AS $$
-  SELECT CASE
-    WHEN p_intents IS NULL OR jsonb_array_length(p_intents) = 0 THEN true
-    WHEN NULLIF(trim(coalesce(p_subject_intent, '')), '') IS NULL THEN true
-    WHEN COALESCE(NULLIF(trim(p_mode), ''), 'compatible') = 'exact' THEN
-      EXISTS (
-        SELECT 1
-        FROM jsonb_array_elements_text(p_intents) AS i(key)
-        WHERE public.makker_filter_normalize_intent(i.key)
-          = public.makker_filter_normalize_intent(p_subject_intent)
+DECLARE
+  v_caller uuid := auth.uid();
+  v_match public.matches%ROWTYPE;
+  v_creator public.profiles%ROWTYPE;
+  v_match_elo integer;
+  v_title text;
+  v_body text;
+  v_notified integer := 0;
+  v_recipient_ids uuid[] := '{}'::uuid[];
+  v_row record;
+  v_daily integer;
+  v_elo_min integer;
+  v_elo_max integer;
+  v_max_per_match constant integer := 8;
+  v_max_per_day constant integer := 2;
+  v_elo_window constant integer := 250;
+  v_inactive_days constant integer := 21;
+BEGIN
+  IF v_caller IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'Ikke logget ind');
+  END IF;
+
+  SELECT * INTO v_match FROM public.matches m WHERE m.id = p_match_id;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'Kamp findes ikke');
+  END IF;
+
+  IF COALESCE(v_match.status, '') <> 'open'
+     OR COALESCE(v_match.match_type, 'open') = 'closed'
+     OR COALESCE(v_match.current_players, 0) >= COALESCE(v_match.max_players, 4) THEN
+    RETURN jsonb_build_object('ok', true, 'notified', 0, 'recipient_ids', '[]'::jsonb, 'skipped', 'not_open');
+  END IF;
+
+  IF v_caller IS DISTINCT FROM v_match.creator_id
+     AND NOT COALESCE(public.is_user_admin_verified(v_caller), public.is_admin(), false) THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'Kun kampens opretter kan underrette watchere');
+  END IF;
+
+  SELECT * INTO v_creator FROM public.profiles p WHERE p.id = v_match.creator_id;
+  v_match_elo := GREATEST(100, ROUND(COALESCE(v_creator.elo_rating, 1000))::integer);
+  v_elo_min := v_match_elo - v_elo_window;
+  v_elo_max := v_match_elo + v_elo_window;
+
+  v_title := 'Ny kamp passer til dig';
+  v_body := format(
+    'Åben kamp på %s%s%s · ELO ~%s',
+    COALESCE(NULLIF(trim(v_match.court_name), ''), 'en bane'),
+    CASE WHEN v_match.date IS NOT NULL THEN ' · ' || to_char(v_match.date::date, 'DD/MM') ELSE '' END,
+    CASE WHEN v_match.time IS NOT NULL THEN ' kl. ' || left(v_match.time::text, 5) ELSE '' END,
+    v_match_elo
+  );
+
+  FOR v_row IN
+    SELECT p.id AS user_id
+    FROM public.profiles p
+    WHERE p.match_watch_enabled = true
+      AND COALESCE(p.is_banned, false) = false
+      AND p.id <> v_match.creator_id
+      AND p.id <> ALL (
+        SELECT mp.user_id FROM public.match_players mp WHERE mp.match_id = p_match_id
       )
-    ELSE EXISTS (
-      SELECT 1
-      FROM jsonb_array_elements_text(p_intents) AS i(key)
-      WHERE public.makker_filter_intent_compat_score(i.key, p_subject_intent) >= 0.6
-    )
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.makker_filter_play_style_ok(p_filter_style text, p_subject_style text)
-RETURNS boolean
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT
-    COALESCE(NULLIF(trim(p_filter_style), ''), 'all') = 'all'
-    OR NULLIF(trim(coalesce(p_subject_style, '')), '') IS NULL
-    OR trim(p_subject_style) = 'Ved ikke endnu'
-    OR trim(p_subject_style) = trim(p_filter_style);
-$$;
-
-CREATE OR REPLACE FUNCTION public.makker_filter_availability_overlap(p_filter jsonb, p_subject text[])
-RETURNS boolean
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE
-    WHEN p_filter IS NULL OR jsonb_array_length(p_filter) = 0 THEN true
-    WHEN EXISTS (
-      SELECT 1
-      FROM jsonb_array_elements_text(p_filter) AS f(slot)
-      WHERE lower(trim(f.slot)) = 'flexibel'
-    ) THEN true
-    WHEN p_subject IS NULL OR array_length(p_subject, 1) IS NULL OR array_length(p_subject, 1) = 0 THEN true
-    ELSE EXISTS (
-      SELECT 1
-      FROM jsonb_array_elements_text(p_filter) AS f(slot)
-      WHERE lower(trim(f.slot)) = ANY (
-        SELECT lower(trim(x)) FROM unnest(p_subject) AS x
+      AND (
+        NULLIF(trim(COALESCE(v_creator.area, '')), '') IS NULL
+        OR lower(trim(COALESCE(p.area, ''))) = lower(trim(v_creator.area))
       )
-    )
-  END;
+      AND GREATEST(100, ROUND(COALESCE(p.elo_rating, 1000))::integer) BETWEEN v_elo_min AND v_elo_max
+      AND (
+        p.last_active_at IS NULL
+        OR p.last_active_at >= (now() - (v_inactive_days || ' days')::interval)
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM public.notifications n
+        WHERE n.user_id = p.id
+          AND n.type = 'match_watch_match'
+          AND n.match_id = p_match_id
+          AND n.created_at >= now() - interval '7 days'
+      )
+    ORDER BY
+      (CASE WHEN p.seeking_match = true THEN 1 ELSE 0 END) DESC,
+      p.last_active_at DESC NULLS LAST,
+      p.id
+    LIMIT v_max_per_match * 3
+  LOOP
+    EXIT WHEN v_notified >= v_max_per_match;
+
+    v_daily := public.discovery_notifications_today_count(
+      v_row.user_id,
+      ARRAY['match_watch_match']::text[]
+    );
+    IF v_daily >= v_max_per_day THEN
+      CONTINUE;
+    END IF;
+
+    INSERT INTO public.notifications (user_id, type, title, body, match_id, read)
+    VALUES (v_row.user_id, 'match_watch_match', v_title, v_body, p_match_id, false);
+
+    v_notified := v_notified + 1;
+    v_recipient_ids := array_append(v_recipient_ids, v_row.user_id);
+  END LOOP;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'notified', v_notified,
+    'recipient_ids', to_jsonb(v_recipient_ids),
+    'notify_title', v_title,
+    'notify_body', v_body,
+    'match_elo', v_match_elo
+  );
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN jsonb_build_object('ok', false, 'error', SQLERRM);
+END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.makker_filter_level_bounds(
-  p_prefs jsonb,
-  p_watcher_level numeric
-)
-RETURNS TABLE (level_min numeric, level_max numeric)
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT
-    CASE COALESCE(NULLIF(trim(p_prefs->>'partnerLevel'), ''), '')
-      WHEN 'wide' THEN 1.0
-      WHEN 'stronger' THEN GREATEST(1.0, public.match_filter_prefs_level(p_prefs, p_watcher_level))
-      WHEN 'weaker' THEN GREATEST(1.0,
-        public.match_filter_prefs_level(p_prefs, p_watcher_level)
-        - public.match_filter_level_window_from_prefs(p_prefs) - 0.15)
-      ELSE GREATEST(1.0,
-        public.match_filter_prefs_level(p_prefs, p_watcher_level)
-        - public.match_filter_level_window_from_prefs(p_prefs))
-    END AS level_min,
-    CASE COALESCE(NULLIF(trim(p_prefs->>'partnerLevel'), ''), '')
-      WHEN 'wide' THEN 7.0
-      WHEN 'stronger' THEN LEAST(7.0,
-        public.match_filter_prefs_level(p_prefs, p_watcher_level)
-        + public.match_filter_level_window_from_prefs(p_prefs) + 0.15)
-      WHEN 'weaker' THEN LEAST(7.0, public.match_filter_prefs_level(p_prefs, p_watcher_level))
-      ELSE LEAST(7.0,
-        public.match_filter_prefs_level(p_prefs, p_watcher_level)
-        + public.match_filter_level_window_from_prefs(p_prefs))
-    END AS level_max;
-$$;
+REVOKE ALL ON FUNCTION public.notify_match_watchers(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.notify_match_watchers(uuid) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.notify_makker_watchers(p_subject_user_id uuid)
 RETURNS jsonb

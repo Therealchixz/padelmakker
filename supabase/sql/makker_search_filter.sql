@@ -1,5 +1,5 @@
 -- Mit makker-filter: makker_search_prefs + notify_makker_watchers (niveau + region).
--- Deler discovery_notifications_today_count med kamp-watch (max 2/dag).
+-- Makker-notifikationer: max 2/dag (kamp-watch har egne 2/dag — se discovery_notification_limits.sql).
 
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS makker_search_prefs jsonb NOT NULL DEFAULT '{}'::jsonb;
@@ -152,7 +152,10 @@ BEGIN
       END IF;
     END IF;
 
-    v_daily := public.discovery_notifications_today_count(v_row.user_id);
+    v_daily := public.discovery_notifications_today_count(
+      v_row.user_id,
+      ARRAY['makker_suggestion']::text[]
+    );
     IF v_daily >= v_max_per_day THEN
       CONTINUE;
     END IF;

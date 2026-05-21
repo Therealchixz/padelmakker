@@ -2,7 +2,13 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
-import { REGIONS, DAYS_OF_WEEK, levelLabel, seekingVisibleDurationLabel } from '../lib/platformConstants';
+import {
+  REGIONS,
+  DAYS_OF_WEEK,
+  levelLabel,
+  seekingVisibleDurationLabel,
+  DISCOVERY_NOTIFY_DAILY_PER_CHANNEL,
+} from '../lib/platformConstants';
 import { normalizeStringArrayField } from '../lib/profileUtils';
 import {
   normalizeMatchSearchPrefs,
@@ -281,7 +287,8 @@ export function MatchSearchFilterPage({ user, showToast }) {
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Notifikationer</div>
               <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
-                Push og in-app når en ny åben kamp passer (max 2 om dagen).
+                Push og in-app når en ny åben kamp passer (max{' '}
+                {DISCOVERY_NOTIFY_DAILY_PER_CHANNEL} kamp-beskeder om dagen — uafhængigt af makker-filter).
               </div>
             </div>
           </div>

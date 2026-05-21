@@ -16,23 +16,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_match_watch_active
   ON public.profiles (match_watch_enabled)
   WHERE match_watch_enabled = true AND COALESCE(is_banned, false) = false;
 
--- Antal discovery-notifikationer i dag (kamp-watch + senere makker).
-CREATE OR REPLACE FUNCTION public.discovery_notifications_today_count(p_user_id uuid)
-RETURNS integer
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT count(*)::integer
-  FROM public.notifications n
-  WHERE n.user_id = p_user_id
-    AND n.type IN ('match_watch_match', 'makker_suggestion')
-    AND n.created_at >= date_trunc('day', now() AT TIME ZONE 'Europe/Copenhagen');
-$$;
-
-REVOKE ALL ON FUNCTION public.discovery_notifications_today_count(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.discovery_notifications_today_count(uuid) TO authenticated;
+-- Antal discovery-notifikationer i dag — se discovery_notification_limits.sql (2 kamp + 2 makker separat).
 
 CREATE OR REPLACE FUNCTION public.notify_match_watchers(p_match_id uuid)
 RETURNS jsonb
@@ -126,7 +110,10 @@ BEGIN
   LOOP
     EXIT WHEN v_notified >= v_max_per_match;
 
-    v_daily := public.discovery_notifications_today_count(v_row.user_id);
+    v_daily := public.discovery_notifications_today_count(
+      v_row.user_id,
+      ARRAY['match_watch_match']::text[]
+    );
     IF v_daily >= v_max_per_day THEN
       CONTINUE;
     END IF;
