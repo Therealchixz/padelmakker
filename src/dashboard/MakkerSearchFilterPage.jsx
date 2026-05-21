@@ -19,7 +19,10 @@ import {
   PLAY_STYLES,
   AVAILABILITY,
 } from '../lib/makkerSearchFilterUtils';
-import { levelRangeForMakkerPartnerPref } from '../lib/makkerFilterMatch';
+import {
+  levelRangeForMakkerPartnerPref,
+  normalizeMakkerPartnerLevel,
+} from '../lib/makkerFilterMatch';
 import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
 import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
 import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
@@ -43,6 +46,22 @@ function canonicalIntentKey(value) {
   if (v.includes('fast')) return 'fast_makker';
   if (v.includes('turnering')) return 'turnering';
   return v.replace(/\s+/g, '_');
+}
+
+function effectivePartnerLevel(partnerLevel, profile) {
+  const raw = partnerLevel ?? '';
+  if (raw) return raw;
+  return normalizeMakkerPartnerLevel('', profile) || 'same';
+}
+
+function toleranceSectionTitle(partnerLevel) {
+  if (partnerLevel === 'stronger') return 'Hvor meget over dit niveau?';
+  if (partnerLevel === 'weaker') return 'Hvor meget under dit niveau?';
+  return 'Hvor tæt på dit niveau?';
+}
+
+function levelRangeSummary(min, max) {
+  return `${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`;
 }
 
 export function MakkerSearchFilterPage({ user, showToast }) {
@@ -86,10 +105,13 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   const description = describeMakkerFilter(prefs, user);
   const regionOk = Boolean(resolveMakkerFilterRegion(prefs, user) || prefs.region);
   const levelWindow = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
+  const partnerLevel = prefs.partnerLevel ?? '';
+  const effectivePref = effectivePartnerLevel(partnerLevel, user);
+  const showTolerance = partnerLevel !== 'wide';
   const levelSpan = levelRangeForMakkerPartnerPref(
     filterLevel,
     levelWindow,
-    prefs.partnerLevel,
+    partnerLevel,
     user,
   );
 
@@ -278,111 +300,158 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         </div>
       )}
 
-      <div style={labelStyle}>Dit niveau</div>
       <div
         style={{
           background: theme.surfaceAlt,
           border: `1px solid ${theme.border}`,
-          borderRadius: 10,
-          padding: '12px 14px',
-          marginBottom: 8,
-          fontSize: 13,
-          color: theme.text,
+          borderRadius: 12,
+          padding: '14px',
+          marginBottom: 18,
         }}
       >
-        <strong>{formatPlaytomicLevel(profileLevel)}</strong>
-        <div style={{ fontSize: 11, color: theme.textLight, marginTop: 6 }}>
-          Hentes fra din profil. Under Profil → Rediger kan du finjustere.
+        <div style={{ ...labelStyle, marginBottom: 6 }}>Makker-niveau</div>
+        <p style={{ fontSize: 12, color: theme.textMid, margin: '0 0 12px', lineHeight: 1.45 }}>
+          Dit niveau: <strong style={{ color: theme.text }}>{formatPlaytomicLevel(profileLevel)}</strong>
+          <span style={{ color: theme.textLight }}> · fra profilen</span>
+        </p>
+
+        <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, marginBottom: 6 }}>
+          Hvad leder du efter?
         </div>
-      </div>
-
-      <div style={labelStyle}>Ønsket makkerniveau</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-        {MAKKER_PARTNER_LEVEL_FILTERS.map(({ value, label, hint }) => {
-          const active = (prefs.partnerLevel ?? '') === value;
-          return (
-            <button
-              key={value || 'profile'}
-              type="button"
-              onClick={() => set({ partnerLevel: value })}
-              style={{
-                ...btn(active),
-                textAlign: 'left',
-                padding: '8px 12px',
-                fontSize: 12,
-              }}
-            >
-              <span style={{ fontWeight: 600 }}>{label}</span>
-              {hint ? <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.85 }}>{hint}</span> : null}
-            </button>
-          );
-        })}
-      </div>
-
-      {(prefs.partnerLevel === '' || prefs.partnerLevel === 'same') && (
-        <>
-          <div style={labelStyle}>Tolerance (±)</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-            {LEVEL_WINDOW_CHOICES.map(({ value, label, hint }) => {
-              const active = (prefs.levelWindow ?? DEFAULT_LEVEL_WINDOW) === value;
-              const tolLabel = `±${String(value).replace('.', ',')}`;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => set({ levelWindow: value })}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {MAKKER_PARTNER_LEVEL_FILTERS.map(({ value, label, hint }) => {
+            const active = partnerLevel === value;
+            const preview = levelRangeForMakkerPartnerPref(
+              filterLevel,
+              levelWindow,
+              value,
+              user,
+            );
+            const rangeText = levelRangeSummary(preview.min, preview.max);
+            return (
+              <button
+                key={value || 'profile'}
+                type="button"
+                onClick={() => set({ partnerLevel: value })}
+                style={{
+                  ...btn(active),
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  fontSize: 12,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ fontWeight: 600, display: 'block' }}>{label}</span>
+                  {hint ? (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 400,
+                        color: active ? 'rgba(255,255,255,0.82)' : theme.textLight,
+                      }}
+                    >
+                      {hint}
+                    </span>
+                  ) : null}
+                </span>
+                <span
                   style={{
-                    ...btn(active),
-                    textAlign: 'left',
-                    padding: '8px 12px',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: 8,
+                    flexShrink: 0,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    fontVariantNumeric: 'tabular-nums',
+                    color: active ? theme.onAccent : theme.textMid,
                   }}
                 >
-                  <span style={{ minWidth: 0 }}>
-                    <span style={{ fontWeight: 600, color: active ? theme.onAccent : theme.text }}>
-                      {label}
-                    </span>
-                    {hint ? (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 400,
-                          marginLeft: 6,
-                          color: active ? 'rgba(255,255,255,0.82)' : theme.textLight,
-                        }}
-                      >
-                        {hint}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span
+                  {rangeText}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {showTolerance ? (
+          <div
+            style={{
+              marginTop: 14,
+              paddingTop: 14,
+              borderTop: `1px solid ${theme.border}`,
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, marginBottom: 8 }}>
+              {toleranceSectionTitle(effectivePref)}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {LEVEL_WINDOW_CHOICES.map(({ value, label }) => {
+                const active = (prefs.levelWindow ?? DEFAULT_LEVEL_WINDOW) === value;
+                const tol = `±${String(value).replace('.', ',')}`;
+                const { min, max } = levelRangeForMakkerPartnerPref(
+                  filterLevel,
+                  value,
+                  partnerLevel,
+                  user,
+                );
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => set({ levelWindow: value })}
+                    title={`${label}: ${levelRangeSummary(min, max)}`}
                     style={{
-                      flexShrink: 0,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      fontVariantNumeric: 'tabular-nums',
-                      color: active ? theme.onAccent : theme.textMid,
+                      ...btn(active),
+                      padding: '8px 10px',
+                      fontSize: 11,
+                      lineHeight: 1.3,
+                      textAlign: 'center',
+                      minWidth: 72,
                     }}
                   >
-                    {tolLabel}
-                  </span>
-                </button>
-              );
-            })}
+                    <span style={{ display: 'block', fontWeight: 700 }}>{tol}</span>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 10,
+                        fontWeight: 500,
+                        opacity: active ? 0.9 : 0.75,
+                        marginTop: 2,
+                      }}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </>
-      )}
+        ) : null}
 
-      <p style={{ fontSize: 11, color: theme.textLight, marginBottom: 18, lineHeight: 1.45 }}>
-        Med niveau {formatPlaytomicLevel(filterLevel)} matcher vi spillere mellem{' '}
-        <strong>{formatPlaytomicLevel(levelSpan.min)}</strong> og{' '}
-        <strong>{formatPlaytomicLevel(levelSpan.max)}</strong> der søger makker.
-      </p>
+        <p
+          style={{
+            fontSize: 11,
+            color: theme.textLight,
+            margin: '14px 0 0',
+            lineHeight: 1.45,
+            paddingTop: showTolerance ? 0 : 14,
+            borderTop: showTolerance ? 'none' : `1px solid ${theme.border}`,
+          }}
+        >
+          {partnerLevel === 'wide' ? (
+            <>
+              Vi matcher <strong>alle niveauer</strong> i regionen der søger makker.
+            </>
+          ) : (
+            <>
+              Vi matcher spillere mellem{' '}
+              <strong>{formatPlaytomicLevel(levelSpan.min)}</strong> og{' '}
+              <strong>{formatPlaytomicLevel(levelSpan.max)}</strong> der søger makker.
+            </>
+          )}
+        </p>
+      </div>
 
       <div style={labelStyle}>Hvornår kan du spille? (valgfrit)</div>
       <p style={{ fontSize: 11, color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
