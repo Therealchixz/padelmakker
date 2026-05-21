@@ -6,7 +6,6 @@ export function DateInputField({
   value,
   onChange,
   labelStyle,
-  inputStyle,
   min,
   className = '',
 }) {
@@ -18,10 +17,10 @@ export function DateInputField({
       <div className={`pm-date-input-inner${empty ? ' pm-date-input-inner--empty' : ''}`}>
         <input
           type="date"
+          className="pm-date-input-native"
           value={value}
           min={min}
           onChange={onChange}
-          style={inputStyle}
           aria-label={typeof label === 'string' ? label : undefined}
         />
         {empty ? (

@@ -3018,8 +3018,14 @@ button,
 .pm-create-form-anchor {
   scroll-margin-top: 88px;
   scroll-margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  overflow-x: clip;
+  box-sizing: border-box;
+  overflow: hidden;
   max-width: 100%;
+}
+
+.pm-create-form-anchor > * {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .pm-pill-tab {
@@ -3711,37 +3717,70 @@ button,
   min-width: 0;
 }
 
+/* Ramme på wrapper — native date-input tegner ofte ud over på mobil */
 .pm-date-input-inner {
   position: relative;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.pm-date-input-inner input[type="date"] {
-  display: block;
+  display: flex;
+  align-items: center;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   min-height: var(--pm-control-h);
   box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius-md);
+  background: var(--pm-surface);
+}
+
+.pm-date-input-native {
+  flex: 1 1 auto;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: calc(var(--pm-control-h) - 2px);
   margin: 0;
+  padding: 10px calc(var(--pm-space-2) + 2px);
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  font-family: var(--pm-font);
+  font-size: 14px;
+  color: var(--pm-text);
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.pm-date-input-native::-webkit-calendar-picker-indicator {
+  flex-shrink: 0;
+  margin-left: 4px;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.pm-date-input-native::-webkit-datetime-edit,
+.pm-date-input-native::-webkit-datetime-edit-fields-wrapper {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
 }
 
 /* Tom dato: skjul browserens tomme visning, vis dd-mm-åååå-hint */
-.pm-date-input-inner--empty input[type="date"] {
+.pm-date-input-inner--empty .pm-date-input-native {
   color: transparent;
 }
 
-.pm-date-input-inner--empty input[type="date"]:focus {
+.pm-date-input-inner--empty .pm-date-input-native:focus {
   color: var(--pm-text);
 }
 
 .pm-date-input-hint {
   position: absolute;
   left: calc(var(--pm-space-2) + 2px);
-  right: 36px;
+  right: 40px;
   top: 50%;
   transform: translateY(-50%);
   font-family: var(--pm-font);
@@ -3757,6 +3796,7 @@ button,
 .pm-form-2col--dates {
   width: 100%;
   max-width: 100%;
+  grid-template-columns: 1fr;
 }
 
 /* Dato-inputs har stor min-bredde på mobil — stak felter under 640px */
