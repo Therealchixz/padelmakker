@@ -40,7 +40,8 @@ export function RankingTab({ user }) {
   const [profileById, setProfileById] = useState({});
   const [eloHistory, setEloHistory] = useState([]);
   const [americanoHistory, setAmericanoHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -64,6 +65,9 @@ export function RankingTab({ user }) {
 
   const profileOffsetRef = useRef(0);
   const profileFetchGenRef = useRef(0);
+  const periodHistoryLoadedRef = useRef(false);
+  const prevPeriodRef = useRef(period);
+  const prevRankModeRef = useRef(rankMode);
 
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { bundleLoading: myBundleLoading, profileFresh: myProfileFresh, ratedRows: myRatedRows } =
@@ -172,47 +176,121 @@ export function RankingTab({ user }) {
     [orderColumn],
   );
 
+  const loadAllTimeProfiles = useCallback(
+    async ({ background = false } = {}) => {
+      profileFetchGenRef.current += 1;
+      const gen = profileFetchGenRef.current;
+      setLoadingMore(false);
+      setHasMore(false);
+      setLoadError(null);
+      if (!background) {
+        setInitialLoading(true);
+        setPlayers([]);
+        profileOffsetRef.current = 0;
+      } else {
+        setRefreshing(true);
+      }
+      try {
+        await fetchProfilePage(0, false);
+        if (gen === profileFetchGenRef.current) void fetchMyAllTimeRank();
+      } catch (e) {
+        console.error(e);
+        if (gen === profileFetchGenRef.current) {
+          setLoadError('Kunne ikke hente ranking. Tjek din forbindelse og prøv igen.');
+        }
+      } finally {
+        if (gen === profileFetchGenRef.current) {
+          setInitialLoading(false);
+          setRefreshing(false);
+        }
+      }
+    },
+    [fetchProfilePage, fetchMyAllTimeRank],
+  );
+
+  const ensurePeriodHistory = useCallback(
+    async ({ background = false } = {}) => {
+      if (periodHistoryLoadedRef.current) return;
+      profileFetchGenRef.current += 1;
+      const gen = profileFetchGenRef.current;
+      setLoadError(null);
+      if (!background) setInitialLoading(true);
+      else setRefreshing(true);
+      try {
+        await loadPeriodHistory();
+        if (gen === profileFetchGenRef.current) periodHistoryLoadedRef.current = true;
+      } catch (e) {
+        console.error(e);
+        if (gen === profileFetchGenRef.current) {
+          setLoadError('Kunne ikke hente ranking. Tjek din forbindelse og prøv igen.');
+        }
+      } finally {
+        if (gen === profileFetchGenRef.current) {
+          setInitialLoading(false);
+          setRefreshing(false);
+        }
+      }
+    },
+    [loadPeriodHistory],
+  );
+
   const resetAndLoad = useCallback(async () => {
     profileFetchGenRef.current += 1;
-    const gen = profileFetchGenRef.current;
-    setLoading(true);
     setLoadingMore(false);
     setHasMore(false);
     setVisibleCount(RANKING_PAGE_SIZE);
-    setPlayers([]);
     setProfileById({});
     profileOffsetRef.current = 0;
     setMyGlobalRank(null);
     setLoadError(null);
-
-    try {
-      if (period === 'all') {
-        setEloHistory([]);
-        setAmericanoHistory([]);
-        await fetchProfilePage(0, false);
-        if (gen === profileFetchGenRef.current) void fetchMyAllTimeRank();
-      } else {
-        await loadPeriodHistory();
-      }
-    } catch (e) {
-      console.error(e);
-      if (gen === profileFetchGenRef.current) {
-        setLoadError('Kunne ikke hente ranking. Tjek din forbindelse og prøv igen.');
-      }
-    } finally {
-      if (gen === profileFetchGenRef.current) setLoading(false);
+    periodHistoryLoadedRef.current = false;
+    setEloHistory([]);
+    setAmericanoHistory([]);
+    if (period === 'all') {
+      await loadAllTimeProfiles({ background: false });
+    } else {
+      await ensurePeriodHistory({ background: false });
     }
-  }, [period, fetchProfilePage, loadPeriodHistory, fetchMyAllTimeRank]);
+  }, [period, loadAllTimeProfiles, ensurePeriodHistory]);
 
   useEffect(() => {
-    void resetAndLoad();
-  }, [resetAndLoad, eloSyncKey, rankMode]);
+    periodHistoryLoadedRef.current = false;
+    setEloHistory([]);
+    setAmericanoHistory([]);
+    setVisibleCount(RANKING_PAGE_SIZE);
+    if (period === 'all') {
+      void loadAllTimeProfiles({ background: false });
+    } else {
+      void ensurePeriodHistory({ background: false });
+    }
+    // Kun ved ELO-sync — ikke ved skift mellem uge/måned/alle tider
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eloSyncKey]);
+
+  useEffect(() => {
+    if (prevPeriodRef.current === period) return;
+    prevPeriodRef.current = period;
+    setVisibleCount(RANKING_PAGE_SIZE);
+    setMyGlobalRank(null);
+    if (period === 'all') {
+      void loadAllTimeProfiles({ background: players.length > 0 });
+    } else {
+      void ensurePeriodHistory({ background: true });
+    }
+  }, [period, loadAllTimeProfiles, ensurePeriodHistory, players.length]);
+
+  useEffect(() => {
+    if (prevRankModeRef.current === rankMode) return;
+    prevRankModeRef.current = rankMode;
+    setVisibleCount(RANKING_PAGE_SIZE);
+    if (period === 'all') void loadAllTimeProfiles({ background: true });
+  }, [rankMode, period, loadAllTimeProfiles]);
 
   useEffect(() => {
     if (period === 'all' && !myBundleLoading && myId) {
       void fetchMyAllTimeRank();
     }
-  }, [period, myBundleLoading, myId, fetchMyAllTimeRank, myAllTimeElo, myAllTimeAmericanoElo]);
+  }, [period, myBundleLoading, myId, fetchMyAllTimeRank, myAllTimeElo, myAllTimeAmericanoElo, isAmericano]);
 
   useEffect(() => {
     let lastVisFetch = 0;
@@ -222,11 +300,12 @@ export function RankingTab({ user }) {
       const now = Date.now();
       if (now - lastVisFetch < throttleMs) return;
       lastVisFetch = now;
-      void resetAndLoad();
+      if (period === 'all') void loadAllTimeProfiles({ background: true });
+      else void ensurePeriodHistory({ background: true });
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
-  }, [resetAndLoad]);
+  }, [period, loadAllTimeProfiles, ensurePeriodHistory]);
 
   const periodRankList = useMemo(() => {
     if (period === 'all') return [];
@@ -462,21 +541,14 @@ export function RankingTab({ user }) {
     { id: 'all', label: 'Alle tider' },
   ];
 
-  if (loading) {
-    return (
-      <div className="pm-state-card" style={{ textAlign: 'center', padding: '32px 20px' }}>
-        <div className="pm-state-copy" style={{ color: theme.textLight, fontSize: '14px' }}>
-          Indlæser ranking...
-        </div>
-      </div>
-    );
-  }
+  const showInitialLoader = initialLoading && sorted.length === 0;
 
-  if (loadError && sorted.length === 0) {
-    return (
-      <div>
-        <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Ranking</h2>
-        <div className="pm-state-card pm-state-card--error">
+  return (
+    <div>
+      <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Ranking</h2>
+
+      {loadError && sorted.length === 0 ? (
+        <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '16px' }}>
           <div className="pm-state-icon" aria-hidden="true">⚠️</div>
           <div className="pm-state-title">Kunne ikke hente ranking</div>
           <div className="pm-state-copy">{loadError}</div>
@@ -486,15 +558,7 @@ export function RankingTab({ user }) {
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Ranking</h2>
-
-      {loadError ? (
+      ) : loadError ? (
         <div
           className="pm-ui-card"
           style={{
@@ -540,6 +604,14 @@ export function RankingTab({ user }) {
         {rankModeLabel} · {periodLabels[period]} · {periodInfo[period]}
       </div>
 
+      <div
+        className="pm-rank-body"
+        style={{
+          opacity: refreshing ? 0.72 : 1,
+          transition: 'opacity 0.15s ease',
+          pointerEvents: refreshing ? 'none' : undefined,
+        }}
+      >
       <div className="pm-rank-hero">
         <div className="pm-rank-hero-kicker">
           Din placering · {rankModeLabel} · {periodLabels[period]}
@@ -597,7 +669,13 @@ export function RankingTab({ user }) {
         )}
       </div>
 
-      {sorted.length === 0 ? (
+      {showInitialLoader ? (
+        <div className="pm-state-card" style={{ textAlign: 'center', padding: '32px 20px' }}>
+          <div className="pm-state-copy" style={{ color: theme.textLight, fontSize: '14px' }}>
+            Indlæser ranking...
+          </div>
+        </div>
+      ) : sorted.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 20px', color: theme.textLight }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>📊</div>
           <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
@@ -726,7 +804,7 @@ export function RankingTab({ user }) {
         <button
           type="button"
           onClick={() => void loadMore()}
-          disabled={loadingMore}
+          disabled={loadingMore || refreshing}
           style={{
             ...btn(false),
             width: '100%',
@@ -740,6 +818,7 @@ export function RankingTab({ user }) {
           {loadingMore ? 'Indlæser…' : `Indlæs ${RANKING_PAGE_SIZE} flere`}
         </button>
       )}
+      </div>
 
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
     </div>
