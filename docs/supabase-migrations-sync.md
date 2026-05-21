@@ -29,6 +29,7 @@ Efter `db push` på prod og grøn **Apply Supabase migrations** bør Preview oft
 
 - Remote har versioner der **mangler** lokalt → kør stub-scriptet igen efter nye manuelle migrationer på prod.
 - Lokalt har versioner der **ikke** findes på remote → fjern eller kør dem på prod først.
+- Remote har MCP/dashboard-versioner uden fil i repo (`Remote migration versions not found in local`) → kør `node scripts/sync-remote-migration-stubs.mjs` eller brug stub-filer `*_mcp_remote_history_sync.sql`.
 
 ## Nye ændringer fremover
 

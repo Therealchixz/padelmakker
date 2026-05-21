@@ -49,6 +49,25 @@ const REMOTE = [
   ['20260520123829', 'notifications_remaining_v2'],
   ['20260520193927', 'notification_invite_push_fixes'],
   ['20260520193932', 'drop_duplicate_notification_rpc_overloads'],
+  // MCP/dashboard runs with timestamps not in original repo (CI db push kræver lokale stubs)
+  ['20260521074215', 'mcp_remote_history_sync'],
+  ['20260521074255', 'mcp_remote_history_sync'],
+  ['20260521093418', 'mcp_remote_history_sync'],
+  ['20260521094121', 'mcp_remote_history_sync'],
+  ['20260521094149', 'mcp_remote_history_sync'],
+  ['20260521094338', 'mcp_remote_history_sync'],
+  ['20260521100123', 'mcp_remote_history_sync'],
+  ['20260521100239', 'mcp_remote_history_sync'],
+  ['20260521100323', 'mcp_remote_history_sync'],
+  ['20260521104600', 'mcp_remote_history_sync'],
+  ['20260521104656', 'mcp_remote_history_sync'],
+  ['20260521105008', 'mcp_remote_history_sync'],
+  ['20260521105328', 'mcp_remote_history_sync'],
+  ['20260521105411', 'mcp_remote_history_sync'],
+  ['20260521105835', 'mcp_remote_history_sync'],
+  ['20260521105911', 'mcp_remote_history_sync'],
+  ['20260521105936', 'mcp_remote_history_sync'],
+  ['20260521122527', 'mcp_remote_history_sync'],
 ];
 
 const STUB = `-- Migration already applied on production (history sync stub).
