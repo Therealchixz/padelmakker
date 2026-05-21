@@ -3703,6 +3703,13 @@ button,
   max-width: 100%;
 }
 
+.pm-form-field input[type="date"] {
+  display: block;
+  width: 100%;
+  min-height: var(--pm-control-h);
+  box-sizing: border-box;
+}
+
 /* Dato-inputs har stor min-bredde på mobil — stak felter under 640px */
 @media (max-width: 640px) {
   .pm-form-2col {

@@ -1984,11 +1984,11 @@ export function LigaTab({
           <div className="pm-form-2col" style={{ marginBottom: '10px' }}>
             <div className="pm-form-field">
               <label style={labelStyle}>Startdato</label>
-              <input type="date" value={createForm.start_date} onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))} style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} />
+              <input type="date" value={createForm.start_date} onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))} style={inputStyle} />
             </div>
             <div className="pm-form-field">
               <label style={labelStyle}>Slutdato</label>
-              <input type="date" value={createForm.end_date} onChange={e => setCreateForm(f => ({ ...f, end_date: e.target.value }))} style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }} />
+              <input type="date" value={createForm.end_date} onChange={e => setCreateForm(f => ({ ...f, end_date: e.target.value }))} style={inputStyle} />
             </div>
           </div>
           <label style={labelStyle}>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
@@ -1998,7 +1998,7 @@ export function LigaTab({
             value={createForm.max_teams}
             onChange={e => setCreateForm(f => ({ ...f, max_teams: e.target.value }))}
             placeholder="Ubegrænset"
-            style={{ ...inputStyle, marginBottom: '14px', width: '140px' }}
+            style={{ ...inputStyle, marginBottom: '14px' }}
           />
           <div className="pm-form-submit" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button onClick={createLeague} disabled={busyId === 'create'} style={{ ...btn(true), fontSize: '13px' }}>
