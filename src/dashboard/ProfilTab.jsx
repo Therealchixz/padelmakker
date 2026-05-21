@@ -2,12 +2,12 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
-import { resolveDisplayName, sanitizeText, availabilityTags } from '../lib/platformUtils';
+import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
-import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, levelLabel, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, COURT_SIDES, levelLabel, INTENTS, PARTNER_LEVELS } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
-import { normalizeStringArrayField, canonicalRegionForForm, calcAge } from '../lib/profileUtils';
+import { canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { normalizeMatchSearchPrefs, describeMatchFilter } from '../lib/matchSearchFilterUtils';
 import { normalizeMakkerSearchPrefs, describeMakkerFilter } from '../lib/makkerSearchFilterUtils';
 import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
@@ -202,6 +202,21 @@ function formatUpdatedAtDa(value) {
   });
 }
 
+function persistRankingModeForProfile(mode) {
+  if (typeof localStorage === "undefined" || mode === "liga") return;
+  try {
+    localStorage.setItem("pm-rank-mode", mode === "americano" ? "americano" : "2v2");
+  } catch {
+    // Ignore storage issues in private mode / quota exceeded.
+  }
+}
+
+const PROFILE_MODE_LABELS = {
+  "2v2": "2v2",
+  americano: "Americano",
+  liga: "Liga",
+};
+
 export function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
@@ -264,7 +279,6 @@ export function ProfilTab({ user, showToast, setTab }) {
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
   const [avatarUploading, setAvatarUploading]       = useState(false);
   const [overviewMode, setOverviewMode] = useState("2v2");
-  const [eloGraphMode, setEloGraphMode] = useState("2v2");
   const [americanoEloHistoryRows, setAmericanoEloHistoryRows] = useState([]);
   const [americanoEloHistoryLoading, setAmericanoEloHistoryLoading] = useState(true);
   const [ligaLoading, setLigaLoading] = useState(true);
@@ -285,19 +299,10 @@ export function ProfilTab({ user, showToast, setTab }) {
   const relationsRef = useRef(null);
   const actionsRef = useRef(null);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const toggleAvail = (a) => setForm(f => {
-    const cur = normalizeStringArrayField(f.availability);
-    return { ...f, availability: cur.includes(a) ? cur.filter((x) => x !== a) : [...cur, a] };
-  });
-  const toggleDay = (d) => setForm(f => {
-    const cur = normalizeStringArrayField(f.available_days);
-    return { ...f, available_days: cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d] };
-  });
 
   useEffect(() => {
     if (!user?.id) {
       setOverviewMode("2v2");
-      setEloGraphMode("2v2");
       return;
     }
     const persistedMode = readProfileOverviewMode(user.id);
@@ -464,8 +469,6 @@ export function ProfilTab({ user, showToast, setTab }) {
 
   const handleSave = async () => {
     const region = canonicalRegionForForm(form.area) || form.area;
-    const availability = normalizeStringArrayField(form.availability);
-    const available_days = normalizeStringArrayField(form.available_days);
     setSaving(true);
     let avatarValue = form.avatar;
     if (pendingAvatarFile) {
@@ -491,8 +494,6 @@ export function ProfilTab({ user, showToast, setTab }) {
         court_side: form.court_side || null,
         bio: sanitizeText(form.bio.trim()),
         avatar: avatarValue,
-        availability,
-        available_days,
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
         birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
         birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
@@ -555,13 +556,23 @@ export function ProfilTab({ user, showToast, setTab }) {
       : overviewMode === "liga"
         ? ligaOverviewCards
         : twoVTwoOverviewCards;
-  const activeEloGraphData = eloGraphMode === "americano" ? americanoEloHistoryRows : eloHistory;
-  const activeEloGraphLoading = eloGraphMode === "americano" ? americanoEloHistoryLoading : statsLoading;
-  const activeEloGraphLabel = eloGraphMode === "americano" ? "Americano ELO" : "ELO";
-  const activeEloGraphEmptyText =
-    eloGraphMode === "americano"
-      ? "Afslut mindst 2 Americano-turneringer for at se din Americano-ELO graf."
-      : "Spil mindst 2 kampe for at se din ELO-graf.";
+  const is2v2Mode = overviewMode === "2v2";
+  const isAmericanoMode = overviewMode === "americano";
+  const isLigaMode = overviewMode === "liga";
+  const activeModeLabel = PROFILE_MODE_LABELS[overviewMode] || overviewMode;
+  const activeEloGraphData = isAmericanoMode ? americanoEloHistoryRows : eloHistory;
+  const activeEloGraphLoading = isAmericanoMode ? americanoEloHistoryLoading : statsLoading;
+  const activeEloGraphLabel = isAmericanoMode ? "Americano ELO" : "ELO";
+  const activeEloGraphEmptyText = isAmericanoMode
+    ? "Afslut mindst 2 Americano-turneringer for at se din Americano-ELO graf."
+    : "Spil mindst 2 kampe for at se din ELO-graf.";
+  const showPerformanceSection = is2v2Mode || isAmericanoMode;
+  const showRelationsSection =
+    is2v2Mode
+    && !statsLoading
+    && !partnerOpponentLoading
+    && partnerOpponentStats
+    && (partnerOpponentStats.partners.length > 0 || partnerOpponentStats.opponents.length > 0);
   const activeOverviewSource =
     overviewMode === "americano"
       ? "Datakilde: Americano-turneringer"
@@ -581,8 +592,12 @@ export function ProfilTab({ user, showToast, setTab }) {
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
           <button onClick={() => jumpToSection(overviewRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Overblik</button>
-          <button onClick={() => jumpToSection(performanceRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Performance</button>
-          <button onClick={() => jumpToSection(relationsRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Relationer</button>
+          {showPerformanceSection ? (
+            <button onClick={() => jumpToSection(performanceRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Performance</button>
+          ) : null}
+          {showRelationsSection ? (
+            <button onClick={() => jumpToSection(relationsRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Relationer</button>
+          ) : null}
           <button onClick={() => jumpToSection(actionsRef)} style={{ ...btn(false), padding: "6px 10px", fontSize: "11px", background: theme.surfaceAlt }}>Handlinger</button>
         </div>
 
@@ -609,8 +624,11 @@ export function ProfilTab({ user, showToast, setTab }) {
               </div>
               <div className="pm-profile-email" style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
               <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
-                {!statsLoading && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
-                {!statsLoading && <span style={tag(theme.blueBg, theme.blue)}>Americano ELO {americanoElo}</span>}
+                {!statsLoading && is2v2Mode && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
+                {!statsLoading && isAmericanoMode && <span style={tag(theme.blueBg, theme.blue)}>Americano ELO {americanoElo}</span>}
+                {!statsLoading && isLigaMode && !ligaLoading && ligaStats.matches > 0 && (
+                  <span style={tag(theme.blueBg, theme.blue)}>{ligaStats.matches} ligakampe</span>
+                )}
                 {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
                 {user.level != null && (
                   <span style={tag(theme.blueBg, theme.blue)}>
@@ -630,32 +648,29 @@ export function ProfilTab({ user, showToast, setTab }) {
           <MatchFilterProfileCard user={user} />
           <MakkerFilterProfileCard user={user} />
 
-          {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
-          {statsLoading || (overviewMode === "liga" && ligaLoading) ? (
-            <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px", marginBottom: "20px" }}>Indlæser statistik…</div>
-          ) : (
-          <>
           <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Overblik
           </div>
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
-            <button onClick={() => setOverviewMode("2v2")} style={{ ...btn(overviewMode === "2v2"), padding: "5px 10px", fontSize: "11px" }}>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "6px" }}>
+            <button type="button" onClick={() => setOverviewMode("2v2")} style={{ ...btn(overviewMode === "2v2"), padding: "5px 10px", fontSize: "11px" }}>
               2v2
             </button>
-            <button onClick={() => setOverviewMode("americano")} style={{ ...btn(overviewMode === "americano"), padding: "5px 10px", fontSize: "11px" }}>
+            <button type="button" onClick={() => setOverviewMode("americano")} style={{ ...btn(overviewMode === "americano"), padding: "5px 10px", fontSize: "11px" }}>
               Americano
             </button>
-            <button onClick={() => setOverviewMode("liga")} style={{ ...btn(overviewMode === "liga"), padding: "5px 10px", fontSize: "11px" }}>
+            <button type="button" onClick={() => setOverviewMode("liga")} style={{ ...btn(overviewMode === "liga"), padding: "5px 10px", fontSize: "11px" }}>
               Liga
             </button>
-            <span style={{ fontSize: "11px", color: theme.textLight, display: "inline-flex", alignItems: "center", paddingLeft: "2px" }}>
-              {overviewMode === "americano"
-                ? "Viser kun Americano-data"
-                : overviewMode === "liga"
-                  ? "Viser kun Liga-data"
-                  : "Viser kun 2v2-data"}
-            </span>
           </div>
+          <div style={{ fontSize: "11px", color: theme.textMid, marginBottom: "10px", lineHeight: 1.45 }}>
+            Alt under profilen (performance, relationer og genveje) følger <strong style={{ color: theme.text }}>{activeModeLabel}</strong>.
+          </div>
+
+          {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
+          {statsLoading || (overviewMode === "liga" && ligaLoading) ? (
+            <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px", marginBottom: "20px" }}>Indlæser {activeModeLabel}-statistik…</div>
+          ) : (
+          <>
           <div style={{ fontSize: "10px", color: theme.textLight, marginBottom: "10px" }}>
             {activeOverviewSource} · Sidst opdateret: {activeOverviewUpdatedAt}
           </div>
@@ -670,56 +685,19 @@ export function ProfilTab({ user, showToast, setTab }) {
           </>
           )}
 
-          {/* Availability — tidspunkter */}
-          {availabilityTags(user).length > 0 && (
-            <div style={{ marginBottom: "10px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tilgængelighed</div>
-              <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
-                {availabilityTags(user).map((a) => <span key={a} style={tag(theme.accentBg, theme.accent)}>{a}</span>)}
-              </div>
-            </div>
-          )}
-
-          {/* Availability — ugedage */}
-          {(() => {
-            const days = normalizeStringArrayField(user.available_days);
-            if (!days.length) return null;
-            return (
-              <div style={{ marginBottom: "16px" }}>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Spilledage</div>
-                <div style={{ display: "flex", gap: "4px" }}>
-                  {DAYS_OF_WEEK.map(({ key, label }) => {
-                    const active = days.includes(key);
-                    return (
-                      <div key={key} style={{ flex: 1, textAlign: "center", padding: "5px 2px", borderRadius: "6px", fontSize: "11px", fontWeight: 700, background: active ? theme.accent : "#F1F5F9", color: active ? "#fff" : theme.textLight }}>
-                        {label}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-
         </div>
 
+        {showPerformanceSection ? (
+        <>
         <div ref={performanceRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          Performance
+          Performance · {activeModeLabel}
         </div>
-        {/* ELO over tid */}
+        {/* ELO over tid — samme format som valgt i Overblik */}
         <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
-          <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", flexWrap: "wrap" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-              <TrendingUp size={16} color={theme.accent} /> {activeEloGraphLabel} over tid
-            </span>
-            <span style={{ display: "inline-flex", gap: "6px" }}>
-              <button onClick={() => setEloGraphMode("2v2")} style={{ ...btn(eloGraphMode === "2v2"), padding: "5px 10px", fontSize: "11px" }}>
-                2v2
-              </button>
-              <button onClick={() => setEloGraphMode("americano")} style={{ ...btn(eloGraphMode === "americano"), padding: "5px 10px", fontSize: "11px" }}>
-                Americano
-              </button>
-            </span>
+          <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+            <TrendingUp size={16} color={theme.accent} />
+            <span>{activeEloGraphLabel} over tid</span>
+            <span style={{ fontSize: "11px", fontWeight: 500, color: theme.textLight }}>({activeModeLabel})</span>
           </div>
           {activeEloGraphLoading ? (
             <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px" }}>Indlæser...</div>
@@ -732,8 +710,8 @@ export function ProfilTab({ user, showToast, setTab }) {
           )}
         </div>
 
-        {/* Ekstra statistik */}
-        {!statsLoading && eloGraphMode === "2v2" && (() => {
+        {/* Ekstra statistik — kun 2v2 */}
+        {!statsLoading && is2v2Mode && (() => {
           const { currentStreak, bestStreak } = winStreaksFromEloHistory(eloHistory);
 
           const monthStats = {};
@@ -776,8 +754,8 @@ export function ProfilTab({ user, showToast, setTab }) {
           );
         })()}
 
-        {/* Peak ELO + Seneste form */}
-        {!statsLoading && eloGraphMode === "2v2" && ratedRows.length > 0 && (
+        {/* Peak ELO + Seneste form — kun 2v2 */}
+        {!statsLoading && is2v2Mode && ratedRows.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginBottom: "10px" }}>
             {peakElo && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
@@ -802,14 +780,16 @@ export function ProfilTab({ user, showToast, setTab }) {
             )}
           </div>
         )}
+        </>
+        ) : null}
 
-        {(!statsLoading && !partnerOpponentLoading && partnerOpponentStats && (partnerOpponentStats.partners.length > 0 || partnerOpponentStats.opponents.length > 0)) && (
+        {showRelationsSection && (
           <div ref={relationsRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Relationer
+            Relationer · 2v2
           </div>
         )}
-        {/* Bedste makker + Hårdeste modstandere */}
-        {!statsLoading && !partnerOpponentLoading && partnerOpponentStats && (
+        {/* Bedste makker + Hårdeste modstandere — kun 2v2 */}
+        {showRelationsSection && partnerOpponentStats && (
           <>
             {partnerOpponentStats.partners.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
@@ -858,20 +838,52 @@ export function ProfilTab({ user, showToast, setTab }) {
         )}
 
         <div ref={actionsRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          Handlinger
+          Handlinger · {activeModeLabel}
         </div>
-        {/* Quick links */}
+        {/* Quick links — matcher valgt format i Overblik */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px" }}>
-          <button onClick={() => { mergeKampeSessionPrefs(user.id, { view: "completed" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
-            <Swords size={18} color={theme.accent} />
-            <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine kampe</div>
-            <div style={{ fontSize: "11px", color: theme.textLight }}>{games} spillet</div>
-          </button>
-          <button onClick={() => setTab("ranking")} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
-            <Trophy size={18} color={theme.warm} />
-            <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Ranking</div>
-            <div style={{ fontSize: "11px", color: theme.textLight }}>ELO {elo}</div>
-          </button>
+          {is2v2Mode ? (
+            <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: "padel", view: "completed", scope: "mine" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+              <Swords size={18} color={theme.accent} />
+              <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine 2v2-kampe</div>
+              <div style={{ fontSize: "11px", color: theme.textLight }}>{games} spillet</div>
+            </button>
+          ) : null}
+          {isAmericanoMode ? (
+            <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: "americano", view: "completed", scope: "mine" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+              <Swords size={18} color={theme.accent} />
+              <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine turneringer</div>
+              <div style={{ fontSize: "11px", color: theme.textLight }}>{americanoPlayed} deltaget</div>
+            </button>
+          ) : null}
+          {isLigaMode ? (
+            <button onClick={() => setTab("liga")} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+              <Swords size={18} color={theme.accent} />
+              <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine ligaer</div>
+              <div style={{ fontSize: "11px", color: theme.textLight }}>{ligaStats.leagues} liga{ligaStats.leagues === 1 ? "" : "er"}</div>
+            </button>
+          ) : null}
+          {is2v2Mode ? (
+            <button onClick={() => { persistRankingModeForProfile("2v2"); setTab("ranking"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+              <Trophy size={18} color={theme.warm} />
+              <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>2v2-ranking</div>
+              <div style={{ fontSize: "11px", color: theme.textLight }}>ELO {elo}</div>
+            </button>
+          ) : null}
+          {isAmericanoMode ? (
+            <button onClick={() => { persistRankingModeForProfile("americano"); setTab("ranking"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+              <Trophy size={18} color={theme.warm} />
+              <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Americano-ranking</div>
+              <div style={{ fontSize: "11px", color: theme.textLight }}>ELO {americanoElo}</div>
+            </button>
+          ) : null}
+          {isLigaMode ? (
+            <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: "liga" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
+              <Trophy size={18} color={theme.warm} />
+              <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Liga i Kampe</div>
+              <div style={{ fontSize: "11px", color: theme.textLight }}>{ligaStats.matches} kampe</div>
+            </button>
+          ) : null}
         </div>
       </div>
       ) : (
@@ -966,43 +978,6 @@ export function ProfilTab({ user, showToast, setTab }) {
           {COURT_SIDES.map(s => (
             <button key={s} onClick={() => set("court_side", s)} style={{ ...btn(form.court_side === s), padding: "6px 12px", fontSize: "12px" }}>{s}</button>
           ))}
-        </div>
-
-        {/* Availability — tidspunkter */}
-        <div style={labelStyle}>Hvornår kan du spille?</div>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
-          {AVAILABILITY.map(a => (
-            <button key={a} onClick={() => toggleAvail(a)} style={{ ...btn(form.availability.includes(a)), padding: "6px 12px", fontSize: "12px" }}>{a}</button>
-          ))}
-        </div>
-
-        {/* Availability — ugedage */}
-        <div style={labelStyle}>Hvilke dage kan du typisk spille?</div>
-        <div style={{ display: "flex", gap: "6px", marginBottom: "14px" }}>
-          {DAYS_OF_WEEK.map(({ key, label }) => {
-            const active = normalizeStringArrayField(form.available_days).includes(key);
-            return (
-              <button
-                key={key}
-                onClick={() => toggleDay(key)}
-                style={{
-                  flex: 1,
-                  padding: "8px 2px",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  borderRadius: "8px",
-                  border: "1.5px solid " + (active ? theme.accent : theme.border),
-                  background: active ? theme.accent : theme.surface,
-                  color: active ? "#fff" : theme.textMid,
-                  cursor: "pointer",
-                  transition: "all 0.12s",
-                  minWidth: 0,
-                }}
-              >
-                {label}
-              </button>
-            );
-          })}
         </div>
 
         {/* Bio */}
