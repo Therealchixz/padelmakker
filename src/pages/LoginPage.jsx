@@ -62,7 +62,7 @@ export function LoginPage() {
           <button type="button" onClick={() => { setForgotMode(false); setForgotSent(false); setErr(""); }} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage til login</button>
           <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Glemt adgangskode</h1>
           {forgotSent ? (
-            <div style={{ background: theme.accentBg, padding: "20px", borderRadius: theme.radius, marginTop: "20px" }}>
+            <div className="pm-auth-success-card">
               <p style={{ fontSize: "14px", color: theme.accent, fontWeight: 600, marginBottom: "8px" }}>✉️ Mail sendt!</p>
               <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5 }}>Tjek din indbakke på <strong>{email}</strong> og følg linket for at nulstille din adgangskode.</p>
             </div>

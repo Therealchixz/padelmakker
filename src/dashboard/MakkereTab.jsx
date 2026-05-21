@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchMakkerePlayerProfiles } from '../lib/profileQueries';
-import { theme, btn, inputStyle, tag, heading } from '../lib/platformTheme';
+import { theme, btn, inputStyle, tag, heading, makkerMatchBadge } from '../lib/platformTheme';
 import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS, COURT_SIDES } from '../lib/platformConstants';
 import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { eloOf } from '../lib/matchDisplayUtils';
@@ -150,34 +150,21 @@ function writeFavoritesSet(userId, set) {
 
 // ----- Suggested player card -----
 
-function matchQuality(score) {
-  if (score >= 80) return { label: 'Stærk match', color: '#15803D', bg: '#F0FDF4', border: '#86EFAC' };
-  if (score >= 65) return { label: 'God match',   color: '#1D4ED8', bg: '#DBEAFE', border: '#93C5FD' };
-  if (score >= 50) return { label: 'Okay match',  color: '#B45309', bg: '#FEF3C7', border: '#FCD34D' };
-  return               { label: 'Mulig match',  color: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB' };
-}
-
 function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
   const { profile: p, score, breakdown } = suggestion;
   const eloShown = displayEloFor(p);
   const reason = matchReason(breakdown, p);
-  const quality = matchQuality(score);
+  const quality = makkerMatchBadge(score);
 
   return (
-    <div style={{
-      background: theme.surface,
-      borderRadius: theme.radius,
-      padding: '14px 16px',
-      boxShadow: theme.shadow,
-      border: `1px solid ${theme.border}`,
-    }}>
+    <div className="pm-ui-card" style={{ padding: '14px 16px' }}>
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
         <div onClick={() => onView(p)} style={{ cursor: 'pointer', flexShrink: 0 }}>
           <AvatarCircle
             avatar={p.avatar}
             size={46}
             emojiSize="22px"
-            style={{ background: '#F1F5F9', border: '1px solid ' + theme.border }}
+            style={{ background: theme.surfaceAlt, border: '1px solid ' + theme.border }}
           />
         </div>
 
@@ -197,10 +184,10 @@ function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
               </span>
             )}
             {p.intent_now && INTENT_LABELS[p.intent_now] && (
-              <span style={tag('#F0FDF4', '#15803D')}>{INTENT_LABELS[p.intent_now]}</span>
+              <span style={tag(theme.greenBg, theme.green)}>{INTENT_LABELS[p.intent_now]}</span>
             )}
             {isSeekingActive(p) && (
-              <span style={tag('#FEF3C7', '#B45309')}>{seekingActivityLabelDisplay(p)}</span>
+              <span style={tag(theme.warmBg, theme.warm)}>{seekingActivityLabelDisplay(p)}</span>
             )}
           </div>
         </div>
@@ -688,7 +675,7 @@ export function MakkereTab({ user, showToast }) {
           <SlidersHorizontal size={13} />
           Filtre
           {activeFilterCount > 0 && (
-            <span style={{ background: showFilters ? 'rgba(255,255,255,0.3)' : theme.accent, color: '#fff', borderRadius: '10px', fontSize: '10px', fontWeight: 800, padding: '1px 6px', marginLeft: '2px' }}>
+            <span style={{ background: showFilters ? 'color-mix(in srgb, var(--pm-on-accent) 30%, transparent)' : theme.accent, color: theme.onAccent, borderRadius: '10px', fontSize: '10px', fontWeight: 800, padding: '1px 6px', marginLeft: '2px' }}>
               {activeFilterCount}
             </span>
           )}
@@ -710,7 +697,7 @@ export function MakkereTab({ user, showToast }) {
       </div>
 
       {showFilters && (
-        <div style={{ background: '#F8FAFC', borderRadius: '10px', border: '1px solid ' + theme.border, padding: '14px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="pm-filter-panel">
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <select value={filterElo} onChange={e => handleFilterChange(() => setFilterElo(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
               <option value="all">Alle ELO-niveauer</option>
@@ -763,7 +750,7 @@ export function MakkereTab({ user, showToast }) {
                   avatar={p.avatar}
                   size={48}
                   emojiSize="22px"
-                  style={{ background: '#F1F5F9', border: '1px solid ' + theme.border }}
+                  style={{ background: theme.surfaceAlt, border: '1px solid ' + theme.border }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
@@ -780,7 +767,7 @@ export function MakkereTab({ user, showToast }) {
                     {p.court_side && <span style={tag(theme.blueBg, theme.blue)}>{p.court_side}</span>}
                     <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>
                     {isSeekingActive(p) && (
-                      <span style={tag('#FEF3C7', '#B45309')}>{seekingActivityLabelDisplay(p)}</span>
+                      <span style={tag(theme.warmBg, theme.warm)}>{seekingActivityLabelDisplay(p)}</span>
                     )}
                   </div>
                   {p.bio && <PlayerBioPreview bio={p.bio} />}

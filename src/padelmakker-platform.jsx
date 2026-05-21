@@ -4,7 +4,7 @@ import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
 import { canAccessDashboard } from "./lib/profileUtils";
 import { isPhoneVerificationExempt, shouldRequirePhoneVerification } from "./lib/phoneVerification";
-import { font, theme } from "./lib/platformTheme";
+import { font, theme, btn } from "./lib/platformTheme";
 import { ConfirmDialogProvider } from "./lib/ConfirmDialogProvider";
 import { LandingPage } from "./pages/LandingPage";
 
@@ -87,7 +87,7 @@ export default function PadelMakker() {
         <button
           type="button"
           onClick={() => refreshProfile()}
-          style={{ background: theme.accent, color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: font }}
+          style={{ ...btn(true), padding: "10px 20px", fontSize: 14 }}
         >
           Prøv igen
         </button>
@@ -107,9 +107,7 @@ export default function PadelMakker() {
       <ConfirmDialogProvider>
         <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text }}>
           {toast && (
-            <div className="pm-toast" style={{ position: "fixed", top: "max(12px, env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", background: theme.accent, color: "#fff", padding: "11px 22px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, zIndex: 9999, boxShadow: theme.shadowLg }}>
-              {toast}
-            </div>
+            <div className="pm-toast" role="status">{toast}</div>
           )}
           <Suspense fallback={<div className="pm-spinner" style={{ margin: "40px auto" }} />}>
             <ResetPasswordPageLazy onDone={() => { setResetMode(false); navigate("/dashboard"); showToast("Adgangskode opdateret! ✅"); }} />
@@ -124,9 +122,7 @@ export default function PadelMakker() {
     <ConfirmDialogProvider>
       <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, position: "relative" }}>
         {toast && (
-          <div className="pm-toast" style={{ position: "fixed", top: "max(12px, env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", background: theme.accent, color: "#fff", padding: "11px 22px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, zIndex: 9999, boxShadow: theme.shadowLg, letterSpacing: "-0.01em" }}>
-            {toast}
-          </div>
+          <div className="pm-toast" role="status">{toast}</div>
         )}
         <Suspense
           fallback={

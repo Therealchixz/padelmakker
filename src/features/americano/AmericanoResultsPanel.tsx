@@ -20,6 +20,8 @@ const c = {
   avatarBg: 'var(--pm-border)',
   avatarText: 'var(--pm-text-light)',
   accent: 'var(--pm-accent)',
+  warm: 'var(--pm-warm)',
+  onAccent: 'var(--pm-on-accent)',
 }
 
 function initialsFromName(name: string): string {
@@ -534,7 +536,7 @@ export function AmericanoResultsPanel({
   const leaderboard = buildLeaderboard(participants, matches, scores, P)
 
   if (loading) {
-    return <div style={{ fontSize: 12, color: '#8494A7', marginTop: 12 }}>Henter kampe…</div>
+    return <div style={{ fontSize: 12, color: c.muted, marginTop: 12 }}>Henter kampe…</div>
   }
 
   return (
@@ -567,7 +569,7 @@ export function AmericanoResultsPanel({
           </div>
           {leaderboard.map((row, idx) => (
             <div key={row.id} className="pm-data-table-row">
-              <div className="pm-data-table-cell" style={{ textAlign: 'center', color: idx < 3 ? '#D97706' : c.muted, fontWeight: 700 }}>
+              <div className="pm-data-table-cell" style={{ textAlign: 'center', color: idx < 3 ? c.warm : c.muted, fontWeight: 700 }}>
                 {idx + 1}
               </div>
               <div className="pm-data-table-cell" style={{ fontSize: 13, fontWeight: 600 }}>
@@ -844,7 +846,7 @@ export function AmericanoResultsPanel({
                         borderRadius: 8,
                         border: '1px solid var(--pm-border)',
                         background: canConfirmSave ? 'var(--pm-accent)' : 'var(--pm-surface)',
-                        color: canConfirmSave ? '#fff' : c.muted,
+                        color: canConfirmSave ? c.onAccent : c.muted,
                         cursor: saving || !canConfirmSave ? 'not-allowed' : 'pointer',
                         alignSelf: 'flex-start',
                       }}

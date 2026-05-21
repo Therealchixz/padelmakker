@@ -539,25 +539,8 @@ export function RankingTab({ user }) {
         {rankModeLabel} · {periodLabels[period]} · {periodInfo[period]}
       </div>
 
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #1E3A5F, #1D4ED8)',
-          borderRadius: theme.radius,
-          padding: 'clamp(18px,4vw,24px)',
-          marginBottom: '24px',
-          color: '#fff',
-        }}
-      >
-        <div
-          style={{
-            fontSize: '10px',
-            opacity: 0.65,
-            marginBottom: '6px',
-            fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }}
-        >
+      <div className="pm-rank-hero">
+        <div className="pm-rank-hero-kicker">
           Din placering · {rankModeLabel} · {periodLabels[period]}
         </div>
         <div className="pm-rank-hero-inner">
@@ -686,7 +669,7 @@ export function RankingTab({ user }) {
                   size={38}
                   emojiSize="17px"
                   alt={`${p.full_name || p.name || 'Spiller'} avatar`}
-                  style={{ background: '#F1F5F9', border: `1px solid ${theme.border}` }}
+                  style={{ background: theme.surfaceAlt, border: `1px solid ${theme.border}` }}
                 />
 
                 <div style={{ flex: 1, minWidth: 0 }}>

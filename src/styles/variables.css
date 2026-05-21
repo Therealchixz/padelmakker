@@ -52,6 +52,16 @@
   --pm-elo-gradient-start:#1E3A5F;
   --pm-elo-gradient-end:#1D4ED8;
   --pm-brand-gradient: linear-gradient(135deg, var(--pm-elo-gradient-start), var(--pm-elo-gradient-end));
+  --pm-hero-gradient: linear-gradient(160deg, #1e3a5f 0%, #1d4ed8 100%);
+  --pm-cta-gradient: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  --pm-accent-gradient-end: #3b82f6;
+  --pm-hero-subtitle: rgba(255, 255, 255, 0.8);
+  --pm-rank-hero-gradient: linear-gradient(135deg, #1e3a5f, #1d4ed8);
+  --pm-surface-muted: #f1f5f9;
+  --pm-video-bg: #0f172a;
+  --pm-form-win: #22c55e;
+  --pm-form-loss: #ef4444;
+  --pm-form-draw: #9ca3af;
   --pm-elo-progress-track: rgba(255,255,255,0.15);
   --pm-overlay:     rgba(0,0,0,0.35);
   --pm-overlay-strong: rgba(0,0,0,0.5);
@@ -83,6 +93,7 @@
 
 /* ── Dark mode overrides ── */
 [data-theme="dark"] {
+  --pm-surface-muted: #1e293b;
   --pm-bg:          #0F172A;
   --pm-surface:     #1E293B;
   --pm-surface-alt: #162032;

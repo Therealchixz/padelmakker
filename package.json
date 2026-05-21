@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "test:unit": "node --test tests/unit/*.test.mjs",
     "audit:notifications": "node scripts/audit-notification-health.mjs",
+    "check:ui-hex": "node scripts/check-ui-hex.mjs",
     "db:migration:new": "bash scripts/db-migration-new.sh",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed --project=chromium",

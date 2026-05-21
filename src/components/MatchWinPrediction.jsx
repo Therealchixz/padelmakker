@@ -40,7 +40,7 @@ export function MatchWinPrediction({ prediction }) {
         <div
           style={{ width: `${team1WinPct}%`, background: theme.accent, minWidth: team1WinPct > 0 ? 2 : 0 }}
         />
-        <div style={{ width: '2px', background: '#FFFFFF', flexShrink: 0 }} />
+        <div style={{ width: '2px', background: theme.onAccent, flexShrink: 0 }} />
         <div style={{ flex: 1, background: theme.green }} />
       </div>
       <div style={{ textAlign: 'center', marginTop: 6, fontSize: 11, color: theme.textMid, lineHeight: 1.45 }}>

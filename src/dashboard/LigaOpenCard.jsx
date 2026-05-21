@@ -5,16 +5,16 @@ import { theme } from '../lib/platformTheme';
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
 
 /** Blå gradient header — samme stil på tværs af 2v2 / Americano / Liga */
-const HEADER_GRADIENT = 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)';
+const HEADER_GRADIENT = 'var(--pm-cta-gradient)';
 
 /** Subtile farver til hold-initial bokse — vælges deterministisk fra hold-id */
 const TEAM_PALETTE = [
-  { bg: '#1D4ED8', fg: '#FFFFFF' },
-  { bg: '#059669', fg: '#FFFFFF' },
-  { bg: '#7C3AED', fg: '#FFFFFF' },
-  { bg: '#D97706', fg: '#FFFFFF' },
-  { bg: '#DB2777', fg: '#FFFFFF' },
-  { bg: '#0891B2', fg: '#FFFFFF' },
+  { bg: 'var(--pm-accent)', fg: 'var(--pm-on-accent)' },
+  { bg: 'var(--pm-green)', fg: 'var(--pm-on-accent)' },
+  { bg: 'var(--pm-purple)', fg: 'var(--pm-on-accent)' },
+  { bg: 'var(--pm-warm)', fg: 'var(--pm-on-accent)' },
+  { bg: 'var(--pm-red)', fg: 'var(--pm-on-accent)' },
+  { bg: 'var(--pm-blue)', fg: 'var(--pm-on-accent)' },
 ];
 
 function hashStr(s) {
@@ -352,7 +352,7 @@ export function LigaOpenCard({
             style={{
               width: `${fillPct}%`,
               height: '100%',
-              background: 'linear-gradient(90deg, #1D4ED8, #0EA5E9)',
+              background: theme.ctaGradient,
               transition: 'width 0.25s ease',
             }}
           />

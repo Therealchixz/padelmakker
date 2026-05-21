@@ -25,6 +25,7 @@ import { FILTER_RETURN_PROFIL } from '../lib/filterReturnNavigation';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { SeekingCallout } from '../components/SeekingCallout';
 
 function MatchFilterProfileCard({ user }) {
   const navigate = useNavigate();
@@ -700,16 +701,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
           {!editing && !isValidProfileRegion(user.area) ? (
-            <div
-              style={{
-                marginBottom: '16px',
-                padding: '12px 14px',
-                background: '#FEF3C7',
-                borderRadius: '10px',
-                border: '1px solid #FDE68A',
-              }}
-            >
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#B45309', marginBottom: '4px' }}>Vælg region</div>
+            <SeekingCallout title="Vælg region" className="pm-seeking-callout--profile">
               <p style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.45, marginBottom: '10px' }}>
                 Din profil mangler en region. Det er påkrævet, så andre kan finde dig i det rigtige område.
               </p>
@@ -720,7 +712,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               >
                 Vælg region under Rediger
               </button>
-            </div>
+            </SeekingCallout>
           ) : null}
 
           {!editing && isValidProfileRegion(user.area) && !String(user.city || '').trim() ? (
@@ -881,7 +873,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                   {recentForm.map((r, i) => (
                     <div key={i} title={r.result === 'win' ? 'Sejr' : r.result === 'loss' ? 'Nederlag' : 'Uafgjort'} style={{
                       width: "22px", height: "22px", borderRadius: "50%", flexShrink: 0,
-                      background: r.result === 'win' ? "#22C55E" : r.result === 'loss' ? "#EF4444" : "#9CA3AF",
+                      background: r.result === 'win' ? 'var(--pm-form-win)' : r.result === 'loss' ? 'var(--pm-form-loss)' : 'var(--pm-form-draw)',
                     }} />
                   ))}
                 </div>
@@ -934,7 +926,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.games} kampe sammen</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: "#16A34A" }}>{Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%</div>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%</div>
                       <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
                     </div>
                   </div>
@@ -951,13 +943,13 @@ export function ProfilTab({ user, showToast, setTab }) {
                     const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.games) * 100);
                     return (
                       <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < hardOpponents.length - 1 ? "10px" : 0 }}>
-                        <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: "#FEF2F2", border: "1px solid #FECACA", flexShrink: 0 }} />
+                        <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.redBg, border: `1px solid ${theme.red}`, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
                           <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.games} kampe imod</div>
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontSize: "15px", fontWeight: 800, color: "#DC2626" }}>{theirWinPct}%</div>
+                          <div style={{ fontSize: "15px", fontWeight: 800, color: theme.red }}>{theirWinPct}%</div>
                           <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
                         </div>
                       </div>
@@ -1015,7 +1007,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                   const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.rounds) * 100);
                   return (
                     <div key={`hard-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
-                      <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: "#FEF2F2", border: "1px solid #FECACA", flexShrink: 0 }} />
+                      <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.redBg, border: `1px solid ${theme.red}`, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
                         <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.rounds} runder imod</div>
@@ -1095,7 +1087,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                   const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.matches) * 100);
                   return (
                     <div key={`liga-hard-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
-                      <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: "#FEF2F2", border: "1px solid #FECACA", flexShrink: 0 }} />
+                      <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.redBg, border: `1px solid ${theme.red}`, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
                         <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.matches} kampe imod</div>
@@ -1216,9 +1208,9 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {/* Name — read-only */}
         <label style={labelStyle}>Fornavn</label>
-        <input value={form.first_name} readOnly style={{ ...inputStyle, marginBottom: "10px", background: "#F1F5F9", color: theme.textLight, cursor: "not-allowed" }} />
+        <input value={form.first_name} readOnly style={{ ...inputStyle, marginBottom: "10px", background: theme.surfaceAlt, color: theme.textLight, cursor: "not-allowed" }} />
         <label style={labelStyle}>Efternavn</label>
-        <input value={form.last_name} readOnly style={{ ...inputStyle, marginBottom: "6px", background: "#F1F5F9", color: theme.textLight, cursor: "not-allowed" }} />
+        <input value={form.last_name} readOnly style={{ ...inputStyle, marginBottom: "6px", background: theme.surfaceAlt, color: theme.textLight, cursor: "not-allowed" }} />
         <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "14px" }}>
           Navn kan ikke ændres efter oprettelse. Kontakt support hvis der er en fejl.
         </p>
@@ -1244,7 +1236,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "6px 12px", fontSize: "12px" }}>{r}</button>
           ))}
         </div>
-        <label htmlFor="profil-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: "#8494A7" }}>(valgfri)</span></label>
+        <label htmlFor="profil-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
         <input
           id="profil-city"
           value={form.city}

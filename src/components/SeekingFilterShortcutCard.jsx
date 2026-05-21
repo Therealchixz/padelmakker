@@ -170,7 +170,7 @@ export function SeekingFilterShortcutCard({ channel, user, showToast, returnTo }
               width: 18,
               height: 18,
               borderRadius: '50%',
-              background: '#fff',
+              background: theme.onAccent,
               transition: 'left 0.2s',
               boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
             }}

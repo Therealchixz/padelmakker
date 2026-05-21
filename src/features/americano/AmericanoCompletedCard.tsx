@@ -13,11 +13,10 @@ import {
 import { ReportResultErrorButton } from '../../components/ReportResultErrorButton'
 import { completionMsForAmericano } from '../../lib/resultErrorReports'
 
-/** Podium medal accent colors (theme-independent) */
 const PODIUM = {
-  gold: '#D97706',
-  silver: '#94A3B8',
-  bronze: '#B45309',
+  gold: theme.warm,
+  silver: theme.textLight,
+  bronze: theme.warm,
 } as const
 
 type PartMin = {
@@ -410,7 +409,7 @@ export function AmericanoCompletedCard({
       {/* 1. Header — fælles blå gradient med 2v2 / Liga / Americano open */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)',
+          background: 'var(--pm-cta-gradient)',
           color: theme.onAccent,
           padding: '16px 18px',
         }}

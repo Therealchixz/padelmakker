@@ -35,8 +35,8 @@ export function AvatarPicker({ value, previewUrl, onFileSelect, onEmojiSelect, u
           width: 72,
           height: 72,
           borderRadius: '50%',
-          background: '#F1F5F9',
-          border: '2px solid #D5DDE8',
+          background: theme.surfaceMuted,
+          border: `2px solid ${theme.border}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -87,11 +87,11 @@ export function AvatarPicker({ value, previewUrl, onFileSelect, onEmojiSelect, u
               borderRadius: '50%',
               fontSize: '20px',
               border: (!previewUrl && !isAvatarUrl(value) && value === e)
-                ? '2px solid #1D4ED8'
-                : '1px solid #D5DDE8',
+                ? `2px solid ${theme.accent}`
+                : `1px solid ${theme.border}`,
               background: (!previewUrl && !isAvatarUrl(value) && value === e)
-                ? '#EFF6FF'
-                : '#fff',
+                ? theme.blueBg
+                : theme.surface,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',

@@ -618,7 +618,7 @@ export function NotificationBell() {
       >
         <Bell size={20} color={theme.textMid} strokeWidth={2} />
         {unreadCount > 0 && (
-          <span style={{ position: "absolute", top: "-2px", right: "-2px", minWidth: "17px", height: "17px", padding: "0 4px", borderRadius: "999px", background: theme.red, color: "#fff", fontSize: "9px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, boxSizing: "border-box" }}>
+          <span style={{ position: "absolute", top: "-2px", right: "-2px", minWidth: "17px", height: "17px", padding: "0 4px", borderRadius: "999px", background: theme.red, color: theme.onAccent, fontSize: "9px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, boxSizing: "border-box" }}>
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -700,9 +700,9 @@ export function NotificationBell() {
 
           {/* Push opt-in / opt-out banner */}
           {pushSupported && !pushBlocked && getPushPermission() !== 'denied' && (
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? "#DCFCE7" : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: pushMessage ? (pushSubscribed ? theme.greenBg : theme.surface) : pushSubscribed ? theme.accentBg + "30" : theme.warmBg + "40", transition: "background 0.3s", display: "flex", alignItems: "center", gap: "10px" }}>
               <span style={{ fontSize: "16px" }}>{pushMessage && pushSubscribed ? "✅" : pushMessage ? "🔕" : pushSubscribed ? "🔔" : "🔔"}</span>
-              <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? "#166534" : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
+              <span style={{ flex: 1, fontSize: "12px", color: pushMessage ? (pushSubscribed ? theme.winText : theme.textMid) : theme.textMid, lineHeight: 1.4, fontWeight: pushMessage ? 600 : 400 }}>
                 {pushMessage || (pushSubscribed ? "Push-beskeder er aktiveret" : "Få push-beskeder selv når du ikke er på siden")}
               </span>
               {!pushMessage && (
@@ -721,7 +721,7 @@ export function NotificationBell() {
                     type="button"
                     onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
                     disabled={pushLoading || pushTestLoading}
-                    style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : "#fff", border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: (pushLoading || pushTestLoading) ? "default" : "pointer", opacity: (pushLoading || pushTestLoading) ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
+                    style={{ background: pushSubscribed ? theme.border : theme.accent, color: pushSubscribed ? theme.textMid : theme.onAccent, border: "none", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", fontWeight: 700, cursor: (pushLoading || pushTestLoading) ? "default" : "pointer", opacity: (pushLoading || pushTestLoading) ? 0.6 : 1, whiteSpace: "nowrap", fontFamily: font }}
                   >
                     {pushLoading ? "…" : pushSubscribed ? "Slå fra" : "Aktiver"}
                   </button>

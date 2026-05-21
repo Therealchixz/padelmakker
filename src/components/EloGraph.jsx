@@ -164,7 +164,7 @@ export function EloGraph({ data, valueLabel = 'ELO', emptyText = 'Spil mindst 2 
               cy={p.y}
               r={r}
               fill={theme.accent}
-              stroke="#fff"
+              stroke={theme.onAccent}
               strokeWidth={active ? 2 : 1.5}
             />
           );

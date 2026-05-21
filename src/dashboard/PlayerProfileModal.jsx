@@ -10,6 +10,8 @@ import { DAYS_OF_WEEK } from '../lib/platformConstants';
 import { profileLevelDisplayText, formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { getPlayerSeekingDetails } from '../lib/seekingActivityLabel';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { AppModal } from '../components/AppModal';
+import { SeekingCallout, SeekingCalloutDetail } from '../components/SeekingCallout';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
   const [dataLoading, setDataLoading] = useState(true);
@@ -196,11 +198,17 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
     [pRef, seekingChannel],
   );
 
-  if (!player) return null;
+  const playerName = pRef.full_name || pRef.name || 'Spiller';
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: theme.surface, borderRadius: '14px', padding: 'clamp(18px,5vw,28px)', maxWidth: '380px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', border: '1px solid ' + theme.border, maxHeight: '90dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+    <AppModal
+      open={!!player}
+      onClose={onClose}
+      ariaLabel={`Profil for ${playerName}`}
+      maxWidthPreset="sm"
+      contentStyle={{ overflowY: 'auto', maxHeight: '90dvh', WebkitOverflowScrolling: 'touch' }}
+    >
+      <div className="pm-modal-body">
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
           <AvatarCircle avatar={pRef.avatar} size={64} emojiSize="32px" style={{ background: theme.accentBg, border: '2px solid ' + theme.accent + '40' }} />
           <div style={{ minWidth: 0 }}>
@@ -235,44 +243,23 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
         ) : null}
 
         {seekingDetails?.blocks?.map((block) => (
-          <div
+          <SeekingCallout
             key={block.type}
-            style={{
-              marginBottom: '12px',
-              padding: '14px',
-              background: '#FEF3C7',
-              borderRadius: '10px',
-              border: '1px solid #FDE68A',
-            }}
+            title={block.label}
+            meta={`Synlig ${block.duration}${block.sinceLabel ? ` · ${block.sinceLabel}` : ''}`}
           >
-            <div style={{ fontSize: '15px', fontWeight: 800, color: '#B45309', marginBottom: '4px', letterSpacing: '-0.02em' }}>
-              {block.label}
-            </div>
-            <div style={{ fontSize: '11px', color: theme.textLight, marginBottom: '8px' }}>
-              Synlig {block.duration}
-              {block.sinceLabel ? ` · ${block.sinceLabel}` : ''}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {(block.details?.length ? block.details : block.line ? [block.line] : []).map((detail, detailIdx) => {
-                const colon = detail.indexOf(':');
-                const hasLabel = colon > 0;
-                const detailLabel = hasLabel ? detail.slice(0, colon) : null;
-                const detailValue = hasLabel ? detail.slice(colon + 1).trim() : detail;
-                return (
-                  <div key={detailIdx} style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.45 }}>
-                    {detailLabel ? (
-                      <>
-                        <span style={{ color: theme.textLight, fontWeight: 600 }}>{detailLabel}: </span>
-                        <span style={{ fontWeight: 500 }}>{detailValue}</span>
-                      </>
-                    ) : (
-                      <span style={{ fontWeight: 500 }}>{detailValue}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+            {(block.details?.length ? block.details : block.line ? [block.line] : []).map((detail, detailIdx) => {
+              const colon = detail.indexOf(':');
+              const hasLabel = colon > 0;
+              return (
+                <SeekingCalloutDetail
+                  key={detailIdx}
+                  label={hasLabel ? detail.slice(0, colon) : null}
+                  value={hasLabel ? detail.slice(colon + 1).trim() : detail}
+                />
+              );
+            })}
+          </SeekingCallout>
         ))}
 
         <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
@@ -342,18 +329,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
                 americanoForm.map((row) => (
                   <div
                     key={row.key}
-                    style={{
-                      width: '22px',
-                      height: '22px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      background: row.result === 'win' ? '#22C55E' : row.result === 'loss' ? '#EF4444' : '#9CA3AF',
-                      color: '#fff',
-                    }}
+                    className={`pm-form-result-dot pm-form-result-dot--${row.result === 'win' ? 'win' : row.result === 'loss' ? 'loss' : 'draw'}`}
                   >
                     {row.label}
                   </div>
@@ -434,7 +410,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
                   {DAYS_OF_WEEK.map(({ key, label }) => {
                     const active = days.includes(key);
                     return (
-                      <div key={key} style={{ flex: 1, textAlign: 'center', padding: '4px 2px', borderRadius: '5px', fontSize: '11px', fontWeight: 700, background: active ? theme.accent : theme.surfaceAlt, color: active ? '#fff' : theme.textLight }}>
+                      <div key={key} className={active ? 'pm-day-pill pm-day-pill--active' : 'pm-day-pill pm-day-pill--inactive'}>
                         {label}
                       </div>
                     );
@@ -458,6 +434,6 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
         )}
         <button type="button" onClick={onClose} style={{ ...btn(false), width: '100%', justifyContent: 'center' }}>Luk</button>
       </div>
-    </div>
+    </AppModal>
   );
 }

@@ -275,9 +275,9 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
                 <div
                   style={{
                     fontSize: '12px',
-                    color: '#b91c1c',
-                    background: '#fef2f2',
-                    border: '1px solid #fecaca',
+                    color: theme.dangerStrong,
+                    background: theme.redBg,
+                    border: `1px solid ${theme.dangerBorder}`,
                     borderRadius: '8px',
                     padding: '8px 10px',
                     lineHeight: 1.45,
@@ -285,7 +285,7 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
                 >
                   {errorText}
                   {lockUntil && (
-                    <div style={{ marginTop: '4px', color: '#991b1b' }}>
+                    <div style={{ marginTop: '4px', color: theme.dangerStrong }}>
                       Låst indtil: {formatDaTime(lockUntil)}
                     </div>
                   )}

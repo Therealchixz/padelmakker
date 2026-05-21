@@ -193,7 +193,7 @@ export function GuidedTourOverlay({
               style={{
                 border: 'none',
                 background: theme.accent,
-                color: '#fff',
+                color: theme.onAccent,
                 borderRadius: 9,
                 fontSize: 12,
                 fontWeight: 800,

@@ -1461,46 +1461,18 @@ export function DashboardPage({ user, onLogout, showToast }) {
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", paddingLeft: "8px", flexShrink: 0 }}>
             <button
               type="button"
+              className={`pm-theme-switch ${dark ? 'pm-theme-switch--dark' : 'pm-theme-switch--light'}`}
               onClick={() => setDark((d) => !d)}
               title={dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
               aria-label={dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
-              style={{
-                width: 60,
-                height: 30,
-                borderRadius: 15,
-                border: "none",
-                cursor: "pointer",
-                flexShrink: 0,
-                background: dark ? theme.surfaceAlt : theme.border,
-                position: "relative",
-                transition: "background 0.25s",
-                boxShadow: dark ? "inset 0 2px 5px rgba(0,0,0,0.6)" : "inset 0 2px 4px rgba(0,0,0,0.12)",
-                padding: 0,
-              }}
             >
-              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? theme.textLight : theme.warm, transition: "color 0.25s" }}>
+              <span className="pm-theme-switch__icon pm-theme-switch__icon--sun" style={{ color: dark ? theme.textLight : theme.warm }}>
                 <Sun size={13} />
               </span>
-              <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", zIndex: 1, color: dark ? theme.textMid : theme.textLight, transition: "color 0.25s" }}>
+              <span className="pm-theme-switch__icon pm-theme-switch__icon--moon" style={{ color: dark ? theme.textMid : theme.textLight }}>
                 <Moon size={13} />
               </span>
-              <div
-                style={{
-                  position: "absolute",
-                  top: 3,
-                  left: dark ? 31 : 3,
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  background: dark ? theme.surface : theme.onAccent,
-                  transition: "left 0.25s",
-                  boxShadow: dark ? "0 1px 5px rgba(0,0,0,0.7)" : "0 1px 4px rgba(0,0,0,0.2)",
-                  zIndex: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+              <div className={`pm-theme-switch__thumb ${dark ? 'pm-theme-switch__thumb--dark' : 'pm-theme-switch__thumb--light'}`}>
                 {dark
                   ? <Moon size={13} style={{ color: theme.text }} />
                   : <Sun size={13} style={{ color: theme.warm }} />

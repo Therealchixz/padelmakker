@@ -86,17 +86,18 @@ function EmptySlot() {
         width: 44,
         height: 44,
         borderRadius: '50%',
-        border: `2px dashed #CBD5E1`,
+        border: `2px dashed ${theme.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         background: 'transparent',
+        color: theme.textLight,
       }}
       aria-hidden
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <line x1="7" y1="2" x2="7" y2="12" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-        <line x1="2" y1="7" x2="12" y2="7" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+        <line x1="7" y1="2" x2="7" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
     </div>
   )
@@ -141,7 +142,7 @@ export function AmericanoOpenCard({
       {/* 1. Blå gradient header — fælles stil med 2v2 og Liga */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)',
+          background: 'var(--pm-cta-gradient)',
           color: theme.onAccent,
           padding: '16px 18px',
         }}

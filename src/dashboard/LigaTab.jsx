@@ -181,7 +181,7 @@ const TEAM_PALETTE = [
 function DotName({ teamId, name, teamColors }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-      <span style={{ width: 20, height: 20, borderRadius: '50%', background: teamColors[teamId] || '#94A3B8', display: 'inline-grid', placeItems: 'center', fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
+      <span style={{ width: 20, height: 20, borderRadius: '50%', background: teamColors[teamId] || theme.textLight, display: 'inline-grid', placeItems: 'center', fontSize: '10px', fontWeight: 700, color: theme.onAccent, flexShrink: 0 }}>
         {name?.slice(0, 1).toUpperCase()}
       </span>
       <span style={{ fontFamily: 'system-ui', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em' }}>{name}</span>
@@ -556,9 +556,9 @@ function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
 
                         const dotStyle = (teamId) => ({
                           width: 14, height: 14, borderRadius: '50%',
-                          background: teamColors[teamId] || '#94A3B8',
+                          background: teamColors[teamId] || theme.textLight,
                           display: 'inline-grid', placeItems: 'center',
-                          fontSize: '8px', fontWeight: 700, color: 'white', flexShrink: 0,
+                          fontSize: '8px', fontWeight: 700, color: theme.onAccent, flexShrink: 0,
                         });
 
                         return (

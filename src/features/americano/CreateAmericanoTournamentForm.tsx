@@ -15,6 +15,7 @@ for (let h = 6; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
 }
 import { supabase } from '../../lib/supabase'
+import { theme, btn } from '../../lib/platformTheme'
 import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses } from './types'
 import {
   getMatchVenueOptions,
@@ -240,7 +241,7 @@ export function CreateAmericanoTournamentForm({
       </div>
 
       {error && (
-        <p style={{ color: '#DC2626', fontSize: 13, marginTop: 12 }}>{error}</p>
+        <p style={{ color: theme.red, fontSize: 13, marginTop: 12 }}>{error}</p>
       )}
 
       <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
@@ -248,16 +249,8 @@ export function CreateAmericanoTournamentForm({
           type="submit"
           disabled={submitting}
           style={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: 14,
-            fontWeight: 600,
-            padding: '10px 20px',
-            borderRadius: 10,
-            border: 'none',
-            background: '#1D4ED8',
-            color: '#fff',
+            ...btn(true),
             cursor: submitting ? 'wait' : 'pointer',
-            opacity: 1,
           }}
         >
           {submitting ? 'Opretter…' : 'Opret turnering'}

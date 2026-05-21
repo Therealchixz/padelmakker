@@ -4,8 +4,8 @@ import { theme } from '../lib/platformTheme';
 /** @param {{ tone?: 'light' | 'dark' }} [props] */
 export function PublicLegalFooter({ tone = 'light' } = {}) {
   const dark = tone === 'dark'
-  const linkColor = dark ? '#93C5FD' : theme.accent
-  const muted = dark ? '#64748B' : theme.textLight
+  const linkColor = dark ? theme.infoBorder : theme.accent
+  const muted = theme.textLight
   const sep = dark ? 'rgba(148, 163, 184, 0.35)' : theme.border
   const linkStyle = { color: linkColor, fontSize: '13px', fontWeight: 500, textDecoration: 'none' }
   return (

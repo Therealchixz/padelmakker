@@ -54,7 +54,7 @@ export function LandingTourVideo() {
           overflow: 'hidden',
           border: `1px solid ${theme.border}`,
           boxShadow: theme.shadowLg,
-          background: '#0f172a',
+          background: theme.videoBg,
           aspectRatio: '16 / 9',
           maxWidth: '900px',
           margin: '0 auto',

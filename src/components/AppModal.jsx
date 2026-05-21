@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { theme } from '../lib/platformTheme';
+import { theme, resolveModalMaxWidth } from '../lib/platformTheme';
 
 const FOCUSABLE_SELECTOR = [
   'button:not([disabled])',
@@ -16,7 +16,8 @@ export function AppModal({
   onClose,
   ariaLabel,
   children,
-  maxWidth = "520px",
+  maxWidth,
+  maxWidthPreset = 'md',
   zIndex = 1000,
   closeOnBackdrop = true,
   closeOnEscape = true,
@@ -93,6 +94,8 @@ export function AppModal({
 
   if (!open || typeof document === "undefined") return null;
 
+  const resolvedMaxWidth = resolveModalMaxWidth(maxWidth ?? maxWidthPreset);
+
   return createPortal(
     <div
       role="dialog"
@@ -121,7 +124,7 @@ export function AppModal({
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
         style={{
-          width: "min(100%, " + maxWidth + ")",
+          width: "min(100%, " + resolvedMaxWidth + ")",
           maxHeight: "85vh",
           overflow: "hidden",
           display: "flex",

@@ -385,10 +385,10 @@ export function LandingPage() {
         >
           <div className="pm-landing-hero-grid">
             <div className="pm-landing-hero-copy">
-            <h1 className="pm-reveal pm-visible pm-delay-1" style={{ fontFamily: font, fontSize: "clamp(40px,8vw,76px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.04em", color: "#fff", marginBottom: "24px" }}>
-              Find makker<br />på dit niveau.<br /><span style={{ color: "#93C5FD" }}>Spil mere padel.</span>
+            <h1 className="pm-reveal pm-visible pm-delay-1 pm-landing-hero-title">
+              Find makker<br />på dit niveau.<br /><span className="pm-landing-hero-accent">Spil mere padel.</span>
             </h1>
-            <p className="pm-reveal pm-visible pm-delay-2" style={{ fontSize: "clamp(16px,3.8vw,19px)", color: "rgba(255,255,255,0.80)", maxWidth: "480px", margin: "0 auto clamp(36px,7vw,48px)", lineHeight: 1.65 }}>
+            <p className="pm-reveal pm-visible pm-delay-2 pm-landing-hero-subtitle" style={{ fontSize: "clamp(16px,3.8vw,19px)", maxWidth: "480px", margin: "0 auto clamp(36px,7vw,48px)", lineHeight: 1.65 }}>
               Find padelspillere på dit niveau, opret kampe og se ledige baner i Danmark. PadelMakker gør det nemmere at komme fra lyst til kamp.
             </p>
             <div className="pm-reveal pm-visible pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
@@ -453,7 +453,7 @@ export function LandingPage() {
           {steps.map((s, i) => (
             <div key={s.step} className={"pm-feature-card pm-reveal pm-delay-" + (i+1)} style={{ ...landingFeatureCardStyle, position: "relative" }}>
               <div style={{ fontSize: "48px", fontWeight: 900, color: theme.accent + "12", position: "absolute", top: "16px", right: "20px", letterSpacing: "-0.04em", fontFamily: font }}>{s.step}</div>
-              <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "linear-gradient(135deg, " + theme.accent + ", #3B82F6)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px" }}>
+              <div className="pm-landing-feature-icon">
                 {s.icon}
               </div>
               <div style={{ ...landingFeatureTitleStyle, fontSize: "17px", marginBottom: "8px", letterSpacing: "-0.01em" }}>{s.title}</div>
@@ -498,12 +498,10 @@ export function LandingPage() {
 
       {/* CTA */}
       <section className="pm-reveal-scale" style={landingSectionStyle}>
-        <div style={{ background: "linear-gradient(135deg, #1E3A5F, #1D4ED8)", borderRadius: "20px", padding: "clamp(40px,8vw,64px) clamp(24px,5vw,48px)", textAlign: "center", position: "relative", overflow: "hidden" }}>
+        <div className="pm-landing-cta-banner">
           <div style={{ position: "relative", zIndex: 1 }}>
-            <h2 style={{ fontFamily: font, fontSize: "clamp(26px,5.5vw,40px)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", marginBottom: "16px", lineHeight: 1.1 }}>
-              Klar til at spille?
-            </h2>
-            <p style={{ fontSize: "clamp(15px,3.5vw,17px)", color: "rgba(255,255,255,0.75)", maxWidth: "420px", margin: "0 auto 32px", lineHeight: 1.6 }}>
+            <h2>Klar til at spille?</h2>
+            <p style={{ fontSize: "clamp(15px,3.5vw,17px)", color: "var(--pm-hero-subtitle)", maxWidth: "420px", margin: "0 auto 32px", lineHeight: 1.6 }}>
               Opret din gratis profil, find spillere på dit niveau og gør det lettere at få næste kamp i kalenderen.
             </p>
             <button onClick={() => navigate("/opret")} style={ctaPrimaryBtnStyle} aria-label="Opret gratis profil og kom i gang">

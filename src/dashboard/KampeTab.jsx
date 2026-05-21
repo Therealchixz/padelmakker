@@ -1750,13 +1750,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         onClick={unreadMatchCount > 0 ? () => { void markMatchNotifsRead(m.id); } : undefined}
       >
         {/* Blå gradient header — fælles stil med Americano og Liga */}
-        <div
-          style={{
-            background: "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)",
-            color: "#FFFFFF",
-            padding: "14px 16px",
-          }}
-        >
+        <div className="pm-cta-gradient" style={{ padding: "14px 16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div
@@ -1832,7 +1826,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   padding: "4px 9px",
                   borderRadius: 999,
                   background: "rgba(220,38,38,0.95)",
-                  color: "#FFFFFF",
+                  color: theme.onAccent,
                   letterSpacing: "0.08em",
                   whiteSpace: "nowrap",
                 }}
@@ -1864,7 +1858,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   padding: "4px 10px",
                   borderRadius: 999,
                   background: "rgba(255,255,255,0.18)",
-                  color: "#FFFFFF",
+                  color: theme.onAccent,
                   whiteSpace: "nowrap",
                 }}
               >

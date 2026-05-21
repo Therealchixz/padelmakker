@@ -19,11 +19,17 @@ export const theme = {
   blue:        'var(--pm-blue)',
   blueBg:      'var(--pm-blue-bg)',
   infoBorder:  'var(--pm-info-border)',
+  warningBorder:'var(--pm-warning-border)',
   red:         'var(--pm-red)',
   redBg:       'var(--pm-red-bg)',
+  dangerBorder:'var(--pm-danger-border)',
   dangerStrong:'var(--pm-danger-strong)',
   green:       'var(--pm-green)',
   greenBg:     'var(--pm-green-bg)',
+  winText:     'var(--pm-americano-win-text)',
+  surfaceMuted:'var(--pm-surface-muted)',
+  ctaGradient: 'var(--pm-cta-gradient)',
+  videoBg:     'var(--pm-video-bg)',
   purple:      'var(--pm-purple)',
   purpleBg:    'var(--pm-purple-bg)',
   brandGradient: 'var(--pm-brand-gradient)',
@@ -153,3 +159,23 @@ export const heading = (size = '24px') => ({
   letterSpacing: '-0.03em',
   color: 'var(--pm-text)',
 });
+
+/** AppModal width presets — see docs/UI_GUIDELINES.md */
+export const MODAL_WIDTH_PRESETS = {
+  sm: '380px',
+  md: '520px',
+  lg: '640px',
+};
+
+export function resolveModalMaxWidth(presetOrPx) {
+  if (presetOrPx && MODAL_WIDTH_PRESETS[presetOrPx]) return MODAL_WIDTH_PRESETS[presetOrPx];
+  return presetOrPx || MODAL_WIDTH_PRESETS.md;
+}
+
+/** Find makker match-score badge colors (tokens) */
+export function makkerMatchBadge(score) {
+  if (score >= 80) return { label: 'Stærk match', color: 'var(--pm-green)', bg: 'var(--pm-green-bg)', border: 'var(--pm-success-border)' };
+  if (score >= 65) return { label: 'God match', color: 'var(--pm-accent)', bg: 'var(--pm-accent-bg)', border: 'var(--pm-info-border)' };
+  if (score >= 50) return { label: 'Okay match', color: 'var(--pm-warm)', bg: 'var(--pm-warm-bg)', border: 'var(--pm-warning-border)' };
+  return { label: 'Mulig match', color: 'var(--pm-text-light)', bg: 'var(--pm-surface-alt)', border: 'var(--pm-border)' };
+}

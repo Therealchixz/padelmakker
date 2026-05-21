@@ -45,33 +45,9 @@ export function SignupEmailSentPage() {
         justifyContent: 'flex-start',
       }}
     >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '420px',
-          background: theme.surface,
-          borderRadius: theme.radius,
-          padding: '36px 28px 32px',
-          boxShadow: theme.shadowLg,
-          border: '1px solid ' + theme.border,
-          textAlign: 'center',
-        }}
-      >
-        <div
-          style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
-            background: '#22C55E',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px',
-            boxShadow: '0 8px 24px rgba(34, 197, 94, 0.3)',
-          }}
-          aria-hidden
-        >
-          <Check size={30} strokeWidth={2.5} color="#fff" />
+      <div className="pm-auth-panel pm-auth-panel--centered pm-auth-panel--stack">
+        <div className="pm-auth-check-icon" aria-hidden>
+          <Check size={30} strokeWidth={2.5} />
         </div>
 
         <h1

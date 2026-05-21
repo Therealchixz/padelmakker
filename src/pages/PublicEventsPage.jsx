@@ -8,8 +8,8 @@ import { formatMatchDateDa, formatTimeSlotDa } from '../lib/matchDisplayUtils';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 
 function statusLabel(status) {
-  if (status === 'playing') return { text: 'I gang', bg: theme.warmBg, border: '#FCD34D', color: theme.warm };
-  return { text: 'Tilmelding åben', bg: theme.accentBg, border: '#93C5FD', color: theme.accent };
+  if (status === 'playing') return { text: 'I gang', bg: theme.warmBg, border: theme.warningBorder, color: theme.warm };
+  return { text: 'Tilmelding åben', bg: theme.accentBg, border: theme.infoBorder, color: theme.accent };
 }
 
 export function PublicEventsPage() {

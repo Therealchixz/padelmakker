@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { Users, MapPin, Swords, Trophy, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
+import { PageSectionTitle } from '../components/PageSectionTitle';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
@@ -945,9 +946,7 @@ export function HomeTab({ user, setTab }) {
             </div>
           ) : null}
           <div className="pm-feed-filters-header">
-            <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Seneste aktivitet
-            </div>
+            <PageSectionTitle>Seneste aktivitet</PageSectionTitle>
             <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
               <div className="pm-feed-filters-row">
                 <button

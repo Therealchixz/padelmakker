@@ -285,17 +285,7 @@ export function PhoneVerificationPage() {
         justifyContent: 'flex-start',
       }}
     >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '420px',
-          background: theme.surface,
-          borderRadius: theme.radius,
-          padding: '30px 26px',
-          boxShadow: theme.shadowLg,
-          border: '1px solid ' + theme.border,
-        }}
-      >
+      <div className="pm-auth-panel pm-auth-panel--centered">
         <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>Bekræft dit telefonnummer</h1>
         <p style={{ color: theme.textMid, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>
           {mode === 'phone_change'
@@ -304,16 +294,7 @@ export function PhoneVerificationPage() {
         </p>
 
         {noPendingSignup && (
-          <div style={{
-            background: theme.surfaceAlt,
-            border: '1px solid ' + theme.border,
-            borderRadius: '10px',
-            padding: '12px',
-            marginBottom: '14px',
-            color: theme.textMid,
-            fontSize: '13px',
-            lineHeight: 1.5,
-          }}>
+          <div className="pm-auth-info-card">
             Vi kunne ikke finde en aktiv oprettelse. Start venligst fra opret-siden.
           </div>
         )}
@@ -432,18 +413,7 @@ export function PhoneVerificationPage() {
         )}
 
         {mode === 'signup' && otpSent && (
-          <div
-            style={{
-              marginTop: '16px',
-              padding: '12px',
-              background: theme.surfaceAlt,
-              borderRadius: '10px',
-              border: '1px solid ' + theme.border,
-              fontSize: '12px',
-              color: theme.textMid,
-              lineHeight: 1.5,
-            }}
-          >
+          <div className="pm-auth-post-verify-note">
             <strong style={{ color: theme.text }}>Efter bekræftelse:</strong> Du logges kort ud, så du kan bekræfte email på
             næste side. Det er med vilje — så login først virker, når både telefon og email er bekræftet.
           </div>

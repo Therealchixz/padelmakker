@@ -1,5 +1,6 @@
 import React from "react";
 import * as Sentry from "@sentry/react";
+import { btn } from "./lib/platformTheme";
 
 function debugMode() {
   try {
@@ -39,68 +40,23 @@ export class ErrorBoundary extends React.Component {
       const msg = this.state.err?.message || String(this.state.err);
       const eventId = this.state.eventId;
       return (
-        <div
-          style={{
-            minHeight: "100dvh",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
-            fontFamily: "system-ui, sans-serif",
-            background: "#F0F4F8",
-            color: "#0B1120",
-            textAlign: "center",
-          }}
-        >
+        <div className="pm-error-boundary">
           <p style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Noget gik galt</p>
-          <p style={{ fontSize: 14, color: "#3E4C63", maxWidth: 360, lineHeight: 1.5, marginBottom: 12 }}>
+          <p style={{ fontSize: 14, color: "var(--pm-text-mid)", maxWidth: 360, lineHeight: 1.5, marginBottom: 12 }}>
             Prøv at genindlæse siden. Virker det ikke, så ryd cache for websitet eller kontakt support.
           </p>
-          {showDetail && (
-            <pre
-              style={{
-                textAlign: "left",
-                fontSize: 11,
-                color: "#64748B",
-                maxWidth: "min(100%, 420px)",
-                overflow: "auto",
-                padding: 12,
-                background: "#fff",
-                borderRadius: 8,
-                border: "1px solid #E2E8F0",
-                marginBottom: 16,
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-              }}
-            >
-              {msg}
-            </pre>
-          )}
+          {showDetail && <pre>{msg}</pre>}
           {!showDetail && (
-            <p style={{ fontSize: 12, color: "#94A3B8", marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: "var(--pm-text-light)", marginBottom: 16 }}>
               (Til udviklere: åbn siden med <code>?debug=1</code> for fejlbesked)
             </p>
           )}
           {eventId && (
-            <p style={{ fontSize: 11, color: "#94A3B8", marginBottom: 16 }}>
+            <p style={{ fontSize: 11, color: "var(--pm-text-light)", marginBottom: 16 }}>
               Reference: <code style={{ userSelect: "all" }}>{eventId}</code>
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            style={{
-              padding: "12px 20px",
-              borderRadius: 10,
-              border: "none",
-              background: "#1D4ED8",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: 15,
-              cursor: "pointer",
-            }}
-          >
+          <button type="button" onClick={() => window.location.reload()} style={{ ...btn(true), padding: "12px 20px", fontSize: "15px" }}>
             Genindlæs
           </button>
         </div>

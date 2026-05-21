@@ -305,7 +305,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
                 borderRadius: 8,
                 border: `1.5px solid ${active ? theme.accent : theme.border}`,
                 background: active ? theme.accent : theme.surface,
-                color: active ? '#fff' : theme.textMid,
+                color: active ? theme.onAccent : theme.textMid,
                 cursor: 'pointer',
               }}
             >
@@ -363,7 +363,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
                 width: 18,
                 height: 18,
                 borderRadius: '50%',
-                background: '#fff',
+                background: theme.surface,
                 transition: 'left 0.2s',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
               }}
@@ -414,7 +414,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
                 width: 18,
                 height: 18,
                 borderRadius: '50%',
-                background: '#fff',
+                background: theme.surface,
                 transition: 'left 0.2s',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
               }}
