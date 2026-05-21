@@ -38,7 +38,7 @@ export function OnboardingPage() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
-  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: null, style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false, preferred_partner_level: "" });
+  const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "", intent_now: "", seeking_match: false, travel_willing: false, preferred_partner_level: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
   /** Undgå gentaget auto-spring fra trin 1 → 0 → 1 når brugeren går tilbage. */
@@ -589,7 +589,7 @@ export function OnboardingPage() {
 
       <div style={labelStyle}>Niveau</div>
       <p style={{ fontSize: 13, color: theme.textLight, marginBottom: 12, lineHeight: 1.45 }}>
-        Vælg et udgangspunkt og finjustér — fx 3,3 hvis du ligger mellem 3,0 og 3,5.
+        Træk slideren eller skriv dit niveau — fx 3,3 hvis du ligger mellem 3,0 og 3,5.
       </p>
       <div style={{ marginBottom: 24 }}>
         <PlaytomicLevelPicker

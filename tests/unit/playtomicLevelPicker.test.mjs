@@ -9,7 +9,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 test('PlaytomicLevelPicker supports fine-tuned decimal level', () => {
   const src = readFileSync(join(root, 'src/components/PlaytomicLevelPicker.jsx'), 'utf8');
   assert.match(src, /step=\{0\.1\}/);
-  assert.match(src, /Finjuster dit niveau/);
+  assert.match(src, /Hurtig valg/);
+  assert.doesNotMatch(src, /Finjuster dit niveau/);
   assert.match(src, /type="number"/);
 });
 
