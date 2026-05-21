@@ -914,7 +914,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             )}
             {americanoRelationStats.toughestPartners.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Sværeste makker</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Taber mest med</div>
                 {americanoRelationStats.toughestPartners.map((p, i) => (
                   <div key={`tough-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
                     <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
@@ -924,7 +924,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((p.asPartner.wins / p.asPartner.rounds) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr på banen</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr som makker</div>
                     </div>
                   </div>
                 ))}
@@ -994,7 +994,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             )}
             {ligaRelationStats.toughestPartners.length > 0 && (
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Sværeste makker</div>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>Taber mest med</div>
                 {ligaRelationStats.toughestPartners.map((p, i) => (
                   <div key={`liga-tough-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
                     <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
@@ -1004,7 +1004,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((p.asPartner.wins / p.asPartner.matches) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr som makker</div>
                     </div>
                   </div>
                 ))}
