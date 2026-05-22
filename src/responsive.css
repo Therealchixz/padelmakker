@@ -3727,12 +3727,22 @@ button,
   max-width: 100%;
 }
 
-/* Dato — samme boks som text input (inputStyle); kun hint-overlay */
+/* Dato — samme boks som tekst-input (inputStyle på selve input) */
 .pm-date-field {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.pm-date-field__clip {
   position: relative;
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
+  overflow: hidden;
+  border-radius: var(--pm-radius-md);
 }
 
 .pm-date-field__input {
@@ -3743,15 +3753,8 @@ button,
   box-sizing: border-box;
 }
 
-.pm-date-field__input--empty {
-  color: transparent;
-}
-
-.pm-date-field__input--empty:focus {
-  color: var(--pm-text);
-}
-
 .pm-date-field__hint {
+  display: none;
   position: absolute;
   left: calc(var(--pm-space-2) + 2px);
   right: 2.75rem;
@@ -3760,14 +3763,58 @@ button,
   font-family: var(--pm-font);
   font-size: 14px;
   line-height: 1.2;
+  letter-spacing: 0.02em;
   color: var(--pm-text-light);
   pointer-events: none;
+  white-space: nowrap;
 }
 
-/* Dato-inputs har stor min-bredde på mobil — stak felter under 640px */
+/* Tom: skjul WebKit dd/mm/åå (overlapper på smal bredde) — vis én hint */
+.pm-date-field__input--empty {
+  color: transparent;
+}
+
+.pm-date-field__input--empty:focus {
+  color: var(--pm-text);
+}
+
+.pm-date-field__input--empty::-webkit-datetime-edit,
+.pm-date-field__input--empty::-webkit-datetime-edit-fields-wrapper,
+.pm-date-field__input--empty::-webkit-datetime-edit-day-field,
+.pm-date-field__input--empty::-webkit-datetime-edit-month-field,
+.pm-date-field__input--empty::-webkit-datetime-edit-year-field {
+  opacity: 0;
+}
+
+.pm-date-field__input--empty ~ .pm-date-field__hint {
+  display: block;
+}
+
 @media (max-width: 640px) {
   .pm-form-2col {
     grid-template-columns: 1fr;
+  }
+
+  /*
+   * Safari/iOS: type=date har ofte indre min-bredde > 100%.
+   * Gør input lidt bredere og klip i __clip — kanten forbliver i kortet.
+   */
+  .pm-create-form-anchor .pm-date-field {
+    overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .pm-create-form-anchor .pm-date-field__clip {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .pm-create-form-anchor .pm-date-field__input {
+    width: calc(100% + 3rem) !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin-right: -3rem;
   }
 }
 

@@ -1,6 +1,6 @@
 /**
- * Dato-input — samme markup som øvrige felter (label + input med inputStyle).
- * Hint dd-mm-åååå kun når tom; wrapper har ingen ekstra ramme/overflow.
+ * Dato-input — samme inputStyle som tekstfelter.
+ * Tom: én dd-mm-åååå-hint (WebKit-felter skjult). Mobil: bredere input klippet i __clip.
  */
 export function DateInputField({
   label,
@@ -17,20 +17,26 @@ export function DateInputField({
     <>
       {label ? <label style={labelStyle}>{label}</label> : null}
       <div className="pm-date-field" style={{ marginBottom }}>
-        <input
-          type="date"
-          className={empty ? 'pm-date-field__input pm-date-field__input--empty' : 'pm-date-field__input'}
-          value={value}
-          min={min}
-          onChange={onChange}
-          style={{ ...fieldInputStyle, marginBottom: 0 }}
-          aria-label={typeof label === 'string' ? label : undefined}
-        />
-        {empty ? (
-          <span className="pm-date-field__hint" aria-hidden="true">
-            dd-mm-åååå
-          </span>
-        ) : null}
+        <div className="pm-date-field__clip">
+          <input
+            type="date"
+            className={
+              empty
+                ? 'pm-date-field__input pm-date-field__input--empty'
+                : 'pm-date-field__input'
+            }
+            value={value}
+            min={min}
+            onChange={onChange}
+            style={{ ...fieldInputStyle, marginBottom: 0 }}
+            aria-label={typeof label === 'string' ? label : undefined}
+          />
+          {empty ? (
+            <span className="pm-date-field__hint" aria-hidden="true">
+              dd-mm-åååå
+            </span>
+          ) : null}
+        </div>
       </div>
     </>
   );
