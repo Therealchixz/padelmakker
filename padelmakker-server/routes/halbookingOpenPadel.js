@@ -115,6 +115,7 @@ export async function handleHalbookingOpenPadel(req, res) {
       hidden += `<input type="hidden" name="${escAttr(name)}" value="${escAttr(value)}"/>`;
     }
 
+    const procEsc = escAttr(PROC_BANER);
     const body = `<!DOCTYPE html>
 <html lang="da">
 <head>
@@ -124,10 +125,18 @@ export async function handleHalbookingOpenPadel(req, res) {
 </head>
 <body style="font-family:system-ui,sans-serif;padding:1.5rem;max-width:32rem;">
   <p>Åbner Halbooking…</p>
-  <p style="color:#666;font-size:14px;">Hvis intet sker, <button type="submit" form="pm-hb-padel" style="font:inherit;cursor:pointer;color:#1d4ed8;text-decoration:underline;background:none;border:none;padding:0;">klik her</button>.</p>
-  <form id="pm-hb-padel" method="post" action="${PROC_BANER}" accept-charset="iso-8859-1">
+  <form id="pm-hb-padel" method="post" action="${procEsc}" accept-charset="iso-8859-1">
     ${hidden}
+    <p style="margin-top:1rem;">
+      <button type="submit" style="font:inherit;cursor:pointer;padding:0.5rem 1rem;background:#1d4ed8;color:#fff;border:none;border-radius:6px;">
+        Fortsæt til booking
+      </button>
+    </p>
   </form>
+  <p style="color:#666;font-size:14px;margin-top:1rem;">
+    Hvis du ikke viderestilles automatisk, brug knappen ovenfor eller
+    <a href="${procEsc}" style="color:#1d4ed8;">åbn Halbooking direkte</a>.
+  </p>
   <script src="/hb-submit.js"></script>
 </body>
 </html>`;
