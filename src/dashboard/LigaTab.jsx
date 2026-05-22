@@ -1982,7 +1982,7 @@ export function LigaTab({
             size="sm"
             style={{ marginBottom: '10px' }}
           />
-          <div className="pm-form-2col pm-form-2col--dates" style={{ marginBottom: '10px' }}>
+          <div className="pm-form-date-stack">
             <DateInputField
               label="Startdato"
               value={createForm.start_date}

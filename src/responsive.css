@@ -3727,17 +3727,35 @@ button,
   max-width: 100%;
 }
 
+.pm-form-date-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.pm-form-date-stack > .pm-date-input-wrap {
+  width: 100%;
+  max-width: 100%;
+  flex: 0 0 auto;
+  align-self: stretch;
+}
+
 .pm-date-input-wrap {
+  display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
 }
 
-/* Ramme på wrapper — native date-input tegner ofte ud over på mobil */
+/* Ramme på wrapper — samme bredde/højde som øvrige inputStyle-felter */
 .pm-date-input-inner {
   position: relative;
-  display: flex;
-  align-items: center;
+  display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -3750,11 +3768,11 @@ button,
 }
 
 .pm-date-input-native {
-  flex: 1 1 auto;
   display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  height: 100%;
   min-height: calc(var(--pm-control-h) - 2px);
   margin: 0;
   padding: 10px calc(var(--pm-space-2) + 2px);
@@ -3807,12 +3825,6 @@ button,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.pm-form-2col--dates {
-  width: 100%;
-  max-width: 100%;
-  grid-template-columns: 1fr;
 }
 
 /* Dato-inputs har stor min-bredde på mobil — stak felter under 640px */
