@@ -1982,22 +1982,20 @@ export function LigaTab({
             size="sm"
             style={{ marginBottom: '10px' }}
           />
-          <div className="pm-form-date-stack">
-            <DateInputField
-              label="Startdato"
-              value={createForm.start_date}
-              onChange={(e) => setCreateForm((f) => ({ ...f, start_date: e.target.value }))}
-              labelStyle={labelStyle}
-              inputStyle={inputStyle}
-            />
-            <DateInputField
-              label="Slutdato"
-              value={createForm.end_date}
-              onChange={(e) => setCreateForm((f) => ({ ...f, end_date: e.target.value }))}
-              labelStyle={labelStyle}
-              inputStyle={inputStyle}
-            />
-          </div>
+          <DateInputField
+            label="Startdato"
+            value={createForm.start_date}
+            onChange={(e) => setCreateForm((f) => ({ ...f, start_date: e.target.value }))}
+            labelStyle={labelStyle}
+            inputStyle={{ ...inputStyle, marginBottom: '10px' }}
+          />
+          <DateInputField
+            label="Slutdato"
+            value={createForm.end_date}
+            onChange={(e) => setCreateForm((f) => ({ ...f, end_date: e.target.value }))}
+            labelStyle={labelStyle}
+            inputStyle={{ ...inputStyle, marginBottom: '10px' }}
+          />
           <label style={labelStyle}>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
           <input
             type="number"

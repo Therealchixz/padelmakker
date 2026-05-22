@@ -1,5 +1,6 @@
 /**
- * Dato-input med samme inputStyle som øvrige felter + dd-mm-åååå-hint når tom.
+ * Dato-input — samme markup som øvrige felter (label + input med inputStyle).
+ * Hint dd-mm-åååå kun når tom; wrapper har ingen ekstra ramme/overflow.
  */
 export function DateInputField({
   label,
@@ -8,39 +9,29 @@ export function DateInputField({
   labelStyle,
   inputStyle,
   min,
-  className = '',
 }) {
   const empty = !value;
-  const baseInputStyle = inputStyle || {};
-  const { marginBottom, ...inputRest } = baseInputStyle;
-  const inputFieldStyle = {
-    ...inputRest,
-    marginBottom: 0,
-    display: 'block',
-  };
+  const { marginBottom = '10px', ...fieldInputStyle } = inputStyle || {};
 
   return (
-    <div
-      className={`pm-form-field pm-date-input-wrap ${className}`.trim()}
-      style={{ width: '100%', marginBottom: marginBottom ?? 0 }}
-    >
+    <>
       {label ? <label style={labelStyle}>{label}</label> : null}
-      <div className="pm-date-input-shell">
+      <div className="pm-date-field" style={{ marginBottom }}>
         <input
           type="date"
-          className={empty ? 'pm-date-input--empty' : undefined}
+          className={empty ? 'pm-date-field__input pm-date-field__input--empty' : 'pm-date-field__input'}
           value={value}
           min={min}
           onChange={onChange}
-          style={inputFieldStyle}
+          style={{ ...fieldInputStyle, marginBottom: 0 }}
           aria-label={typeof label === 'string' ? label : undefined}
         />
         {empty ? (
-          <span className="pm-date-input-hint" aria-hidden="true">
+          <span className="pm-date-field__hint" aria-hidden="true">
             dd-mm-åååå
           </span>
         ) : null}
       </div>
-    </div>
+    </>
   );
 }

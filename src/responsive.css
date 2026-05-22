@@ -3727,28 +3727,15 @@ button,
   max-width: 100%;
 }
 
-.pm-form-date-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+/* Dato — samme boks som text input (inputStyle); kun hint-overlay */
+.pm-date-field {
+  position: relative;
   width: 100%;
   max-width: 100%;
-  margin-bottom: 10px;
   box-sizing: border-box;
 }
 
-.pm-form-date-stack > .pm-date-input-wrap + .pm-date-input-wrap {
-  margin-top: 10px;
-}
-
-.pm-form-date-stack > .pm-date-input-wrap {
-  width: 100%;
-  max-width: 100%;
-  flex: 0 0 auto;
-  align-self: stretch;
-}
-
-.pm-date-input-wrap {
+.pm-date-field__input {
   display: block;
   width: 100%;
   max-width: 100%;
@@ -3756,39 +3743,15 @@ button,
   box-sizing: border-box;
 }
 
-/* Samme box som inputStyle; shell clipper kun WebKit-overflow på mobil */
-.pm-date-input-shell {
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.pm-date-input-shell input[type="date"] {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
-.pm-date-input-shell input[type="date"]::-webkit-datetime-edit,
-.pm-date-input-shell input[type="date"]::-webkit-datetime-edit-fields-wrapper {
-  min-width: 0;
-  max-width: 100%;
-}
-
-/* Tom dato: skjul browserens tomme visning, vis dd-mm-åååå-hint */
-.pm-date-input--empty {
+.pm-date-field__input--empty {
   color: transparent;
 }
 
-.pm-date-input--empty:focus {
+.pm-date-field__input--empty:focus {
   color: var(--pm-text);
 }
 
-.pm-date-input-hint {
+.pm-date-field__hint {
   position: absolute;
   left: calc(var(--pm-space-2) + 2px);
   right: 2.75rem;
@@ -3799,9 +3762,6 @@ button,
   line-height: 1.2;
   color: var(--pm-text-light);
   pointer-events: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Dato-inputs har stor min-bredde på mobil — stak felter under 640px */
