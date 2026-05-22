@@ -42,6 +42,7 @@ export const BANER_INTEGRATED_INDOOR_VERIFIED = {
   // Bookli
   padelpadel_aalborg: true,
   padelclub_roskilde_bookli: true,
+  padelclub_koge_bookli: true,
 
   // MATCHi (Padel INDOORS / OUTDOORS fra facilitetsside)
   matchi_padel99: true,
@@ -134,4 +135,16 @@ export const BANER_INTEGRATED_INDOOR_VERIFIED = {
   matchi_westpadelvorupor: false,
   matchi_orslevidrotsforning: true,
   matchi_padelaarup: true,
+  matchi_apn: true,
+  matchi_aps: true,
+  matchi_babooncitypadletennis: true,
+  matchi_bankagerpadel: true,
+  matchi_bryruptennisklub: true,
+  matchi_baringgf: true,
+  matchi_dianalundpadelklub: true,
+  matchi_gedvedifpadel: true,
+  matchi_padelhouse: true,
+  matchi_skylightpadel: true,
+  matchi_sicenter: true,
+  matchi_vardepadel: true,
 };

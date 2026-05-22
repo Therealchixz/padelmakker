@@ -103,16 +103,6 @@ export const BANER_VENUES_LINKS = [
   },
   {
     "kind": "link",
-    "id": "link_munkebo_padel_club_munkebo",
-    "title": "Padel Club Munkebo",
-    "address": "Munkebo — se booking-link",
-    "indoor": true,
-    "region": "Fyn",
-    "bookingUrl": "https://padelclub.dk/l/munkebo",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
     "id": "link_rudk_bing_langeland_rudk_bing_tennisklub",
     "title": "Rudkøbing Tennisklub",
     "address": "Rudkøbing, Langeland — se booking-link",
@@ -179,16 +169,6 @@ export const BANER_VENUES_LINKS = [
     "indoor": false,
     "region": "Hovedstaden",
     "bookingUrl": "http://www.altennis.mono.net/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
-    "id": "link_k_benhavn_nv_arbejdernes_tennisklub",
-    "title": "Arbejdernes Tennisklub",
-    "address": "København NV — se booking-link",
-    "indoor": false,
-    "region": "Hovedstaden",
-    "bookingUrl": "http://www.atk-tennis.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
   {
@@ -573,16 +553,6 @@ export const BANER_VENUES_LINKS = [
   },
   {
     "kind": "link",
-    "id": "link_k_ge_padel_club_k_ge",
-    "title": "Padel Club Køge",
-    "address": "Køge — se booking-link",
-    "indoor": true,
-    "region": "Sjælland",
-    "bookingUrl": "https://padelclub.dk/koege/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
     "id": "link_ringsted_padel_club_ringsted",
     "title": "Padel Club Ringsted",
     "address": "Ringsted — se booking-link",
@@ -929,16 +899,6 @@ export const BANER_VENUES_LINKS = [
     "indoor": true,
     "region": "Østjylland",
     "bookingUrl": "https://www.auningik.dk/padel-tennis/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
-    "id": "link_bjerringbro_bjerringbro_idr_ts_og_kulturcenter",
-    "title": "Bjerringbro Idræts og Kulturcenter",
-    "address": "Bjerringbro — se booking-link",
-    "indoor": true,
-    "region": "Østjylland",
-    "bookingUrl": "https://bjerringbroip.dk/padel/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
   {

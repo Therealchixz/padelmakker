@@ -15,6 +15,11 @@ export const BOOKLI_VENUE_ALLOWLIST = {
     resourceCategoryId: 'ckt1o3vwt10174391d8qfbpq32s0',
     timezone: 'Europe/Copenhagen',
   },
+  padelclub_koge_bookli: {
+    locationId: 'cl6kkzj108249110ds68hhwggm8',
+    resourceCategoryId: 'cl6kl6i1w8691970ds6ojdztv6t',
+    timezone: 'Europe/Copenhagen',
+  },
 };
 
 export function getBookliVenue(venueId) {

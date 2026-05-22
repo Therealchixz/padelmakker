@@ -534,6 +534,78 @@ export const MATCHI_VENUE_ALLOWLIST = {
     indoorQuery: '',
     bookingUrl: 'https://www.matchi.se/facilities/padelaarup',
   },
+  matchi_apn: {
+    facilityId: '1912',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/apn',
+  },
+  matchi_aps: {
+    facilityId: '1911',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/aps',
+  },
+  matchi_babooncitypadletennis: {
+    facilityId: '903',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/BaboonCityPadleTennis',
+  },
+  matchi_bankagerpadel: {
+    facilityId: '2437',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/bankagerpadel',
+  },
+  matchi_bryruptennisklub: {
+    facilityId: '1150',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/BryrupTennisklub',
+  },
+  matchi_baringgf: {
+    facilityId: '1810',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/baringgf',
+  },
+  matchi_dianalundpadelklub: {
+    facilityId: '2501',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/dianalundpadelklub',
+  },
+  matchi_gedvedifpadel: {
+    facilityId: '2131',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/gedvedifpadel',
+  },
+  matchi_padelhouse: {
+    facilityId: '1380',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/padelhouse',
+  },
+  matchi_skylightpadel: {
+    facilityId: '2465',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/skylightpadel',
+  },
+  matchi_sicenter: {
+    facilityId: '2313',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/sicenter',
+  },
+  matchi_vardepadel: {
+    facilityId: '1728',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/vardepadel',
+  },
 };
 
 const MATCHI_ORIGIN = 'https://www.matchi.se';

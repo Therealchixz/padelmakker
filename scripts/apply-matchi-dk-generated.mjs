@@ -23,16 +23,18 @@ function apply(path, check, from, to) {
   console.log('Patched', path);
 }
 
+const firstId = allowPart.match(/^\s+(matchi_\w+):/m)?.[1] || 'matchi_apn';
+
 apply(
   'padelmakker-server/matchiAllowlist.js',
-  'matchi_lunden:',
+  `${firstId}:`,
   '\r\n};\r\n\r\nconst MATCHI_ORIGIN',
   `\r\n${allowPart.replace(/\n/g, '\r\n')}\r\n};\r\n\r\nconst MATCHI_ORIGIN`
 );
 
 apply(
   'src/lib/banerVenues.js',
-  "id: 'matchi_lunden'",
+  `id: '${firstId}'`,
   '\r\n];\r\n\r\nconst BANER_VENUES_LINKS_DEDUPED',
   `\r\n${banerPart.replace(/\n/g, '\r\n')}\r\n];\r\n\r\nconst BANER_VENUES_LINKS_DEDUPED`
 );
@@ -40,9 +42,11 @@ apply(
 const indoorLines = [...banerPart.matchAll(/id: '(matchi_[^']+)'[\s\S]*?indoor: (true|false)/g)].map(
   (m) => `  ${m[1]}: ${m[2]},`
 );
-apply(
-  'src/lib/banerVenueIndoorVerified.js',
-  'matchi_lunden:',
-  '  matchi_padelground_aarhus: true,\r\n};',
-  `  matchi_padelground_aarhus: true,\r\n${indoorLines.join('\r\n')}\r\n};`
-);
+if (indoorLines.length) {
+  apply(
+    'src/lib/banerVenueIndoorVerified.js',
+    `${firstId}:`,
+    '  matchi_padelaarup: true,\r\n};',
+    `  matchi_padelaarup: true,\r\n${indoorLines.join('\r\n')}\r\n};`
+  );
+}

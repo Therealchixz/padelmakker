@@ -4,6 +4,12 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { MATCHI_VENUE_ALLOWLIST } from '../padelmakker-server/matchiAllowlist.js';
+
+const EXISTING_FACILITY_IDS = new Set(
+  Object.values(MATCHI_VENUE_ALLOWLIST).map((c) => String(c.facilityId))
+);
+const EXISTING_VENUE_IDS = new Set(Object.keys(MATCHI_VENUE_ALLOWLIST));
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const collect = JSON.parse(readFileSync(join(__dirname, 'output/matchi-denmark-all.json'), 'utf8'));
@@ -21,7 +27,7 @@ const MANUAL = [
   { facilityId: '2412', shortname: 'jellingpadel', name: 'Jelling Padel', city: 'Jelling', zipcode: '', address: '', region: 'Østjylland', indoor: false },
 ];
 
-const SKIP_IDS = new Set(['2625', '373']); // camping, test
+const SKIP_IDS = new Set(['2625', '373', '2232', '2262']); // camping, test; Breintholt/Taastrup = link-only (ingen schedule API)
 const SKIP_NAME = /camping|golfcenter.*padel$/i;
 
 function toId(shortname) {
@@ -60,6 +66,9 @@ const byId = new Map();
 for (const v of [...collect.missing, ...MANUAL]) {
   const id = String(v.facilityId);
   if (SKIP_IDS.has(id) || SKIP_NAME.test(v.name)) continue;
+  if (EXISTING_FACILITY_IDS.has(id)) continue;
+  const vid = toId(v.shortname);
+  if (EXISTING_VENUE_IDS.has(vid)) continue;
   if (!byId.has(id)) {
     byId.set(id, {
       ...v,

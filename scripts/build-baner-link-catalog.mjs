@@ -68,6 +68,11 @@ const INTEGRATED_TITLE_KEYS = new Set(
     'Bjerringbro Padel (Halbooking)',
     'Jelling Padel / Gormshallen (MATCHi)',
     'Padel Arena Hedensted (MATCHi)',
+    'Breintholtgård Padel, Esbjerg (MATCHi)',
+    'Racket Club Taastrup (MATCHi)',
+    'Padel Club Køge (Bookli)',
+    'Padel Club Roskilde (Bookli)',
+    'Padel Club Køge (Bookli)',
   ].map((t) => normalizeVenueTitleKey(t))
 );
 
@@ -203,6 +208,7 @@ const INTEGRATED_URL_FRAGMENTS = [
   'bjerringbroip.halbooking',
   'blaavandshuk.halbooking',
   'bookli.app/go/location/ckt1o3a2u11617261da07ieg2nmc',
+  'bookli.app/go/location/cl6kkzj108249110ds68hhwggm8',
 ];
 
 function slugify(...parts) {
@@ -219,6 +225,8 @@ function slugify(...parts) {
 /** Kendte booking-URL’er (Padellife linker ofte til marketing-site, ikke kalender). */
 const BOOKING_URL_OVERRIDES = {
   'Padel Sport Lemvig': 'https://eu.padeliq.io/da/padel-sport-lemvig/booking',
+  'Padel Club Munkebo': 'https://bookli.app/go/location/cl6kkzj108249110ds68hhwggm8',
+  'Padel Club Køge': 'https://bookli.app/go/location/cl6kkzj108249110ds68hhwggm8',
 };
 
 const PADELIQ_NOTE =

@@ -9,6 +9,9 @@ export function normalizeVenueTitleKey(title) {
     .replace(/padel\s+ground/gi, 'padelground')
     .replace(/\s*—\s*padel\b/gi, ' ')
     .replace(/\barbejdernes tennisklub\b/gi, 'arbejdernes tennisklub atk')
+    .replace(/\bjelling forenede sportsklubber\b/gi, 'jelling padel gormshallen')
+    .replace(/\bbjerringbro idr[æa]ts og kulturcenter\b/gi, 'bjerringbro padel')
+    .replace(/\bpadel lounge (randers|skejby)\b/gi, 'padel lounge aarhus skejby')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
