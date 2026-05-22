@@ -2898,12 +2898,19 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             </div>
           </div>
           <label style={{ ...labelStyle, marginTop: "12px" }}>Beskrivelse (valgfrit)</label>
-          <textarea
-            className="pm-create-match-description"
-            value={newMatch.description}
-            onChange={(e) => setNewMatch((m) => ({ ...m, description: e.target.value }))}
-            placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'"
-          />
+          <div className="pm-create-match-description-wrap">
+            {!newMatch.description.trim() ? (
+              <span className="pm-create-match-description-hint" aria-hidden>
+                F.eks. &apos;Søger venstreside-spiller&apos; eller &apos;Begyndervenlig kamp&apos;
+              </span>
+            ) : null}
+            <textarea
+              className="pm-create-match-description"
+              value={newMatch.description}
+              onChange={(e) => setNewMatch((m) => ({ ...m, description: e.target.value }))}
+              aria-label="Beskrivelse af kampen (valgfrit)"
+            />
+          </div>
 
           <label style={{ ...labelStyle, marginTop: "14px" }}>Kamptyp</label>
           <PillTabs
