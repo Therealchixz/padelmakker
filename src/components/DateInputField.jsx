@@ -1,6 +1,29 @@
+import { useRef } from 'react';
+
+/** ISO YYYY-MM-DD → dd-mm-åååå (visning i felt) */
+function formatIsoForDisplay(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '').trim());
+  if (!m) return '';
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
+function openNativeDatePicker(nativeInput) {
+  if (!nativeInput) return;
+  try {
+    if (typeof nativeInput.showPicker === 'function') {
+      nativeInput.showPicker();
+      return;
+    }
+  } catch {
+    /* showPicker kan kaste hvis ikke i bruger-gesture */
+  }
+  nativeInput.focus();
+  nativeInput.click();
+}
+
 /**
- * Dato-input — synlig boks på __clip (100 % bredde), ikke på input.
- * Undgår at WebKit type=date's indre min-bredde skubber border ud over kortet på mobil.
+ * Dato-felt med samme look som inputStyle (tekst-input).
+ * Synligt felt er type=text; native date-picker via skjult input (mobil-safe).
  */
 export function DateInputField({
   label,
@@ -10,66 +33,44 @@ export function DateInputField({
   inputStyle,
   min,
 }) {
-  const empty = !value;
-  const { marginBottom = '10px', ...fieldInputStyle } = inputStyle || {};
+  const nativeRef = useRef(null);
+  const { marginBottom = '10px', ...fieldStyle } = inputStyle || {};
+  const display = formatIsoForDisplay(value);
 
-  const {
-    width: _w,
-    boxSizing: _bs,
-    border,
-    borderRadius,
-    background,
-    padding: _padding,
-    transition,
-    ...inputTypography
-  } = fieldInputStyle;
-
-  const boxStyle = {
-    width: '100%',
-    boxSizing: 'border-box',
-    border,
-    borderRadius,
-    background,
-    padding: 0,
-    transition,
-  };
-
-  const inputInnerStyle = {
-    ...inputTypography,
-    width: '100%',
-    boxSizing: 'border-box',
-    margin: 0,
-    border: 'none',
-    background: 'transparent',
-    outline: 'none',
-    /* Samme som inputStyle + plads til kalender på mobil */
-    padding: '10px 2.75rem 10px calc(var(--pm-space-2) + 2px)',
-  };
+  const openPicker = () => openNativeDatePicker(nativeRef.current);
 
   return (
     <>
       {label ? <label style={labelStyle}>{label}</label> : null}
       <div className="pm-date-field" style={{ marginBottom }}>
-        <div className="pm-date-field__clip pm-date-field__box" style={boxStyle}>
-          <input
-            type="date"
-            className={
-              empty
-                ? 'pm-date-field__input pm-date-field__input--empty'
-                : 'pm-date-field__input'
+        <input
+          type="text"
+          readOnly
+          className="pm-date-field__display"
+          value={display}
+          placeholder="dd-mm-åååå"
+          style={fieldStyle}
+          onClick={openPicker}
+          onFocus={openPicker}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openPicker();
             }
-            value={value}
-            min={min}
-            onChange={onChange}
-            style={inputInnerStyle}
-            aria-label={typeof label === 'string' ? label : undefined}
-          />
-          {empty ? (
-            <span className="pm-date-field__hint" aria-hidden="true">
-              dd-mm-åååå
-            </span>
-          ) : null}
-        </div>
+          }}
+          aria-label={typeof label === 'string' ? label : undefined}
+          autoComplete="off"
+        />
+        <input
+          ref={nativeRef}
+          type="date"
+          className="pm-date-field__native"
+          tabIndex={-1}
+          aria-hidden="true"
+          value={value}
+          min={min}
+          onChange={onChange}
+        />
       </div>
     </>
   );

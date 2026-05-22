@@ -7,26 +7,26 @@ const componentUrl = new URL('../../src/components/DateInputField.jsx', import.m
 const cssUrl = new URL('../../src/responsive.css', import.meta.url);
 const ligaUrl = new URL('../../src/dashboard/LigaTab.jsx', import.meta.url);
 
-test('DateInputField puts visible box styles on clip wrapper, not on input', async () => {
+test('DateInputField uses text display + off-screen native date picker', async () => {
   const source = await readFile(componentUrl, 'utf8');
 
-  assert.match(source, /pm-date-field__box/);
-  assert.match(source, /style=\{boxStyle\}/);
-  assert.match(source, /inputInnerStyle/);
-  assert.match(source, /padding:\s*'10px 2\.75rem 10px calc\(var\(--pm-space-2\) \+ 2px\)'/);
-  assert.match(source, /border,\s*\n\s*borderRadius,\s*\n\s*background,\s*\n\s*padding/);
-  assert.match(source, /style=\{inputInnerStyle\}/);
-  assert.doesNotMatch(source, /calc\(100% \+/);
+  assert.match(source, /type="text"/);
+  assert.match(source, /pm-date-field__display/);
+  assert.match(source, /type="date"/);
+  assert.match(source, /pm-date-field__native/);
+  assert.match(source, /showPicker/);
+  assert.match(source, /placeholder="dd-mm-åååå"/);
+  assert.doesNotMatch(source, /type="date"[\s\S]{0,80}pm-date-field__input--empty/);
+  assert.doesNotMatch(source, /pm-date-field__clip/);
 });
 
-test('date field CSS avoids Safari widen hack and uses appearance none on input', async () => {
+test('date field CSS has no Safari widen hack', async () => {
   const css = await readFile(cssUrl, 'utf8');
 
-  assert.match(css, /\.pm-date-field__input[\s\S]*border:\s*none/);
-  assert.doesNotMatch(css, /pm-date-field__input[\s\S]{0,120}padding:\s*0/);
-  assert.match(css, /-webkit-appearance:\s*none/);
+  assert.match(css, /\.pm-date-field__display/);
+  assert.match(css, /\.pm-date-field__native/);
   assert.doesNotMatch(css, /calc\(100% \+ 3rem\)/);
-  assert.doesNotMatch(css, /margin-right:\s*-3rem/);
+  assert.doesNotMatch(css, /pm-date-field__hint/);
 });
 
 test('liga create form uses DateInputField inside create anchor card', async () => {
@@ -34,5 +34,9 @@ test('liga create form uses DateInputField inside create anchor card', async () 
 
   assert.match(liga, /pm-create-form-anchor/);
   assert.match(liga, /DateInputField/);
-  assert.match(liga, /Startdato/);
+});
+
+test('formatIsoForDisplay maps YYYY-MM-DD to dd-mm-yyyy', async () => {
+  const source = await readFile(componentUrl, 'utf8');
+  assert.match(source, /`\$\{m\[3\]\}-\$\{m\[2\]\}-\$\{m\[1\]\}`/);
 });

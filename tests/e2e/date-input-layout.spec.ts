@@ -3,11 +3,10 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
 /**
- * Layout smoke: dato-boks må ikke stikke ud over kortet (mobil-bredde).
- * Bruger samme pm-date-field-* markup som DateInputField + responsive.css.
+ * Layout smoke: dato-felt (tekst) matcher Navn og holder sig i kortet på mobil.
  */
 test.describe('Date input layout', () => {
-  test('date field box stays inside card on mobile viewport', async ({ page }) => {
+  test('date display field matches text input height and stays inside card', async ({ page }) => {
     const cssPath = fileURLToPath(new URL('../../src/responsive.css', import.meta.url))
     const responsiveCss = await readFile(cssPath, 'utf8')
 
@@ -29,29 +28,37 @@ test.describe('Date input layout', () => {
             }
             body { margin: 0; background: #f3f4f6; }
             #card.pm-ui-card.pm-create-form-anchor {
-              width: min(100%, 350px);
-              margin: 16px auto;
+              width: 100%;
+              max-width: 100%;
+              min-width: 0;
+              margin: 16px 0;
               padding: 20px;
               box-sizing: border-box;
-              overflow: hidden;
-              max-width: 100%;
+              overflow-x: clip;
               background: var(--pm-surface);
               border: 1px solid var(--pm-border);
               border-radius: 12px;
+            }
+            .field {
+              width: 100%;
+              box-sizing: border-box;
+              border: 1px solid var(--pm-border);
+              border-radius: var(--pm-radius-md);
+              background: var(--pm-surface);
+              padding: 10px calc(var(--pm-space-2) + 2px);
+              font-size: 14px;
+              font-family: var(--pm-font);
+              margin-bottom: 10px;
             }
           </style>
           <style>${responsiveCss.replace(/<\/style/gi, '<\\/style')}</style>
         </head>
         <body>
           <div id="card" class="pm-ui-card pm-create-form-anchor">
-            <label>Navn</label>
-            <input id="text-ref" type="text" placeholder="F.eks. Forårssæson 2026" style="width:100%;box-sizing:border-box;border:1px solid var(--pm-border);border-radius:var(--pm-radius-md);background:var(--pm-surface);padding:10px calc(var(--pm-space-2) + 2px);font-size:14px;font-family:var(--pm-font);margin-bottom:10px;" />
-            <label>Startdato</label>
+            <input id="text-ref" class="field" type="text" placeholder="Navn" />
             <div class="pm-date-field">
-              <div class="pm-date-field__clip pm-date-field__box" style="width:100%;box-sizing:border-box;border:1px solid var(--pm-border);border-radius:var(--pm-radius-md);background:var(--pm-surface);padding:0;">
-                <input type="date" class="pm-date-field__input pm-date-field__input--empty" value="" style="width:100%;box-sizing:border-box;margin:0;border:none;background:transparent;padding:10px 2.75rem 10px calc(var(--pm-space-2) + 2px);font-size:14px;font-family:var(--pm-font);" />
-                <span class="pm-date-field__hint" aria-hidden="true">dd-mm-åååå</span>
-              </div>
+              <input class="pm-date-field__display field" type="text" readonly placeholder="dd-mm-åååå" />
+              <input class="pm-date-field__native" type="date" tabindex="-1" aria-hidden="true" />
             </div>
           </div>
         </body>
@@ -59,26 +66,25 @@ test.describe('Date input layout', () => {
     `)
 
     const card = page.locator('#card')
-    const box = page.locator('.pm-date-field__box')
+    const dateDisplay = page.locator('.pm-date-field__display')
+    const textRef = page.locator('#text-ref')
 
-    await expect(box).toBeVisible()
+    await expect(dateDisplay).toBeVisible()
 
     const cardBox = await card.boundingBox()
-    const fieldBox = await box.boundingBox()
+    const dateBox = await dateDisplay.boundingBox()
+    const textBox = await textRef.boundingBox()
 
     expect(cardBox).not.toBeNull()
-    expect(fieldBox).not.toBeNull()
+    expect(dateBox).not.toBeNull()
+    expect(textBox).not.toBeNull()
 
     const cardRight = cardBox!.x + cardBox!.width
-    const fieldRight = fieldBox!.x + fieldBox!.width
+    const dateRight = dateBox!.x + dateBox!.width
     const slack = 1
 
-    expect(fieldBox!.x).toBeGreaterThanOrEqual(cardBox!.x - slack)
-    expect(fieldRight).toBeLessThanOrEqual(cardRight + slack)
-
-    const textInput = page.locator('#text-ref')
-    const textBox = await textInput.boundingBox()
-    expect(textBox).not.toBeNull()
-    expect(Math.abs(fieldBox!.height - textBox!.height)).toBeLessThanOrEqual(4)
+    expect(dateBox!.x).toBeGreaterThanOrEqual(cardBox!.x - slack)
+    expect(dateRight).toBeLessThanOrEqual(cardRight + slack)
+    expect(Math.abs(dateBox!.height - textBox!.height)).toBeLessThanOrEqual(2)
   })
 })

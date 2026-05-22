@@ -1963,7 +1963,7 @@ export function LigaTab({
         <div
           ref={ligaCreateFormRef}
           className="pm-ui-card pm-create-form-anchor"
-          style={{ padding: '20px', marginTop: '20px', marginBottom: '16px' }}
+          style={{ padding: '20px', marginTop: '20px', marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
         >
           <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Ny liga</div>
           <label style={labelStyle}>Navn</label>

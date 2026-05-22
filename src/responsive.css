@@ -3035,8 +3035,10 @@ button,
   scroll-margin-top: 88px;
   scroll-margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
-  overflow: hidden;
+  width: 100%;
   max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 .pm-create-form-anchor > * {
@@ -3727,95 +3729,37 @@ button,
   max-width: 100%;
 }
 
-/* Dato — synlig boks på __box/__clip; input fylder inden i (mobil-safe) */
+/* Dato — tekst-input + skjult native picker (samme højde/bredde som øvrige felter) */
 .pm-date-field {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
-.pm-date-field__clip {
   position: relative;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
-.pm-date-field__input {
+.pm-date-field__display {
   display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  font-family: var(--pm-font);
-  font-size: 14px;
-  line-height: normal;
-  color: var(--pm-text);
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.pm-date-field__input::-webkit-calendar-picker-indicator {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 2.75rem;
-  height: 100%;
-  margin: 0;
-  padding: 0;
+  box-sizing: border-box;
   cursor: pointer;
-  opacity: 1;
 }
 
-.pm-date-field__hint {
-  display: none;
+.pm-date-field__native {
   position: absolute;
-  left: calc(var(--pm-space-2) + 2px);
-  right: 2.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-family: var(--pm-font);
-  font-size: 14px;
-  line-height: 1.2;
-  letter-spacing: 0.02em;
-  color: var(--pm-text-light);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-/* Tom: skjul WebKit dd/mm/åå (overlapper på smal bredde) — vis én hint */
-.pm-date-field__input--empty {
-  color: transparent;
-}
-
-.pm-date-field__input--empty:focus {
-  color: var(--pm-text);
-}
-
-.pm-date-field__input--empty::-webkit-datetime-edit,
-.pm-date-field__input--empty::-webkit-datetime-edit-fields-wrapper,
-.pm-date-field__input--empty::-webkit-datetime-edit-day-field,
-.pm-date-field__input--empty::-webkit-datetime-edit-month-field,
-.pm-date-field__input--empty::-webkit-datetime-edit-year-field {
+  left: -9999px;
+  width: 1px;
+  height: 1px;
   opacity: 0;
-}
-
-.pm-date-field__input--empty ~ .pm-date-field__hint {
-  display: block;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 @media (max-width: 640px) {
   .pm-form-2col {
     grid-template-columns: 1fr;
-  }
-
-  .pm-create-form-anchor .pm-date-field,
-  .pm-create-form-anchor .pm-date-field__clip {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
   }
 }
 
