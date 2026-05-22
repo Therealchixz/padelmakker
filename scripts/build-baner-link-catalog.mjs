@@ -17,6 +17,7 @@ const INTEGRATED_TITLE_KEYS = new Set(
     'Match Padel Aalborg',
     'PadelPadel Aalborg (AL Bank Arena)',
     'HimmerLand padel (Halbooking)',
+    'Sæby Spektrum & Hostel (padel)',
     'Sportshallen Frederikshavn — padel (Halbooking)',
     'Match Padel Lemvig',
     'Match Padel Hobro (Sparekassen Danmark Padel)',

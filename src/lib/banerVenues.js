@@ -67,10 +67,12 @@ const BANER_VENUES_INTEGRATED = [
   {
     kind: 'halbooking',
     id: 'sportshallen_frederikshavn_halbooking',
-    title: 'Sportshallen Frederikshavn — padel (Halbooking)',
-    address: 'Via Halbooking — Frederikshavn',
+    title: 'Sæby Spektrum & Hostel (padel)',
+    address: 'Sæby — bookes via sportshallen.halbooking.dk (Frederikshavn)',
     indoor: true,
     region: 'Nordjylland',
+    note:
+      'Padel bookes på Sportshallens Halbooking (samme kalender som på sfc.dk). Baner 4–8 er padel — boldmaskinen er ikke en bane.',
   },
   {
     kind: 'halbooking',

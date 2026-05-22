@@ -109,6 +109,14 @@ test('integrerede baner matcher verificeret indoor/outdoor-katalog', () => {
   }
 });
 
+test('Sæby Spektrum er Halbooking (ikke kun Padellife-link)', () => {
+  const saeby = BANER_VENUES.filter(
+    (v) => normalizeVenueTitleKey(v.title).includes('sæby spektrum') || v.id === 'sportshallen_frederikshavn_halbooking'
+  );
+  assert.ok(saeby.some((v) => v.kind === 'halbooking' && v.id === 'sportshallen_frederikshavn_halbooking'));
+  assert.ok(!saeby.some((v) => v.kind === 'link' && /sæby spektrum/i.test(v.title)));
+});
+
 test('Padellife-link med samme navn som integreret center filtreres fra', () => {
   const dup = BANER_VENUES.filter((v) => normalizeVenueTitleKey(v.title) === 'padel lounge aalborg');
   assert.equal(dup.length, 1, `forventet én Padel Lounge Aalborg, fik ${dup.length}: ${dup.map((v) => v.id).join(', ')}`);
