@@ -2897,7 +2897,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               />
             </div>
           </div>
-          <label style={labelStyle}>
+          <label style={{ ...labelStyle, marginTop: "14px" }}>
             Beskrivelse <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span>
           </label>
           <input
