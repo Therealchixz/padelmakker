@@ -6,6 +6,7 @@ import {
   groupBanerVenuesByRegion,
 } from '../../src/lib/banerVenues.js';
 import { BANER_INTEGRATED_INDOOR_VERIFIED } from '../../src/lib/banerVenueIndoorVerified.js';
+import { normalizeVenueTitleKey } from '../../src/lib/banerVenueDedup.js';
 
 test('every venue id is unique', () => {
   const ids = BANER_VENUES.map((v) => v.id);
@@ -106,6 +107,13 @@ test('integrerede baner matcher verificeret indoor/outdoor-katalog', () => {
     assert.ok(v, `missing venue ${id}`);
     assert.equal(v.indoor, indoor, `${id}: forventet ${indoor ? 'indoor' : 'outdoor'}`);
   }
+});
+
+test('Padellife-link med samme navn som integreret center filtreres fra', () => {
+  const dup = BANER_VENUES.filter((v) => normalizeVenueTitleKey(v.title) === 'padel lounge aalborg');
+  assert.equal(dup.length, 1, `forventet én Padel Lounge Aalborg, fik ${dup.length}: ${dup.map((v) => v.id).join(', ')}`);
+  assert.equal(dup[0].kind, 'halbooking');
+  assert.equal(dup[0].id, 'padel_lounge_aalborg');
 });
 
 test('Skagen Padelcenter er indendørs (MATCHi: Padel INDOORS)', () => {

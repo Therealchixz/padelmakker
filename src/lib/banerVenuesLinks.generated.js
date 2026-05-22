@@ -363,16 +363,6 @@ export const BANER_VENUES_LINKS = [
   },
   {
     "kind": "link",
-    "id": "link_aalborg_padel_lounge_aalborg",
-    "title": "Padel Lounge Aalborg",
-    "address": "Aalborg — se booking-link",
-    "indoor": true,
-    "region": "Nordjylland",
-    "bookingUrl": "https://padellounge.dk/padel/centre/aalborg/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
     "id": "link_n_rresundby_rocket_padel_n_rresundby",
     "title": "Rocket Padel Nørresundby",
     "address": "Nørresundby — se booking-link",
@@ -693,16 +683,6 @@ export const BANER_VENUES_LINKS = [
   },
   {
     "kind": "link",
-    "id": "link_taastrup_racket_club_taastrup",
-    "title": "Racket Club Taastrup",
-    "address": "Taastrup — se booking-link",
-    "indoor": true,
-    "region": "Sjælland",
-    "bookingUrl": "https://www.racketclub.dk/centre/taastrup",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
     "id": "link_r_dvig_r_dvig_g_i_padel",
     "title": "Rødvig G&I Padel",
     "address": "Rødvig — se booking-link",
@@ -949,16 +929,6 @@ export const BANER_VENUES_LINKS = [
     "indoor": true,
     "region": "Vestjylland",
     "bookingUrl": "https://padelground.dk/padelbaner-i-viborg/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
-    "id": "link_herning_padel_lounge_herning",
-    "title": "Padel Lounge Herning",
-    "address": "Herning — se booking-link",
-    "indoor": true,
-    "region": "Vestjylland",
-    "bookingUrl": "https://padellounge.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
   {

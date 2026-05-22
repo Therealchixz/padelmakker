@@ -7,6 +7,53 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { guessJutlandRegionFromPlace } from '../src/lib/banerRegions.js';
+import { normalizeVenueTitleKey } from '../src/lib/banerVenueDedup.js';
+
+/** Titler på fuldt integrerede centre i banerVenues.js (hold synkron) */
+const INTEGRATED_TITLE_KEYS = new Set(
+  [
+    'Skansen Padel',
+    'Padel Lounge Aalborg',
+    'Match Padel Aalborg',
+    'PadelPadel Aalborg (AL Bank Arena)',
+    'HimmerLand padel (Halbooking)',
+    'Sportshallen Frederikshavn — padel (Halbooking)',
+    'Match Padel Lemvig',
+    'Match Padel Hobro (Sparekassen Danmark Padel)',
+    'Padel Nord (MATCHi)',
+    'Padel99 (MATCHi)',
+    'Skagen Padelcenter (MATCHi)',
+    'Padel8500 (MATCHi)',
+    'PadelMaster Hadsten (Halbooking)',
+    'Match Padel Aarhus',
+    'Padel Land (MATCHi)',
+    'ViPadel Aarhus (MATCHi)',
+    'Match Padel Silkeborg',
+    'ØBG Tennis & Padel, Silkeborg (Halbooking)',
+    'Padel Lounge Herning (Halbooking)',
+    'Match Padel Odense',
+    'Vissenbjerg Padel (MATCHi)',
+    'Nr. Lyndelse Padeltennis (MATCHi)',
+    'Breintholtgård Padel, Esbjerg (MATCHi)',
+    'K7 Padel, Løsning (MATCHi)',
+    'XPADEL Helsingør (Halbooking)',
+    'PADELPIT Roskilde (Halbooking)',
+    'PADELPIT Karlslunde (Halbooking)',
+    'Padel4alle Køge (MATCHi)',
+    'Padel North Kokkedal (MATCHi)',
+    'Padel Yard Reffen (MATCHi)',
+    'VI Padel Slagelse (MATCHi)',
+    'Køge Tennis og Padel Klub (Halbooking)',
+    'Allerød Tennis & Padel (Halbooking)',
+    'Tisvilde Tennis & Padel (Halbooking)',
+    'Hillerød Tennis & Padelklub (Halbooking)',
+    'Match Padel Ballerup',
+    'Match Padel Ballerup (singlebaner)',
+    'Match Padel Næstved',
+    'Match Padel Nykøbing Falster',
+    'Racket Club Taastrup (MATCHi)',
+  ].map((t) => normalizeVenueTitleKey(t))
+);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC =
@@ -221,6 +268,7 @@ for (const line of md.split(/\r?\n/)) {
   const title = m[2].trim();
   const bookingUrl = m[3].trim();
   if (!title || title === 'All-Padel' || isIntegratedUrl(bookingUrl, title)) continue;
+  if (INTEGRATED_TITLE_KEYS.has(normalizeVenueTitleKey(title))) continue;
 
   let region = currentSection;
   if (region === '__MIDT__') {

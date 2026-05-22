@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 import { BANER_REGION_ORDER } from './banerRegions.js';
 import { BANER_VENUES_LINKS } from './banerVenuesLinks.generated.js';
+import { filterLinkVenuesWithoutIntegratedDuplicates } from './banerVenueDedup.js';
 
 export { BANER_REGION_ORDER };
 
@@ -446,8 +447,13 @@ const BANER_VENUES_INTEGRATED = [
   },
 ];
 
-/** Integrerede + Padellife-link-katalog (alle regioner) */
-export const BANER_VENUES = [...BANER_VENUES_INTEGRATED, ...BANER_VENUES_LINKS];
+const BANER_VENUES_LINKS_DEDUPED = filterLinkVenuesWithoutIntegratedDuplicates(
+  BANER_VENUES_INTEGRATED,
+  BANER_VENUES_LINKS
+);
+
+/** Integrerede + Padellife-link-katalog (uden dubletter af integrerede navne) */
+export const BANER_VENUES = [...BANER_VENUES_INTEGRATED, ...BANER_VENUES_LINKS_DEDUPED];
 
 /**
  * @param {BanerVenue[]} [venues]
