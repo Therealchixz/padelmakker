@@ -67,3 +67,8 @@ test('scheduleLooksLikePadel accepts Padel Lounge court names with Padel heading
     true
   );
 });
+
+test('scheduleLooksLikePadel accepts Match Padel singlebaner and sponsor-named padel baner', () => {
+  assert.equal(scheduleLooksLikePadel([{ name: 'Ballerup Single 1' }]), true);
+  assert.equal(scheduleLooksLikePadel([{ name: 'Kvickly Banen' }, { name: 'Hjemmefest Banen' }]), true);
+});

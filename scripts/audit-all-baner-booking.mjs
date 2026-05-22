@@ -20,7 +20,8 @@ import { getAllowlistedVenue } from '../padelmakker-server/halbookingVenuesAllow
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, 'output', 'baner-booking-audit.json');
 const UA = 'PadelMakkerBanerAudit/1.0';
-const CONCURRENCY = 6;
+const CONCURRENCY = 3;
+const MATCHI_PROBE_DELAY_MS = 450;
 const PAGE_TIMEOUT_MS = 12000;
 
 /** @param {string} html */
@@ -80,6 +81,7 @@ async function probeIntegrated(venue) {
     if (venue.kind === 'matchi') {
       const cfg = getMatchiVenue(venue.id);
       if (!cfg) return { ok: false, error: 'not in allowlist' };
+      await new Promise((r) => setTimeout(r, MATCHI_PROBE_DELAY_MS));
       const url = matchiScheduleUrl(cfg, today);
       const r = await fetchMatchiSchedule(url);
       const courts = r.courts?.length || 0;
@@ -89,7 +91,10 @@ async function probeIntegrated(venue) {
     if (venue.kind === 'halbooking') {
       const cfg = getAllowlistedVenue(venue.id);
       if (!cfg) return { ok: false, error: 'not in allowlist' };
-      const r = await fetchHalbookingPadelSchedule(cfg.procBaner, cfg.omraede, { targetDateYmd: today });
+      const r = await fetchHalbookingPadelSchedule(cfg.procBaner, cfg.omraede, {
+        targetDateYmd: today,
+        ...(cfg.assumePadel ? { assumePadel: true } : {}),
+      });
       const courts = r.courts?.length || 0;
       const free = r.courts?.reduce((n, c) => n + (c.slots?.filter((s) => s.status === 'free').length || 0), 0) || 0;
       return { ok: !r.error && courts > 0, courts, freeSlots: free, error: r.error };

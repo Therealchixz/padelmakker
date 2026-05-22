@@ -48,12 +48,6 @@ export const MATCHI_VENUE_ALLOWLIST = {
     indoorQuery: '',
     bookingUrl: 'https://www.matchi.se/facilities/vissenbjergpadel',
   },
-  matchi_breintholt_esbjerg: {
-    facilityId: '2232',
-    sport: '5',
-    indoorQuery: '',
-    bookingUrl: 'https://www.matchi.se/facilities/breinhotlgardpadel',
-  },
   matchi_k7_padel_losning: {
     facilityId: '2650',
     sport: '5',
@@ -89,12 +83,6 @@ export const MATCHI_VENUE_ALLOWLIST = {
     sport: '5',
     indoorQuery: '',
     bookingUrl: 'https://www.matchi.se/facilities/vipadelslagelse',
-  },
-  matchi_racketclub_taastrup: {
-    facilityId: '2262',
-    sport: '5',
-    indoorQuery: '',
-    bookingUrl: 'https://www.matchi.se/facilities/RacketClubTaastrup',
   },
   matchi_padelground_viborg: {
     facilityId: '1534',

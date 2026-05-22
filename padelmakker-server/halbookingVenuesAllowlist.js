@@ -77,6 +77,7 @@ export const HALBOOKING_VENUE_ALLOWLIST = {
   at_tennis_alleroed: {
     procBaner: 'https://at-tennis.halbooking.dk/newlook/proc_baner.asp',
     omraede: '7',
+    assumePadel: true,
   },
   tisvilde_tennis_halbooking: {
     procBaner: 'https://tisvildetennis.halbooking.dk/newlook/proc_baner.asp',
@@ -93,6 +94,7 @@ export const HALBOOKING_VENUE_ALLOWLIST = {
   match_padel_ballerup_single: {
     procBaner: MATCH_PADEL_PROC,
     omraede: '7',
+    assumePadel: true,
   },
   match_padel_naestved: {
     procBaner: MATCH_PADEL_PROC,

@@ -7,6 +7,8 @@ export function normalizeVenueTitleKey(title) {
     .replace(/\s*\([^)]*\)\s*/g, ' ')
     .replace(/\s*—\s*padel\s*\(halbooking\)\s*/gi, ' ')
     .replace(/padel\s+ground/gi, 'padelground')
+    .replace(/\s*—\s*padel\b/gi, ' ')
+    .replace(/\barbejdernes tennisklub\b/gi, 'arbejdernes tennisklub atk')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();

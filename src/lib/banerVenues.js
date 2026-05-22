@@ -394,16 +394,14 @@ const BANER_VENUES_INTEGRATED = [
 
   // —— Sønderjylland (syd for Kongeå; ikke Fyn) ——
   {
-    kind: 'matchi',
+    kind: 'link',
     id: 'matchi_breintholt_esbjerg',
     title: 'Breintholtgård Padel, Esbjerg (MATCHi)',
     address: 'Kokspangvej 17-19, 6710 Esbjerg V',
     indoor: false,
     region: 'Sønderjylland',
-    facilityId: '2232',
-    sport: '5',
     bookingUrl: 'https://www.matchi.se/facilities/breinhotlgardpadel',
-    note: 'Udendørs baner via MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+    note: 'Booking via MATCHi — PadelMakker henter ikke ledige tider inline for dette center.',
   },
   {
     kind: 'matchi',
@@ -585,16 +583,14 @@ const BANER_VENUES_INTEGRATED = [
     region: 'Sjælland',
   },
   {
-    kind: 'matchi',
+    kind: 'link',
     id: 'matchi_racketclub_taastrup',
     title: 'Racket Club Taastrup (MATCHi)',
     address: 'Taastrup — matchi.se',
     indoor: true,
     region: 'Sjælland',
-    facilityId: '2262',
-    sport: '5',
     bookingUrl: 'https://www.matchi.se/facilities/RacketClubTaastrup',
-    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+    note: 'Booking via MATCHi — PadelMakker henter ikke ledige tider inline for dette center.',
   },
   {
     kind: 'matchi',

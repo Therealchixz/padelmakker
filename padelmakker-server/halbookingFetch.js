@@ -358,6 +358,8 @@ export function scheduleLooksLikePadel(courts, html = '') {
   if (/Padel\s*-/i.test(html) && /(Single|Double)\s*(Bane)?\s*\d/i.test(names)) return true;
   if (/( - Bane \d| - Single\b|Bane P\d)/i.test(names) && !/Bane T\d/i.test(names)) return true;
   if (/\bbane \d/i.test(names) && !/Bane T\d/i.test(names) && !/tennis/i.test(names)) return true;
+  if (/\bSingle \d/i.test(names) && !/tennis/i.test(names)) return true;
+  if (/\sBanen\b/i.test(names) && !/Bane T\d|tennis|squash/i.test(names)) return true;
   return false;
 }
 
@@ -446,7 +448,7 @@ function parseCalendarHtml(html) {
 /**
  * @param {string} procBanerUrl
  * @param {string} soegOmrAede
- * @param {{ targetDateYmd?: string }} [options] — valgfri YYYY-MM-DD; navigerer med Halbookings dag/uge-knapper (dagback, dagfrem, …)
+ * @param {{ targetDateYmd?: string; assumePadel?: boolean }} [options] — valgfri YYYY-MM-DD; `assumePadel` springer padel-detektion over (verificeret område i allowlist)
  */
 export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, options = {}) {
   const targetDateYmd =
@@ -543,7 +545,7 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, op
   const parsed = parseCalendarHtml(html);
   if (parsed.error) return { error: parsed.error };
 
-  if (!scheduleLooksLikePadel(parsed.courts, html)) {
+  if (!options.assumePadel && !scheduleLooksLikePadel(parsed.courts, html)) {
     return {
       error:
         'Kalenderen viser tennis eller andre baner — padel-område kunne ikke findes. Prøv «Åbn booking» på centrets side.',

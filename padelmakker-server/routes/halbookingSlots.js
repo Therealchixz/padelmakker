@@ -38,6 +38,7 @@ export async function handleHalbookingSlots(req, res) {
   try {
     const result = await fetchHalbookingPadelSchedule(venue.procBaner, venue.omraede, {
       ...(dateYmd ? { targetDateYmd: dateYmd } : {}),
+      ...(venue.assumePadel ? { assumePadel: true } : {}),
     });
     if (result.error) {
       res.status(502).json({ error: result.error });
