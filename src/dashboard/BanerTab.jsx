@@ -3,6 +3,7 @@ import { theme, btn, inputStyle, heading, tag } from '../lib/platformTheme';
 import { BANER_REGION_SUBTITLE } from '../lib/banerRegions';
 import {
   groupBanerVenuesByRegion,
+  filterGroupedBanerVenuesBySearch,
   halbookingSlotsUrl,
   halbookingOpenUrl,
   halbookingOpenVenueUrl,
@@ -14,7 +15,7 @@ import {
   copenhagenAddDaysYmd,
 } from '../lib/banerVenues';
 import { filterPastSlotsIfToday } from '../lib/banerPastSlots';
-import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown } from 'lucide-react';
+import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown, Search, X } from 'lucide-react';
 
 /**
  * @typedef {{ time: string, status: string, ruleHint?: string }} SlotRow
@@ -67,6 +68,19 @@ function DateNavigator({ dateYmd, todayYmd, loading = false, onChangeDate }) {
 export function BanerTab() {
   const detailRefs = useRef(/** @type {Record<string, HTMLDetailsElement | null>} */ ({}));
   const venueGroups = useMemo(() => groupBanerVenuesByRegion(), []);
+  const [venueSearch, setVenueSearch] = useState('');
+  const filteredVenueGroups = useMemo(
+    () => filterGroupedBanerVenuesBySearch(venueGroups, venueSearch),
+    [venueGroups, venueSearch]
+  );
+  const totalVenueCount = useMemo(
+    () => venueGroups.reduce((n, g) => n + g.venues.length, 0),
+    [venueGroups]
+  );
+  const filteredVenueCount = useMemo(
+    () => filteredVenueGroups.reduce((n, g) => n + g.venues.length, 0),
+    [filteredVenueGroups]
+  );
 
   /** @type {[Record<string, VenueLoadState | null>, function]} */
   const [byVenue, setByVenue] = useState({});
@@ -307,6 +321,38 @@ export function BanerTab() {
   return (
     <div className="pm-baner-page">
       <h2 className="pm-baner-page-title" style={{ ...heading('clamp(20px,4.5vw,24px)') }}>Ledige padelbaner</h2>
+
+      <div className="pm-baner-search-row">
+        <div className="pm-baner-search-wrap">
+          <Search size={16} className="pm-baner-search-icon" aria-hidden />
+          <input
+            type="search"
+            value={venueSearch}
+            onChange={(e) => setVenueSearch(e.target.value)}
+            placeholder="Søg center, by eller region…"
+            className="pm-baner-search-input"
+            aria-label="Søg padelcentre"
+            autoComplete="off"
+            enterKeyHint="search"
+          />
+          {venueSearch.trim() ? (
+            <button
+              type="button"
+              className="pm-baner-search-clear"
+              onClick={() => setVenueSearch('')}
+              aria-label="Ryd søgning"
+            >
+              <X size={16} />
+            </button>
+          ) : null}
+        </div>
+        <p className="pm-baner-search-meta" aria-live="polite">
+          {venueSearch.trim()
+            ? `${filteredVenueCount} af ${totalVenueCount} centre`
+            : `${totalVenueCount} centre`}
+        </p>
+      </div>
+
       <div className="pm-help-box" style={{ marginBottom: '20px' }}>
         <button
           type="button"
@@ -363,7 +409,18 @@ export function BanerTab() {
         )}
       </div>
 
-      {venueGroups.map(({ region, venues }) => (
+      {filteredVenueGroups.length === 0 && venueSearch.trim() ? (
+        <div className="pm-baner-search-empty pm-ui-card">
+          <p style={{ margin: 0, color: theme.textMid, fontSize: '14px' }}>
+            Ingen centre matcher «{venueSearch.trim()}». Prøv bynavn, klubnavn eller region (fx Aalborg, MATCHi, Sjælland).
+          </p>
+          <button type="button" onClick={() => setVenueSearch('')} style={{ ...btn(false), marginTop: '12px', fontSize: '13px' }}>
+            Vis alle centre
+          </button>
+        </div>
+      ) : null}
+
+      {filteredVenueGroups.map(({ region, venues }) => (
         <section key={region} className="pm-baner-region" aria-labelledby={`pm-baner-region-${region}`}>
           <h3 id={`pm-baner-region-${region}`} className="pm-baner-region-title">
             {region}

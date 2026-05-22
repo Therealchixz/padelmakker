@@ -4,9 +4,27 @@ import {
   BANER_VENUES,
   BANER_REGION_ORDER,
   groupBanerVenuesByRegion,
+  venueMatchesBanerSearch,
+  filterGroupedBanerVenuesBySearch,
 } from '../../src/lib/banerVenues.js';
 import { BANER_INTEGRATED_INDOOR_VERIFIED } from '../../src/lib/banerVenueIndoorVerified.js';
 import { normalizeVenueTitleKey } from '../../src/lib/banerVenueDedup.js';
+
+test('venueMatchesBanerSearch matches title, address and region', () => {
+  const v = BANER_VENUES.find((x) => x.id === 'matchi_padelground_viborg');
+  assert.ok(v);
+  assert.equal(venueMatchesBanerSearch(v, 'viborg'), true);
+  assert.equal(venueMatchesBanerSearch(v, 'vestjylland padel'), true);
+  assert.equal(venueMatchesBanerSearch(v, 'aalborg'), false);
+});
+
+test('filterGroupedBanerVenuesBySearch hides empty regions', () => {
+  const groups = groupBanerVenuesByRegion();
+  const filtered = filterGroupedBanerVenuesBySearch(groups, 'Bornholm');
+  assert.ok(filtered.every((g) => g.venues.length > 0));
+  assert.ok(filtered.some((g) => g.region === 'Bornholm'));
+  assert.ok(!filtered.some((g) => g.region === 'Sjælland' && g.venues.every((v) => !venueMatchesBanerSearch(v, 'Bornholm'))));
+});
 
 test('every venue id is unique', () => {
   const ids = BANER_VENUES.map((v) => v.id);
