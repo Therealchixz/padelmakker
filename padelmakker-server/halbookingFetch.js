@@ -355,6 +355,7 @@ export function scheduleLooksLikePadel(courts, html = '') {
   }
   if (/padel/i.test(names)) return true;
   if (/\bBane P\d| - P\d\b|Padel Tennis/i.test(names)) return true;
+  if (/Padel\s*-/i.test(html) && /(Single|Double)\s*(Bane)?\s*\d/i.test(names)) return true;
   return false;
 }
 
@@ -368,6 +369,27 @@ export function pickPadelOmraedeFromOptions(options) {
   if (exact) return exact.omraede;
   if (padel.length > 0) return padel[0].omraede;
   return null;
+}
+
+/**
+ * Vælg område til POST: respekter allowlist når id findes i dropdown (fx Padel Lounge Aalborg vs Herning).
+ * @param {string} soegOmrAede
+ * @param {{ omraede: string, label: string }[]} omraedeOptions
+ */
+export function resolveHalbookingOmraede(soegOmrAede, omraedeOptions) {
+  let omraede = String(soegOmrAede ?? '');
+  const labeledPadel = pickPadelOmraedeFromOptions(omraedeOptions);
+  const configuredValid =
+    omraede !== '' &&
+    omraedeOptions.some((o) => o.omraede === omraede && /padel/i.test(o.label));
+  if (!configuredValid && labeledPadel != null && labeledPadel !== '') {
+    omraede = labeledPadel;
+  }
+  const needsDiscover =
+    omraedeOptions.length > 0 &&
+    !omraedeOptions.some((o) => /padel/i.test(o.label)) &&
+    !configuredValid;
+  return { omraede, needsDiscover };
 }
 
 /**
@@ -448,11 +470,9 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, op
 
   const formInner = formMatch0[1];
   const omraedeOptions = parseSoegOmraedeOptions(html0);
-  let omraede = String(soegOmrAede);
-  const labeledPadel = pickPadelOmraedeFromOptions(omraedeOptions);
-  if (labeledPadel != null && labeledPadel !== '') {
-    omraede = labeledPadel;
-  } else if (omraedeOptions.length > 0 && !omraedeOptions.some((o) => /padel/i.test(o.label))) {
+  const { omraede: resolvedOm, needsDiscover } = resolveHalbookingOmraede(soegOmrAede, omraedeOptions);
+  let omraede = resolvedOm;
+  if (needsDiscover) {
     const discovered = await discoverPadelOmraedeId(procBanerUrl, formInner, omraedeOptions);
     if (discovered != null) omraede = discovered;
   }
