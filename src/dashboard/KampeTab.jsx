@@ -2907,12 +2907,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             style={{ ...inputStyle, marginBottom: "10px" }}
           />
 
-          <label style={{ ...labelStyle, marginTop: "14px" }}>Kamptyp</label>
+          <label style={{ ...labelStyle, marginTop: "14px" }}>Kamptype</label>
           <PillTabs
             tabs={matchTypeTabs}
             value={newMatch.match_type === "closed" ? "closed" : "open"}
             onChange={(id) => setNewMatch((m) => ({ ...m, match_type: id }))}
-            ariaLabel="Kamptyp"
+            ariaLabel="Kamptype"
             size="sm"
             style={{ marginTop: "4px" }}
           />
