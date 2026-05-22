@@ -44,10 +44,12 @@ test.describe('Date input layout', () => {
         </head>
         <body>
           <div id="card" class="pm-ui-card pm-create-form-anchor">
+            <label>Navn</label>
+            <input id="text-ref" type="text" placeholder="F.eks. Forårssæson 2026" style="width:100%;box-sizing:border-box;border:1px solid var(--pm-border);border-radius:var(--pm-radius-md);background:var(--pm-surface);padding:10px calc(var(--pm-space-2) + 2px);font-size:14px;font-family:var(--pm-font);margin-bottom:10px;" />
             <label>Startdato</label>
             <div class="pm-date-field">
-              <div class="pm-date-field__clip pm-date-field__box" style="width:100%;box-sizing:border-box;border:1px solid var(--pm-border);border-radius:var(--pm-radius-md);background:var(--pm-surface);padding:10px calc(var(--pm-space-2) + 2px);">
-                <input type="date" class="pm-date-field__input pm-date-field__input--empty" value="" />
+              <div class="pm-date-field__clip pm-date-field__box" style="width:100%;box-sizing:border-box;border:1px solid var(--pm-border);border-radius:var(--pm-radius-md);background:var(--pm-surface);padding:0;">
+                <input type="date" class="pm-date-field__input pm-date-field__input--empty" value="" style="width:100%;box-sizing:border-box;margin:0;border:none;background:transparent;padding:10px 2.75rem 10px calc(var(--pm-space-2) + 2px);font-size:14px;font-family:var(--pm-font);" />
                 <span class="pm-date-field__hint" aria-hidden="true">dd-mm-åååå</span>
               </div>
             </div>
@@ -73,5 +75,10 @@ test.describe('Date input layout', () => {
 
     expect(fieldBox!.x).toBeGreaterThanOrEqual(cardBox!.x - slack)
     expect(fieldRight).toBeLessThanOrEqual(cardRight + slack)
+
+    const textInput = page.locator('#text-ref')
+    const textBox = await textInput.boundingBox()
+    expect(textBox).not.toBeNull()
+    expect(Math.abs(fieldBox!.height - textBox!.height)).toBeLessThanOrEqual(4)
   })
 })

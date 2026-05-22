@@ -3744,23 +3744,14 @@ button,
   overflow: hidden;
 }
 
-.pm-date-field__box {
-  padding-right: 2.75rem;
-}
-
 .pm-date-field__input {
   display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
-  box-sizing: border-box;
-  outline: none;
   font-family: var(--pm-font);
   font-size: 14px;
+  line-height: normal;
   color: var(--pm-text);
   -webkit-appearance: none;
   appearance: none;

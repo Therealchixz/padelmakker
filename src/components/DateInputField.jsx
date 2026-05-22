@@ -19,7 +19,7 @@ export function DateInputField({
     border,
     borderRadius,
     background,
-    padding,
+    padding: _padding,
     transition,
     ...inputTypography
   } = fieldInputStyle;
@@ -30,8 +30,20 @@ export function DateInputField({
     border,
     borderRadius,
     background,
-    padding,
+    padding: 0,
     transition,
+  };
+
+  const inputInnerStyle = {
+    ...inputTypography,
+    width: '100%',
+    boxSizing: 'border-box',
+    margin: 0,
+    border: 'none',
+    background: 'transparent',
+    outline: 'none',
+    /* Samme som inputStyle + plads til kalender på mobil */
+    padding: '10px 2.75rem 10px calc(var(--pm-space-2) + 2px)',
   };
 
   return (
@@ -49,7 +61,7 @@ export function DateInputField({
             value={value}
             min={min}
             onChange={onChange}
-            style={inputTypography}
+            style={inputInnerStyle}
             aria-label={typeof label === 'string' ? label : undefined}
           />
           {empty ? (
