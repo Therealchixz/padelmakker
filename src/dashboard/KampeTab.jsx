@@ -2907,7 +2907,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             style={{ ...inputStyle, marginBottom: "10px" }}
           />
 
-          <label style={{ ...labelStyle, marginTop: "14px" }}>Kamptype</label>
+          <label style={labelStyle}>Kamptype</label>
           <PillTabs
             tabs={matchTypeTabs}
             value={newMatch.match_type === "closed" ? "closed" : "open"}
