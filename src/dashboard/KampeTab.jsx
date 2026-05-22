@@ -2903,8 +2903,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             value={newMatch.description}
             onChange={(e) => setNewMatch((m) => ({ ...m, description: e.target.value }))}
             placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'"
-            style={inputStyle}
-            rows={3}
           />
 
           <label style={{ ...labelStyle, marginTop: "14px" }}>Kamptyp</label>

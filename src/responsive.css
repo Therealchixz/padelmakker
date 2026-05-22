@@ -3628,19 +3628,32 @@ button,
   animation: pm-baner-spin 0.8s linear infinite;
 }
 
-/* Opret 2v2-kamp — beskrivelsesfelt */
+/* Opret 2v2-kamp — beskrivelsesfelt (samme højde som før, mindre + centreret tekst) */
 .pm-create-match-description {
-  font-size: 12px;
-  line-height: 1.45;
+  font-family: var(--pm-font, inherit);
+  font-size: 11px;
+  line-height: 1.35;
   text-align: center;
+  height: 60px;
   min-height: 60px;
-  padding: 12px var(--pm-space-2);
-  resize: vertical;
+  max-height: 60px;
+  padding: 13px calc(var(--pm-space-2) + 2px);
+  border-radius: var(--pm-radius-md);
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
 }
 
 .pm-create-match-description::placeholder {
+  font-size: 11px;
+  line-height: 1.35;
   text-align: center;
-  color: var(--pm-text-muted, var(--pm-text-light));
+  color: var(--pm-text-light);
 }
 
 /* Kampe — titel venstre, Opret kamp/turnering højre (fuld bredde af .pm-dash-main) */
