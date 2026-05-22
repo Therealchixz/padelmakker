@@ -1,0 +1,570 @@
+{
+  "generatedAt": "2026-05-22T14:00:43.592Z",
+  "note": "Integrér kun poster med ok:true og facilityId/omraede. WannaSport og Padellife har ingen åben API — brug som manuel krydstjek.",
+  "catalogs": {
+    "wannasport": "https://www.wannasport.com/dnk/da",
+    "padellife": "https://padellife.dk/blogs/tips-og-tricks/oversigt-over-padelbaner-i-danmark"
+  },
+  "matchi": [
+    {
+      "slug": "padel8500",
+      "region": "Østjylland",
+      "title": "Padel8500",
+      "indoor": true,
+      "ok": true,
+      "status": 200,
+      "facilityId": "2229",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/padel8500"
+    },
+    {
+      "slug": "Padelland",
+      "region": "Midtjylland",
+      "title": "Padel Land",
+      "ok": true,
+      "status": 200,
+      "facilityId": "2072",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/Padelland"
+    },
+    {
+      "slug": "ViPadelAarhus",
+      "region": "Midtjylland",
+      "title": "ViPadel Aarhus",
+      "ok": true,
+      "status": 200,
+      "facilityId": "1062",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/ViPadelAarhus"
+    },
+    {
+      "slug": "padelnord",
+      "region": "Nordjylland",
+      "title": "Padel Nord",
+      "ok": true,
+      "status": 200,
+      "facilityId": "2445",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/padelnord"
+    },
+    {
+      "slug": "padel99",
+      "region": "Nordjylland",
+      "title": "Padel99",
+      "ok": true,
+      "status": 200,
+      "facilityId": "2840",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/padel99"
+    },
+    {
+      "slug": "SkagenPadelcenter",
+      "region": "Nordjylland",
+      "title": "Skagen Padelcenter",
+      "ok": true,
+      "status": 200,
+      "facilityId": "2430",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/SkagenPadelcenter"
+    },
+    {
+      "slug": "vissenbjergpadel",
+      "region": "Fyn",
+      "title": "Vissenbjerg Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": "3112",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/vissenbjergpadel"
+    },
+    {
+      "slug": "breinhotlgardpadel",
+      "region": "Sønderjylland",
+      "title": "Breintholtgård Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": "2232",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/breinhotlgardpadel"
+    },
+    {
+      "slug": "k7-padel",
+      "region": "Sønderjylland",
+      "title": "K7 Padel Løsning",
+      "ok": true,
+      "status": 200,
+      "facilityId": "2650",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/k7-padel"
+    },
+    {
+      "slug": "NrLyndelsePadeltennis",
+      "region": "Fyn",
+      "title": "Nr. Lyndelse Padeltennis",
+      "indoor": false,
+      "ok": true,
+      "status": 200,
+      "facilityId": "870",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/NrLyndelsePadeltennis"
+    },
+    {
+      "slug": "padelyard",
+      "region": "Hovedstaden",
+      "title": "Padel Yard Reffen",
+      "ok": true,
+      "status": 200,
+      "facilityId": "917",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/padelyard"
+    },
+    {
+      "slug": "Padel4alle",
+      "region": "Sjælland",
+      "title": "Padel4alle Køge",
+      "ok": true,
+      "status": 200,
+      "facilityId": "2364",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/Padel4alle"
+    },
+    {
+      "slug": "padelnorth",
+      "region": "Sjælland",
+      "title": "Padel North Kokkedal",
+      "ok": true,
+      "status": 200,
+      "facilityId": "2810",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/padelnorth"
+    },
+    {
+      "slug": "vipadelslagelse",
+      "region": "Sjælland",
+      "title": "VI Padel Slagelse",
+      "ok": true,
+      "status": 200,
+      "facilityId": "1925",
+      "hasPadel": true,
+      "bookingUrl": "https://www.matchi.se/facilities/vipadelslagelse"
+    }
+  ],
+  "matchiFailed": [
+    {
+      "slug": "padelmaster",
+      "region": "Østjylland",
+      "title": "PadelMaster (MATCHi?)",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/padelmaster"
+    },
+    {
+      "slug": "HerningPadel",
+      "region": "Midtjylland",
+      "title": "Herning Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/HerningPadel"
+    },
+    {
+      "slug": "herningpadel",
+      "region": "Midtjylland",
+      "title": "Herning Padel alt",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/herningpadel"
+    },
+    {
+      "slug": "RandersPadel",
+      "region": "Østjylland",
+      "title": "Randers Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/RandersPadel"
+    },
+    {
+      "slug": "randerspadel",
+      "region": "Østjylland",
+      "title": "Randers Padel alt",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/randerspadel"
+    },
+    {
+      "slug": "HorsensPadel",
+      "region": "Østjylland",
+      "title": "Horsens Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/HorsensPadel"
+    },
+    {
+      "slug": "horsenspadel",
+      "region": "Østjylland",
+      "title": "Horsens Padel alt",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/horsenspadel"
+    },
+    {
+      "slug": "HerningCentret",
+      "region": "Midtjylland",
+      "title": "Herning Centret",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/HerningCentret"
+    },
+    {
+      "slug": "padel-aarhus",
+      "region": "Midtjylland",
+      "title": "Padel Aarhus",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/padel-aarhus"
+    },
+    {
+      "slug": "aarhuspadel",
+      "region": "Midtjylland",
+      "title": "Aarhus Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/aarhuspadel"
+    },
+    {
+      "slug": "RocketPadelKolding",
+      "region": "Sønderjylland",
+      "title": "Rocket Padel Kolding",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/RocketPadelKolding"
+    },
+    {
+      "slug": "MiddelfartPadel",
+      "region": "Fyn",
+      "title": "Middelfart Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/MiddelfartPadel"
+    },
+    {
+      "slug": "svendborgpadel",
+      "region": "Fyn",
+      "title": "Svendborg Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/svendborgpadel"
+    },
+    {
+      "slug": "nyborgpadel",
+      "region": "Fyn",
+      "title": "Nyborg Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/nyborgpadel"
+    },
+    {
+      "slug": "VejlePadel",
+      "region": "Sønderjylland",
+      "title": "Vejle Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/VejlePadel"
+    },
+    {
+      "slug": "HolstebroPadel",
+      "region": "Midtjylland",
+      "title": "Holstebro Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/HolstebroPadel"
+    },
+    {
+      "slug": "ViborgPadel",
+      "region": "Midtjylland",
+      "title": "Viborg Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/ViborgPadel"
+    },
+    {
+      "slug": "ThistedPadel",
+      "region": "Nordjylland",
+      "title": "Thisted Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/ThistedPadel"
+    },
+    {
+      "slug": "HjorringPadel",
+      "region": "Nordjylland",
+      "title": "Hjørring Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/HjorringPadel"
+    },
+    {
+      "slug": "lic-padel",
+      "region": "Nordjylland",
+      "title": "Løkken Padel",
+      "ok": true,
+      "status": 200,
+      "facilityId": null,
+      "hasPadel": false,
+      "bookingUrl": "https://www.matchi.se/facilities/lic-padel"
+    }
+  ],
+  "halbooking": [
+    {
+      "id": "xpadel_halbooking",
+      "procBaner": "https://xpadel.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Sjælland",
+      "title": "XPADEL Helsingør",
+      "ok": true,
+      "omraeder": [
+        {
+          "omraede": "1",
+          "label": "Padel"
+        },
+        {
+          "omraede": "2",
+          "label": "Golf Simulator"
+        },
+        {
+          "omraede": "5",
+          "label": "Pool & Dart"
+        }
+      ],
+      "hasCalendar": true
+    },
+    {
+      "id": "padelpit_halbooking",
+      "procBaner": "https://padelpit.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Sjælland",
+      "title": "PADELPIT",
+      "ok": true,
+      "omraeder": [
+        {
+          "omraede": "1",
+          "label": "ROSKILDE, K�benhavnsvej 136B, 4000 Roskilde"
+        },
+        {
+          "omraede": "2",
+          "label": "KARLSLUNDE, Drejergangen 3D, 2690 Karlslunde"
+        }
+      ],
+      "hasCalendar": true
+    },
+    {
+      "id": "oebg_silkeborg",
+      "procBaner": "https://oebgtennis.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Midtjylland",
+      "title": "ØBG Silkeborg",
+      "ok": true,
+      "omraeder": [
+        {
+          "omraede": "3",
+          "label": "Padel"
+        },
+        {
+          "omraede": "2",
+          "label": "Indend�rs Tennis"
+        },
+        {
+          "omraede": "1",
+          "label": "Udend�rs Tennis"
+        }
+      ],
+      "hasCalendar": true
+    },
+    {
+      "id": "padellounge_herning",
+      "procBaner": "https://padellounge.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Midtjylland",
+      "title": "Padel Lounge (Herning?)",
+      "ok": true,
+      "omraeder": [
+        {
+          "omraede": "2",
+          "label": "Padel - Herning - Godsbanevej 5"
+        },
+        {
+          "omraede": "3",
+          "label": "Padel - Aalborg - Poul Larsens vej 36"
+        },
+        {
+          "omraede": "4",
+          "label": "Padel - Aarhus - Graham Bells Vej 23B"
+        },
+        {
+          "omraede": "5",
+          "label": "Padel - Odense - Dannebrogsgade 2"
+        }
+      ],
+      "hasCalendar": true
+    },
+    {
+      "id": "koge_tennis_halbooking",
+      "procBaner": "https://koge-tennis.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Sjælland",
+      "title": "Køge Tennis og Padel",
+      "ok": true,
+      "omraeder": [
+        {
+          "omraede": "2",
+          "label": "Indend�rs Tennis"
+        },
+        {
+          "omraede": "1",
+          "label": "Udend�rs tennis"
+        },
+        {
+          "omraede": "5",
+          "label": "Padel"
+        },
+        {
+          "omraede": "3",
+          "label": "Udlejning af lokaler"
+        }
+      ],
+      "hasCalendar": true
+    },
+    {
+      "id": "at_tennis_alleroed",
+      "procBaner": "https://at-tennis.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Sjælland",
+      "title": "Allerød Tennis & Padel",
+      "ok": true,
+      "omraeder": [
+        {
+          "omraede": "3",
+          "label": "Tennishallen"
+        },
+        {
+          "omraede": "1",
+          "label": "Tennisbaner"
+        },
+        {
+          "omraede": "7",
+          "label": "Padel"
+        },
+        {
+          "omraede": "8",
+          "label": "Pickleball"
+        }
+      ],
+      "hasCalendar": true
+    },
+    {
+      "id": "tisvilde_tennis",
+      "procBaner": "https://tisvildetennis.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Sjælland",
+      "title": "Tisvilde Tennis & Padel",
+      "ok": true,
+      "omraeder": [
+        {
+          "omraede": "1",
+          "label": "Tennisbaner"
+        },
+        {
+          "omraede": "2",
+          "label": "Padel"
+        },
+        {
+          "omraede": "3",
+          "label": "Pickleball"
+        }
+      ],
+      "hasCalendar": true
+    }
+  ],
+  "halbookingFailed": [
+    {
+      "id": "padelmaster_halbooking",
+      "procBaner": "https://padelmaster.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Østjylland",
+      "title": "PadelMaster",
+      "ok": false,
+      "hasPadelWord": true,
+      "omraeder": [],
+      "note": "no soeg_omraede select"
+    },
+    {
+      "id": "padel_fun4all",
+      "procBaner": "https://padel-fun4all.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Midtjylland",
+      "title": "Padel Fun4all",
+      "ok": false,
+      "hasPadelWord": true,
+      "omraeder": [],
+      "note": "no soeg_omraede select"
+    },
+    {
+      "id": "lic_halbooking",
+      "procBaner": "https://lic.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Nordjylland",
+      "title": "Løkken Idrætscenter",
+      "ok": false,
+      "hasPadelWord": true,
+      "omraeder": [],
+      "note": "no soeg_omraede select"
+    },
+    {
+      "id": "egif_halbooking",
+      "procBaner": "https://egif.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Sønderjylland",
+      "title": "EGIF Esbjerg",
+      "ok": false,
+      "hasPadelWord": true,
+      "omraeder": [],
+      "note": "no soeg_omraede select"
+    },
+    {
+      "id": "hitk_hillerod",
+      "procBaner": "https://hitk.halbooking.dk/newlook/proc_baner.asp",
+      "region": "Sjælland",
+      "title": "Hillerød Tennis & Padel",
+      "ok": false,
+      "hasPadelWord": true,
+      "omraeder": [],
+      "note": "no soeg_omraede select"
+    }
+  ]
+}

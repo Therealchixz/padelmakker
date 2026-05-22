@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { theme, btn, inputStyle, heading, tag } from '../lib/platformTheme';
+import { BANER_REGION_SUBTITLE } from '../lib/banerRegions';
 import {
   groupBanerVenuesByRegion,
   halbookingSlotsUrl,
@@ -337,6 +338,27 @@ export function BanerTab() {
             <p className="pm-help-box-copy" style={{ margin: 0 }}>
               PadelMakker hjælper med overblikket, men selve bookingen foregår altid hos centret.
             </p>
+            <p className="pm-help-box-copy" style={{ margin: '10px 0 0' }}>
+              Mangler du et center? Se oversigter på{' '}
+              <a
+                href="https://www.wannasport.com/dnk/da"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pm-baner-btn-link"
+              >
+                WannaSport
+              </a>
+              {' '}og{' '}
+              <a
+                href="https://padellife.dk/blogs/tips-og-tricks/oversigt-over-padelbaner-i-danmark"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pm-baner-btn-link"
+              >
+                Padellife
+              </a>
+              . PadelMakker viser kun centre med åben online-booking (Halbooking, MATCHi eller Bookli), hvor ledige tider kan hentes i appen.
+            </p>
           </div>
         )}
       </div>
@@ -345,8 +367,8 @@ export function BanerTab() {
         <section key={region} className="pm-baner-region" aria-labelledby={`pm-baner-region-${region}`}>
           <h3 id={`pm-baner-region-${region}`} className="pm-baner-region-title">
             {region}
-            {region === 'Sønderjylland' ? (
-              <span className="pm-baner-region-sub"> (også kaldet sydjylland)</span>
+            {BANER_REGION_SUBTITLE[region] ? (
+              <span className="pm-baner-region-sub"> ({BANER_REGION_SUBTITLE[region]})</span>
             ) : null}
           </h3>
           <div className="pm-baner-venue-list">

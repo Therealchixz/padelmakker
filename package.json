@@ -16,7 +16,9 @@
     "db:drift-check": "node scripts/check-migration-drift.mjs --repair-hint",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed --project=chromium",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "baner:discover": "node scripts/discover-padel-venues.mjs",
+    "baner:links": "node scripts/build-baner-link-catalog.mjs"
   },
   "dependencies": {
     "@sentry/react": "^10.49.0",

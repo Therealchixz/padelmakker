@@ -46,6 +46,62 @@ export const HALBOOKING_VENUE_ALLOWLIST = {
     procBaner: MATCH_PADEL_PROC,
     omraede: '11',
   },
+  padelmaster_hadsten: {
+    procBaner: 'https://padelmaster.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '',
+  },
+  xpadel_helsingor_halbooking: {
+    procBaner: 'https://xpadel.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '1',
+  },
+  padelpit_roskilde_halbooking: {
+    procBaner: 'https://padelpit.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '1',
+  },
+  padelpit_karlslunde_halbooking: {
+    procBaner: 'https://padelpit.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '2',
+  },
+  oebg_silkeborg_halbooking: {
+    procBaner: 'https://oebgtennis.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '3',
+  },
+  padel_lounge_herning: {
+    procBaner: 'https://padellounge.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '2',
+  },
+  koge_tennis_halbooking: {
+    procBaner: 'https://koge-tennis.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '5',
+  },
+  at_tennis_alleroed: {
+    procBaner: 'https://at-tennis.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '7',
+  },
+  tisvilde_tennis_halbooking: {
+    procBaner: 'https://tisvildetennis.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '2',
+  },
+  htpk_hillerod_halbooking: {
+    procBaner: 'https://htpk.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '',
+  },
+  match_padel_ballerup: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '6',
+  },
+  match_padel_ballerup_single: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '7',
+  },
+  match_padel_naestved: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '15',
+  },
+  match_padel_nykobing_falster: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '9',
+  },
 };
 
 export function getAllowlistedVenue(venueId) {

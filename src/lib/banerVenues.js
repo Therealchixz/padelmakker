@@ -1,10 +1,15 @@
 import { DateTime } from 'luxon';
+import { BANER_REGION_ORDER } from './banerRegions.js';
+import { BANER_VENUES_LINKS } from './banerVenuesLinks.generated.js';
+
+export { BANER_REGION_ORDER };
 
 /**
  * Alle steder under fanen Baner.
  * Halbooking: id → padelmakker-server/halbookingVenuesAllowlist.js
  * Bookli: id → padelmakker-server/bookliAllowlist.js
  * Matchi: id → padelmakker-server/matchiAllowlist.js
+ * Link: Padellife-katalog (scripts/build-baner-link-catalog.mjs) — booking uden inline-tider
  */
 
 /** @typedef {{ kind: 'halbooking', id: string, title: string, address: string, indoor: boolean, region: string }} HalbookingVenue */
@@ -13,20 +18,8 @@ import { DateTime } from 'luxon';
 /** @typedef {{ kind: 'link', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, note?: string }} LinkVenue */
 /** @typedef {HalbookingVenue | BookliVenue | MatchiVenue | LinkVenue} BanerVenue */
 
-/** Rækkefølge af region-sektioner under Book bane */
-export const BANER_REGION_ORDER = [
-  'Nordjylland',
-  'Østjylland',
-  'Midtjylland',
-  'Fyn',
-  'Sønderjylland',
-  'Sjælland',
-  'Hovedstaden',
-  'Bornholm',
-];
-
-/** @type {BanerVenue[]} */
-export const BANER_VENUES = [
+/** Fuldt integrerede centre (ledige tider i app når API tillader det) */
+const BANER_VENUES_INTEGRATED = [
   // —— Nordjylland ——
   {
     kind: 'halbooking',
@@ -84,7 +77,7 @@ export const BANER_VENUES = [
     title: 'Match Padel Lemvig',
     address: 'Nyvang 8, 7620 Lemvig',
     indoor: true,
-    region: 'Nordjylland',
+    region: 'Vestjylland',
   },
   {
     kind: 'halbooking',
@@ -169,15 +162,23 @@ export const BANER_VENUES = [
     bookingUrl: 'https://www.matchi.se/facilities/padel8500',
     note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
   },
+  {
+    kind: 'halbooking',
+    id: 'padelmaster_hadsten',
+    title: 'PadelMaster Hadsten (Halbooking)',
+    address: 'Toftegårdsvej 28, 8370 Hadsten',
+    indoor: true,
+    region: 'Østjylland',
+  },
 
-  // —— Midtjylland ——
+  // —— Østjylland (DST: Aarhus, Randers, Horsens, Silkeborg, Djursland m.fl.) ——
   {
     kind: 'halbooking',
     id: 'match_padel_aarhus',
     title: 'Match Padel Aarhus',
     address: 'Sindalsvej 2, 8240 Risskov',
     indoor: true,
-    region: 'Midtjylland',
+    region: 'Østjylland',
   },
   {
     kind: 'matchi',
@@ -185,7 +186,7 @@ export const BANER_VENUES = [
     title: 'Padel Land (MATCHi)',
     address: 'Hjelmagervej 6, 8541 Skødstrup',
     indoor: true,
-    region: 'Midtjylland',
+    region: 'Østjylland',
     facilityId: '2072',
     sport: '5',
     bookingUrl: 'https://www.matchi.se/facilities/Padelland',
@@ -197,7 +198,7 @@ export const BANER_VENUES = [
     title: 'ViPadel Aarhus (MATCHi)',
     address: 'Holmstrupgårdvej 18A, 8220 Brabrand',
     indoor: true,
-    region: 'Midtjylland',
+    region: 'Østjylland',
     facilityId: '1062',
     sport: '5',
     bookingUrl: 'https://www.matchi.se/facilities/ViPadelAarhus',
@@ -209,7 +210,25 @@ export const BANER_VENUES = [
     title: 'Match Padel Silkeborg',
     address: 'Kejlstrupvej 87, 8600 Silkeborg',
     indoor: true,
-    region: 'Midtjylland',
+    region: 'Østjylland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'oebg_silkeborg_halbooking',
+    title: 'ØBG Tennis & Padel, Silkeborg (Halbooking)',
+    address: 'Silkeborg — se øbgtennis.dk',
+    indoor: true,
+    region: 'Østjylland',
+  },
+
+  // —— Vestjylland (DST: Herning, Holstebro, Lemvig, Viborg m.fl.) ——
+  {
+    kind: 'halbooking',
+    id: 'padel_lounge_herning',
+    title: 'Padel Lounge Herning (Halbooking)',
+    address: 'Godsbanevej 5, Herning',
+    indoor: true,
+    region: 'Vestjylland',
   },
 
   // —— Fyn ——
@@ -232,6 +251,18 @@ export const BANER_VENUES = [
     sport: '5',
     bookingUrl: 'https://www.matchi.se/facilities/vissenbjergpadel',
     note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_nr_lyndelse_padel',
+    title: 'Nr. Lyndelse Padeltennis (MATCHi)',
+    address: 'Årslev — matchi.se',
+    indoor: false,
+    region: 'Fyn',
+    facilityId: '870',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/NrLyndelsePadeltennis',
+    note: 'Udendørs baner via MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
   },
 
   // —— Sønderjylland (syd for Kongeå; ikke Fyn) ——
@@ -259,7 +290,162 @@ export const BANER_VENUES = [
     bookingUrl: 'https://www.matchi.se/facilities/k7-padel',
     note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
   },
+
+  // —— Sjælland ——
+  {
+    kind: 'halbooking',
+    id: 'xpadel_helsingor_halbooking',
+    title: 'XPADEL Helsingør (Halbooking)',
+    address: 'Helsingør — se xpadel.dk',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'padelpit_roskilde_halbooking',
+    title: 'PADELPIT Roskilde (Halbooking)',
+    address: 'Københavnsvej 136B, 4000 Roskilde',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'padelpit_karlslunde_halbooking',
+    title: 'PADELPIT Karlslunde (Halbooking)',
+    address: 'Drejergangen 3D, 2690 Karlslunde',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_padel4alle',
+    title: 'Padel4alle Køge (MATCHi)',
+    address: 'Køge — matchi.se',
+    indoor: true,
+    region: 'Sjælland',
+    facilityId: '2364',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/Padel4alle',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_padelnorth',
+    title: 'Padel North Kokkedal (MATCHi)',
+    address: 'Kokkedal — matchi.se',
+    indoor: true,
+    region: 'Sjælland',
+    facilityId: '2810',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/padelnorth',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+
+  // —— Hovedstaden ——
+  {
+    kind: 'matchi',
+    id: 'matchi_padelyard',
+    title: 'Padel Yard Reffen (MATCHi)',
+    address: 'Refshaleøen, København — matchi.se',
+    indoor: true,
+    region: 'Hovedstaden',
+    facilityId: '917',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/padelyard',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_vipadelslagelse',
+    title: 'VI Padel Slagelse (MATCHi)',
+    address: 'Slagelse — matchi.se',
+    indoor: true,
+    region: 'Sjælland',
+    facilityId: '1925',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/vipadelslagelse',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+  {
+    kind: 'halbooking',
+    id: 'koge_tennis_halbooking',
+    title: 'Køge Tennis og Padel Klub (Halbooking)',
+    address: 'Køge — koge-tennis.halbooking.dk',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'at_tennis_alleroed',
+    title: 'Allerød Tennis & Padel (Halbooking)',
+    address: 'Allerød — at-tennis.halbooking.dk',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'tisvilde_tennis_halbooking',
+    title: 'Tisvilde Tennis & Padel (Halbooking)',
+    address: 'Tisvildeleje — tisvildetennis.halbooking.dk',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'htpk_hillerod_halbooking',
+    title: 'Hillerød Tennis & Padelklub (Halbooking)',
+    address: 'Hillerød — htpk.halbooking.dk',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'match_padel_ballerup',
+    title: 'Match Padel Ballerup',
+    address: 'Ballerup — matchpadel.dk',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'match_padel_ballerup_single',
+    title: 'Match Padel Ballerup (singlebaner)',
+    address: 'Ballerup — singlebaner via Match Padel',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'match_padel_naestved',
+    title: 'Match Padel Næstved',
+    address: 'Næstved — matchpadel.dk',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'match_padel_nykobing_falster',
+    title: 'Match Padel Nykøbing Falster',
+    address: 'Nykøbing Falster — matchpadel.dk',
+    indoor: true,
+    region: 'Sjælland',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_racketclub_taastrup',
+    title: 'Racket Club Taastrup (MATCHi)',
+    address: 'Taastrup — matchi.se',
+    indoor: true,
+    region: 'Sjælland',
+    facilityId: '2262',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/RacketClubTaastrup',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
 ];
+
+/** Integrerede + Padellife-link-katalog (alle regioner) */
+export const BANER_VENUES = [...BANER_VENUES_INTEGRATED, ...BANER_VENUES_LINKS];
 
 /**
  * @param {BanerVenue[]} [venues]

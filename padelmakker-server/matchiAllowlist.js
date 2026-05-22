@@ -60,6 +60,42 @@ export const MATCHI_VENUE_ALLOWLIST = {
     indoorQuery: '',
     bookingUrl: 'https://www.matchi.se/facilities/k7-padel',
   },
+  matchi_nr_lyndelse_padel: {
+    facilityId: '870',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/NrLyndelsePadeltennis',
+  },
+  matchi_padelyard: {
+    facilityId: '917',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/padelyard',
+  },
+  matchi_padel4alle: {
+    facilityId: '2364',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/Padel4alle',
+  },
+  matchi_padelnorth: {
+    facilityId: '2810',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/padelnorth',
+  },
+  matchi_vipadelslagelse: {
+    facilityId: '1925',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/vipadelslagelse',
+  },
+  matchi_racketclub_taastrup: {
+    facilityId: '2262',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/RacketClubTaastrup',
+  },
 };
 
 const MATCHI_ORIGIN = 'https://www.matchi.se';
