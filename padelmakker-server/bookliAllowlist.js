@@ -10,6 +10,11 @@ export const BOOKLI_VENUE_ALLOWLIST = {
     resourceCategoryId: 'ckup3puay6369731da52u9khirj',
     timezone: 'Europe/Copenhagen',
   },
+  padelclub_roskilde_bookli: {
+    locationId: 'ckt1o3a2u11617261da07ieg2nmc',
+    resourceCategoryId: 'ckt1o3vwt10174391d8qfbpq32s0',
+    timezone: 'Europe/Copenhagen',
+  },
 };
 
 export function getBookliVenue(venueId) {

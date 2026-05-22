@@ -23,26 +23,6 @@ export const BANER_VENUES_LINKS = [
   },
   {
     "kind": "link",
-    "id": "link_gudhjem_match_padel_gudhjem",
-    "title": "Match Padel Gudhjem",
-    "address": "Gudhjem — se booking-link",
-    "indoor": true,
-    "region": "Bornholm",
-    "bookingUrl": "https://matchpadel.dk/afdelinger/gudhjem",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
-    "id": "link_svaneke_match_padel_svaneke",
-    "title": "Match Padel Svaneke",
-    "address": "Svaneke — se booking-link",
-    "indoor": true,
-    "region": "Bornholm",
-    "bookingUrl": "https://matchpadel.dk/afdelinger/svaneke",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
     "id": "link_marstal_r_marstal_if",
     "title": "Marstal IF",
     "address": "Marstal, Ærø — se booking-link",
@@ -109,16 +89,6 @@ export const BANER_VENUES_LINKS = [
     "indoor": true,
     "region": "Fyn",
     "bookingUrl": "https://www.eventyrpadel.dk/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
-    "id": "link_odense_odense_padel_center",
-    "title": "Odense Padel Center",
-    "address": "Odense — se booking-link",
-    "indoor": true,
-    "region": "Fyn",
-    "bookingUrl": "https://www.odensepadelcenter.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
   {
@@ -623,16 +593,6 @@ export const BANER_VENUES_LINKS = [
   },
   {
     "kind": "link",
-    "id": "link_roskilde_padel_club_roskilde",
-    "title": "Padel Club Roskilde",
-    "address": "Roskilde — se booking-link",
-    "indoor": true,
-    "region": "Sjælland",
-    "bookingUrl": "https://padelclub.dk/roskilde/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
     "id": "link_v_ggerl_se_padel_danmark_marielyst",
     "title": "Padel Danmark – Marielyst",
     "address": "Væggerløse — se booking-link",
@@ -923,26 +883,6 @@ export const BANER_VENUES_LINKS = [
   },
   {
     "kind": "link",
-    "id": "link_nr_nebel_padel_time_n_rre_nebel",
-    "title": "Padel Time Nørre Nebel",
-    "address": "Nr. Nebel — se booking-link",
-    "indoor": true,
-    "region": "Vestjylland",
-    "bookingUrl": "https://www.formogfritid.dk/udendoers-faciliteter/padel-tennis-i-nr-nebel",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
-    "id": "link_holstebro_padel_zone_holstebro",
-    "title": "Padel Zone Holstebro",
-    "address": "Holstebro — se booking-link",
-    "indoor": true,
-    "region": "Vestjylland",
-    "bookingUrl": "https://www.padelzone-holstebro.dk/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
     "id": "link_viborg_rocket_padel_viborg",
     "title": "Rocket Padel Viborg",
     "address": "Viborg — se booking-link",
@@ -959,16 +899,6 @@ export const BANER_VENUES_LINKS = [
     "indoor": true,
     "region": "Vestjylland",
     "bookingUrl": "https://www.smash.dk/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
-    "id": "link_struer_struer_energi_park",
-    "title": "Struer Energi Park",
-    "address": "Struer — se booking-link",
-    "indoor": true,
-    "region": "Vestjylland",
-    "bookingUrl": "https://struerenergipark.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
   {
@@ -1069,36 +999,6 @@ export const BANER_VENUES_LINKS = [
     "indoor": true,
     "region": "Østjylland",
     "bookingUrl": "https://www.odderpadelcenter.dk/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
-    "id": "link_oksb_l_oksb_l_padel_sport",
-    "title": "Oksbøl Padel Sport",
-    "address": "Oksbøl — se booking-link",
-    "indoor": true,
-    "region": "Østjylland",
-    "bookingUrl": "https://obk-badminton.dk/oksboel-padel-sport",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
-    "id": "link_hedensted_padel_arena_hedensted",
-    "title": "Padel Arena Hedensted",
-    "address": "Hedensted — se booking-link",
-    "indoor": true,
-    "region": "Østjylland",
-    "bookingUrl": "https://padelarena.dk/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
-    "id": "link_arhus_padel_ground_aarhus",
-    "title": "Padel Ground Aarhus",
-    "address": "Århus — se booking-link",
-    "indoor": true,
-    "region": "Østjylland",
-    "bookingUrl": "https://padelground.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
   {

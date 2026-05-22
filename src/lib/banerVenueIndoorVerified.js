@@ -30,9 +30,18 @@ export const BANER_INTEGRATED_INDOOR_VERIFIED = {
   match_padel_ballerup_single: true,
   match_padel_naestved: true,
   match_padel_nykobing_falster: true,
+  match_padel_gudhjem: false,
+  match_padel_svaneke: false,
+  atk_arbejdernes_tennisklub_halbooking: true,
+  struer_energi_park_halbooking: true,
+  bjerringbro_padel_halbooking: true,
+  oksbol_padel_halbooking: true,
+  padel_lounge_aarhus_halbooking: true,
+  padel_zone_holstebro_halbooking: true,
 
   // Bookli
   padelpadel_aalborg: true,
+  padelclub_roskilde_bookli: true,
 
   // MATCHi (Padel INDOORS / OUTDOORS fra facilitetsside)
   matchi_padel99: true,
@@ -51,4 +60,9 @@ export const BANER_INTEGRATED_INDOOR_VERIFIED = {
   matchi_vipadelslagelse: true,
   matchi_racketclub_taastrup: true,
   matchi_padelground_viborg: false,
+  matchi_odense_padel_center: true,
+  matchi_padel_time_norre_nebel: false,
+  matchi_jelling_gormshallen: false,
+  matchi_padel_arena_hedensted: true,
+  matchi_padelground_aarhus: true,
 };

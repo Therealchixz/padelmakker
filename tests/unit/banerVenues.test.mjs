@@ -92,6 +92,16 @@ test('Lemvig and Herning are in Vestjylland', () => {
   assert.equal(herning?.region, 'Vestjylland');
 });
 
+test('audit batch: mindst 55 integrerede centre efter udvidelse', () => {
+  const integrated = BANER_VENUES.filter((v) => v.kind !== 'link');
+  assert.ok(integrated.length >= 55, `expected >=55 integrated, got ${integrated.length}`);
+});
+
+test('Bornholm har Match Padel Gudhjem og Svaneke som Halbooking', () => {
+  assert.ok(BANER_VENUES.some((v) => v.id === 'match_padel_gudhjem' && v.kind === 'halbooking'));
+  assert.ok(BANER_VENUES.some((v) => v.id === 'match_padel_svaneke' && v.kind === 'halbooking'));
+});
+
 test('Padelground Viborg er MATCHi med udendørs baner (ikke kun padelground.dk-link)', () => {
   const v = BANER_VENUES.find((x) => x.id === 'matchi_padelground_viborg');
   assert.equal(v?.kind, 'matchi');

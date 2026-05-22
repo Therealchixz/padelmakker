@@ -102,6 +102,38 @@ export const HALBOOKING_VENUE_ALLOWLIST = {
     procBaner: MATCH_PADEL_PROC,
     omraede: '9',
   },
+  match_padel_gudhjem: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '17',
+  },
+  match_padel_svaneke: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '18',
+  },
+  atk_arbejdernes_tennisklub_halbooking: {
+    procBaner: 'https://atk.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '3',
+  },
+  struer_energi_park_halbooking: {
+    procBaner: 'https://struerhallerne.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '19',
+  },
+  bjerringbro_padel_halbooking: {
+    procBaner: 'https://bjerringbroip.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '10',
+  },
+  oksbol_padel_halbooking: {
+    procBaner: 'https://blaavandshuk.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '28',
+  },
+  padel_lounge_aarhus_halbooking: {
+    procBaner: 'https://padellounge.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '4',
+  },
+  padel_zone_holstebro_halbooking: {
+    procBaner: 'https://padelzone.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '1',
+  },
 };
 
 export function getAllowlistedVenue(venueId) {

@@ -50,6 +50,11 @@ test('resolveHalbookingOmraede keeps Match Padel omraede without "padel" in labe
   assert.equal(resolveHalbookingOmraede('1', options).omraede, '1');
 });
 
+test('scheduleLooksLikePadel accepts lowercase bane names (Bornholm)', () => {
+  const courts = [{ name: 'Gudhjem bane 1' }, { name: 'Svaneke bane 2' }];
+  assert.equal(scheduleLooksLikePadel(courts), true);
+});
+
 test('scheduleLooksLikePadel accepts Match Padel city baner without padel in name', () => {
   const courts = [{ name: 'Aalborg - Bane 1' }, { name: 'Aalborg - Single' }];
   assert.equal(scheduleLooksLikePadel(courts), true);

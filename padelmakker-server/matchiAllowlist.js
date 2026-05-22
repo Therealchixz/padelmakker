@@ -102,6 +102,36 @@ export const MATCHI_VENUE_ALLOWLIST = {
     indoorQuery: '',
     bookingUrl: 'https://www.matchi.se/facilities/PadelgroundViborg',
   },
+  matchi_odense_padel_center: {
+    facilityId: '989',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/OPC',
+  },
+  matchi_padel_time_norre_nebel: {
+    facilityId: '1290',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/PadelTimeNorreNebel',
+  },
+  matchi_jelling_gormshallen: {
+    facilityId: '1946',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/gormshallen',
+  },
+  matchi_padel_arena_hedensted: {
+    facilityId: '766',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/padelarenahedensted',
+  },
+  matchi_padelground_aarhus: {
+    facilityId: '1063',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/padelground',
+  },
 };
 
 const MATCHI_ORIGIN = 'https://www.matchi.se';

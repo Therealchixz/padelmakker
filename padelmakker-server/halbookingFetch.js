@@ -357,6 +357,7 @@ export function scheduleLooksLikePadel(courts, html = '') {
   if (/\bBane P\d| - P\d\b|Padel Tennis/i.test(names)) return true;
   if (/Padel\s*-/i.test(html) && /(Single|Double)\s*(Bane)?\s*\d/i.test(names)) return true;
   if (/( - Bane \d| - Single\b|Bane P\d)/i.test(names) && !/Bane T\d/i.test(names)) return true;
+  if (/\bbane \d/i.test(names) && !/Bane T\d/i.test(names) && !/tennis/i.test(names)) return true;
   return false;
 }
 

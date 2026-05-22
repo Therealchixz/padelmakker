@@ -54,6 +54,20 @@ const INTEGRATED_TITLE_KEYS = new Set(
     'Match Padel Nykøbing Falster',
     'Racket Club Taastrup (MATCHi)',
     'Padelground Viborg (MATCHi)',
+    'Struer Energi Park (padel)',
+    'Padel Zone Holstebro (Halbooking)',
+    'Padel Time Nørre Nebel (MATCHi)',
+    'Match Padel Gudhjem',
+    'Match Padel Svaneke',
+    'Odense Padel Center (MATCHi)',
+    'Oksbøl Padel Sport (Halbooking)',
+    'Padel Club Roskilde (Bookli)',
+    'Arbejdernes Tennisklub — padel (Halbooking)',
+    'Padel Lounge Aarhus / Skejby (Halbooking)',
+    'Padelground Aarhus (MATCHi)',
+    'Bjerringbro Padel (Halbooking)',
+    'Jelling Padel / Gormshallen (MATCHi)',
+    'Padel Arena Hedensted (MATCHi)',
   ].map((t) => normalizeVenueTitleKey(t))
 );
 
@@ -178,6 +192,17 @@ const INTEGRATED_URL_FRAGMENTS = [
   'himmerland.halbooking',
   'sportshallen.halbooking',
   'PadelgroundViborg',
+  'facilities/OPC',
+  'PadelTimeNorreNebel',
+  'gormshallen',
+  'padelarenahedensted',
+  'facilities/padelground',
+  'atk.halbooking',
+  'struerhallerne.halbooking',
+  'padelzone.halbooking',
+  'bjerringbroip.halbooking',
+  'blaavandshuk.halbooking',
+  'bookli.app/go/location/ckt1o3a2u11617261da07ieg2nmc',
 ];
 
 function slugify(...parts) {
@@ -205,6 +230,8 @@ const MATCH_PADEL_IN_APP = [
   '/naestved',
   '/nykobing',
   '/nykobing-falster',
+  '/gudhjem',
+  '/svaneke',
 ];
 
 const INTEGRATED_URL_FRAGMENTS_EXTRA = [
