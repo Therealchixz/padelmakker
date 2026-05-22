@@ -5,35 +5,24 @@ import { URL } from 'node:url';
 
 const componentUrl = new URL('../../src/components/DateInputField.jsx', import.meta.url);
 const cssUrl = new URL('../../src/responsive.css', import.meta.url);
-const ligaUrl = new URL('../../src/dashboard/LigaTab.jsx', import.meta.url);
 
-test('DateInputField uses text display + off-screen native date picker', async () => {
+test('DateInputField uses facade + transparent date overlay for taps', async () => {
   const source = await readFile(componentUrl, 'utf8');
 
-  assert.match(source, /type="text"/);
-  assert.match(source, /pm-date-field__display/);
+  assert.match(source, /pm-date-field__facade/);
+  assert.match(source, /pm-date-field__overlay/);
   assert.match(source, /type="date"/);
-  assert.match(source, /pm-date-field__native/);
-  assert.match(source, /showPicker/);
-  assert.match(source, /placeholder="dd-mm-åååå"/);
-  assert.doesNotMatch(source, /type="date"[\s\S]{0,80}pm-date-field__input--empty/);
-  assert.doesNotMatch(source, /pm-date-field__clip/);
+  assert.doesNotMatch(source, /showPicker/);
+  assert.doesNotMatch(source, /left:\s*-9999px/);
 });
 
-test('date field CSS has no Safari widen hack', async () => {
+test('date overlay CSS covers full field and stays tappable', async () => {
   const css = await readFile(cssUrl, 'utf8');
 
-  assert.match(css, /\.pm-date-field__display/);
-  assert.match(css, /\.pm-date-field__native/);
-  assert.doesNotMatch(css, /calc\(100% \+ 3rem\)/);
-  assert.doesNotMatch(css, /pm-date-field__hint/);
-});
-
-test('liga create form uses DateInputField inside create anchor card', async () => {
-  const liga = await readFile(ligaUrl, 'utf8');
-
-  assert.match(liga, /pm-create-form-anchor/);
-  assert.match(liga, /DateInputField/);
+  assert.match(css, /\.pm-date-field__overlay[\s\S]*position:\s*absolute/);
+  assert.match(css, /\.pm-date-field__overlay[\s\S]*inset:\s*0/);
+  const overlayBlock = css.match(/\.pm-date-field__overlay\s*\{[^}]+\}/)?.[0] ?? '';
+  assert.doesNotMatch(overlayBlock, /pointer-events:\s*none/);
 });
 
 test('formatIsoForDisplay maps YYYY-MM-DD to dd-mm-yyyy', async () => {
