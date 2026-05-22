@@ -1,6 +1,6 @@
 /**
- * Dato-input — samme inputStyle som tekstfelter.
- * Tom: én dd-mm-åååå-hint (WebKit-felter skjult). Mobil: bredere input klippet i __clip.
+ * Dato-input — synlig boks på __clip (100 % bredde), ikke på input.
+ * Undgår at WebKit type=date's indre min-bredde skubber border ud over kortet på mobil.
  */
 export function DateInputField({
   label,
@@ -13,11 +13,32 @@ export function DateInputField({
   const empty = !value;
   const { marginBottom = '10px', ...fieldInputStyle } = inputStyle || {};
 
+  const {
+    width: _w,
+    boxSizing: _bs,
+    border,
+    borderRadius,
+    background,
+    padding,
+    transition,
+    ...inputTypography
+  } = fieldInputStyle;
+
+  const boxStyle = {
+    width: '100%',
+    boxSizing: 'border-box',
+    border,
+    borderRadius,
+    background,
+    padding,
+    transition,
+  };
+
   return (
     <>
       {label ? <label style={labelStyle}>{label}</label> : null}
       <div className="pm-date-field" style={{ marginBottom }}>
-        <div className="pm-date-field__clip">
+        <div className="pm-date-field__clip pm-date-field__box" style={boxStyle}>
           <input
             type="date"
             className={
@@ -28,7 +49,7 @@ export function DateInputField({
             value={value}
             min={min}
             onChange={onChange}
-            style={{ ...fieldInputStyle, marginBottom: 0 }}
+            style={inputTypography}
             aria-label={typeof label === 'string' ? label : undefined}
           />
           {empty ? (

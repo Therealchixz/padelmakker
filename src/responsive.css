@@ -3727,7 +3727,7 @@ button,
   max-width: 100%;
 }
 
-/* Dato — samme boks som tekst-input (inputStyle på selve input) */
+/* Dato — synlig boks på __box/__clip; input fylder inden i (mobil-safe) */
 .pm-date-field {
   width: 100%;
   max-width: 100%;
@@ -3742,7 +3742,10 @@ button,
   min-width: 0;
   box-sizing: border-box;
   overflow: hidden;
-  border-radius: var(--pm-radius-md);
+}
+
+.pm-date-field__box {
+  padding-right: 2.75rem;
 }
 
 .pm-date-field__input {
@@ -3750,7 +3753,29 @@ button,
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
   box-sizing: border-box;
+  outline: none;
+  font-family: var(--pm-font);
+  font-size: 14px;
+  color: var(--pm-text);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.pm-date-field__input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 2.75rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  opacity: 1;
 }
 
 .pm-date-field__hint {
@@ -3795,26 +3820,11 @@ button,
     grid-template-columns: 1fr;
   }
 
-  /*
-   * Safari/iOS: type=date har ofte indre min-bredde > 100%.
-   * Gør input lidt bredere og klip i __clip — kanten forbliver i kortet.
-   */
-  .pm-create-form-anchor .pm-date-field {
-    overflow-x: clip;
-    width: 100%;
-    max-width: 100%;
-  }
-
+  .pm-create-form-anchor .pm-date-field,
   .pm-create-form-anchor .pm-date-field__clip {
     width: 100%;
     max-width: 100%;
-  }
-
-  .pm-create-form-anchor .pm-date-field__input {
-    width: calc(100% + 3rem) !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    margin-right: -3rem;
+    min-width: 0;
   }
 }
 
