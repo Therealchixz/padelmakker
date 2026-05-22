@@ -49,6 +49,7 @@ const MATCHI_CANDIDATES = [
   // Padellife-oversigt (maj 2026)
   { slug: 'vipadelslagelse', region: 'Sjælland', title: 'VI Padel Slagelse' },
   { slug: 'RacketClubTaastrup', region: 'Sjælland', title: 'Racket Club Taastrup' },
+  { slug: 'PadelgroundViborg', region: 'Vestjylland', title: 'Padelground Viborg', indoor: false },
 ];
 
 /** @type {{ id: string, procBaner: string, region: string, title: string }[]} */

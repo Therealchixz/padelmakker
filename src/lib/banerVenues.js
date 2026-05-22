@@ -234,6 +234,19 @@ const BANER_VENUES_INTEGRATED = [
     indoor: true,
     region: 'Vestjylland',
   },
+  {
+    kind: 'matchi',
+    id: 'matchi_padelground_viborg',
+    title: 'Padelground Viborg (MATCHi)',
+    address: 'Gyldenrisvej 9, 8800 Viborg',
+    indoor: false,
+    region: 'Vestjylland',
+    facilityId: '1534',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/PadelgroundViborg',
+    note:
+      '2 udendørs baner — bookes via MATCHi (som «Book en bane» på padelground.dk). Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
 
   // —— Fyn ——
   {

@@ -50,4 +50,5 @@ export const BANER_INTEGRATED_INDOOR_VERIFIED = {
   matchi_padelnorth: true,
   matchi_vipadelslagelse: true,
   matchi_racketclub_taastrup: true,
+  matchi_padelground_viborg: false,
 };

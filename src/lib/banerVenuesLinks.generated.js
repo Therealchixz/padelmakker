@@ -913,16 +913,6 @@ export const BANER_VENUES_LINKS = [
   },
   {
     "kind": "link",
-    "id": "link_viborg_padel_ground_viborg",
-    "title": "Padel Ground Viborg",
-    "address": "Viborg — se booking-link",
-    "indoor": true,
-    "region": "Vestjylland",
-    "bookingUrl": "https://padelground.dk/padelbaner-i-viborg/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
-  },
-  {
-    "kind": "link",
     "id": "link_lemvig_padel_sport_lemvig",
     "title": "Padel Sport Lemvig",
     "address": "Lemvig — se booking-link",

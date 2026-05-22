@@ -96,6 +96,12 @@ export const MATCHI_VENUE_ALLOWLIST = {
     indoorQuery: '',
     bookingUrl: 'https://www.matchi.se/facilities/RacketClubTaastrup',
   },
+  matchi_padelground_viborg: {
+    facilityId: '1534',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/PadelgroundViborg',
+  },
 };
 
 const MATCHI_ORIGIN = 'https://www.matchi.se';

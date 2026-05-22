@@ -53,6 +53,7 @@ const INTEGRATED_TITLE_KEYS = new Set(
     'Match Padel Næstved',
     'Match Padel Nykøbing Falster',
     'Racket Club Taastrup (MATCHi)',
+    'Padelground Viborg (MATCHi)',
   ].map((t) => normalizeVenueTitleKey(t))
 );
 
@@ -176,6 +177,7 @@ const INTEGRATED_URL_FRAGMENTS = [
   'ntsc.halbooking',
   'himmerland.halbooking',
   'sportshallen.halbooking',
+  'PadelgroundViborg',
 ];
 
 function slugify(...parts) {
@@ -221,6 +223,10 @@ const INTEGRATED_URL_FRAGMENTS_EXTRA = [
 
 function isIntegratedUrl(url, title = '') {
   const u = url.toLowerCase();
+  const t = `${title}`.toLowerCase();
+  if (/padelground\.dk/i.test(u) && /padel\s*ground|padelground/i.test(t) && /viborg/i.test(t + u)) {
+    return true;
+  }
   if (u.includes('matchpadel.dk/afdelinger')) {
     if (MATCH_PADEL_IN_APP.some((p) => u.includes(p))) return true;
     return false;

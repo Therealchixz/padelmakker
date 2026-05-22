@@ -92,6 +92,14 @@ test('Lemvig and Herning are in Vestjylland', () => {
   assert.equal(herning?.region, 'Vestjylland');
 });
 
+test('Padelground Viborg er MATCHi med udendørs baner (ikke kun padelground.dk-link)', () => {
+  const v = BANER_VENUES.find((x) => x.id === 'matchi_padelground_viborg');
+  assert.equal(v?.kind, 'matchi');
+  assert.equal(v?.facilityId, '1534');
+  assert.equal(v?.indoor, false);
+  assert.ok(!BANER_VENUES.some((x) => x.kind === 'link' && normalizeVenueTitleKey(x.title) === 'padelground viborg'));
+});
+
 test('Padellife link catalog covers all regions', () => {
   for (const region of BANER_REGION_ORDER) {
     assert.ok(
