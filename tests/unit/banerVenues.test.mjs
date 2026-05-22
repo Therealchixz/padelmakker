@@ -45,3 +45,13 @@ test('new MATCHi venues are registered', () => {
   assert.ok(ids.includes('matchi_padel8500'));
   assert.ok(ids.includes('matchi_padelland'));
 });
+
+test('Odense is on Fyn; Sønderjylland has southern Jutland venues', () => {
+  const odense = BANER_VENUES.find((v) => v.id === 'match_padel_odense');
+  assert.equal(odense?.region, 'Fyn');
+  assert.ok(BANER_REGION_ORDER.includes('Fyn'));
+  assert.ok(BANER_REGION_ORDER.includes('Sønderjylland'));
+  assert.ok(!BANER_REGION_ORDER.includes('Syddanmark'));
+  const sonder = BANER_VENUES.filter((v) => v.region === 'Sønderjylland');
+  assert.ok(sonder.length >= 2);
+});

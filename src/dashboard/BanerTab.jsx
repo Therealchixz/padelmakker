@@ -345,6 +345,9 @@ export function BanerTab() {
         <section key={region} className="pm-baner-region" aria-labelledby={`pm-baner-region-${region}`}>
           <h3 id={`pm-baner-region-${region}`} className="pm-baner-region-title">
             {region}
+            {region === 'Sønderjylland' ? (
+              <span className="pm-baner-region-sub"> (også kaldet sydjylland)</span>
+            ) : null}
           </h3>
           <div className="pm-baner-venue-list">
             {venues.map((v) => {

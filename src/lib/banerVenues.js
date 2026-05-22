@@ -18,7 +18,8 @@ export const BANER_REGION_ORDER = [
   'Nordjylland',
   'Østjylland',
   'Midtjylland',
-  'Syddanmark',
+  'Fyn',
+  'Sønderjylland',
   'Sjælland',
   'Hovedstaden',
   'Bornholm',
@@ -211,14 +212,52 @@ export const BANER_VENUES = [
     region: 'Midtjylland',
   },
 
-  // —— Syddanmark ——
+  // —— Fyn ——
   {
     kind: 'halbooking',
     id: 'match_padel_odense',
     title: 'Match Padel Odense',
     address: 'Petersmindevej 1E, 5000 Odense',
     indoor: true,
-    region: 'Syddanmark',
+    region: 'Fyn',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_vissenbjerg_padel',
+    title: 'Vissenbjerg Padel (MATCHi)',
+    address: 'Idrætsvej 3, 5492 Vissenbjerg',
+    indoor: true,
+    region: 'Fyn',
+    facilityId: '3112',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/vissenbjergpadel',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+
+  // —— Sønderjylland (syd for Kongeå; ikke Fyn) ——
+  {
+    kind: 'matchi',
+    id: 'matchi_breintholt_esbjerg',
+    title: 'Breintholtgård Padel, Esbjerg (MATCHi)',
+    address: 'Kokspangvej 17-19, 6710 Esbjerg V',
+    indoor: false,
+    region: 'Sønderjylland',
+    facilityId: '2232',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/breinhotlgardpadel',
+    note: 'Udendørs baner via MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_k7_padel_losning',
+    title: 'K7 Padel, Løsning (MATCHi)',
+    address: 'Lundagervej 57, 8723 Løsning',
+    indoor: true,
+    region: 'Sønderjylland',
+    facilityId: '2650',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/k7-padel',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
   },
 ];
 

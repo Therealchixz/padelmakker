@@ -42,6 +42,24 @@ export const MATCHI_VENUE_ALLOWLIST = {
     indoorQuery: '',
     bookingUrl: 'https://www.matchi.se/facilities/ViPadelAarhus',
   },
+  matchi_vissenbjerg_padel: {
+    facilityId: '3112',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/vissenbjergpadel',
+  },
+  matchi_breintholt_esbjerg: {
+    facilityId: '2232',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/breinhotlgardpadel',
+  },
+  matchi_k7_padel_losning: {
+    facilityId: '2650',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/k7-padel',
+  },
 };
 
 const MATCHI_ORIGIN = 'https://www.matchi.se';

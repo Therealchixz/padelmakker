@@ -15,7 +15,9 @@ PadelMakker **Book bane** viser ledige tider, når centrets kalender er **offent
 
 Centre grupperes under overskrifter defineret i `BANER_REGION_ORDER` i `src/lib/banerVenues.js`:
 
-- Nordjylland, Østjylland, Midtjylland, Syddanmark, Sjælland, Hovedstaden, Bornholm
+- Nordjylland, Østjylland, Midtjylland, Fyn, Sønderjylland (sydjylland), Sjælland, Hovedstaden, Bornholm
+
+**Bemærk:** Odense og Vissenbjerg ligger på **Fyn**, ikke Sønderjylland. «Syddanmark» bruges ikke som regionnavn i appen.
 
 Nye centre skal have `region` sat til én af disse (eller de vises under «Øvrige» til sidst).
 
@@ -54,11 +56,21 @@ Nye centre skal have `region` sat til én af disse (eller de vises under «Øvri
 | ViPadel Aarhus | matchi | `matchi_vipadelaarhus` (1062) |
 | Match Padel Silkeborg | halbooking | `match_padel_silkeborg` (område 19) |
 
-### Syddanmark
+### Fyn
 
 | Titel | Type | id |
 |-------|------|-----|
 | Match Padel Odense | halbooking | `match_padel_odense` (område 14) |
+| Vissenbjerg Padel | matchi | `matchi_vissenbjerg_padel` (3112) |
+
+### Sønderjylland (sydjylland)
+
+| Titel | Type | id |
+|-------|------|-----|
+| Breintholtgård Padel, Esbjerg | matchi | `matchi_breintholt_esbjerg` (2232) |
+| K7 Padel, Løsning | matchi | `matchi_k7_padel_losning` (2650) |
+
+**Kandidater** (ikke Halbooking/MATCHi i appen endnu): EGIF Esbjerg (`egif.halbooking.dk`), Rocket Padel Kolding, Bel Air PadelCourt Esbjerg.
 
 ## Tilføj nyt Halbooking-center
 
