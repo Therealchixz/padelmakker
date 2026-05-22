@@ -1,26 +1,38 @@
 /**
- * Dato-input med dd-mm-åååå-hint når tom (type="date" har ikke placeholder på mobil).
+ * Dato-input med samme inputStyle som øvrige felter + dd-mm-åååå-hint når tom.
  */
 export function DateInputField({
   label,
   value,
   onChange,
   labelStyle,
+  inputStyle,
   min,
   className = '',
 }) {
   const empty = !value;
+  const baseInputStyle = inputStyle || {};
+  const { marginBottom, ...inputRest } = baseInputStyle;
+  const inputFieldStyle = {
+    ...inputRest,
+    marginBottom: 0,
+    display: 'block',
+  };
 
   return (
-    <div className={`pm-form-field pm-date-input-wrap ${className}`.trim()}>
+    <div
+      className={`pm-form-field pm-date-input-wrap ${className}`.trim()}
+      style={{ width: '100%', marginBottom: marginBottom ?? 0 }}
+    >
       {label ? <label style={labelStyle}>{label}</label> : null}
-      <div className={`pm-date-input-inner${empty ? ' pm-date-input-inner--empty' : ''}`}>
+      <div className="pm-date-input-shell">
         <input
           type="date"
-          className="pm-date-input-native"
+          className={empty ? 'pm-date-input--empty' : undefined}
           value={value}
           min={min}
           onChange={onChange}
+          style={inputFieldStyle}
           aria-label={typeof label === 'string' ? label : undefined}
         />
         {empty ? (

@@ -3730,11 +3730,15 @@ button,
 .pm-form-date-stack {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
   width: 100%;
   max-width: 100%;
   margin-bottom: 10px;
   box-sizing: border-box;
+}
+
+.pm-form-date-stack > .pm-date-input-wrap + .pm-date-input-wrap {
+  margin-top: 10px;
 }
 
 .pm-form-date-stack > .pm-date-input-wrap {
@@ -3752,69 +3756,42 @@ button,
   box-sizing: border-box;
 }
 
-/* Ramme på wrapper — samme bredde/højde som øvrige inputStyle-felter */
-.pm-date-input-inner {
+/* Samme box som inputStyle; shell clipper kun WebKit-overflow på mobil */
+.pm-date-input-shell {
   position: relative;
-  display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: var(--pm-control-h);
   box-sizing: border-box;
   overflow: hidden;
-  border: 1px solid var(--pm-border);
-  border-radius: var(--pm-radius-md);
-  background: var(--pm-surface);
 }
 
-.pm-date-input-native {
-  display: block;
+.pm-date-input-shell input[type="date"] {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 100%;
-  min-height: calc(var(--pm-control-h) - 2px);
-  margin: 0;
-  padding: 10px calc(var(--pm-space-2) + 2px);
-  border: none;
-  background: transparent;
-  box-shadow: none;
-  outline: none;
-  font-family: var(--pm-font);
-  font-size: 14px;
-  color: var(--pm-text);
   box-sizing: border-box;
-  -webkit-appearance: none;
-  appearance: none;
 }
 
-.pm-date-input-native::-webkit-calendar-picker-indicator {
-  flex-shrink: 0;
-  margin-left: 4px;
-  padding: 4px;
-  cursor: pointer;
-}
-
-.pm-date-input-native::-webkit-datetime-edit,
-.pm-date-input-native::-webkit-datetime-edit-fields-wrapper {
+.pm-date-input-shell input[type="date"]::-webkit-datetime-edit,
+.pm-date-input-shell input[type="date"]::-webkit-datetime-edit-fields-wrapper {
   min-width: 0;
   max-width: 100%;
-  padding: 0;
 }
 
 /* Tom dato: skjul browserens tomme visning, vis dd-mm-åååå-hint */
-.pm-date-input-inner--empty .pm-date-input-native {
+.pm-date-input--empty {
   color: transparent;
 }
 
-.pm-date-input-inner--empty .pm-date-input-native:focus {
+.pm-date-input--empty:focus {
   color: var(--pm-text);
 }
 
 .pm-date-input-hint {
   position: absolute;
   left: calc(var(--pm-space-2) + 2px);
-  right: 40px;
+  right: 2.75rem;
   top: 50%;
   transform: translateY(-50%);
   font-family: var(--pm-font);

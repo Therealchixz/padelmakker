@@ -1988,12 +1988,14 @@ export function LigaTab({
               value={createForm.start_date}
               onChange={(e) => setCreateForm((f) => ({ ...f, start_date: e.target.value }))}
               labelStyle={labelStyle}
+              inputStyle={inputStyle}
             />
             <DateInputField
               label="Slutdato"
               value={createForm.end_date}
               onChange={(e) => setCreateForm((f) => ({ ...f, end_date: e.target.value }))}
               labelStyle={labelStyle}
+              inputStyle={inputStyle}
             />
           </div>
           <label style={labelStyle}>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
