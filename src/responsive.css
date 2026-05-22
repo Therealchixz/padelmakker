@@ -3301,6 +3301,23 @@ button,
   margin-bottom: var(--pm-space-2);
 }
 
+.pm-baner-region {
+  margin-bottom: 24px;
+}
+
+.pm-baner-region:last-child {
+  margin-bottom: 0;
+}
+
+.pm-baner-region-title {
+  margin: 0 0 12px;
+  font-family: var(--pm-font);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pm-text);
+  letter-spacing: 0.01em;
+}
+
 .pm-baner-venue-list {
   display: flex;
   flex-direction: column;

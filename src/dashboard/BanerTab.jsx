@@ -1,7 +1,7 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { theme, btn, inputStyle, heading, tag } from '../lib/platformTheme';
 import {
-  BANER_VENUES,
+  groupBanerVenuesByRegion,
   halbookingSlotsUrl,
   halbookingOpenUrl,
   halbookingOpenVenueUrl,
@@ -65,6 +65,7 @@ function DateNavigator({ dateYmd, todayYmd, loading = false, onChangeDate }) {
 
 export function BanerTab() {
   const detailRefs = useRef(/** @type {Record<string, HTMLDetailsElement | null>} */ ({}));
+  const venueGroups = useMemo(() => groupBanerVenuesByRegion(), []);
 
   /** @type {[Record<string, VenueLoadState | null>, function]} */
   const [byVenue, setByVenue] = useState({});
@@ -340,8 +341,13 @@ export function BanerTab() {
         )}
       </div>
 
-      <div className="pm-baner-venue-list">
-        {BANER_VENUES.map((v) => {
+      {venueGroups.map(({ region, venues }) => (
+        <section key={region} className="pm-baner-region" aria-labelledby={`pm-baner-region-${region}`}>
+          <h3 id={`pm-baner-region-${region}`} className="pm-baner-region-title">
+            {region}
+          </h3>
+          <div className="pm-baner-venue-list">
+            {venues.map((v) => {
           const loaded = byVenue[v.id];
           const loading = !!loadingVenue[v.id];
           const err = errorVenue[v.id];
@@ -372,7 +378,6 @@ export function BanerTab() {
                   <div className="pm-baner-summary-address">
                     <MapPin size={11} /> {v.address}
                   </div>
-                  <div className="pm-baner-summary-region">{v.region}</div>
                 </div>
                 <span style={v.indoor ? tag(theme.blueBg, theme.blue) : tag(theme.warmBg, theme.warm)}>
                   {v.indoor ? (
@@ -704,8 +709,10 @@ export function BanerTab() {
               </div>
             </details>
           );
-        })}
-      </div>
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

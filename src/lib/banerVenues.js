@@ -2,9 +2,9 @@ import { DateTime } from 'luxon';
 
 /**
  * Alle steder under fanen Baner.
- * Halbooking: id skal matche padelmakker-server/halbookingVenuesAllowlist.js
- * Bookli: id skal matche padelmakker-server/bookliAllowlist.js
- * Matchi: id skal matche padelmakker-server/matchiAllowlist.js
+ * Halbooking: id → padelmakker-server/halbookingVenuesAllowlist.js
+ * Bookli: id → padelmakker-server/bookliAllowlist.js
+ * Matchi: id → padelmakker-server/matchiAllowlist.js
  */
 
 /** @typedef {{ kind: 'halbooking', id: string, title: string, address: string, indoor: boolean, region: string }} HalbookingVenue */
@@ -13,8 +13,20 @@ import { DateTime } from 'luxon';
 /** @typedef {{ kind: 'link', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, note?: string }} LinkVenue */
 /** @typedef {HalbookingVenue | BookliVenue | MatchiVenue | LinkVenue} BanerVenue */
 
+/** Rækkefølge af region-sektioner under Book bane */
+export const BANER_REGION_ORDER = [
+  'Nordjylland',
+  'Østjylland',
+  'Midtjylland',
+  'Syddanmark',
+  'Sjælland',
+  'Hovedstaden',
+  'Bornholm',
+];
+
 /** @type {BanerVenue[]} */
 export const BANER_VENUES = [
+  // —— Nordjylland ——
   {
     kind: 'halbooking',
     id: 'skansen_ntsc',
@@ -33,11 +45,11 @@ export const BANER_VENUES = [
   },
   {
     kind: 'halbooking',
-    id: 'match_padel_halbooking',
-    title: 'Match Padel',
-    address: 'Via Halbooking — se matchpadel.dk',
+    id: 'match_padel_aalborg',
+    title: 'Match Padel Aalborg',
+    address: 'Nibevej 58, 9200 Aalborg',
     indoor: true,
-    region: 'Danmark',
+    region: 'Nordjylland',
   },
   {
     kind: 'bookli',
@@ -46,7 +58,6 @@ export const BANER_VENUES = [
     address: 'Hellebarden 2, 9230 Svenstrup J',
     indoor: true,
     region: 'Nordjylland',
-    /** Opret booking (kræver login) — samme flow som på padelpadel.dk */
     bookingUrl: 'https://bookli.app/u/booking/create',
     infoUrl: 'https://padelpadel.dk/vores-centre/aalborg/',
   },
@@ -67,9 +78,37 @@ export const BANER_VENUES = [
     region: 'Nordjylland',
   },
   {
+    kind: 'halbooking',
+    id: 'match_padel_lemvig',
+    title: 'Match Padel Lemvig',
+    address: 'Nyvang 8, 7620 Lemvig',
+    indoor: true,
+    region: 'Nordjylland',
+  },
+  {
+    kind: 'halbooking',
+    id: 'match_padel_hobro',
+    title: 'Match Padel Hobro (Sparekassen Danmark Padel)',
+    address: 'Jyllandsvej 7, Hobro',
+    indoor: true,
+    region: 'Nordjylland',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_padelnord',
+    title: 'Padel Nord (MATCHi)',
+    address: 'Velkomstcenter Syd 10, 9700 Brønderslev',
+    indoor: true,
+    region: 'Nordjylland',
+    facilityId: '2445',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/padelnord',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+  {
     kind: 'matchi',
     id: 'matchi_padel99',
-    title: 'Padel99 (Matchi)',
+    title: 'Padel99 (MATCHi)',
     address: 'Frederikshavn — matchi.se',
     indoor: true,
     region: 'Nordjylland',
@@ -78,6 +117,18 @@ export const BANER_VENUES = [
     bookingUrl: 'https://www.matchi.se/facilities/padel99',
     note:
       'Oversigt hentes fra MATCHi (samme data som på facilitetssiden). Baner vises med sponsor-/bane-navne som på MATCHi. Grøn = ledigt interval — klik åbner MATCHi med valgt dato.',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_skagen_padelcenter',
+    title: 'Skagen Padelcenter (MATCHi)',
+    address: 'Skagen — matchi.se',
+    indoor: false,
+    region: 'Nordjylland',
+    facilityId: '2430',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/SkagenPadelcenter%20',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner facilitetssiden med valgt dato.',
   },
   {
     kind: 'link',
@@ -103,31 +154,114 @@ export const BANER_VENUES = [
     note:
       'Ledige tider vises på booking-siden nederst — scroll ned på siden. Tryk Åbn booking (PadelMakker henter ikke kalenderen ind).',
   },
+
+  // —— Østjylland ——
   {
     kind: 'matchi',
-    id: 'matchi_skagen_padelcenter',
-    title: 'Skagen Padelcenter (Matchi)',
-    address: 'Skagen — matchi.se',
-    indoor: false,
-    region: 'Nordjylland',
-    facilityId: '2430',
+    id: 'matchi_padel8500',
+    title: 'Padel8500 (MATCHi)',
+    address: 'Teknologivej 16, 8500 Grenaa',
+    indoor: true,
+    region: 'Østjylland',
+    facilityId: '2229',
     sport: '5',
-    bookingUrl: 'https://www.matchi.se/facilities/SkagenPadelcenter%20',
-    note:
-      'Oversigt fra MATCHi. Grøn = ledigt — klik åbner facilitetssiden med valgt dato.',
+    bookingUrl: 'https://www.matchi.se/facilities/padel8500',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+
+  // —— Midtjylland ——
+  {
+    kind: 'halbooking',
+    id: 'match_padel_aarhus',
+    title: 'Match Padel Aarhus',
+    address: 'Sindalsvej 2, 8240 Risskov',
+    indoor: true,
+    region: 'Midtjylland',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_padelland',
+    title: 'Padel Land (MATCHi)',
+    address: 'Hjelmagervej 6, 8541 Skødstrup',
+    indoor: true,
+    region: 'Midtjylland',
+    facilityId: '2072',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/Padelland',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+  {
+    kind: 'matchi',
+    id: 'matchi_vipadelaarhus',
+    title: 'ViPadel Aarhus (MATCHi)',
+    address: 'Holmstrupgårdvej 18A, 8220 Brabrand',
+    indoor: true,
+    region: 'Midtjylland',
+    facilityId: '1062',
+    sport: '5',
+    bookingUrl: 'https://www.matchi.se/facilities/ViPadelAarhus',
+    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner MATCHi med valgt dato.',
+  },
+  {
+    kind: 'halbooking',
+    id: 'match_padel_silkeborg',
+    title: 'Match Padel Silkeborg',
+    address: 'Kejlstrupvej 87, 8600 Silkeborg',
+    indoor: true,
+    region: 'Midtjylland',
+  },
+
+  // —— Syddanmark ——
+  {
+    kind: 'halbooking',
+    id: 'match_padel_odense',
+    title: 'Match Padel Odense',
+    address: 'Petersmindevej 1E, 5000 Odense',
+    indoor: true,
+    region: 'Syddanmark',
   },
 ];
 
+/**
+ * @param {BanerVenue[]} [venues]
+ * @returns {{ region: string, venues: BanerVenue[] }[]}
+ */
+export function groupBanerVenuesByRegion(venues = BANER_VENUES) {
+  /** @type {Map<string, BanerVenue[]>} */
+  const map = new Map();
+  for (const v of venues) {
+    const region = v.region || 'Øvrige';
+    if (!map.has(region)) map.set(region, []);
+    map.get(region).push(v);
+  }
+
+  /** @type {{ region: string, venues: BanerVenue[] }[]} */
+  const ordered = [];
+  for (const region of BANER_REGION_ORDER) {
+    const list = map.get(region);
+    if (list?.length) {
+      ordered.push({ region, venues: list });
+      map.delete(region);
+    }
+  }
+  for (const [region, list] of map) {
+    ordered.push({ region, venues: list });
+  }
+  return ordered;
+}
+
+const viteEnv = import.meta.env ?? {};
+
 const SLOTS_BASE =
-  (import.meta.env.VITE_HALBOOKING_SLOTS_URL && String(import.meta.env.VITE_HALBOOKING_SLOTS_URL).trim()) ||
+  (viteEnv.VITE_HALBOOKING_SLOTS_URL && String(viteEnv.VITE_HALBOOKING_SLOTS_URL).trim()) ||
   '/api/halbooking-slots';
 
 const BOOKLI_SLOTS_BASE =
-  (import.meta.env.VITE_BOOKLI_SLOTS_URL && String(import.meta.env.VITE_BOOKLI_SLOTS_URL).trim()) ||
+  (viteEnv.VITE_BOOKLI_SLOTS_URL && String(viteEnv.VITE_BOOKLI_SLOTS_URL).trim()) ||
   '/api/bookli-slots';
 
 const MATCHI_SLOTS_BASE =
-  (import.meta.env.VITE_MATCHI_SLOTS_URL && String(import.meta.env.VITE_MATCHI_SLOTS_URL).trim()) ||
+  (viteEnv.VITE_MATCHI_SLOTS_URL && String(viteEnv.VITE_MATCHI_SLOTS_URL).trim()) ||
   '/api/matchi-slots';
 
 /**
@@ -142,7 +276,6 @@ export function matchiSlotsUrl(venueId, dateYmd) {
 }
 
 /**
- * Dyb link til MATCHi-facilitet med dato (booking flow på deres site).
  * @param {{ bookingUrl: string; facilityId: string; sport: string }} v
  * @param {string} dateYmd
  */
@@ -164,7 +297,6 @@ export function matchiFacilityDeepUrl(v, dateYmd) {
 }
 
 /**
- * Memberlink booking-URL med valgt dag (fx Aars/Gug). Ukendte sites ignorerer typisk ekstra query-parametre.
  * @param {string} bookingUrl
  * @param {string} dateYmd
  */
@@ -187,7 +319,7 @@ export function memberlinkBookingUrlWithDate(bookingUrl, dateYmd) {
 
 /**
  * @param {string} venueId
- * @param {string} [dateYmd] - YYYY-MM-DD (Europe/Copenhagen)
+ * @param {string} [dateYmd]
  */
 export function halbookingSlotsUrl(venueId, dateYmd) {
   const q = new URLSearchParams();
@@ -209,12 +341,10 @@ export function bookliSlotsUrl(venueId, dateYmd) {
   return `${BOOKLI_SLOTS_BASE}?${q.toString()}`;
 }
 
-/** I dag som YYYY-MM-DD i Europe/Copenhagen (til date-input default). */
 export function copenhagenDateYmd() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Copenhagen' });
 }
 
-/** Flyt en kalenderdag i Europe/Copenhagen (til Halbooking-dato). */
 export function copenhagenAddDaysYmd(ymd, deltaDays) {
   const d = DateTime.fromISO(String(ymd || '').trim(), { zone: 'Europe/Copenhagen' });
   if (!d.isValid) return copenhagenDateYmd();

@@ -1,6 +1,5 @@
 /**
  * Tilladte MATCHi-faciliteter (server-side hentning af /book/schedule HTML).
- * facilityId findes på facilitetssiden (fx i favorit-link eller inline script).
  */
 
 /** @typedef {{ facilityId: string; sport: string; indoorQuery: string; bookingUrl: string }} MatchiVenueConfig */
@@ -18,6 +17,30 @@ export const MATCHI_VENUE_ALLOWLIST = {
     sport: '5',
     indoorQuery: '',
     bookingUrl: 'https://www.matchi.se/facilities/SkagenPadelcenter',
+  },
+  matchi_padelnord: {
+    facilityId: '2445',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/padelnord',
+  },
+  matchi_padel8500: {
+    facilityId: '2229',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/padel8500',
+  },
+  matchi_padelland: {
+    facilityId: '2072',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/Padelland',
+  },
+  matchi_vipadelaarhus: {
+    facilityId: '1062',
+    sport: '5',
+    indoorQuery: '',
+    bookingUrl: 'https://www.matchi.se/facilities/ViPadelAarhus',
   },
 };
 
