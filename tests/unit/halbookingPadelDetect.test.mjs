@@ -40,6 +40,21 @@ test('resolveHalbookingOmraede keeps allowlist id when several Padel Lounge citi
   assert.equal(resolveHalbookingOmraede('', options).omraede, '2');
 });
 
+test('resolveHalbookingOmraede keeps Match Padel omraede without "padel" in label', () => {
+  const options = [
+    { omraede: '5', label: 'AALBORG, Nibevej 58 9200 Aalborg' },
+    { omraede: '1', label: 'AARHUS, Sindalsvej 2 8240 Risskov' },
+    { omraede: '11', label: 'HOBRO, Jyllandsvej 7 9500 Hobro' },
+  ];
+  assert.equal(resolveHalbookingOmraede('5', options).omraede, '5');
+  assert.equal(resolveHalbookingOmraede('1', options).omraede, '1');
+});
+
+test('scheduleLooksLikePadel accepts Match Padel city baner without padel in name', () => {
+  const courts = [{ name: 'Aalborg - Bane 1' }, { name: 'Aalborg - Single' }];
+  assert.equal(scheduleLooksLikePadel(courts), true);
+});
+
 test('scheduleLooksLikePadel accepts Padel Lounge court names with Padel heading in HTML', () => {
   const courts = [{ name: 'Aalborg Double  1' }, { name: 'Aalborg Single 7' }];
   assert.equal(

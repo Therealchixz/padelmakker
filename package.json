@@ -19,7 +19,8 @@
     "test:e2e:report": "playwright show-report",
     "baner:discover": "node scripts/discover-padel-venues.mjs",
     "baner:links": "node scripts/build-baner-link-catalog.mjs",
-    "audit:venue-indoor": "node scripts/audit-venue-indoor.mjs"
+    "audit:venue-indoor": "node scripts/audit-venue-indoor.mjs",
+    "baner:audit-booking": "node scripts/audit-all-baner-booking.mjs"
   },
   "dependencies": {
     "@sentry/react": "^10.49.0",

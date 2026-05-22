@@ -356,6 +356,7 @@ export function scheduleLooksLikePadel(courts, html = '') {
   if (/padel/i.test(names)) return true;
   if (/\bBane P\d| - P\d\b|Padel Tennis/i.test(names)) return true;
   if (/Padel\s*-/i.test(html) && /(Single|Double)\s*(Bane)?\s*\d/i.test(names)) return true;
+  if (/( - Bane \d| - Single\b|Bane P\d)/i.test(names) && !/Bane T\d/i.test(names)) return true;
   return false;
 }
 
@@ -379,16 +380,15 @@ export function pickPadelOmraedeFromOptions(options) {
 export function resolveHalbookingOmraede(soegOmrAede, omraedeOptions) {
   let omraede = String(soegOmrAede ?? '');
   const labeledPadel = pickPadelOmraedeFromOptions(omraedeOptions);
-  const configuredValid =
-    omraede !== '' &&
-    omraedeOptions.some((o) => o.omraede === omraede && /padel/i.test(o.label));
-  if (!configuredValid && labeledPadel != null && labeledPadel !== '') {
+  const existsInDropdown =
+    omraede !== '' && omraedeOptions.some((o) => String(o.omraede) === omraede);
+  if (!existsInDropdown && labeledPadel != null && labeledPadel !== '') {
     omraede = labeledPadel;
   }
   const needsDiscover =
     omraedeOptions.length > 0 &&
     !omraedeOptions.some((o) => /padel/i.test(o.label)) &&
-    !configuredValid;
+    !existsInDropdown;
   return { omraede, needsDiscover };
 }
 
