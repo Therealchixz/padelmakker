@@ -5,6 +5,7 @@ import {
   BANER_REGION_ORDER,
   groupBanerVenuesByRegion,
 } from '../../src/lib/banerVenues.js';
+import { BANER_INTEGRATED_INDOOR_VERIFIED } from '../../src/lib/banerVenueIndoorVerified.js';
 
 test('every venue id is unique', () => {
   const ids = BANER_VENUES.map((v) => v.id);
@@ -97,6 +98,20 @@ test('Padellife link catalog covers all regions', () => {
       `missing any venue in ${region}`
     );
   }
+});
+
+test('integrerede baner matcher verificeret indoor/outdoor-katalog', () => {
+  for (const [id, indoor] of Object.entries(BANER_INTEGRATED_INDOOR_VERIFIED)) {
+    const v = BANER_VENUES.find((x) => x.id === id);
+    assert.ok(v, `missing venue ${id}`);
+    assert.equal(v.indoor, indoor, `${id}: forventet ${indoor ? 'indoor' : 'outdoor'}`);
+  }
+});
+
+test('Skagen Padelcenter er indendørs (MATCHi: Padel INDOORS)', () => {
+  const skagen = BANER_VENUES.find((v) => v.id === 'matchi_skagen_padelcenter');
+  assert.equal(skagen?.indoor, true);
+  assert.match(skagen?.bookingUrl || '', /SkagenPadelcenter$/);
 });
 
 test('Odense is on Fyn; Sønderjylland has southern Jutland venues', () => {

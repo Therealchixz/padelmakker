@@ -16,7 +16,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_r_nne_match_padel_bornholm_udend_rs",
     "title": "Match Padel Bornholm (udendørs)",
     "address": "Rønne — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Bornholm",
     "bookingUrl": "https://matchpadel.dk/afdelinger/bornholm-outdoor",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -66,7 +66,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_morud_morud_tennis_og_padel",
     "title": "Morud Tennis og Padel",
     "address": "Morud — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Fyn",
     "bookingUrl": "https://tennis.morud.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -86,7 +86,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_nyborg_nyborg_tennis_og_padelklub",
     "title": "Nyborg Tennis- og Padelklub",
     "address": "Nyborg — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Fyn",
     "bookingUrl": "https://www.nyborgtennisklub.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -96,7 +96,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_n_rre_aaby_n_rre_aaby_tennisklub",
     "title": "Nørre Aaby Tennisklub",
     "address": "Nørre Aaby — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Fyn",
     "bookingUrl": "https://www.n-t-k.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -146,7 +146,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_rudk_bing_langeland_rudk_bing_tennisklub",
     "title": "Rudkøbing Tennisklub",
     "address": "Rudkøbing, Langeland — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Fyn",
     "bookingUrl": "https://rudtennis.dk/default.aspx",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -166,7 +166,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_odense_tennis_club_odense",
     "title": "Tennis Club Odense",
     "address": "Odense — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Fyn",
     "bookingUrl": "https://www.tennisclubodense.dk/padel/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -176,7 +176,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_tasinge_tasinge_tennis_padel_klub",
     "title": "Tåsinge Tennis & Padel Klub",
     "address": "Tåsinge — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Fyn",
     "bookingUrl": "https://www.ttpk.dk/da",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -186,7 +186,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_ullerslev_ullerslev_tennis_klub",
     "title": "Ullerslev Tennis Klub",
     "address": "Ullerslev — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Fyn",
     "bookingUrl": "https://www.ullerslevtennis.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -196,7 +196,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_vester_skerninge_vester_skerninge_tennisklub",
     "title": "Vester Skerninge Tennisklub",
     "address": "Vester Skerninge — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Fyn",
     "bookingUrl": "https://www.vstennis.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -206,7 +206,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_amager_amager_lawn_tennisklub",
     "title": "Amager Lawn Tennisklub",
     "address": "Amager — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Hovedstaden",
     "bookingUrl": "http://www.altennis.mono.net/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -216,7 +216,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_k_benhavn_nv_arbejdernes_tennisklub",
     "title": "Arbejdernes Tennisklub",
     "address": "København NV — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Hovedstaden",
     "bookingUrl": "http://www.atk-tennis.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -286,7 +286,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_k_benhavn_s_sundby_tennisklub",
     "title": "Sundby Tennisklub",
     "address": "København S — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Hovedstaden",
     "bookingUrl": "https://www.sundbytennisklub.dk/da",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -316,7 +316,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_br_nderslev_br_nderslev_tennis_og_padelklub",
     "title": "Brønderslev Tennis og Padelklub",
     "address": "Brønderslev — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Nordjylland",
     "bookingUrl": "https://www.bronderslevtennisklub.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -326,7 +326,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_dronninglund_dronninglund_tennis_og_padel",
     "title": "Dronninglund Tennis og Padel",
     "address": "Dronninglund — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Nordjylland",
     "bookingUrl": "https://www.dronninglundtennisogpadel.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -336,7 +336,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_hobro_hobro_tennis_og_padelklub",
     "title": "Hobro Tennis- og Padelklub",
     "address": "Hobro — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Nordjylland",
     "bookingUrl": "https://www.hobrotennisklub.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -396,7 +396,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_thisted_thisted_tennis_og_padelklub",
     "title": "Thisted Tennis- og Padelklub",
     "address": "Thisted — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Nordjylland",
     "bookingUrl": "http://www.thistedtennisklub.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -416,7 +416,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_vestbjerg_vestbjerg_if_tennis_og_padel",
     "title": "Vestbjerg IF Tennis og Padel",
     "address": "Vestbjerg — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Nordjylland",
     "bookingUrl": "https://www.vestbjergif.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -426,7 +426,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_sp_ttrup_vestsalling_tennis_padel",
     "title": "Vestsalling Tennis & Padel",
     "address": "Spøttrup — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Nordjylland",
     "bookingUrl": "https://spottrupkulturhal.dk/vestsalling-tennis-padel/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -436,7 +436,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_hobro_volstrup_golf_center",
     "title": "Volstrup Golf Center",
     "address": "Hobro — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Nordjylland",
     "bookingUrl": "https://volstrupgolf.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -446,7 +446,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_albertslund_albertslund_tennis_og_padelklub",
     "title": "Albertslund Tennis- og Padelklub",
     "address": "Albertslund — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://albertslund-tennis.dk/default.aspx",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -456,7 +456,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_h_jby_sj_borren_padel",
     "title": "Borren Padel",
     "address": "Højby Sj. — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "http://www.borren-motion.dk/Borren-Padel",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -476,7 +476,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_faxe_feddet_strand_resort",
     "title": "Feddet Strand Resort",
     "address": "Faxe — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://feddet.dk/aktiviteter/padeltennis/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -486,7 +486,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_gladsaxe_gladsaxe_tennis_og_padelklub",
     "title": "Gladsaxe Tennis- og Padelklub",
     "address": "Gladsaxe — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://gladsaxetennisklub.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -496,7 +496,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_v_ggerl_se_golf_fun_park",
     "title": "Golf & Fun Park",
     "address": "Væggerløse — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://golffunpark.dk/aktiviteter/padel-tennis",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -516,7 +516,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_haslev_haslev_padel_klub",
     "title": "Haslev Padel Klub",
     "address": "Haslev — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://haslevpadelklub.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -536,7 +536,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_holb_k_holb_k_padel_klub",
     "title": "Holbæk Padel Klub",
     "address": "Holbæk — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://www.holbaekpadel.dk/da",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -546,7 +546,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_jyllinge_jyllinge_tennis_padelklub",
     "title": "Jyllinge Tennis & Padelklub",
     "address": "Jyllinge — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://jtk.dk/default.aspx",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -556,7 +556,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_jystrup_jystrup_if_tennis_og_padel",
     "title": "Jystrup IF Tennis og Padel",
     "address": "Jystrup — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "http://www.jystrupif.dk/Tennis---Padel",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -576,7 +576,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_lynge_lynge_uggel_se_if_tennis_og_padel",
     "title": "Lynge-Uggeløse IF Tennis og Padel",
     "address": "Lynge — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://www.lui.dk/iul/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -596,7 +596,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_nyk_bing_falster_nyk_bing_f_tennisklub",
     "title": "Nykøbing F. Tennisklub",
     "address": "Nykøbing Falster — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://www.tennis-klub.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -616,7 +616,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_n_stved_n_stved_tennis_klub",
     "title": "Næstved Tennis Klub",
     "address": "Næstved — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://www.ntk-tennis.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -656,7 +656,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_v_ggerl_se_padel_danmark_marielyst",
     "title": "Padel Danmark – Marielyst",
     "address": "Væggerløse — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://www.padeldanmark.dk/marielyst/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -736,7 +736,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_tune_tune_if_tennis_og_padel",
     "title": "Tune IF Tennis og Padel",
     "address": "Tune — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://tune-if.dk/afdelinger/tennis-og-padel/indhold/forside/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -746,7 +746,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_holb_k_tuse_if_padel_og_tennis",
     "title": "Tuse IF Padel og Tennis",
     "address": "Holbæk — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://tusepadelogtennis.memberlink.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -756,7 +756,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_vallensb_k_vallensb_k_tennis_og_padel_klub",
     "title": "Vallensbæk Tennis og Padel Klub",
     "address": "Vallensbæk — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://vallensbaektennisklub.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -766,7 +766,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_lstykke_lstykke_tennis_padelklub",
     "title": "Ølstykke Tennis & Padelklub",
     "address": "Ølstykke — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sjælland",
     "bookingUrl": "https://www.olstykketennisklub.dk/da/bookings/padel",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -776,7 +776,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_esbjerg_v_breinholtgard_golf_klub",
     "title": "Breinholtgård Golf Klub",
     "address": "Esbjerg V — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sønderjylland",
     "bookingUrl": "https://padel-esbjerg.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -786,7 +786,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_fredericia_egif_tennis_og_padel",
     "title": "EGIF Tennis og Padel",
     "address": "Fredericia — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sønderjylland",
     "bookingUrl": "https://www.egiftennis.dk/newlook/default.asp?f=skiftprefix",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -796,7 +796,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_esbjerg_hjerting_if_padel",
     "title": "Hjerting IF Padel",
     "address": "Esbjerg — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sønderjylland",
     "bookingUrl": "http://hjertingif.dk/Padel/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -806,7 +806,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_l_gumkloster_l_gum_if_tennis",
     "title": "Løgum IF Tennis",
     "address": "Løgumkloster — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sønderjylland",
     "bookingUrl": "https://loegumif.dk/idraetstilbud/tennis-padeltennis/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -856,7 +856,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_varde_sig_tennis_og_padelklub",
     "title": "Sig Tennis og Padelklub",
     "address": "Varde — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Sønderjylland",
     "bookingUrl": "https://sig.dk/sport/sig-tennisklub",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -886,7 +886,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_viborg_bruunshab_tapdrup_if_padel",
     "title": "Bruunshåb/Tapdrup IF Padel",
     "address": "Viborg — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Vestjylland",
     "bookingUrl": "https://www.btpadel.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -896,7 +896,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_grindsted_grindsted_tennis_klub",
     "title": "Grindsted Tennis Klub",
     "address": "Grindsted — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Vestjylland",
     "bookingUrl": "https://www.grindstedtk.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -916,7 +916,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_hvide_sande_hvide_sande_tennisklub",
     "title": "Hvide Sande Tennisklub",
     "address": "Hvide Sande — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Vestjylland",
     "bookingUrl": "https://www.hstk.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -926,7 +926,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_ikast_ikast_fs_tennis",
     "title": "Ikast FS Tennis",
     "address": "Ikast — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Vestjylland",
     "bookingUrl": "https://ikastpadeltennis.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -936,7 +936,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_holstebro_mejdal_halgard_tennis_og_padel",
     "title": "Mejdal-Halgård Tennis og Padel",
     "address": "Holstebro — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Vestjylland",
     "bookingUrl": "https://mejdaltennis.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -1026,7 +1026,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_viborg_viborg_lawn_tennis_forening",
     "title": "Viborg Lawn Tennis Forening",
     "address": "Viborg — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Vestjylland",
     "bookingUrl": "https://www.vltf.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -1036,7 +1036,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_videb_k_videb_k_lawn_tennis_klub",
     "title": "Videbæk Lawn-Tennis Klub",
     "address": "Videbæk — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Vestjylland",
     "bookingUrl": "https://www.vltk.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -1066,7 +1066,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_bredsten_bredsten_if_padel_og_tennis",
     "title": "Bredsten IF Padel og Tennis",
     "address": "Bredsten — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Østjylland",
     "bookingUrl": "https://bredstenif.dk/portfolio-item/tennis/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -1076,7 +1076,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_ebeltoft_ebeltoft_tennis_klub",
     "title": "Ebeltoft Tennis Klub",
     "address": "Ebeltoft — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Østjylland",
     "bookingUrl": "https://ebeltofttennisklub.dk/default.aspx",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -1196,7 +1196,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_randers_sif_assentoft_tennis_padel_klub",
     "title": "SIF Assentoft Tennis & Padel Klub",
     "address": "Randers — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Østjylland",
     "bookingUrl": "https://www.sif-assentoft.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -1206,7 +1206,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_silkeborg_silkeborg_tennis_og_padelklub",
     "title": "Silkeborg Tennis- og Padelklub",
     "address": "Silkeborg — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Østjylland",
     "bookingUrl": "https://www.silkeborg-tennis.dk/newlook/default.asp",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -1216,7 +1216,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_skanderborg_skanderborg_lawn_tennis_klub",
     "title": "Skanderborg Lawn Tennis Klub",
     "address": "Skanderborg — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Østjylland",
     "bookingUrl": "https://sportyfriends.com/da/skanderborg-lawn-tennisklub/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -1246,7 +1246,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_vildbjerg_vildbjerg_tennis_og_padel_klub",
     "title": "Vildbjerg Tennis og Padel Klub",
     "address": "Vildbjerg — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Østjylland",
     "bookingUrl": "https://www.vtop.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
@@ -1256,7 +1256,7 @@ export const BANER_VENUES_LINKS = [
     "id": "link_silkeborg_virklund_tennis_og_padelklub",
     "title": "Virklund Tennis og Padelklub",
     "address": "Silkeborg — se booking-link",
-    "indoor": true,
+    "indoor": false,
     "region": "Østjylland",
     "bookingUrl": "https://www.virklundboldklub.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."

@@ -116,13 +116,14 @@ const BANER_VENUES_INTEGRATED = [
     kind: 'matchi',
     id: 'matchi_skagen_padelcenter',
     title: 'Skagen Padelcenter (MATCHi)',
-    address: 'Skagen — matchi.se',
-    indoor: false,
+    address: 'Nordmarksvænget 1, 9990 Skagen',
+    indoor: true,
     region: 'Nordjylland',
     facilityId: '2430',
     sport: '5',
-    bookingUrl: 'https://www.matchi.se/facilities/SkagenPadelcenter%20',
-    note: 'Oversigt fra MATCHi. Grøn = ledigt — klik åbner facilitetssiden med valgt dato.',
+    bookingUrl: 'https://www.matchi.se/facilities/SkagenPadelcenter',
+    note:
+      '4 indendørs padelbaner på MATCHi (plus én udendørs «Other»-bane). Grøn = ledigt — klik åbner MATCHi med valgt dato.',
   },
   {
     kind: 'link',

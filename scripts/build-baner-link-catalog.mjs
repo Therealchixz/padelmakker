@@ -26,6 +26,82 @@ const SECTION_REGION = {
   'padelbaner på bornholm': 'Bornholm',
 };
 
+/**
+ * Gæt indoor fra Padellife-titel/URL (mange tennis-klubber = udendørs padel).
+ * @param {string} title
+ * @param {string} bookingUrl
+ */
+function guessLinkVenueIndoor(title, bookingUrl) {
+  const s = `${title} ${bookingUrl}`.toLowerCase();
+  if (/(udendørs|udendors|outdoor|bornholm-outdoor|\/outdoor)/i.test(s)) return false;
+  if (/(indendørs|indendors|indoor|bornholm-padelcenter)/i.test(s)) return true;
+
+  const indoorRe = [
+    /\bmatch padel\b/i,
+    /\bpadel yard\b/i,
+    /\brocket padel\b/i,
+    /\bpadel center\b/i,
+    /\bpadelcenter\b/i,
+    /\bpadel house\b/i,
+    /\bpadel lounge\b/i,
+    /\bpadelpit\b/i,
+    /\bxpadel\b/i,
+    /\bvamoz\b/i,
+    /\bheylo\b/i,
+    /\barena\b/i,
+    /\bmulticenter\b/i,
+    /\bracket club\b/i,
+    /\bthe padel club\b/i,
+    /\bsimons padel\b/i,
+    /\bplay padel\b/i,
+    /\beventyr padel\b/i,
+    /\bodense padel center\b/i,
+    /\bnordfyns padel center\b/i,
+    /\bmøns padel center\b/i,
+    /\bvi padel\b/i,
+    /\bpadel north\b/i,
+    /\bpadel99\b/i,
+    /\bsport & event\b/i,
+    /\b9650 padel\b/i,
+    /\bpadel zone\b/i,
+    /\bpadel lab\b/i,
+    /\bpadel pit\b/i,
+    /\bpadelpadel\b/i,
+  ];
+  for (const re of indoorRe) {
+    if (re.test(s) || re.test(title)) return true;
+  }
+
+  const outdoorRe = [
+    /\b(tennisklub|tennis klub|tennis- og padel|tennis og padel|tennis & padel)\b/i,
+    /\b(tennis-klub|tennisklub)\b/i,
+    /\b(golf|strand resort|feddet|lawn tennis)\b/i,
+    /\bpadel danmark\b/i,
+    /\bholbæk padel klub\b/i,
+    /\bhaslev padel\b/i,
+    /\bborren padel\b/i,
+    /\btennis club\b/i,
+    /\btennis og padel klub\b/i,
+    /\btennis & padel klub\b/i,
+    /\btennis- og padelklub\b/i,
+    /\bif tennis\b/i,
+    /\bif padel\b/i,
+    /\bgsgif\b/i,
+    /\btennis\.dk\b/i,
+    /\bmemberlink\.dk\b/i,
+    /\bmono\.net\b/i,
+  ];
+  for (const re of outdoorRe) {
+    if (re.test(title)) return false;
+  }
+
+  if (/padellounge|padelpit|xpadel|padelmaster|matchpadel|sportshallen|halbooking/i.test(s)) {
+    return true;
+  }
+  if (/\btennis\b/i.test(title)) return false;
+  return true;
+}
+
 /** Allerede fuldt integreret — undgå duplikat-link */
 const INTEGRATED_URL_FRAGMENTS = [
   'matchi.se',
@@ -159,7 +235,7 @@ for (const line of md.split(/\r?\n/)) {
     id,
     title,
     address: `${city} — se booking-link`,
-    indoor: true,
+    indoor: guessLinkVenueIndoor(title, bookingUrl),
     region,
     bookingUrl,
     note: 'Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline.',
