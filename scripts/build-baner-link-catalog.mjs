@@ -216,6 +216,14 @@ function slugify(...parts) {
     .slice(0, 72);
 }
 
+/** Kendte booking-URL’er (Padellife linker ofte til marketing-site, ikke kalender). */
+const BOOKING_URL_OVERRIDES = {
+  'Padel Sport Lemvig': 'https://eu.padeliq.io/da/padel-sport-lemvig/booking',
+};
+
+const PADELIQ_NOTE =
+  'Booking via Padeliq. Ledige tider vises på booking-siden — PadelMakker henter dem ikke inline endnu.';
+
 /** Match Padel-afdelinger med Halbooking i appen */
 const MATCH_PADEL_IN_APP = [
   '/aalborg',
@@ -300,7 +308,8 @@ for (const line of md.split(/\r?\n/)) {
 
   const city = m[1].trim();
   const title = m[2].trim();
-  const bookingUrl = m[3].trim();
+  let bookingUrl = m[3].trim();
+  if (BOOKING_URL_OVERRIDES[title]) bookingUrl = BOOKING_URL_OVERRIDES[title];
   if (!title || title === 'All-Padel' || isIntegratedUrl(bookingUrl, title)) continue;
   if (INTEGRATED_TITLE_KEYS.has(normalizeVenueTitleKey(title))) continue;
 
@@ -312,6 +321,10 @@ for (const line of md.split(/\r?\n/)) {
   const id = `link_${slugify(city, title)}`;
   if (byId.has(id)) continue;
 
+  const note = /padeliq\.io/i.test(bookingUrl)
+    ? PADELIQ_NOTE
+    : 'Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline.';
+
   byId.set(id, {
     kind: 'link',
     id,
@@ -320,7 +333,7 @@ for (const line of md.split(/\r?\n/)) {
     indoor: guessLinkVenueIndoor(title, bookingUrl),
     region,
     bookingUrl,
-    note: 'Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline.',
+    note,
   });
 }
 

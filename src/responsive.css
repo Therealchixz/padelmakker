@@ -3628,6 +3628,21 @@ button,
   animation: pm-baner-spin 0.8s linear infinite;
 }
 
+/* Opret 2v2-kamp — beskrivelsesfelt */
+.pm-create-match-description {
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
+  min-height: 60px;
+  padding: 12px var(--pm-space-2);
+  resize: vertical;
+}
+
+.pm-create-match-description::placeholder {
+  text-align: center;
+  color: var(--pm-text-muted, var(--pm-text-light));
+}
+
 /* Kampe — titel venstre, Opret kamp/turnering højre (fuld bredde af .pm-dash-main) */
 .pm-kampe-head {
   display: grid;

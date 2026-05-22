@@ -878,8 +878,8 @@ export const BANER_VENUES_LINKS = [
     "address": "Lemvig — se booking-link",
     "indoor": true,
     "region": "Vestjylland",
-    "bookingUrl": "https://padelsportlemvig.com/",
-    "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
+    "bookingUrl": "https://eu.padeliq.io/da/padel-sport-lemvig/booking",
+    "note": "Booking via Padeliq. Ledige tider vises på booking-siden — PadelMakker henter dem ikke inline endnu."
   },
   {
     "kind": "link",
