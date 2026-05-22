@@ -84,7 +84,7 @@ export const HALBOOKING_VENUE_ALLOWLIST = {
   },
   htpk_hillerod_halbooking: {
     procBaner: 'https://htpk.halbooking.dk/newlook/proc_baner.asp',
-    omraede: '',
+    omraede: '3',
   },
   match_padel_ballerup: {
     procBaner: MATCH_PADEL_PROC,

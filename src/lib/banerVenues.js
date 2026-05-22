@@ -12,7 +12,7 @@ export { BANER_REGION_ORDER };
  * Link: Padellife-katalog (scripts/build-baner-link-catalog.mjs) — booking uden inline-tider
  */
 
-/** @typedef {{ kind: 'halbooking', id: string, title: string, address: string, indoor: boolean, region: string }} HalbookingVenue */
+/** @typedef {{ kind: 'halbooking', id: string, title: string, address: string, indoor: boolean, region: string, note?: string }} HalbookingVenue */
 /** @typedef {{ kind: 'bookli', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, infoUrl: string }} BookliVenue */
 /** @typedef {{ kind: 'matchi', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, facilityId: string, sport: string, note?: string }} MatchiVenue */
 /** @typedef {{ kind: 'link', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, note?: string }} LinkVenue */
@@ -60,7 +60,7 @@ const BANER_VENUES_INTEGRATED = [
     id: 'himmerland_halbooking',
     title: 'HimmerLand padel (Halbooking)',
     address: 'HimmerLand, Gatten (se himmerland.dk)',
-    indoor: true,
+    indoor: false,
     region: 'Nordjylland',
   },
   {
@@ -299,6 +299,7 @@ const BANER_VENUES_INTEGRATED = [
     address: 'Helsingør — se xpadel.dk',
     indoor: true,
     region: 'Sjælland',
+    note: 'Primært indendørs baner; udendørs bane kan forekomme i kalenderen.',
   },
   {
     kind: 'halbooking',

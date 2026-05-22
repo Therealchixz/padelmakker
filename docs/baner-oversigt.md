@@ -116,7 +116,7 @@ PadelMaster (uden `soeg_omraede`-dropdown) virker med `omraede: ''` — se `scri
 | Køge Tennis og Padel | halbooking | `koge_tennis_halbooking` |
 | Allerød Tennis & Padel | halbooking | `at_tennis_alleroed` |
 | Tisvilde Tennis & Padel | halbooking | `tisvilde_tennis_halbooking` |
-| Hillerød Tennis & Padelklub | halbooking | `htpk_hillerod_halbooking` |
+| Hillerød Tennis & Padelklub | halbooking | `htpk_hillerod_halbooking` (område 3 = padel, ikke tennis) |
 | Match Padel Ballerup | halbooking | `match_padel_ballerup` (område 6) |
 | Match Padel Ballerup single | halbooking | `match_padel_ballerup_single` (7) |
 | Match Padel Næstved | halbooking | `match_padel_naestved` (15) |

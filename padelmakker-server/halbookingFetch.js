@@ -329,6 +329,83 @@ async function postHalbookingCalendarNav(procBanerUrl, cookie, html, mfFunktion)
   return { html: nextHtml, cookie: nextCookie };
 }
 
+/** @returns {{ omraede: string, label: string }[]} */
+export function parseSoegOmraedeOptions(html) {
+  const m = html.match(/<select[^>]*name=["']soeg_omraede["'][^>]*>([\s\S]*?)<\/select>/i);
+  if (!m) return [];
+  const options = [];
+  for (const o of m[1].matchAll(/<option[^>]*value=['"](\d*)['"][^>]*>([^<]+)/gi)) {
+    options.push({ omraede: o[1], label: o[2].trim() });
+  }
+  return options;
+}
+
+/**
+ * @param {{ name: string }[]} courts
+ * @param {string} [html]
+ */
+export function scheduleLooksLikePadel(courts, html = '') {
+  if (!courts?.length) return false;
+  const names = courts.map((c) => c.name).join(' ');
+  if (/# Padel/i.test(html)) return true;
+  if (/Bane T\d/i.test(names) && !/padel/i.test(names)) return false;
+  if (/tennis/i.test(names) && !/padel/i.test(names)) return false;
+  if (/squash|pickleball|golf simulator|bowling|badminton/i.test(names) && !/padel/i.test(names)) {
+    return false;
+  }
+  if (/padel/i.test(names)) return true;
+  if (/\bBane P\d| - P\d\b|Padel Tennis/i.test(names)) return true;
+  return false;
+}
+
+/** @param {{ omraede: string, label: string }[]} options */
+export function pickPadelOmraedeFromOptions(options) {
+  const padel = options.filter(
+    (o) => /padel/i.test(o.label) && !/tennis|pickle|squash|golf|fodbold|badminton/i.test(o.label)
+  );
+  if (padel.length === 1) return padel[0].omraede;
+  const exact = padel.find((o) => /^padel$/i.test(o.label.replace(/\s+/g, ' ').trim()));
+  if (exact) return exact.omraede;
+  if (padel.length > 0) return padel[0].omraede;
+  return null;
+}
+
+/**
+ * Nogle klubber (fx HTPK) har kun tennis i dropdown — padel ligger på andet område-id.
+ * @param {string} procBanerUrl
+ * @param {string} formInner
+ */
+async function discoverPadelOmraedeId(procBanerUrl, formInner, omraedeOptions = []) {
+  const skip = new Set(
+    omraedeOptions.filter((o) => /tennis|squash|fodbold|badminton/i.test(o.label)).map((o) => o.omraede)
+  );
+  for (let i = 1; i <= 20; i++) {
+    const om = String(i);
+    if (skip.has(om)) continue;
+    const params = collectInputFields(formInner);
+    params.set('soeg_omraede', om);
+    params.set('mf_funktion', 'omr_soeg');
+    params.set('mf_para1', '');
+    params.set('mf_para2', '');
+    params.set('mf_para3', '');
+    params.set('mf_para4', '');
+    const res = await fetchWithTimeout(procBanerUrl, {
+      method: 'POST',
+      headers: {
+        'User-Agent': UA,
+        Accept: 'text/html,*/*',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    });
+    if (!res.ok) continue;
+    const html = await readHalbookingHtml(res);
+    const parsed = parseCalendarHtml(html);
+    if (!parsed.error && scheduleLooksLikePadel(parsed.courts, html)) return om;
+  }
+  return null;
+}
+
 function parseCalendarHtml(html) {
   if (!html.includes("id='owl-kalender'")) {
     return { error: 'Uventet svar fra Halbooking (ingen kalender)' };
@@ -369,8 +446,19 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, op
     return { error: 'Kunne ikke finde booking-formular' };
   }
 
-  const params0 = collectInputFields(formMatch0[1]);
-  params0.set('soeg_omraede', String(soegOmrAede));
+  const formInner = formMatch0[1];
+  const omraedeOptions = parseSoegOmraedeOptions(html0);
+  let omraede = String(soegOmrAede);
+  const labeledPadel = pickPadelOmraedeFromOptions(omraedeOptions);
+  if (labeledPadel != null && labeledPadel !== '') {
+    omraede = labeledPadel;
+  } else if (omraedeOptions.length > 0 && !omraedeOptions.some((o) => /padel/i.test(o.label))) {
+    const discovered = await discoverPadelOmraedeId(procBanerUrl, formInner, omraedeOptions);
+    if (discovered != null) omraede = discovered;
+  }
+
+  const params0 = collectInputFields(formInner);
+  params0.set('soeg_omraede', omraede);
   params0.set('mf_funktion', 'omr_soeg');
   params0.set('mf_para1', '');
   params0.set('mf_para2', '');
@@ -434,10 +522,17 @@ export async function fetchHalbookingPadelSchedule(procBanerUrl, soegOmrAede, op
   const parsed = parseCalendarHtml(html);
   if (parsed.error) return { error: parsed.error };
 
+  if (!scheduleLooksLikePadel(parsed.courts, html)) {
+    return {
+      error:
+        'Kalenderen viser tennis eller andre baner — padel-område kunne ikke findes. Prøv «Åbn booking» på centrets side.',
+    };
+  }
+
   return {
     dateLabel: parsed.dateLabel,
     courts: parsed.courts,
     procBanerUrl,
-    soegOmrAede: String(soegOmrAede),
+    soegOmrAede: omraede,
   };
 }
