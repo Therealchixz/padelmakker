@@ -36,3 +36,12 @@ export function shouldRequirePhoneVerification(user, profile, serverExempt) {
   if (user.phone_confirmed_at) return false
   return true
 }
+
+/** Skal brugeren bekræfte email før dashboard? (fx efter telefon-signup) */
+export function shouldRequireEmailVerification(user) {
+  if (!user) return false
+  if (user.email_confirmed_at) return false
+  const email = String(user.email || '').trim()
+  if (!email) return false
+  return true
+}

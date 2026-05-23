@@ -255,7 +255,11 @@ export function PhoneVerificationPage() {
       }
 
       clearPendingSignup()
-      try { await signOut() } catch { /* ignore */ }
+      try {
+        await signOut()
+      } catch {
+        /* dashboard er gated på email_confirmed_at — fortsæt til email-trin */
+      }
 
       setInfo(
         'Telefon bekræftet. Du bliver logget ud nu, så du kan bekræfte email på en sikker måde — tjek din indbakke på næste trin.',

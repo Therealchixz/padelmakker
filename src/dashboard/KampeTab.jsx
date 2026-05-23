@@ -419,19 +419,23 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       });
       setMatchResults(mrMap);
 
-      // Load join requests (RLS returns: own requests + requests for matches I created)
-      if (allMatchIds.length > 0) {
-        const jrMap = {};
-        const { data: jrd } = await supabase
-          .from("match_join_requests")
-          .select("*")
-          .in("match_id", allMatchIds.slice(0, 100)); // first chunk — closed matches will be few
-        (jrd || []).forEach((jr) => {
-          if (!jrMap[jr.match_id]) jrMap[jr.match_id] = [];
+      // Join requests: creator pending + egne anmodninger (ikke slice af pool-ids)
+      const createdMatchIds = (createdRes.data || []).map((m) => m.id);
+      const [creatorJoinRows, myJoinRes] = await Promise.all([
+        createdMatchIds.length > 0
+          ? fetchRowsInChunks(supabase, "match_join_requests", "match_id", createdMatchIds)
+          : Promise.resolve([]),
+        supabase.from("match_join_requests").select("*").eq("user_id", uid),
+      ]);
+      if (myJoinRes.error) throw myJoinRes.error;
+      const jrMap = {};
+      for (const jr of [...creatorJoinRows, ...(myJoinRes.data || [])]) {
+        if (!jrMap[jr.match_id]) jrMap[jr.match_id] = [];
+        if (!jrMap[jr.match_id].some((row) => row.id === jr.id)) {
           jrMap[jr.match_id].push(jr);
-        });
-        setJoinRequests(jrMap);
+        }
       }
+      setJoinRequests(jrMap);
     } catch (e) {
       console.error(e);
       setLoadError("Kunne ikke hente kampe lige nu.");

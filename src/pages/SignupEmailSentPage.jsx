@@ -3,11 +3,16 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { font, theme, btn } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
+import { useAuth } from '../lib/AuthContext';
+import { shouldRequireEmailVerification } from '../lib/phoneVerification';
 
 export function SignupEmailSentPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = typeof location.state?.email === 'string' ? location.state.email.trim() : '';
+  const { user } = useAuth();
+  const stateEmail = typeof location.state?.email === 'string' ? location.state.email.trim() : '';
+  const authEmail = user?.email ? String(user.email).trim() : '';
+  const email = stateEmail || (user && shouldRequireEmailVerification(user) ? authEmail : '');
   const phone = typeof location.state?.phone === 'string' ? location.state.phone.trim() : '';
 
   useEffect(() => {

@@ -166,8 +166,32 @@ export function AuthProvider({ children }) {
   const profileReqId = useRef(0)
   /** Til pending-avatar merge: undgå at sætte profil efter logout når core-load timeout gav prev=null */
   const activeUserIdRef = useRef('')
-  /** Forhindrer dobbelt signOut() fra loadProfile + realtime-lytter */
+  /** Forhindrer dobbelt ban-logout fra loadProfile + realtime-lytter */
   const signingOutRef = useRef(false)
+
+  const enforceBanLogout = useCallback(async (reason) => {
+    if (signingOutRef.current) return
+    signingOutRef.current = true
+    profileReqId.current += 1
+    setProfile(null)
+    setBanNotice({ reason: reason || '' })
+    try {
+      await supabase.rpc('admin_clear_pin_session')
+    } catch {
+      /* admin RPC irrelevant for most users */
+    }
+    try {
+      await supabase.auth.signOut()
+    } catch {
+      /* session kan allerede være udløbet */
+    }
+    setSession(null)
+    setUser(null)
+    setProfile(null)
+    setProfileLoading(false)
+    setProfileLoadError(false)
+    signingOutRef.current = false
+  }, [])
 
   /**
    * Opdater last_active_at for brugeren — fire-and-forget.
@@ -217,12 +241,9 @@ export function AuthProvider({ children }) {
           return
         }
 
-        // Tjek for ban-status — vis modal i stedet for blokerende alert()
         if (profileRow?.is_banned) {
-          if (signingOutRef.current) return
-          signingOutRef.current = true
-          setBanNotice({ reason: profileRow.ban_reason || '' })
-          return;
+          void enforceBanLogout(profileRow.ban_reason || '')
+          return
         }
 
         setProfile(profileRow)
@@ -266,7 +287,7 @@ export function AuthProvider({ children }) {
         if (profileReqId.current !== id) return
         if (!quiet) setProfileLoading(false)
       })
-  }, [])
+  }, [enforceBanLogout])
 
   /**
    * Init + auth-state-listener: kører kun én gang ved mount.
@@ -360,9 +381,7 @@ export function AuthProvider({ children }) {
         { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
         (payload) => {
           if (payload.new?.is_banned) {
-            if (signingOutRef.current) return
-            signingOutRef.current = true
-            setBanNotice({ reason: payload.new.ban_reason || '' })
+            void enforceBanLogout(payload.new.ban_reason || '')
           }
         }
       )
@@ -371,7 +390,7 @@ export function AuthProvider({ children }) {
     return () => {
       try { supabase.removeChannel(channel) } catch { /* ignore */ }
     }
-  }, [user?.id])
+  }, [user?.id, enforceBanLogout])
 
   useEffect(() => {
     activeUserIdRef.current = user?.id != null ? String(user.id) : ''
@@ -611,9 +630,8 @@ export function AuthProvider({ children }) {
       {banNotice && (
         <BanNoticeModal
           reason={banNotice.reason}
-          onAcknowledge={async () => {
+          onAcknowledge={() => {
             setBanNotice(null)
-            try { await signOut() } catch { /* ignorer — vi prøver at logge ud */ }
           }}
         />
       )}
