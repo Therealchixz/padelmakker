@@ -14,10 +14,14 @@ import { ReportResultErrorButton } from '../../components/ReportResultErrorButto
 import { completionMsForAmericano } from '../../lib/resultErrorReports'
 
 const PODIUM = {
-  gold: theme.warm,
-  silver: theme.textLight,
-  bronze: theme.warm,
+  gold: 'var(--pm-podium-gold)',
+  silver: 'var(--pm-podium-silver)',
+  bronze: 'var(--pm-podium-bronze)',
 } as const
+
+function podiumStepBackground(color: string) {
+  return `linear-gradient(180deg, ${color} 0%, color-mix(in srgb, ${color} 75%, var(--pm-surface)) 100%)`
+}
 
 type PartMin = {
   id: string
@@ -727,7 +731,7 @@ export function AmericanoCompletedCard({
                   <div
                     style={{
                       width: '100%',
-                      background: `linear-gradient(180deg, ${color} 0%, ${color}CC 100%)`,
+                      background: podiumStepBackground(color),
                       color: theme.onAccent,
                       borderRadius: '10px 10px 4px 4px',
                       padding: `${topSpacer}px 6px 10px`,

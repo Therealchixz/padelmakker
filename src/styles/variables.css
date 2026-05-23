@@ -37,6 +37,9 @@
   --pm-danger-border:#FCA5A5;
   --pm-danger-strong:#B91C1C;
   --pm-on-accent:   #FFFFFF;
+  --pm-podium-gold:   #D97706;
+  --pm-podium-silver: #64748B;
+  --pm-podium-bronze: #B45309;
   --pm-americano-win-bg: #DCFCE7;
   --pm-americano-win-border: #86EFAC;
   --pm-americano-win-text: #166534;
@@ -132,6 +135,9 @@
   --pm-danger-border:#EF4444;
   --pm-danger-strong:#FCA5A5;
   --pm-on-accent:   #FFFFFF;
+  --pm-podium-gold:   #FBBF24;
+  --pm-podium-silver: #94A3B8;
+  --pm-podium-bronze: #D97706;
   --pm-americano-win-bg: #102E24;
   --pm-americano-win-border: #34D399;
   --pm-americano-win-text: #D1FAE5;
