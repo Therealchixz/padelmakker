@@ -5,9 +5,25 @@ import { font, theme } from '../lib/platformTheme';
 const OVERLAY_Z_INDEX = 10040;
 const TARGET_PADDING = 8;
 const TOOLTIP_WIDTH = 320;
+const MOBILE_BOTTOM_NAV_RESERVE = 72;
+const TOOLTIP_RESERVE = 200;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function tourBottomReserve() {
+  if (window.innerWidth > 768) return 24;
+  return MOBILE_BOTTOM_NAV_RESERVE + 12;
+}
+
+function clampHighlightRect(rect, step) {
+  if (!step?.clampHighlight) return rect;
+  const top = Math.max(0, rect.top);
+  const reserve = tourBottomReserve() + TOOLTIP_RESERVE;
+  const maxHeight = window.innerHeight - top - reserve;
+  const height = Math.min(rect.height, Math.max(160, maxHeight));
+  return { ...rect, top, height };
 }
 
 export function GuidedTourOverlay({
@@ -41,12 +57,13 @@ export function GuidedTourOverlay({
         setTargetRect(null);
         return;
       }
-      setTargetRect({
+      const clamped = clampHighlightRect({
         left: Math.max(0, rect.left),
         top: Math.max(0, rect.top),
         width: Math.max(0, rect.width),
         height: Math.max(0, rect.height),
-      });
+      }, step);
+      setTargetRect(clamped);
     };
 
     const schedule = () => {
@@ -65,7 +82,7 @@ export function GuidedTourOverlay({
       window.removeEventListener('resize', schedule);
       window.removeEventListener('scroll', schedule, true);
     };
-  }, [open, step?.selector, step?.waitForMount, stepIndex]);
+  }, [open, step?.selector, step?.waitForMount, step?.clampHighlight, stepIndex]);
 
   const tooltipPos = useMemo(() => {
     if (!targetRect) {

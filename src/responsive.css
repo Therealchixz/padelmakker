@@ -3050,6 +3050,11 @@ button,
   overflow-x: clip;
 }
 
+/* Guided tour: align scroll start under sticky dash header on all devices */
+.pm-tour-scroll-anchor {
+  scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 58px);
+}
+
 .pm-create-form-anchor > * {
   max-width: 100%;
   box-sizing: border-box;

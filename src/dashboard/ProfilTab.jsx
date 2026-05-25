@@ -677,7 +677,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     <div>
       {!editing ? (
       <div>
-        <div data-tour="profile-main" style={{ scrollMarginTop: 88, marginBottom: "12px" }}>
+        <div data-tour="profile-main" className="pm-tour-scroll-anchor" style={{ marginBottom: "12px" }}>
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>
         <PillTabs
           tabs={profileSectionTabs}

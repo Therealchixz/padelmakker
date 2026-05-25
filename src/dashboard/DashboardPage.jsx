@@ -660,6 +660,25 @@ function useUnreadKampeNotificationsCount(userId) {
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking", "beskeder"];
 const TOUR_VERSION = 3;
 const SCROLL_RETRY_MAX = 40;
+const SCROLL_START_SETTLE_RETRIES = 16;
+
+function scrollTourTarget(target, step, attempts) {
+  if (step.scrollBlock === 'start') {
+    const header = document.querySelector('.pm-dash-header');
+    const headerH = header?.getBoundingClientRect().height ?? 88;
+    const top = target.getBoundingClientRect().top + window.scrollY - headerH - 8;
+    window.scrollTo({
+      top: Math.max(0, top),
+      behavior: attempts === 0 ? 'smooth' : 'auto',
+    });
+    return;
+  }
+  target.scrollIntoView({
+    behavior: attempts === 0 ? 'smooth' : 'auto',
+    block: step.scrollBlock || 'center',
+    inline: 'nearest',
+  });
+}
 
 const tabBtnStyle = (active) => ({
   background: "transparent",
@@ -801,6 +820,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
         tab: 'hjem',
         selector: '[data-tour="home-latest-activity"]',
         scrollBlock: 'start',
+        clampHighlight: true,
+        tooltipPlacement: 'below',
         title: 'Seneste aktivitet',
         description: 'Her kan nye brugere hurtigt se hvad der rører sig: nye kampe, ELO-ændringer og relevante events i fællesskabet.',
       },
@@ -1024,11 +1045,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
       if (cancelled) return;
       const target = step.selector ? document.querySelector(step.selector) : null;
       if (target && typeof target.scrollIntoView === 'function') {
-        target.scrollIntoView({
-          behavior: attempts === 0 ? 'smooth' : 'auto',
-          block: step.scrollBlock || 'center',
-          inline: 'nearest',
-        });
+        scrollTourTarget(target, step, attempts);
+        attempts += 1;
+        if (step.scrollBlock === 'start' && attempts < SCROLL_START_SETTLE_RETRIES) {
+          rafId = requestAnimationFrame(tryScroll);
+        }
         return;
       }
       attempts += 1;
