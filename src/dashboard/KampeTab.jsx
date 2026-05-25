@@ -61,6 +61,8 @@ import {
   getMatchVenueOptions,
   courtIdFromVenueSelection,
   courtNameFromVenueSelection,
+  isMatchVenueTbd,
+  MATCH_VENUE_TBD,
 } from '../lib/matchVenueOptions';
 
 function matchPlayerTeam(p) {
@@ -280,7 +282,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const matchCardDwellTimersRef = useRef(new Map());
   const matchChatListRefs = useRef({});
   const [newMatch, setNewMatch]       = useState({
-    court_id: "",
+    court_id: MATCH_VENUE_TBD,
     date: new Date().toISOString().split("T")[0],
     time: nearestHalfHour(),
     duration: "120",
@@ -298,6 +300,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
    */
   const myUidStr = String(user.id);
   const venueOptions = useMemo(() => getMatchVenueOptions(courts), [courts]);
+  const createVenueOptions = useMemo(() => {
+    if (newMatch.court_booked) return venueOptions;
+    return [
+      { id: MATCH_VENUE_TBD, label: 'Ikke valgt endnu', courtId: null },
+      ...venueOptions,
+    ];
+  }, [venueOptions, newMatch.court_booked]);
 
   const myElo = useMemo(() => {
     const fromHist = statsFromEloHistoryRows(kampeRatedRows)?.elo;
@@ -367,8 +376,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const vOpts = getMatchVenueOptions(cd || []);
       if (vOpts.length > 0) {
         setNewMatch((m) => {
+          if (m.court_id === MATCH_VENUE_TBD && !m.court_booked) return m;
           if (m.court_id && vOpts.some((o) => o.id === m.court_id)) return m;
-          return { ...m, court_id: vOpts[0].id };
+          const defaultId = m.court_booked ? vOpts[0].id : MATCH_VENUE_TBD;
+          return { ...m, court_id: defaultId };
         });
       }
 
@@ -761,6 +772,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [focusScrollLeagueId, setFocusScrollLeagueId] = useState(null);
 
   const createMatch = async () => {
+    if (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id))) {
+      showToast("Vælg hvilken bane der er booket.");
+      return;
+    }
     const startM = timeToMinutes(newMatch.time);
     if (!Number.isFinite(startM)) { showToast("Vælg en gyldig starttid."); return; }
     const dur = parseInt(newMatch.duration, 10);
@@ -771,8 +786,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const timeEnd = endH + ":" + endMin;
     setCreating(true);
     try {
-      const cid = courtIdFromVenueSelection(newMatch.court_id, venueOptions);
-      const cname = courtNameFromVenueSelection(newMatch.court_id, venueOptions);
+      const cid = courtIdFromVenueSelection(newMatch.court_id, createVenueOptions);
+      const cname = courtNameFromVenueSelection(newMatch.court_id, createVenueOptions);
       const row = {
         creator_id: user.id, court_id: cid, court_name: cname || '',
         date: newMatch.date, time: fmtClock(newMatch.time), time_end: timeEnd,
@@ -1792,7 +1807,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   gap: 6,
                 }}
               >
-                {m.court_name || "Padelbane"}
+                {matchPrefs.booked === false && !String(m.court_name || "").trim()
+                  ? "Bane ikke booket endnu"
+                  : (m.court_name || "Padelbane")}
                 {unreadMatchCount > 0 && (
                   <span
                     aria-label={`${unreadMatchCount} ulæste notifikationer for denne kamp`}
@@ -2832,18 +2849,51 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px" }}>Opret ny kamp</h3>
           <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px" }}>Din ELO <strong>{myElo}</strong> — du sættes automatisk på Hold 1.</p>
           <div className="pm-form-2col">
-            <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Bane</label>
-              <select value={newMatch.court_id} onChange={e => setNewMatch(m => ({ ...m, court_id: e.target.value }))} style={{ ...inputStyle, fontSize: "13px" }}>
-                {venueOptions.length === 0 ? (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={labelStyle}>Har du booket en bane?</label>
+              <PillTabs
+                tabs={courtBookedTabs}
+                value={newMatch.court_booked === true ? "yes" : "no"}
+                onChange={(id) => {
+                  const booked = id === "yes";
+                  setNewMatch((m) => {
+                    let nextCourtId = m.court_id;
+                    if (booked) {
+                      if (!nextCourtId || isMatchVenueTbd(nextCourtId)) {
+                        nextCourtId = venueOptions[0]?.id ?? "";
+                      }
+                    } else if (!nextCourtId || !isMatchVenueTbd(nextCourtId)) {
+                      nextCourtId = MATCH_VENUE_TBD;
+                    }
+                    return { ...m, court_booked: booked, court_id: nextCourtId };
+                  });
+                }}
+                ariaLabel="Bane booket"
+                size="sm"
+                style={{ marginTop: "4px" }}
+              />
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={labelStyle}>
+                {newMatch.court_booked ? "Hvilken bane er booket?" : "Hvor vil du helst spille? (valgfrit)"}
+              </label>
+              <select
+                value={newMatch.court_id}
+                onChange={(e) => setNewMatch((m) => ({ ...m, court_id: e.target.value }))}
+                style={{ ...inputStyle, fontSize: "13px" }}
+              >
+                {createVenueOptions.length === 0 ? (
                   <option value="">Indlæser…</option>
                 ) : (
-                  venueOptions.map((o) => (
+                  createVenueOptions.map((o) => (
                     <option key={o.id} value={o.id}>{o.label}</option>
                   ))
                 )}
               </select>
               <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
-                Samme steder som under fanen Baner. Virtuel bane gemmer kun navnet (tilføj banen i databasen for at koble uuid).
+                {newMatch.court_booked
+                  ? "Vælg det center, hvor du har booket tid."
+                  : "Vælg «Ikke valgt endnu», eller peg på et center du overvejer — du behøver ikke have booket endnu."}
               </p>
             </div>
             <div style={{ minWidth: 0 }}><label style={labelStyle}>Dato</label>
@@ -2860,17 +2910,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <option value="150">2½ timer</option>
                 <option value="180">3 timer</option>
               </select></div>
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Har du booket en bane?</label>
-              <PillTabs
-                tabs={courtBookedTabs}
-                value={newMatch.court_booked === true ? "yes" : "no"}
-                onChange={(id) => setNewMatch((m) => ({ ...m, court_booked: id === "yes" }))}
-                ariaLabel="Bane booket"
-                size="sm"
-                style={{ marginTop: "4px" }}
-              />
-            </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={labelStyle}>Hvilket spiller-niveau søger du? (ELO til kampen)</label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "4px" }}>
@@ -2933,7 +2972,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             <button
               type="button"
               onClick={createMatch}
-              disabled={creating || !newMatch.court_id || venueOptions.length === 0}
+              disabled={
+                creating ||
+                venueOptions.length === 0 ||
+                (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id)))
+              }
               style={{ ...btn(true, { size: "md", fontWeight: 600 }), opacity: creating ? 0.55 : 1 }}
             >
               {creating ? "Opretter..." : "Opret kamp"}

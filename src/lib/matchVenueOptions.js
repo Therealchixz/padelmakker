@@ -3,6 +3,9 @@ import { BANER_VENUES } from './banerVenues'
 /** Værdi i <select> når center ikke har matchende række i `courts` endnu */
 export const PM_VENUE_PREFIX = 'pm_venue:'
 
+/** Opret kamp uden booket bane endnu — ingen specifikt center påkrævet */
+export const MATCH_VENUE_TBD = '__venue_tbd__'
+
 function norm(s) {
   return String(s || '')
     .toLowerCase()
@@ -39,6 +42,11 @@ export function courtIdFromVenueSelection(selectedId, options) {
 }
 
 export function courtNameFromVenueSelection(selectedId, options) {
+  if (selectedId === MATCH_VENUE_TBD) return ''
   const o = (options || []).find((x) => x.id === selectedId)
   return o?.label ?? ''
+}
+
+export function isMatchVenueTbd(selectedId) {
+  return selectedId === MATCH_VENUE_TBD
 }
