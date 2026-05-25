@@ -12,6 +12,7 @@ import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { normalizeMatchSearchPrefs, describeMatchFilter } from '../lib/matchSearchFilterUtils';
 import { normalizeMakkerSearchPrefs, describeMakkerFilter } from '../lib/makkerSearchFilterUtils';
+import { isProfileMatchFeedVisible, isProfileMakkerFeedVisible } from '../lib/seekingFeedTtl';
 import { useNavigate } from 'react-router-dom';
 import { Filter, Users, ChevronRight } from 'lucide-react';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
@@ -47,10 +48,30 @@ const profilePromptCardStyle = {
   border: `1px solid ${theme.border}`,
 };
 
+const filterStatusPillStyle = {
+  fontSize: 10,
+  fontWeight: 700,
+  padding: '2px 8px',
+  borderRadius: 100,
+  background: theme.accentBg,
+  color: theme.accent,
+};
+
+function FilterChannelBadges({ feedVisible, notify }) {
+  if (!feedVisible && !notify) return null;
+  return (
+    <>
+      {feedVisible ? <span style={filterStatusPillStyle}>Synlig</span> : null}
+      {notify ? <span style={filterStatusPillStyle}>Notifikationer</span> : null}
+    </>
+  );
+}
+
 function MatchFilterProfileCard({ user }) {
   const navigate = useNavigate();
   const prefs = normalizeMatchSearchPrefs(user?.match_search_prefs, user);
   const info = describeMatchFilter(prefs, user);
+  const feedVisible = isProfileMatchFeedVisible(user);
 
   return (
     <button
@@ -75,7 +96,7 @@ function MatchFilterProfileCard({ user }) {
           width: 36,
           height: 36,
           borderRadius: 10,
-          background: info.active ? theme.accentBg : theme.blueBg,
+          background: feedVisible ? theme.accentBg : theme.blueBg,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -87,20 +108,7 @@ function MatchFilterProfileCard({ user }) {
       <span style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Mit kamp-filter</span>
-          {info.active ? (
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: 100,
-                background: theme.accentBg,
-                color: theme.accent,
-              }}
-            >
-              Aktiv
-            </span>
-          ) : null}
+          <FilterChannelBadges feedVisible={feedVisible} notify={prefs.notify} />
         </div>
         <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2, lineHeight: 1.4 }}>
           {info.configured ? (
@@ -123,6 +131,7 @@ function MakkerFilterProfileCard({ user }) {
   const navigate = useNavigate();
   const prefs = normalizeMakkerSearchPrefs(user?.makker_search_prefs, user);
   const info = describeMakkerFilter(prefs, user);
+  const feedVisible = isProfileMakkerFeedVisible(user);
 
   return (
     <button
@@ -147,7 +156,7 @@ function MakkerFilterProfileCard({ user }) {
           width: 36,
           height: 36,
           borderRadius: 10,
-          background: info.active ? theme.accentBg : theme.blueBg,
+          background: feedVisible ? theme.accentBg : theme.blueBg,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -159,20 +168,7 @@ function MakkerFilterProfileCard({ user }) {
       <span style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Mit makker-filter</span>
-          {info.active ? (
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: 100,
-                background: theme.accentBg,
-                color: theme.accent,
-              }}
-            >
-              Aktiv
-            </span>
-          ) : null}
+          <FilterChannelBadges feedVisible={feedVisible} notify={prefs.notify} />
         </div>
         <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2, lineHeight: 1.4 }}>
           {info.configured ? (
