@@ -27,6 +27,11 @@ import { eloOf } from '../lib/matchDisplayUtils';
 import { normalizeProfileRow } from '../lib/profileUtils';
 import { explainRatingAdminFlag } from '../lib/ratingAdminFlagExplain';
 import { fetchAdminAuditLogRecent, adminAuditActionLabel } from '../lib/adminAuditLog';
+import {
+  buildRatingFlagStatusUpdate,
+  computeAdminConsoleStats,
+  filterRatingAdminFlags,
+} from '../lib/adminConsoleUtils';
 
 import { PLAY_STYLES, REGIONS } from '../lib/platformConstants';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
@@ -487,36 +492,30 @@ export function AdminTab({ initialSubTab = null }) {
           setRatingFlags([]);
         } else {
           setConsoleError('Kunne ikke hente flags: ' + msg);
+          setRatingFlags([]);
         }
       } else {
         setRatingFlags(flagsRes.data || []);
       }
 
+      const flagRows = flagsRes.error ? [] : flagsRes.data || [];
       const profiles = profilesRes.data || [];
       const matchesRows = matchesRes.data || [];
       const pendingResults = resultsRes.data || [];
       const americanoRows = americanoRes.data || [];
-      const now = Date.now();
-      const oneDayAgo = now - 24 * 60 * 60 * 1000;
-      const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
 
-      const nextStats = {
-        totalPlayers: profiles.length,
-        bannedPlayers: profiles.filter((p) => !!p.is_banned).length,
-        pendingResults: pendingResults.length,
-        openMatches: matchesRows.filter((m) => m.status === 'open' || m.status === 'full').length,
-        inProgressMatches: matchesRows.filter((m) => m.status === 'in_progress').length,
-        completedMatches24h: matchesRows.filter((m) => m.status === 'completed' && m.completed_at && new Date(m.completed_at).getTime() >= oneDayAgo).length,
-        americanoOpen: americanoRows.filter((t) => t.status === 'open').length,
-        americanoActive: americanoRows.filter((t) => t.status === 'active').length,
-        americanoCompleted7d: americanoRows.filter((t) => t.status === 'completed' && t.updated_at && new Date(t.updated_at).getTime() >= sevenDaysAgo).length,
-        openFlags: (flagsRes.data || []).filter((f) => f.status === 'open').length,
-        highFlags: (flagsRes.data || []).filter((f) => f.status === 'open' && f.severity === 'high').length,
-      };
-      setConsoleStats(nextStats);
+      setConsoleStats(
+        computeAdminConsoleStats({
+          profiles,
+          matchesRows,
+          pendingResults,
+          americanoRows,
+          flags: flagRows,
+        }),
+      );
       void refreshSubTabBadges();
 
-      const reviewerIds = [...new Set((flagsRes.data || []).map((f) => f.reviewed_by).filter(Boolean))];
+      const reviewerIds = [...new Set(flagRows.map((f) => f.reviewed_by).filter(Boolean))];
       if (reviewerIds.length > 0) {
         const { data: reviewerRows } = await supabase
           .from('profiles')
@@ -1038,25 +1037,16 @@ export function AdminTab({ initialSubTab = null }) {
       : <ChevronDown size={12} style={{ marginLeft: '4px', color: theme.accent }} />;
   };
 
-  const filteredFlags = useMemo(() => {
-    return (ratingFlags || []).filter((flag) => {
-      if (flagStatusFilter !== 'all' && flag.status !== flagStatusFilter) return false;
-      if (flagSourceFilter !== 'all' && flag.source !== flagSourceFilter) return false;
-      if (flagSeverityFilter !== 'all' && flag.severity !== flagSeverityFilter) return false;
-      const q = flagSearch.trim().toLowerCase();
-      if (!q) return true;
-      const blob = [
-        flag.reason,
-        flag.source,
-        flag.severity,
-        flag.status,
-        flag.match_id,
-        flag.tournament_id,
-        JSON.stringify(flag.payload || {}),
-      ].join(' ').toLowerCase();
-      return blob.includes(q);
-    });
-  }, [ratingFlags, flagSearch, flagStatusFilter, flagSourceFilter, flagSeverityFilter]);
+  const filteredFlags = useMemo(
+    () =>
+      filterRatingAdminFlags(ratingFlags, {
+        flagSearch,
+        flagStatusFilter,
+        flagSourceFilter,
+        flagSeverityFilter,
+      }),
+    [ratingFlags, flagSearch, flagStatusFilter, flagSourceFilter, flagSeverityFilter],
+  );
 
   const flagStatusBadgeColor = (status) => {
     if (status === 'open') return { text: theme.red, bg: theme.redBg };
@@ -1089,17 +1079,10 @@ export function AdminTab({ initialSubTab = null }) {
     const note = String(flagNotes[flag.id] || '').trim();
     setFlagBusyId(flag.id);
     try {
-      const updates = {
-        status: nextStatus,
-      };
-      if (nextStatus === 'open') {
-        updates.reviewed_at = null;
-        updates.reviewed_by = null;
-      } else {
-        updates.reviewed_at = new Date().toISOString();
-        updates.reviewed_by = user?.id || null;
-      }
-      if (note) updates.review_note = note;
+      const updates = buildRatingFlagStatusUpdate(nextStatus, {
+        userId: user?.id || null,
+        note,
+      });
 
       const { error } = await supabase
         .from('rating_admin_flags')

@@ -48,3 +48,14 @@ test('admin console keeps stable enum values for filtering and DB status updates
   assert.match(adminTab, /value="medium"/)
   assert.match(adminTab, /value="low"/)
 })
+
+test('admin console uses shared filter/stats helpers and flag update builder', async () => {
+  const adminTab = await readFile(ADMIN_TAB_URL, 'utf8')
+
+  assert.match(adminTab, /adminConsoleUtils/)
+  assert.match(adminTab, /filterRatingAdminFlags/)
+  assert.match(adminTab, /computeAdminConsoleStats/)
+  assert.match(adminTab, /buildRatingFlagStatusUpdate/)
+  assert.match(adminTab, /fetchAdminConsole/)
+  assert.match(adminTab, /admin_audit_log_recent|fetchAdminAuditLogRecent/)
+})
