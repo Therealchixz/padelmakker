@@ -154,8 +154,11 @@ export function AdminTab({ initialSubTab = null }) {
   const [resultErrorStatusFilter, setResultErrorStatusFilter] = useState('open');
   const [resultErrorBusyId, setResultErrorBusyId] = useState(null);
   const [editMatchTarget, setEditMatchTarget] = useState(null);
+  const [editMatchLoading, setEditMatchLoading] = useState(false);
   const [editAmericanoTarget, setEditAmericanoTarget] = useState(null);
   const [editLigaTarget, setEditLigaTarget] = useState(null);
+  const usersLoadSeqRef = useRef(0);
+  const matchesLoadSeqRef = useRef(0);
   const [subTabBadges, setSubTabBadges] = useState({
     users: 0,
     matches: 0,
@@ -257,13 +260,36 @@ export function AdminTab({ initialSubTab = null }) {
     };
   }, [user?.id, refreshSubTabBadges]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
+    const seq = ++usersLoadSeqRef.current;
     setLoading(true);
-    const { data, error } = await supabase.rpc('admin_profiles_with_email');
-    if (error) console.warn('AdminTab fetchUsers:', error.message || error);
-    else setUsers(data || []);
-    setLoading(false);
-  };
+    try {
+      const { data, error } = await supabase.rpc('admin_profiles_with_email');
+      if (error) throw error;
+      let rows = data || [];
+      const ids = rows.map((u) => u.id).filter(Boolean);
+      if (ids.length > 0) {
+        const eloMap = await fetchEloStatsBatchByUserIds(ids);
+        if (seq !== usersLoadSeqRef.current) return;
+        rows = rows.map((u) => {
+          const snap = eloMap[String(u.id)];
+          const elo =
+            snap != null && Number.isFinite(Number(snap.elo))
+              ? Math.round(Number(snap.elo))
+              : Number(u.elo_rating) || 1000;
+          return { ...u, elo_rating: elo };
+        });
+      }
+      if (seq !== usersLoadSeqRef.current) return;
+      setUsers(rows);
+    } catch (err) {
+      if (seq !== usersLoadSeqRef.current) return;
+      console.warn('AdminTab fetchUsers:', err?.message || err);
+      setUsers([]);
+    } finally {
+      if (seq === usersLoadSeqRef.current) setLoading(false);
+    }
+  }, []);
 
   const closeUserEditor = useCallback(() => {
     setEditingUser(null);
@@ -316,53 +342,108 @@ export function AdminTab({ initialSubTab = null }) {
     }
   }, [ask]);
 
-  const fetchMatches = async () => {
+  const fetchMatches = useCallback(async () => {
+    const seq = ++matchesLoadSeqRef.current;
     setLoading(true);
-    const { data, error } = await supabase
-      .from('matches')
-      .select('*, match_results(*), match_players(*, profiles(full_name))')
-      .order('created_at', { ascending: false })
-      .limit(100);
-    if (error) console.warn('AdminTab fetchMatches:', error.message || error);
-    else setMatches(data || []);
-    setLoading(false);
-  };
-
-  const fetchAmericano = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('americano_tournaments')
-      .select('id, name, status, tournament_date, updated_at, created_at, points_per_match')
-      .order('updated_at', { ascending: false, nullsFirst: false })
-      .order('created_at', { ascending: false })
-      .limit(100);
-    if (error) console.warn('AdminTab fetchAmericano:', error.message || error);
-    else setAmericanoTournaments(data || []);
-    setLoading(false);
-  };
-
-  const fetchLiga = async () => {
-    setLoading(true);
-    const { data: leagues, error } = await supabase
-      .from('leagues')
-      .select('id, name, status, season_type, start_date, end_date, current_round, total_rounds, created_at, updated_at')
-      .order('updated_at', { ascending: false, nullsFirst: false })
-      .order('created_at', { ascending: false })
-      .limit(100);
-    if (error) {
-      console.warn('AdminTab fetchLiga:', error.message || error);
-      setLoading(false);
-      return;
+    try {
+      const { data, error } = await supabase
+        .from('matches')
+        .select('*, match_results(*), match_players(*, profiles(full_name, name))')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      if (seq !== matchesLoadSeqRef.current) return;
+      setMatches(data || []);
+    } catch (err) {
+      if (seq !== matchesLoadSeqRef.current) return;
+      console.warn('AdminTab fetchMatches:', err?.message || err);
+      setMatches([]);
+    } finally {
+      if (seq === matchesLoadSeqRef.current) setLoading(false);
     }
-    const lIds = (leagues || []).map(l => l.id);
-    let teamCounts = {};
-    if (lIds.length) {
-      const { data: teams } = await supabase.from('league_teams').select('league_id').in('league_id', lIds);
-      for (const t of (teams || [])) teamCounts[t.league_id] = (teamCounts[t.league_id] || 0) + 1;
+  }, []);
+
+  const fetchAmericano = useCallback(async () => {
+    const seq = ++matchesLoadSeqRef.current;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('americano_tournaments')
+        .select('id, name, status, tournament_date, updated_at, created_at, points_per_match')
+        .order('updated_at', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      if (seq !== matchesLoadSeqRef.current) return;
+      setAmericanoTournaments(data || []);
+    } catch (err) {
+      if (seq !== matchesLoadSeqRef.current) return;
+      console.warn('AdminTab fetchAmericano:', err?.message || err);
+      setAmericanoTournaments([]);
+    } finally {
+      if (seq === matchesLoadSeqRef.current) setLoading(false);
     }
-    setLigaLeagues((leagues || []).map(l => ({ ...l, team_count: teamCounts[l.id] || 0 })));
-    setLoading(false);
-  };
+  }, []);
+
+  const fetchLiga = useCallback(async () => {
+    const seq = ++matchesLoadSeqRef.current;
+    setLoading(true);
+    try {
+      const { data: leagues, error } = await supabase
+        .from('leagues')
+        .select('id, name, status, season_type, start_date, end_date, current_round, total_rounds, created_at, updated_at')
+        .order('updated_at', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      const lIds = (leagues || []).map((l) => l.id);
+      let teamCounts = {};
+      if (lIds.length) {
+        const { data: teams } = await supabase.from('league_teams').select('league_id').in('league_id', lIds);
+        for (const t of teams || []) {
+          teamCounts[t.league_id] = (teamCounts[t.league_id] || 0) + 1;
+        }
+      }
+      if (seq !== matchesLoadSeqRef.current) return;
+      setLigaLeagues((leagues || []).map((l) => ({ ...l, team_count: teamCounts[l.id] || 0 })));
+    } catch (err) {
+      if (seq !== matchesLoadSeqRef.current) return;
+      console.warn('AdminTab fetchLiga:', err?.message || err);
+      setLigaLeagues([]);
+    } finally {
+      if (seq === matchesLoadSeqRef.current) setLoading(false);
+    }
+  }, []);
+
+  const openMatchResultEditor = useCallback(
+    async (matchId) => {
+      setEditMatchLoading(true);
+      try {
+        const { data: m, error } = await supabase
+          .from('matches')
+          .select('*, match_results(*), match_players(*, profiles(full_name, name))')
+          .eq('id', matchId)
+          .maybeSingle();
+        if (error) throw error;
+        if (!m) throw new Error('Kamp ikke fundet');
+        const confirmedResult = (m.match_results || []).find((r) => r.confirmed) || null;
+        if (!confirmedResult) {
+          await ask({ message: 'Ingen bekræftet resultat at rette på denne kamp.', notice: true });
+          return;
+        }
+        setEditMatchTarget({
+          match: m,
+          matchResult: confirmedResult,
+          players: m.match_players || [],
+        });
+      } catch (err) {
+        await ask({ message: err?.message || 'Kunne ikke hente kampdata', notice: true });
+      } finally {
+        setEditMatchLoading(false);
+      }
+    },
+    [ask],
+  );
 
   const fetchAdminConsole = async () => {
     setConsoleLoading(true);
@@ -629,6 +710,19 @@ export function AdminTab({ initialSubTab = null }) {
     }
   };
 
+  const refreshActiveAdminTab = useCallback(() => {
+    if (activeSubTab === 'users') return fetchUsers();
+    if (activeSubTab === 'matches') {
+      if (matchSubTab === '2v2') return fetchMatches();
+      if (matchSubTab === 'americano') return fetchAmericano();
+      return fetchLiga();
+    }
+    if (activeSubTab === 'reports') return fetchUserReports();
+    if (activeSubTab === 'result_errors') return fetchResultErrorReports();
+    if (activeSubTab === 'console') return fetchAdminConsole();
+    return Promise.resolve();
+  }, [activeSubTab, matchSubTab, fetchUsers, fetchMatches, fetchAmericano, fetchLiga]);
+
   const updateResultErrorReportStatus = async (report, nextStatus) => {
     setResultErrorBusyId(report.id);
     try {
@@ -660,19 +754,37 @@ export function AdminTab({ initialSubTab = null }) {
   }, [initialSubTab]);
 
   useEffect(() => {
-    if (activeSubTab === 'users') fetchUsers();
+    if (activeSubTab === 'users') void fetchUsers();
     else if (activeSubTab === 'matches') {
-      if (matchSubTab === '2v2') fetchMatches();
-      else if (matchSubTab === 'americano') fetchAmericano();
-      else fetchLiga();
+      if (matchSubTab === '2v2') void fetchMatches();
+      else if (matchSubTab === 'americano') void fetchAmericano();
+      else void fetchLiga();
     } else if (activeSubTab === 'reports') {
-      fetchUserReports();
+      void fetchUserReports();
     } else if (activeSubTab === 'result_errors') {
-      fetchResultErrorReports();
+      void fetchResultErrorReports();
     } else if (activeSubTab === 'console') {
-      fetchAdminConsole();
+      void fetchAdminConsole();
     }
-  }, [activeSubTab, matchSubTab, reportStatusFilter, resultErrorStatusFilter]);
+  }, [
+    activeSubTab,
+    matchSubTab,
+    reportStatusFilter,
+    resultErrorStatusFilter,
+    fetchUsers,
+    fetchMatches,
+    fetchAmericano,
+    fetchLiga,
+  ]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState !== 'visible') return;
+      void refreshActiveAdminTab();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [refreshActiveAdminTab]);
 
   const toggleAdmin = async (user) => {
     const newRole = user.role === 'admin' ? 'player' : 'admin';
@@ -1092,15 +1204,28 @@ export function AdminTab({ initialSubTab = null }) {
 
       {activeSubTab === 'users' ? (
         <>
-          <div className="pm-admin-search">
-            <Search size={16} className="pm-admin-search-icon" aria-hidden />
-            <input
-              type="text"
-              className="pm-admin-search-input"
-              placeholder="Søg..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="pm-admin-search" style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <Search size={16} className="pm-admin-search-icon" aria-hidden />
+              <input
+                type="text"
+                className="pm-admin-search-input"
+                placeholder="Søg..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => { void fetchUsers(); }}
+              disabled={loading}
+              className="pm-admin-refresh-btn"
+              style={{ ...btn(false), flexShrink: 0, alignSelf: 'center' }}
+              title="Hent seneste brugerdata"
+            >
+              <RefreshCw size={14} style={{ marginRight: 4, opacity: loading ? 0.5 : 1 }} aria-hidden />
+              Opdater
+            </button>
           </div>
 
           {isMobile && (
@@ -1268,6 +1393,19 @@ export function AdminTab({ initialSubTab = null }) {
         </>
       ) : activeSubTab === 'matches' ? (
         <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+            <button
+              type="button"
+              onClick={() => { void refreshActiveAdminTab(); }}
+              disabled={loading || editMatchLoading}
+              className="pm-admin-refresh-btn"
+              style={btn(false)}
+              title="Hent seneste kampdata"
+            >
+              <RefreshCw size={14} style={{ marginRight: 4, opacity: loading || editMatchLoading ? 0.5 : 1 }} aria-hidden />
+              Opdater
+            </button>
+          </div>
           <PillTabs
             tabs={matchTypePills}
             value={matchSubTab}
@@ -1434,13 +1572,8 @@ export function AdminTab({ initialSubTab = null }) {
                         {canEditResult ? (
                           <button
                             type="button"
-                            onClick={() =>
-                              setEditMatchTarget({
-                                match: m,
-                                matchResult: confirmedResult,
-                                players: m.match_players || [],
-                              })
-                            }
+                            onClick={() => { void openMatchResultEditor(m.id); }}
+                            disabled={editMatchLoading}
                             className="pm-admin-action-btn pm-admin-action-btn--edit"
                             title="Ret resultat og genberegn ELO"
                           >

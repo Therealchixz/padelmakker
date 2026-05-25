@@ -57,6 +57,18 @@ test('Admin user editor fetches fresh profile instead of list snapshot', async (
   assert.doesNotMatch(adminTab, /onClick=\{\(\) => setEditingUser\(\{ \.\.\.u \}\)\}/);
 });
 
+test('Admin tab avoids stale list and match editor data', async () => {
+  const adminTab = await readFile(new URL('../../src/dashboard/AdminTab.jsx', import.meta.url), 'utf8');
+
+  assert.match(adminTab, /usersLoadSeqRef/);
+  assert.match(adminTab, /fetchUsers[\s\S]*fetchEloStatsBatchByUserIds/);
+  assert.match(adminTab, /openMatchResultEditor/);
+  assert.match(adminTab, /\.eq\('id', matchId\)/);
+  assert.match(adminTab, /refreshActiveAdminTab/);
+  assert.match(adminTab, /visibilitychange/);
+  assert.match(adminTab, /openMatchResultEditor\(m\.id\)/);
+});
+
 test('AuthContext signs out immediately when a user is banned', async () => {
   const authContext = await readFile(new URL('../../src/lib/AuthContext.jsx', import.meta.url), 'utf8');
 
