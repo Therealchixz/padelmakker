@@ -70,17 +70,20 @@ test.describe('Public smoke flows', () => {
     )
   })
 
-  test('mobile landing keeps stats below the first screen', async ({ page }) => {
+  test('mobile landing keeps stats below hero', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
 
-    // Label from the stats banner grid only (not hero / mockup cards). Copy stays stable in both
-    // RPC-backed and fallback `statsBannerItems` layouts in `LandingPage.jsx`.
+    const hero = page.getByRole('heading', { name: /Find makker/i })
     const firstStat = page.getByText('Opret profil uden betaling').first()
+    await expect(hero).toBeVisible()
     await expect(firstStat).toBeVisible()
 
-    const box = await firstStat.boundingBox()
-    expect(box?.y).toBeGreaterThan(844)
+    const heroBox = await hero.boundingBox()
+    const statBox = await firstStat.boundingBox()
+    expect(heroBox).toBeTruthy()
+    expect(statBox).toBeTruthy()
+    expect(statBox!.y).toBeGreaterThan(heroBox!.y + heroBox!.height - 8)
   })
 
   test('landing page exposes critical resource hints', async ({ page }) => {

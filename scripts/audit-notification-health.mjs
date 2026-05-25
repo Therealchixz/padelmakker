@@ -39,9 +39,9 @@ function extractCreateFunctions(sql, file) {
   return out;
 }
 
-// 1) Duplicate RPC signatures in supabase/
+// 1) Duplicate RPC signatures in migrations (deployed path — not archived supabase/sql/)
 const byName = new Map();
-for (const file of walk(join(root, 'supabase'))) {
+for (const file of walk(join(root, 'supabase/migrations'))) {
   const rel = file.slice(root.length + 1);
   for (const fn of extractCreateFunctions(read(rel), rel)) {
     const key = fn.name;
@@ -74,9 +74,17 @@ for (const [name, defs] of byName) {
   }
 }
 
-// 2) DROP migration present
-const dropMigration = read('supabase/migrations/20260521130000_drop_duplicate_notification_rpc_overloads.sql');
-if (!dropMigration.includes('DROP FUNCTION IF EXISTS public.create_notification_for_user')) {
+// 2) DROP migration present (timestamp prefix may differ between local/remote sync)
+const migrationsDir = join(root, 'supabase/migrations');
+const dropMigrationFile = readdirSync(migrationsDir).find((name) =>
+  name.includes('drop_duplicate_notification_rpc_overloads'),
+);
+const dropMigration = dropMigrationFile
+  ? read(join('supabase/migrations', dropMigrationFile))
+  : '';
+if (
+  !dropMigration.includes('DROP FUNCTION IF EXISTS public.create_notification_for_user')
+) {
   issues.push({
     severity: 'high',
     code: 'MISSING_DROP_MIGRATION',

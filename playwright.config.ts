@@ -2,6 +2,13 @@ import { defineConfig, devices } from '@playwright/test'
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173'
 
+const hasAuthE2E = Boolean(
+  process.env.VITE_SUPABASE_URL?.trim() &&
+    process.env.VITE_SUPABASE_ANON_KEY?.trim() &&
+    process.env.PLAYWRIGHT_TEST_EMAIL?.trim() &&
+    process.env.PLAYWRIGHT_TEST_PASSWORD,
+)
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -26,7 +33,17 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: hasAuthE2E ? ['**/logged-in.spec.ts'] : undefined,
       use: { ...devices['Desktop Chrome'] },
     },
+    ...(hasAuthE2E
+      ? [
+          {
+            name: 'authenticated',
+            testMatch: '**/logged-in.spec.ts',
+            use: { ...devices['Desktop Chrome'] },
+          },
+        ]
+      : []),
   ],
 })

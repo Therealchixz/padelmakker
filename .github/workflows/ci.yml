@@ -37,6 +37,12 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      - name: Notification health audit
+        run: npm run audit:notifications
+
+      - name: Production build
+        run: npm run build
+
       - name: UI hex (no hardcoded colors in JSX)
         run: npm run check:ui-hex
         env:

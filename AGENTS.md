@@ -31,6 +31,10 @@ Prettier is not configured.
 
 - **Unit tests:** `npm run test:unit`
 - **Notification/RPC drift audit:** `npm run audit:notifications` (fails on high-severity static findings, e.g. legacy SQL overloads in `supabase/sql/`)
+- **E2E (Playwright):** `npm run test:e2e` — public flows always; logged-in dashboard tests when `VITE_SUPABASE_*` + `PLAYWRIGHT_TEST_EMAIL`/`PASSWORD` are set (see `tests/e2e/README.md`)
+- **Pre-release bundle:** `npm run test:release` (lint, typecheck, unit, audit, build, e2e)
+
+CI runs lint, typecheck, unit, `audit:notifications`, and `build` on every PR. E2E runs in a separate workflow; add GitHub secrets for authenticated E2E.
 
 No Jest/Vitest beyond Node’s built-in test runner.
 
