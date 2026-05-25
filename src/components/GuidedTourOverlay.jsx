@@ -18,6 +18,7 @@ export function GuidedTourOverlay({
   onNext,
   onSkip,
   onFinish,
+  zIndex = OVERLAY_Z_INDEX,
 }) {
   const step = steps[stepIndex] || null;
   const [targetRect, setTargetRect] = useState(null);
@@ -36,6 +37,10 @@ export function GuidedTourOverlay({
         return;
       }
       const rect = el.getBoundingClientRect();
+      if (step.waitForMount && rect.height < 48) {
+        setTargetRect(null);
+        return;
+      }
       setTargetRect({
         left: Math.max(0, rect.left),
         top: Math.max(0, rect.top),
@@ -60,7 +65,7 @@ export function GuidedTourOverlay({
       window.removeEventListener('resize', schedule);
       window.removeEventListener('scroll', schedule, true);
     };
-  }, [open, step?.selector, stepIndex]);
+  }, [open, step?.selector, step?.waitForMount, stepIndex]);
 
   const tooltipPos = useMemo(() => {
     if (!targetRect) {
@@ -75,24 +80,34 @@ export function GuidedTourOverlay({
       Math.max(12, window.innerWidth - TOOLTIP_WIDTH - 12)
     );
 
-    const placeBelow = targetRect.top < window.innerHeight * 0.55;
+    const placeBelow = step.tooltipPlacement === 'below'
+      ? true
+      : step.tooltipPlacement === 'above'
+        ? false
+        : targetRect.top < window.innerHeight * 0.55;
     const top = placeBelow
       ? Math.min(window.innerHeight - 210, targetRect.top + targetRect.height + 14)
       : Math.max(14, targetRect.top - 198);
 
     return { left, top };
-  }, [targetRect]);
+  }, [targetRect, step?.tooltipPlacement]);
 
   if (!open || !step) return null;
 
   const isLast = stepIndex >= steps.length - 1;
+  const passThroughTarget = Boolean(step.interactive && targetRect);
 
   return createPortal(
     <div
       aria-live="polite"
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: OVERLAY_Z_INDEX }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex,
+        pointerEvents: passThroughTarget ? 'none' : 'auto',
+      }}
     >
       {!targetRect && (
         <div
@@ -128,6 +143,7 @@ export function GuidedTourOverlay({
           left: tooltipPos.left,
           top: tooltipPos.top,
           width: `min(${TOOLTIP_WIDTH}px, calc(100vw - 24px))`,
+          pointerEvents: 'auto',
           background: theme.surface,
           border: '1px solid ' + theme.border,
           borderRadius: 14,
@@ -163,7 +179,7 @@ export function GuidedTourOverlay({
               padding: '6px 2px',
             }}
           >
-            Skip
+            Spring over
           </button>
 
           <div style={{ display: 'flex', gap: 8 }}>

@@ -58,7 +58,7 @@ function addDismissedIds(userId, ids) {
   }
 }
 
-export function NotificationBell() {
+export function NotificationBell({ tourForceOpen = false }) {
   const { user: authUser, profile, updateProfile } = useAuth();
   const navigate = useNavigate();
   const userId = authUser?.id;
@@ -233,6 +233,12 @@ export function NotificationBell() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!tourForceOpen) return;
+    setOpen(true);
+    void load();
+  }, [tourForceOpen, load]);
 
   /* Realtime på notifications med retry, så mobil ikke kræver app-reopen ved timeout. */
   useEffect(() => {
@@ -626,6 +632,7 @@ export function NotificationBell() {
 
       {open && (
         <div
+          data-tour="notification-panel"
           className="pm-notification-panel"
           style={{
             position: "absolute",

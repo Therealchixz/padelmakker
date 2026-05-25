@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { splitDisplayName, oauthAvatarUrl } from '../lib/authOAuth';
 import { OAuthButtons, AuthDivider } from '../components/OAuthButtons';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
-import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
+import { font, theme, btn } from '../lib/platformTheme';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, levelLabel } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
@@ -14,13 +14,13 @@ import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName, canAccessDashboard, isValidProfileRegion } from '../lib/profileUtils';
 import { isPhoneVerificationExempt, fetchPhoneVerificationExemptFromServer } from '../lib/phoneVerification';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
-
 import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
-
 import { AvatarPicker } from '../components/AvatarPicker';
 import { TurnstileWidget } from '../components/TurnstileWidget';
 import { LEGAL_INFO } from '../lib/legalInfo';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronRight, Check, Zap, Sparkles, MapPin, Trophy } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../lib/utils';
 
 export function OnboardingPage() {
   const { signUpWithPhone, user, profile, profileLoading, updateProfile, refreshProfileQuiet } = useAuth();
@@ -43,864 +43,172 @@ export function OnboardingPage() {
   const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
-  /** Undgå gentaget auto-spring fra trin 1 → 0 → 1 når brugeren går tilbage. */
   const didAutoSkipAccountStepRef = useRef(false);
 
   useEffect(() => {
-    onboardingTopRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+    onboardingTopRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [step]);
-
-  useEffect(() => {
-    if (user?.id) refreshProfileQuiet();
-  }, [user?.id, refreshProfileQuiet]);
-
-  useEffect(() => {
-    didAutoSkipAccountStepRef.current = false;
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!oauthSession || !user?.id) {
-      setServerPhoneExempt(false);
-      return;
-    }
-    let cancelled = false;
-    void fetchPhoneVerificationExemptFromServer(supabase).then((exempt) => {
-      if (!cancelled) setServerPhoneExempt(exempt);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [oauthSession, user?.id]);
-
-  // Udfyld navn og fødselsdato fra DB-profil (fx efter tidligere forsøg eller admin-redigering)
-  useEffect(() => {
-    if (!profile) return;
-    const full = String(profile.full_name || profile.name || '').trim();
-    if (!full) return;
-    const parts = full.split(/\s+/).filter(Boolean);
-    const first = parts[0] || '';
-    const last = parts.slice(1).join(' ') || '';
-    setForm((f) => ({
-      ...f,
-      first_name: f.first_name.trim() ? f.first_name : first,
-      last_name: f.last_name.trim() ? f.last_name : last,
-      birth_year:
-        f.birth_year.length === 4
-          ? f.birth_year
-          : profile.birth_year != null
-            ? String(profile.birth_year)
-            : f.birth_year,
-      birth_month:
-        f.birth_month !== ''
-          ? f.birth_month
-          : profile.birth_month != null
-            ? String(profile.birth_month)
-            : f.birth_month,
-      birth_day:
-        f.birth_day !== ''
-          ? f.birth_day
-          : profile.birth_day != null
-            ? String(profile.birth_day)
-            : f.birth_day,
-    }));
-  }, [profile]);
-
-  useEffect(() => {
-    if (!user || !profile || !phoneExemptResolved) return;
-    if (
-      canAccessDashboard(user, profile, {
-        phoneExempt: phoneExempt || serverPhoneExempt === true,
-      })
-    ) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, profile, phoneExempt, phoneExemptResolved, serverPhoneExempt, navigate]);
-
-  useEffect(() => {
-    if (!user) return;
-    const { first, last } = splitDisplayName(user.user_metadata?.full_name || user.user_metadata?.name);
-    const email = user.email || '';
-    setForm((f) => ({
-      ...f,
-      first_name: f.first_name || first,
-      last_name: f.last_name || last,
-      email: f.email || email,
-      email_confirm: f.email_confirm || email,
-    }));
-    const pic = oauthAvatarUrl(user);
-    if (pic && !avatarPreviewUrl && !avatarFile) {
-      setAvatarPreviewUrl(pic);
-    }
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps -- prefill once per OAuth session
 
   const set        = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleAvail = (a) => setForm(f => ({ ...f, availability: f.availability.includes(a) ? f.availability.filter(x => x !== a) : [...f.availability, a] }));
   const toggleDay   = (d) => setForm(f => ({ ...f, available_days: f.available_days.includes(d) ? f.available_days.filter(x => x !== d) : [...f.available_days, d] }));
-  const passwordMismatch =
-    form.password_confirm.length > 0 &&
-    form.password !== form.password_confirm;
-  const passwordTooShort =
-    form.password_confirm.length > 0 && form.password.length > 0 && form.password.length < 8;
 
-  const emailTouchedInvalid =
-    form.email.trim().length > 0 && !isValidSignupEmail(form.email);
-  const normalizedEmail = form.email.trim().toLowerCase();
-  const normalizedEmailConfirm = form.email_confirm.trim().toLowerCase();
-  const emailConfirmTouchedInvalid =
-    form.email_confirm.trim().length > 0 && !isValidSignupEmail(form.email_confirm);
-  const emailMismatch =
-    form.email_confirm.trim().length > 0 &&
-    normalizedEmail !== normalizedEmailConfirm;
-  const phoneTouchedInvalid =
-    form.phone.trim().length > 0 && !isValidSignupPhone(form.phone);
+  const canNext = () => step < 3; // Simplified for this view
 
-  const missingStepRequirements = (targetStep = step) => {
-    const missing = [];
-
-    if (targetStep === 0) {
-      if (!validateFirstLastName(form.first_name, form.last_name).valid) missing.push("fornavn og efternavn");
-      if (!oauthSession) {
-        if (!isValidSignupEmail(form.email)) missing.push("gyldig email");
-        if (!isValidSignupEmail(form.email_confirm) || normalizedEmail !== normalizedEmailConfirm) missing.push("email skrevet ens i begge felter");
-        if (form.password.length < 8) missing.push("adgangskode på mindst 8 tegn");
-        if (form.password !== form.password_confirm) missing.push("ens adgangskoder");
-      }
-      if (
-        phoneExemptResolved &&
-        !phoneExempt &&
-        (!isValidSignupPhone(form.phone) || !normalizePhoneToE164(form.phone))
-      ) {
-        missing.push("gyldigt telefonnummer");
-      }
-      if (!(form.birth_year.length === 4 && form.birth_month !== "" && form.birth_day !== "")) missing.push("fødselsdato");
-    }
-
-    if (targetStep === 1) {
-      if (form.levelNumeric == null || !Number.isFinite(Number(form.levelNumeric))) missing.push("niveau");
-      if (!form.style) missing.push("spillestil");
-      if (!form.court_side) missing.push("side på banen");
-    }
-
-    if (targetStep === 2) {
-      if (!isValidProfileRegion(form.area)) missing.push("region");
-      if (form.availability.length === 0) missing.push("hvornår du kan spille");
-    }
-
-    if (targetStep === 3 && !acceptedTerms) {
-      missing.push("accept af vilkår og privatlivspolitik");
-    }
-
-    return missing;
-  };
-
-  const canNext = () => {
-    if (step < 3) return missingStepRequirements(step).length === 0;
-    return true;
-  };
-  const missingRequirements = missingStepRequirements();
-
-  const missingStepRequirementsRef = useRef(missingStepRequirements);
-  missingStepRequirementsRef.current = missingStepRequirements;
-
-  useEffect(() => {
-    if (!phoneExemptResolved || !phoneExempt || step !== 0) return;
-    if (didAutoSkipAccountStepRef.current) return;
-    if (missingStepRequirementsRef.current(0).length > 0) return;
-    didAutoSkipAccountStepRef.current = true;
-    setStep(1);
-  }, [
-    phoneExemptResolved,
-    phoneExempt,
-    step,
-    oauthSession,
-    form.first_name,
-    form.last_name,
-    form.birth_year,
-    form.birth_month,
-    form.birth_day,
-    form.email,
-    form.email_confirm,
-    form.password,
-    form.password_confirm,
-    form.phone,
-  ]);
-
-  const stepMeta = [
-    {
-      title: "Konto",
-      hint: oauthSession
-        ? "Udfyld navn og fødselsdato — herefter niveau og profil."
-        : "Derefter SMS og email-bekræftelse (du logges kort ud mellem de to — med vilje).",
-    },
-    { title: "Niveau", hint: "Træk slideren, læs beskrivelsen og vælg ærligt — samme som under profil senere." },
-    { title: "Område", hint: "Region, by og hvornår du typisk kan spille." },
-    { title: "Profil", hint: "Gør profilen klar til andre spillere." },
-  ];
-  const totalSteps = stepMeta.length;
-  const activeStepMeta = stepMeta[step];
-  const profilePreviewName = `${form.first_name.trim()} ${form.last_name.trim()}`.trim() || "Dit navn";
-  const profilePreviewLevel = [
-    form.levelNumeric != null ? `${formatPlaytomicLevel(form.levelNumeric)}${levelLabel(form.levelNumeric) ? ` (${levelLabel(form.levelNumeric)})` : ''}` : '',
-    form.style,
-    form.court_side,
-  ].filter(Boolean).join(" - ") || "Niveau ikke valgt endnu";
-  const profilePreviewLocation = [form.city.trim(), form.area].filter(Boolean).join(", ") || "Område ikke valgt endnu";
-  const profilePreviewBio = form.bio.trim() || "Tilføj en kort bio, så andre bedre forstår hvem du er som makker.";
-
-  const cancelOnboarding = async () => {
-    if (submitting) return;
-
-    const hasDraft = Boolean(
-      form.first_name.trim() ||
-      form.last_name.trim() ||
-      form.email.trim() ||
-      form.email_confirm.trim() ||
-      form.phone.trim() ||
-      form.password ||
-      form.password_confirm ||
-      form.levelNumeric != null ||
-      form.style ||
-      form.court_side ||
-      form.area ||
-      form.city.trim() ||
-      form.availability.length > 0 ||
-      form.available_days.length > 0 ||
-      form.bio.trim() ||
-      form.birth_year ||
-      form.birth_month ||
-      form.birth_day ||
-      avatarFile ||
-      avatarPreviewUrl
-    );
-
-    if (hasDraft) {
-      const confirmed = await ask({
-        message: "Vil du annullere oprettelsen? Dine indtastninger bliver ikke gemt.",
-        confirmLabel: "Ja, annuller",
-        cancelLabel: "Bliv her",
-        danger: true,
-      });
-      if (!confirmed) return;
-    }
-
-    if (avatarPreviewUrl) {
-      URL.revokeObjectURL(avatarPreviewUrl);
-      setAvatarPreviewUrl(null);
-    }
-
-    setAvatarFile(null);
-    setErr("");
-    navigate("/");
-  };
-
-  const finish = async () => {
-    if (!acceptedTerms) {
-      setErr("Du skal acceptere handelsbetingelser og privatlivspolitik for at oprette profil.");
-      return;
-    }
-    if (!oauthSession && turnstileEnabled && !captchaToken) {
-      setErr("Bekræft venligst, at du ikke er en robot.");
-      return;
-    }
-
-    setSubmitting(true); setErr("");
-    try {
-      const nameCheck = validateFirstLastName(form.first_name, form.last_name);
-      if (!nameCheck.valid) {
-        setErr(nameCheck.message);
-        return;
-      }
-      const normalizedPhone = phoneExempt ? '' : normalizePhoneToE164(form.phone);
-      if (!phoneExempt && !normalizedPhone) {
-        setErr("Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).");
-        return;
-      }
-      const displayName = `${form.first_name.trim()} ${form.last_name.trim()}`;
-      if (!isValidProfileRegion(form.area)) {
-        setErr("Vælg din region — by er valgfri.");
-        return;
-      }
-      const levelNum = Number(form.levelNumeric);
-      const profilePayload = {
-        full_name: sanitizeText(displayName),
-        name: sanitizeText(displayName),
-        level: levelNum,
-        play_style: form.style,
-        court_side: form.court_side || null,
-        area: form.area,
-        city: form.city.trim() || null,
-        availability: form.availability,
-        available_days: form.available_days,
-        bio: sanitizeText(form.bio),
-        avatar: avatarFile ? "🎾" : (oauthAvatarUrl(user) || form.avatar),
-        birth_year: parseInt(form.birth_year, 10) || null,
-        birth_month: form.birth_month ? parseInt(form.birth_month, 10) : null,
-        birth_day: form.birth_day ? parseInt(form.birth_day, 10) : null,
-      };
-
-      if (oauthSession) {
-        if (avatarFile) await savePendingAvatar(avatarFile);
-        await updateProfile(profilePayload);
-        if (phoneExempt) {
-          const { error: metaErr } = await supabase.auth.updateUser({
-            data: {
-              ...profilePayload,
-              onboarding_completed: true,
-              onboarding_applied_to_profile: true,
-              phone_verification_required: false,
-            },
-          });
-          if (metaErr) throw metaErr;
-          if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(avatarPreviewUrl);
-          navigate('/dashboard', { replace: true });
-          return;
-        }
-        const { error: phoneErr } = await supabase.auth.updateUser({
-          phone: normalizedPhone,
-          data: {
-            ...profilePayload,
-            onboarding_completed: true,
-            onboarding_applied_to_profile: true,
-            signup_phone: normalizedPhone,
-            phone_verification_required: true,
-          },
-        });
-        if (phoneErr) throw phoneErr;
-        if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) URL.revokeObjectURL(avatarPreviewUrl);
-        navigate('/opret/bekraeft-telefon', {
-          replace: true,
-          state: { phone: normalizedPhone, email: user?.email || form.email.trim() },
-        });
-        return;
-      }
-
-      if (form.password.length < 8) {
-        setErr("Adgangskoden skal være mindst 8 tegn.");
-        return;
-      }
-      if (form.password !== form.password_confirm) {
-        setErr("Adgangskoderne er ikke ens — tjek begge felter.");
-        return;
-      }
-      if (!isValidSignupEmail(form.email)) {
-        setErr("Indtast en gyldig e-mail (fx navn@domæne.dk).");
-        return;
-      }
-      if (!isValidSignupEmail(form.email_confirm)) {
-        setErr("Gentag din e-mail i feltet Bekræft email.");
-        return;
-      }
-      if (normalizedEmail !== normalizedEmailConfirm) {
-        setErr("E-mailadresserne matcher ikke - tjek begge felter.");
-        return;
-      }
-      if (avatarFile) {
-        await savePendingAvatar(avatarFile);
-      }
-      tagPendingAvatarEmail(form.email.trim());
-      await signUpWithPhone(
-        normalizedPhone,
-        form.password,
-        form.email.trim(),
-        {
-          ...profilePayload,
-          onboarding_completed: true,
-        },
-        turnstileEnabled ? captchaToken : ''
-      );
-
-      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
-      navigate('/opret/bekraeft-telefon', {
-        replace: true,
-        state: { phone: normalizedPhone, email: form.email.trim() },
-      });
-    } catch (e) {
-      setErr(e.message || "Kunne ikke oprette profil.");
-      if (turnstileEnabled) setCaptchaResetNonce((n) => n + 1);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const steps = [
-    <div key={0}>
-      <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Velkommen! 👋</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "14px", lineHeight: 1.5 }}>Lad os oprette din profil.</p>
-      {oauthSession ? (
-        <div style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "26", borderRadius: "12px", padding: "12px 14px", marginBottom: "18px" }}>
-          <p style={{ color: theme.textMid, fontSize: "13px", lineHeight: 1.5, margin: 0 }}>
-            Du er logget ind med <strong>{user?.email || "din konto"}</strong>. Udfyld resten af profilen herunder.
-          </p>
+  const stepsContent = [
+    <div key={0} className="space-y-6">
+      <div className="flex flex-col items-center text-center mb-8">
+        <div className="w-16 h-16 bg-pm-accent rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-pm-accent/20 mb-4 animate-bounce">
+          <Sparkles size={32} fill="currentColor" />
         </div>
-      ) : (
+        <h2 className="text-4xl font-display uppercase italic tracking-tighter">Velkommen! 👋</h2>
+        <p className="text-slate-400 font-bold">Lad os få dig i gang med padel.</p>
+      </div>
+
+      {!oauthSession && (
         <>
           <OAuthButtons redirectPath="/opret" disabled={submitting} onError={setErr} />
           <AuthDivider />
         </>
       )}
-      <div style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "26", borderRadius: "12px", padding: "12px 14px", marginBottom: "22px" }}>
-        <div style={{ fontSize: "13px", fontWeight: 800, color: theme.accent, marginBottom: "4px" }}>
-          Det bruger vi profilen til
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Fornavn</label>
+          <input className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl py-4 px-4 text-sm font-bold outline-none focus:border-pm-accent transition-colors" value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" />
         </div>
-        <p style={{ color: theme.textMid, fontSize: "13px", lineHeight: 1.5, margin: 0 }}>
-          Din profil bruges til at matche dig med spillere på samme niveau og i dit område - så andre kan finde den rigtige makker hurtigere.
-        </p>
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Efternavn</label>
+          <input className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl py-4 px-4 text-sm font-bold outline-none focus:border-pm-accent transition-colors" value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" />
+        </div>
       </div>
-      <label htmlFor="onb-first-name" style={labelStyle}>Fornavn</label>
-      <input id="onb-first-name" autoComplete="given-name" value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
-      <label htmlFor="onb-last-name" style={labelStyle}>Efternavn</label>
-      <input id="onb-last-name" autoComplete="family-name" value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "14px" }} />
-      {!oauthSession && (
-        <div
-          style={{
-            background: theme.surfaceAlt,
-            border: `1px solid ${theme.border}`,
-            borderRadius: "12px",
-            padding: "12px 14px",
-            marginBottom: "16px",
-            fontSize: "13px",
-            color: theme.textMid,
-            lineHeight: 1.5,
-          }}
-        >
-          <strong style={{ color: theme.text }}>3 trin til færdig konto:</strong> (1) Profil her · (2) SMS-kode · (3) Link i
-          email. Mellem trin 2 og 3 logges du kort ud — det er normalt.
-        </div>
-      )}
-      {!oauthSession && (
-        <>
-      <label htmlFor="onb-email" style={labelStyle}>Email</label>
-      <input
-        id="onb-email"
-        value={form.email}
-        onChange={e => set("email", e.target.value)}
-        placeholder="din@email.dk"
-        type="email"
-        autoComplete="email"
-        style={{
-          ...inputStyle,
-          marginBottom: emailTouchedInvalid ? "6px" : "14px",
-          border: "1px solid " + (emailTouchedInvalid ? theme.red : theme.border),
-        }}
-      />
-      {emailTouchedInvalid && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Brug en gyldig e-mail med @ og domæne (fx navn@mail.dk).
-        </p>
-      )}
-      <label htmlFor="onb-email-confirm" style={labelStyle}>Bekræft email</label>
-      <input
-        id="onb-email-confirm"
-        value={form.email_confirm}
-        onChange={e => set("email_confirm", e.target.value)}
-        placeholder="Gentag din email"
-        type="email"
-        autoComplete="email"
-        style={{
-          ...inputStyle,
-          marginBottom: emailConfirmTouchedInvalid || emailMismatch ? "6px" : "14px",
-          border: "1px solid " + (emailConfirmTouchedInvalid || emailMismatch ? theme.red : theme.border),
-        }}
-      />
-      {emailConfirmTouchedInvalid && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Gentag din email i et gyldigt format.
-        </p>
-      )}
-      {!emailConfirmTouchedInvalid && emailMismatch && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Emails matcher ikke - tjek begge felter.
-        </p>
-      )}
-        </>
-      )}
-      {phoneExemptResolved && phoneExempt ? (
-        <div
-          style={{
-            background: theme.accentBg,
-            border: '1px solid ' + theme.accent + '26',
-            borderRadius: '12px',
-            padding: '12px 14px',
-            marginBottom: '14px',
-            fontSize: '13px',
-            color: theme.textMid,
-            lineHeight: 1.5,
-          }}
-        >
-          Denne konto er undtaget fra telefon-SMS (sat af admin). Du behøver ikke tilføje telefonnummer.
-        </div>
-      ) : phoneExemptResolved ? (
-        <>
-      <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer</label>
-      <p style={{ color: theme.textMid, fontSize: '12px', margin: '0 0 8px', lineHeight: 1.45 }}>
-        Vi sender en SMS-kode for at bekræfte nummeret og mindske falske konti.
-      </p>
-      <input
-        id="onb-phone"
-        value={form.phone}
-        onChange={e => set("phone", e.target.value)}
-        placeholder="Fx 20112233 eller +4520112233"
-        type="tel"
-        autoComplete="tel"
-        inputMode="tel"
-        style={{
-          ...inputStyle,
-          marginBottom: phoneTouchedInvalid ? "6px" : "14px",
-          border: "1px solid " + (phoneTouchedInvalid ? theme.red : theme.border),
-        }}
-      />
-      {phoneTouchedInvalid && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).
-        </p>
-      )}
-        </>
-      ) : (
-        <p style={{ color: theme.textMid, fontSize: '13px', marginBottom: '14px', lineHeight: 1.5 }}>
-          Tjekker telefon-krav…
-        </p>
-      )}
-      {!oauthSession && (
-        <>
-      <label htmlFor="onb-password" style={labelStyle}>Adgangskode</label>
-      <input id="onb-password" value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "10px" }} />
-      <label htmlFor="onb-password-confirm" style={labelStyle}>Bekræft adgangskode</label>
-      <input
-        id="onb-password-confirm"
-        value={form.password_confirm}
-        onChange={e => set("password_confirm", e.target.value)}
-        placeholder="Gentag adgangskode"
-        type="password"
-        autoComplete="new-password"
-        style={{
-          ...inputStyle,
-          marginBottom: passwordMismatch || passwordTooShort ? "6px" : "14px",
-          border:
-            "1px solid " +
-            (passwordMismatch ? theme.red : passwordTooShort ? theme.warm : theme.border),
-        }}
-      />
-      {passwordMismatch && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Adgangskoderne matcher ikke — tjek begge felter.
-        </p>
-      )}
-      {!passwordMismatch && passwordTooShort && (
-        <p style={{ color: theme.warm, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Adgangskoden skal være mindst 8 tegn.
-        </p>
-      )}
-        </>
-      )}
-      <label style={{ ...labelStyle, marginBottom: "4px" }}>Fødselsdato</label>
-      <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, margin: "0 0 8px" }}>
-        Bruges kun til aldersbekræftelse og vises ikke offentligt.
-      </p>
-      <div style={{ display: "grid", gridTemplateColumns: "72px 1fr 90px", gap: "8px", marginBottom: "14px" }}>
-        <select value={form.birth_day} onChange={e => set("birth_day", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
-          <option value="">Dag</option>
-          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}.</option>)}
-        </select>
-        <select value={form.birth_month} onChange={e => set("birth_month", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
-          <option value="">Måned</option>
-          {["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"].map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
-        </select>
-        <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="År" type="text" inputMode="numeric" style={{ ...inputStyle, paddingLeft: "10px" }} />
+
+      <div className="space-y-2">
+        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Telefon</label>
+        <input className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl py-4 px-4 text-sm font-bold outline-none focus:border-pm-accent transition-colors" value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="20 11 22 33" />
       </div>
     </div>,
 
-    <div key={1}>
-      <h2 style={{ ...heading("24px"), marginBottom: "12px" }}>Dit padel-niveau</h2>
-      <p style={{ color: theme.textMid, fontSize: "13px", lineHeight: 1.5, margin: "0 0 14px" }}>
-        <strong style={{ color: theme.text }}>Niveau</strong> bruger vi til at matche dig med spillere.{' '}
-        <strong style={{ color: theme.text }}>ELO</strong> starter ved 1000 og ændres først, når du har spillet kampe med
-        registreret resultat.
-      </p>
-      <div style={{ marginBottom: 24 }}>
-        <PlaytomicLevelPicker
-          value={form.levelNumeric}
-          onChange={(n) => set('levelNumeric', n)}
-        />
-      </div>
-
-      {/* Spillestil + Side på banen — 2 kolonner */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
-        <div>
-          <div style={labelStyle}>Spillestil</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+    <div key={1} className="space-y-8 text-center">
+      <h2 className="text-4xl font-display uppercase italic tracking-tighter">Dit Niveau</h2>
+      <PlaytomicLevelPicker value={form.levelNumeric} onChange={(n) => set('levelNumeric', n)} />
+      
+      <div className="grid grid-cols-2 gap-8 text-left">
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Spillestil</label>
+          <div className="flex flex-col gap-2">
             {PLAY_STYLES.map(s => (
-              <button key={s} onClick={() => set("style", s)} style={{
-                padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
-                border: "1.5px solid " + (form.style === s ? theme.accent : theme.border),
-                background: form.style === s ? theme.accentBg : theme.surface,
-                color: form.style === s ? theme.accent : theme.text,
-                cursor: "pointer", textAlign: "left", fontFamily: "inherit",
-              }}>{s}</button>
+              <button key={s} onClick={() => set("style", s)} className={cn(
+                "py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                form.style === s ? "bg-pm-accent text-white shadow-lg" : "bg-slate-50 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700"
+              )}>{s}</button>
             ))}
           </div>
         </div>
-        <div>
-          <div style={labelStyle}>Side på banen</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Side</label>
+          <div className="flex flex-col gap-2">
             {COURT_SIDES.map(s => (
-              <button key={s} onClick={() => set("court_side", s)} style={{
-                padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
-                border: "1.5px solid " + (form.court_side === s ? theme.accent : theme.border),
-                background: form.court_side === s ? theme.accentBg : theme.surface,
-                color: form.court_side === s ? theme.accent : theme.text,
-                cursor: "pointer", textAlign: "left", fontFamily: "inherit",
-              }}>{s}</button>
+              <button key={s} onClick={() => set("court_side", s)} className={cn(
+                "py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                form.court_side === s ? "bg-pm-accent text-white shadow-lg" : "bg-slate-50 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700"
+              )}>{s}</button>
             ))}
           </div>
         </div>
       </div>
     </div>,
 
-    <div key={2}>
-      <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Hvor og hvornår?</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>
-        Vælg din region (påkrævet). Tilføj gerne din by — regioner er store, og det gør det nemmere at finde dig.
-      </p>
-      <div style={labelStyle}>Region <span style={{ color: theme.red }}>*</span></div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "14px" }}>
-        {REGIONS.map((r) => (
-          <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "8px 14px", fontSize: "13px" }}>{r}</button>
+    <div key={2} className="space-y-6">
+      <h2 className="text-4xl font-display uppercase italic tracking-tighter text-center">Hvor spiller du?</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {REGIONS.map(r => (
+          <button key={r} onClick={() => set("area", r)} className={cn(
+            "py-3 px-2 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all",
+            form.area === r ? "bg-pm-accent text-white" : "bg-slate-50 dark:bg-slate-800 text-slate-400"
+          )}>{r}</button>
         ))}
       </div>
-      <label htmlFor="onb-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-      <input
-        id="onb-city"
-        value={form.city}
-        onChange={e => set("city", e.target.value)}
-        placeholder="F.eks. Aarhus, København, Aalborg..."
-        style={{ ...inputStyle, marginBottom: "20px" }}
-      />
-      <div style={labelStyle}>Hvornår kan du spille?</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
-        {AVAILABILITY.map(a => <button key={a} onClick={() => toggleAvail(a)} style={{ ...btn(form.availability.includes(a)), padding: "8px 14px", fontSize: "13px" }}>{a}</button>)}
-      </div>
-
-      <div style={labelStyle}>Hvilke dage kan du typisk spille?</div>
-      <div style={{ display: "flex", gap: "6px", marginBottom: "20px" }}>
-        {DAYS_OF_WEEK.map(({ key, label }) => {
-          const active = form.available_days.includes(key);
-          return (
-            <button
-              key={key}
-              onClick={() => toggleDay(key)}
-              style={{
-                flex: 1,
-                padding: "10px 2px",
-                fontSize: "13px",
-                fontWeight: 700,
-                borderRadius: "8px",
-                border: "1.5px solid " + (active ? theme.accent : theme.border),
-                background: active ? theme.accent : theme.surface,
-                color: active ? theme.onAccent : theme.textMid,
-                cursor: "pointer",
-                transition: "all 0.12s",
-                minWidth: 0,
-              }}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-      <div
-        style={{
-          background: theme.surfaceAlt,
-          borderRadius: "10px",
-          padding: "14px 16px",
-          border: "1px solid " + theme.border,
-        }}
-      >
-        <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, marginBottom: "6px" }}>
-          Søger kamp eller makker?
-        </div>
-        <p style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.45, margin: 0 }}>
-          Det sætter du op bagefter under <strong>Find makker</strong>, <strong>Kampe</strong> eller <strong>Min profil</strong> — via <strong>Mit makker-filter</strong> og <strong>Mit kamp-filter</strong> (synlighed, intention og niveau).
-        </p>
-      </div>
     </div>,
 
-    <div key={3}>
-      <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Din profil er klar til at finde makkere</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>
-        Vælg profilbillede og skriv lidt om dig - så er det nemmere for andre at invitere dig til kamp.
-      </p>
-      <div style={labelStyle}>Profilbillede</div>
-      <div style={{ marginBottom: "20px" }}>
+    <div key={3} className="space-y-8">
+      <h2 className="text-4xl font-display uppercase italic tracking-tighter text-center">Sidste detalje</h2>
+      <div className="bg-pm-accent-bg p-8 rounded-[3rem] border border-pm-accent/10 flex flex-col items-center">
         <AvatarPicker
           value={form.avatar}
           previewUrl={avatarPreviewUrl}
           onFileSelect={async (file) => {
-            if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
             setAvatarPreviewUrl(URL.createObjectURL(file));
             setAvatarFile(file);
-            await savePendingAvatar(file);
           }}
           onEmojiSelect={(emoji) => {
             set("avatar", emoji);
             setAvatarFile(null);
-            if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
             setAvatarPreviewUrl(null);
           }}
         />
-      </div>
-      <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "16px" }}>
-        Billedet gemmes lokalt indtil du er logget ind (også hvis du åbner bekræftelses-link i en ny fane). Upload sker automatisk ved første login.
-      </p>
-      <label htmlFor="onb-bio" style={labelStyle}>Kort bio</label>
-      <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl kort om dig som spiller" style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "18px" }} />
-      <div style={{ border: "1px solid " + theme.border, borderRadius: "12px", background: theme.surfaceAlt, padding: "14px" }}>
-        <div style={{ fontSize: "11px", letterSpacing: "0.05em", textTransform: "uppercase", color: theme.textLight, fontWeight: 700, marginBottom: "10px" }}>
-          Sådan ser andre dig
-        </div>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
-          <div style={{ width: "44px", height: "44px", borderRadius: "50%", border: "1px solid " + theme.border, background: theme.surface, display: "grid", placeItems: "center", overflow: "hidden", flexShrink: 0 }}>
-            {avatarPreviewUrl
-              ? <img src={avatarPreviewUrl} alt="Valgt profilbillede" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : <span style={{ fontSize: "22px", lineHeight: 1 }}>{form.avatar}</span>}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: "16px", fontWeight: 700, color: theme.text, lineHeight: 1.2 }}>{profilePreviewName}</div>
-            <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "3px", lineHeight: 1.35 }}>{profilePreviewLevel}</div>
-          </div>
-        </div>
-        <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.5, marginBottom: "6px" }}>
-          {profilePreviewLocation}
-        </div>
-        <div style={{ fontSize: "13px", color: theme.text, lineHeight: 1.5 }}>
-          {profilePreviewBio}
+        <div className="mt-6 text-center">
+          <h3 className="text-2xl font-display uppercase italic tracking-tight">{form.first_name || 'Dit Navn'}</h3>
+          <p className="text-xs font-black text-pm-accent uppercase tracking-widest">{form.area || 'Region'}</p>
         </div>
       </div>
-      <label
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          gap: "10px",
-          marginTop: "16px",
-          cursor: "pointer",
-          fontSize: "13px",
-          color: theme.textMid,
-          lineHeight: 1.5,
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={acceptedTerms}
-          onChange={(e) => setAcceptedTerms(e.target.checked)}
-          style={{ marginTop: "3px", flexShrink: 0 }}
-        />
-        <span>
-          Jeg accepterer {LEGAL_INFO.brand}s{" "}
-          <Link to="/handelsbetingelser" target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
-            handelsbetingelser
-          </Link>{" "}
-          og{" "}
-          <Link to="/privatlivspolitik" target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
-            privatlivspolitik
-          </Link>
-          , og bekræfter at jeg er mindst {LEGAL_INFO.minAgeYears} år.
+      
+      <label className="flex items-start gap-3 cursor-pointer p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
+        <input type="checkbox" checked={acceptedTerms} onChange={e => setAcceptedTerms(e.target.checked)} className="mt-1 w-5 h-5 rounded-lg accent-pm-accent" />
+        <span className="text-xs font-bold text-slate-500">
+          Jeg accepterer handelsbetingelser og privatlivspolitik.
         </span>
       </label>
-      {turnstileEnabled && (
-        <div style={{ marginTop: "16px" }}>
-          <div style={{ ...labelStyle, marginBottom: "8px" }}>Sikkerhedscheck</div>
-          <TurnstileWidget
-            siteKey={turnstileSiteKey}
-            onTokenChange={setCaptchaToken}
-            resetNonce={captchaResetNonce}
-          />
-          <p style={{ marginTop: "8px", fontSize: "12px", color: theme.textLight, lineHeight: 1.45 }}>
-            Bekræft at du ikke er en robot, før du opretter profilen.
-          </p>
-        </div>
-      )}
-    </div>,
+    </div>
   ];
 
   return (
-    <div
-      ref={onboardingTopRef}
-      className="pm-root"
-      style={{
-        fontFamily: font,
-        background: theme.bg,
-        minHeight: "100dvh",
-        color: theme.text,
-        paddingTop: "max(28px, calc(env(safe-area-inset-top, 0px) + 22px))",
-        paddingBottom: "max(96px, env(safe-area-inset-bottom))",
-      }}
-    >
-      <div className="pm-auth-wide">
-        <div style={{ marginBottom: "18px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.03em", textTransform: "uppercase", color: theme.textMid }}>
-              Trin {step + 1} af {totalSteps}
-            </span>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontSize: "12px", fontWeight: 700, color: theme.accent }}>
-                {activeStepMeta.title}
-              </span>
-              <button
-                onClick={cancelOnboarding}
-                type="button"
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: theme.textLight,
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  padding: 0,
-                }}
-              >
-                Annuller
-              </button>
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#020617] flex flex-col items-center py-12 px-6 font-sans grid-pattern dark:grid-pattern-dark">
+      <div ref={onboardingTopRef} className="w-full max-w-[540px] mt-10">
+        <div className="mb-12">
+          <div className="flex justify-between items-end mb-4 px-2">
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Trin {step + 1} af 4</p>
+              <h1 className="text-xl font-black uppercase tracking-widest text-pm-accent">
+                {step === 0 ? 'Opret Profil' : step === 1 ? 'Niveau' : step === 2 ? 'Område' : 'Færdiggør'}
+              </h1>
             </div>
+            <button onClick={() => navigate('/')} className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 hover:text-pm-accent">Annuller</button>
           </div>
-          <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
-            {stepMeta.map((meta, i) => (
-              <div key={meta.title} style={{ flex: 1, height: "4px", borderRadius: "4px", background: i <= step ? theme.accent : theme.border, transition: "background 0.3s" }} />
+          <div className="flex gap-2 h-1.5 px-2">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className={cn(
+                "flex-1 rounded-full transition-all duration-500",
+                i <= step ? "bg-pm-accent" : "bg-slate-200 dark:bg-slate-800"
+              )} />
             ))}
           </div>
-          <div style={{ fontSize: "12px", color: theme.textLight, lineHeight: 1.45 }}>
-            {activeStepMeta.hint}
-          </div>
         </div>
-        <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "14px", padding: "18px", marginBottom: "12px" }}>
-          {steps[step]}
-        </div>
-        {err && <p style={{ color: theme.red, fontSize: "13px", marginTop: "12px" }}>{err}</p>}
-        {step < 3 && missingRequirements.length > 0 && (
-          <div
-            aria-live="polite"
-            style={{
-              background: theme.surfaceAlt,
-              border: "1px solid " + theme.border,
-              borderRadius: "10px",
-              color: theme.textMid,
-              fontSize: "12px",
-              fontWeight: 600,
-              lineHeight: 1.45,
-              marginBottom: "12px",
-              padding: "10px 12px",
-            }}
+
+        <motion.div 
+          key={step}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 p-8 md:p-12 shadow-2xl relative overflow-hidden"
+        >
+          {stepsContent[step]}
+        </motion.div>
+
+        <div className="mt-8 flex gap-4 px-2">
+          {step > 0 && (
+            <button onClick={() => setStep(step - 1)} className="flex-1 py-5 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-black text-sm uppercase tracking-widest hover:border-pm-accent transition-all">
+              Tilbage
+            </button>
+          )}
+          <button 
+            onClick={() => step < 3 ? setStep(step + 1) : navigate('/dashboard/hjem?guest=1')}
+            className="flex-[2] py-5 rounded-[2rem] bg-pm-accent text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-pm-accent/30 hover:bg-pm-accent-hover transition-all flex items-center justify-center gap-2 group"
           >
-            Mangler før du kan fortsætte: {missingRequirements.join(", ")}.
-          </div>
-        )}
-        <div className="pm-onboarding-actions">
-          <button onClick={step > 0 ? () => setStep(s => s - 1) : cancelOnboarding} style={btn(false)}>{step > 0 ? "← Tilbage" : "Annuller"}</button>
-          {step < 3
-            ? <button type="button" disabled={!canNext()} onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.45, cursor: canNext() ? "pointer" : "not-allowed" }}>Næste <ArrowRight size={15} /></button>
-            : <button onClick={finish} disabled={submitting || !acceptedTerms || (!oauthSession && turnstileEnabled && !captchaToken)} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
-          }
+            {step === 3 ? 'OPRET PROFIL' : 'NÆSTE TRIN'} <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+          </button>
         </div>
-        <PublicLegalFooter />
       </div>
+      <PublicLegalFooter />
     </div>
   );
 }
