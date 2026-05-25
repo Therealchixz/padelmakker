@@ -26,7 +26,6 @@ import { LEGAL_INFO } from '../lib/legalInfo';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
-import { SeekingCallout } from '../components/SeekingCallout';
 import { PillTabs } from '../components/PillTabs';
 
 const PROFILE_OVERVIEW_TABS = [
@@ -34,6 +33,19 @@ const PROFILE_OVERVIEW_TABS = [
   { id: 'americano', label: 'Americano' },
   { id: 'liga', label: 'Liga' },
 ];
+
+const REGION_PILL_TABS = REGIONS.map((r) => ({
+  id: r,
+  label: r.replace(/^Region /, ''),
+}));
+
+const profilePromptCardStyle = {
+  marginBottom: '16px',
+  padding: '12px 14px',
+  background: theme.surfaceAlt,
+  borderRadius: '10px',
+  border: `1px solid ${theme.border}`,
+};
 
 function MatchFilterProfileCard({ user }) {
   const navigate = useNavigate();
@@ -732,8 +744,11 @@ export function ProfilTab({ user, showToast, setTab }) {
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
           {!editing && !isValidProfileRegion(user.area) ? (
-            <SeekingCallout title="Vælg region" className="pm-seeking-callout--profile">
-              <p style={{ fontSize: '12px', color: theme.textMid, lineHeight: 1.45, marginBottom: '10px' }}>
+            <div style={profilePromptCardStyle}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: theme.text, marginBottom: '4px' }}>
+                Vælg region
+              </div>
+              <p style={{ fontSize: '12px', color: theme.textLight, lineHeight: 1.45, marginBottom: '10px' }}>
                 Din profil mangler en region. Det er påkrævet, så andre kan finde dig i det rigtige område.
               </p>
               <button
@@ -743,19 +758,11 @@ export function ProfilTab({ user, showToast, setTab }) {
               >
                 Vælg region under Rediger
               </button>
-            </SeekingCallout>
+            </div>
           ) : null}
 
           {!editing && isValidProfileRegion(user.area) && !String(user.city || '').trim() ? (
-            <div
-              style={{
-                marginBottom: '16px',
-                padding: '12px 14px',
-                background: theme.surfaceAlt,
-                borderRadius: '10px',
-                border: `1px solid ${theme.border}`,
-              }}
-            >
+            <div style={profilePromptCardStyle}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: theme.text, marginBottom: '4px' }}>
                 Tilføj din by <span style={{ fontWeight: 500, color: theme.textLight }}>(valgfri)</span>
               </div>
@@ -1260,18 +1267,15 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {/* Area + City */}
         <div style={labelStyle}>Region <span style={{ color: theme.red }}>*</span></div>
-        <div className="pm-choice-chips">
-          {REGIONS.map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => set("area", r)}
-              className={`pm-ui-btn-chip ${form.area === r ? "pm-ui-btn-chip-active" : ""}`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
+        <PillTabs
+          tabs={REGION_PILL_TABS}
+          value={REGIONS.includes(form.area) ? form.area : ''}
+          onChange={(id) => set('area', id)}
+          ariaLabel="Region"
+          size="sm"
+          className="pm-pill-tabs--wrap"
+          style={{ marginBottom: '14px' }}
+        />
         <label htmlFor="profil-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
         <input
           id="profil-city"
