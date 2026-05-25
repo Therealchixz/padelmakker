@@ -698,6 +698,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           ariaLabel="Profil-sektioner"
           size="sm"
           className="pm-pill-tabs--wrap"
+          style={{ marginBottom: "16px" }}
         />
 
         {/* Profile card */}
