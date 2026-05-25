@@ -1685,16 +1685,21 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   outline: "none",
                 }}
               />
+              <label htmlFor="feedback-message" style={{ fontSize: "12px", fontWeight: 600, color: theme.textMid, display: "block", marginBottom: "6px" }}>
+                Beskrivelse <span style={{ fontWeight: 500, color: theme.textLight }}>(mindst 10 tegn)</span>
+              </label>
               <textarea
+                id="feedback-message"
                 value={feedbackMessage}
                 onChange={(event) => setFeedbackMessage(event.target.value.slice(0, 3000))}
-                placeholder="Hvad gik galt, og hvordan kan vi genskabe det?"
+                placeholder="Fx: På Kampe-tabben får jeg fejl når jeg trykker Gem resultat efter en 2v2-kamp…"
                 disabled={feedbackSending}
                 rows={6}
+                aria-describedby="feedback-message-hint"
                 style={{
                   width: "100%",
                   resize: "vertical",
-                  border: "1px solid " + theme.border,
+                  border: "1px solid " + (feedbackMessage.trim().length < 10 ? theme.warm : theme.border),
                   borderRadius: "10px",
                   padding: "10px 12px",
                   fontSize: isMobileView ? "16px" : "13px",
@@ -1706,13 +1711,22 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   minHeight: "140px",
                 }}
               />
-              <div style={{ fontSize: "11px", color: theme.textLight, textAlign: "right" }}>
-                {feedbackMessage.trim().length}/3000
-                {feedbackMessage.trim().length > 0 && feedbackMessage.trim().length < 10 && (
-                  <span style={{ display: "block", marginTop: "4px", color: theme.warm, fontWeight: 600, textAlign: "left" }}>
-                    Skriv mindst 10 tegn, så vi kan forstå fejlen.
-                  </span>
-                )}
+              <div
+                id="feedback-message-hint"
+                style={{
+                  fontSize: "11px",
+                  color: feedbackMessage.trim().length < 10 ? theme.warm : theme.textLight,
+                  fontWeight: feedbackMessage.trim().length < 10 ? 600 : 400,
+                  marginTop: "6px",
+                  lineHeight: 1.45,
+                }}
+              >
+                {feedbackMessage.trim().length < 10
+                  ? `Skriv mindst ${10 - feedbackMessage.trim().length} tegn mere, så vi kan forstå fejlen.`
+                  : "Tak — du kan sende indberetningen nu."}
+                <span style={{ float: "right", fontWeight: 400, color: theme.textLight }}>
+                  {feedbackMessage.trim().length}/3000
+                </span>
               </div>
             </div>
             <div style={{ padding: "12px 16px", borderTop: "1px solid " + theme.border, display: "flex", justifyContent: "flex-end", gap: "8px" }}>
@@ -1734,6 +1748,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 type="button"
                 onClick={() => { void submitFeedbackReport(); }}
                 disabled={feedbackSending || feedbackMessage.trim().length < 10}
+                title={
+                  feedbackMessage.trim().length < 10
+                    ? "Skriv mindst 10 tegn i beskrivelsen"
+                    : undefined
+                }
                 style={{
                   ...btn(true),
                   minHeight: "34px",
@@ -1743,7 +1762,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
                   cursor: (feedbackSending || feedbackMessage.trim().length < 10) ? "not-allowed" : "pointer",
                 }}
               >
-                {feedbackSending ? "Sender..." : "Send indberetning"}
+                {feedbackSending
+                  ? "Sender..."
+                  : feedbackMessage.trim().length < 10
+                    ? `Mangler ${10 - feedbackMessage.trim().length} tegn`
+                    : "Send indberetning"}
               </button>
             </div>
           </div>
