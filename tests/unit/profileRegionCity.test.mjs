@@ -36,7 +36,8 @@ test('søge-filter genveje i Find makker og Kampe', () => {
   assert.match(makkereTab, /channel="makker"/);
   assert.match(kampeTab, /SeekingFilterShortcutCard/);
   assert.match(kampeTab, /channel="kamp"/);
-  assert.match(dash, /t\.id !== "liga"/);
+  assert.match(dash, /PRIMARY_TAB_IDS = \["hjem", "makkere", "baner", "kampe", "ranking", "beskeder"\]/);
+  assert.doesNotMatch(dash, /id: "liga",\s*label: "Liga"/);
   assert.match(matchFilterPage, /Hvornår søger du kamp/);
   assert.doesNotMatch(matchFilterPage, /Kun kampe med ledige pladser/);
   assert.doesNotMatch(matchFilterPage, /Hvilke kampe/);
