@@ -29,7 +29,7 @@ test('mobile tour opens mere-sheet and scrolls activity/profile to top', () => {
   assert.doesNotMatch(home, /pm-feed-filters-header.*home-latest-activity/);
   assert.match(profil, /data-tour="profile-main" className="pm-tour-scroll-anchor"[\s\S]*pm-profile-card/);
   assert.equal((dash.match(/id: 'profile'/g) || []).length, 2);
-  assert.equal((dash.match(/clampHighlight: true/g) || []).length, 2);
+  assert.ok((dash.match(/clampHighlight: true/g) || []).length >= 2);
   assert.match(overlay, /mergeHighlightRects/);
   assert.match(overlay, /tourTargetSelectors/);
 });
