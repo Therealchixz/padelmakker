@@ -852,12 +852,12 @@ export function DashboardPage({ user, onLogout, showToast }) {
     if (isMobileView) {
       base.push({
         id: 'mobile-more',
-        selector: '[data-tour="mobile-more-sheet"]',
+        selectors: ['[data-tour="mobile-more-sheet"]', '[data-tour="mobile-tab-mere"]'],
         tooltipPlacement: 'above',
         waitForMount: true,
         skipScroll: true,
         title: 'Mere-menu',
-        description: 'Her finder du Ranking, Beskeder, Profil og flere indstillinger.',
+        description: 'Tryk på Mere nederst — her finder du Ranking, Beskeder, Profil og flere indstillinger.',
       });
 
       base.push({
@@ -1318,7 +1318,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const userInitial = (displayName || "?").trim().charAt(0).toUpperCase();
 
-  const hideMobileBottomNav = isMobileView && ((tab === "beskeder" && mobileConversationOpen) || mobileMoreTourActive);
+  const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
@@ -1847,15 +1847,12 @@ export function DashboardPage({ user, onLogout, showToast }) {
         document.body
       )}
 
-      {mobileMoreVisible && (
+      {mobileMoreVisible && !mobileMoreTourActive && (
         <button
           type="button"
           aria-label="Luk menu"
-          className={mobileMoreTourActive ? 'pm-mobile-more-backdrop pm-mobile-more-backdrop--tour' : 'pm-mobile-more-backdrop'}
-          onClick={() => {
-            if (mobileMoreTourActive) return;
-            setMobileMoreOpen(false);
-          }}
+          className="pm-mobile-more-backdrop"
+          onClick={() => setMobileMoreOpen(false)}
         />
       )}
       {mobileMoreVisible && (
@@ -1949,7 +1946,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       )}
 
       {!hideMobileBottomNav && (
-      <nav className="pm-mobile-bottom-nav" aria-label="Mobil navigation">
+      <nav className={mobileMoreTourActive ? 'pm-mobile-bottom-nav pm-mobile-bottom-nav--tour' : 'pm-mobile-bottom-nav'} aria-label="Mobil navigation">
         {mobilePrimaryTabs.map((t) => {
           const active = tab === t.id;
           const tabAttention = Boolean(t.attention && !active);

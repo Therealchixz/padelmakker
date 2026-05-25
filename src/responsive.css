@@ -1827,12 +1827,11 @@ button,
   }
 
   .pm-mobile-more-sheet--tour {
-    z-index: 10050;
-    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 10051;
   }
 
-  .pm-mobile-more-backdrop--tour {
-    z-index: 10045;
+  .pm-mobile-bottom-nav--tour {
+    z-index: 10052;
   }
 
   .pm-mobile-more-row {
