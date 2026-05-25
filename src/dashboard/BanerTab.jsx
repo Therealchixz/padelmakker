@@ -414,11 +414,8 @@ export function BanerTab() {
               <li><strong>Gul tid:</strong> der er en regel eller note til tiden. Læs beskeden før du går videre.</li>
               <li><strong>Ingen tider i listen:</strong> nogle centre viser kun tider på deres egen booking-side. Brug knappen &quot;Åbn booking&quot;.</li>
             </ul>
-            <p className="pm-help-box-copy" style={{ margin: 0 }}>
-              PadelMakker hjælper med overblikket, men selve bookingen foregår altid hos centret.
-            </p>
             <p className="pm-help-box-copy" style={{ margin: '10px 0 0' }}>
-              PadelMakker viser centre med åben online-booking (Halbooking, MATCHi, Bookli eller direkte booking-link), hvor vi kan hente eller linke til ledige tider. Mangler du et center, kan du give besked via konto-menuen.
+              PadelMakker giver overblik over centre med åben online-booking (Halbooking, MATCHi, Bookli eller direkte booking-link), hvor vi kan hente eller linke til ledige tider. Selve bookingen foregår altid hos centret. Mangler du et center, tryk på dit navn øverst til højre og vælg &quot;Rapportér fejl&quot;.
             </p>
           </div>
         )}
