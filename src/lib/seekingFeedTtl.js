@@ -7,7 +7,7 @@ import {
   SEEK_MAKKER_TTL_MS,
   seekingVisibleDurationLabel,
   DAYS_OF_WEEK,
-  INTENT_LABELS,
+  intentDisplayLabel,
   PARTNER_LEVEL_LABELS,
 } from './platformConstants';
 import { normalizeStringArrayField } from './profileUtils';
@@ -173,8 +173,7 @@ function formatSeekingDayKeys(dayKeys) {
 }
 
 function makkerIntentLabel(key) {
-  if (key === 'traening') return 'Træning';
-  return INTENT_LABELS[key] || key;
+  return intentDisplayLabel(key);
 }
 
 function makkerIntentSummary(intents) {

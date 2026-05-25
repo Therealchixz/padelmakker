@@ -176,6 +176,13 @@ export const INTENTS = [
 ];
 
 export const INTENT_LABELS = Object.fromEntries(INTENTS.map((i) => [i.value, i.label]));
+INTENT_LABELS.traening = 'Træning';
+
+/** Bruger-synlig intention — accepterer både træning og legacy traening. */
+export function intentDisplayLabel(key) {
+  if (!key) return '';
+  return INTENT_LABELS[key] || key;
+}
 
 // Shared UI/data refresh timings
 export const PROFILE_REFRESH_COOLDOWN_MS = 30_000;

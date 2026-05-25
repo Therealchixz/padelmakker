@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchMakkerePlayerProfiles } from '../lib/profileQueries';
 import { theme, btn, inputStyle, tag, heading, makkerMatchBadge } from '../lib/platformTheme';
-import { REGIONS, PLAY_STYLES, INTENTS, INTENT_LABELS, COURT_SIDES } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, INTENTS, intentDisplayLabel, COURT_SIDES } from '../lib/platformConstants';
 import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
@@ -184,8 +184,8 @@ function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
                 <MapPin size={8} />{p.city || p.area.replace('Region ', '')}
               </span>
             )}
-            {p.intent_now && INTENT_LABELS[p.intent_now] && (
-              <span style={tag(theme.greenBg, theme.green)}>{INTENT_LABELS[p.intent_now]}</span>
+            {p.intent_now && intentDisplayLabel(p.intent_now) && (
+              <span style={tag(theme.greenBg, theme.green)}>{intentDisplayLabel(p.intent_now)}</span>
             )}
             {isSeekingActive(p) && (
               <span style={tag(theme.warmBg, theme.warm)}>{seekingActivityLabelDisplay(p)}</span>

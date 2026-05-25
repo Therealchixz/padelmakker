@@ -42,7 +42,12 @@ const VALID_PARTNER_COURT_SIDES = new Set(MAKKER_PARTNER_COURT_SIDES.map((m) => 
 const VALID_INTENT_MODES = new Set(MAKKER_INTENT_MODES.map((m) => m.value));
 const VALID_PARTNER_LEVELS = new Set(MAKKER_PARTNER_LEVEL_FILTERS.map((p) => p.value));
 const VALID_PLAY_STYLES = new Set(['all', 'Offensiv', 'Defensiv', 'Allround']);
-const INTENT_KEYS = ['hygge', 'traening', 'konkurrence', 'fast_makker', 'turnering'];
+const INTENT_KEYS = ['hygge', 'træning', 'konkurrence', 'fast_makker', 'turnering'];
+
+function intentCompatKey(key) {
+  if (key === 'træning' || key === 'traening') return 'traening';
+  return key;
+}
 
 const INTENT_COMPAT = {
   konkurrence: { konkurrence: 1.0, traening: 0.6, hygge: 0.2, fast_makker: 0.5, turnering: 0.8 },
@@ -74,7 +79,7 @@ function normalizeIntent(value) {
   const v = normalizeText(value).replace(/\s+/g, '_');
   if (!v) return '';
   if (v.includes('konkurrence')) return 'konkurrence';
-  if (v.includes('traening') || v.includes('træning')) return 'traening';
+  if (v.includes('traening') || v.includes('træning')) return 'træning';
   if (v.includes('hygge')) return 'hygge';
   if (v.includes('fast_makker') || v.includes('fast')) return 'fast_makker';
   if (v.includes('turnering')) return 'turnering';
@@ -93,8 +98,8 @@ function courtSideScore(mySide, theirSide) {
 }
 
 function intentCompatScore(myIntent, theirIntent) {
-  const mine = normalizeIntent(myIntent);
-  const theirs = normalizeIntent(theirIntent);
+  const mine = intentCompatKey(normalizeIntent(myIntent));
+  const theirs = intentCompatKey(normalizeIntent(theirIntent));
   if (!mine || !theirs) return 0.4;
   return INTENT_COMPAT[mine]?.[theirs] ?? 0.4;
 }
@@ -195,15 +200,19 @@ export function playStyleMatchesMakkerFilter(filterStyle, subjectPlayStyle) {
 }
 
 export function intentMatchesMakkerFilter(selectedIntents, intentMode, subjectIntent) {
-  const selected = normalizeStringArrayField(selectedIntents).filter((k) => INTENT_KEYS.includes(k));
-  if (!selected.length) return true;
+  const selected = normalizeStringArrayField(selectedIntents)
+    .map((k) => normalizeIntent(k))
+    .filter((k) => INTENT_KEYS.includes(k) || k === 'traening');
+  const normalizedSelected = selected.map((k) => (k === 'traening' ? 'træning' : k));
+  if (!normalizedSelected.length) return true;
   const theirs = normalizeIntent(subjectIntent);
   if (!theirs) return true;
+  const theirsCompat = intentCompatKey(theirs);
   const mode = VALID_INTENT_MODES.has(intentMode) ? intentMode : 'compatible';
   if (mode === 'exact') {
-    return selected.includes(theirs);
+    return normalizedSelected.some((mine) => intentCompatKey(mine) === theirsCompat);
   }
-  return selected.some((mine) => intentCompatScore(mine, theirs) >= 0.6);
+  return normalizedSelected.some((mine) => intentCompatScore(mine, theirs) >= 0.6);
 }
 
 export function availabilityMatchesMakkerFilter(filterAvailability, subjectAvailability) {

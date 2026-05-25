@@ -8,6 +8,7 @@ import {
   PLAY_STYLES,
   AVAILABILITY,
   INTENT_LABELS,
+  intentDisplayLabel,
 } from './platformConstants';
 import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils';
 import {
@@ -226,7 +227,7 @@ export function describeMakkerFilter(prefs, profile = {}) {
   if (prefs.playStyle && prefs.playStyle !== 'all') parts.push(prefs.playStyle);
   if (normalizeStringArrayField(prefs.intents).length > 0) {
     const labels = normalizeStringArrayField(prefs.intents)
-      .map((k) => INTENT_LABELS[k] || k)
+      .map((k) => intentDisplayLabel(k))
       .slice(0, 2);
     parts.push(labels.join(', ') + (prefs.intents.length > 2 ? '…' : ''));
   }

@@ -49,7 +49,7 @@ const labelStyle = {
 
 function canonicalIntentKey(value) {
   const v = String(value || '').trim().toLowerCase();
-  if (v.includes('traening') || v.includes('træning')) return 'traening';
+  if (v.includes('traening') || v.includes('træning')) return 'træning';
   if (v.includes('konkurrence')) return 'konkurrence';
   if (v.includes('hygge')) return 'hygge';
   if (v.includes('fast')) return 'fast_makker';
@@ -292,7 +292,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
         {INTENTS.map(({ value, label }) => {
           const key = canonicalIntentKey(value);
-          const active = selectedIntents.includes(key);
+          const active = selectedIntents.some((x) => canonicalIntentKey(x) === key);
           return (
             <button
               key={value}
