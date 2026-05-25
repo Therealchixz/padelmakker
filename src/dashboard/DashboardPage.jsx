@@ -34,6 +34,7 @@ import {
   fetchAdminSubTabBadges,
 } from '../lib/userModeration';
 import { subscribeToPush, isPushSupported } from '../lib/pushNotifications';
+import { BADGE_POLL_VISIBLE_MS, usePageVisible } from '../lib/pageVisibility';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -78,11 +79,15 @@ const FEEDBACK_PRIORITY_OPTIONS = [
 
 function useRealtimeCount(userId, createController) {
   const [count, setCount] = useState(0);
+  const pageVisible = usePageVisible();
 
   useEffect(() => {
     if (!userId) {
       setCount(0);
-      return;
+      return undefined;
+    }
+    if (!pageVisible) {
+      return undefined;
     }
 
     let cancelled = false;
@@ -220,7 +225,7 @@ function useRealtimeCount(userId, createController) {
         controller.cleanup();
       }
     };
-  }, [userId, createController]);
+  }, [userId, pageVisible, createController]);
 
   return count;
 }
@@ -358,7 +363,7 @@ function usePendingKampeBadge(userId, isAdmin = false) {
           },
         },
       ],
-      intervalMs: 15000,
+      intervalMs: BADGE_POLL_VISIBLE_MS,
       onInterval: (runtime) => {
         if (runtime.isPageVisible()) runtime.scheduleRefetch({ delay: 50 });
       },
@@ -432,7 +437,7 @@ function useAdminAttentionBadge(userId, isAdminRole = false) {
           },
         },
       ],
-      intervalMs: 15000,
+      intervalMs: BADGE_POLL_VISIBLE_MS,
       onInterval: (runtime) => {
         if (runtime.isPageVisible()) runtime.scheduleRefetch({ delay: 50 });
       },
