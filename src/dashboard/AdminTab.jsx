@@ -21,6 +21,7 @@ import { AdminReportDmViewer } from '../components/AdminReportDmViewer';
 import { AdminMatchResultEditor } from '../components/AdminMatchResultEditor';
 import { AdminAmericanoResultEditor } from '../components/AdminAmericanoResultEditor';
 import { AdminLeagueResultEditor } from '../components/AdminLeagueResultEditor';
+import { AdminUserProfileOverview } from './AdminUserProfileOverview';
 import { fetchEloStatsBatchByUserIds, formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { normalizeProfileRow } from '../lib/profileUtils';
@@ -279,9 +280,15 @@ export function AdminTab({ initialSubTab = null }) {
     setEditingUserLoading(true);
     try {
       const uid = String(userRow.id);
-      const [profileRes, eloBatch] = await Promise.all([
+      const [profileRes, eloBatch, amHistRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', uid).maybeSingle(),
         fetchEloStatsBatchByUserIds([uid]),
+        supabase
+          .from('americano_elo_history')
+          .select('new_rating')
+          .eq('user_id', uid)
+          .order('created_at', { ascending: false })
+          .limit(1),
       ]);
       if (profileRes.error) throw profileRes.error;
       const fresh = normalizeProfileRow(profileRes.data || userRow);
@@ -290,6 +297,11 @@ export function AdminTab({ initialSubTab = null }) {
         stats != null && Number.isFinite(Number(stats.elo))
           ? Math.round(Number(stats.elo))
           : eloOf(fresh);
+      const amRow = (amHistRes.data || [])[0];
+      const americanoEloDisplay =
+        amRow?.new_rating != null && Number.isFinite(Number(amRow.new_rating))
+          ? Math.round(Number(amRow.new_rating))
+          : Math.round(Number(fresh.americano_elo_rating) || 1000);
       setEditingUser({
         ...fresh,
         full_name: fresh.full_name || fresh.name || userRow.full_name || userRow.name || '',
@@ -297,6 +309,7 @@ export function AdminTab({ initialSubTab = null }) {
         elo_rating: eloFromHistory,
         games_played: stats?.games ?? fresh.games_played,
         games_won: stats?.wins ?? fresh.games_won,
+        _americanoEloDisplay: americanoEloDisplay,
       });
     } catch (err) {
       console.warn('AdminTab openUserEditor:', err?.message || err);
@@ -915,19 +928,6 @@ export function AdminTab({ initialSubTab = null }) {
     return sortConfig.direction === 'asc' 
       ? <ChevronUp size={12} style={{ marginLeft: '4px', color: theme.accent }} /> 
       : <ChevronDown size={12} style={{ marginLeft: '4px', color: theme.accent }} />;
-  };
-
-  const formatCreatedAt = (createdAt) => {
-    if (!createdAt) return 'Ukendt';
-    const date = new Date(createdAt);
-    if (Number.isNaN(date.getTime())) return 'Ukendt';
-    return new Intl.DateTimeFormat('da-DK', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
   };
 
   const filteredFlags = useMemo(() => {
@@ -2070,10 +2070,25 @@ export function AdminTab({ initialSubTab = null }) {
             >
               <X size={20} />
             </button>
-            <h3 style={{ ...heading('18px'), marginBottom: '20px' }}>Rediger Spiller</h3>
-            <p className="pm-admin-help-copy" style={{ marginTop: '-12px', marginBottom: '16px' }}>
-              Data hentes frisk fra databasen (ELO som på Find makker).
+            <h3 style={{ ...heading('18px'), marginBottom: '8px' }}>Rediger spiller</h3>
+            <p className="pm-admin-help-copy" style={{ marginBottom: '12px' }}>
+              Profil hentes frisk fra databasen. Felter nedenfor kan redigeres; oversigten viser alt som på Find makker.
             </p>
+
+            <AdminUserProfileOverview profile={editingUser} formatDateTime={formatDateTimeDa} />
+
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: theme.textLight,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                marginBottom: 10,
+              }}
+            >
+              Rediger felter
+            </div>
 
             <form onSubmit={handleUpdateUser} className="pm-admin-form-stack">
               <div className="pm-admin-form-grid-2">
@@ -2095,10 +2110,6 @@ export function AdminTab({ initialSubTab = null }) {
                     style={inputStyle}
                   />
                 </div>
-              </div>
-
-              <div className="pm-admin-meta-box">
-                Oprettet: <strong style={{ color: theme.text }}>{formatCreatedAt(editingUser.created_at)}</strong>
               </div>
 
               <div className="pm-admin-form-grid-2">
