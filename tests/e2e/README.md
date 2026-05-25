@@ -25,6 +25,15 @@ Uden disse variabler springes logged-in tests over (CI kan stadig være grøn).
 
 **Opret ikke** secret `PLAYWRIGHT_BASE_URL` med `localhost:3000` — så starter CI ikke Vite, og du får `ERR_CONNECTION_REFUSED`. Brug kun de fire secrets ovenfor.
 
+## Vigtigt: ingen Playwright-wizard-filer
+
+Kør **ikke** `npm init playwright@latest` oven i vores setup. Slet disse filer hvis de findes (lokalt og på GitHub):
+
+- `tests/e2e/auth.setup.ts` eller `tests/auth.setup.ts`
+- `tests/e2e/example.spec.ts`
+
+PadelMakker bruger i stedet `logged-in.spec.ts` + secrets `PLAYWRIGHT_TEST_EMAIL` / `PLAYWRIGHT_TEST_PASSWORD` (ikke `TEST_USER_1_EMAIL` osv.).
+
 ## GitHub Actions
 
 Tilføj repo-secrets med samme navne, så E2E også tester dashboard efter login.

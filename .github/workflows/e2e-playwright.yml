@@ -33,6 +33,10 @@ jobs:
           echo "Commit: ${{ github.sha }}"
           test -f playwright.config.ts
           test ! -f tests/e2e/example.spec.ts
+          test ! -f tests/e2e/auth.setup.ts
+          test ! -f tests/auth.setup.ts
+          ! grep -q "dependencies:.*setup" playwright.config.ts
+          ! grep -q "localhost:3000" playwright.config.ts
           grep -q "127.0.0.1:4173" playwright.config.ts
           npx playwright test --config=playwright.config.ts --list
 

@@ -11,6 +11,8 @@ const hasAuthE2E = Boolean(
 
 export default defineConfig({
   testDir: './tests/e2e',
+  // Playwright wizard-filer (auth.setup / example.spec) bruges ikke i PadelMakker CI.
+  testIgnore: ['**/auth.setup.ts', '**/example.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
