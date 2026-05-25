@@ -677,7 +677,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     <div>
       {!editing ? (
       <div>
-        <div data-tour="profile-main" className="pm-tour-scroll-anchor" style={{ marginBottom: "12px" }}>
+        <div data-tour="profile-main" className="pm-tour-scroll-anchor">
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>
         <PillTabs
           tabs={profileSectionTabs}
@@ -687,7 +687,6 @@ export function ProfilTab({ user, showToast, setTab }) {
           size="sm"
           className="pm-pill-tabs--wrap"
         />
-        </div>
 
         {/* Profile card */}
         <div ref={overviewRef} className="pm-profile-card" style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
@@ -1202,6 +1201,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ fontSize: "11px", color: theme.textLight }}>{ligaStats.matches} kampe</div>
             </button>
           ) : null}
+        </div>
         </div>
       </div>
       ) : (
