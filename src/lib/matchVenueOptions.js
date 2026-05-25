@@ -1,4 +1,4 @@
-import { BANER_VENUES } from './banerVenues'
+import { BANER_VENUES } from './banerVenues.js'
 
 /** Værdi i <select> når center ikke har matchende række i `courts` endnu */
 export const PM_VENUE_PREFIX = 'pm_venue:'
