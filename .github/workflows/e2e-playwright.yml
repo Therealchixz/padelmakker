@@ -28,21 +28,36 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Build app for E2E (bakes Supabase env into bundle)
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
       - name: Verify PadelMakker E2E layout
         run: |
           echo "Commit: ${{ github.sha }}"
           test -f playwright.config.ts
           test ! -f tests/e2e/example.spec.ts
+          test ! -f tests/e2e/main.spec.ts
           test ! -f tests/e2e/auth.setup.ts
           test ! -f tests/auth.setup.ts
           ! grep -q "dependencies:.*setup" playwright.config.ts
           ! grep -q "localhost:3000" playwright.config.ts
           grep -q "127.0.0.1:4173" playwright.config.ts
+          for f in tests/e2e/*.spec.ts; do
+            case "$(basename "$f")" in
+              auth.spec.ts|date-input-layout.spec.ts|logged-in.spec.ts|smoke.spec.ts) ;;
+              *) echo "Unexpected E2E spec: $f"; exit 1 ;;
+            esac
+          done
           npx playwright test --config=playwright.config.ts --list
 
       - name: Run Playwright tests
         run: npm run test:e2e
         env:
+          CI: true
+          PLAYWRIGHT_BASE_URL: ''
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           PLAYWRIGHT_TEST_EMAIL: ${{ secrets.PLAYWRIGHT_TEST_EMAIL }}

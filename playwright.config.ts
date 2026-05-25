@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173'
+// Tom streng fra GitHub env skal ikke slå webServer fra (kun rigtig URL gør det).
+const playwrightBaseUrl = process.env.PLAYWRIGHT_BASE_URL?.trim()
+const baseURL = playwrightBaseUrl || 'http://127.0.0.1:4173'
+const useCiPreview = Boolean(process.env.CI) && !playwrightBaseUrl
 
 const hasAuthE2E = Boolean(
   process.env.VITE_SUPABASE_URL?.trim() &&
@@ -12,7 +15,7 @@ const hasAuthE2E = Boolean(
 export default defineConfig({
   testDir: './tests/e2e',
   // Playwright wizard-filer (auth.setup / example.spec) bruges ikke i PadelMakker CI.
-  testIgnore: ['**/auth.setup.ts', '**/example.spec.ts'],
+  testIgnore: ['**/auth.setup.ts', '**/example.spec.ts', '**/main.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -24,17 +27,21 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  webServer: process.env.PLAYWRIGHT_BASE_URL
+  webServer: playwrightBaseUrl
     ? undefined
     : {
-        command: 'node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4173',
+        command: useCiPreview
+          ? 'npx vite preview --host 127.0.0.1 --port 4173'
+          : 'node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4173',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
-        env: {
-          VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL || '',
-          VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || '',
-        },
+        env: useCiPreview
+          ? {}
+          : {
+              VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL || '',
+              VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || '',
+            },
       },
   projects: [
     {

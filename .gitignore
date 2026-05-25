@@ -13,6 +13,7 @@ playwright/.auth/
 tests/e2e/auth.setup.ts
 tests/auth.setup.ts
 tests/e2e/example.spec.ts
+tests/e2e/main.spec.ts
 tests/example.spec.ts
 
 .vercel
