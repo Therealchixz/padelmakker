@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { DateTime } from 'luxon';
 import { useAuth } from '../lib/AuthContext';
-import { theme, btn } from '../lib/platformTheme';
+import { theme, btn, font } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
