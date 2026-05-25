@@ -8,7 +8,8 @@ const BANER_TAB_URL = new URL('../../src/dashboard/BanerTab.jsx', import.meta.ur
 test('baner booking help explains the booking flow in user-friendly language', async () => {
   const banerTab = await readFile(BANER_TAB_URL, 'utf8')
 
-  assert.match(banerTab, /Start med at vælge et center og en dato/)
+  assert.match(banerTab, /Vælg først din region/)
+  assert.match(banerTab, /expandedRegions/)
   assert.match(banerTab, /Grøn tid/)
   assert.match(banerTab, /Gul tid/)
   assert.match(banerTab, /selve bookingen foregår altid hos centret/)

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { theme, btn, inputStyle, heading, tag } from '../lib/platformTheme';
 import { BANER_REGION_SUBTITLE } from '../lib/banerRegions';
 import {
@@ -97,6 +97,32 @@ export function BanerTab() {
   /** Memberlink (kun link-venues): valgt dato til booking-link */
   const [linkDateByVenue, setLinkDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
   const [showBookingHelp, setShowBookingHelp] = useState(false);
+  /** Kun render centre når region-fold er åben (performance ved 200+ centre). */
+  const [expandedRegions, setExpandedRegions] = useState(() => new Set());
+
+  useEffect(() => {
+    const q = venueSearch.trim();
+    if (!q) return;
+    setExpandedRegions(new Set(filteredVenueGroups.map((g) => g.region)));
+  }, [venueSearch, filteredVenueGroups]);
+
+  const closeVenuesInRegion = useCallback((venues) => {
+    for (const v of venues) {
+      const node = detailRefs.current[v.id];
+      if (node) node.open = false;
+    }
+  }, []);
+
+  const onRegionToggle = useCallback((region, venues, e) => {
+    const open = e.currentTarget.open;
+    setExpandedRegions((prev) => {
+      const next = new Set(prev);
+      if (open) next.add(region);
+      else next.delete(region);
+      return next;
+    });
+    if (!open) closeVenuesInRegion(venues);
+  }, [closeVenuesInRegion]);
 
   const loadHalbookingVenue = useCallback(async (venueId, dateYmd) => {
     setLoadingVenue((m) => ({ ...m, [venueId]: true }));
@@ -349,7 +375,7 @@ export function BanerTab() {
         <p className="pm-baner-search-meta" aria-live="polite">
           {venueSearch.trim()
             ? `${filteredVenueCount} af ${totalVenueCount} centre`
-            : `${totalVenueCount} centre`}
+            : `${filteredVenueGroups.length} regioner · ${totalVenueCount} centre`}
         </p>
       </div>
 
@@ -374,7 +400,7 @@ export function BanerTab() {
         {showBookingHelp && (
           <div className="pm-help-box-content" style={{ marginTop: '8px' }}>
             <p className="pm-help-box-copy" style={{ margin: 0 }}>
-              Start med at vælge et center og en dato. Når PadelMakker kan hente tiderne, viser vi dem direkte i listen.
+              Vælg først din region, derefter et center og en dato. Når PadelMakker kan hente tiderne, viser vi dem i listen.
             </p>
             <ul className="pm-help-box-copy" style={{ margin: '10px 0', paddingLeft: '18px' }}>
               <li><strong>Grøn tid:</strong> tiden ser ledig ud. Tryk på tiden eller &quot;Åbn booking&quot; for at booke hos centret.</li>
@@ -420,14 +446,35 @@ export function BanerTab() {
         </div>
       ) : null}
 
+      {filteredVenueGroups.length > 0 && !venueSearch.trim() && expandedRegions.size === 0 ? (
+        <p className="pm-baner-region-hint pm-ui-card" style={{ margin: '0 0 16px', padding: '12px 14px', fontSize: '13px', color: theme.textMid }}>
+          Tryk på en region nedenfor for at se centre og ledige tider.
+        </p>
+      ) : null}
+
       {filteredVenueGroups.map(({ region, venues }) => (
-        <section key={region} className="pm-baner-region" aria-labelledby={`pm-baner-region-${region}`}>
-          <h3 id={`pm-baner-region-${region}`} className="pm-baner-region-title">
-            {region}
-            {BANER_REGION_SUBTITLE[region] ? (
-              <span className="pm-baner-region-sub"> ({BANER_REGION_SUBTITLE[region]})</span>
-            ) : null}
-          </h3>
+        <details
+          key={region}
+          className="pm-baner-region pm-baner-region-fold pm-ui-card"
+          open={expandedRegions.has(region)}
+          onToggle={(e) => onRegionToggle(region, venues, e)}
+        >
+          <summary className="pm-baner-region-summary" aria-labelledby={`pm-baner-region-${region}`}>
+            <div className="pm-baner-region-summary-text">
+              <h3 id={`pm-baner-region-${region}`} className="pm-baner-region-title">
+                {region}
+                {BANER_REGION_SUBTITLE[region] ? (
+                  <span className="pm-baner-region-sub"> ({BANER_REGION_SUBTITLE[region]})</span>
+                ) : null}
+              </h3>
+              <span className="pm-baner-region-count">
+                {venues.length} {venues.length === 1 ? 'center' : 'centre'}
+              </span>
+            </div>
+            <ChevronDown size={18} className="pm-baner-region-chevron" aria-hidden />
+          </summary>
+          {expandedRegions.has(region) ? (
+          <div className="pm-baner-region-body">
           <div className="pm-baner-venue-list">
             {venues.map((v) => {
           const loaded = byVenue[v.id];
@@ -793,7 +840,9 @@ export function BanerTab() {
           );
             })}
           </div>
-        </section>
+          </div>
+          ) : null}
+        </details>
       ))}
     </div>
   );

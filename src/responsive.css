@@ -3383,6 +3383,67 @@ button,
   margin-bottom: 0;
 }
 
+.pm-baner-region-fold {
+  margin-bottom: 12px;
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius-md);
+  overflow: hidden;
+}
+
+.pm-baner-region-fold:last-child {
+  margin-bottom: 0;
+}
+
+.pm-baner-region-summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  user-select: none;
+}
+
+.pm-baner-region-summary::-webkit-details-marker {
+  display: none;
+}
+
+.pm-baner-region-summary-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.pm-baner-region-fold .pm-baner-region-title {
+  margin: 0 0 4px;
+}
+
+.pm-baner-region-count {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pm-text-light);
+}
+
+.pm-baner-region-chevron {
+  flex-shrink: 0;
+  color: var(--pm-text-light);
+  transition: transform 0.2s ease;
+}
+
+.pm-baner-region-fold[open] .pm-baner-region-chevron {
+  transform: rotate(180deg);
+}
+
+.pm-baner-region-body {
+  padding: 0 12px 14px;
+}
+
+.pm-baner-region-hint {
+  border: 1px dashed var(--pm-border);
+  background: var(--pm-surface);
+}
+
 .pm-baner-region-title {
   margin: 0 0 12px;
   font-family: var(--pm-font);
