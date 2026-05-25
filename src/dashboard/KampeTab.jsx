@@ -50,7 +50,7 @@ import { AvatarCircle } from '../components/AvatarCircle';
 import { MatchWinPrediction } from '../components/MatchWinPrediction';
 import { MatchResultStrip } from '../components/MatchResultStrip';
 import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
-import { completionMsFor2v2 } from '../lib/resultErrorReports';
+import { completionMsFor2v2, isWithinResultErrorReportWindow } from '../lib/resultErrorReports';
 import { calculate2v2MatchWinPrediction } from '../lib/matchWinPrediction';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
@@ -2057,9 +2057,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           />
         ) : null}
 
-        {status === 'completed' && joined && !isCreator ? (
+        {status === 'completed' &&
+        joined &&
+        !isCreator &&
+        isWithinResultErrorReportWindow(completionMsFor2v2(m, mr)) ? (
           <p style={{ fontSize: 11, color: theme.textLight, margin: '8px 0 4px', lineHeight: 1.4 }}>
-            Kun kampens opretter kan indberette fejl i resultat/ELO til admin.
+            Kun kampens opretter kan indberette fejl i resultat/ELO til admin (inden for 24 timer efter kampen).
           </p>
         ) : null}
 
