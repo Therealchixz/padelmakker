@@ -123,7 +123,10 @@ export function AdminUserProfileOverview({ profile, formatDateTime }) {
       </Section>
 
       <Section title="Profil">
-        <InfoRow label="Niveau" value={levelDisplay || (p.level ? formatPlaytomicLevel(p.level) : null)} />
+        <InfoRow
+          label="Niveau (præcis)"
+          value={levelDisplay || (p.level != null ? formatPlaytomicLevel(p.level) : null)}
+        />
         <InfoRow label="Spillestil" value={p.play_style || null} />
         <InfoRow label="Foretrukket side" value={courtLabel} />
         <InfoRow label="Område" value={p.area || null} />

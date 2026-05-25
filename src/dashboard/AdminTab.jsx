@@ -28,12 +28,8 @@ import { normalizeProfileRow } from '../lib/profileUtils';
 import { explainRatingAdminFlag } from '../lib/ratingAdminFlagExplain';
 import { fetchAdminAuditLogRecent, adminAuditActionLabel } from '../lib/adminAuditLog';
 
-import {
-  LEVELS,
-  PLAY_STYLES,
-  REGIONS,
-  levelStringFromNum,
-} from '../lib/platformConstants';
+import { PLAY_STYLES, REGIONS } from '../lib/platformConstants';
+import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 
 function adminDisplayName(user) {
   const fullName = String(user?.full_name || '').trim();
@@ -2113,21 +2109,12 @@ export function AdminTab({ initialSubTab = null }) {
               </div>
 
               <div className="pm-admin-form-grid-2">
-                <div>
-                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Niveau</label>
-                  <select
-                    value={levelStringFromNum(editingUser.level) || ''}
-                    onChange={(e) => {
-                      const levelNum = parseFloat(e.target.value.match(/[\d.]+/)?.[0] || '0');
-                      setEditingUser({ ...editingUser, level: levelNum });
-                    }}
-                    style={inputStyle}
-                  >
-                    <option value="" disabled>Vælg niveau</option>
-                    {LEVELS.map((levelOption) => (
-                      <option key={levelOption} value={levelOption}>{levelOption}</option>
-                    ))}
-                  </select>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>Niveau (Playtomic)</label>
+                  <PlaytomicLevelPicker
+                    value={editingUser.level}
+                    onChange={(n) => setEditingUser({ ...editingUser, level: n })}
+                  />
                 </div>
                 <div>
                   <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Foretrukket side</label>
