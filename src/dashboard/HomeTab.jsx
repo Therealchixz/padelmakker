@@ -950,7 +950,7 @@ export function HomeTab({ user, setTab }) {
       </button>
       {/* Aktivitetsfeed */}
       {feedLoading ? (
-        <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
+        <div data-tour="home-latest-activity" style={{ marginBottom: "24px", scrollMarginTop: 88 }}>
           <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
             Seneste aktivitet
           </div>
@@ -961,7 +961,7 @@ export function HomeTab({ user, setTab }) {
           </div>
         </div>
       ) : feedLoadError && allFeedRows.length === 0 ? (
-        <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
+        <div data-tour="home-latest-activity" style={{ marginBottom: "24px", scrollMarginTop: 88 }}>
           <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
             Seneste aktivitet
           </div>
@@ -977,7 +977,7 @@ export function HomeTab({ user, setTab }) {
           </div>
         </div>
       ) : (
-        <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
+        <div style={{ marginBottom: "24px" }}>
           {feedLoadError ? (
             <div
               className="pm-ui-card"
@@ -1000,7 +1000,7 @@ export function HomeTab({ user, setTab }) {
               </button>
             </div>
           ) : null}
-          <div className="pm-feed-filters-header">
+          <div data-tour="home-latest-activity" className="pm-feed-filters-header" style={{ scrollMarginTop: 88 }}>
             <PageSectionTitle>Seneste aktivitet</PageSectionTitle>
             <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
               <div className="pm-feed-filters-row">

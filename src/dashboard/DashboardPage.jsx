@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useRef, useMemo, lazy, Suspense } from 'react';
+import { useEffect, useLayoutEffect, useCallback, useState, useRef, useMemo, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
@@ -658,7 +658,8 @@ function useUnreadKampeNotificationsCount(userId) {
 }
 
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking", "beskeder"];
-const TOUR_VERSION = 2;
+const TOUR_VERSION = 3;
+const SCROLL_RETRY_MAX = 40;
 
 const tabBtnStyle = (active) => ({
   background: "transparent",
@@ -774,10 +775,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
       },
       {
         id: 'notification-bell',
-        selector: isMobileView ? '[data-tour="notification-bell"]' : '[data-tour="account-menu-btn"]',
+        selector: isMobileView ? '[data-tour="notification-panel"]' : '[data-tour="account-menu-btn"]',
+        interactive: isMobileView,
         title: 'Notifikationer & push-indstillinger',
         description: isMobileView
-          ? 'Her finder du alle dine notifikationer. Øverst i panelet kan du slå push-beskeder til og fra når som helst.'
+          ? 'Klokken er åben. Tryk Aktiver i panelet (browseren kan bede om tilladelse). Du kan altid finde notifikationer i klokken bagefter.'
           : 'Åbn konto-menuen øverst til højre – der finder du alle dine notifikationer og kan slå push-beskeder til og fra når som helst.',
       },
       {
@@ -798,6 +800,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         id: 'latest-activity',
         tab: 'hjem',
         selector: '[data-tour="home-latest-activity"]',
+        scrollBlock: 'start',
         title: 'Seneste aktivitet',
         description: 'Her kan nye brugere hurtigt se hvad der rører sig: nye kampe, ELO-ændringer og relevante events i fællesskabet.',
       },
@@ -828,15 +831,20 @@ export function DashboardPage({ user, onLogout, showToast }) {
     if (isMobileView) {
       base.push({
         id: 'mobile-more',
-        selector: '[data-tour="mobile-tab-mere"]',
+        selector: '[data-tour="mobile-more-sheet"]',
+        tooltipPlacement: 'above',
+        waitForMount: true,
+        skipScroll: true,
         title: 'Mere-menu',
-        description: 'Under “Mere” finder du bl.a. Profil, Ranking, Beskeder og øvrige funktioner.',
+        description: 'Her finder du Ranking, Beskeder, Profil og flere indstillinger.',
       });
 
       base.push({
         id: 'profile',
         tab: 'profil',
         selector: '[data-tour="profile-main"]',
+        scrollBlock: 'start',
+        waitForMount: true,
         title: 'Din profil',
         description: 'Her opdaterer du profil, følger ELO-udvikling og styrer dine personlige præferencer. Det er dit vigtigste udgangspunkt i appen.',
       });
@@ -860,6 +868,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
           id: 'profile',
           tab: 'profil',
           selector: '[data-tour="profile-main"]',
+          scrollBlock: 'start',
+          waitForMount: true,
           title: 'Din profil',
           description: 'Her opdaterer du profil, følger ELO-udvikling og styrer dine personlige præferencer. Det er dit vigtigste udgangspunkt i appen.',
         }
@@ -868,6 +878,14 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
     return base;
   }, [isMobileView, tabTourSelector]);
+
+  const mobileMoreTourActive =
+    tourOpen && tourSteps[tourStepIndex]?.id === 'mobile-more';
+
+  const tourOnNotificationStep =
+    tourOpen && tourSteps[tourStepIndex]?.id === 'notification-bell';
+
+  const mobileMoreVisible = mobileMoreOpen || mobileMoreTourActive;
 
   const persistTourCompleted = useCallback(() => {
     if (!tourStorageKey) return;
@@ -879,6 +897,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [tourStorageKey]);
 
   const startTour = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      setIsMobileView(window.innerWidth <= 768);
+    }
     setMobileMoreOpen(false);
     setAccountOpen(false);
     setTourStepIndex(0);
@@ -970,6 +991,12 @@ export function DashboardPage({ user, onLogout, showToast }) {
     return () => window.clearTimeout(timer);
   }, [tourStorageKey]);
 
+  useLayoutEffect(() => {
+    if (!tourOpen) return;
+    const step = tourSteps[tourStepIndex];
+    setMobileMoreOpen(step?.id === 'mobile-more');
+  }, [tourOpen, tourStepIndex, tourSteps]);
+
   useEffect(() => {
     if (!tourOpen) return;
     const step = tourSteps[tourStepIndex];
@@ -978,19 +1005,43 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [tourOpen, tourStepIndex, tourSteps]);
 
   useEffect(() => {
-    if (!tourOpen) return;
+    if (!tourOpen) return undefined;
     const step = tourSteps[tourStepIndex];
-    if (!step) return;
+    if (!step) return undefined;
 
     if (step.tab && tab !== step.tab) {
       setTab(step.tab);
-      return;
+      return undefined;
     }
 
-    const target = step.selector ? document.querySelector(step.selector) : null;
-    if (target && typeof target.scrollIntoView === 'function') {
-      target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-    }
+    if (step.skipScroll) return undefined;
+
+    let cancelled = false;
+    let attempts = 0;
+    let rafId = null;
+
+    const tryScroll = () => {
+      if (cancelled) return;
+      const target = step.selector ? document.querySelector(step.selector) : null;
+      if (target && typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({
+          behavior: attempts === 0 ? 'smooth' : 'auto',
+          block: step.scrollBlock || 'center',
+          inline: 'nearest',
+        });
+        return;
+      }
+      attempts += 1;
+      if (attempts < SCROLL_RETRY_MAX) {
+        rafId = requestAnimationFrame(tryScroll);
+      }
+    };
+
+    rafId = requestAnimationFrame(tryScroll);
+    return () => {
+      cancelled = true;
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [tourOpen, tourStepIndex, tourSteps, tab, setTab]);
 
   useEffect(() => {
@@ -1246,7 +1297,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const userInitial = (displayName || "?").trim().charAt(0).toUpperCase();
 
-  const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
+  const hideMobileBottomNav = isMobileView && ((tab === "beskeder" && mobileConversationOpen) || mobileMoreTourActive);
 
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
@@ -1265,7 +1316,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           </picture>
         </button>
         <div className="pm-dash-header-actions pm-dash-header-actions-mobile">
-          {isMobileView && <NotificationBell />}
+          {isMobileView && <NotificationBell tourForceOpen={tourOnNotificationStep} />}
         </div>
         <div className="pm-dash-account-desktop">
           <button
@@ -1574,6 +1625,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           closeTour("Guide gennemført. God fornøjelse!");
           setTab("hjem");
         }}
+        zIndex={mobileMoreTourActive ? 10060 : undefined}
       />
 
       <PendingResultConfirmModal user={user} />
@@ -1774,16 +1826,19 @@ export function DashboardPage({ user, onLogout, showToast }) {
         document.body
       )}
 
-      {mobileMoreOpen && (
+      {mobileMoreVisible && (
         <button
           type="button"
           aria-label="Luk menu"
-          className="pm-mobile-more-backdrop"
-          onClick={() => setMobileMoreOpen(false)}
+          className={mobileMoreTourActive ? 'pm-mobile-more-backdrop pm-mobile-more-backdrop--tour' : 'pm-mobile-more-backdrop'}
+          onClick={() => {
+            if (mobileMoreTourActive) return;
+            setMobileMoreOpen(false);
+          }}
         />
       )}
-      {mobileMoreOpen && (
-        <div className="pm-mobile-more-sheet">
+      {mobileMoreVisible && (
+        <div data-tour="mobile-more-sheet" className={mobileMoreTourActive ? 'pm-mobile-more-sheet pm-mobile-more-sheet--tour' : 'pm-mobile-more-sheet'}>
           {mobileMoreTabs.map((t) => (
             <button
               key={t.id}

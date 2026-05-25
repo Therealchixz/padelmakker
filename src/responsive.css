@@ -1826,6 +1826,15 @@ button,
     box-shadow: 0 14px 38px rgba(2, 6, 23, 0.16);
   }
 
+  .pm-mobile-more-sheet--tour {
+    z-index: 10050;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .pm-mobile-more-backdrop--tour {
+    z-index: 10045;
+  }
+
   .pm-mobile-more-row {
     width: 100%;
     border: none;
