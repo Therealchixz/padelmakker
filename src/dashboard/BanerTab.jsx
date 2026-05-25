@@ -358,7 +358,8 @@ export function BanerTab() {
         <div className="pm-baner-search-wrap">
           <Search size={16} className="pm-baner-search-icon" aria-hidden />
           <input
-            type="search"
+            type="text"
+            inputMode="search"
             value={venueSearch}
             onChange={(e) => setVenueSearch(e.target.value)}
             placeholder="Søg center, by eller region…"
