@@ -117,7 +117,7 @@ export function AdminTab({ initialSubTab = null }) {
   ); // 'users' | 'matches' | 'console' | 'reports' | 'result_errors'
   const [matchSubTab, setMatchSubTab] = useState('2v2'); // '2v2' | 'americano' | 'liga'
   const [matchStatusFilter, setMatchStatusFilter] = useState('all');
-  const [_loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [matches, setMatches] = useState([]);
   const [americanoTournaments, setAmericanoTournaments] = useState([]);
