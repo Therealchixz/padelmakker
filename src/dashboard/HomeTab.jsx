@@ -1,7 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { DateTime } from 'luxon';
-import { motion } from 'framer-motion';
-import { cn } from '../lib/utils';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
@@ -10,7 +8,6 @@ import { supabase } from '../lib/supabase';
 import { Users, MapPin, Swords, Trophy, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import { PageSectionTitle } from '../components/PageSectionTitle';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS } from '../lib/platformConstants';
@@ -805,229 +802,270 @@ export function HomeTab({ user, setTab }) {
     ? "Se dem under Find makker"
     : "Se spillere på dit niveau";
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <header className="flex items-end justify-between px-1 mb-8">
-        <div className="space-y-1">
-          <motion.h1 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-5xl md:text-6xl font-display uppercase italic tracking-tighter leading-none text-pm-text"
-          >
-            Hej <span className="text-pm-accent">{firstName}!</span> 👋
-          </motion.h1>
-          <p className="text-slate-500 font-bold text-lg md:text-xl">Klar til kamp i dag?</p>
-        </div>
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
-          <button 
-            onClick={() => setEloMode('2v2')} 
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-xs font-black tracking-widest transition-all",
-              eloMode === '2v2' ? "bg-white dark:bg-slate-700 text-pm-accent shadow-sm" : "text-slate-400 hover:text-slate-600"
-            )}
-          >
-            2V2
-          </button>
-          <button 
-            onClick={() => setEloMode('americano')} 
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-xs font-black tracking-widest transition-all",
-              eloMode === 'americano' ? "bg-white dark:bg-slate-700 text-pm-orange shadow-sm" : "text-slate-400 hover:text-slate-600"
-            )}
-          >
-            AMERICANO
-          </button>
-        </div>
-      </header>
-
-      {/* Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* ELO Main Card */}
-        <motion.div 
-          whileHover={{ y: -4, scale: 1.01 }}
-          className="md:col-span-2"
+    <div>
+      {showNiveauEloHint && (
+        <div
+          style={{
+            background: theme.accentBg,
+            border: `1px solid ${theme.accent}33`,
+            borderRadius: '12px',
+            padding: '12px 14px',
+            marginBottom: '14px',
+            fontSize: '13px',
+            color: theme.textMid,
+            lineHeight: 1.5,
+          }}
         >
-          <Card className="h-full overflow-hidden border-none bg-[#001e3c] text-white shadow-2xl shadow-blue-900/30 group p-1">
-            <div className="h-full w-full rounded-[1.8rem] bg-gradient-to-br from-[#0076B6] via-[#004e82] to-[#001e3c] p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-blue-400/20 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none group-hover:scale-150 transition-transform duration-1000" />
-              
-              <div className="relative z-10">
-                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-200/80 mb-2">
-                  Din nuværende status
-                </p>
-                <div className="flex items-baseline gap-3 mb-8">
-                  <span className="text-7xl md:text-8xl font-display uppercase italic tracking-tighter drop-shadow-2xl">{activeElo}</span>
-                  <span className="text-2xl font-black text-blue-300/60 uppercase italic tracking-tighter">ELO</span>
-                </div>
+          <strong style={{ color: theme.text }}>Niveau og ELO er ikke det samme.</strong>{' '}
+          Dit valgte niveau bruges til matching. ELO opdateres først, når du spiller kampe med resultat.{' '}
+          <a href="/elo" style={{ color: theme.accent, fontWeight: 700 }}>
+            Læs hvordan ELO virker
+          </a>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                localStorage.setItem('pm_niveau_elo_hint_v1', '1');
+              } catch {
+                /* ignore */
+              }
+              setShowNiveauEloHint(false);
+            }}
+            style={{
+              display: 'block',
+              marginTop: '8px',
+              background: 'transparent',
+              border: 'none',
+              color: theme.textLight,
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              padding: 0,
+              fontFamily: font,
+            }}
+          >
+            Forstået
+          </button>
+        </div>
+      )}
+      {/* Premium ELO hero: vent på frisk DB (undgå flash af forældede tal fra React) */}
+      {bundleLoading ? (
+        <div style={{ textAlign: "center", padding: "32px 16px", color: theme.textLight, fontSize: "14px", marginBottom: "24px" }}>Indlæser dine tal…</div>
+      ) : (
+        <section className="pm-home-premium-hero" aria-label="Din ELO status">
+          <div className="pm-home-premium-top">
+            <h2>Hej {firstName}!</h2>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <button onClick={() => setEloMode('2v2')} style={{ ...btn(eloMode === '2v2'), padding: "5px 10px", fontSize: "11px" }}>
+                2v2
+              </button>
+              <button onClick={() => setEloMode('americano')} style={{ ...btn(eloMode === 'americano'), padding: "5px 10px", fontSize: "11px" }}>
+                Americano
+              </button>
+            </div>
+          </div>
 
-                <div className="grid grid-cols-3 gap-4 border-t border-white/10 pt-8 mt-4">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-300">Kampe</p>
-                    <p className="text-3xl font-display italic uppercase tracking-tighter">{activeStats.primary.value}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-300">Sejre</p>
-                    <p className="text-3xl font-display italic uppercase tracking-tighter">{activeStats.secondary.value}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-300">Winrate</p>
-                    <p className="text-3xl font-display italic uppercase tracking-tighter">{activeStats.tertiary.value}</p>
-                  </div>
-                </div>
+          <div className="pm-home-player-card-head">
+            <div className="pm-home-premium-elo-block">
+              <div className="pm-home-premium-kicker">{eloMode === 'americano' ? 'Americano ELO rating' : '2v2 ELO rating'}</div>
+              <div className="pm-home-premium-elo">{activeElo}</div>
+            </div>
+            <div
+              className="pm-home-next-goal-card"
+              aria-label={`Næste mål: ${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`}
+            >
+              <span>Næste mål</span>
+              <strong>
+                {nextEloMilestone.remaining > 0
+                  ? `${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`
+                  : `${nextEloMilestone.target} ELO nået`}
+              </strong>
+            </div>
+            <div className="pm-home-premium-stats" aria-label="Dine kampstatistikker">
+              <div className="pm-home-premium-stat">
+                <strong>{activeStats.primary.value}</strong>
+                <span>{activeStats.primary.label}</span>
+              </div>
+              <div className="pm-home-premium-stat">
+                <strong>{activeStats.secondary.value}</strong>
+                <span>{activeStats.secondary.label}</span>
+              </div>
+              <div className="pm-home-premium-stat pm-home-premium-stat--win">
+                <strong>{activeStats.tertiary.value}</strong>
+                <span>{activeStats.tertiary.label}</span>
               </div>
             </div>
-          </Card>
-        </motion.div>
+          </div>
 
-        {/* Form Card */}
-        <motion.div whileHover={{ y: -4, scale: 1.01 }}>
-          <Card className="h-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xl p-8 flex flex-col justify-between">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Seneste form</p>
-              <div className="flex gap-3">
-                {recentForm.length > 0 ? recentForm.map((item) => (
-                  <div 
-                    key={item.key} 
-                    className={cn(
-                      "w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg text-white shadow-lg transform transition-transform hover:scale-110",
-                      item.result === 'win' ? "bg-green-500 shadow-green-500/20" : item.result === 'loss' ? "bg-red-500 shadow-red-500/20" : "bg-slate-400 shadow-slate-500/20"
-                    )}
-                  >
-                    {item.label}
-                  </div>
-                )) : (
-                  <p className="text-sm text-slate-400 font-bold italic">Ingen kampe endnu</p>
-                )}
-              </div>
+          <div className="pm-home-form-row" aria-label="Seneste form">
+            <span>Seneste form</span>
+            <div className="pm-home-form-chips">
+              {recentForm.length > 0 ? recentForm.map((item) => (
+                <span key={item.key} className={`pm-home-form-chip pm-home-form-chip--${item.result}`}>
+                  {item.label}
+                </span>
+              )) : (
+                <small>{eloMode === 'americano' ? 'Afslut en Americano-turnering for at se din form' : 'Spil en kamp for at se din form'}</small>
+              )}
             </div>
-
-            <div className="mt-12 p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Næste milepæl</p>
-               <div className="flex justify-between items-end mb-3">
-                 <p className="text-lg font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">
-                  {nextEloMilestone.remaining > 0
-                    ? `${nextEloMilestone.remaining} til målet`
-                    : `Mål nået!`}
-                 </p>
-                 <span className="text-xs font-black text-pm-accent tracking-tighter italic uppercase">{nextEloMilestone.target} ELO</span>
-               </div>
-               <div className="w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.max(5, (1 - nextEloMilestone.remaining / 50) * 100)}%` }}
-                    className="h-full bg-pm-accent shadow-[0_0_12px_rgba(0,118,182,0.4)]" 
-                    transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-                  />
-               </div>
-            </div>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Quick CTAs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <button
-          onClick={() => setTab("makkere")}
-          className="flex items-center gap-6 p-6 rounded-[2.5rem] bg-green-500 hover:bg-green-600 transition-all group text-left shadow-xl shadow-green-500/20 relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-150 transition-transform duration-700" />
-          <div className="w-16 h-16 rounded-[1.5rem] bg-white flex items-center justify-center text-green-600 shadow-xl group-hover:rotate-6 transition-transform">
-            <Users size={32} />
           </div>
-          <div className="relative z-10">
-            <p className="font-black text-white/70 uppercase text-[10px] tracking-widest mb-1">Social</p>
-            <p className="text-2xl font-display uppercase italic tracking-tighter text-white">Find Makker</p>
-            <p className="text-xs font-bold text-white/80">{seekingTitle}</p>
-          </div>
-          <div className="ml-auto w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
-            <ChevronRight size={24} />
-          </div>
-        </button>
+        </section>
+      )}
 
+      {matchFilterOn && filterMatchCount != null && filterMatchCount > 0 && (
         <button
           type="button"
-          data-tour="quick-action-kampe"
-          onClick={() => setTab("kampe")}
-          className="flex items-center gap-6 p-6 rounded-[2.5rem] bg-pm-accent hover:bg-pm-accent-hover transition-all group text-left shadow-xl shadow-blue-500/20 relative overflow-hidden"
+          className="pm-home-seeking-cta"
+          style={{ marginBottom: 10 }}
+          onClick={() => setTab('kampe')}
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-150 transition-transform duration-700" />
-          <div className="w-16 h-16 rounded-[1.5rem] bg-white flex items-center justify-center text-pm-accent shadow-xl group-hover:rotate-6 transition-transform">
-            <Swords size={32} />
-          </div>
-          <div className="relative z-10">
-            <p className="font-black text-white/70 uppercase text-[10px] tracking-widest mb-1">Play</p>
-            <p className="text-2xl font-display uppercase italic tracking-tighter text-white">Tilmeld Kamp</p>
-            <p className="text-xs font-bold text-white/80">Se åbne kampe i nærheden</p>
-          </div>
-          <div className="ml-auto w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
-            <ChevronRight size={24} />
-          </div>
+          <span className="pm-home-seeking-cta-icon" aria-hidden="true">
+            <Swords size={20} />
+          </span>
+          <span className="pm-home-seeking-cta-copy">
+            <strong>
+              {filterMatchCount === 1
+                ? '1 kamp matcher dit filter'
+                : `${filterMatchCount} kampe matcher dit filter`}
+            </strong>
+            <small>Åbne kampe i din region på dit niveau</small>
+          </span>
+          <ChevronRight size={18} aria-hidden="true" />
         </button>
-      </div>
+      )}
 
-      {/* Activity Feed */}
-      <section className="space-y-4">
-        <div data-tour="home-latest-activity" className="scroll-mt-24 space-y-4">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-xl font-black font-display uppercase italic text-pm-text">Seneste aktivitet</h2>
-          <button 
-            onClick={enableAllFilters}
-            className="text-xs font-black text-pm-accent uppercase tracking-wider"
-          >
-            Vis alle
-          </button>
+      <button
+        type="button"
+        className="pm-home-seeking-cta"
+        onClick={() => setTab("makkere", { search: seekingByChannel.total > 0 ? "seeking=1" : "" })}
+      >
+        <span className="pm-home-seeking-cta-icon" aria-hidden="true">
+          <Users size={20} />
+        </span>
+        <span className="pm-home-seeking-cta-copy">
+          <strong>{seekingTitle}</strong>
+          <small>{seekingSubtitle}</small>
+        </span>
+        <ChevronRight size={18} aria-hidden="true" />
+      </button>
+      {/* Aktivitetsfeed */}
+      {feedLoading ? (
+        <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
+            Seneste aktivitet
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {[54, 46, 54, 38, 50].map((w, i) => (
+              <div key={i} style={{ height: "54px", borderRadius: "8px", background: theme.border, opacity: 0.5 + (i * 0.08), animation: "pm-pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+            ))}
+          </div>
         </div>
-
-        <div className="flex gap-3 overflow-x-auto pb-4 px-1 scrollbar-hide">
-          <button
-            onClick={enableAllFilters}
-            className={cn(
-              "px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all",
-              allActive 
-                ? "bg-pm-text text-white shadow-lg" 
-                : "bg-white text-slate-400 border border-slate-200"
-            )}
-          >
-            Alle Typer
-          </button>
-          {HOME_FEED_FILTERS.map(f => {
-            const on = activeFilters.has(f.id);
-            return (
-              <button
-                key={f.id}
-                onClick={() => toggleFilter(f.id)}
-                className={cn(
-                  "px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all",
-                  on 
-                    ? "bg-pm-accent text-white shadow-lg shadow-pm-accent/20" 
-                    : "bg-white text-slate-400 border border-slate-200 hover:border-pm-accent/30"
-                )}
-              >
-                {f.label}
+      ) : feedLoadError && allFeedRows.length === 0 ? (
+        <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
+            Seneste aktivitet
+          </div>
+          <div className="pm-state-card pm-state-card--error">
+            <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+            <div className="pm-state-title">Kunne ikke hente aktivitet</div>
+            <div className="pm-state-copy">{feedLoadError}</div>
+            <div className="pm-state-actions">
+              <button type="button" onClick={() => void fetchFeed()} style={{ ...btn(true), fontSize: "13px" }}>
+                Prøv igen
               </button>
-            );
-          })}
-        </div>
-        </div>
-
-        <div className="space-y-4">
-          {feedLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-24 bg-white border border-slate-100 rounded-[2rem] animate-pulse" />
-              ))}
             </div>
-          ) : feedRows.length === 0 ? (
-            <Card className="p-12 text-center bg-slate-50 dark:bg-slate-900 border-dashed border-2">
-              <p className="text-slate-400 font-bold text-lg">Ingen aktivitet fundet i dit område endnu.</p>
-            </Card>
-          ) : (
-            feedRenderItems.map((entry) => {
-              if (entry.kind === "label") {
-                return (
-                  <div
+          </div>
+        </div>
+      ) : (
+        <div data-tour="home-latest-activity" style={{ marginBottom: "24px" }}>
+          {feedLoadError ? (
+            <div
+              className="pm-ui-card"
+              style={{
+                padding: "12px 14px",
+                marginBottom: "10px",
+                border: `1px solid ${theme.warm}`,
+                background: theme.warmBg,
+                fontSize: "12px",
+                color: theme.textMid,
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <span>Kunne ikke opdatere aktivitet — viser sidst hentede data.</span>
+              <button type="button" onClick={() => void fetchFeed()} style={{ ...btn(false), padding: "6px 12px", fontSize: "12px" }}>
+                Prøv igen
+              </button>
+            </div>
+          ) : null}
+          <div className="pm-feed-filters-header">
+            <PageSectionTitle>Seneste aktivitet</PageSectionTitle>
+            <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
+              <div className="pm-feed-filters-row">
+                <button
+                  onClick={enableAllFilters}
+                  className={allActive ? "pm-ui-btn-chip pm-feed-filter-chip pm-ui-btn-chip-active" : "pm-ui-btn-chip pm-feed-filter-chip"}
+                >
+                  Alle
+                </button>
+                {HOME_FEED_FILTERS.map(f => {
+                  const on = activeFilters.has(f.id);
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => toggleFilter(f.id)}
+                      className={on ? "pm-ui-btn-chip pm-feed-filter-chip pm-ui-btn-chip-active" : "pm-ui-btn-chip pm-feed-filter-chip"}
+                    >
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {feedRows.length === 0 ? (
+              <div className="pm-ui-card" style={{ padding: "16px", color: theme.textMid, fontSize: "13px" }}>
+                {allFeedRows.length > 0 ? (
+                  <>
+                    Ingen aktiviteter matcher de valgte filtre lige nu.
+                    <button
+                      onClick={enableAllFilters}
+                      className="pm-ui-btn-chip pm-feed-filter-chip"
+                      style={{ marginLeft: "10px" }}
+                    >
+                      Vis alle typer
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Der er ingen aktivitet endnu i dit område.
+                    <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center" }}>
+                      <button type="button" onClick={() => setTab("makkere")} style={activityActionBtnStyle(theme.accent)}>
+                        Find makker
+                      </button>
+                      <button type="button" onClick={() => setTab("kampe")} style={activityActionBtnStyle(theme.textMid)}>
+                        Opret kamp
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : feedRenderItems.map((entry) => {
+                if (entry.kind === "label") {
+                  return (
+                    <div
                     key={entry.key}
-                    className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-8 mb-4 ml-1"
+                    style={{
+                      fontSize: "12px",
+                      color: theme.textMid,
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                      marginTop: entry.label === "Nyeste" ? 0 : "4px",
+                    }}
                   >
                     {entry.label}
                   </div>
@@ -1035,45 +1073,286 @@ export function HomeTab({ user, setTab }) {
               }
               const row = entry.row;
               const i = entry.index;
-              const isAmericano = row.type === 'americano_winner';
-              return (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  key={entry.key}
-                  className="group relative flex items-center gap-5 p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-pm-accent hover:shadow-2xl hover:shadow-pm-accent/10 transition-all cursor-pointer"
+              const isHighlight = entry.isHighlight;
+
+              if (row.type === 'americano_winner') {
+                const player = { id: row.userId, name: row.name };
+                const winnerEloChange = Number(row.winnerEloChange);
+                const hasWinnerElo = Number.isFinite(winnerEloChange);
+                const winnerEloTone =
+                  winnerEloChange > 0 ? theme.green : winnerEloChange < 0 ? theme.red : theme.textMid;
+                return renderActivityRowCard({
+                  key: `am-${i}`,
+                  isHighlight,
+                  tone: theme.warm,
+                  leading: (
+                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
+                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    </div>
+                  ),
+                  tag: "Americano",
+                  meta: formatTimeAgo(row.created_at),
+                  title: (
+                    <>
+                      <span onClick={() => setViewPlayer(player)} style={{ cursor: "pointer", fontWeight: 700 }}>{row.name}</span> vandt Americano
+                    </>
+                  ),
+                  subtitle: row.tournamentName ? `"${row.tournamentName}"` : null,
+                  stat: hasWinnerElo ? (
+                    <span style={activityStatPillStyle(winnerEloTone)}>
+                      {winnerEloChange > 0 ? '+' : ''}{winnerEloChange} ELO
+                    </span>
+                  ) : undefined,
+                  action: <button onClick={() => setViewTournament(row)} style={activityActionBtnStyle(theme.warm)}>Detaljer</button>,
+                });
+              }
+
+              if (row.type === 'liga_completed') {
+                const c = row.champion;
+                return renderActivityRowCard({
+                  key: `liga-${i}`,
+                  isHighlight,
+                  tone: theme.accent,
+                  leading: (
+                    <div style={{ position: "relative", width: "40px", height: "32px" }}>
+                      <AvatarCircle avatar={c.player1_avatar} size={28} emojiSize="14px" style={{ background: theme.surfaceAlt, border: "2px solid " + theme.surface, position: "absolute", left: 0, top: 2, zIndex: 2 }} />
+                      <AvatarCircle avatar={c.player2_avatar} size={28} emojiSize="14px" style={{ background: theme.surfaceAlt, border: "2px solid " + theme.surface, position: "absolute", left: 14, top: 2, zIndex: 1 }} />
+                    </div>
+                  ),
+                  tag: "Liga",
+                  meta: formatTimeAgo(row.created_at),
+                  title: <><span style={{ fontWeight: 700 }}>{c.name}</span> vandt ligaen</>,
+                  subtitle: row.leagueName ? `"${row.leagueName}"` : null,
+                  action: <button onClick={() => setViewLeague(row)} style={activityActionBtnStyle(theme.accent)}>Detaljer</button>,
+                });
+              }
+
+              if (row.type === 'open_match') {
+                const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
+                const player = { id: row.creatorId, name: row.creatorName };
+                return renderActivityRowCard({
+                  key: `open-${i}`,
+                  isHighlight,
+                  tone: theme.green,
+                  leading: (
+                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
+                      <AvatarCircle avatar={row.creatorAvatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    </div>
+                  ),
+                  tag: "2v2",
+                  meta: formatTimeAgo(row.created_at),
+                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.creatorName}</span> søger spillere til <strong>2v2</strong></>,
+                  subtitle: `${dateStr}${row.court ? ` · ${row.court}` : ""}`,
+                  action: (
+                    <button
+                      onClick={() =>
+                        setViewMatch({
+                          kind: "open",
+                          title: `${row.creatorName} søger spillere`,
+                          createdAt: row.created_at,
+                          date: row.date,
+                          court: row.court,
+                          creatorName: row.creatorName,
+                          creatorAvatar: row.creatorAvatar,
+                        })
+                      }
+                      style={activityActionBtnStyle(theme.green)}
+                    >
+                      Detaljer
+                    </button>
+                  ),
+                });
+              }
+
+              if (row.type === 'americano_registration') {
+                const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
+                return renderActivityRowCard({
+                  key: `amreg-${i}`,
+                  isHighlight,
+                  tone: theme.warm,
+                  leading: (
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" }}>
+                      🎾
+                    </div>
+                  ),
+                  tag: "Americano",
+                  meta: formatTimeAgo(row.created_at),
+                  title: <span style={{ fontWeight: 700 }}>{row.name}</span>,
+                  subtitle: `${dateStr}${row.time ? ` · ${row.time}` : ""} · ${row.participants}/${row.slots} tilmeldt`,
+                  action: <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.warm)}>Tilmeld</button>,
+                });
+              }
+
+              if (row.type === 'elo_milestone') {
+                const player = { id: row.userId, name: row.name };
+                return renderActivityRowCard({
+                  key: `milestone-${i}`,
+                  isHighlight,
+                  tone: theme.purple,
+                  leading: (
+                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
+                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    </div>
+                  ),
+                  tag: "ELO",
+                  meta: formatTimeAgo(row.created_at),
+                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.name}</span> nåede {row.milestone} ELO</>,
+                  subtitle: "Ny milepæl",
+                  stat: <span style={activityStatPillStyle(theme.purple)}>{row.milestone}+</span>,
+                });
+              }
+
+              if (row.type === 'seeking_player') {
+                const player = {
+                  id: row.userId,
+                  name: row.name,
+                  seekingChannel: row.seekingChannel === 'makker' ? 'makker' : row.seekingChannel === 'kamp' ? 'kamp' : undefined,
+                };
+                const openSeekingPlayer = () => setViewPlayer(player);
+                const levelStr = row.level != null && row.level !== '' ? formatPlaytomicLevel(row.level) : null;
+                const sub = [row.area, levelStr].filter(Boolean).join(' · ');
+                return renderActivityRowCard({
+                  key: `seek-${row.userId}-${row.seekingChannel || 'x'}-${i}`,
+                  isHighlight,
+                  tone: theme.blue,
+                  leading: (
+                    <div onClick={openSeekingPlayer} style={{ cursor: "pointer" }}>
+                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    </div>
+                  ),
+                  tag: "Spiller",
+                  meta: formatTimeAgo(row.created_at),
+                  title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={openSeekingPlayer}>{row.name}</span> {seekingActivityLabelForRow(row)}</>,
+                  subtitle: sub || "Klar til kamp",
+                  action: <button onClick={openSeekingPlayer} style={activityActionBtnStyle(theme.blue)}>Detaljer</button>,
+                });
+              }
+
+              if (row.type === 'league_new') {
+                const isReg = row.status === 'registration';
+                return renderActivityRowCard({
+                  key: `lnew-${i}`,
+                  isHighlight,
+                  tone: theme.accent,
+                  leading: (
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" }}>
+                      🏆
+                    </div>
+                  ),
+                  tag: "Liga",
+                  meta: formatTimeAgo(row.created_at),
+                  title: <span style={{ fontWeight: 700 }}>{row.leagueName}</span>,
+                  subtitle: `${isReg ? "Tilmelding åben" : "I gang"} · ${row.teamCount} hold`,
+                  action: (
+                    <button
+                      onClick={() => {
+                        mergeKampeSessionPrefs(user.id, { format: 'liga' });
+                        setTab('kampe', { search: 'format=liga' });
+                      }}
+                      style={activityActionBtnStyle(theme.accent)}
+                    >
+                      {isReg ? 'Tilmeld' : 'Detaljer'}
+                    </button>
+                  ),
+                });
+              }
+
+              if (row.type === 'match_group') {
+                const winners = row.players.filter((p) => p.win);
+                const losers = row.players.filter((p) => !p.win);
+                const winnerNames = winners.map((p) => p.name.split(' ')[0]).join(' + ');
+                const loserNames = losers.map((p) => p.name.split(' ')[0]).join(' + ');
+                return renderActivityRowCard({
+                  key: `match-${i}`,
+                  isHighlight,
+                  tone: theme.accent,
+                  leading: (
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: theme.surfaceAlt, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Swords size={16} color={theme.accent} />
+                    </div>
+                  ),
+                  tag: "Kamp",
+                  meta: formatTimeAgo(row.created_at),
+                  title: <><strong>{winnerNames}</strong> slog <strong>{loserNames}</strong></>,
+                  subtitle: `${row.court} · ${row.score}`,
+                  action: (
+                    <button
+                      onClick={() =>
+                        setViewMatch({
+                          kind: "result",
+                          title: `${winnerNames} slog ${loserNames}`,
+                          createdAt: row.created_at,
+                          court: row.court,
+                          score: row.score,
+                          description: row.description,
+                          winners,
+                          losers,
+                        })
+                      }
+                      style={activityActionBtnStyle(theme.accent)}
+                    >
+                      Detaljer
+                    </button>
+                  ),
+                });
+              }
+              const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
+              const avatar = row.profiles?.avatar || "🎾";
+              const won = row.result === 'win';
+              const change = Number(row.change) || 0;
+              const tone = change >= 0 ? theme.green : theme.red;
+              return renderActivityRowCard({
+                key: `elo-${i}`,
+                isHighlight,
+                tone: theme.accent,
+                leading: <AvatarCircle avatar={avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />,
+                tag: "Kamp",
+                meta: formatTimeAgo(row.created_at),
+                title: <><strong>{name}</strong> {won ? "vandt" : "tabte"}</>,
+                stat: <span style={activityStatPillStyle(tone)}>{change >= 0 ? "+" : ""}{change} ELO</span>,
+              });
+            })}
+          </div>
+          {(canShowMore || canShowLess) && (
+            <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+              {canShowMore && (
+                <button
+                  className="pm-ui-btn-chip pm-feed-filter-chip"
+                  onClick={() => setVisibleFeedCount((prev) => Math.min(prev + FEED_PAGE_SIZE, filteredFeedRows.length))}
                 >
-                  <div className={cn(
-                    "w-14 h-14 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg",
-                    isAmericano ? "bg-pm-orange shadow-pm-orange/20" : "bg-pm-accent shadow-pm-accent/20"
-                  )}>
-                    {isAmericano ? <Trophy size={24} /> : <Swords size={24} />}
-                  </div>
-                  <div className="flex-1 min-width-0">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
-                      {formatTimeAgo(row.created_at)}
-                    </p>
-                    <p className="text-lg font-black text-slate-900 dark:text-white leading-tight uppercase italic tracking-tighter">
-                      {isAmericano ? (
-                        <><span className="text-pm-orange">{row.name}</span> vandt Americano</>
-                      ) : row.type === 'match_group' ? (
-                        <>Kampresultat: <span className="text-pm-accent">{row.score}</span></>
-                      ) : (
-                        row.title || "Ny aktivitet"
-                      )}
-                    </p>
-                    {row.court && <p className="text-sm font-bold text-slate-400 mt-1">{row.court}</p>}
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-300 group-hover:text-pm-accent group-hover:bg-pm-accent-bg transition-all">
-                    <ChevronRight size={20} />
-                  </div>
-                </motion.div>
-              );
-            })
+                  Vis flere
+                </button>
+              )}
+              {canShowLess && (
+                <button
+                  className="pm-ui-btn-chip pm-feed-filter-chip"
+                  onClick={() => setVisibleFeedCount(FEED_INITIAL_COUNT)}
+                >
+                  Vis færre
+                </button>
+              )}
+            </div>
           )}
         </div>
-      </section>
+      )}
+
+      {/* Quick actions */}
+      <div className="pm-home-grid">
+        {actions.map((a, i) => (
+          <button
+            key={i}
+            onClick={() => setTab(a.tab)}
+            data-tour={`quick-action-${a.tab}`}
+            className="pm-ui-card pm-ui-card-interactive pm-home-action-card"
+          >
+            <div className="pm-home-action-card-icon">
+              {a.icon}
+            </div>
+            <div className="pm-home-action-card-title">{a.title}</div>
+            <div className="pm-home-action-card-desc">{a.desc}</div>
+          </button>
+        ))}
+      </div>
 
       {/* Modals */}
       <AppModal

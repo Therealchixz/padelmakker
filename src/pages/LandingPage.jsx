@@ -1,321 +1,645 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { 
-  ArrowRight, Users, Trophy, Swords, MapPin, 
-  ChevronRight, Calendar, Sparkles, Zap, Shield, 
-  MessageSquare, LayoutGrid, Sun, Moon, Menu, X
-} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { font, theme, btn, heading } from '../lib/platformTheme';
+import { useScrollReveal } from '../lib/platformUtils';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2 } from 'lucide-react';
 import { useDarkMode } from '../lib/useDarkMode';
+import { fetchLandingPublicStats, formatLandingStatCount } from '../lib/landingPublicStats';
+import { shareInviteFriendToApp, shareResultToastMessage } from '../lib/shareUtils';
+import { LEGAL_INFO } from '../lib/legalInfo';
 import { useAuth } from '../lib/AuthContext';
-import { cn } from '../lib/utils';
+
+const AnimatedAppMockupLazy = lazy(() =>
+  import('../components/AnimatedAppMockup').then((m) => ({ default: m.AnimatedAppMockup }))
+);
+const LandingEloExplainerLazy = lazy(() =>
+  import('../components/LandingEloExplainer').then((m) => ({ default: m.LandingEloExplainer }))
+);
+const LandingRoadmapLazy = lazy(() =>
+  import('../components/LandingRoadmap').then((m) => ({ default: m.LandingRoadmap }))
+);
+const LandingTourVideoLazy = lazy(() =>
+  import('../components/LandingTourVideo').then((m) => ({ default: m.LandingTourVideo }))
+);
 
 export function LandingPage() {
+  const revealRef = useScrollReveal();
+  const heroRef = useRef(null);
+  const navRef = useRef(null);
   const navigate = useNavigate();
-  const location = useLocation();
-  const isGuestPreview = new URLSearchParams(location.search).get("guest") === "1";
   const { session } = useAuth();
-  const hasSession = session || isGuestPreview;
+  const goDashboard = () => navigate('/dashboard/hjem');
+  const [menuOpen, setMenuOpen] = useState(false);
   const [dark, setDark] = useDarkMode();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [navHeight, setNavHeight] = useState(0);
+  const [showDeferredSections, setShowDeferredSections] = useState(false);
+  const [publicStats, setPublicStats] = useState(null);
+  const [inviteNote, setInviteNote] = useState('');
+  const toggleTheme = () => setDark((isDark) => !isDark);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    let cancelled = false;
+    void fetchLandingPublicStats().then((stats) => {
+      if (!cancelled) setPublicStats(stats);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+  const handleInviteFriend = async () => {
+    setInviteNote('');
+    const result = await shareInviteFriendToApp();
+    const msg = shareResultToastMessage(result);
+    if (msg) setInviteNote(msg);
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+  const statsBannerItems = publicStats
+    ? [
+        { n: formatLandingStatCount(publicStats.player_count), l: 'Spillere på platformen' },
+        { n: formatLandingStatCount(publicStats.open_matches), l: 'Åbne kampe lige nu' },
+        { n: formatLandingStatCount(publicStats.matches_last_30_days), l: 'Kampe spillet (30 dage)' },
+        { n: 'Gratis', l: 'Opret profil uden betaling' },
+      ]
+    : [
+        { n: 'Gratis', l: 'Opret profil uden betaling' },
+        { n: 'Makkere', l: 'Find spillere på dit niveau' },
+        { n: 'Kampe', l: 'Opret og deltag i 2v2' },
+        { n: 'ELO', l: 'Følg udviklingen over tid' },
+      ];
+
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const maxExtra = 100;
+    const fadeStart = 24;
+    const fadeRange = 200;
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      const t = Math.max(0, Math.min(1, (y - fadeStart) / fadeRange));
+      el.style.setProperty("--pm-hero-fade-extra", `${Math.round(t * maxExtra)}px`);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const navEl = navRef.current;
+    if (!navEl) return;
+
+    const updateNavHeight = () => {
+      const next = Math.ceil(navEl.getBoundingClientRect().height);
+      setNavHeight((prev) => (prev === next ? prev : next));
+    };
+
+    updateNavHeight();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(updateNavHeight);
+      observer.observe(navEl);
+      window.addEventListener("resize", updateNavHeight);
+      return () => {
+        observer.disconnect();
+        window.removeEventListener("resize", updateNavHeight);
+      };
+    }
+
+    window.addEventListener("resize", updateNavHeight);
+    return () => window.removeEventListener("resize", updateNavHeight);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    let cancelled = false;
+
+    const revealDeferredSections = () => {
+      if (!cancelled) setShowDeferredSections(true);
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      const idleId = window.requestIdleCallback(revealDeferredSections, { timeout: 1600 });
+      return () => {
+        cancelled = true;
+        if (typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timerId = window.setTimeout(revealDeferredSections, 900);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timerId);
+    };
+  }, []);
+
+  const steps = [
+    { step: "01", icon: <UserPlus  size={24} color={theme.onAccent} />, title: "Opret profil", desc: "Vælg niveau, region, spillestil og dine foretrukne spilledage — så kan andre finde dig rigtigt." },
+    { step: "02", icon: <Users     size={24} color={theme.onAccent} />, title: "Find makker",  desc: "Se padelspillere nær dig på samme niveau, og invitér dem til en kamp uden Facebook-tråde." },
+    { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Book bane",    desc: "Få overblik over ledige tider hos udvalgte centre, og hop videre til booking når tidspunktet passer." },
+    { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din rating", desc: "Registrér resultater, følg både 2v2- og Americano-rating og find mere jævnbyrdige kampe næste gang." },
+  ];
+
+  const features = [
+    { icon: <Trophy size={22} color={theme.accent} />, title: "2v2 ELO-ranking", desc: "Dynamisk ELO med individuel forventning, sejrsmargin og fair udsving i dine 2v2-kampe." },
+    { icon: <Swords size={22} color={theme.accent} />, title: "Holdkampe", desc: "Opret åbne eller lukkede 2v2 kampe. Åbne kampe kan alle tilslutte sig direkte — lukkede kræver godkendelse fra opretteren." },
+    { icon: <Medal size={22} color={theme.accent} />, title: "Americano med ELO", desc: "Opret turneringer med automatisk rundeplan, fair rotation og separat Americano-ELO (adskilt fra 2v2)." },
+    { icon: <MapPinned size={22} color={theme.accent} />, title: "Ledige baner", desc: "Se live ledige tider hos udvalgte centre og hop direkte videre til booking, når du har fundet et tidspunkt." },
+    { icon: <MessageCircle size={22} color={theme.accent} />, title: "Direkte beskeder", desc: "Chat direkte med andre spillere i appen — aftale kamp, koordinér tider og hold kontakten med dine faste makkere." },
+    { icon: <LineChart size={22} color={theme.accent} />, title: "Profil & udvikling", desc: "Følg din ELO over tid, se sejrsstreaks, bedste makker og kamphistorik — alt på ét sted." },
+  ];
+
+  const landingCtaBlue = "var(--pm-landing-cta-blue)";
+  const navSecondaryBtnStyle = {
+    ...btn(false, { size: 'sm', radius: 'md', fontWeight: 600 }),
+    borderColor: "transparent",
+    background: "transparent",
+    boxShadow: "none",
+    textDecoration: "none",
+  };
+  const navPrimaryBtnStyle = {
+    ...btn(true, { size: 'sm', radius: 'md' }),
+    background: landingCtaBlue,
+    borderColor: landingCtaBlue,
+    color: theme.onAccent,
+  };
+  const heroPrimaryBtnStyle = {
+    ...btn(true, { size: 'lg', radius: 'lg' }),
+    background: theme.onAccent,
+    borderColor: "rgba(255,255,255,0.92)",
+    color: landingCtaBlue,
+    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+  };
+  const heroSecondaryBtnStyle = {
+    ...btn(false, { size: 'lg', radius: 'lg', fontWeight: 600 }),
+    border: "1px solid rgba(255,255,255,0.35)",
+    background: "rgba(255,255,255,0.1)",
+    color: theme.onAccent,
+    backdropFilter: "blur(4px)",
+    boxShadow: "none",
+  };
+  const mobileMenuActionStyle = {
+    ...btn(false, { size: 'md', radius: 'md', fontWeight: 600 }),
+    width: "100%",
+    justifyContent: "flex-start",
+    background: "transparent",
+    borderColor: "transparent",
+    boxShadow: "none",
+    padding: "13px 12px",
+    fontSize: "15px",
+    textDecoration: "none",
+    color: theme.text,
+  };
+  const ctaPrimaryBtnStyle = {
+    ...btn(true, { size: 'lg', radius: 'lg' }),
+    background: theme.onAccent,
+    borderColor: "rgba(255,255,255,0.92)",
+    color: landingCtaBlue,
+    boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+  };
+  const landingSectionStyle = {
+    maxWidth: "1100px",
+    margin: "0 auto",
+    padding: "clamp(56px,12vw,88px) clamp(16px,4vw,24px)",
+  };
+  const landingSectionIntroStyle = {
+    textAlign: "center",
+    marginBottom: "clamp(32px,7vw,48px)",
+  };
+  const landingSectionKickerStyle = {
+    fontSize: "12px",
+    fontWeight: 700,
+    color: theme.accent,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    marginBottom: "10px",
+  };
+  const landingSectionHeadingStyle = {
+    ...heading("clamp(26px,5.5vw,36px)"),
+    letterSpacing: "-0.03em",
+  };
+  const landingFeatureCardStyle = {
+    background: theme.surface,
+    borderRadius: "14px",
+    padding: "32px 24px",
+    boxShadow: theme.shadow,
+    border: "1px solid " + theme.border,
+  };
+  const landingFeatureTitleStyle = {
+    fontSize: "18px",
+    fontWeight: 700,
+    marginBottom: "10px",
+    letterSpacing: "-0.02em",
+    color: theme.text,
+  };
+  const landingFeatureDescStyle = {
+    fontSize: "14px",
+    color: theme.textMid,
+    lineHeight: 1.65,
+  };
+  const landingInfoCardStyle = {
+    background: theme.surface,
+    borderRadius: "14px",
+    border: "1px solid " + theme.border,
+    boxShadow: theme.shadow,
+    padding: "clamp(20px,4vw,28px)",
   };
 
   return (
-    <div className={cn(
-      "min-h-screen transition-colors duration-500 font-sans selection:bg-pm-accent selection:text-white",
-      dark ? "bg-[#020617] text-white grid-pattern-dark" : "bg-[#f8fafc] text-slate-900 grid-pattern"
-    )}>
-      {/* Floating Island Header */}
-      <header className={cn(
-        "fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 w-[95%] max-w-5xl",
-        isScrolled 
-          ? "bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-slate-200 dark:border-slate-800 py-3 rounded-2xl shadow-2xl" 
-          : "bg-transparent py-6"
-      )}>
-        <div className="px-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-pm-accent rounded-xl flex items-center justify-center text-white shadow-lg shadow-pm-accent/20 group-hover:scale-110 transition-transform">
-              <Zap size={22} fill="currentColor" />
-            </div>
-            <span className="font-display uppercase italic text-2xl tracking-tighter">PadelMakker</span>
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-8">
-            <Link to="/events" className="text-sm font-bold text-slate-500 hover:text-pm-accent transition-colors">Events</Link>
-            <Link to="/hjaelp" className="text-sm font-bold text-slate-500 hover:text-pm-accent transition-colors">Hjælp</Link>
-            <Link to="/app" className="text-sm font-bold text-slate-500 hover:text-pm-accent transition-colors">App</Link>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setDark(!dark)}
-              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              {dark ? <Sun size={18} /> : <Moon size={18} />}
+    <div
+      className="pm-landing"
+      ref={revealRef}
+      style={{
+        paddingBottom: 'max(96px, env(safe-area-inset-bottom))',
+        '--pm-landing-nav-h': navHeight > 0 ? `${navHeight}px` : undefined,
+      }}
+    >
+      {/* Nav */}
+      <nav ref={navRef} style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: theme.surface, backdropFilter: "blur(12px)", borderBottom: "1px solid " + theme.border }}>
+        <div className="pm-landing-nav" style={{ paddingTop: "max(clamp(12px,2.5vw,16px), env(safe-area-inset-top))", paddingBottom: "clamp(12px,2.5vw,16px)", paddingLeft: "clamp(16px,4vw,24px)", paddingRight: "clamp(16px,4vw,24px)", maxWidth: "1100px", margin: "0 auto" }}>
+          <div className="pm-landing-nav-brand">
+            <button type="button" onClick={() => navigate("/")} style={{ display: "flex", alignItems: "center", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }} aria-label="PadelMakker forsiden">
+              <picture>
+                <source srcSet={dark ? "/logo-brand-dark-nav.webp" : "/logo-brand-nav.webp"} type="image/webp" />
+                <img
+                  src={dark ? "/logo-brand-dark.png" : "/logo-brand.png"}
+                  width={320}
+                  height={120}
+                  alt="PadelMakker logo"
+                  style={{ height: "clamp(40px,5vw,50px)", width: "auto", objectFit: "contain", display: "block" }}
+                />
+              </picture>
             </button>
-            
-            {hasSession ? (
-              <button 
-                onClick={() => navigate('/dashboard/hjem?guest=1')}
-                className="bg-pm-accent hover:bg-pm-accent-hover text-white px-5 py-2 rounded-xl text-sm font-black transition-all shadow-lg shadow-pm-accent/25"
-              >
-                DASHBOARD
+            <button
+              type="button"
+              className="pm-landing-hamburger"
+              onClick={() => setMenuOpen(o => !o)}
+              aria-label={menuOpen ? "Luk menu" : "Åbn menu"}
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
+          <div className="pm-landing-nav-actions">
+            <Link
+              to="/events"
+              className="pm-landing-nav-secondary"
+              style={navSecondaryBtnStyle}
+            >
+              <CalendarDays size={16} aria-hidden />
+              Events
+            </Link>
+            <Link
+              to="/hjaelp"
+              className="pm-landing-nav-secondary"
+              style={navSecondaryBtnStyle}
+            >
+              <LifeBuoy size={16} aria-hidden />
+              Hjælp
+            </Link>
+            <Link
+              to="/app"
+              className="pm-landing-nav-secondary"
+              style={navSecondaryBtnStyle}
+            >
+              <Smartphone size={16} aria-hidden />
+              App
+            </Link>
+            <button
+              type="button"
+              className="pm-landing-theme-btn"
+              onClick={toggleTheme}
+              aria-pressed={dark}
+              title={dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
+              style={{
+                ...navSecondaryBtnStyle,
+                padding: "10px 12px",
+              }}
+            >
+              {dark ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
+              <span>{dark ? "Lys" : "Mørk"}</span>
+            </button>
+            {session ? (
+              <button type="button" onClick={goDashboard} style={navPrimaryBtnStyle}>
+                Gå til dashboard
               </button>
             ) : (
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => navigate('/login')}
-                  className="hidden sm:block px-4 py-2 text-sm font-bold text-slate-500 hover:text-pm-accent"
-                >
-                  Log ind
-                </button>
-                <button 
-                  onClick={() => navigate('/opret')}
-                  className="bg-pm-accent hover:bg-pm-accent-hover text-white px-5 py-2 rounded-xl text-sm font-black transition-all shadow-lg shadow-pm-accent/25"
-                >
-                  OPRET PROFIL
-                </button>
-              </div>
+              <>
+                <button type="button" onClick={() => navigate("/login")} style={navSecondaryBtnStyle}>Log ind</button>
+                <button type="button" onClick={() => navigate("/opret")} style={navPrimaryBtnStyle}>Opret gratis profil</button>
+              </>
             )}
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-40 pb-20 px-6 overflow-hidden">
-        <div className="hero-glow" />
-        <div className="max-w-7xl mx-auto text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-pm-accent-bg text-pm-accent text-[10px] font-black uppercase tracking-widest mb-8 border border-pm-accent/10"
-          >
-            <Sparkles size={14} /> Nu med Americano ELO
-          </motion.div>
-
-          <motion.h1 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="text-6xl md:text-8xl lg:text-[120px] font-display uppercase italic tracking-tighter leading-[0.85] mb-8"
-          >
-            Spil mere <span className="text-gradient">padel.</span><br />
-            Find din <span className="underline decoration-pm-orange underline-offset-8">makker.</span>
-          </motion.h1>
-
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg md:text-2xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-12 font-bold leading-relaxed"
-          >
-            PadelMakker er Danmarks mest moderne platform for padel-spillere. 
-            Find makkere på dit niveau, book baner og følg din ELO-udvikling.
-          </motion.p>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            {hasSession ? (
-              <button 
-                onClick={() => navigate('/dashboard/hjem?guest=1')}
-                className="w-full sm:w-auto bg-pm-accent hover:bg-pm-accent-hover text-white px-8 py-5 rounded-2xl text-lg font-black transition-all shadow-[0_20px_40px_-10px_rgba(0,118,182,0.4)] flex items-center justify-center gap-2 group"
-              >
-                GÅ TIL DASHBOARD <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-              </button>
-            ) : (
-              <button 
-                onClick={() => navigate('/opret')}
-                className="w-full sm:w-auto bg-pm-accent hover:bg-pm-accent-hover text-white px-8 py-5 rounded-2xl text-lg font-black transition-all shadow-[0_20px_40px_-10px_rgba(0,118,182,0.4)] flex items-center justify-center gap-2 group"
-              >
-                KOM I GANG NU <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-              </button>
-            )}
-            <Link 
-              to="/elo"
-              className="w-full sm:w-auto px-8 py-5 rounded-2xl text-lg font-black bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-pm-accent transition-all flex items-center justify-center gap-2"
-            >
-              SE HVORDAN ELO VIRKER
+      {/* Mobilmenu dropdown */}
+      {menuOpen && (
+        <>
+          {/* Backdrop — klik udenfor lukker menuen */}
+          <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 47 }} aria-hidden />
+          <div className="pm-landing-mobile-menu">
+            <Link to="/events" onClick={() => setMenuOpen(false)} style={mobileMenuActionStyle}>
+              <CalendarDays size={18} color={theme.accent} /> Events
             </Link>
-          </motion.div>
-        </div>
-
-        {/* Floating Stats */}
-        <div className="max-w-7xl mx-auto mt-32 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {[
-            { label: 'Aktive spillere', value: '5.000+', icon: Users },
-            { label: 'Kampe spillet', value: '12k', icon: Swords },
-            { label: 'Gns. rating', value: '1540', icon: Trophy },
-            { label: 'Ledige baner', value: '24/7', icon: MapPin },
-          ].map((stat, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="text-center p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 backdrop-blur-sm"
+            <Link to="/hjaelp" onClick={() => setMenuOpen(false)} style={mobileMenuActionStyle}>
+              <LifeBuoy size={18} color={theme.accent} /> Hjælp
+            </Link>
+            <Link to="/om" onClick={() => setMenuOpen(false)} style={mobileMenuActionStyle}>
+              <Info size={18} color={theme.accent} /> Om PadelMakker
+            </Link>
+            <Link to="/faq" onClick={() => setMenuOpen(false)} style={mobileMenuActionStyle}>
+              <CircleHelp size={18} color={theme.accent} /> FAQ
+            </Link>
+            <Link to="/app" onClick={() => setMenuOpen(false)} style={mobileMenuActionStyle}>
+              <Smartphone size={18} color={theme.accent} /> App
+            </Link>
+            {session ? (
+              <button
+                type="button"
+                onClick={() => {
+                  goDashboard();
+                  setMenuOpen(false);
+                }}
+                style={{ ...mobileMenuActionStyle, fontFamily: "inherit", fontWeight: 700, color: theme.accent }}
+              >
+                <ArrowRight size={18} color={theme.accent} /> Gå til dashboard
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                toggleTheme();
+                setMenuOpen(false);
+              }}
+              style={{
+                ...mobileMenuActionStyle,
+                gap: "12px",
+                fontFamily: "inherit",
+              }}
             >
-              <div className="w-10 h-10 bg-pm-accent-bg rounded-xl flex items-center justify-center text-pm-accent mx-auto mb-4">
-                <stat.icon size={20} />
-              </div>
-              <p className="text-3xl font-display uppercase tracking-tight italic mb-1">{stat.value}</p>
-              <p className="text-xs font-black text-slate-500 uppercase tracking-widest">{stat.label}</p>
-            </motion.div>
+              {dark ? <Sun size={18} color={theme.accent} /> : <Moon size={18} color={theme.accent} />}
+              {dark ? "Skift til lys tilstand" : "Skift til mørk tilstand"}
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Hero */}
+      <section
+        className="pm-hero-gradient pm-landing-hero"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          paddingLeft: 0,
+          paddingRight: 0,
+          paddingBottom: 0,
+          textAlign: "center",
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            flex: "1 1 auto",
+            paddingLeft: "clamp(16px,4vw,24px)",
+            paddingRight: "clamp(16px,4vw,24px)",
+            paddingBottom: "clamp(28px,6vw,44px)",
+            position: "relative",
+            zIndex: 2,
+          }}
+        >
+          <div className="pm-landing-hero-grid">
+            <div className="pm-landing-hero-copy">
+            <h1 className="pm-reveal pm-visible pm-delay-1 pm-landing-hero-title">
+              Find makker<br />på dit niveau.<br /><span className="pm-landing-hero-accent">Spil mere padel.</span>
+            </h1>
+            <p className="pm-reveal pm-visible pm-delay-2 pm-landing-hero-subtitle" style={{ fontSize: "clamp(16px,3.8vw,19px)", maxWidth: "480px", margin: "0 auto clamp(36px,7vw,48px)", lineHeight: 1.65 }}>
+              Find padelspillere på dit niveau, opret kampe og se ledige baner i Danmark. PadelMakker gør det nemmere at komme fra lyst til kamp.
+            </p>
+            <div className="pm-reveal pm-visible pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+              {session ? (
+                <button type="button" onClick={goDashboard} style={heroPrimaryBtnStyle} aria-label="Gå til dashboard">
+                  Gå til dashboard <ArrowRight size={17} />
+                </button>
+              ) : (
+                <>
+                  <button type="button" onClick={() => navigate("/opret")} style={heroPrimaryBtnStyle} aria-label="Opret gratis profil på PadelMakker">
+                    Opret gratis profil <ArrowRight size={17} />
+                  </button>
+                  <button type="button" onClick={() => navigate("/login")} style={heroSecondaryBtnStyle}>
+                    Log ind
+                  </button>
+                </>
+              )}
+            </div>
+            </div>
+            {showDeferredSections ? (
+              <Suspense fallback={<div className="pm-landing-hero-mockup" aria-hidden="true" />}>
+                <AnimatedAppMockupLazy className="pm-landing-hero-mockup" />
+              </Suspense>
+            ) : (
+              <div className="pm-landing-hero-mockup" aria-hidden="true" />
+            )}
+          </div>
+        </div>
+        <div ref={heroRef} className="pm-hero-fade-tail" aria-hidden />
+      </section>
+
+      {/* Stats banner */}
+      <section style={{ background: theme.surface, padding: "clamp(32px,6vw,48px) clamp(16px,4vw,24px)", borderBottom: "1px solid " + theme.border }}>
+        <div style={{ maxWidth: "900px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,140px),1fr))", gap: "20px", textAlign: "center" }}>
+          {statsBannerItems.map((s, i) => (
+            <div key={i} className={"pm-reveal pm-delay-" + (i+1)}>
+              <div className="pm-stat-number" style={{ fontFamily: font, fontSize: "clamp(32px,7vw,44px)", fontWeight: 800, color: theme.accent, letterSpacing: "-0.04em" }}>{s.n}</div>
+              <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "4px", fontWeight: 500 }}>{s.l}</div>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* Bento Grid Features */}
-      <section className="py-32 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-16 text-center">
-            <h2 className="text-4xl md:text-6xl font-display uppercase italic tracking-tighter mb-4">Alt samlet på <span className="text-pm-accent">ét sted</span></h2>
-            <p className="text-slate-500 font-bold max-w-xl mx-auto">Bygget af padel-entusiaster til padel-entusiaster. En moderne oplevelse uden unødigt støj.</p>
+      <section className="pm-landing-mobile-mockup-section" style={{ background: theme.surface }}>
+        {showDeferredSections ? (
+          <Suspense fallback={<div className="pm-landing-mobile-mockup" aria-hidden="true" />}>
+            <AnimatedAppMockupLazy className="pm-landing-mobile-mockup pm-reveal-scale" />
+          </Suspense>
+        ) : (
+          <div className="pm-landing-mobile-mockup" aria-hidden="true" />
+        )}
+      </section>
+
+      {showDeferredSections && (
+        <Suspense fallback={null}>
+          <LandingTourVideoLazy />
+        </Suspense>
+      )}
+
+      {/* How it works */}
+      <section style={landingSectionStyle}>
+        <div className="pm-reveal" style={landingSectionIntroStyle}>
+          <p style={landingSectionKickerStyle}>Sådan virker det</p>
+          <h2 style={landingSectionHeadingStyle}>Fra profil til bane — første gang ca. 5 min</h2>
+          <p style={{ fontSize: "15px", color: theme.textMid, lineHeight: 1.7, maxWidth: "620px", margin: "14px auto 0" }}>
+            Opret profil, find makker, book bane og følg din ELO — fire enkle skridt fra idéen om en kamp til en mere aktiv padel-hverdag.
+          </p>
+        </div>
+        <div className="pm-landing-step-flow pm-reveal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,230px),1fr))", gap: "16px" }}>
+          {steps.map((s, i) => (
+            <div key={s.step} className={"pm-feature-card pm-reveal pm-delay-" + (i+1)} style={{ ...landingFeatureCardStyle, position: "relative" }}>
+              <div style={{ fontSize: "48px", fontWeight: 900, color: theme.accent + "12", position: "absolute", top: "16px", right: "20px", letterSpacing: "-0.04em", fontFamily: font }}>{s.step}</div>
+              <div className="pm-landing-feature-icon">
+                {s.icon}
+              </div>
+              <div style={{ ...landingFeatureTitleStyle, fontSize: "17px", marginBottom: "8px", letterSpacing: "-0.01em" }}>{s.title}</div>
+              <div style={{ ...landingFeatureDescStyle, lineHeight: 1.6 }}>{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {showDeferredSections && (
+        <Suspense fallback={null}>
+          <LandingRoadmapLazy />
+        </Suspense>
+      )}
+
+      {showDeferredSections && (
+        <Suspense fallback={null}>
+          <LandingEloExplainerLazy />
+        </Suspense>
+      )}
+
+      {/* Features */}
+      <section style={{ background: theme.bg, padding: "clamp(56px,12vw,88px) clamp(16px,4vw,24px)" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+          <div className="pm-reveal" style={landingSectionIntroStyle}>
+            <p style={landingSectionKickerStyle}>Funktioner</p>
+            <h2 style={landingSectionHeadingStyle}>Alt hvad du behøver</h2>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-6 grid-rows-2 gap-4">
-            {/* Feature 1: ELO */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className="md:col-span-4 bg-gradient-to-br from-pm-accent to-[#005fa3] rounded-[2.5rem] p-8 text-white relative overflow-hidden group border border-white/10 shadow-2xl"
-            >
-              <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl group-hover:scale-125 transition-transform duration-700" />
-              <Shield className="mb-6 opacity-80" size={40} />
-              <h3 className="text-4xl font-display uppercase italic mb-4">Avanceret ELO-system</h3>
-              <p className="text-white/80 font-bold text-lg max-w-md">Vores algoritme sikrer at du altid finder makkere og modstandere der matcher dit niveau præcist.</p>
-              <div className="mt-8 flex gap-4">
-                <div className="px-4 py-2 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest">2v2 Rating</div>
-                <div className="px-4 py-2 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest">Americano Rating</div>
-              </div>
-            </motion.div>
-
-            {/* Feature 2: Chat */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className="md:col-span-2 bg-pm-orange rounded-[2.5rem] p-8 text-white flex flex-col justify-between border border-white/10 shadow-2xl"
-            >
-              <MessageSquare size={40} className="opacity-80" />
-              <div>
-                <h3 className="text-3xl font-display uppercase italic mb-2 text-white">Direkte Chat</h3>
-                <p className="text-white/80 font-bold text-sm">Aftal tidspunkter og koordinér kampe direkte i appen.</p>
-              </div>
-            </motion.div>
-
-            {/* Feature 3: Venue Search */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className="md:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 flex flex-col justify-between shadow-xl"
-            >
-              <MapPin size={40} className="text-pm-accent" />
-              <div>
-                <h3 className="text-3xl font-display uppercase italic mb-2">Baner-overblik</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-bold text-sm">Se ledige tider hos alle de største padelcentre i Aalborg og omegn.</p>
-              </div>
-            </motion.div>
-
-            {/* Feature 4: Dashboard */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className="md:col-span-4 bg-slate-900 dark:bg-white dark:text-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden group shadow-2xl"
-            >
-              <div className="flex justify-between items-start">
-                <LayoutGrid size={40} className="opacity-80" />
-                <div className="w-12 h-12 rounded-full border border-white/20 dark:border-slate-200 flex items-center justify-center">
-                  <ArrowRight size={20} />
+          <div className="pm-landing-features-grid">
+            {features.map((f, i) => (
+              <div key={f.title} className={"pm-feature-card pm-reveal pm-delay-" + (i + 1)} style={landingFeatureCardStyle}>
+                <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: theme.accentBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px" }}>
+                  {f.icon}
                 </div>
+                <div style={landingFeatureTitleStyle}>{f.title}</div>
+                <div style={landingFeatureDescStyle}>{f.desc}</div>
               </div>
-              <div className="mt-20">
-                <h3 className="text-4xl font-display uppercase italic mb-4">Dit Personlige Dashboard</h3>
-                <p className="text-slate-400 dark:text-slate-500 font-bold text-lg max-w-md">Få det fulde overblik over dine statistikker, kommende kampe og makker-invitationer.</p>
-              </div>
-            </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Modern CTA */}
-      <section className="py-20 px-6">
-        <div className="max-w-5xl mx-auto rounded-[3rem] bg-pm-accent p-12 md:p-24 text-center text-white relative overflow-hidden shadow-2xl">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-          <h2 className="text-5xl md:text-7xl font-display uppercase italic tracking-tighter mb-8 relative z-10">Klar til din <span className="text-slate-900 underline underline-offset-8">næste kamp?</span></h2>
-          {hasSession ? (
-            <button 
-              onClick={() => navigate('/dashboard/hjem?guest=1')}
-              className="bg-white text-pm-accent px-10 py-6 rounded-2xl text-xl font-black transition-all hover:scale-105 shadow-2xl relative z-10"
-            >
-              GÅ TIL DASHBOARD
-            </button>
-          ) : (
-            <button 
-              onClick={() => navigate('/opret')}
-              className="bg-white text-pm-accent px-10 py-6 rounded-2xl text-xl font-black transition-all hover:scale-105 shadow-2xl relative z-10"
-            >
-              OPRET DIN PROFIL GRATIS
-            </button>
-          )}
-          <p className="mt-8 text-white/70 font-bold relative z-10 uppercase tracking-widest text-xs italic">Tager under 2 minutter</p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-20 px-6 border-t border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="md:col-span-2">
-            <Link to="/" className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 bg-pm-accent rounded-lg flex items-center justify-center text-white">
-                <Zap size={18} fill="currentColor" />
-              </div>
-              <span className="font-display uppercase italic text-xl tracking-tighter">PadelMakker</span>
-            </Link>
-            <p className="text-slate-500 dark:text-slate-400 font-bold max-w-sm">
-              Fællesskabet for padelspillere i Aalborg. Vi hjælper dig med at finde makkere, kampe og baner.
+      {/* CTA */}
+      <section className="pm-reveal-scale" style={landingSectionStyle}>
+        <div className="pm-landing-cta-banner">
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <h2>{session ? 'Klar til næste kamp?' : 'Klar til at spille?'}</h2>
+            <p style={{ fontSize: "clamp(15px,3.5vw,17px)", color: "var(--pm-hero-subtitle)", maxWidth: "420px", margin: "0 auto 32px", lineHeight: 1.6 }}>
+              {session
+                ? 'Du er logget ind. Hop tilbage i dashboard og find kampe, makkere og baner.'
+                : 'Opret din gratis profil, find spillere på dit niveau og gør det lettere at få næste kamp i kalenderen.'}
             </p>
-          </div>
-          <div>
-            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Navigation</h4>
-            <ul className="space-y-4 font-bold">
-              <li><Link to="/events" className="text-slate-500 hover:text-pm-accent transition-colors">Events</Link></li>
-              <li><Link to="/hjaelp" className="text-slate-500 hover:text-pm-accent transition-colors">Hjælp & Support</Link></li>
-              <li><Link to="/app" className="text-slate-500 hover:text-pm-accent transition-colors">App Installation</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Juridisk</h4>
-            <ul className="space-y-4 font-bold">
-              <li><Link to="/privatlivspolitik" className="text-slate-500 hover:text-pm-accent transition-colors">Privatlivspolitik</Link></li>
-              <li><Link to="/handelsbetingelser" className="text-slate-500 hover:text-pm-accent transition-colors">Handelsbetingelser</Link></li>
-              <li><Link to="/cookies" className="text-slate-500 hover:text-pm-accent transition-colors">Cookies</Link></li>
-            </ul>
+            {session ? (
+              <button type="button" onClick={goDashboard} style={ctaPrimaryBtnStyle} aria-label="Gå til dashboard">
+                Gå til dashboard <ArrowRight size={17} />
+              </button>
+            ) : (
+              <button type="button" onClick={() => navigate("/opret")} style={ctaPrimaryBtnStyle} aria-label="Opret gratis profil og kom i gang">
+                Kom i gang — det er gratis <ArrowRight size={17} />
+              </button>
+            )}
           </div>
         </div>
-        <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-slate-100 dark:border-slate-800 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
-          © 2026 PadelMakker Aalborg. Alle rettigheder forbeholdes.
+      </section>
+
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 clamp(16px,4vw,24px) clamp(32px,6vw,48px)" }}>
+        <div className="pm-reveal" style={landingInfoCardStyle}>
+          <p style={{ ...landingSectionKickerStyle, margin: "0 0 10px" }}>Centre på platformen</p>
+          <h2 style={{ ...heading("clamp(20px,4vw,24px)"), margin: "0 0 14px", letterSpacing: "-0.02em" }}>Baner-overblik i appen</h2>
+          <p style={{ fontSize: "14px", color: theme.textMid, lineHeight: 1.6, margin: "0 0 16px" }}>
+            Se ledige tider og spring videre til booking hos: Skansen Padel, Padel Lounge Aalborg, Match Padel og PadelPadel Aalborg (AL Bank Arena).
+          </p>
+          <Link to="/om" style={{ fontSize: "14px", fontWeight: 600, color: theme.accent, textDecoration: "none" }}>
+            Læs mere om PadelMakker →
+          </Link>
+        </div>
+      </section>
+
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 clamp(16px,4vw,24px) clamp(32px,6vw,48px)" }}>
+        <div
+          className="pm-reveal"
+          style={{
+            ...landingInfoCardStyle,
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "16px 20px",
+          }}
+        >
+          <div style={{ flex: "1 1 220px", minWidth: 0 }}>
+            <p style={{ fontSize: "15px", fontWeight: 700, color: theme.text, margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+              Kender du nogen der mangler makker?
+            </p>
+            <p style={{ fontSize: "13px", color: theme.textMid, margin: 0, lineHeight: 1.5 }}>
+              Send en invitation — det tager under et minut at komme i gang på PadelMakker.
+            </p>
+            {inviteNote ? (
+              <p style={{ fontSize: "12px", color: theme.accent, margin: "8px 0 0", fontWeight: 600 }} role="status">
+                {inviteNote}
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => void handleInviteFriend()}
+            style={{ ...btn(true), padding: "11px 18px", fontSize: "13px", flexShrink: 0 }}
+          >
+            <Share2 size={16} /> Inviter en ven
+          </button>
+        </div>
+      </section>
+
+      <footer className="pm-landing-footer" style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(24px,6vw,36px) clamp(16px,4vw,24px)", fontSize: "13px", color: theme.textLight, flexDirection: "column", alignItems: "stretch", gap: "20px" }}>
+        <div className="pm-landing-footer-topline">
+          <span style={{ fontWeight: 500 }}>© 2026 PadelMakker &nbsp;·&nbsp; CVR-nr. {LEGAL_INFO.cvr}</span>
+        </div>
+        <div className="pm-landing-footer-links">
+            <p className="pm-landing-footer-links-title">Kontakt</p>
+            <a href="mailto:kontakt@padelmakker.dk" className="pm-landing-footer-primary-link">
+              <Mail size={14} aria-hidden />
+              kontakt@padelmakker.dk
+            </a>
+            <Link to="/hjaelp" className="pm-landing-footer-primary-link">
+              <LifeBuoy size={14} aria-hidden />
+              Hjælp og kontakt
+            </Link>
+            <Link to="/app" className="pm-landing-footer-primary-link">
+              <Smartphone size={14} aria-hidden />
+              Installér app
+            </Link>
+            <p className="pm-landing-footer-links-title pm-landing-footer-links-title-secondary">Udforsk</p>
+            <div className="pm-landing-footer-link-list-secondary">
+            <Link to="/om" className="pm-landing-footer-secondary-link">
+              Om PadelMakker
+            </Link>
+            <Link to="/faq" className="pm-landing-footer-secondary-link">
+              FAQ
+            </Link>
+            <Link to="/events" className="pm-landing-footer-secondary-link">
+              Events
+            </Link>
+            <Link to="/elo" className="pm-landing-footer-secondary-link">
+              ELO
+            </Link>
+            </div>
+        </div>
+        <div className="pm-landing-footer-legal">
+          <Link to="/privatlivspolitik">Privatlivspolitik</Link>
+          <Link to="/handelsbetingelser">Handelsbetingelser</Link>
+          <Link to="/cookies">Cookies</Link>
         </div>
       </footer>
     </div>
   );
 }
+

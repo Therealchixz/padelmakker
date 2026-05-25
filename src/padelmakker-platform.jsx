@@ -66,8 +66,6 @@ export default function PadelMakker() {
   const navigate = useNavigate();
   const location = useLocation();
   const showPublicLanding = new URLSearchParams(location.search).get("forside") === "1";
-  const isGuestPreview = new URLSearchParams(location.search).get("guest") === "1";
-
   const showToast = useCallback((msg) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast(msg);
@@ -76,17 +74,6 @@ export default function PadelMakker() {
       toastTimerRef.current = null;
     }, 3000);
   }, []);
-
-  const mockGuestUser = {
-    id: 'guest-id',
-    full_name: 'Gæst Spiller',
-    name: 'Gæst',
-    avatar: '🎾',
-    elo_rating: 1540,
-    games_played: 24,
-    games_won: 15,
-    role: 'user'
-  };
   const handleLogout = useCallback(async () => {
     await signOut();
     navigate("/", { replace: true });
@@ -218,27 +205,23 @@ export default function PadelMakker() {
             <Route
               path="/dashboard"
               element={
-                isGuestPreview 
-                  ? <DashboardPageLazy user={mockGuestUser} onLogout={handleLogout} showToast={showToast} />
-                  : dashboardGate
-                    ?? (canUseApp
-                      ? <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />
-                      : hasProfile
-                        ? <Navigate to="/opret" replace />
-                        : <Navigate to="/" replace />)
+                dashboardGate
+                  ?? (canUseApp
+                    ? <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />
+                    : hasProfile
+                      ? <Navigate to="/opret" replace />
+                      : <Navigate to="/" replace />)
               }
             />
             <Route
               path="/dashboard/:tab"
               element={
-                isGuestPreview 
-                  ? <DashboardPageLazy user={mockGuestUser} onLogout={handleLogout} showToast={showToast} />
-                  : dashboardGate
-                    ?? (canUseApp
-                      ? <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />
-                      : hasProfile
-                        ? <Navigate to="/opret" replace />
-                        : <Navigate to="/" replace />)
+                dashboardGate
+                  ?? (canUseApp
+                    ? <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />
+                    : hasProfile
+                      ? <Navigate to="/opret" replace />
+                      : <Navigate to="/" replace />)
               }
             />
             <Route path="*" element={<NotFoundPageLazy />} />
