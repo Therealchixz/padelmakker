@@ -1,15 +1,18 @@
 import { expect, test } from '@playwright/test'
-import { dismissCookieNotice, getPlaywrightAuthEnv, seedSupabaseSession } from './helpers/supabaseAuth'
+import { dismissCookieNotice, getPlaywrightAuthEnv, seedPlaywrightAuth } from './helpers/supabaseAuth'
 
 const authEnv = getPlaywrightAuthEnv()
 
 test.describe('Logged-in dashboard flows', () => {
-  test.skip(!authEnv, 'Kræver VITE_SUPABASE_* og PLAYWRIGHT_TEST_EMAIL/PASSWORD i miljø')
+  test.skip(
+    !authEnv,
+    'Kræver VITE_SUPABASE_* og PLAYWRIGHT_TEST_REFRESH_TOKEN eller EMAIL/PASSWORD',
+  )
 
   test.beforeEach(async ({ page }) => {
     if (!authEnv) return
     await dismissCookieNotice(page)
-    await seedSupabaseSession(page, authEnv)
+    await seedPlaywrightAuth(page, authEnv)
   })
 
   test('dashboard viser hjem med ELO-overblik', async ({ page }) => {

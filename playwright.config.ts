@@ -8,8 +8,8 @@ const useCiPreview = Boolean(process.env.CI) && !playwrightBaseUrl
 const hasAuthE2E = Boolean(
   process.env.VITE_SUPABASE_URL?.trim() &&
     process.env.VITE_SUPABASE_ANON_KEY?.trim() &&
-    process.env.PLAYWRIGHT_TEST_EMAIL?.trim() &&
-    process.env.PLAYWRIGHT_TEST_PASSWORD,
+    (process.env.PLAYWRIGHT_TEST_REFRESH_TOKEN?.trim() ||
+      (process.env.PLAYWRIGHT_TEST_EMAIL?.trim() && process.env.PLAYWRIGHT_TEST_PASSWORD)),
 )
 
 export default defineConfig({

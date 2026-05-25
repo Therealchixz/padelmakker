@@ -62,6 +62,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           PLAYWRIGHT_TEST_EMAIL: ${{ secrets.PLAYWRIGHT_TEST_EMAIL }}
           PLAYWRIGHT_TEST_PASSWORD: ${{ secrets.PLAYWRIGHT_TEST_PASSWORD }}
+          PLAYWRIGHT_TEST_REFRESH_TOKEN: ${{ secrets.PLAYWRIGHT_TEST_REFRESH_TOKEN }}
 
       - name: Upload Playwright report
         if: always()
