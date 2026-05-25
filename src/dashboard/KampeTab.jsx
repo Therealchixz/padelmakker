@@ -2778,17 +2778,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             boxShadow: theme.shadow,
           }}
         >
-          <p style={{ fontSize: "12px", fontWeight: 700, color: theme.accent, margin: "0 0 8px", letterSpacing: "0.04em" }}>
-            Opret ny kamp
+          <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px" }}>Opret ny kamp</h3>
+          <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px" }}>
+            Din ELO <strong>{myElo}</strong> — du sættes automatisk på Hold 1.
           </p>
-          <h3 style={{ fontSize: "clamp(18px,4vw,22px)", fontWeight: 800, marginBottom: "6px", letterSpacing: "-0.02em" }}>
-            Udfyld detaljerne herunder
-          </h3>
-          <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px", lineHeight: 1.5 }}>
-            Kampe-listen er skjult, så du kan fokusere. Tryk <strong>Annullér</strong> øverst for at se åbne kampe igen
-            {openMatches.length > 0 ? ` (${openMatches.length} åbne lige nu)` : ""}.
-          </p>
-          <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px" }}>Din ELO <strong>{myElo}</strong> — du sættes automatisk på Hold 1.</p>
           <div className="pm-form-2col">
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={labelStyle}>Har du booket en bane?</label>
