@@ -102,7 +102,13 @@ export function BanerTab() {
 
   useEffect(() => {
     const q = venueSearch.trim();
-    if (!q) return;
+    if (!q) {
+      setExpandedRegions(new Set());
+      Object.values(detailRefs.current).forEach((node) => {
+        if (node) node.open = false;
+      });
+      return;
+    }
     setExpandedRegions(new Set(filteredVenueGroups.map((g) => g.region)));
   }, [venueSearch, filteredVenueGroups]);
 
