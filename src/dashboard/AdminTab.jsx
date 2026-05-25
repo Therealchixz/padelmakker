@@ -21,7 +21,9 @@ import { AdminReportDmViewer } from '../components/AdminReportDmViewer';
 import { AdminMatchResultEditor } from '../components/AdminMatchResultEditor';
 import { AdminAmericanoResultEditor } from '../components/AdminAmericanoResultEditor';
 import { AdminLeagueResultEditor } from '../components/AdminLeagueResultEditor';
-import { formatEloHistoryDate } from '../lib/eloHistoryUtils';
+import { fetchEloStatsBatchByUserIds, formatEloHistoryDate } from '../lib/eloHistoryUtils';
+import { eloOf } from '../lib/matchDisplayUtils';
+import { normalizeProfileRow } from '../lib/profileUtils';
 import { explainRatingAdminFlag } from '../lib/ratingAdminFlagExplain';
 import { fetchAdminAuditLogRecent, adminAuditActionLabel } from '../lib/adminAuditLog';
 
@@ -125,6 +127,7 @@ export function AdminTab({ initialSubTab = null }) {
   const [ligaLeagues, setLigaLeagues] = useState([]);
   const [search, setSearch] = useState('');
   const [editingUser, setEditingUser] = useState(null);
+  const [editingUserLoading, setEditingUserLoading] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'asc' });
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const [deletePinOpen, setDeletePinOpen] = useState(false);
@@ -264,6 +267,45 @@ export function AdminTab({ initialSubTab = null }) {
     else setUsers(data || []);
     setLoading(false);
   };
+
+  const closeUserEditor = useCallback(() => {
+    setEditingUser(null);
+    setEditingUserLoading(false);
+  }, []);
+
+  /** Hent frisk profil + ELO fra historik (samme kilde som Find makker) — ikke snapshot fra listen. */
+  const openUserEditor = useCallback(async (userRow) => {
+    if (!userRow?.id) return;
+    setEditingUserLoading(true);
+    try {
+      const uid = String(userRow.id);
+      const [profileRes, eloBatch] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', uid).maybeSingle(),
+        fetchEloStatsBatchByUserIds([uid]),
+      ]);
+      if (profileRes.error) throw profileRes.error;
+      const fresh = normalizeProfileRow(profileRes.data || userRow);
+      const stats = eloBatch[uid];
+      const eloFromHistory =
+        stats != null && Number.isFinite(Number(stats.elo))
+          ? Math.round(Number(stats.elo))
+          : eloOf(fresh);
+      setEditingUser({
+        ...fresh,
+        full_name: fresh.full_name || fresh.name || userRow.full_name || userRow.name || '',
+        email: userRow.email ?? fresh.email ?? '',
+        elo_rating: eloFromHistory,
+        games_played: stats?.games ?? fresh.games_played,
+        games_won: stats?.wins ?? fresh.games_won,
+      });
+    } catch (err) {
+      console.warn('AdminTab openUserEditor:', err?.message || err);
+      await ask({ message: 'Kunne ikke hente opdateret profil. Prøv igen.', notice: true });
+      setEditingUser(null);
+    } finally {
+      setEditingUserLoading(false);
+    }
+  }, [ask]);
 
   const fetchMatches = async () => {
     setLoading(true);
@@ -739,7 +781,7 @@ export function AdminTab({ initialSubTab = null }) {
       }
 
       const displayName = adminDisplayName(deleteTargetUser);
-      if (editingUser?.id === deleteTargetUser.id) setEditingUser(null);
+      if (editingUser?.id === deleteTargetUser.id) closeUserEditor();
       closeDeletePinModal(true);
       await ask({ message: `Spiller slettet: ${displayName}`, notice: true });
       fetchUsers();
@@ -811,7 +853,7 @@ export function AdminTab({ initialSubTab = null }) {
       }
       if (exemptData?.error) throw new Error(String(exemptData.error));
       
-      setEditingUser(null);
+      closeUserEditor();
       setTimeout(() => fetchUsers(), 300);
     } catch (err) {
       await ask({ message: 'Fejl ved opdatering: ' + (err.message || 'Ukendt fejl'), notice: true });
@@ -1137,7 +1179,7 @@ export function AdminTab({ initialSubTab = null }) {
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div className="pm-admin-actions">
-                          <button type="button" onClick={() => setEditingUser({ ...u })} className="pm-admin-icon-btn pm-admin-icon-btn--accent" title="Rediger">
+                          <button type="button" onClick={() => { void openUserEditor(u); }} className="pm-admin-icon-btn pm-admin-icon-btn--accent" title="Rediger">
                             <Edit2 size={18} />
                           </button>
                           <button
@@ -1218,7 +1260,7 @@ export function AdminTab({ initialSubTab = null }) {
                       >
                         {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
                       </button>
-                      <button type="button" onClick={() => setEditingUser({ ...u })} className="pm-admin-mobile-edit">
+                      <button type="button" onClick={() => { void openUserEditor(u); }} className="pm-admin-mobile-edit">
                         <Edit2 size={16} /> Rediger
                       </button>
                     </div>
@@ -1594,14 +1636,13 @@ export function AdminTab({ initialSubTab = null }) {
                       )}
                       <button
                         type="button"
-                        onClick={async () => {
-                          const { data } = await supabase
-                            .from('profiles')
-                            .select('*')
-                            .eq('id', report.reported_id)
-                            .maybeSingle();
-                          if (data) setEditingUser(data);
-                          else await ask({ message: 'Kunne ikke hente profilen', notice: true });
+                        onClick={() => {
+                          void openUserEditor({
+                            id: report.reported_id,
+                            full_name: report.reported?.full_name,
+                            name: report.reported?.name,
+                            email: report.reported?.email,
+                          });
                         }}
                         className="pm-admin-action-chip"
                         style={btn(false)}
@@ -2006,24 +2047,33 @@ export function AdminTab({ initialSubTab = null }) {
         </div>
       )}
       <AppModal
-        open={Boolean(editingUser)}
-        onClose={() => setEditingUser(null)}
+        open={Boolean(editingUser) || editingUserLoading}
+        onClose={closeUserEditor}
         ariaLabel="Rediger spiller"
         maxWidthPreset="sm"
         zIndex={1000}
         contentStyle={{ maxHeight: '90vh', overflow: 'hidden' }}
       >
+        {editingUserLoading && !editingUser ? (
+          <div className="pm-admin-modal-body" style={{ padding: '32px 20px', textAlign: 'center' }}>
+            <div className="pm-spinner" style={{ margin: '0 auto 12px' }} />
+            <div style={{ fontSize: 14, color: theme.textMid }}>Henter opdateret profil…</div>
+          </div>
+        ) : null}
         {editingUser ? (
           <div className="pm-admin-modal-scroll pm-admin-modal-body">
             <button
               type="button"
-              onClick={() => setEditingUser(null)}
+              onClick={closeUserEditor}
               className="pm-admin-modal-close"
               aria-label="Luk redigering"
             >
               <X size={20} />
             </button>
             <h3 style={{ ...heading('18px'), marginBottom: '20px' }}>Rediger Spiller</h3>
+            <p className="pm-admin-help-copy" style={{ marginTop: '-12px', marginBottom: '16px' }}>
+              Data hentes frisk fra databasen (ELO som på Find makker).
+            </p>
 
             <form onSubmit={handleUpdateUser} className="pm-admin-form-stack">
               <div className="pm-admin-form-grid-2">
@@ -2195,10 +2245,10 @@ export function AdminTab({ initialSubTab = null }) {
               </div>
 
               <div className="pm-admin-form-actions">
-                <button type="button" onClick={() => setEditingUser(null)} style={{ ...btn(false), flex: 1 }}>
+                <button type="button" onClick={closeUserEditor} style={{ ...btn(false), flex: 1 }} disabled={editingUserLoading}>
                   Annuller
                 </button>
-                <button type="submit" style={{ ...btn(true), flex: 1 }}>
+                <button type="submit" style={{ ...btn(true), flex: 1 }} disabled={editingUserLoading}>
                   Gem ændringer
                 </button>
               </div>

@@ -47,6 +47,15 @@ test('KampeTab loads join requests for created matches and own requests', async 
   assert.doesNotMatch(kampeTab, /match_join_requests[\s\S]*\.slice\(0,\s*100\)/);
 });
 
+test('Admin user editor fetches fresh profile instead of list snapshot', async () => {
+  const adminTab = await readFile(new URL('../../src/dashboard/AdminTab.jsx', import.meta.url), 'utf8');
+
+  assert.match(adminTab, /openUserEditor/);
+  assert.match(adminTab, /fetchEloStatsBatchByUserIds/);
+  assert.match(adminTab, /normalizeProfileRow/);
+  assert.doesNotMatch(adminTab, /onClick=\{\(\) => setEditingUser\(\{ \.\.\.u \}\)\}/);
+});
+
 test('AuthContext signs out immediately when a user is banned', async () => {
   const authContext = await readFile(new URL('../../src/lib/AuthContext.jsx', import.meta.url), 'utf8');
 
