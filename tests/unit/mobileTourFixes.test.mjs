@@ -19,6 +19,7 @@ test('mobile tour opens mere-sheet and scrolls activity/profile to top', () => {
   assert.match(dash, /mobileMoreVisible && !mobileMoreTourActive/);
   assert.match(dash, /pm-mobile-bottom-nav--tour/);
   assert.match(dash, /hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen/);
+  assert.match(dash, /const active = tab === t\.id && !mobileMoreVisible/);
   assert.match(dash, /scrollBlock: 'start'/);
   assert.match(dash, /waitForMount: true/);
   assert.match(dash, /tourForceOpen=\{tourOnNotificationStep\}/);

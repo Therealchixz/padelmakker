@@ -1948,7 +1948,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       {!hideMobileBottomNav && (
       <nav className={mobileMoreTourActive ? 'pm-mobile-bottom-nav pm-mobile-bottom-nav--tour' : 'pm-mobile-bottom-nav'} aria-label="Mobil navigation">
         {mobilePrimaryTabs.map((t) => {
-          const active = tab === t.id;
+          const active = tab === t.id && !mobileMoreVisible;
           const tabAttention = Boolean(t.attention && !active);
           const mobileTabColor = active ? theme.accent : theme.textMid;
           return (
