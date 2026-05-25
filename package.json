@@ -14,7 +14,7 @@
     "check:ui-hex": "node scripts/check-ui-hex.mjs",
     "db:migration:new": "bash scripts/db-migration-new.sh",
     "db:drift-check": "node scripts/check-migration-drift.mjs --repair-hint",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --config=playwright.config.ts",
     "test:e2e:headed": "playwright test --headed --project=chromium",
     "test:e2e:auth": "playwright test --project=authenticated",
     "test:e2e:report": "playwright show-report",

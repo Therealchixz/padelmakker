@@ -28,6 +28,14 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Verify PadelMakker E2E layout
+        run: |
+          echo "Commit: ${{ github.sha }}"
+          test -f playwright.config.ts
+          test ! -f tests/e2e/example.spec.ts
+          grep -q "127.0.0.1:4173" playwright.config.ts
+          npx playwright test --config=playwright.config.ts --list
+
       - name: Run Playwright tests
         run: npm run test:e2e
         env:
