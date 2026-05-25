@@ -977,7 +977,7 @@ export function HomeTab({ user, setTab }) {
           </div>
         </div>
       ) : (
-        <div style={{ marginBottom: "24px" }}>
+        <div data-tour="home-latest-activity" style={{ marginBottom: "24px", scrollMarginTop: 88 }}>
           {feedLoadError ? (
             <div
               className="pm-ui-card"
@@ -1000,7 +1000,7 @@ export function HomeTab({ user, setTab }) {
               </button>
             </div>
           ) : null}
-          <div data-tour="home-latest-activity" className="pm-feed-filters-header" style={{ scrollMarginTop: 88 }}>
+          <div className="pm-feed-filters-header">
             <PageSectionTitle>Seneste aktivitet</PageSectionTitle>
             <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
               <div className="pm-feed-filters-row">
