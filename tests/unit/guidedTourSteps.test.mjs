@@ -6,7 +6,7 @@ const tabSel = (tabId) => `[data-tour="tab-${tabId}"]`;
 const mobileSel = (tabId) => `[data-tour="mobile-tab-${tabId}"]`;
 
 test('guided tour version is bumped when steps change', () => {
-  assert.equal(GUIDED_TOUR_VERSION, 3);
+  assert.equal(GUIDED_TOUR_VERSION, 4);
 });
 
 test('desktop tour covers kampe, baner and account menu', () => {

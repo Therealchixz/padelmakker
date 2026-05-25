@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v6-badge';
+const VERSION = 'padelmakker-sw-v7-tour-mobile';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

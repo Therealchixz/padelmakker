@@ -1,5 +1,5 @@
 /** Bump når trin/tekst ændres — brugere får guiden igen én gang. */
-export const GUIDED_TOUR_VERSION = 3;
+export const GUIDED_TOUR_VERSION = 4;
 
 /**
  * @param {boolean} isMobileView
@@ -90,6 +90,7 @@ export function buildGuidedTourSteps(isMobileView, tabTourSelector) {
       tab: 'profil',
       selector: '[data-tour="profile-main"]',
       scrollBlock: 'start',
+      waitForMount: true,
       title: 'Din profil',
       description: 'Her opdaterer du profil, følger ELO og styrer dine præferencer.',
     });
@@ -115,6 +116,7 @@ export function buildGuidedTourSteps(isMobileView, tabTourSelector) {
         tab: 'profil',
         selector: '[data-tour="profile-main"]',
         scrollBlock: 'start',
+        waitForMount: true,
         title: 'Din profil',
         description: 'Her opdaterer du profil, følger ELO og styrer dine præferencer.',
       },
