@@ -2677,7 +2677,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         )}
         cardStyle={{ marginBottom: "18px" }}
       />
-      {kampeFormat === "padel" && (
+      {kampeFormat === "padel" && !showCreate && (
         <SeekingFilterShortcutCard
           channel="kamp"
           user={user}
@@ -2767,86 +2767,27 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {kampeFormat === "padel" && !loadingMatches && !loadError && (
       <>
-      <PillTabs
-        tabs={padelViewTabs}
-        value={viewTab}
-        onChange={(nextView) => setViewTab(nextView)}
-        ariaLabel="Kampestatus"
-        size="sm"
-        style={{ marginBottom: "16px" }}
-      />
-
-      <div className="pm-help-box" style={{ marginBottom: "14px" }}>
-        <button
-          type="button"
-          onClick={() => setPadelHelpOpen((v) => !v)}
-          aria-expanded={padelHelpOpen}
-          className="pm-help-box-toggle"
-          style={{ cursor: "pointer" }}
-        >
-          <span className="pm-help-box-title">Regler for 2v2 (padel)</span>
-          <span className="pm-help-box-chevron">
-            {padelHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          </span>
-        </button>
-        {padelHelpOpen ? (
-          <div className="pm-help-box-content" style={{ marginTop: "8px" }}>
-            {PADEL_RULE_SUMMARY.map((item) => (
-              <div key={item.icon} className="pm-help-box-item">
-                <span style={{ flexShrink: 0 }}>{item.icon}</span>
-                <span>{item.text}</span>
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {viewTab === "open" && openMatches.map((m) => renderMatchCard(m, "open"))}
-        {viewTab === "active" && activeMatches.map((m) => renderMatchCard(m, "active"))}
-        {viewTab === "completed" && completedMatches.slice(0, completedLimit).map((m) => renderMatchCard(m, "completed"))}
-        {viewTab === "completed" && completedMatches.length > completedLimit && (
-          <button
-            onClick={() => setCompletedLimit(n => n + 5)}
-            style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.textMid }}
-          >
-            Indlæs flere ({completedMatches.length - completedLimit} tilbage)
-          </button>
-        )}
-
-        {viewTab === "open" && openMatches.length === 0 && (
-          <div className="pm-state-card pm-state-card--empty">
-            <div className="pm-state-icon">⚔️</div>
-            <div className="pm-state-title">Ingen åbne kampe</div>
-            <div className="pm-state-copy" style={{ marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med.</div>
-            <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}>
-              <Plus size={14} /> Opret kamp
-            </button>
-          </div>
-        )}
-        {viewTab === "active" && activeMatches.length === 0 && (
-          <div className="pm-state-card pm-state-card--empty">
-            <div className="pm-state-icon">🎾</div>
-            <div className="pm-state-title">Ingen aktive kampe</div>
-            <div className="pm-state-copy">Tilmeld dig en åben kamp for at komme i gang.</div>
-          </div>
-        )}
-        {viewTab === "completed" && completedMatches.length === 0 && (
-          <div className="pm-state-card pm-state-card--empty">
-            <div className="pm-state-icon">📊</div>
-            <div className="pm-state-title">Ingen afsluttede kampe endnu</div>
-            <div className="pm-state-copy">Spil din første kamp og se dit resultat her.</div>
-          </div>
-        )}
-      </div>
-
-      {showCreate && (
+      {showCreate ? (
         <div
           ref={padelCreateFormRef}
-          className="pm-ui-card pm-create-form-anchor"
-          style={{ padding: "clamp(16px,3vw,20px)", marginTop: "20px", marginBottom: "20px" }}
+          className="pm-ui-card pm-create-form-anchor pm-create-form-panel"
+          style={{
+            padding: "clamp(16px,3vw,20px)",
+            marginBottom: "20px",
+            border: `2px solid ${theme.accent}40`,
+            boxShadow: theme.shadow,
+          }}
         >
-          <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px" }}>Opret ny kamp</h3>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: theme.accent, margin: "0 0 8px", letterSpacing: "0.04em" }}>
+            Opret ny kamp
+          </p>
+          <h3 style={{ fontSize: "clamp(18px,4vw,22px)", fontWeight: 800, marginBottom: "6px", letterSpacing: "-0.02em" }}>
+            Udfyld detaljerne herunder
+          </h3>
+          <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px", lineHeight: 1.5 }}>
+            Kampe-listen er skjult, så du kan fokusere. Tryk <strong>Annullér</strong> øverst for at se åbne kampe igen
+            {openMatches.length > 0 ? ` (${openMatches.length} åbne lige nu)` : ""}.
+          </p>
           <p style={{ fontSize: "13px", color: theme.textMid, marginBottom: "16px" }}>Din ELO <strong>{myElo}</strong> — du sættes automatisk på Hold 1.</p>
           <div className="pm-form-2col">
             <div style={{ gridColumn: "1 / -1" }}>
@@ -2991,6 +2932,81 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             </button>
           </div>
         </div>
+      ) : (
+        <>
+          <PillTabs
+            tabs={padelViewTabs}
+            value={viewTab}
+            onChange={(nextView) => setViewTab(nextView)}
+            ariaLabel="Kampestatus"
+            size="sm"
+            style={{ marginBottom: "16px" }}
+          />
+
+          <div className="pm-help-box" style={{ marginBottom: "14px" }}>
+            <button
+              type="button"
+              onClick={() => setPadelHelpOpen((v) => !v)}
+              aria-expanded={padelHelpOpen}
+              className="pm-help-box-toggle"
+              style={{ cursor: "pointer" }}
+            >
+              <span className="pm-help-box-title">Regler for 2v2 (padel)</span>
+              <span className="pm-help-box-chevron">
+                {padelHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </span>
+            </button>
+            {padelHelpOpen ? (
+              <div className="pm-help-box-content" style={{ marginTop: "8px" }}>
+                {PADEL_RULE_SUMMARY.map((item) => (
+                  <div key={item.icon} className="pm-help-box-item">
+                    <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                    <span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {viewTab === "open" && openMatches.map((m) => renderMatchCard(m, "open"))}
+            {viewTab === "active" && activeMatches.map((m) => renderMatchCard(m, "active"))}
+            {viewTab === "completed" && completedMatches.slice(0, completedLimit).map((m) => renderMatchCard(m, "completed"))}
+            {viewTab === "completed" && completedMatches.length > completedLimit && (
+              <button
+                onClick={() => setCompletedLimit(n => n + 5)}
+                style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.textMid }}
+              >
+                Indlæs flere ({completedMatches.length - completedLimit} tilbage)
+              </button>
+            )}
+
+            {viewTab === "open" && openMatches.length === 0 && (
+              <div className="pm-state-card pm-state-card--empty">
+                <div className="pm-state-icon">⚔️</div>
+                <div className="pm-state-title">Ingen åbne kampe</div>
+                <div className="pm-state-copy" style={{ marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med.</div>
+                <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}>
+                  <Plus size={14} /> Opret kamp
+                </button>
+              </div>
+            )}
+            {viewTab === "active" && activeMatches.length === 0 && (
+              <div className="pm-state-card pm-state-card--empty">
+                <div className="pm-state-icon">🎾</div>
+                <div className="pm-state-title">Ingen aktive kampe</div>
+                <div className="pm-state-copy">Tilmeld dig en åben kamp for at komme i gang.</div>
+              </div>
+            )}
+            {viewTab === "completed" && completedMatches.length === 0 && (
+              <div className="pm-state-card pm-state-card--empty">
+                <div className="pm-state-icon">📊</div>
+                <div className="pm-state-title">Ingen afsluttede kampe endnu</div>
+                <div className="pm-state-copy">Spil din første kamp og se dit resultat her.</div>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* Team selection modal */}
