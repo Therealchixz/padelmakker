@@ -418,25 +418,7 @@ export function BanerTab() {
               PadelMakker hjælper med overblikket, men selve bookingen foregår altid hos centret.
             </p>
             <p className="pm-help-box-copy" style={{ margin: '10px 0 0' }}>
-              Mangler du et center? Se oversigter på{' '}
-              <a
-                href="https://www.wannasport.com/dnk/da"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pm-baner-btn-link"
-              >
-                WannaSport
-              </a>
-              {' '}og{' '}
-              <a
-                href="https://padellife.dk/blogs/tips-og-tricks/oversigt-over-padelbaner-i-danmark"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pm-baner-btn-link"
-              >
-                Padellife
-              </a>
-              . PadelMakker viser kun centre med åben online-booking (Halbooking, MATCHi eller Bookli), hvor ledige tider kan hentes i appen.
+              PadelMakker viser centre med åben online-booking (Halbooking, MATCHi, Bookli eller direkte booking-link), hvor vi kan hente eller linke til ledige tider. Mangler du et center, kan du give besked via konto-menuen.
             </p>
           </div>
         )}

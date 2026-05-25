@@ -15,4 +15,5 @@ test('baner booking help explains the booking flow in user-friendly language', a
   assert.match(banerTab, /selve bookingen foregår altid hos centret/)
   assert.doesNotMatch(banerTab, /Åbn ét sted ad gangen/)
   assert.doesNotMatch(banerTab, /mødelokaler vises ikke/)
+  assert.doesNotMatch(banerTab, /WannaSport|Padellife/)
 })
