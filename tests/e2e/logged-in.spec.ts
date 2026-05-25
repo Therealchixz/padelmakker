@@ -6,7 +6,7 @@ const authEnv = getPlaywrightAuthEnv()
 test.describe('Logged-in dashboard flows', () => {
   test.skip(
     !authEnv,
-    'Kræver VITE_SUPABASE_* og PLAYWRIGHT_TEST_REFRESH_TOKEN eller EMAIL/PASSWORD',
+    'Kræver VITE_SUPABASE_* og PLAYWRIGHT_TEST_SERVICE_ROLE_KEY + EMAIL, REFRESH_TOKEN eller EMAIL/PASSWORD',
   )
 
   test.beforeEach(async ({ page }) => {

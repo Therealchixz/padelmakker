@@ -6,6 +6,7 @@ export type PlaywrightAuthEnv = {
   email: string
   password: string
   refreshToken?: string
+  serviceRoleKey?: string
 }
 
 type AuthTokenResponse = {
@@ -26,12 +27,16 @@ export function getPlaywrightAuthEnv(): PlaywrightAuthEnv | null {
   const email = process.env.PLAYWRIGHT_TEST_EMAIL?.trim() || ''
   const password = process.env.PLAYWRIGHT_TEST_PASSWORD || ''
   const refreshToken = process.env.PLAYWRIGHT_TEST_REFRESH_TOKEN?.trim()
+  const serviceRoleKey = process.env.PLAYWRIGHT_TEST_SERVICE_ROLE_KEY?.trim()
   if (!supabaseUrl || !anonKey) return null
+  if (serviceRoleKey && email) {
+    return { supabaseUrl, anonKey, email, password, refreshToken, serviceRoleKey }
+  }
   if (refreshToken) {
-    return { supabaseUrl, anonKey, email, password, refreshToken }
+    return { supabaseUrl, anonKey, email, password, refreshToken, serviceRoleKey }
   }
   if (email && password) {
-    return { supabaseUrl, anonKey, email, password }
+    return { supabaseUrl, anonKey, email, password, serviceRoleKey }
   }
   return null
 }
@@ -42,28 +47,16 @@ function supabaseStorageKey(supabaseUrl: string): string {
   return `sb-${projectRef}-auth-token`
 }
 
-async function fetchAuthToken(
-  env: PlaywrightAuthEnv,
-  grantType: 'password' | 'refresh_token',
-  body: Record<string, string>,
-): Promise<AuthTokenResponse> {
-  const res = await fetch(`${env.supabaseUrl}/auth/v1/token?grant_type=${grantType}`, {
-    method: 'POST',
-    headers: {
-      apikey: env.anonKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
-  return (await res.json()) as AuthTokenResponse
-}
-
 function authErrorMessage(body: AuthTokenResponse, status: number): string {
   return body.error_description || body.msg || body.error_code || `Auth failed (${status})`
 }
 
 function isCaptchaBlocked(message: string): boolean {
   return /captcha/i.test(message)
+}
+
+function isStaleRefreshTokenError(message: string): boolean {
+  return /invalid refresh token|refresh token not found|refresh_token_not_found/i.test(message)
 }
 
 async function injectSession(
@@ -122,8 +115,8 @@ async function seedFromPassword(page: Page, env: PlaywrightAuthEnv): Promise<voi
     if (isCaptchaBlocked(msg)) {
       throw new Error(
         `${msg} — Supabase tillader ikke password-login fra GitHub CI uden captcha. ` +
-          'Tilføj secret PLAYWRIGHT_TEST_REFRESH_TOKEN (se tests/e2e/README.md) ' +
-          'eller slå Captcha protection fra under Supabase → Authentication → Attack Protection.',
+          'Tilføj GitHub secret PLAYWRIGHT_TEST_SERVICE_ROLE_KEY (anbefalet) eller ' +
+          'opdater PLAYWRIGHT_TEST_REFRESH_TOKEN (npm run e2e:refresh-token).',
       )
     }
     throw new Error(msg)
@@ -138,11 +131,89 @@ async function seedFromPassword(page: Page, env: PlaywrightAuthEnv): Promise<voi
   })
 }
 
-/** Log ind til E2E: refresh-token (CI) eller email/password (lokalt). */
+/** Admin magic link — virker i CI uden captcha og uden manuel refresh-token rotation. */
+async function seedFromServiceRoleMagicLink(page: Page, env: PlaywrightAuthEnv): Promise<void> {
+  const serviceRoleKey = env.serviceRoleKey
+  if (!serviceRoleKey || !env.email) {
+    throw new Error('PLAYWRIGHT_TEST_SERVICE_ROLE_KEY og PLAYWRIGHT_TEST_EMAIL kræves')
+  }
+
+  const linkRes = await fetch(`${env.supabaseUrl}/auth/v1/admin/generate_link`, {
+    method: 'POST',
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ type: 'magiclink', email: env.email }),
+  })
+  const linkBody = (await linkRes.json()) as {
+    properties?: { hashed_token?: string }
+    hashed_token?: string
+    error_description?: string
+    msg?: string
+  }
+  const tokenHash = linkBody.properties?.hashed_token || linkBody.hashed_token
+  if (!linkRes.ok || !tokenHash) {
+    throw new Error(
+      linkBody.error_description ||
+        linkBody.msg ||
+        `Service role magic link failed (${linkRes.status})`,
+    )
+  }
+
+  const verifyRes = await fetch(`${env.supabaseUrl}/auth/v1/verify`, {
+    method: 'POST',
+    headers: {
+      apikey: env.anonKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ type: 'email', token_hash: tokenHash }),
+  })
+  const session = (await verifyRes.json()) as AuthTokenResponse
+  if (!verifyRes.ok || !session.access_token) {
+    throw new Error(authErrorMessage(session, verifyRes.status))
+  }
+
+  await injectSession(page, env.supabaseUrl, {
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_in: session.expires_in,
+    expires_at: session.expires_at,
+    token_type: session.token_type || 'bearer',
+    user: session.user,
+  })
+}
+
+/** Log ind til E2E: service role (CI) → refresh-token → email/password (lokalt). */
 export async function seedPlaywrightAuth(page: Page, env: PlaywrightAuthEnv): Promise<void> {
-  if (env.refreshToken) {
-    await seedFromRefreshToken(page, env)
+  if (env.serviceRoleKey && env.email) {
+    await seedFromServiceRoleMagicLink(page, env)
     return
+  }
+
+  if (env.refreshToken) {
+    try {
+      await seedFromRefreshToken(page, env)
+      return
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (!isStaleRefreshTokenError(msg)) throw err
+      if (env.email && env.password) {
+        await seedFromPassword(page, env)
+        return
+      }
+      throw new Error(
+        `${msg} — Opdater GitHub secret PLAYWRIGHT_TEST_REFRESH_TOKEN (npm run e2e:refresh-token) ` +
+          'eller tilføj PLAYWRIGHT_TEST_SERVICE_ROLE_KEY.',
+      )
+    }
+  }
+
+  if (!env.email || !env.password) {
+    throw new Error(
+      'Mangler PLAYWRIGHT_TEST_EMAIL/PASSWORD, gyldig PLAYWRIGHT_TEST_REFRESH_TOKEN eller PLAYWRIGHT_TEST_SERVICE_ROLE_KEY.',
+    )
   }
   await seedFromPassword(page, env)
 }

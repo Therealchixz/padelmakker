@@ -17,6 +17,7 @@
     "test:e2e": "playwright test --config=playwright.config.ts",
     "test:e2e:headed": "playwright test --headed --project=chromium",
     "test:e2e:auth": "playwright test --project=authenticated",
+    "e2e:refresh-token": "node scripts/print-playwright-refresh-token.mjs",
     "test:e2e:report": "playwright show-report",
     "test:release": "npm run lint && npm run typecheck && npm run test:unit && npm run audit:notifications && npm run build && npm run test:e2e",
     "baner:discover": "node scripts/discover-padel-venues.mjs",

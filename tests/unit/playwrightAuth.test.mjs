@@ -12,6 +12,9 @@ test('E2E auth helper documents captcha bypass via refresh token', async () => {
     'utf8',
   );
   assert.match(src, /PLAYWRIGHT_TEST_REFRESH_TOKEN/);
+  assert.match(src, /PLAYWRIGHT_TEST_SERVICE_ROLE_KEY/);
+  assert.match(src, /isStaleRefreshTokenError/);
+  assert.match(src, /seedFromServiceRoleMagicLink/);
   assert.match(src, /grant_type=refresh_token/);
   assert.match(src, /captcha/i);
 });
