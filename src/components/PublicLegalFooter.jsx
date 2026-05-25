@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { LEGAL_INFO } from '../lib/legalInfo';
 import { theme } from '../lib/platformTheme';
 
 /** @param {{ tone?: 'light' | 'dark' }} [props] */
@@ -24,7 +25,9 @@ export function PublicLegalFooter({ tone = 'light' } = {}) {
         color: muted,
       }}
     >
-      <span style={{ color: muted }}>CVR-nr. 46403193</span>
+      <span style={{ color: muted }}>
+        {LEGAL_INFO.legalName} · CVR-nr. {LEGAL_INFO.cvr}
+      </span>
       <span aria-hidden style={{ color: sep }}>·</span>
       <Link to="/privatlivspolitik" style={linkStyle}>
         Privatlivspolitik

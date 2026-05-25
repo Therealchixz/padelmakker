@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { splitDisplayName, oauthAvatarUrl } from '../lib/authOAuth';
@@ -19,6 +19,7 @@ import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
 
 import { AvatarPicker } from '../components/AvatarPicker';
 import { TurnstileWidget } from '../components/TurnstileWidget';
+import { LEGAL_INFO } from '../lib/legalInfo';
 import { ArrowRight } from 'lucide-react';
 
 export function OnboardingPage() {
@@ -38,6 +39,7 @@ export function OnboardingPage() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
@@ -184,6 +186,10 @@ export function OnboardingPage() {
       if (form.availability.length === 0) missing.push("hvornår du kan spille");
     }
 
+    if (targetStep === 3 && !acceptedTerms) {
+      missing.push("accept af vilkår og privatlivspolitik");
+    }
+
     return missing;
   };
 
@@ -283,6 +289,10 @@ export function OnboardingPage() {
   };
 
   const finish = async () => {
+    if (!acceptedTerms) {
+      setErr("Du skal acceptere handelsbetingelser og privatlivspolitik for at oprette profil.");
+      return;
+    }
     if (!oauthSession && turnstileEnabled && !captchaToken) {
       setErr("Bekræft venligst, at du ikke er en robot.");
       return;
@@ -738,6 +748,36 @@ export function OnboardingPage() {
           {profilePreviewBio}
         </div>
       </div>
+      <label
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "10px",
+          marginTop: "16px",
+          cursor: "pointer",
+          fontSize: "13px",
+          color: theme.textMid,
+          lineHeight: 1.5,
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={acceptedTerms}
+          onChange={(e) => setAcceptedTerms(e.target.checked)}
+          style={{ marginTop: "3px", flexShrink: 0 }}
+        />
+        <span>
+          Jeg accepterer {LEGAL_INFO.brand}s{" "}
+          <Link to="/handelsbetingelser" target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
+            handelsbetingelser
+          </Link>{" "}
+          og{" "}
+          <Link to="/privatlivspolitik" target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
+            privatlivspolitik
+          </Link>
+          , og bekræfter at jeg er mindst {LEGAL_INFO.minAgeYears} år.
+        </span>
+      </label>
       {turnstileEnabled && (
         <div style={{ marginTop: "16px" }}>
           <div style={{ ...labelStyle, marginBottom: "8px" }}>Sikkerhedscheck</div>
@@ -829,7 +869,7 @@ export function OnboardingPage() {
           <button onClick={step > 0 ? () => setStep(s => s - 1) : cancelOnboarding} style={btn(false)}>{step > 0 ? "← Tilbage" : "Annuller"}</button>
           {step < 3
             ? <button type="button" disabled={!canNext()} onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.45, cursor: canNext() ? "pointer" : "not-allowed" }}>Næste <ArrowRight size={15} /></button>
-            : <button onClick={finish} disabled={submitting || (!oauthSession && turnstileEnabled && !captchaToken)} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
+            : <button onClick={finish} disabled={submitting || !acceptedTerms || (!oauthSession && turnstileEnabled && !captchaToken)} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
           }
         </div>
         <PublicLegalFooter />

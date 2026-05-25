@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { PublicLegalFooter } from './PublicLegalFooter';
+import { LEGAL_INFO } from '../lib/legalInfo';
 
 /**
  * @param {{ title: string; children: import('react').ReactNode }} props
@@ -41,9 +42,12 @@ export function LegalPageLayout({ title, children }) {
             padding: 'clamp(24px, 5vw, 36px)',
           }}
         >
-          <h1 style={{ ...heading('clamp(22px, 5vw, 28px)'), marginBottom: '20px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ ...heading('clamp(22px, 5vw, 28px)'), marginBottom: '8px', letterSpacing: '-0.02em' }}>
             {title}
           </h1>
+          <p style={{ fontSize: '13px', color: theme.textLight, margin: '0 0 20px' }}>
+            Senest opdateret: {LEGAL_INFO.lastUpdated}
+          </p>
           <div
             className="pm-legal-prose"
             style={{

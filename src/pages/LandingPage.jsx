@@ -6,6 +6,7 @@ import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Med
 import { useDarkMode } from '../lib/useDarkMode';
 import { fetchLandingPublicStats, formatLandingStatCount } from '../lib/landingPublicStats';
 import { shareInviteFriendToApp, shareResultToastMessage } from '../lib/shareUtils';
+import { LEGAL_INFO } from '../lib/legalInfo';
 
 const AnimatedAppMockupLazy = lazy(() =>
   import('../components/AnimatedAppMockup').then((m) => ({ default: m.AnimatedAppMockup }))
@@ -561,7 +562,7 @@ export function LandingPage() {
 
       <footer className="pm-landing-footer" style={{ maxWidth: "1100px", margin: "0 auto", padding: "clamp(24px,6vw,36px) clamp(16px,4vw,24px)", fontSize: "13px", color: theme.textLight, flexDirection: "column", alignItems: "stretch", gap: "20px" }}>
         <div className="pm-landing-footer-topline">
-          <span style={{ fontWeight: 500 }}>© 2026 PadelMakker &nbsp;·&nbsp; CVR-nr. 46403193</span>
+          <span style={{ fontWeight: 500 }}>© 2026 PadelMakker &nbsp;·&nbsp; CVR-nr. {LEGAL_INFO.cvr}</span>
         </div>
         <div className="pm-landing-footer-links">
             <p className="pm-landing-footer-links-title">Kontakt</p>

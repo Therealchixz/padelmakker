@@ -1,4 +1,5 @@
 import { LegalPageLayout } from '../components/LegalPageLayout';
+import { LEGAL_INFO } from '../lib/legalInfo';
 import { theme } from '../lib/platformTheme';
 
 export function OmPage() {
@@ -24,11 +25,14 @@ export function OmPage() {
         <strong style={{ color: theme.text }}>Match Padel</strong> (via Halbooking) og{' '}
         <strong style={{ color: theme.text }}>PadelPadel Aalborg</strong> (Bookli). Listen kan udvides over tid.
       </p>
-      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Kontakt</h2>
+      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Kontakt og virksomhed</h2>
+      <p style={{ color: theme.textMid }}>
+        {LEGAL_INFO.legalName} · CVR-nr. {LEGAL_INFO.cvr}
+      </p>
       <p style={{ marginBottom: 0, color: theme.textMid }}>
         Spørgsmål eller feedback:{' '}
-        <a href="mailto:kontakt@padelmakker.dk" style={{ color: theme.accent, fontWeight: 600 }}>
-          kontakt@padelmakker.dk
+        <a href={`mailto:${LEGAL_INFO.email}`} style={{ color: theme.accent, fontWeight: 600 }}>
+          {LEGAL_INFO.email}
         </a>
       </p>
     </LegalPageLayout>
