@@ -7,6 +7,7 @@ import { useDarkMode } from '../lib/useDarkMode';
 import { fetchLandingPublicStats, formatLandingStatCount } from '../lib/landingPublicStats';
 import { shareInviteFriendToApp, shareResultToastMessage } from '../lib/shareUtils';
 import { LEGAL_INFO } from '../lib/legalInfo';
+import { useAuth } from '../lib/AuthContext';
 
 const AnimatedAppMockupLazy = lazy(() =>
   import('../components/AnimatedAppMockup').then((m) => ({ default: m.AnimatedAppMockup }))
@@ -26,6 +27,8 @@ export function LandingPage() {
   const heroRef = useRef(null);
   const navRef = useRef(null);
   const navigate = useNavigate();
+  const { session } = useAuth();
+  const goDashboard = () => navigate('/dashboard/hjem');
   const [menuOpen, setMenuOpen] = useState(false);
   const [dark, setDark] = useDarkMode();
   const [navHeight, setNavHeight] = useState(0);
@@ -315,8 +318,16 @@ export function LandingPage() {
               {dark ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
               <span>{dark ? "Lys" : "Mørk"}</span>
             </button>
-            <button onClick={() => navigate("/login")} style={navSecondaryBtnStyle}>Log ind</button>
-            <button onClick={() => navigate("/opret")} style={navPrimaryBtnStyle}>Opret gratis profil</button>
+            {session ? (
+              <button type="button" onClick={goDashboard} style={navPrimaryBtnStyle}>
+                Gå til dashboard
+              </button>
+            ) : (
+              <>
+                <button type="button" onClick={() => navigate("/login")} style={navSecondaryBtnStyle}>Log ind</button>
+                <button type="button" onClick={() => navigate("/opret")} style={navPrimaryBtnStyle}>Opret gratis profil</button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -342,6 +353,18 @@ export function LandingPage() {
             <Link to="/app" onClick={() => setMenuOpen(false)} style={mobileMenuActionStyle}>
               <Smartphone size={18} color={theme.accent} /> App
             </Link>
+            {session ? (
+              <button
+                type="button"
+                onClick={() => {
+                  goDashboard();
+                  setMenuOpen(false);
+                }}
+                style={{ ...mobileMenuActionStyle, fontFamily: "inherit", fontWeight: 700, color: theme.accent }}
+              >
+                <ArrowRight size={18} color={theme.accent} /> Gå til dashboard
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => {
@@ -393,12 +416,20 @@ export function LandingPage() {
               Find padelspillere på dit niveau, opret kampe og se ledige baner i Danmark. PadelMakker gør det nemmere at komme fra lyst til kamp.
             </p>
             <div className="pm-reveal pm-visible pm-delay-3" style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-              <button onClick={() => navigate("/opret")} style={heroPrimaryBtnStyle} aria-label="Opret gratis profil på PadelMakker">
-                Opret gratis profil <ArrowRight size={17} />
-              </button>
-              <button onClick={() => navigate("/login")} style={heroSecondaryBtnStyle}>
-                Log ind
-              </button>
+              {session ? (
+                <button type="button" onClick={goDashboard} style={heroPrimaryBtnStyle} aria-label="Gå til dashboard">
+                  Gå til dashboard <ArrowRight size={17} />
+                </button>
+              ) : (
+                <>
+                  <button type="button" onClick={() => navigate("/opret")} style={heroPrimaryBtnStyle} aria-label="Opret gratis profil på PadelMakker">
+                    Opret gratis profil <ArrowRight size={17} />
+                  </button>
+                  <button type="button" onClick={() => navigate("/login")} style={heroSecondaryBtnStyle}>
+                    Log ind
+                  </button>
+                </>
+              )}
             </div>
             </div>
             {showDeferredSections ? (
@@ -501,13 +532,21 @@ export function LandingPage() {
       <section className="pm-reveal-scale" style={landingSectionStyle}>
         <div className="pm-landing-cta-banner">
           <div style={{ position: "relative", zIndex: 1 }}>
-            <h2>Klar til at spille?</h2>
+            <h2>{session ? 'Klar til næste kamp?' : 'Klar til at spille?'}</h2>
             <p style={{ fontSize: "clamp(15px,3.5vw,17px)", color: "var(--pm-hero-subtitle)", maxWidth: "420px", margin: "0 auto 32px", lineHeight: 1.6 }}>
-              Opret din gratis profil, find spillere på dit niveau og gør det lettere at få næste kamp i kalenderen.
+              {session
+                ? 'Du er logget ind. Hop tilbage i dashboard og find kampe, makkere og baner.'
+                : 'Opret din gratis profil, find spillere på dit niveau og gør det lettere at få næste kamp i kalenderen.'}
             </p>
-            <button onClick={() => navigate("/opret")} style={ctaPrimaryBtnStyle} aria-label="Opret gratis profil og kom i gang">
-              Kom i gang — det er gratis <ArrowRight size={17} />
-            </button>
+            {session ? (
+              <button type="button" onClick={goDashboard} style={ctaPrimaryBtnStyle} aria-label="Gå til dashboard">
+                Gå til dashboard <ArrowRight size={17} />
+              </button>
+            ) : (
+              <button type="button" onClick={() => navigate("/opret")} style={ctaPrimaryBtnStyle} aria-label="Opret gratis profil og kom i gang">
+                Kom i gang — det er gratis <ArrowRight size={17} />
+              </button>
+            )}
           </div>
         </div>
       </section>
