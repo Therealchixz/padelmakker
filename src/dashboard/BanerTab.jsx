@@ -446,12 +446,6 @@ export function BanerTab() {
         </div>
       ) : null}
 
-      {filteredVenueGroups.length > 0 && !venueSearch.trim() && expandedRegions.size === 0 ? (
-        <p className="pm-baner-region-hint pm-ui-card" style={{ margin: '0 0 16px', padding: '12px 14px', fontSize: '13px', color: theme.textMid }}>
-          Tryk på en region nedenfor for at se centre og ledige tider.
-        </p>
-      ) : null}
-
       {filteredVenueGroups.map(({ region, venues }) => (
         <details
           key={region}

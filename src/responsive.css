@@ -3439,11 +3439,6 @@ button,
   padding: 0 12px 14px;
 }
 
-.pm-baner-region-hint {
-  border: 1px dashed var(--pm-border);
-  background: var(--pm-surface);
-}
-
 .pm-baner-region-title {
   margin: 0 0 12px;
   font-family: var(--pm-font);
