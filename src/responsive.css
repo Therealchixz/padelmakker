@@ -3028,6 +3028,18 @@ button,
   min-width: max-content;
 }
 
+.pm-profile-top {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .pm-profile-top {
+    gap: 24px;
+  }
+}
+
 .pm-choice-chips {
   display: flex;
   flex-wrap: wrap;

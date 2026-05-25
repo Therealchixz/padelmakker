@@ -691,6 +691,7 @@ export function ProfilTab({ user, showToast, setTab }) {
       <div>
         <div data-tour="profile-main" className="pm-tour-scroll-anchor">
         <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>
+        <div className="pm-profile-top">
         <PillTabs
           tabs={profileSectionTabs}
           value={profileSectionValue}
@@ -698,7 +699,6 @@ export function ProfilTab({ user, showToast, setTab }) {
           ariaLabel="Profil-sektioner"
           size="sm"
           className="pm-pill-tabs--wrap"
-          style={{ marginBottom: "16px" }}
         />
 
         {/* Profile card */}
@@ -823,6 +823,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           </>
           )}
 
+        </div>
         </div>
 
         {showPerformanceSection ? (
