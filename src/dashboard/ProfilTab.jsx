@@ -22,6 +22,7 @@ import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-re
 import { profileFormState } from './profileTabHelpers';
 import { isValidProfileRegion } from '../lib/profileUtils';
 import { FILTER_RETURN_PROFIL } from '../lib/filterReturnNavigation';
+import { LEGAL_INFO } from '../lib/legalInfo';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
@@ -1322,6 +1323,30 @@ export function ProfilTab({ user, showToast, setTab }) {
         </p>
         <MatchFilterProfileCard user={user} />
         <MakkerFilterProfileCard user={user} />
+
+        <div
+          style={{
+            marginTop: '20px',
+            marginBottom: '16px',
+            padding: '14px',
+            borderRadius: theme.radius,
+            border: `1px solid ${theme.border}`,
+            background: theme.surfaceAlt,
+          }}
+        >
+          <div style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+            Konto og privatliv
+          </div>
+          <p style={{ margin: '0 0 10px', fontSize: '13px', color: theme.textMid, lineHeight: 1.5 }}>
+            Vil du slette konto og persondata? Skriv til os — vi sletter typisk inden for 30 dage.
+          </p>
+          <a
+            href={`mailto:${LEGAL_INFO.email}?subject=${encodeURIComponent('Slet min PadelMakker-konto')}`}
+            style={{ ...btn(false), display: 'inline-flex', fontSize: '13px', textDecoration: 'none' }}
+          >
+            Anmod om sletning
+          </a>
+        </div>
 
         <button onClick={handleSave} disabled={saving} style={{ ...btn(true), width: "100%", justifyContent: "center", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Gemmer..." : <><Save size={14} /> Gem ændringer</>}

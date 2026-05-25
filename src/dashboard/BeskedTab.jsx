@@ -48,7 +48,7 @@ function formatTime(dateStr) {
   return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) + ' ' + timeStr;
 }
 
-export function BeskedTab({ user, showToast, onMobileConversationStateChange }) {
+export function BeskedTab({ user, showToast, setTab, onMobileConversationStateChange }) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -684,7 +684,21 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
             <div className="pm-besked-compose-hint">Søger…</div>
           )}
           {!composeSearching && composeQuery && composeResults.length === 0 && (
-            <div className="pm-besked-compose-hint">Ingen spillere fundet.</div>
+            <div className="pm-besked-compose-hint">
+              Ingen spillere fundet.
+              {setTab && (
+                <>
+                  {' '}
+                  <button
+                    type="button"
+                    onClick={() => setTab('makkere')}
+                    style={{ background: 'none', border: 'none', padding: 0, color: theme.accent, fontWeight: 700, cursor: 'pointer', font: 'inherit' }}
+                  >
+                    Gå til Find makker
+                  </button>
+                </>
+              )}
+            </div>
           )}
           {!composeSearching && !composeQuery && (
             <div className="pm-besked-compose-hint">Skriv et navn for at søge.</div>
@@ -731,7 +745,19 @@ export function BeskedTab({ user, showToast, onMobileConversationStateChange }) 
           <MessageCircle size={48} color={theme.border} style={{ marginBottom: '14px' }} aria-hidden />
           <div className="pm-state-title">Ingen samtaler endnu</div>
           <div className="pm-state-copy">
-            Tryk <strong>Ny besked</strong> for at starte en samtale.
+            Tryk <strong>Ny besked</strong> for at starte en samtale — eller find spillere under{' '}
+            {setTab ? (
+              <button
+                type="button"
+                onClick={() => setTab('makkere')}
+                style={{ background: 'none', border: 'none', padding: 0, color: theme.accent, fontWeight: 700, cursor: 'pointer', font: 'inherit' }}
+              >
+                Find makker
+              </button>
+            ) : (
+              'Find makker'
+            )}
+            .
           </div>
         </div>
       ) : (

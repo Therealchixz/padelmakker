@@ -168,13 +168,13 @@ export function PublicEventsPage() {
               lineHeight: 1.55,
             }}
           >
-            <strong style={{ color: theme.text }}>Kunne ikke hente kalenderen.</strong>
+            <strong style={{ color: theme.text }}>Kunne ikke hente turneringer lige nu.</strong>
             <br />
-            Hvis du er administrator: kør SQL-scriptet{' '}
-            <code style={{ fontSize: '12px', background: theme.surface, padding: '2px 6px', borderRadius: '4px' }}>
-              supabase/sql/public_upcoming_americano_events.sql
-            </code>{' '}
-            i Supabase for at aktivere den offentlige funktion.
+            Prøv igen om lidt. Hvis problemet fortsætter, skriv til{' '}
+            <a href="mailto:kontakt@padelmakker.dk" style={{ color: theme.accent, fontWeight: 600 }}>
+              kontakt@padelmakker.dk
+            </a>
+            .
           </div>
         )}
 

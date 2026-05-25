@@ -55,6 +55,9 @@ export function SignupEmailSentPage() {
           <Check size={30} strokeWidth={2.5} />
         </div>
 
+        <p style={{ fontSize: '12px', fontWeight: 700, color: theme.accent, margin: '0 0 10px', letterSpacing: '0.04em' }}>
+          Trin 3 af 3 · Bekræft email
+        </p>
         <h1
           style={{
             fontSize: '24px',

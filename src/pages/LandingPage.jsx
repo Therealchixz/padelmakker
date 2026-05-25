@@ -445,7 +445,7 @@ export function LandingPage() {
       <section style={landingSectionStyle}>
         <div className="pm-reveal" style={landingSectionIntroStyle}>
           <p style={landingSectionKickerStyle}>Sådan virker det</p>
-          <h2 style={landingSectionHeadingStyle}>Fra profil til bane på minutter</h2>
+          <h2 style={landingSectionHeadingStyle}>Fra profil til bane — første gang ca. 5 min</h2>
           <p style={{ fontSize: "15px", color: theme.textMid, lineHeight: 1.7, maxWidth: "620px", margin: "14px auto 0" }}>
             Opret profil, find makker, book bane og følg din ELO — fire enkle skridt fra idéen om en kamp til en mere aktiv padel-hverdag.
           </p>

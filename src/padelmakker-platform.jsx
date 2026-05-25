@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./lib/AuthContext";
 import { supabase } from "./lib/supabase";
 import { canAccessDashboard } from "./lib/profileUtils";
@@ -64,6 +64,8 @@ export default function PadelMakker() {
   const [resetMode, setResetMode] = useState(false);
   const toastTimerRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const showPublicLanding = new URLSearchParams(location.search).get("forside") === "1";
   const showToast = useCallback((msg) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast(msg);
@@ -92,7 +94,10 @@ export default function PadelMakker() {
   if (loading || (user && profileLoading && !profile && !profileLoadError)) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100dvh", background: theme.bg, padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)" }}>
-        <div className="pm-spinner" />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <div className="pm-spinner" />
+          <p style={{ margin: 0, fontSize: 14, color: theme.textMid }}>Indlæser PadelMakker…</p>
+        </div>
       </div>
     );
   }
@@ -158,7 +163,16 @@ export default function PadelMakker() {
           }
         >
           <Routes>
-            <Route path="/" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : hasProfile ? <Navigate to="/opret" replace /> : <LandingPage />} />
+            <Route
+              path="/"
+              element={
+                canUseApp && !showPublicLanding
+                  ? <Navigate to={defaultAuthedPath} replace />
+                  : hasProfile && !showPublicLanding
+                    ? <Navigate to="/opret" replace />
+                    : <LandingPage />
+              }
+            />
             <Route path="/login" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : hasProfile ? <Navigate to="/opret" replace /> : <LoginPageLazy />} />
             <Route path="/opret" element={canUseApp ? <Navigate to={defaultAuthedPath} replace /> : <OnboardingPageLazy />} />
             <Route

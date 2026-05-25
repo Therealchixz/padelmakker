@@ -820,7 +820,20 @@ export function MakkereTab({ user, showToast }) {
             <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
               {activeFilterCount > 0 ? 'Ingen spillere matcher dine filtre' : 'Ingen spillere at vise'}
             </div>
-            <div style={{ fontSize: '13px', lineHeight: 1.5 }}>Prøv at ændre filtre eller søg med et andet navn.</div>
+            <div style={{ fontSize: '13px', lineHeight: 1.5 }}>
+              {activeFilterCount > 0
+                ? 'Prøv at ændre filtre eller søg med et andet navn.'
+                : 'Der er endnu få spillere i dit område — prøv at udvide region eller niveau under filter.'}
+            </div>
+            {activeFilterCount === 0 && (
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard/makker-filter')}
+                style={{ ...btn(true), marginTop: '14px', fontSize: '13px' }}
+              >
+                Åbn filter
+              </button>
+            )}
           </div>
         )}
       </div>

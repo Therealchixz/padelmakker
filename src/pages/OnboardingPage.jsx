@@ -226,7 +226,12 @@ export function OnboardingPage() {
   ]);
 
   const stepMeta = [
-    { title: "Konto", hint: "Kontaktinfo, adgangskode og aldersbekræftelse." },
+    {
+      title: "Konto",
+      hint: oauthSession
+        ? "Udfyld navn og fødselsdato — herefter niveau og profil."
+        : "Derefter SMS og email-bekræftelse (du logges kort ud mellem de to — med vilje).",
+    },
     { title: "Niveau", hint: "Træk slideren, læs beskrivelsen og vælg ærligt — samme som under profil senere." },
     { title: "Område", hint: "Region, by og hvornår du typisk kan spille." },
     { title: "Profil", hint: "Gør profilen klar til andre spillere." },
@@ -446,6 +451,23 @@ export function OnboardingPage() {
       <label htmlFor="onb-last-name" style={labelStyle}>Efternavn</label>
       <input id="onb-last-name" autoComplete="family-name" value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "14px" }} />
       {!oauthSession && (
+        <div
+          style={{
+            background: theme.surfaceAlt,
+            border: `1px solid ${theme.border}`,
+            borderRadius: "12px",
+            padding: "12px 14px",
+            marginBottom: "16px",
+            fontSize: "13px",
+            color: theme.textMid,
+            lineHeight: 1.5,
+          }}
+        >
+          <strong style={{ color: theme.text }}>3 trin til færdig konto:</strong> (1) Profil her · (2) SMS-kode · (3) Link i
+          email. Mellem trin 2 og 3 logges du kort ud — det er normalt.
+        </div>
+      )}
+      {!oauthSession && (
         <>
       <label htmlFor="onb-email" style={labelStyle}>Email</label>
       <input
@@ -589,6 +611,11 @@ export function OnboardingPage() {
 
     <div key={1}>
       <h2 style={{ ...heading("24px"), marginBottom: "12px" }}>Dit padel-niveau</h2>
+      <p style={{ color: theme.textMid, fontSize: "13px", lineHeight: 1.5, margin: "0 0 14px" }}>
+        <strong style={{ color: theme.text }}>Niveau</strong> bruger vi til at matche dig med spillere.{' '}
+        <strong style={{ color: theme.text }}>ELO</strong> starter ved 1000 og ændres først, når du har spillet kampe med
+        registreret resultat.
+      </p>
       <div style={{ marginBottom: 24 }}>
         <PlaytomicLevelPicker
           value={form.levelNumeric}

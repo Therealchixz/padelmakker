@@ -20,8 +20,8 @@ export function mergeLigaSessionPrefs(userId, partial) {
   } catch { /* private mode / quota */ }
 }
 
-/** Genvej fra profil: Mine ligaer → Afsluttede + Mine. */
+/** Genvej fra profil: Mine ligaer → Kampe → Liga, Afsluttede + Mine. */
 export function openMineLigaerFromProfile(userId, setTab) {
   mergeLigaSessionPrefs(userId, { ligaView: 'completed', ligaScope: 'mine' });
-  setTab('liga');
+  setTab('kampe', { search: 'format=liga' });
 }

@@ -262,7 +262,7 @@ export function PhoneVerificationPage() {
       }
 
       setInfo(
-        'Telefon bekræftet. Du bliver logget ud nu, så du kan bekræfte email på en sikker måde — tjek din indbakke på næste trin.',
+        'Telefon bekræftet (trin 2/3). Du bliver logget ud nu — det er med vilje. Næste trin: åbn linket i emailen (trin 3/3), og log derefter ind.',
       )
       navigate('/opret/bekraeft-email', { replace: true, state: { email: effectiveEmail } })
     } catch (e) {
@@ -290,6 +290,9 @@ export function PhoneVerificationPage() {
       }}
     >
       <div className="pm-auth-panel pm-auth-panel--centered">
+        <p style={{ fontSize: '12px', fontWeight: 700, color: theme.accent, marginBottom: '10px', letterSpacing: '0.04em' }}>
+          Trin 2 af 3 · SMS-bekræftelse
+        </p>
         <h1 style={{ ...heading('24px'), marginBottom: '8px' }}>Bekræft dit telefonnummer</h1>
         <p style={{ color: theme.textMid, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>
           {mode === 'phone_change'

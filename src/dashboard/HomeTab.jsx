@@ -129,6 +129,16 @@ export function HomeTab({ user, setTab }) {
   const [leagueNewFeed, setLeagueNewFeed] = useState([]);
   const [feedLoading, setFeedLoading] = useState(true);
   const [feedLoadError, setFeedLoadError] = useState(null);
+  const [showNiveauEloHint, setShowNiveauEloHint] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('pm_niveau_elo_hint_v1') === '1') return;
+      setShowNiveauEloHint(true);
+    } catch {
+      /* private mode */
+    }
+  }, []);
   const [viewLeague, setViewLeague] = useState(null);
   const [viewMatch, setViewMatch] = useState(null);
   const closeViewTournament = useCallback(() => setViewTournament(null), []);
@@ -793,6 +803,51 @@ export function HomeTab({ user, setTab }) {
     : "Se spillere på dit niveau";
   return (
     <div>
+      {showNiveauEloHint && (
+        <div
+          style={{
+            background: theme.accentBg,
+            border: `1px solid ${theme.accent}33`,
+            borderRadius: '12px',
+            padding: '12px 14px',
+            marginBottom: '14px',
+            fontSize: '13px',
+            color: theme.textMid,
+            lineHeight: 1.5,
+          }}
+        >
+          <strong style={{ color: theme.text }}>Niveau og ELO er ikke det samme.</strong>{' '}
+          Dit valgte niveau bruges til matching. ELO opdateres først, når du spiller kampe med resultat.{' '}
+          <a href="/elo" style={{ color: theme.accent, fontWeight: 700 }}>
+            Læs hvordan ELO virker
+          </a>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                localStorage.setItem('pm_niveau_elo_hint_v1', '1');
+              } catch {
+                /* ignore */
+              }
+              setShowNiveauEloHint(false);
+            }}
+            style={{
+              display: 'block',
+              marginTop: '8px',
+              background: 'transparent',
+              border: 'none',
+              color: theme.textLight,
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              padding: 0,
+              fontFamily: font,
+            }}
+          >
+            Forstået
+          </button>
+        </div>
+      )}
       {/* Premium ELO hero: vent på frisk DB (undgå flash af forældede tal fra React) */}
       {bundleLoading ? (
         <div style={{ textAlign: "center", padding: "32px 16px", color: theme.textLight, fontSize: "14px", marginBottom: "24px" }}>Indlæser dine tal…</div>
@@ -985,7 +1040,17 @@ export function HomeTab({ user, setTab }) {
                     </button>
                   </>
                 ) : (
-                  "Der er ingen aktivitet endnu."
+                  <>
+                    Der er ingen aktivitet endnu i dit område.
+                    <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center" }}>
+                      <button type="button" onClick={() => setTab("makkere")} style={activityActionBtnStyle(theme.accent)}>
+                        Find makker
+                      </button>
+                      <button type="button" onClick={() => setTab("kampe")} style={activityActionBtnStyle(theme.textMid)}>
+                        Opret kamp
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             ) : feedRenderItems.map((entry) => {
@@ -1178,7 +1243,17 @@ export function HomeTab({ user, setTab }) {
                   meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.leagueName}</span>,
                   subtitle: `${isReg ? "Tilmelding åben" : "I gang"} · ${row.teamCount} hold`,
-                  action: <button onClick={() => setTab('liga')} style={activityActionBtnStyle(theme.accent)}>{isReg ? 'Tilmeld' : 'Detaljer'}</button>,
+                  action: (
+                    <button
+                      onClick={() => {
+                        mergeKampeSessionPrefs(user.id, { format: 'liga' });
+                        setTab('kampe', { search: 'format=liga' });
+                      }}
+                      style={activityActionBtnStyle(theme.accent)}
+                    >
+                      {isReg ? 'Tilmeld' : 'Detaljer'}
+                    </button>
+                  ),
                 });
               }
 

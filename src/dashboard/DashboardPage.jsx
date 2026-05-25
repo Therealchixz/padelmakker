@@ -5,7 +5,7 @@ import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
-import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, Medal, ChevronDown, Menu, Bug, Compass, Sun, Moon } from 'lucide-react';
+import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, ChevronDown, Menu, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
 
 const loadHomeTab = () => import('./HomeTab');
@@ -45,8 +45,6 @@ const loadMatchSearchFilterPage = () => import('./MatchSearchFilterPage');
 const loadMakkerSearchFilterPage = () => import('./MakkerSearchFilterPage');
 const loadAdminTab = () => import('./AdminTab');
 const loadBeskedTab = () => import('./BeskedTab');
-const loadLigaTab = () => import('./LigaTab');
-
 const MakkereTabLazy = lazy(() => loadMakkereTab().then((m) => ({ default: m.MakkereTab })));
 const BanerTabLazy = lazy(() => loadBanerTab().then((m) => ({ default: m.BanerTab })));
 const KampeTabLazy = lazy(() => loadKampeTab().then((m) => ({ default: m.KampeTab })));
@@ -56,7 +54,6 @@ const MatchSearchFilterPageLazy = lazy(() => loadMatchSearchFilterPage().then((m
 const MakkerSearchFilterPageLazy = lazy(() => loadMakkerSearchFilterPage().then((m) => ({ default: m.MakkerSearchFilterPage })));
 const AdminTabLazy = lazy(() => loadAdminTab().then((m) => ({ default: m.AdminTab })));
 const BeskedTabLazy = lazy(() => loadBeskedTab().then((m) => ({ default: m.BeskedTab })));
-const LigaTabLazy = lazy(() => loadLigaTab().then((m) => ({ default: m.LigaTab })));
 
 const FEEDBACK_DEFAULT_CATEGORY = "bug";
 const FEEDBACK_DEFAULT_PRIORITY = "normal";
@@ -660,7 +657,7 @@ function useUnreadKampeNotificationsCount(userId) {
   return useRealtimeCount(userId, createController);
 }
 
-const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder"];
+const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking", "beskeder"];
 const TOUR_VERSION = 2;
 
 const tabBtnStyle = (active) => ({
@@ -713,7 +710,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [adminInitialSubTab, setAdminInitialSubTab] = useState(null);
   const unreadNotifs = useUnreadNotificationsCount(user?.id);
   const unreadKampeNotifs = useUnreadKampeNotificationsCount(user?.id);
-  const hasKampeAttention = pendingKampe > 0 || unreadKampeNotifs > 0;
+  const hasKampeAttention = pendingKampe > 0 || unreadKampeNotifs > 0 || pendingLigaInvites > 0;
+  const kampeTabBadge =
+    pendingKampe + pendingLigaInvites > 0 ? pendingKampe + pendingLigaInvites : null;
   const pathTab = location.pathname.split("/")[2] || "hjem";
   const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "makker-filter", "admin"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
@@ -724,6 +723,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [navigate]);
 
   useEffect(() => {
+    if (pathTab === "liga") {
+      navigate("/dashboard/kampe?format=liga", { replace: true });
+      return;
+    }
     if (!validTabs.includes(pathTab)) {
       navigate("/dashboard/hjem", { replace: true });
     }
@@ -817,7 +820,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
         tab: 'kampe',
         selector: tabTourSelector('kampe'),
         title: 'Kampe',
-        description: 'I Kampe opretter du nye kampe, tilmelder dig eksisterende, og håndterer resultater og bekræftelser.',
+        description:
+          'I Kampe opretter du 2v2-kampe, Americano og liga — her tilmelder du dig, ser invitationer og håndterer resultater.',
       },
     ];
 
@@ -1205,9 +1209,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
     { id: "hjem",     label: "Hjem",        icon: <Home          size={15} /> },
     { id: "makkere",  label: "Find makker",  icon: <Users         size={15} /> },
     { id: "baner",    label: "Book Bane",    icon: <MapPin        size={15} /> },
-    { id: "kampe",    label: "Kampe",        icon: <Swords        size={15} />, badge: pendingKampe > 0 ? pendingKampe : null, attention: hasKampeAttention },
+    { id: "kampe",    label: "Kampe",        icon: <Swords        size={15} />, badge: kampeTabBadge, attention: hasKampeAttention },
     { id: "ranking",  label: "Ranking",      icon: <Trophy        size={15} /> },
-    { id: "liga",     label: "Liga",         icon: <Medal         size={15} />, badge: pendingLigaInvites > 0 ? pendingLigaInvites : null },
     { id: "beskeder", label: "Beskeder",     icon: <MessageCircle size={15} />, badge: unreadMessages > 0 ? unreadMessages : null },
   ];
   // Profil vises i konto-dropdown på desktop, men beholdes i mobilens "Mere"-menu.
@@ -1238,9 +1241,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const primaryTabs = allTabs.filter(t => PRIMARY_TAB_IDS.includes(t.id));
   const mobilePrimaryTabs = allTabs.filter(t => ["hjem", "makkere", "baner", "kampe"].includes(t.id));
-  const mobileMoreTabs = allTabs.filter(
-    (t) => !["hjem", "makkere", "baner", "kampe"].includes(t.id) && t.id !== "liga",
-  );
+  const mobileMoreTabs = allTabs.filter((t) => !["hjem", "makkere", "baner", "kampe"].includes(t.id));
   const mobileMoreIsActive = mobileMoreTabs.some(t => t.id === tab);
   const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const userInitial = (displayName || "?").trim().charAt(0).toUpperCase();
@@ -1394,6 +1395,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
             </div>
             <button
               type="button"
+              onClick={() => {
+                setAccountOpen(false);
+                navigate("/?forside=1");
+              }}
+              style={accountMenuRowBtnStyle()}
+            >
+              <ExternalLink size={15} />
+              Se forsiden
+            </button>
+            <button
+              type="button"
               data-tour="account-menu-profile-btn"
               onClick={() => {
                 setTab("profil");
@@ -1511,11 +1523,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
             {tab === "baner"    && <BanerTabLazy />}
             {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive />}
             {tab === "ranking"  && <RankingTabLazy user={user} />}
-            {tab === "liga"     && <LigaTabLazy user={user} showToast={showToast} />}
             {tab === "beskeder" && (
               <BeskedTabLazy
                 user={user}
                 showToast={showToast}
+                setTab={setTab}
                 onMobileConversationStateChange={setMobileConversationOpen}
               />
             )}
@@ -1696,6 +1708,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
               />
               <div style={{ fontSize: "11px", color: theme.textLight, textAlign: "right" }}>
                 {feedbackMessage.trim().length}/3000
+                {feedbackMessage.trim().length > 0 && feedbackMessage.trim().length < 10 && (
+                  <span style={{ display: "block", marginTop: "4px", color: theme.warm, fontWeight: 600, textAlign: "left" }}>
+                    Skriv mindst 10 tegn, så vi kan forstå fejlen.
+                  </span>
+                )}
               </div>
             </div>
             <div style={{ padding: "12px 16px", borderTop: "1px solid " + theme.border, display: "flex", justifyContent: "flex-end", gap: "8px" }}>
@@ -1801,6 +1818,19 @@ export function DashboardPage({ user, onLogout, showToast }) {
             <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <Compass size={16} />
               Start guide
+            </span>
+          </button>
+          <button
+            type="button"
+            className="pm-mobile-more-row"
+            onClick={() => {
+              setMobileMoreOpen(false);
+              navigate("/?forside=1");
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <ExternalLink size={16} />
+              Se forsiden
             </span>
           </button>
           <button
