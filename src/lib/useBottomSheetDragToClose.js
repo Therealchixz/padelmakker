@@ -15,7 +15,10 @@ const SNAP_MS = 240;
  * @see https://github.com/material-components/material-components-android/blob/master/lib/java/com/google/android/material/bottomsheet/BottomSheetBehavior.java
  */
 export const BOTTOM_SHEET_CLOSE_THRESHOLD = 0.25;
+/** Vaul default; velocity alone must not dismiss tiny pulls. */
 export const BOTTOM_SHEET_VELOCITY_THRESHOLD_PX_PER_MS = 0.4;
+/** Fast flick must still move the sheet at least this far (avoids accidental close on release). */
+export const BOTTOM_SHEET_MIN_FLICK_DISMISS_FRACTION = 0.15;
 
 /** Matches `.pm-kampe-v2-sheet { max-height: min(85vh, 640px) }` — fallback before measure. */
 export function getEstimatedSheetHeightPx() {
@@ -28,7 +31,7 @@ export function getBottomSheetCloseDistanceThresholdPx(sheetHeightPx = getEstima
 }
 
 /**
- * Vaul-style release: fast flick (velocity) OR drag past 25% of sheet height.
+ * Vaul-style release: fast flick past min distance, or slow drag past 25% of sheet height.
  */
 export function shouldCloseBottomSheetDrag({ dy, sheetHeightPx, elapsedMs }) {
   const distance = Math.max(0, dy);
@@ -37,8 +40,12 @@ export function shouldCloseBottomSheetDrag({ dy, sheetHeightPx, elapsedMs }) {
   const height = Math.max(1, sheetHeightPx ?? getEstimatedSheetHeightPx());
   const ms = Math.max(1, elapsedMs ?? 9999);
   const velocityPxPerMs = distance / ms;
+  const minFlickDistance = height * BOTTOM_SHEET_MIN_FLICK_DISMISS_FRACTION;
 
-  if (velocityPxPerMs > BOTTOM_SHEET_VELOCITY_THRESHOLD_PX_PER_MS) {
+  if (
+    velocityPxPerMs > BOTTOM_SHEET_VELOCITY_THRESHOLD_PX_PER_MS &&
+    distance >= minFlickDistance
+  ) {
     return true;
   }
 
@@ -222,6 +229,7 @@ export function useBottomSheetDragToClose({ onClose, enabled = true } = {}) {
       onPointerMove: onDragZonePointerMove,
       onPointerUp: onDragZonePointerUp,
       onPointerCancel: onDragZonePointerCancel,
+      onClick: (event) => event.stopPropagation(),
       'aria-hidden': true,
     },
     sheetStyle,
