@@ -6186,7 +6186,7 @@ button,
   transform: translateY(var(--sheet-drag-y, 0px));
 }
 
-/* Thumb-reachable drag area: handle + sheet header + invisible strip below title */
+/* Thumb-reachable drag: handle + header; invisible overlay extends below without extra layout height */
 .pm-kampe-v2-sheet-drag-header {
   position: relative;
   flex-shrink: 0;
@@ -6196,23 +6196,22 @@ button,
   width: 100%;
   box-sizing: border-box;
   margin: -6px 0 0;
-  padding: 10px 0 4px;
+  padding: 6px 0 0;
   touch-action: none;
   cursor: grab;
   -webkit-user-select: none;
   user-select: none;
 }
 
-.pm-kampe-v2-sheet-drag-header::after {
-  content: '';
-  display: block;
-  flex-shrink: 0;
-  width: 100%;
-  height: 32px;
-}
-
 .pm-kampe-v2-detail-sheet .pm-kampe-v2-sheet-drag-header::after {
-  height: 44px;
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 52px;
+  background: transparent;
+  pointer-events: auto;
 }
 
 .pm-kampe-v2-sheet-drag-header:active {
@@ -6221,7 +6220,7 @@ button,
 
 .pm-kampe-v2-sheet-drag-header .pm-kampe-v2-sheet-handle {
   flex-shrink: 0;
-  margin: 6px auto 12px;
+  margin: 4px auto 10px;
 }
 
 .pm-kampe-v2-sheet-drag-header .pm-kampe-v2-detail-head,
@@ -6230,7 +6229,7 @@ button,
 }
 
 .pm-kampe-v2-detail-sheet .pm-kampe-v2-sheet-drag-header {
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
 
 .pm-kampe-v2-sheet:not(.pm-kampe-v2-detail-sheet) .pm-kampe-v2-sheet-drag-header {
@@ -6769,10 +6768,6 @@ button,
   margin-bottom: 12px;
 }
 
-.pm-kampe-v2-sheet-drag-header .pm-kampe-v2-detail-badges {
-  margin-bottom: 0;
-}
-
 .pm-kampe-v2-detail-desc {
   margin: 0 0 14px;
   font-size: 13px;
@@ -7149,7 +7144,6 @@ button,
   flex-shrink: 0;
   z-index: 2;
   background: var(--pm-surface);
-  border-bottom: 1px solid color-mix(in srgb, var(--pm-border) 65%, transparent);
 }
 
 .pm-americano-v2-detail-scroll {
@@ -7159,13 +7153,14 @@ button,
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 4px;
+  padding-top: 2px;
 }
 
 .pm-americano-v2-detail-head {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 0;
 }
 
 .pm-americano-v2-detail-head-main {
