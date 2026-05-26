@@ -7124,7 +7124,25 @@ button,
 
 .pm-americano-v2-detail-sheet {
   max-height: min(92vh, 860px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.pm-americano-v2-detail-sheet .pm-kampe-v2-sheet-drag-header {
+  flex-shrink: 0;
+  z-index: 2;
+  background: var(--pm-surface);
+  border-bottom: 1px solid color-mix(in srgb, var(--pm-border) 65%, transparent);
+}
+
+.pm-americano-v2-detail-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
 }
 
 .pm-americano-v2-detail-head {

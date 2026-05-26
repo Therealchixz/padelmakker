@@ -246,6 +246,7 @@ export function AmericanoDetailSheet({
           </div>
         </div>
 
+        <div className="pm-americano-v2-detail-scroll">
         <div className="pm-americano-v2-detail-stats">
           <div className="pm-americano-v2-detail-stat">
             <span className="pm-americano-v2-detail-stat-label">Runder</span>
@@ -343,6 +344,7 @@ export function AmericanoDetailSheet({
         ) : null}
 
         {extras}
+        </div>
       </div>
     </>
   )
