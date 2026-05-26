@@ -16,10 +16,6 @@ export function KampeRedesignToolbar({
   formatTabs,
   format,
   onFormatChange,
-  statusTabs,
-  viewTab,
-  onViewChange,
-  showStatusTabs = false,
   searchQuery,
   onSearchChange,
   searchPlaceholder,
@@ -69,28 +65,6 @@ export function KampeRedesignToolbar({
         })}
       </div>
 
-      {showStatusTabs && statusTabs?.length ? (
-        <div className="pm-kampe-v2-status-row" role="tablist" aria-label="Kampestatus">
-          {statusTabs.map((tab) => {
-            const active = viewTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                className={`pm-kampe-v2-status-tab${active ? ' pm-kampe-v2-status-tab--active' : ''}`}
-                onClick={() => onViewChange(tab.id)}
-              >
-                {tab.label}{' '}
-                <span className="pm-kampe-v2-status-count">{tab.count}</span>
-                <UnreadBadge count={tab.unread} />
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-
       <div className="pm-kampe-v2-search-row">
         <label className="pm-kampe-v2-search-wrap">
           <Search size={16} className="pm-kampe-v2-search-icon" aria-hidden />
@@ -130,13 +104,5 @@ export function KampeActiveFilterChips({ chips }) {
         </button>
       ))}
     </div>
-  );
-}
-
-export function KampeRulesLink({ onClick }) {
-  return (
-    <button type="button" className="pm-kampe-v2-rules-link" onClick={onClick}>
-      Regler for 2v2 · Vis ›
-    </button>
   );
 }

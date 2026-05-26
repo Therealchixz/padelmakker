@@ -56,7 +56,6 @@ import { PillTabs } from '../components/PillTabs';
 import {
   KampeRedesignToolbar,
   KampeActiveFilterChips,
-  KampeRulesLink,
 } from '../components/kampe/KampeRedesignToolbar';
 import { KampeFilterSheet } from '../components/kampe/KampeFilterSheet';
 import { KampeMatchListCard } from '../components/kampe/KampeMatchListCard';
@@ -3329,10 +3328,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     { id: "americano", label: "Americano" },
     { id: "liga", label: "Liga" },
   ];
-  const padelStatusTabs = [
-    { id: "open", label: "Åbne", count: openMatches.length, unread: padelUnreadCounts.open },
-    { id: "active", label: "I gang", count: activeMatches.length, unread: padelUnreadCounts.active },
-    { id: "completed", label: "Afsluttede", count: completedMatches.length, unread: padelUnreadCounts.completed },
+  const padelSubTabs = [
+    { id: "open", label: `Åbne (${openMatches.length})` },
+    { id: "active", label: `I gang (${activeMatches.length})` },
+    { id: "completed", label: `Afsluttede (${completedMatches.length})` },
   ];
   const currentPadelMatches =
     viewTab === "open" ? openMatches : viewTab === "active" ? activeMatches : completedMatches;
@@ -3393,10 +3392,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           setFilterSheetOpen(false);
           setDetailMatchId(null);
         }}
-        showStatusTabs={kampeFormat === "padel" && !showCreate}
-        statusTabs={padelStatusTabs}
-        viewTab={viewTab}
-        onViewChange={onViewTabChange}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder={searchPlaceholder}
@@ -3661,10 +3656,31 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         </div>
       ) : (
         <>
-          <KampeRulesLink onClick={() => setPadelHelpOpen((v) => !v)} />
-          {padelHelpOpen ? (
-            <div className="pm-help-box" style={{ marginBottom: "14px" }}>
-              <div className="pm-help-box-content">
+          <div className="pm-help-box" style={{ marginBottom: 16 }}>
+            <button
+              type="button"
+              onClick={() => setPadelHelpOpen((v) => !v)}
+              aria-expanded={padelHelpOpen}
+              style={{
+                width: "100%",
+                border: "none",
+                background: "transparent",
+                padding: 0,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+                textAlign: "left",
+              }}
+            >
+              <span className="pm-help-box-title">Sådan fungerer 2v2-kampe</span>
+              <span className="pm-help-box-chevron">
+                {padelHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </span>
+            </button>
+            {padelHelpOpen ? (
+              <div className="pm-help-box-content" style={{ marginTop: 8 }}>
                 {PADEL_RULE_SUMMARY.map((item) => (
                   <div key={item.icon} className="pm-help-box-item">
                     <span style={{ flexShrink: 0 }}>{item.icon}</span>
@@ -3672,8 +3688,17 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   </div>
                 ))}
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
+
+          <PillTabs
+            tabs={padelSubTabs}
+            value={viewTab}
+            onChange={onViewTabChange}
+            ariaLabel="2v2 kampstatus"
+            size="sm"
+            style={{ marginBottom: 16 }}
+          />
 
           <div className="pm-kampe-v2-list">
             {viewTab === "open" && openMatches.map((m) => renderPadelListItem(m))}
