@@ -9,8 +9,8 @@ import { BanNoticeModal } from '../components/BanNoticeModal'
 
 const AuthContext = createContext(null)
 
-const SESSION_TIMEOUT_MS = 12000
-const PROFILE_TIMEOUT_MS = 12000
+const SESSION_TIMEOUT_MS = 8000
+const PROFILE_TIMEOUT_MS = 8000
 
 /** Trigger/default-rækker sætter ofte "Ny spiller" før app-metadata når email skal bekræftes først. */
 function isGenericProfileName(s) {
@@ -84,33 +84,13 @@ async function applyPendingAvatarToProfile(userRow, currentProfile) {
 }
 
 /**
- * Hent/merge profil uden pending storage-upload — så Promise.race-timeout ikke afbryder upload.
+ * Hent profil-række — uden navne-sync/onboarding-merge (hurtig sti til UI).
  */
-async function fetchOrCreateProfileCore(userRow) {
+async function fetchProfileFast(userRow) {
   if (!userRow?.id) return null
-  let p = await fetchProfileQuery(userRow.id)
-  if (p) {
-    p = await syncProfileNameFromAuthIfNeeded(p, userRow)
-    const obPatch = buildOnboardingProfileRowPatch(userRow.user_metadata || {}, p)
-    if (obPatch && userRow.id) {
-      const { data: merged, error: obErr } = await supabase
-        .from('profiles')
-        .update(obPatch)
-        .eq('id', userRow.id)
-        .select()
-        .single()
-      if (!obErr && merged) {
-        p = normalizeProfileRow(merged)
-        const { error: metaErr } = await supabase.auth.updateUser({
-          data: { onboarding_applied_to_profile: true },
-        })
-        if (metaErr) console.warn('auth metadata onboarding flag:', metaErr.message)
-      } else if (obErr) {
-        console.warn('onboarding → profiles merge:', obErr.message)
-      }
-    }
-    return p
-  }
+  const existing = await fetchProfileQuery(userRow.id)
+  if (existing) return existing
+
   const meta = userRow.user_metadata || {}
   const email = userRow.email || ''
   const regionFromMeta =
@@ -146,6 +126,30 @@ async function fetchOrCreateProfileCore(userRow) {
   return normalizeProfileRow(row || null)
 }
 
+/** Navne-sync + onboarding-merge — køres i baggrunden efter UI er klar. */
+async function syncProfileMaintenance(userRow, profileRow) {
+  if (!userRow?.id || !profileRow) return profileRow
+  let p = await syncProfileNameFromAuthIfNeeded(profileRow, userRow)
+  const obPatch = buildOnboardingProfileRowPatch(userRow.user_metadata || {}, p)
+  if (!obPatch) return p
+  const { data: merged, error: obErr } = await supabase
+    .from('profiles')
+    .update(obPatch)
+    .eq('id', userRow.id)
+    .select()
+    .single()
+  if (!obErr && merged) {
+    p = normalizeProfileRow(merged)
+    const { error: metaErr } = await supabase.auth.updateUser({
+      data: { onboarding_applied_to_profile: true },
+    })
+    if (metaErr) console.warn('auth metadata onboarding flag:', metaErr.message)
+  } else if (obErr) {
+    console.warn('onboarding → profiles merge:', obErr.message)
+  }
+  return p
+}
+
 function withTimeout(promise, ms) {
   return Promise.race([
     promise,
@@ -164,6 +168,7 @@ export function AuthProvider({ children }) {
   const [profileLoadError, setProfileLoadError] = useState(false)
   const [banNotice, setBanNotice] = useState(null)
   const profileReqId = useRef(0)
+  const profileIdRef = useRef('')
   /** Til pending-avatar merge: undgå at sætte profil efter logout når core-load timeout gav prev=null */
   const activeUserIdRef = useRef('')
   /** Forhindrer dobbelt ban-logout fra loadProfile + realtime-lytter */
@@ -188,6 +193,7 @@ export function AuthProvider({ children }) {
     setSession(null)
     setUser(null)
     setProfile(null)
+    profileIdRef.current = ''
     setProfileLoading(false)
     setProfileLoadError(false)
     signingOutRef.current = false
@@ -211,31 +217,89 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  const runProfileBackgroundSync = useCallback((userRow, profileRow, reqId, uid) => {
+    void syncProfileMaintenance(userRow, profileRow).then((maintained) => {
+      if (profileReqId.current !== reqId) return
+      if (!maintained) return
+      if (maintained.is_banned) {
+        void enforceBanLogout(maintained.ban_reason || '')
+        return
+      }
+      setProfile((prev) => {
+        if (prev != null && String(prev.id) !== uid) return prev
+        return maintained
+      })
+      if (maintained.seeking_match && !isSeekingActiveProfile(maintained)) {
+        supabase
+          .from('profiles')
+          .update({ seeking_match: false, seeking_match_at: null })
+          .eq('id', maintained.id)
+          .select()
+          .single()
+          .then(({ data, error }) => {
+            if (error || !data || profileReqId.current !== reqId) return
+            setProfile(normalizeProfileRow(data))
+          })
+          .catch(() => {})
+      }
+    })
+
+    void applyPendingAvatarToProfile(userRow, profileRow).then((withAvatar) => {
+      if (!withAvatar || !uid || profileReqId.current !== reqId) return
+      setProfile((prev) => {
+        if (String(withAvatar.id) !== uid) return prev
+        if (prev != null && String(prev.id) !== uid) return prev
+        if (prev == null) {
+          if (activeUserIdRef.current !== uid) return prev
+          return withAvatar
+        }
+        if (String(withAvatar.avatar || '') === String(prev.avatar || '')) return prev
+        return withAvatar
+      })
+    })
+  }, [enforceBanLogout])
+
   const loadProfile = useCallback((userRow, opts = {}) => {
     const quiet = opts.quiet === true
     const id = ++profileReqId.current
     const uid = userRow?.id != null ? String(userRow.id) : ''
     if (!userRow?.id) {
       setProfile(null)
+      profileIdRef.current = ''
       setProfileLoadError(false)
       if (!quiet) setProfileLoading(false)
       return
     }
+
+    if (quiet && profileIdRef.current === uid) {
+      void fetchProfileQuery(userRow.id).then((fresh) => {
+        if (!fresh || profileReqId.current !== id) return
+        if (fresh.is_banned) {
+          void enforceBanLogout(fresh.ban_reason || '')
+          return
+        }
+        setProfile(fresh)
+        runProfileBackgroundSync(userRow, fresh, id, uid)
+      })
+      return
+    }
+
     if (!quiet) setProfileLoading(true)
     setProfileLoadError(false)
 
-    const fetchWithTimeout = () => Promise.race([
-      fetchOrCreateProfileCore(userRow),
-      new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
-    ])
+    const fetchWithTimeout = () =>
+      Promise.race([
+        fetchProfileFast(userRow),
+        new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
+      ])
 
     fetchWithTimeout()
       .then(async (p) => {
-        if (profileReqId.current !== id) return;
+        if (profileReqId.current !== id) return
         let profileRow = p
         if (!profileRow) {
           profileRow = await Promise.race([
-            fetchOrCreateProfileCore(userRow),
+            fetchProfileFast(userRow),
             new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
           ])
         }
@@ -245,53 +309,20 @@ export function AuthProvider({ children }) {
           return
         }
 
-        if (profileRow?.is_banned) {
+        if (profileRow.is_banned) {
           void enforceBanLogout(profileRow.ban_reason || '')
           return
         }
 
+        profileIdRef.current = uid
         setProfile(profileRow)
-
-        // Auto-expire feed-synlighed når begge kanaler er udløbet (kamp 24 t, makker 7 d)
-        if (profileRow?.seeking_match && !isSeekingActiveProfile(profileRow)) {
-          supabase.from('profiles')
-            .update({ seeking_match: false, seeking_match_at: null })
-            .eq('id', profileRow.id)
-            .select()
-            .single()
-            .then(({ data, error }) => {
-              if (error || !data) return;
-              setProfile(normalizeProfileRow(data));
-            })
-            .catch(() => {});
-        }
-
-        /**
-         * Pending storage-upload kan tage lang tid. TOKEN_REFRESHED udløser ofte et nyt loadProfile
-         * med et nyt profileReqId — må ikke afvise setProfile når upload først færdiggøres bagefter
-         * (så ville pending være slettet men UI stadig vise emoji).
-         * Merge med funktionel setProfile + bruger-id-tjek i stedet for profileReqId.
-         */
-        void applyPendingAvatarToProfile(userRow, profileRow).then((withAvatar) => {
-          if (!withAvatar || !uid) return
-          setProfile((prev) => {
-            if (String(withAvatar.id) !== uid) return prev
-            if (prev != null && String(prev.id) !== uid) return prev
-            /* Core-load timeout → prev null; kun sæt hvis samme bruger stadig er aktiv */
-            if (prev == null) {
-              if (activeUserIdRef.current !== uid) return prev
-              return withAvatar
-            }
-            if (String(withAvatar.avatar || '') === String(prev.avatar || '')) return prev
-            return withAvatar
-          })
-        })
+        runProfileBackgroundSync(userRow, profileRow, id, uid)
       })
       .finally(() => {
         if (profileReqId.current !== id) return
         setProfileLoading(false)
       })
-  }, [enforceBanLogout])
+  }, [enforceBanLogout, runProfileBackgroundSync])
 
   /**
    * Init + auth-state-listener: kører kun én gang ved mount.
@@ -348,6 +379,7 @@ export function AuthProvider({ children }) {
         } else {
           profileReqId.current += 1
           setProfile(null)
+          profileIdRef.current = ''
           setProfileLoading(false)
         }
       }
@@ -545,6 +577,7 @@ export function AuthProvider({ children }) {
     setSession(null)
     setUser(null)
     setProfile(null)
+    profileIdRef.current = ''
     setProfileLoading(false)
     setProfileLoadError(false)
   }
