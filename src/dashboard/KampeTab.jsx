@@ -3771,7 +3771,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           joinRequestsPanel={renderJoinRequestsPanel(detailMatch, detailBundle)}
           unreadCount={detailBundle.cardState.attentionCount}
           joined={detailBundle.cardState.joined}
-          myTeam={detailBundle.cardState.myTeam}
           matchId={detailMatch.id}
           busyId={busyId}
           isCreator={detailBundle.cardState.isCreator}

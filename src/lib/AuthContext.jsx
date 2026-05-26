@@ -234,8 +234,12 @@ export function AuthProvider({ children }) {
         if (profileReqId.current !== id) return;
         let profileRow = p
         if (!profileRow) {
-          profileRow = await fetchOrCreateProfileCore(userRow)
+          profileRow = await Promise.race([
+            fetchOrCreateProfileCore(userRow),
+            new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
+          ])
         }
+        if (profileReqId.current !== id) return
         if (!profileRow) {
           setProfileLoadError(true)
           return
@@ -285,7 +289,7 @@ export function AuthProvider({ children }) {
       })
       .finally(() => {
         if (profileReqId.current !== id) return
-        if (!quiet) setProfileLoading(false)
+        setProfileLoading(false)
       })
   }, [enforceBanLogout])
 
