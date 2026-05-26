@@ -40,6 +40,7 @@ export function KampeMatchDetailSheet({
   currentUserId = null,
   onSwitchTeam,
   onSwitchPlayerTeam,
+  onKickPlayer,
   onProfileClick,
 }) {
   if (!open || !match) return null;
@@ -122,6 +123,7 @@ export function KampeMatchDetailSheet({
           currentUserId={currentUserId}
           onSwitchTeam={onSwitchTeam}
           onSwitchPlayerTeam={onSwitchPlayerTeam}
+          onKickPlayer={onKickPlayer}
           onProfileClick={onProfileClick}
         />
 

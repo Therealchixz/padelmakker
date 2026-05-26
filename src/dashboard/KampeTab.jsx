@@ -2918,8 +2918,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const adminCanForceConfirm = isAdmin && !isPlayerInMatch && mr && !mr.confirmed;
     const canDeleteMatch =
       (isCreator || isAdmin) && status !== "completed" && status !== "in_progress";
+    const kickablePlayers =
+      (isCreator || isAdmin) && (status === "open" || status === "full")
+        ? mp.filter((p) => String(p.user_id) !== String(user.id))
+        : [];
+    const canKickPlayers = kickablePlayers.length > 0;
     const showToolsAccordion =
-      adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch;
+      adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch || canKickPlayers;
     const hasManage =
       canUseMatchChat || hasSecondaryLinks || showToolsAccordion;
 
@@ -3128,6 +3133,38 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             </button>
             {adminActionsOpen ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px 12px 12px", borderTop: "1px solid " + theme.warm + "33" }}>
+                {canKickPlayers ? (
+                  <div className="pm-kampe-v2-kick-players">
+                    <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
+                      Fjern spiller fra kampen
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      {kickablePlayers.map((p) => {
+                        const kickingBusy = busyId === m.id + "-kick-" + p.user_id;
+                        const label = (p.user_name || "Ukendt").split(" ")[0];
+                        return (
+                          <button
+                            key={p.user_id}
+                            type="button"
+                            onClick={() => { void kickPlayer(m.id, p.user_id, p.user_name); }}
+                            disabled={kickingBusy}
+                            style={{
+                              ...btn(false),
+                              width: "100%",
+                              justifyContent: "center",
+                              fontSize: "13px",
+                              color: theme.red,
+                              borderColor: theme.red + "55",
+                            }}
+                          >
+                            <UserMinus size={14} />
+                            {kickingBusy ? "Fjerner..." : `Smid ${label} ud`}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
                 {adminCanForceStart ? (
                   <button
                     type="button"
@@ -3662,6 +3699,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           currentUserId={user.id}
           onSwitchTeam={switchTeam}
           onSwitchPlayerTeam={switchPlayerTeam}
+          onKickPlayer={kickPlayer}
           onProfileClick={(prof) => setViewPlayer(prof)}
           managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
         />
