@@ -45,6 +45,9 @@ export function buildMatchCardState({
       ? 2
       : null;
   const requestRows = Array.isArray(joinRequests) ? joinRequests : [];
+  const pendingRequests = requestRows.filter((request) => request.status === 'pending');
+  const pendingJoinAttention = isCreator && pendingRequests.length > 0 ? pendingRequests.length : 0;
+  const unreadMatchCountNum = Number(unreadMatchCount) || 0;
   const hasAdminActions = Boolean(isAdmin && (
     ((isCreator || isAdmin) && (status === 'open' || status === 'full')) ||
     (status === 'in_progress' && (isPlayerInMatch || isAdmin) && !matchResult) ||
@@ -65,7 +68,8 @@ export function buildMatchCardState({
     myTeam,
     isClosed: (match?.match_type || 'open') === 'closed',
     myRequest: requestRows.find((request) => String(request.user_id) === currentUserKey),
-    pendingRequests: requestRows.filter((request) => request.status === 'pending'),
+    pendingRequests,
+    attentionCount: Math.max(unreadMatchCountNum, pendingJoinAttention),
     hasAdminActions,
     adminActionsOpen: Boolean(adminActionsOpen),
     canUseMatchChat: Boolean(joined || isAdmin),

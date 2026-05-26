@@ -64,6 +64,9 @@ export function groupRelevantUnreadNotificationsByMatchId(rows, statusByMatchId 
   (Array.isArray(rows) ? rows : []).forEach((row) => {
     const matchId = row?.match_id ? String(row.match_id) : '';
     if (!matchId) return;
+    // Join-request alerts for creators are driven by pending match_join_requests,
+    // not notification read-state — cleared only on approve/reject.
+    if (row?.type === 'match_invite') return;
     if (!isKampeNotificationRelevantForStatus(row?.type, statusByMatchId[matchId])) return;
     grouped[matchId] = (grouped[matchId] || 0) + 1;
   });

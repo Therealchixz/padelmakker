@@ -45,6 +45,14 @@ test('isKampeNotificationRelevantForStatus only keeps notifications for the curr
   assert.equal(isKampeNotificationRelevantForStatus('match_chat', 'completed'), true);
 });
 
+test('groupRelevantUnreadNotificationsByMatchId ignores match_invite join-request alerts', () => {
+  const grouped = groupRelevantUnreadNotificationsByMatchId(
+    [{ id: 1, match_id: 'match-1', type: 'match_invite' }],
+    { 'match-1': 'open' },
+  );
+  assert.deepEqual(grouped, {});
+});
+
 test('groupRelevantUnreadNotificationsByMatchId drops stale notifications after a match moves phase', () => {
   const rows = [
     { id: 1, match_id: 'match-1', type: 'match_join' },

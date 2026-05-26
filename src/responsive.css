@@ -6572,6 +6572,92 @@ button,
   color: var(--pm-text-light);
 }
 
+.pm-kampe-v2-join-requests {
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface-alt);
+}
+
+.pm-kampe-v2-join-requests--loading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pm-text-mid);
+  text-align: center;
+}
+
+.pm-kampe-v2-join-requests-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-text-mid);
+  margin-bottom: 8px;
+}
+
+.pm-kampe-v2-join-requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-kampe-v2-join-request-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+}
+
+.pm-kampe-v2-join-request-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.pm-kampe-v2-join-request-user span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-kampe-v2-join-request-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pm-kampe-v2-join-request-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+}
+
+.pm-kampe-v2-join-request-btn--approve {
+  background: var(--pm-accent);
+  color: var(--pm-on-accent);
+}
+
+.pm-kampe-v2-join-request-btn--reject {
+  background: var(--pm-surface);
+  color: var(--pm-red);
+  border: 1px solid color-mix(in srgb, var(--pm-red) 33%, transparent);
+}
+
+.pm-kampe-v2-join-request-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .pm-kampe-v2-detail-primary {
   width: 100%;
   margin-bottom: 10px;

@@ -28,6 +28,7 @@ export function KampeMatchDetailSheet({
   winnerTeam,
   description,
   primaryAction,
+  joinRequestsPanel = null,
   managePanel = null,
   unreadCount = 0,
   onProfileClick,
@@ -105,6 +106,8 @@ export function KampeMatchDetailSheet({
           readOnly
           onProfileClick={onProfileClick}
         />
+
+        {joinRequestsPanel}
 
         {primaryAction ? (
           <button

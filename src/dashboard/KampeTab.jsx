@@ -70,6 +70,8 @@ import {
   MATCH_VENUE_TBD,
 } from '../lib/matchVenueOptions';
 
+const KAMPE_AUTO_READ_NOTIF_TYPES = KAMPE_NON_CHAT_NOTIF_TYPES.filter((type) => type !== 'match_invite');
+
 function matchPlayerTeam(p) {
   return Number(p?.team);
 }
@@ -243,6 +245,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [joinRequests, setJoinRequests] = useState({}); // { [matchId]: [{ id, user_id, user_name, user_emoji, status }] }
+  const [joinRequestsLoadingMatchId, setJoinRequestsLoadingMatchId] = useState(null);
+  const refreshJoinRequestsForMatchRef = useRef(null);
   const [matchChatOpenById, setMatchChatOpenById] = useState({});
   const [matchChatById, setMatchChatById] = useState({});
   const [matchChatDraftById, setMatchChatDraftById] = useState({});
@@ -421,9 +425,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       if (myJoinRes.error) throw myJoinRes.error;
       const jrMap = {};
       for (const jr of [...creatorJoinRows, ...(myJoinRes.data || [])]) {
-        if (!jrMap[jr.match_id]) jrMap[jr.match_id] = [];
-        if (!jrMap[jr.match_id].some((row) => row.id === jr.id)) {
-          jrMap[jr.match_id].push(jr);
+        const mid = String(jr.match_id);
+        if (!jrMap[mid]) jrMap[mid] = [];
+        if (!jrMap[mid].some((row) => row.id === jr.id)) {
+          jrMap[mid].push(jr);
         }
       }
       setJoinRequests(jrMap);
@@ -438,6 +443,26 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   }, [user.id, showToast, reloadKampeEloBundle]);
 
   useEffect(() => { void loadData(); }, [loadData]);
+
+  const refreshJoinRequestsForMatch = useCallback(async (matchId) => {
+    const key = String(matchId || "");
+    if (!key || !user?.id) return;
+    setJoinRequestsLoadingMatchId(key);
+    try {
+      const { data, error } = await supabase
+        .from("match_join_requests")
+        .select("*")
+        .eq("match_id", key);
+      if (error) throw error;
+      setJoinRequests((prev) => ({ ...prev, [key]: data || [] }));
+    } catch (e) {
+      console.warn("refresh join requests:", e?.message || e);
+    } finally {
+      setJoinRequestsLoadingMatchId((prev) => (prev === key ? null : prev));
+    }
+  }, [user?.id]);
+
+  refreshJoinRequestsForMatchRef.current = refreshJoinRequestsForMatch;
 
   /* Hent totalt antal chat-beskeder per kamp så badgen "Match chat (N)"
      kan vises uden at brugeren først skal åbne chatten. */
@@ -579,6 +604,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           } else if (refreshTarget === "match" || refreshTarget === "entity") {
             void loadMatchUnreadCounts();
           }
+          if (type === "match_invite") {
+            const matchId = next?.match_id || prev?.match_id;
+            if (matchId && refreshJoinRequestsForMatchRef.current) {
+              void refreshJoinRequestsForMatchRef.current(matchId);
+            }
+          }
         }
       )
       .subscribe();
@@ -613,7 +644,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       .from("notifications")
       .update({ read: true })
       .eq("user_id", user.id)
-      .in("type", KAMPE_NON_CHAT_NOTIF_TYPES)
+      .in("type", KAMPE_AUTO_READ_NOTIF_TYPES)
       .eq("match_id", key)
       .eq("read", false);
     if (error) {
@@ -623,6 +654,28 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       window.dispatchEvent(new Event("pm-notifications-sync"));
     }
   }, [loadMatchUnreadCounts, user?.id]);
+
+  const markJoinRequestNotifsRead = useCallback(async (matchId) => {
+    const key = String(matchId || "");
+    if (!key || !user?.id) return;
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", user.id)
+      .eq("type", "match_invite")
+      .eq("match_id", key)
+      .eq("read", false);
+    if (error) {
+      console.warn("mark join request notifications read:", error.message || error);
+    } else if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("pm-notifications-sync"));
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!detailMatchId || !user?.id) return;
+    void refreshJoinRequestsForMatch(detailMatchId);
+  }, [detailMatchId, refreshJoinRequestsForMatch, user?.id]);
 
   // Auto-mark match notifs as read when the card has been visible for ~1.2s.
   // Cards below the fold stay unread until the user scrolls them into view,
@@ -973,6 +1026,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       if (approveErr) console.warn("approve join notify:", approveErr.message || approveErr);
 
       showToast(`${reqUserName} er godkendt og sat på Hold ${teamNum}!`);
+      await markJoinRequestNotifsRead(matchId);
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }
@@ -990,6 +1044,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       if (rejectErr) console.warn("reject join notify:", rejectErr.message || rejectErr);
 
       showToast(`Anmodning fra ${reqUserName} afvist.`);
+      await markJoinRequestNotifsRead(matchId);
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }
@@ -1592,34 +1647,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     if (!matchInRenderedList()) return;
 
-    const scrollToCard = () => {
-      const el = document.getElementById("pm-match-" + String(mid));
-      if (!el) return false;
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      setFocusScrollMatchId(null);
-      return true;
-    };
-
-    if (scrollToCard()) return undefined;
-
-    let cancelled = false;
-    let attempts = 0;
-    const retry = () => {
-      if (cancelled) return;
-      if (scrollToCard() || attempts >= 15) {
-        if (attempts >= 15) setFocusScrollMatchId(null);
-        return;
-      }
-      attempts += 1;
-      window.setTimeout(retry, 80);
-    };
-    const raf = window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(retry);
-    });
-    return () => {
-      cancelled = true;
-      window.cancelAnimationFrame(raf);
-    };
+    setDetailMatchId(String(mid));
+    void refreshJoinRequestsForMatch(mid);
+    setFocusScrollMatchId(null);
   }, [
     tabActive,
     loadingMatches,
@@ -1630,6 +1660,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     activeMatches,
     completedMatches,
     completedLimit,
+    refreshJoinRequestsForMatch,
   ]);
 
   const matchTeamStatsById = useMemo(() => {
@@ -1731,7 +1762,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       currentUserId: user.id,
       busyId,
       status,
-      joinRequests: joinRequests[m.id] || [],
+      joinRequests: joinRequests[String(m.id)] || [],
       isAdmin,
       adminActionsOpen: !!expandedAdminActions[m.id],
       chatOpen: !!matchChatOpenById[m.id],
@@ -2518,6 +2549,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     Object.entries(matchChatUnreadById).forEach(([id, c]) => {
       merged.set(id, (merged.get(id) || 0) + (Number(c) || 0));
     });
+    for (const m of matches) {
+      if (String(m.creator_id) !== String(user.id)) continue;
+      const pending = (joinRequests[String(m.id)] || []).filter((row) => row.status === "pending");
+      if (pending.length === 0) continue;
+      const id = String(m.id);
+      merged.set(id, Math.max(merged.get(id) || 0, pending.length));
+    }
     for (const [id, count] of merged) {
       const match = matchById.get(id);
       if (!match) continue;
@@ -2614,7 +2652,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       currentUserId: user.id,
       busyId,
       status,
-      joinRequests: joinRequests[m.id] || [],
+      joinRequests: joinRequests[String(m.id)] || [],
       isAdmin,
       adminActionsOpen: !!expandedAdminActions[m.id],
       chatOpen: !!matchChatOpenById[m.id],
@@ -2729,6 +2767,65 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return null;
   }, [busyId, confirmResult, isAdmin, requestJoin, startMatch, user.id]);
 
+  const renderJoinRequestsPanel = (m, bundle) => {
+    const { isCreator, pendingRequests } = bundle.cardState;
+    const key = String(m.id);
+    const loading = joinRequestsLoadingMatchId === key;
+
+    if (!isCreator) return null;
+
+    if (loading && pendingRequests.length === 0) {
+      return (
+        <div className="pm-kampe-v2-join-requests pm-kampe-v2-join-requests--loading">
+          Henter anmodninger…
+        </div>
+      );
+    }
+
+    if (pendingRequests.length === 0) return null;
+
+    return (
+      <div className="pm-kampe-v2-join-requests">
+        <div className="pm-kampe-v2-join-requests-title">
+          🔒 Tilmeldingsanmodninger ({pendingRequests.length})
+        </div>
+        <div className="pm-kampe-v2-join-requests-list">
+          {pendingRequests.map((req) => (
+            <div key={req.id} className="pm-kampe-v2-join-request-row">
+              <div className="pm-kampe-v2-join-request-user">
+                <AvatarCircle
+                  avatar={profilesById[String(req.user_id)]?.avatar || req.user_emoji || "🎾"}
+                  size={28}
+                  emojiSize="13px"
+                  style={{ background: theme.accentBg, border: "1px solid " + theme.border, flexShrink: 0 }}
+                />
+                <span>{req.user_name || "Ukendt"}</span>
+              </div>
+              <div className="pm-kampe-v2-join-request-actions">
+                <button
+                  type="button"
+                  onClick={() => approveJoinRequest(m.id, req.id, req.user_id, req.user_name, req.user_emoji)}
+                  disabled={busyId === m.id + "-approve-" + req.id}
+                  className="pm-kampe-v2-join-request-btn pm-kampe-v2-join-request-btn--approve"
+                >
+                  {busyId === m.id + "-approve-" + req.id ? "..." : "✓ Godkend"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => rejectJoinRequest(m.id, req.id, req.user_id, req.user_name)}
+                  disabled={busyId === m.id + "-reject-" + req.id}
+                  className="pm-kampe-v2-join-request-btn pm-kampe-v2-join-request-btn--reject"
+                >
+                  {busyId === m.id + "-reject-" + req.id ? "..." : "✕ Afvis"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderDetailManagePanel = (m, bundle) => {
     const { mp, mr, status } = bundle;
     const {
@@ -2736,8 +2833,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       isCreator,
       busy,
       left,
-      isClosed,
-      pendingRequests,
       canUseMatchChat,
       canWriteMatchChat,
       chatOpen,
@@ -2763,9 +2858,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       (isCreator || isAdmin) && status !== "completed" && status !== "in_progress";
     const showToolsAccordion =
       adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch;
-    const showPendingRequests = isCreator && isClosed && pendingRequests.length > 0;
     const hasManage =
-      canUseMatchChat || hasSecondaryLinks || showPendingRequests || showToolsAccordion;
+      canUseMatchChat || hasSecondaryLinks || showToolsAccordion;
 
     if (!hasManage) return null;
 
@@ -2898,47 +2992,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               </div>
             ) : null}
           </>
-        ) : null}
-
-        {showPendingRequests ? (
-          <div className="pm-card-subpanel">
-            <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
-              🔒 Tilmeldingsanmodninger ({pendingRequests.length})
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {pendingRequests.map((req) => (
-                <div key={req.id} className="pm-card-row-item" style={{ justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600 }}>
-                    <AvatarCircle
-                      avatar={profilesById[String(req.user_id)]?.avatar || req.user_emoji || "🎾"}
-                      size={28}
-                      emojiSize="13px"
-                      style={{ background: theme.accentBg, border: "1px solid " + theme.border, flexShrink: 0 }}
-                    />
-                    <span>{req.user_name || "Ukendt"}</span>
-                  </div>
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    <button
-                      type="button"
-                      onClick={() => approveJoinRequest(m.id, req.id, req.user_id, req.user_name, req.user_emoji)}
-                      disabled={busyId === m.id + "-approve-" + req.id}
-                      style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 700, background: theme.accent, color: theme.onAccent, border: "none", borderRadius: "6px", cursor: "pointer" }}
-                    >
-                      {busyId === m.id + "-approve-" + req.id ? "..." : "✓ Godkend"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => rejectJoinRequest(m.id, req.id, req.user_id, req.user_name)}
-                      disabled={busyId === m.id + "-reject-" + req.id}
-                      style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 700, background: theme.surface, color: theme.red, border: "1px solid " + theme.red + "55", borderRadius: "6px", cursor: "pointer" }}
-                    >
-                      {busyId === m.id + "-reject-" + req.id ? "..." : "✕ Afvis"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         ) : null}
 
         {hasSecondaryLinks ? (
@@ -3088,7 +3141,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         isFull={cardState.isFull}
         isClosed={cardState.isClosed}
         joined={cardState.joined}
-        unreadCount={cardState.unreadMatchCount}
+        unreadCount={cardState.attentionCount}
         onClick={() => setDetailMatchId(m.id)}
       />
     );
@@ -3150,7 +3203,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         ? "Opret turnering"
         : "Opret liga";
   const detailMatch = detailMatchId
-    ? [...openMatches, ...activeMatches, ...completedMatches].find((m) => m.id === detailMatchId)
+    ? [...openMatches, ...activeMatches, ...completedMatches].find((m) => String(m.id) === String(detailMatchId))
     : null;
   const detailBundle = detailMatch ? getMatchCardBundle(detailMatch) : null;
 
@@ -3536,7 +3589,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           winnerTeam={detailBundle.winnerTeam}
           description={detailMatch.description}
           primaryAction={buildMatchPrimaryAction(detailMatch, detailBundle)}
-          unreadCount={detailBundle.cardState.unreadMatchCount}
+          joinRequestsPanel={renderJoinRequestsPanel(detailMatch, detailBundle)}
+          unreadCount={detailBundle.cardState.attentionCount}
           onProfileClick={(prof) => setViewPlayer(prof)}
           managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
         />
