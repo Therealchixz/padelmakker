@@ -107,19 +107,24 @@ export function KampeFilterSheet({
         aria-modal="true"
         aria-label="Filtrer kampe"
       >
-        <div {...dragZoneProps}>
-          <div className="pm-kampe-v2-sheet-handle" />
-        </div>
-        <div className="pm-kampe-v2-sheet-head">
-          <div>
-            <div className="pm-kampe-v2-sheet-title">Filter</div>
-            {resultCount != null ? (
-              <div className="pm-kampe-v2-sheet-sub">{resultCount} kampe matcher</div>
-            ) : null}
+        <div {...dragZoneProps} aria-label="Træk her for at lukke">
+          <div className="pm-kampe-v2-sheet-handle" aria-hidden />
+          <div className="pm-kampe-v2-sheet-head">
+            <div>
+              <div className="pm-kampe-v2-sheet-title">Filter</div>
+              {resultCount != null ? (
+                <div className="pm-kampe-v2-sheet-sub">{resultCount} kampe matcher</div>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              className="pm-kampe-v2-sheet-apply"
+              onClick={onClose}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Anvend
+            </button>
           </div>
-          <button type="button" className="pm-kampe-v2-sheet-apply" onClick={onClose}>
-            Anvend
-          </button>
         </div>
 
         <div className="pm-kampe-v2-sheet-section">

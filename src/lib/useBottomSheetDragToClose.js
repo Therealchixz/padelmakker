@@ -225,13 +225,12 @@ export function useBottomSheetDragToClose({ onClose, enabled = true } = {}) {
   return {
     sheetRef: sheetElRef,
     dragZoneProps: {
-      className: 'pm-kampe-v2-sheet-handle-zone',
+      className: 'pm-kampe-v2-sheet-drag-header',
       onPointerDown: onDragZonePointerDown,
       onPointerMove: onDragZonePointerMove,
       onPointerUp: onDragZonePointerUp,
       onPointerCancel: onDragZonePointerCancel,
       onClick: (event) => event.stopPropagation(),
-      'aria-hidden': true,
     },
     sheetStyle,
     sheetClassName,

@@ -80,23 +80,29 @@ export function KampeMatchDetailSheet({
         aria-modal="true"
         aria-label="Kampdetaljer"
       >
-        <div {...dragZoneProps}>
-          <div className="pm-kampe-v2-sheet-handle" />
-        </div>
-        <div className="pm-kampe-v2-detail-head">
-          <div className="pm-kampe-v2-detail-head-main">
-            <div className="pm-kampe-v2-detail-venue">{venue}</div>
-            <div className="pm-kampe-v2-detail-datetime pm-kampe-v2-detail-datetime--primary">
-              {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
+        <div {...dragZoneProps} aria-label="Træk her for at lukke">
+          <div className="pm-kampe-v2-sheet-handle" aria-hidden />
+          <div className="pm-kampe-v2-detail-head">
+            <div className="pm-kampe-v2-detail-head-main">
+              <div className="pm-kampe-v2-detail-venue">{venue}</div>
+              <div className="pm-kampe-v2-detail-datetime pm-kampe-v2-detail-datetime--primary">
+                {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
+              </div>
+              <div className="pm-kampe-v2-detail-location">
+                <MapPin size={12} aria-hidden />
+                {venue}
+              </div>
             </div>
-            <div className="pm-kampe-v2-detail-location">
-              <MapPin size={12} aria-hidden />
-              {venue}
-            </div>
+            <button
+              type="button"
+              className="pm-kampe-v2-detail-close"
+              onClick={onClose}
+              onPointerDown={(event) => event.stopPropagation()}
+              aria-label="Luk"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <button type="button" className="pm-kampe-v2-detail-close" onClick={onClose} aria-label="Luk">
-            <X size={18} />
-          </button>
         </div>
 
         <div className="pm-kampe-v2-detail-badges">

@@ -6104,26 +6104,43 @@ button,
   transform: translateY(var(--sheet-drag-y, 0px));
 }
 
-.pm-kampe-v2-sheet-handle-zone {
+/* Thumb-reachable drag area: handle + sheet header, stops above badges/content */
+.pm-kampe-v2-sheet-drag-header {
   position: relative;
   flex-shrink: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
   width: 100%;
   box-sizing: border-box;
-  /* Large invisible hit target (Material min ~48dp); visual handle stays small */
-  min-height: 52px;
-  padding: 14px 20px 12px;
   margin: -6px 0 0;
+  padding: 6px 0 2px;
   touch-action: none;
   cursor: grab;
   -webkit-user-select: none;
   user-select: none;
 }
 
-.pm-kampe-v2-sheet-handle-zone:active {
+.pm-kampe-v2-sheet-drag-header:active {
   cursor: grabbing;
+}
+
+.pm-kampe-v2-sheet-drag-header .pm-kampe-v2-sheet-handle {
+  flex-shrink: 0;
+  margin: 4px auto 10px;
+}
+
+.pm-kampe-v2-sheet-drag-header .pm-kampe-v2-detail-head,
+.pm-kampe-v2-sheet-drag-header .pm-kampe-v2-sheet-head {
+  margin-bottom: 0;
+}
+
+.pm-kampe-v2-detail-sheet .pm-kampe-v2-sheet-drag-header {
+  margin-bottom: 4px;
+}
+
+.pm-kampe-v2-sheet:not(.pm-kampe-v2-detail-sheet) .pm-kampe-v2-sheet-drag-header {
+  margin-bottom: 8px;
 }
 
 .pm-kampe-v2-sheet-handle {
@@ -6132,14 +6149,6 @@ button,
   border-radius: 999px;
   background: var(--pm-border);
   margin: 0 auto;
-}
-
-.pm-kampe-v2-detail-sheet .pm-kampe-v2-sheet-handle-zone {
-  margin-bottom: 6px;
-}
-
-.pm-kampe-v2-sheet:not(.pm-kampe-v2-detail-sheet) .pm-kampe-v2-sheet-handle-zone {
-  margin-bottom: 6px;
 }
 
 .pm-kampe-v2-sheet--dragging {
