@@ -137,8 +137,11 @@ export function KampeMatchListCard({
           </span>
         </div>
         {showEloRange ? (
-          <span className="pm-kampe-v2-list-elo-pill">
-            {matchPrefs.min}–{matchPrefs.max}
+          <span
+            className="pm-kampe-v2-list-elo-pill"
+            title={`Arrangøren søger spillere med ELO mellem ${matchPrefs.min} og ${matchPrefs.max}`}
+          >
+            ELO {matchPrefs.min}–{matchPrefs.max}
           </span>
         ) : null}
         {showMyEloDelta ? (
