@@ -212,6 +212,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [matches, setMatches]         = useState([]);
   const [matchPlayers, setMatchPlayers] = useState({});
   const [matchResults, setMatchResults] = useState({});
+  /** match_id → user_id → ELO-ændring (alle spillere, til afsluttede kampe) */
+  const [eloChangesByMatchId, setEloChangesByMatchId] = useState({});
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [creating, setCreating]       = useState(false);
@@ -423,6 +425,27 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         if (tb >= ta) mrMap[mid] = mr;
       });
       setMatchResults(mrMap);
+
+      const eloHistRows =
+        allMatchIds.length > 0
+          ? await fetchRowsInChunks(
+              supabase,
+              'elo_history',
+              'match_id',
+              allMatchIds,
+              'match_id, user_id, change',
+            )
+          : [];
+      const eloChangesMap = {};
+      for (const row of eloHistRows) {
+        if (!row?.match_id || !row?.user_id) continue;
+        const change = Number(row.change);
+        if (!Number.isFinite(change) || change === 0) continue;
+        const mid = String(row.match_id);
+        if (!eloChangesMap[mid]) eloChangesMap[mid] = {};
+        eloChangesMap[mid][String(row.user_id)] = change;
+      }
+      setEloChangesByMatchId(eloChangesMap);
 
       // Join requests: creator pending + egne anmodninger (ikke slice af pool-ids)
       const createdMatchIds = (createdRes.data || []).map((m) => m.id);
@@ -1766,11 +1789,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         t1Avg: avgElo(t1),
         t2Avg: avgElo(t2),
         playerEloByUserId,
+        playerEloChangeByUserId: eloChangesByMatchId[String(matchId)] || {},
         winPrediction,
       };
     }
     return stats;
-  }, [eloByUserId, eloFromHistoryByUserId, matchPlayers, myElo, myUidStr, profilesById, user.games_played]);
+  }, [eloByUserId, eloChangesByMatchId, eloFromHistoryByUserId, matchPlayers, myElo, myUidStr, profilesById, user.games_played]);
 
   const renderMatchCard = (m) => {
     const mp = matchPlayers[m.id] || [];
@@ -1780,6 +1804,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       t1Avg: null,
       t2Avg: null,
       playerEloByUserId: {},
+      playerEloChangeByUserId: {},
       winPrediction: null,
     };
     const mr = matchResults[m.id];
@@ -2695,6 +2720,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       t1Avg: null,
       t2Avg: null,
       playerEloByUserId: {},
+      playerEloChangeByUserId: {},
       winPrediction: null,
     };
     const mr = matchResults[m.id];
@@ -3227,7 +3253,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   const renderPadelListItem = useCallback((m) => {
     const bundle = getMatchCardBundle(m);
-    const { cardState, matchPrefs, status } = bundle;
+    const { cardState, matchPrefs, status, mr } = bundle;
+    const myEloChange =
+      status === 'completed' && mr?.confirmed && cardState.joined
+        ? eloChangesByMatchId[String(m.id)]?.[myUidStr] ?? null
+        : null;
     return (
       <KampeMatchListCard
         key={m.id}
@@ -3240,11 +3270,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         isFull={cardState.isFull}
         isClosed={cardState.isClosed}
         joined={cardState.joined}
+        myEloChange={myEloChange}
         unreadCount={cardState.attentionCount}
         onClick={() => setDetailMatchId(m.id)}
       />
     );
-  }, [getMatchCardBundle, profilesById]);
+  }, [eloChangesByMatchId, getMatchCardBundle, myUidStr, profilesById]);
 
   const toolbarFormatTabs = [
     {
@@ -3686,6 +3717,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           isFull={detailBundle.cardState.isFull}
           teamStats={detailBundle.teamStats}
           winnerTeam={detailBundle.winnerTeam}
+          matchResult={detailBundle.mr}
+          myEloChange={
+            detailBundle.mr?.confirmed && detailBundle.cardState.joined
+              ? eloChangesByMatchId[String(detailMatch.id)]?.[myUidStr] ?? null
+              : null
+          }
+          myTeam={detailBundle.cardState.myTeam}
           description={detailMatch.description}
           primaryAction={buildMatchPrimaryAction(detailMatch, detailBundle)}
           joinRequestsPanel={renderJoinRequestsPanel(detailMatch, detailBundle)}

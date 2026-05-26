@@ -25,6 +25,8 @@ export function MatchCourtView({
   const t1Avg = teamStats?.t1Avg;
   const t2Avg = teamStats?.t2Avg;
   const playerElo = (p) => teamStats?.playerEloByUserId?.[String(p.user_id)] ?? 1000;
+  const playerEloChange = (p) => teamStats?.playerEloChangeByUserId?.[String(p.user_id)];
+  const showEloChanges = status === 'completed';
 
   const renderPlayer = (p, teamNum) => {
     const otherTeam = teamNum === 1 ? 2 : 1;
@@ -92,7 +94,20 @@ export function MatchCourtView({
           <span style={{ fontSize: '9px', color: theme.text, marginTop: '3px', fontWeight: 600 }}>
             {(p.user_name || '?').split(' ')[0]}
           </span>
-          <span style={{ fontSize: '8px', color: teamColor, fontWeight: 700 }}>{playerElo(p)}</span>
+          {showEloChanges && playerEloChange(p) != null ? (
+            <span
+              style={{
+                fontSize: '8px',
+                fontWeight: 700,
+                color: playerEloChange(p) >= 0 ? theme.green : theme.red,
+              }}
+            >
+              {playerEloChange(p) >= 0 ? '+' : ''}
+              {playerEloChange(p)}
+            </span>
+          ) : (
+            <span style={{ fontSize: '8px', color: teamColor, fontWeight: 700 }}>{playerElo(p)}</span>
+          )}
         </button>
         {canSwitchPlayer ? (
           <div

@@ -21,6 +21,7 @@ export function KampeMatchListCard({
   isFull,
   isClosed = false,
   joined,
+  myEloChange = null,
   unreadCount = 0,
   onClick,
 }) {
@@ -36,6 +37,10 @@ export function KampeMatchListCard({
   const maxPlayers = match?.max_players || 4;
   const dateHeadline = formatMatchDateHeadlineDa(match.date);
   const timeLabel = matchTimeLabel(match);
+  const isCompleted = status === 'completed';
+  const showMyEloDelta =
+    isCompleted && joined && myEloChange != null && Number.isFinite(Number(myEloChange));
+  const eloDelta = showMyEloDelta ? Number(myEloChange) : null;
 
   return (
     <button
@@ -65,7 +70,7 @@ export function KampeMatchListCard({
         </div>
       </div>
 
-      <div className="pm-kampe-v2-list-card-bottom">
+      <div className={`pm-kampe-v2-list-card-bottom${isCompleted ? ' pm-kampe-v2-list-card-bottom--completed' : ''}`}>
         <div className="pm-kampe-v2-list-participants">
           <div className="pm-kampe-v2-list-avatars">
             {[...t1, ...t2].map((p, i) => (
@@ -83,8 +88,25 @@ export function KampeMatchListCard({
           </span>
         </div>
         {matchPrefs?.min != null && matchPrefs?.max != null ? (
-          <span className="pm-kampe-v2-list-elo-pill">
-            {matchPrefs.min}–{matchPrefs.max}
+          <div className="pm-kampe-v2-list-elo-col">
+            <span className="pm-kampe-v2-list-elo-pill">
+              {matchPrefs.min}–{matchPrefs.max}
+            </span>
+            {showMyEloDelta ? (
+              <span
+                className={`pm-kampe-v2-list-elo-delta${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-delta--up' : ' pm-kampe-v2-list-elo-delta--down'}`}
+              >
+                {eloDelta >= 0 ? '+' : ''}
+                {eloDelta} ELO
+              </span>
+            ) : null}
+          </div>
+        ) : showMyEloDelta ? (
+          <span
+            className={`pm-kampe-v2-list-elo-delta pm-kampe-v2-list-elo-delta--solo${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-delta--up' : ' pm-kampe-v2-list-elo-delta--down'}`}
+          >
+            {eloDelta >= 0 ? '+' : ''}
+            {eloDelta} ELO
           </span>
         ) : null}
       </div>

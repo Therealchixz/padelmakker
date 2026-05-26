@@ -6426,6 +6426,10 @@ button,
   gap: 10px;
 }
 
+.pm-kampe-v2-list-card-bottom--completed {
+  align-items: flex-end;
+}
+
 .pm-kampe-v2-list-participants {
   display: flex;
   align-items: center;
@@ -6449,6 +6453,14 @@ button,
   white-space: nowrap;
 }
 
+.pm-kampe-v2-list-elo-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
 .pm-kampe-v2-list-elo-pill {
   flex-shrink: 0;
   font-size: 11px;
@@ -6459,6 +6471,25 @@ button,
   border-radius: 999px;
   padding: 5px 10px;
   white-space: nowrap;
+}
+
+.pm-kampe-v2-list-elo-delta {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.pm-kampe-v2-list-elo-delta--up {
+  color: var(--pm-green);
+}
+
+.pm-kampe-v2-list-elo-delta--down {
+  color: var(--pm-danger);
+}
+
+.pm-kampe-v2-list-elo-delta--solo {
+  flex-shrink: 0;
 }
 
 .pm-kampe-v2-court-wrap {

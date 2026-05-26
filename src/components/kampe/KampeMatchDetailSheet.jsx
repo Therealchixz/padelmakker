@@ -3,6 +3,7 @@ import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDispla
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { btn } from '../../lib/platformTheme';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
+import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCourtView } from './MatchCourtView';
 
 function badgeToneClass(tone) {
@@ -27,13 +28,15 @@ export function KampeMatchDetailSheet({
   isFull = false,
   teamStats,
   winnerTeam,
+  matchResult = null,
+  myEloChange = null,
+  myTeam = null,
   description,
   primaryAction,
   joinRequestsPanel = null,
   managePanel = null,
   unreadCount = 0,
   joined = false,
-  myTeam = null,
   matchId = null,
   busyId = null,
   isCreator = false,
@@ -134,7 +137,7 @@ export function KampeMatchDetailSheet({
           status={status}
           winnerTeam={winnerTeam}
           profilesById={profilesById}
-          readOnly={false}
+          readOnly={status === 'completed'}
           joined={joined}
           myTeam={myTeam}
           matchId={matchId}
@@ -147,6 +150,16 @@ export function KampeMatchDetailSheet({
           onKickPlayer={onKickPlayer}
           onProfileClick={onProfileClick}
         />
+
+        {status === 'completed' && matchResult ? (
+          <MatchResultStrip
+            matchResult={matchResult}
+            myTeam={
+              myTeam === 1 ? 'team1' : myTeam === 2 ? 'team2' : null
+            }
+            eloChange={myEloChange}
+          />
+        ) : null}
 
         {joinRequestsPanel}
 
