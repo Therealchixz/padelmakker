@@ -6273,10 +6273,14 @@ button,
 }
 
 .pm-kampe-v2-list-venue {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--pm-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pm-text-mid);
   line-height: 1.25;
+  margin-top: 4px;
 }
 
 .pm-kampe-v2-list-datetime {
@@ -6285,7 +6289,12 @@ button,
   gap: 5px;
   font-size: 12px;
   color: var(--pm-text-mid);
-  margin-top: 3px;
+}
+
+.pm-kampe-v2-list-datetime--primary {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-text);
 }
 
 .pm-kampe-v2-list-badges {
@@ -6337,6 +6346,21 @@ button,
   color: var(--pm-on-accent);
 }
 
+.pm-kampe-v2-badge--open {
+  background: color-mix(in srgb, var(--pm-green) 16%, var(--pm-surface));
+  color: var(--pm-green);
+}
+
+.pm-kampe-v2-badge--full {
+  background: color-mix(in srgb, var(--pm-warm) 20%, var(--pm-surface));
+  color: color-mix(in srgb, var(--pm-warm) 85%, #7c2d12);
+}
+
+.pm-kampe-v2-badge--closed {
+  background: color-mix(in srgb, var(--pm-text-mid) 12%, var(--pm-surface));
+  color: var(--pm-text-mid);
+}
+
 .pm-kampe-v2-list-unread {
   font-size: 10px;
   font-weight: 700;
@@ -6350,6 +6374,13 @@ button,
   gap: 10px;
 }
 
+.pm-kampe-v2-list-participants {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .pm-kampe-v2-list-avatars {
   display: flex;
   align-items: center;
@@ -6359,34 +6390,47 @@ button,
   margin-left: -8px;
 }
 
-.pm-kampe-v2-list-avatar-empty {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1.5px dashed var(--pm-border);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.pm-kampe-v2-list-slots-plus {
+  margin-left: 4px;
   font-size: 12px;
-  color: var(--pm-text-light);
-  background: var(--pm-surface-alt);
+  font-weight: 700;
+  color: var(--pm-accent);
 }
 
-.pm-kampe-v2-list-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  font-size: 11px;
+.pm-kampe-v2-list-count {
+  font-size: 12px;
   font-weight: 600;
   color: var(--pm-text-mid);
+  white-space: nowrap;
 }
 
-.pm-kampe-v2-list-seeking {
+.pm-kampe-v2-list-elo-pill {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--pm-blue);
+  background: color-mix(in srgb, var(--pm-blue) 12%, var(--pm-surface));
+  border: 1px solid color-mix(in srgb, var(--pm-blue) 22%, var(--pm-border));
+  border-radius: 999px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.pm-kampe-v2-detail-location {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  color: var(--pm-warm);
+  gap: 5px;
+  font-size: 12px;
+  color: var(--pm-text-mid);
+  margin-top: 4px;
+}
+
+.pm-kampe-v2-court-wrap {
+  margin-bottom: 14px;
+}
+
+.pm-kampe-v2-detail-sheet .pm-court-wrap {
+  margin-bottom: 16px;
 }
 
 .pm-kampe-v2-detail-sheet {

@@ -2740,13 +2740,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       <KampeMatchListCard
         key={m.id}
         match={m}
-        players={[...bundle.teamStats.t1, ...bundle.teamStats.t2]}
+        teamStats={bundle.teamStats}
         profilesById={profilesById}
         matchPrefs={matchPrefs}
         status={status}
-        statusLabel={cardState.statusLabel}
         left={cardState.left}
         isFull={cardState.isFull}
+        isClosed={cardState.isClosed}
         joined={cardState.joined}
         unreadCount={cardState.unreadMatchCount}
         onClick={() => setDetailMatchId(m.id)}
@@ -3185,16 +3185,19 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           open
           onClose={() => setDetailMatchId(null)}
           match={detailMatch}
-          players={detailBundle.mp}
           profilesById={profilesById}
           matchPrefs={detailBundle.matchPrefs}
           statusLabel={detailBundle.cardState.statusLabel}
           status={detailBundle.status}
+          isClosed={detailBundle.cardState.isClosed}
+          left={detailBundle.cardState.left}
+          isFull={detailBundle.cardState.isFull}
           teamStats={detailBundle.teamStats}
           winnerTeam={detailBundle.winnerTeam}
           description={detailMatch.description}
           primaryAction={buildMatchPrimaryAction(detailMatch, detailBundle)}
           unreadCount={detailBundle.cardState.unreadMatchCount}
+          onProfileClick={(prof) => setViewPlayer(prof)}
           onExpandFull={() => {
             setExpandedMatchIds((prev) => new Set(prev).add(detailMatch.id));
             setDetailMatchId(null);

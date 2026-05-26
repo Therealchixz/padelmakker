@@ -1,23 +1,25 @@
-import { CalendarDays, Zap } from 'lucide-react';
+import { CalendarDays, MapPin } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
 import { formatMatchDateDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
+import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
 
-function toneClass(tone) {
-  if (tone === 'accent') return 'pm-kampe-v2-badge--accent';
-  if (tone === 'warm') return 'pm-kampe-v2-badge--warm';
-  if (tone === 'blue') return 'pm-kampe-v2-badge--blue';
+function badgeToneClass(tone) {
+  if (tone === 'live') return 'pm-kampe-v2-badge--live';
+  if (tone === 'open') return 'pm-kampe-v2-badge--open';
+  if (tone === 'full') return 'pm-kampe-v2-badge--full';
+  if (tone === 'closed') return 'pm-kampe-v2-badge--closed';
   return 'pm-kampe-v2-badge--neutral';
 }
 
 export function KampeMatchListCard({
   match,
-  players = [],
+  teamStats,
   profilesById = {},
   matchPrefs,
   status,
-  statusLabel,
   left,
   isFull,
+  isClosed = false,
   joined,
   unreadCount = 0,
   onClick,
@@ -26,30 +28,12 @@ export function KampeMatchListCard({
     matchPrefs?.booked === false && !String(match.court_name || '').trim()
       ? 'Bane ikke booket endnu'
       : (match.court_name || 'Padelbane');
-  const isLive = status === 'in_progress';
   const dull = isFull && !joined && status !== 'completed' && status !== 'in_progress';
-
-  const slots = [];
-  for (let i = 0; i < 4; i += 1) {
-    const p = players[i];
-    if (p) {
-      slots.push(
-        <AvatarCircle
-          key={p.user_id || i}
-          avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
-          size={28}
-          emojiSize="12px"
-          style={{ border: '1.5px solid var(--pm-border)' }}
-        />,
-      );
-    } else {
-      slots.push(
-        <span key={`empty-${i}`} className="pm-kampe-v2-list-avatar-empty" aria-hidden>
-          +
-        </span>,
-      );
-    }
-  }
+  const statusBadge = getKampeListStatusBadge({ status, isClosed, left, isFull });
+  const t1 = teamStats?.t1 || [];
+  const t2 = teamStats?.t2 || [];
+  const filledCount = t1.length + t2.length;
+  const maxPlayers = match?.max_players || 4;
 
   return (
     <button
@@ -60,23 +44,20 @@ export function KampeMatchListCard({
     >
       <div className="pm-kampe-v2-list-card-top">
         <div className="pm-kampe-v2-list-card-main">
-          <div className="pm-kampe-v2-list-venue">{venue}</div>
-          <div className="pm-kampe-v2-list-datetime">
-            <CalendarDays size={12} aria-hidden />
+          <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary">
+            <CalendarDays size={13} aria-hidden />
             {formatMatchDateDa(match.date)} · {matchTimeLabel(match)}
+          </div>
+          <div className="pm-kampe-v2-list-venue">
+            <MapPin size={12} aria-hidden />
+            {venue}
           </div>
         </div>
         <div className="pm-kampe-v2-list-badges">
-          {isLive ? (
-            <span className="pm-kampe-v2-badge pm-kampe-v2-badge--live">
-              <span className="pm-live-dot" />
-              LIVE
-            </span>
-          ) : (
-            <span className={`pm-kampe-v2-badge ${toneClass(statusLabel?.tone)}`}>
-              {statusLabel?.text}
-            </span>
-          )}
+          <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
+            {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
+            {statusBadge.label}
+          </span>
           {unreadCount > 0 ? (
             <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
           ) : null}
@@ -84,20 +65,30 @@ export function KampeMatchListCard({
       </div>
 
       <div className="pm-kampe-v2-list-card-bottom">
-        <div className="pm-kampe-v2-list-avatars">{slots}</div>
-        <div className="pm-kampe-v2-list-meta">
-          {matchPrefs?.min != null && matchPrefs?.max != null ? (
-            <span className="pm-kampe-v2-list-elo">ELO {matchPrefs.min}–{matchPrefs.max}</span>
-          ) : null}
-          {match.seeking_player ? (
-            <span className="pm-kampe-v2-list-seeking">
-              <Zap size={10} aria-hidden />
-              Mangler spiller
-            </span>
-          ) : left > 0 && status === 'open' ? (
-            <span className="pm-kampe-v2-list-spots">{left} ledig{left > 1 ? 'e' : ''}</span>
-          ) : null}
+        <div className="pm-kampe-v2-list-participants">
+          <div className="pm-kampe-v2-list-avatars">
+            {[...t1, ...t2].map((p, i) => (
+              <AvatarCircle
+                key={p.user_id || i}
+                avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
+                size={28}
+                emojiSize="12px"
+                style={{ border: '1.5px solid var(--pm-border)' }}
+              />
+            ))}
+            {left > 0 ? (
+              <span className="pm-kampe-v2-list-slots-plus">+{left}</span>
+            ) : null}
+          </div>
+          <span className="pm-kampe-v2-list-count">
+            {filledCount}/{maxPlayers}
+          </span>
         </div>
+        {matchPrefs?.min != null && matchPrefs?.max != null ? (
+          <span className="pm-kampe-v2-list-elo-pill">
+            {matchPrefs.min}–{matchPrefs.max}
+          </span>
+        ) : null}
       </div>
     </button>
   );

@@ -1,23 +1,36 @@
-import { CalendarDays, X } from 'lucide-react';
-import { AvatarCircle } from '../AvatarCircle';
+import { CalendarDays, MapPin, X } from 'lucide-react';
 import { formatMatchDateDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
+import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { btn } from '../../lib/platformTheme';
+import { MatchCourtView } from './MatchCourtView';
+
+function badgeToneClass(tone) {
+  if (tone === 'live') return 'pm-kampe-v2-badge--live';
+  if (tone === 'open') return 'pm-kampe-v2-badge--open';
+  if (tone === 'full') return 'pm-kampe-v2-badge--full';
+  if (tone === 'closed') return 'pm-kampe-v2-badge--closed';
+  if (tone === 'green') return 'pm-kampe-v2-badge--green';
+  return 'pm-kampe-v2-badge--neutral';
+}
 
 export function KampeMatchDetailSheet({
   open,
   onClose,
   match,
-  players: _players = [],
   profilesById = {},
   matchPrefs,
   statusLabel,
   status,
+  isClosed = false,
+  left = 0,
+  isFull = false,
   teamStats,
   winnerTeam,
   description,
   primaryAction,
   onExpandFull,
   unreadCount = 0,
+  onProfileClick,
 }) {
   if (!open || !match) return null;
 
@@ -25,30 +38,14 @@ export function KampeMatchDetailSheet({
     matchPrefs?.booked === false && !String(match.court_name || '').trim()
       ? 'Bane ikke booket endnu'
       : (match.court_name || 'Padelbane');
-  const t1 = teamStats?.t1 || [];
-  const t2 = teamStats?.t2 || [];
-
-  const renderPlayer = (p, teamNum) => {
-    if (!p) {
-      return (
-        <div key={`empty-${teamNum}`} className="pm-kampe-v2-detail-player pm-kampe-v2-detail-player--empty">
-          <span className="pm-kampe-v2-detail-empty-slot">Ledig</span>
-        </div>
-      );
-    }
-    const elo = teamStats?.playerEloByUserId?.[String(p.user_id)] ?? '—';
-    return (
-      <div key={p.user_id} className="pm-kampe-v2-detail-player">
-        <AvatarCircle
-          avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
-          size={40}
-          emojiSize="16px"
-        />
-        <span className="pm-kampe-v2-detail-player-name">{(p.user_name || '?').split(' ')[0]}</span>
-        <span className="pm-kampe-v2-detail-player-elo">{elo}</span>
-      </div>
-    );
-  };
+  const statusBadge = getKampeDetailStatusBadge({
+    status,
+    isClosed,
+    left,
+    isFull,
+    statusLabel,
+    winnerTeam,
+  });
 
   return (
     <>
@@ -67,6 +64,10 @@ export function KampeMatchDetailSheet({
               <CalendarDays size={13} aria-hidden />
               {formatMatchDateDa(match.date)} kl. {matchTimeLabel(match)}
             </div>
+            <div className="pm-kampe-v2-detail-location">
+              <MapPin size={12} aria-hidden />
+              {venue}
+            </div>
           </div>
           <button type="button" className="pm-kampe-v2-detail-close" onClick={onClose} aria-label="Luk">
             <X size={18} />
@@ -74,16 +75,10 @@ export function KampeMatchDetailSheet({
         </div>
 
         <div className="pm-kampe-v2-detail-badges">
-          {status === 'in_progress' ? (
-            <span className="pm-kampe-v2-badge pm-kampe-v2-badge--live">
-              <span className="pm-live-dot" />
-              LIVE
-            </span>
-          ) : winnerTeam ? (
-            <span className="pm-kampe-v2-badge pm-kampe-v2-badge--green">Hold {winnerTeam} vandt</span>
-          ) : (
-            <span className="pm-kampe-v2-badge pm-kampe-v2-badge--neutral">{statusLabel?.text}</span>
-          )}
+          <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
+            {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
+            {statusBadge.label}
+          </span>
           {matchPrefs?.min != null && matchPrefs?.max != null ? (
             <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue">
               ELO {matchPrefs.min}–{matchPrefs.max}
@@ -103,23 +98,14 @@ export function KampeMatchDetailSheet({
           <p className="pm-kampe-v2-detail-desc">{description}</p>
         ) : null}
 
-        <div className="pm-kampe-v2-detail-teams">
-          <div className="pm-kampe-v2-detail-team">
-            <div className="pm-kampe-v2-detail-team-label">Hold 1</div>
-            <div className="pm-kampe-v2-detail-team-players">
-              {renderPlayer(t1[0], 1)}
-              {renderPlayer(t1[1], 1)}
-            </div>
-          </div>
-          <div className="pm-kampe-v2-detail-vs">vs</div>
-          <div className="pm-kampe-v2-detail-team">
-            <div className="pm-kampe-v2-detail-team-label">Hold 2</div>
-            <div className="pm-kampe-v2-detail-team-players">
-              {renderPlayer(t2[0], 2)}
-              {renderPlayer(t2[1], 2)}
-            </div>
-          </div>
-        </div>
+        <MatchCourtView
+          teamStats={teamStats}
+          status={status}
+          winnerTeam={winnerTeam}
+          profilesById={profilesById}
+          readOnly
+          onProfileClick={onProfileClick}
+        />
 
         {primaryAction ? (
           <button
