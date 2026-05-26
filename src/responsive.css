@@ -6105,8 +6105,17 @@ button,
 }
 
 .pm-kampe-v2-sheet-handle-zone {
+  position: relative;
   flex-shrink: 0;
-  padding: 10px 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  /* Large invisible hit target (Material min ~48dp); visual handle stays small */
+  min-height: 52px;
+  padding: 14px 20px 12px;
+  margin: -6px 0 0;
   touch-action: none;
   cursor: grab;
   -webkit-user-select: none;

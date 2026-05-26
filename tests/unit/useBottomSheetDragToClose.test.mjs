@@ -9,10 +9,10 @@ import {
 
 const SHEET_H = 500;
 
-test('slow drag: closes at 40% of sheet height', () => {
+test('slow drag: closes at 50% of sheet height', () => {
   const slowMs = 600;
-  assert.equal(shouldCloseBottomSheetDrag({ dy: 199, sheetHeightPx: SHEET_H, elapsedMs: slowMs }), false);
-  assert.equal(shouldCloseBottomSheetDrag({ dy: 200, sheetHeightPx: SHEET_H, elapsedMs: slowMs }), true);
+  assert.equal(shouldCloseBottomSheetDrag({ dy: 249, sheetHeightPx: SHEET_H, elapsedMs: slowMs }), false);
+  assert.equal(shouldCloseBottomSheetDrag({ dy: 250, sheetHeightPx: SHEET_H, elapsedMs: slowMs }), true);
 });
 
 test('fast flick needs at least 15% travel, not just velocity', () => {
@@ -33,7 +33,7 @@ test('small slow drag snaps back', () => {
   assert.equal(shouldCloseBottomSheetDrag({ dy: 40, sheetHeightPx: SHEET_H, elapsedMs: 400 }), false);
 });
 
-test('close distance threshold is 40%', () => {
-  assert.equal(BOTTOM_SHEET_CLOSE_THRESHOLD, 0.4);
-  assert.equal(getBottomSheetCloseDistanceThresholdPx(SHEET_H), 200);
+test('close distance threshold is 50%', () => {
+  assert.equal(BOTTOM_SHEET_CLOSE_THRESHOLD, 0.5);
+  assert.equal(getBottomSheetCloseDistanceThresholdPx(SHEET_H), 250);
 });
