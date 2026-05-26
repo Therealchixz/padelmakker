@@ -6437,13 +6437,63 @@ button,
   min-width: 0;
 }
 
-.pm-kampe-v2-list-avatars {
+.pm-kampe-v2-list-teams {
   display: flex;
   align-items: center;
+  gap: 0;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
-.pm-kampe-v2-list-avatars > * + * {
+.pm-kampe-v2-list-team {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.pm-kampe-v2-list-team > * + * {
   margin-left: -8px;
+}
+
+.pm-kampe-v2-list-team--t1 > .pm-avatar-circle {
+  border: 1.5px solid color-mix(in srgb, var(--pm-accent) 50%, var(--pm-border));
+  background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface));
+}
+
+.pm-kampe-v2-list-team--t2 > .pm-avatar-circle {
+  border: 1.5px solid color-mix(in srgb, var(--pm-blue) 50%, var(--pm-border));
+  background: color-mix(in srgb, var(--pm-blue) 8%, var(--pm-surface));
+}
+
+.pm-kampe-v2-list-teams-vs {
+  flex-shrink: 0;
+  padding: 0 7px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pm-text-light);
+  line-height: 1;
+  user-select: none;
+}
+
+.pm-kampe-v2-list-avatar-slot--empty {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px dashed color-mix(in srgb, var(--pm-border) 85%, transparent);
+  background: color-mix(in srgb, var(--pm-surface-alt) 70%, var(--pm-surface));
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.pm-kampe-v2-list-team--t1 .pm-kampe-v2-list-avatar-slot--empty {
+  border-color: color-mix(in srgb, var(--pm-accent) 28%, var(--pm-border));
+}
+
+.pm-kampe-v2-list-team--t2 .pm-kampe-v2-list-avatar-slot--empty {
+  border-color: color-mix(in srgb, var(--pm-blue) 28%, var(--pm-border));
 }
 
 .pm-kampe-v2-list-count {
@@ -6490,6 +6540,28 @@ button,
 
 .pm-kampe-v2-list-elo-delta--solo {
   flex-shrink: 0;
+}
+
+.pm-kampe-v2-list-elo-result {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 5px 10px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.pm-kampe-v2-list-elo-result--up {
+  color: var(--pm-green);
+  background: color-mix(in srgb, var(--pm-green) 12%, var(--pm-surface));
+  border: 1px solid color-mix(in srgb, var(--pm-green) 22%, var(--pm-border));
+}
+
+.pm-kampe-v2-list-elo-result--down {
+  color: var(--pm-danger);
+  background: color-mix(in srgb, var(--pm-danger) 10%, var(--pm-surface));
+  border: 1px solid color-mix(in srgb, var(--pm-danger) 20%, var(--pm-border));
 }
 
 .pm-kampe-v2-court-wrap {

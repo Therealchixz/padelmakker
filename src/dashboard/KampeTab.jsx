@@ -76,6 +76,23 @@ function matchPlayerTeam(p) {
   return Number(p?.team);
 }
 
+function splitPlayersByTeam(players) {
+  const list = players || [];
+  const t1 = list.filter((p) => matchPlayerTeam(p) === 1);
+  const t2 = list.filter((p) => matchPlayerTeam(p) === 2);
+  const unassigned = list.filter((p) => {
+    const team = matchPlayerTeam(p);
+    return team !== 1 && team !== 2;
+  });
+  for (const p of unassigned) {
+    if (t1.length < 2 && t1.length <= t2.length) t1.push(p);
+    else if (t2.length < 2) t2.push(p);
+    else if (t1.length <= t2.length) t1.push(p);
+    else t2.push(p);
+  }
+  return { t1, t2 };
+}
+
 function teamMoveErrorMessage(data, fallbackTeam) {
   const code = data?.error;
   if (code === "team_full") return `Hold ${data?.team ?? fallbackTeam} er fuldt.`;
@@ -709,6 +726,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     if (!detailMatchId || !user?.id) return;
     void refreshJoinRequestsForMatch(detailMatchId);
   }, [detailMatchId, refreshJoinRequestsForMatch, user?.id]);
+
+  useEffect(() => {
+    if (!detailMatchId) return;
+    if (matchUnreadByIdRef.current[String(detailMatchId)]) {
+      void markMatchNotifsRead(detailMatchId);
+    }
+  }, [detailMatchId, markMatchNotifsRead]);
 
   // Auto-mark match notifs as read when the card has been visible for ~1.2s.
   // Cards below the fold stay unread until the user scrolls them into view,
@@ -1760,8 +1784,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     for (const [matchId, playersRaw] of Object.entries(matchPlayers || {})) {
       const players = playersRaw || [];
-      const t1 = players.filter((p) => matchPlayerTeam(p) === 1);
-      const t2 = players.filter((p) => matchPlayerTeam(p) === 2);
+      const { t1, t2 } = splitPlayersByTeam(players);
       const playerEloByUserId = {};
       for (const p of players) {
         playerEloByUserId[String(p.user_id)] = resolvePlayerElo(p);
@@ -2371,7 +2394,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   disabled={busy}
                   style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.green, borderColor: theme.green }}
                 >
-                  ✅ Godkendt — Vælg hold og tilmeld
+                  ✅ Godkendt — Vælg hold og anmod
                 </button>
               );
             }
@@ -2810,7 +2833,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       }
       if (myRequest.status === "approved") {
         return {
-          label: "Vælg hold og tilmeld",
+          label: "Vælg hold og anmod",
           onClick: () => {
             setDetailMatchId(null);
             setTeamSelectMatch(m.id);
@@ -3258,24 +3281,43 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       status === 'completed' && mr?.confirmed && cardState.joined
         ? eloChangesByMatchId[String(m.id)]?.[myUidStr] ?? null
         : null;
+    const matchKey = String(m.id);
     return (
-      <KampeMatchListCard
+      <div
         key={m.id}
-        match={m}
-        teamStats={bundle.teamStats}
-        profilesById={profilesById}
-        matchPrefs={matchPrefs}
-        status={status}
-        left={cardState.left}
-        isFull={cardState.isFull}
-        isClosed={cardState.isClosed}
-        joined={cardState.joined}
-        myEloChange={myEloChange}
-        unreadCount={cardState.attentionCount}
-        onClick={() => setDetailMatchId(m.id)}
-      />
+        ref={observeMatchCard}
+        data-match-id={m.id}
+        className={cardState.attentionCount ? 'pm-kampe-v2-list-item--attention' : undefined}
+      >
+        <KampeMatchListCard
+          match={m}
+          teamStats={bundle.teamStats}
+          profilesById={profilesById}
+          matchPrefs={matchPrefs}
+          status={status}
+          left={cardState.left}
+          isFull={cardState.isFull}
+          isClosed={cardState.isClosed}
+          joined={cardState.joined}
+          myEloChange={myEloChange}
+          unreadCount={cardState.attentionCount}
+          onClick={() => {
+            if (matchUnreadByIdRef.current[matchKey]) {
+              void markMatchNotifsRead(m.id);
+            }
+            setDetailMatchId(m.id);
+          }}
+        />
+      </div>
     );
-  }, [eloChangesByMatchId, getMatchCardBundle, myUidStr, profilesById]);
+  }, [
+    eloChangesByMatchId,
+    getMatchCardBundle,
+    markMatchNotifsRead,
+    myUidStr,
+    observeMatchCard,
+    profilesById,
+  ]);
 
   const toolbarFormatTabs = [
     {

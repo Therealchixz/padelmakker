@@ -11,6 +11,26 @@ function badgeToneClass(tone) {
   return 'pm-kampe-v2-badge--neutral';
 }
 
+const SLOTS_PER_TEAM = 2;
+
+/** Always two slots per hold so listen visuelt 2 vs 2, ikke én lang række. */
+function teamDisplaySlots(players) {
+  const filled = (players || []).slice(0, SLOTS_PER_TEAM);
+  return Array.from({ length: SLOTS_PER_TEAM }, (_, i) => filled[i] ?? null);
+}
+
+/** Fordel spillere på tværs af hold hvis DB har >2 på ét hold (ældre data). */
+function balanceTeamsForListDisplay(t1, t2) {
+  const team1 = t1 || [];
+  const team2 = t2 || [];
+  if (team1.length <= SLOTS_PER_TEAM && team2.length <= SLOTS_PER_TEAM) {
+    return { t1: team1, t2: team2 };
+  }
+  const all = [...team1, ...team2];
+  const half = Math.ceil(all.length / 2);
+  return { t1: all.slice(0, half), t2: all.slice(half) };
+}
+
 export function KampeMatchListCard({
   match,
   teamStats,
@@ -31,9 +51,10 @@ export function KampeMatchListCard({
       : (match.court_name || 'Padelbane');
   const dull = isFull && !joined && status !== 'completed' && status !== 'in_progress';
   const statusBadge = getKampeListStatusBadge({ status, isClosed, left, isFull });
-  const t1 = teamStats?.t1 || [];
-  const t2 = teamStats?.t2 || [];
-  const filledCount = t1.length + t2.length;
+  const rawT1 = teamStats?.t1 || [];
+  const rawT2 = teamStats?.t2 || [];
+  const { t1, t2 } = balanceTeamsForListDisplay(rawT1, rawT2);
+  const filledCount = rawT1.length + rawT2.length;
   const maxPlayers = match?.max_players || 4;
   const dateHeadline = formatMatchDateHeadlineDa(match.date);
   const timeLabel = matchTimeLabel(match);
@@ -41,6 +62,31 @@ export function KampeMatchListCard({
   const showMyEloDelta =
     isCompleted && joined && myEloChange != null && Number.isFinite(Number(myEloChange));
   const eloDelta = showMyEloDelta ? Number(myEloChange) : null;
+  const showEloRange =
+    !isCompleted && matchPrefs?.min != null && matchPrefs?.max != null;
+  const t1Slots = teamDisplaySlots(t1);
+  const t2Slots = teamDisplaySlots(t2);
+
+  const renderTeamSlot = (player, teamNum, slotIndex) => {
+    if (!player) {
+      return (
+        <span
+          key={`t${teamNum}-empty-${slotIndex}`}
+          className="pm-kampe-v2-list-avatar-slot pm-kampe-v2-list-avatar-slot--empty"
+          aria-hidden
+        />
+      );
+    }
+    return (
+      <AvatarCircle
+        key={player.user_id || `t${teamNum}-${slotIndex}`}
+        avatar={profilesById[String(player.user_id)]?.avatar || player.user_emoji || '🎾'}
+        size={28}
+        emojiSize="12px"
+        style={{ zIndex: slotIndex + 1 }}
+      />
+    );
+  };
 
   return (
     <button
@@ -72,38 +118,32 @@ export function KampeMatchListCard({
 
       <div className={`pm-kampe-v2-list-card-bottom${isCompleted ? ' pm-kampe-v2-list-card-bottom--completed' : ''}`}>
         <div className="pm-kampe-v2-list-participants">
-          <div className="pm-kampe-v2-list-avatars">
-            {[...t1, ...t2].map((p, i) => (
-              <AvatarCircle
-                key={p.user_id || i}
-                avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
-                size={28}
-                emojiSize="12px"
-                style={{ border: '1.5px solid var(--pm-border)' }}
-              />
-            ))}
+          <div
+            className="pm-kampe-v2-list-teams"
+            aria-label={`${filledCount} af ${maxPlayers} spillere, hold 1 mod hold 2`}
+          >
+            <div className="pm-kampe-v2-list-team pm-kampe-v2-list-team--t1" aria-label="Hold 1">
+              {t1Slots.map((p, i) => renderTeamSlot(p, 1, i))}
+            </div>
+            <span className="pm-kampe-v2-list-teams-vs" aria-hidden>
+              vs
+            </span>
+            <div className="pm-kampe-v2-list-team pm-kampe-v2-list-team--t2" aria-label="Hold 2">
+              {t2Slots.map((p, i) => renderTeamSlot(p, 2, i))}
+            </div>
           </div>
           <span className="pm-kampe-v2-list-count">
             {filledCount}/{maxPlayers}
           </span>
         </div>
-        {matchPrefs?.min != null && matchPrefs?.max != null ? (
-          <div className="pm-kampe-v2-list-elo-col">
-            <span className="pm-kampe-v2-list-elo-pill">
-              {matchPrefs.min}–{matchPrefs.max}
-            </span>
-            {showMyEloDelta ? (
-              <span
-                className={`pm-kampe-v2-list-elo-delta${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-delta--up' : ' pm-kampe-v2-list-elo-delta--down'}`}
-              >
-                {eloDelta >= 0 ? '+' : ''}
-                {eloDelta} ELO
-              </span>
-            ) : null}
-          </div>
-        ) : showMyEloDelta ? (
+        {showEloRange ? (
+          <span className="pm-kampe-v2-list-elo-pill">
+            {matchPrefs.min}–{matchPrefs.max}
+          </span>
+        ) : null}
+        {showMyEloDelta ? (
           <span
-            className={`pm-kampe-v2-list-elo-delta pm-kampe-v2-list-elo-delta--solo${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-delta--up' : ' pm-kampe-v2-list-elo-delta--down'}`}
+            className={`pm-kampe-v2-list-elo-result${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
           >
             {eloDelta >= 0 ? '+' : ''}
             {eloDelta} ELO

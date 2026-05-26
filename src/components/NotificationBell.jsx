@@ -290,10 +290,12 @@ export function NotificationBell({ tourForceOpen = false }) {
     if (typeof document !== "undefined") {
       document.addEventListener("visibilitychange", onVisibilityChange);
     }
+    const onNotificationsSync = () => syncIfVisible();
     if (typeof window !== "undefined") {
       window.addEventListener("focus", syncIfVisible);
       window.addEventListener("pageshow", syncIfVisible);
       window.addEventListener("online", syncIfVisible);
+      window.addEventListener("pm-notifications-sync", onNotificationsSync);
     }
     return () => {
       clearInterval(intervalId);
@@ -304,6 +306,7 @@ export function NotificationBell({ tourForceOpen = false }) {
         window.removeEventListener("focus", syncIfVisible);
         window.removeEventListener("pageshow", syncIfVisible);
         window.removeEventListener("online", syncIfVisible);
+        window.removeEventListener("pm-notifications-sync", onNotificationsSync);
       }
     };
   }, [load]);
