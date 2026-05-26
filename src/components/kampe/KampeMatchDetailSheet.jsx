@@ -90,46 +90,52 @@ export function KampeMatchDetailSheet({
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />
           <div className="pm-kampe-v2-detail-head">
             <div className="pm-kampe-v2-detail-head-main">
-              <div className="pm-kampe-v2-detail-venue">{venue}</div>
-              <div className="pm-kampe-v2-detail-datetime pm-kampe-v2-detail-datetime--primary">
-                {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
-              </div>
+              <div className="pm-kampe-v2-detail-type">2v2-kamp</div>
+              <h2 className="pm-kampe-v2-detail-venue">{venue}</h2>
               <div className="pm-kampe-v2-detail-location">
                 <MapPin size={12} aria-hidden />
-                {venue}
+                {venue} · {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
               </div>
             </div>
-            <button
-              type="button"
-              className="pm-kampe-v2-detail-close"
-              onClick={onClose}
-              onPointerDown={(event) => event.stopPropagation()}
-              aria-label="Luk"
-            >
-              <X size={18} />
-            </button>
+            <div className="pm-kampe-v2-detail-head-right">
+              <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
+                {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
+                {statusBadge.label}
+              </span>
+              <button
+                type="button"
+                className="pm-kampe-v2-detail-close"
+                onClick={onClose}
+                onPointerDown={(event) => event.stopPropagation()}
+                aria-label="Luk"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
+
+          {(matchPrefs?.min != null && matchPrefs?.max != null) ||
+          matchPrefs?.booked != null ||
+          unreadCount > 0 ? (
+            <div className="pm-kampe-v2-detail-badges">
+              {matchPrefs?.min != null && matchPrefs?.max != null ? (
+                <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue">
+                  ELO {matchPrefs.min}–{matchPrefs.max}
+                </span>
+              ) : null}
+              {matchPrefs?.booked != null ? (
+                <span className={`pm-kampe-v2-badge ${matchPrefs.booked ? 'pm-kampe-v2-badge--green' : 'pm-kampe-v2-badge--warm'}`}>
+                  {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
+                </span>
+              ) : null}
+              {unreadCount > 0 ? (
+                <span className="pm-kampe-v2-badge pm-kampe-v2-badge--warm">{unreadCount} ulæst</span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
-        <div className="pm-kampe-v2-detail-badges">
-          <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
-            {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
-            {statusBadge.label}
-          </span>
-          {matchPrefs?.min != null && matchPrefs?.max != null ? (
-            <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue">
-              ELO {matchPrefs.min}–{matchPrefs.max}
-            </span>
-          ) : null}
-          {matchPrefs?.booked != null ? (
-            <span className={`pm-kampe-v2-badge ${matchPrefs.booked ? 'pm-kampe-v2-badge--green' : 'pm-kampe-v2-badge--warm'}`}>
-              {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
-            </span>
-          ) : null}
-          {unreadCount > 0 ? (
-            <span className="pm-kampe-v2-badge pm-kampe-v2-badge--warm">{unreadCount} ulæst</span>
-          ) : null}
-        </div>
+        <div className="pm-kampe-v2-detail-scroll">
 
         {description ? (
           <p className="pm-kampe-v2-detail-desc">{description}</p>
@@ -181,6 +187,7 @@ export function KampeMatchDetailSheet({
         {managePanel ? (
           <div className="pm-kampe-v2-detail-manage">{managePanel}</div>
         ) : null}
+        </div>
       </div>
     </>
   );
