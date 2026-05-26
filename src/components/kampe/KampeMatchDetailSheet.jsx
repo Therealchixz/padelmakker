@@ -92,9 +92,12 @@ export function KampeMatchDetailSheet({
             <div className="pm-kampe-v2-detail-head-main">
               <div className="pm-kampe-v2-detail-type">2v2-kamp</div>
               <h2 className="pm-kampe-v2-detail-venue">{venue}</h2>
+              <div className="pm-kampe-v2-detail-datetime pm-kampe-v2-detail-datetime--primary">
+                {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
+              </div>
               <div className="pm-kampe-v2-detail-location">
                 <MapPin size={12} aria-hidden />
-                {venue} · {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
+                {venue}
               </div>
             </div>
             <div className="pm-kampe-v2-detail-head-right">
@@ -113,27 +116,27 @@ export function KampeMatchDetailSheet({
               </button>
             </div>
           </div>
-
-          {(matchPrefs?.min != null && matchPrefs?.max != null) ||
-          matchPrefs?.booked != null ||
-          unreadCount > 0 ? (
-            <div className="pm-kampe-v2-detail-badges">
-              {matchPrefs?.min != null && matchPrefs?.max != null ? (
-                <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue">
-                  ELO {matchPrefs.min}–{matchPrefs.max}
-                </span>
-              ) : null}
-              {matchPrefs?.booked != null ? (
-                <span className={`pm-kampe-v2-badge ${matchPrefs.booked ? 'pm-kampe-v2-badge--green' : 'pm-kampe-v2-badge--warm'}`}>
-                  {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
-                </span>
-              ) : null}
-              {unreadCount > 0 ? (
-                <span className="pm-kampe-v2-badge pm-kampe-v2-badge--warm">{unreadCount} ulæst</span>
-              ) : null}
-            </div>
-          ) : null}
         </div>
+
+        {(matchPrefs?.min != null && matchPrefs?.max != null) ||
+        matchPrefs?.booked != null ||
+        unreadCount > 0 ? (
+          <div className="pm-kampe-v2-detail-badges">
+            {matchPrefs?.min != null && matchPrefs?.max != null ? (
+              <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue">
+                ELO {matchPrefs.min}–{matchPrefs.max}
+              </span>
+            ) : null}
+            {matchPrefs?.booked != null ? (
+              <span className={`pm-kampe-v2-badge ${matchPrefs.booked ? 'pm-kampe-v2-badge--green' : 'pm-kampe-v2-badge--warm'}`}>
+                {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
+              </span>
+            ) : null}
+            {unreadCount > 0 ? (
+              <span className="pm-kampe-v2-badge pm-kampe-v2-badge--warm">{unreadCount} ulæst</span>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="pm-kampe-v2-detail-scroll">
 

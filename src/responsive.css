@@ -6219,7 +6219,7 @@ button,
 }
 
 .pm-kampe-v2-detail-sheet:not(.pm-americano-v2-detail-sheet) .pm-kampe-v2-sheet-drag-header::after {
-  height: 24px;
+  height: 16px;
 }
 
 .pm-kampe-v2-sheet-drag-header:active {
@@ -6738,7 +6738,7 @@ button,
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0;
+  gap: 6px;
   min-width: 0;
   flex: 1;
 }
@@ -6761,7 +6761,7 @@ button,
 }
 
 .pm-kampe-v2-detail-venue {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 20px;
   font-weight: 800;
   color: var(--pm-text);
@@ -6816,12 +6816,18 @@ button,
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 12px;
+  margin: 0 0 16px;
+  flex-shrink: 0;
 }
 
 .pm-kampe-v2-sheet-drag-header .pm-kampe-v2-detail-badges {
-  margin-top: 10px;
+  margin-top: 0;
   margin-bottom: 0;
+}
+
+.pm-kampe-v2-detail-sheet:not(.pm-americano-v2-detail-sheet) > .pm-kampe-v2-detail-badges {
+  margin-top: 10px;
+  margin-bottom: 18px;
 }
 
 .pm-kampe-v2-detail-scroll > .pm-kampe-v2-detail-desc:first-child,
