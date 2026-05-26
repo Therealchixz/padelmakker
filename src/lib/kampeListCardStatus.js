@@ -17,11 +17,27 @@ export function getKampeListStatusBadge({ status, isClosed, left, isFull }) {
   return { label: 'Åben', tone: 'open' };
 }
 
-export function getKampeDetailStatusBadge({ status, isClosed, left, isFull, statusLabel, winnerTeam }) {
+export function getKampeDetailStatusBadge({
+  status,
+  isClosed,
+  left,
+  isFull,
+  statusLabel,
+  winnerTeam,
+  joined = false,
+  myTeam = null,
+}) {
   if (status === 'in_progress') {
     return { label: 'LIVE', tone: 'live' };
   }
   if (winnerTeam) {
+    const viewerTeam = Number(myTeam);
+    if (joined && (viewerTeam === 1 || viewerTeam === 2)) {
+      if (viewerTeam === winnerTeam) {
+        return { label: 'Du vandt', tone: 'green' };
+      }
+      return { label: 'Du tabte', tone: 'danger' };
+    }
     return { label: `Hold ${winnerTeam} vandt`, tone: 'green' };
   }
   if (status === 'completed') {

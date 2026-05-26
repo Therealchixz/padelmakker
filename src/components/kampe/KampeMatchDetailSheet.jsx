@@ -12,6 +12,7 @@ function badgeToneClass(tone) {
   if (tone === 'full') return 'pm-kampe-v2-badge--full';
   if (tone === 'closed') return 'pm-kampe-v2-badge--closed';
   if (tone === 'green') return 'pm-kampe-v2-badge--green';
+  if (tone === 'danger') return 'pm-kampe-v2-badge--danger';
   return 'pm-kampe-v2-badge--neutral';
 }
 
@@ -65,6 +66,8 @@ export function KampeMatchDetailSheet({
     isFull,
     statusLabel,
     winnerTeam,
+    joined,
+    myTeam,
   });
 
   return (

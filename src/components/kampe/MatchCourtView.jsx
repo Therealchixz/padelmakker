@@ -1,6 +1,10 @@
 import { Plus } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
 import { theme } from '../../lib/platformTheme';
+import {
+  getMatchCourtHeaderLabel,
+  getMatchCourtOutcomeClasses,
+} from '../../lib/matchCourtOutcomeClasses';
 
 export function MatchCourtView({
   teamStats,
@@ -219,24 +223,28 @@ export function MatchCourtView({
     t2Avg !== null &&
     (status === 'open' || status === 'full' || status === 'in_progress' || status === 'completed');
 
+  const outcomeCtx = { status, winnerTeam, joined, myTeam };
+  const t1Outcome = getMatchCourtOutcomeClasses(1, outcomeCtx);
+  const t2Outcome = getMatchCourtOutcomeClasses(2, outcomeCtx);
+
   return (
     <div className="pm-court-wrap pm-kampe-v2-court-wrap">
       {showTopTeamLabels ? (
         <div className="pm-court-header">
           <div
-            className={`pm-court-header-team pm-court-header-team--t1${
-              winnerTeam === 1 ? ' pm-court-header-team--winner' : winnerTeam === 2 ? ' pm-court-header-team--loser' : ''
-            }`}
+            className={`pm-court-header-team pm-court-header-team--t1${t1Outcome.header}`}
           >
-            <span className="pm-court-header-label">{winnerTeam === 1 ? '🏆 Hold 1' : 'Hold 1'}</span>
+            <span className="pm-court-header-label">
+              {getMatchCourtHeaderLabel(1, outcomeCtx)}
+            </span>
             {t1Avg !== null ? <span className="pm-court-header-elo">Gns. {t1Avg}</span> : null}
           </div>
           <div
-            className={`pm-court-header-team pm-court-header-team--t2${
-              winnerTeam === 2 ? ' pm-court-header-team--winner' : winnerTeam === 1 ? ' pm-court-header-team--loser' : ''
-            }`}
+            className={`pm-court-header-team pm-court-header-team--t2${t2Outcome.header}`}
           >
-            <span className="pm-court-header-label">{winnerTeam === 2 ? '🏆 Hold 2' : 'Hold 2'}</span>
+            <span className="pm-court-header-label">
+              {getMatchCourtHeaderLabel(2, outcomeCtx)}
+            </span>
             {t2Avg !== null ? <span className="pm-court-header-elo">Gns. {t2Avg}</span> : null}
           </div>
         </div>
@@ -249,11 +257,7 @@ export function MatchCourtView({
         <div className="pm-court-net" />
         <span className="pm-court-vs">vs</span>
         <div className="pm-court-grid">
-          <div
-            className={`pm-court-side pm-court-side--t1${
-              winnerTeam === 1 ? ' pm-court-side--winner' : winnerTeam === 2 ? ' pm-court-side--loser' : ''
-            }`}
-          >
+          <div className={`pm-court-side pm-court-side--t1${t1Outcome.side}`}>
             <div className="pm-court-player-slot pm-court-player-slot--top">
               {t1[0] ? renderPlayer(t1[0], 1) : renderEmptySlot(1)}
             </div>
@@ -261,11 +265,7 @@ export function MatchCourtView({
               {t1[1] ? renderPlayer(t1[1], 1) : renderEmptySlot(1)}
             </div>
           </div>
-          <div
-            className={`pm-court-side pm-court-side--t2${
-              winnerTeam === 2 ? ' pm-court-side--winner' : winnerTeam === 1 ? ' pm-court-side--loser' : ''
-            }`}
-          >
+          <div className={`pm-court-side pm-court-side--t2${t2Outcome.side}`}>
             <div className="pm-court-player-slot pm-court-player-slot--top">
               {t2[0] ? renderPlayer(t2[0], 2) : renderEmptySlot(2)}
             </div>

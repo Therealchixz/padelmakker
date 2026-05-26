@@ -2941,11 +2941,10 @@ button,
 .pm-court-header-team--t1 { color: var(--pm-accent); }
 .pm-court-header-team--t2 { color: var(--pm-blue); }
 
-/* Vinder/taber-tilstand på afsluttede 2v2-kort */
+/* Vinder/taber — objektiv (legacy + tilskuere på afsluttede kampe) */
 .pm-court-header-team--winner { color: var(--pm-green) !important; font-weight: 800; }
 .pm-court-header-team--loser  { opacity: 0.55; }
 
-/* Vinderhalvdel: ::before fylder hele halvdelen (side-padding efterlader ikke blå kanter) */
 .pm-court-side--winner::before {
   content: '';
   position: absolute;
@@ -2964,6 +2963,89 @@ button,
 .pm-court-side--loser {
   opacity: 0.55;
   filter: saturate(0.7);
+}
+
+/* Personlig udfald for deltagere på afsluttede kampe */
+.pm-court-side--mine-lost::before,
+.pm-court-side--mine-won::before,
+.pm-court-side--opp-won::before,
+.pm-court-side--opp-lost::before,
+.pm-court-side--winner-neutral::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pm-court-side--mine-lost::before {
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.2) 0%, rgba(220, 38, 38, 0.32) 100%);
+  box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.52);
+}
+.pm-court-side--mine-lost.pm-court-side--t1::before { border-radius: 10px 0 0 10px; }
+.pm-court-side--mine-lost.pm-court-side--t2::before { border-radius: 0 10px 10px 0; }
+
+.pm-court-header-team--mine-lost {
+  color: var(--pm-danger) !important;
+  font-weight: 800;
+}
+
+.pm-court-side--mine-won::before {
+  background: linear-gradient(180deg, rgba(5, 150, 105, 0.18) 0%, rgba(5, 150, 105, 0.26) 100%);
+  box-shadow: inset 0 0 0 2px rgba(5, 150, 105, 0.48);
+}
+.pm-court-side--mine-won.pm-court-side--t1::before { border-radius: 10px 0 0 10px; }
+.pm-court-side--mine-won.pm-court-side--t2::before { border-radius: 0 10px 10px 0; }
+
+.pm-court-header-team--mine-won {
+  color: var(--pm-green) !important;
+  font-weight: 800;
+}
+
+.pm-court-side--opp-won::before {
+  background: linear-gradient(180deg, rgba(5, 150, 105, 0.07) 0%, rgba(5, 150, 105, 0.11) 100%);
+  box-shadow: inset 0 0 0 1px rgba(5, 150, 105, 0.22);
+}
+.pm-court-side--opp-won.pm-court-side--t1::before { border-radius: 10px 0 0 10px; }
+.pm-court-side--opp-won.pm-court-side--t2::before { border-radius: 0 10px 10px 0; }
+
+.pm-court-header-team--opp-won {
+  color: var(--pm-green) !important;
+  opacity: 0.72;
+  font-weight: 700;
+}
+
+.pm-court-side--opp-lost::before {
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.05) 0%, rgba(220, 38, 38, 0.09) 100%);
+  box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.18);
+}
+.pm-court-side--opp-lost.pm-court-side--t1::before { border-radius: 10px 0 0 10px; }
+.pm-court-side--opp-lost.pm-court-side--t2::before { border-radius: 0 10px 10px 0; }
+
+.pm-court-header-team--opp-lost {
+  opacity: 0.58;
+}
+
+/* Tilskuere: balanceret objektiv visning */
+.pm-court-side--winner-neutral::before {
+  background: linear-gradient(180deg, rgba(5, 150, 105, 0.11) 0%, rgba(5, 150, 105, 0.15) 100%);
+  box-shadow: inset 0 0 0 1px rgba(5, 150, 105, 0.32);
+}
+.pm-court-side--winner-neutral.pm-court-side--t1::before { border-radius: 10px 0 0 10px; }
+.pm-court-side--winner-neutral.pm-court-side--t2::before { border-radius: 0 10px 10px 0; }
+
+.pm-court-header-team--winner-neutral {
+  color: var(--pm-green) !important;
+  font-weight: 700;
+}
+
+.pm-court-side--loser-neutral {
+  opacity: 0.62;
+  filter: saturate(0.75);
+}
+
+.pm-court-header-team--loser-neutral {
+  opacity: 0.62;
 }
 
 /* LIVE-dot animation til kampe i gang */
@@ -6386,6 +6468,11 @@ button,
 .pm-kampe-v2-badge--green {
   background: color-mix(in srgb, var(--pm-green) 14%, var(--pm-surface));
   color: var(--pm-green);
+}
+
+.pm-kampe-v2-badge--danger {
+  background: color-mix(in srgb, var(--pm-danger) 14%, var(--pm-surface));
+  color: var(--pm-danger);
 }
 
 .pm-kampe-v2-badge--neutral {
