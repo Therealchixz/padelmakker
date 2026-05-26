@@ -923,6 +923,41 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     finally { setBusyId(null); }
   };
 
+  // Creator/admin kan flytte vilkårlig spiller mellem Hold 1/2 (hvis målholdet har plads).
+  const switchPlayerTeam = async (matchId, targetUserId, newTeam) => {
+    const match = matches.find((m) => String(m.id) === String(matchId));
+    const isCreator = match && String(match.creator_id) === String(user.id);
+    if (!isCreator && !isAdmin) return;
+
+    const mp = matchPlayers[matchId] || [];
+    const target = mp.find((p) => String(p.user_id) === String(targetUserId));
+    if (!target) return;
+    if (target.team === newTeam) return;
+
+    const targetTeamCount = mp.filter((p) => matchPlayerTeam(p) === Number(newTeam)).length;
+    if (targetTeamCount >= 2) {
+      showToast(`Hold ${newTeam} er fuldt.`);
+      return;
+    }
+
+    setBusyId(matchId + '-switch-player-' + targetUserId + '-' + newTeam);
+    try {
+      const { error } = await supabase
+        .from("match_players")
+        .update({ team: newTeam })
+        .eq("match_id", matchId)
+        .eq("user_id", targetUserId);
+      if (error) throw error;
+
+      showToast(`Flyttet til Hold ${newTeam}! ⚔️`);
+      await loadData();
+    } catch (e) {
+      showToast("Fejl: " + (e.message || "Prøv igen"));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const leaveMatch = async (matchId) => {
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
@@ -3591,6 +3626,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           primaryAction={buildMatchPrimaryAction(detailMatch, detailBundle)}
           joinRequestsPanel={renderJoinRequestsPanel(detailMatch, detailBundle)}
           unreadCount={detailBundle.cardState.attentionCount}
+          joined={detailBundle.cardState.joined}
+          myTeam={detailBundle.cardState.myTeam}
+          matchId={detailMatch.id}
+          busyId={busyId}
+          isCreator={detailBundle.cardState.isCreator}
+          isAdmin={isAdmin}
+          currentUserId={user.id}
+          onSwitchTeam={switchTeam}
+          onSwitchPlayerTeam={switchPlayerTeam}
           onProfileClick={(prof) => setViewPlayer(prof)}
           managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
         />

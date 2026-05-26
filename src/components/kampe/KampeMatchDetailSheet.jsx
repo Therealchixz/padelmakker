@@ -31,6 +31,15 @@ export function KampeMatchDetailSheet({
   joinRequestsPanel = null,
   managePanel = null,
   unreadCount = 0,
+  joined = false,
+  myTeam = null,
+  matchId = null,
+  busyId = null,
+  isCreator = false,
+  isAdmin = false,
+  currentUserId = null,
+  onSwitchTeam,
+  onSwitchPlayerTeam,
   onProfileClick,
 }) {
   if (!open || !match) return null;
@@ -103,7 +112,16 @@ export function KampeMatchDetailSheet({
           status={status}
           winnerTeam={winnerTeam}
           profilesById={profilesById}
-          readOnly
+          readOnly={false}
+          joined={joined}
+          myTeam={myTeam}
+          matchId={matchId}
+          busyId={busyId}
+          isCreator={isCreator}
+          isAdmin={isAdmin}
+          currentUserId={currentUserId}
+          onSwitchTeam={onSwitchTeam}
+          onSwitchPlayerTeam={onSwitchPlayerTeam}
           onProfileClick={onProfileClick}
         />
 

@@ -18,6 +18,7 @@ export function MatchCourtView({
   onProfileClick,
   onKickPlayer,
   onSwitchTeam,
+  onSwitchPlayerTeam,
 }) {
   const t1 = teamStats?.t1 || [];
   const t2 = teamStats?.t2 || [];
@@ -26,12 +27,23 @@ export function MatchCourtView({
   const playerElo = (p) => teamStats?.playerEloByUserId?.[String(p.user_id)] ?? 1000;
 
   const renderPlayer = (p, teamNum) => {
+    const otherTeam = teamNum === 1 ? 2 : 1;
     const canKick =
       !readOnly &&
       (isCreator || isAdmin) &&
       String(p.user_id) !== String(currentUserId) &&
       (status === 'open' || status === 'full');
     const kickingBusy = busyId === matchId + '-kick-' + p.user_id;
+
+    const otherTeamPlayerCount = otherTeam === 1 ? t1.length : t2.length;
+    const canSwitchPlayer =
+      !readOnly &&
+      Boolean(onSwitchPlayerTeam) &&
+      (isCreator || isAdmin) &&
+      (status === 'open' || status === 'full') &&
+      otherTeamPlayerCount < 2 &&
+      busyId !== matchId + '-switch-player-' + p.user_id;
+
     const teamColor = teamNum === 1 ? theme.accent : theme.blue;
     const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
 
@@ -48,22 +60,30 @@ export function MatchCourtView({
         <button
           type="button"
           onClick={() => {
+            if (canSwitchPlayer) {
+              onSwitchPlayerTeam(matchId, p.user_id, otherTeam);
+              return;
+            }
             const prof = profilesById[String(p.user_id)];
             if (prof && onProfileClick) onProfileClick(prof);
           }}
-          aria-label={`Åbn profil for ${p.user_name || 'spiller'}`}
+          aria-label={
+            canSwitchPlayer
+              ? `Flyt ${p.user_name || 'spiller'} til Hold ${otherTeam}`
+              : `Åbn profil for ${p.user_name || 'spiller'}`
+          }
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            cursor: onProfileClick ? 'pointer' : 'default',
+            cursor: canSwitchPlayer ? 'pointer' : onProfileClick ? 'pointer' : 'default',
             border: 'none',
             background: 'transparent',
             padding: 0,
           }}
         >
           <AvatarCircle
-            clickable={Boolean(onProfileClick)}
+            clickable={canSwitchPlayer || Boolean(onProfileClick)}
             avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
             size={36}
             emojiSize="16px"
@@ -74,6 +94,31 @@ export function MatchCourtView({
           </span>
           <span style={{ fontSize: '8px', color: teamColor, fontWeight: 700 }}>{playerElo(p)}</span>
         </button>
+        {canSwitchPlayer ? (
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              top: -6,
+              left: -4,
+              width: 18,
+              height: 18,
+              borderRadius: 9,
+              background: theme.accentBg,
+              border: `1px solid ${theme.accent}55`,
+              color: theme.accent,
+              fontSize: 11,
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1,
+              pointerEvents: 'none',
+            }}
+          >
+            ⇄
+          </div>
+        ) : null}
         {canKick && onKickPlayer ? (
           <button
             type="button"
