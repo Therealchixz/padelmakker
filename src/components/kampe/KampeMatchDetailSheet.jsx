@@ -109,26 +109,25 @@ export function KampeMatchDetailSheet({
               <X size={18} />
             </button>
           </div>
-        </div>
-
-        <div className="pm-kampe-v2-detail-badges">
-          <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
-            {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
-            {statusBadge.label}
-          </span>
-          {matchPrefs?.min != null && matchPrefs?.max != null ? (
-            <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue">
-              ELO {matchPrefs.min}–{matchPrefs.max}
+          <div className="pm-kampe-v2-detail-badges">
+            <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
+              {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
+              {statusBadge.label}
             </span>
-          ) : null}
-          {matchPrefs?.booked != null ? (
-            <span className={`pm-kampe-v2-badge ${matchPrefs.booked ? 'pm-kampe-v2-badge--green' : 'pm-kampe-v2-badge--warm'}`}>
-              {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
-            </span>
-          ) : null}
-          {unreadCount > 0 ? (
-            <span className="pm-kampe-v2-badge pm-kampe-v2-badge--warm">{unreadCount} ulæst</span>
-          ) : null}
+            {matchPrefs?.min != null && matchPrefs?.max != null ? (
+              <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue">
+                ELO {matchPrefs.min}–{matchPrefs.max}
+              </span>
+            ) : null}
+            {matchPrefs?.booked != null ? (
+              <span className={`pm-kampe-v2-badge ${matchPrefs.booked ? 'pm-kampe-v2-badge--green' : 'pm-kampe-v2-badge--warm'}`}>
+                {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
+              </span>
+            ) : null}
+            {unreadCount > 0 ? (
+              <span className="pm-kampe-v2-badge pm-kampe-v2-badge--warm">{unreadCount} ulæst</span>
+            ) : null}
+          </div>
         </div>
 
         {description ? (
