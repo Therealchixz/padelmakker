@@ -1,0 +1,322 @@
+import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
+import { MapPin, Plus, X } from 'lucide-react'
+import { isAvatarUrl } from '../../lib/avatarUpload'
+import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
+import {
+  getAmericanoTournamentMeta,
+  playerInitials,
+  resolveAmericanoCourtName,
+} from './americanoDisplayUtils'
+import type { AmericanoTournament } from './types'
+
+export type AmericanoDetailPlayer = {
+  id: string
+  user_id: string
+  name: string
+  avatar?: string | null
+  isMe?: boolean
+  elo?: number | null
+  points?: number | null
+  eloChange?: number | null
+  onView?: () => void
+  onKick?: () => void
+  kickBusy?: boolean
+}
+
+type Props = {
+  open: boolean
+  onClose: () => void
+  tournament: AmericanoTournament | null
+  courts: { id: string; name: string }[]
+  dateLabel: string
+  status: 'registration' | 'playing' | 'completed'
+  participants: AmericanoDetailPlayer[]
+  joined?: boolean
+  tournamentFull?: boolean
+  liveRound?: number | null
+  description?: string | null
+  actions?: ReactNode
+  joinedNote?: ReactNode
+  extras?: ReactNode
+  resultsPanel?: ReactNode
+  completedResults?: ReactNode
+}
+
+function badgeToneClass(tone: string) {
+  if (tone === 'live') return 'pm-kampe-v2-badge--live'
+  if (tone === 'open') return 'pm-kampe-v2-badge--open'
+  if (tone === 'full') return 'pm-kampe-v2-badge--full'
+  if (tone === 'closed') return 'pm-kampe-v2-badge--closed'
+  return 'pm-kampe-v2-badge--neutral'
+}
+
+function PlayerTile({
+  player,
+  empty = false,
+}: {
+  player?: AmericanoDetailPlayer
+  empty?: boolean
+}) {
+  if (empty || !player) {
+    return (
+      <div className="pm-americano-v2-detail-player pm-americano-v2-detail-player--empty">
+        <div className="pm-americano-v2-detail-player-avatar pm-americano-v2-detail-player-avatar--empty">
+          <Plus size={14} aria-hidden />
+        </div>
+        <span className="pm-americano-v2-detail-player-name">Ledig</span>
+      </div>
+    )
+  }
+
+  const av = player.avatar
+  const avatarInner =
+    av && isAvatarUrl(av) ? (
+      <img src={av} alt="" />
+    ) : av ? (
+      <span>{av}</span>
+    ) : (
+      <span>{playerInitials(player.name)}</span>
+    )
+
+  const avatarEl = (
+    <div className="pm-americano-v2-detail-player-avatar">{avatarInner}</div>
+  )
+
+  return (
+    <div className="pm-americano-v2-detail-player">
+      {player.onView ? (
+        <button
+          type="button"
+          className="pm-americano-v2-detail-player-btn"
+          onClick={player.onView}
+          aria-label={`Se statistik for ${player.name}`}
+        >
+          {avatarEl}
+        </button>
+      ) : (
+        avatarEl
+      )}
+      {player.onKick ? (
+        <button
+          type="button"
+          className="pm-americano-v2-detail-player-kick"
+          onClick={player.onKick}
+          disabled={player.kickBusy}
+          aria-label={`Fjern ${player.name}`}
+        >
+          ×
+        </button>
+      ) : null}
+      <span className={`pm-americano-v2-detail-player-name${player.isMe ? ' pm-americano-v2-detail-player-name--me' : ''}`}>
+        {player.name.split(' ')[0]}
+        {player.isMe ? ' (dig)' : ''}
+      </span>
+      {player.elo != null && Number.isFinite(player.elo) ? (
+        <span className="pm-americano-v2-detail-player-elo">{Math.round(player.elo)}</span>
+      ) : null}
+      {player.eloChange != null && Number.isFinite(player.eloChange) ? (
+        <span
+          className={`pm-americano-v2-detail-player-elo-delta${player.eloChange >= 0 ? ' pm-americano-v2-detail-player-elo-delta--up' : ' pm-americano-v2-detail-player-elo-delta--down'}`}
+        >
+          {player.eloChange >= 0 ? '+' : ''}
+          {player.eloChange} ELO
+        </span>
+      ) : null}
+      {player.points != null ? (
+        <span className="pm-americano-v2-detail-player-points">{player.points} pt</span>
+      ) : null}
+    </div>
+  )
+}
+
+export function AmericanoDetailSheet({
+  open,
+  onClose,
+  tournament,
+  courts,
+  dateLabel,
+  status,
+  participants,
+  joined: _joined = false,
+  tournamentFull = false,
+  liveRound = null,
+  description,
+  actions,
+  joinedNote,
+  extras,
+  resultsPanel,
+  completedResults,
+}: Props) {
+  const [resultsExpanded, setResultsExpanded] = useState(false)
+  const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
+    onClose,
+    enabled: open,
+  })
+
+  useEffect(() => {
+    if (!open) setResultsExpanded(false)
+  }, [open])
+
+  if (!open || !tournament) return null
+
+  const courtName = resolveAmericanoCourtName(tournament.court_id, courts)
+  const { maxPlayers, totalRounds, estMinutes } = getAmericanoTournamentMeta(tournament)
+  const filled = participants.length
+  const emptySlots = Math.max(0, maxPlayers - filled)
+  const fillPct = maxPlayers > 0 ? Math.min(100, Math.round((filled / maxPlayers) * 100)) : 0
+  const isCompleted = status === 'completed'
+  const isPlaying = status === 'playing'
+  const isFullBar = isPlaying || isCompleted || tournamentFull
+
+  let badgeLabel = 'Åben'
+  let badgeTone = 'open'
+  if (isCompleted) {
+    badgeLabel = 'Afsluttet'
+    badgeTone = 'closed'
+  } else if (isPlaying) {
+    badgeTone = 'live'
+    badgeLabel =
+      liveRound != null && totalRounds > 0
+        ? `Live Runde ${liveRound}/${totalRounds}`
+        : 'I gang'
+  } else if (tournamentFull) {
+    badgeLabel = 'Fuld'
+    badgeTone = 'full'
+  }
+
+  const gridCols = maxPlayers <= 4 ? 2 : 2
+
+  return (
+    <>
+      <button
+        type="button"
+        className="pm-kampe-v2-sheet-backdrop"
+        aria-label="Luk turneringsdetaljer"
+        onClick={onClose}
+      />
+      <div
+        ref={sheetRef}
+        className={`pm-kampe-v2-sheet pm-kampe-v2-detail-sheet pm-americano-v2-detail-sheet${sheetClassName ? ` ${sheetClassName}` : ''}`}
+        style={sheetStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Americano-detaljer"
+      >
+        <div {...dragZoneProps} aria-label="Træk her for at lukke">
+          <div className="pm-kampe-v2-sheet-handle" aria-hidden />
+          <div className="pm-americano-v2-detail-head">
+            <div className="pm-americano-v2-detail-head-main">
+              <div className="pm-americano-v2-detail-type">Americano</div>
+              <h2 className="pm-americano-v2-detail-title">{tournament.name}</h2>
+              <div className="pm-americano-v2-detail-location">
+                <MapPin size={12} aria-hidden />
+                {courtName} · {dateLabel}
+              </div>
+            </div>
+            <div className="pm-americano-v2-detail-head-right">
+              <span className={`pm-kampe-v2-badge ${badgeToneClass(badgeTone)}`}>
+                {badgeTone === 'live' ? <span className="pm-live-dot" /> : null}
+                {badgeLabel}
+              </span>
+              <button
+                type="button"
+                className="pm-kampe-v2-detail-close"
+                onClick={onClose}
+                onPointerDown={(event) => event.stopPropagation()}
+                aria-label="Luk"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="pm-americano-v2-detail-stats">
+          <div className="pm-americano-v2-detail-stat">
+            <span className="pm-americano-v2-detail-stat-label">Runder</span>
+            <span className="pm-americano-v2-detail-stat-value">{totalRounds}</span>
+          </div>
+          <div className="pm-americano-v2-detail-stat">
+            <span className="pm-americano-v2-detail-stat-label">Varighed</span>
+            <span className="pm-americano-v2-detail-stat-value">~{estMinutes} min</span>
+          </div>
+          <div className="pm-americano-v2-detail-stat">
+            <span className="pm-americano-v2-detail-stat-label">Format</span>
+            <span className="pm-americano-v2-detail-stat-value">Alle m/ alle</span>
+          </div>
+        </div>
+
+        <div className="pm-americano-v2-detail-fill">
+          <div className="pm-americano-v2-detail-fill-row">
+            <span className="pm-americano-v2-detail-fill-label">
+              {filled} af {maxPlayers} tilmeldt
+            </span>
+            {!isCompleted && !isPlaying && !tournamentFull ? (
+              <span className="pm-americano-v2-detail-fill-left">
+                {emptySlots} {emptySlots === 1 ? 'plads' : 'pladser'} tilbage
+              </span>
+            ) : null}
+          </div>
+          <div className="pm-americano-v2-detail-progress-row">
+            <div
+              className={`pm-americano-v2-detail-progress${isFullBar ? ' pm-americano-v2-detail-progress--full' : ''}`}
+            >
+              <div
+                className="pm-americano-v2-detail-progress-fill"
+                style={{ width: `${isFullBar ? 100 : fillPct}%` }}
+              />
+            </div>
+            <span className={`pm-americano-v2-detail-progress-count${isFullBar ? ' pm-americano-v2-detail-progress-count--full' : ''}`}>
+              {filled}/{maxPlayers}
+            </span>
+          </div>
+        </div>
+
+        {description ? (
+          <p className="pm-kampe-v2-detail-desc">{description}</p>
+        ) : null}
+
+        <div className="pm-americano-v2-detail-players-section">
+          <div className="pm-americano-v2-detail-players-label">Spillere</div>
+          <div
+            className="pm-americano-v2-detail-players-grid"
+            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+          >
+            {participants.map((p) => (
+              <PlayerTile key={p.id} player={p} />
+            ))}
+            {Array.from({ length: emptySlots }).map((_, i) => (
+              <PlayerTile key={`empty-${i}`} empty />
+            ))}
+          </div>
+        </div>
+
+        {joinedNote}
+        {actions}
+
+        {isPlaying && resultsPanel ? (
+          <div className="pm-americano-v2-detail-results">{resultsPanel}</div>
+        ) : null}
+
+        {isCompleted && completedResults ? (
+          <div className="pm-americano-v2-detail-completed">
+            {!resultsExpanded ? (
+              <button
+                type="button"
+                className="pm-americano-v2-detail-result-btn"
+                onClick={() => setResultsExpanded(true)}
+              >
+                Se resultat
+              </button>
+            ) : (
+              <div className="pm-americano-v2-detail-completed-body">{completedResults}</div>
+            )}
+          </div>
+        ) : null}
+
+        {extras}
+      </div>
+    </>
+  )
+}

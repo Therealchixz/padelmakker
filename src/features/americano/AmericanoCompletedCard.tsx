@@ -278,6 +278,10 @@ type Props = {
   /** Åbn deltagerens Americano-statistik (samme modal som på åbne turneringer) */
   onParticipantView?: (userId: string, name: string) => void
   isCreator?: boolean
+  /** Indlejret i bottom sheet — skjul kort-header og ydre kort-styling */
+  embedInSheet?: boolean
+  /** Kun fuld stilling/resultater (accordion-indhold) */
+  sheetResultsOnly?: boolean
 }
 
 export function AmericanoCompletedCard({
@@ -290,6 +294,8 @@ export function AmericanoCompletedCard({
   onSummaryToggle,
   onParticipantView,
   isCreator = false,
+  embedInSheet = false,
+  sheetResultsOnly = false,
 }: Props) {
   const [matches, setMatches] = useState<AmericanoMatchRow[] | undefined>(undefined)
   const [eloByUserId, setEloByUserId] = useState<Record<string, AmericanoEloSnap>>({})
@@ -397,20 +403,31 @@ export function AmericanoCompletedCard({
   const podiumEmoji = (place: number) =>
     place === 1 ? '🥇' : place === 2 ? '🥈' : '🥉'
 
+  const showCompactSections = !sheetResultsOnly
+  const outerTag = embedInSheet ? 'div' : 'div'
+  const Outer = outerTag as 'div'
+
   return (
-    <div
+    <Outer
       id={domId}
-      className="pm-ui-card"
-      style={{
-        background: theme.surface,
-        border: `1px solid ${theme.border}`,
-        borderRadius: 16,
-        boxShadow: theme.shadow,
-        overflow: 'hidden',
-        scrollMarginTop: domId ? '88px' : undefined,
-      }}
+      className={embedInSheet ? 'pm-americano-v2-completed-embed' : 'pm-ui-card'}
+      style={
+        embedInSheet
+          ? { scrollMarginTop: domId ? '88px' : undefined }
+          : {
+              background: theme.surface,
+              border: `1px solid ${theme.border}`,
+              borderRadius: 16,
+              boxShadow: theme.shadow,
+              overflow: 'hidden',
+              scrollMarginTop: domId ? '88px' : undefined,
+            }
+      }
     >
+      {showCompactSections ? (
+      <>
       {/* 1. Header — fælles blå gradient med 2v2 / Liga / Americano open */}
+      {!embedInSheet ? (
       <div
         style={{
           background: 'var(--pm-cta-gradient)',
@@ -549,6 +566,7 @@ export function AmericanoCompletedCard({
           </div>
         ) : null}
       </div>
+      ) : null}
 
       {isCreator ? (
         <div style={{ padding: '0 16px' }}>
@@ -881,8 +899,11 @@ export function AmericanoCompletedCard({
           </div>
         </div>
       ) : null}
+      </>
+      ) : null}
 
       {/* 5. Detail-toggle (accordion) */}
+      {!sheetResultsOnly ? (
       <button
         type="button"
         onClick={onSummaryToggle}
@@ -924,8 +945,9 @@ export function AmericanoCompletedCard({
           aria-hidden
         />
       </button>
+      ) : null}
 
-      {open ? (
+      {open || sheetResultsOnly ? (
         <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${theme.border}` }}>
           {loading && (
             <div style={{ fontSize: 12, color: theme.textLight, paddingTop: 12 }}>
@@ -1329,6 +1351,6 @@ export function AmericanoCompletedCard({
           )}
         </div>
       ) : null}
-    </div>
+    </Outer>
   )
 }

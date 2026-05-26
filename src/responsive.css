@@ -6941,3 +6941,478 @@ button,
   }
 }
 
+/* Americano v2 — kompakte listekort + detail sheet (Claude design) */
+.pm-americano-v2-list-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--pm-border);
+  border-radius: 14px;
+  background: var(--pm-surface);
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.04);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.pm-americano-v2-list-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 10px;
+  align-items: start;
+  padding: 14px 14px 12px;
+  background: var(--pm-cta-gradient);
+  color: var(--pm-on-accent);
+}
+
+.pm-americano-v2-list-top-main {
+  min-width: 0;
+  grid-column: 1;
+}
+
+.pm-americano-v2-list-type {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.88;
+  margin-bottom: 2px;
+}
+
+.pm-americano-v2-list-title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.pm-americano-v2-list-datetime {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  opacity: 0.92;
+  margin-top: 4px;
+}
+
+.pm-americano-v2-list-badge {
+  grid-column: 2;
+  justify-self: end;
+  align-self: start;
+}
+
+.pm-americano-v2-list-body {
+  padding: 12px 14px 14px;
+}
+
+.pm-americano-v2-list-venue {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pm-text-mid);
+  margin-bottom: 10px;
+}
+
+.pm-americano-v2-list-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pm-americano-v2-list-progress {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--pm-border);
+  overflow: hidden;
+}
+
+.pm-americano-v2-list-progress--full .pm-americano-v2-list-progress-fill {
+  background: var(--pm-green);
+}
+
+.pm-americano-v2-list-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--pm-accent), var(--pm-blue));
+  transition: width 0.25s ease;
+}
+
+.pm-americano-v2-list-progress-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-text-mid);
+  white-space: nowrap;
+}
+
+.pm-americano-v2-list-progress-count--full {
+  color: var(--pm-green);
+}
+
+.pm-americano-v2-list-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pm-americano-v2-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pm-americano-v2-list-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--pm-text-light);
+  background: var(--pm-surface-alt);
+  border: 1px solid var(--pm-border);
+  border-radius: 999px;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.pm-americano-v2-list-participants {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pm-americano-v2-list-avatar-stack {
+  display: flex;
+  align-items: center;
+}
+
+.pm-americano-v2-list-avatar-stack > * + * {
+  margin-left: -8px;
+}
+
+.pm-americano-v2-list-overflow {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--pm-text-mid);
+}
+
+.pm-americano-v2-list-elo {
+  margin-left: 4px;
+}
+
+.pm-americano-v2-detail-sheet {
+  max-height: min(92vh, 860px);
+  overflow-y: auto;
+}
+
+.pm-americano-v2-detail-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pm-americano-v2-detail-head-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.pm-americano-v2-detail-head-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pm-americano-v2-detail-type {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pm-text-light);
+  margin-bottom: 2px;
+}
+
+.pm-americano-v2-detail-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--pm-text);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.pm-americano-v2-detail-location {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--pm-text-mid);
+  margin-top: 4px;
+}
+
+.pm-americano-v2-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.pm-americano-v2-detail-stat {
+  background: var(--pm-surface-alt);
+  border: 1px solid var(--pm-border);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.pm-americano-v2-detail-stat-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pm-text-light);
+  margin-bottom: 4px;
+}
+
+.pm-americano-v2-detail-stat-value {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--pm-text);
+}
+
+.pm-americano-v2-detail-fill {
+  margin-bottom: 14px;
+}
+
+.pm-americano-v2-detail-fill-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pm-americano-v2-detail-fill-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pm-text);
+}
+
+.pm-americano-v2-detail-fill-left {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-accent);
+}
+
+.pm-americano-v2-detail-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pm-americano-v2-detail-progress {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--pm-border);
+  overflow: hidden;
+}
+
+.pm-americano-v2-detail-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--pm-accent), var(--pm-blue));
+}
+
+.pm-americano-v2-detail-progress--full .pm-americano-v2-detail-progress-fill {
+  background: var(--pm-green);
+}
+
+.pm-americano-v2-detail-progress-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-text-mid);
+}
+
+.pm-americano-v2-detail-progress-count--full {
+  color: var(--pm-green);
+}
+
+.pm-americano-v2-detail-players-section {
+  margin-bottom: 14px;
+}
+
+.pm-americano-v2-detail-players-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pm-text-light);
+  margin-bottom: 10px;
+}
+
+.pm-americano-v2-detail-players-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.pm-americano-v2-detail-player {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  background: var(--pm-surface-alt);
+  border: 1px solid var(--pm-border);
+  min-width: 0;
+}
+
+.pm-americano-v2-detail-player--empty {
+  border-style: dashed;
+  background: transparent;
+}
+
+.pm-americano-v2-detail-player-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.pm-americano-v2-detail-player-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pm-accent) 14%, var(--pm-surface));
+  color: var(--pm-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  overflow: hidden;
+}
+
+.pm-americano-v2-detail-player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pm-americano-v2-detail-player-avatar--empty {
+  border: 2px dashed var(--pm-border);
+  background: transparent;
+  color: var(--pm-text-light);
+}
+
+.pm-americano-v2-detail-player-kick {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: var(--pm-danger);
+  color: var(--pm-on-accent);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.pm-americano-v2-detail-player-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-text);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-americano-v2-detail-player-name--me {
+  color: var(--pm-accent);
+}
+
+.pm-americano-v2-detail-player-elo {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pm-text-light);
+}
+
+.pm-americano-v2-detail-player-elo-delta {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pm-americano-v2-detail-player-elo-delta--up {
+  color: var(--pm-green);
+}
+
+.pm-americano-v2-detail-player-elo-delta--down {
+  color: var(--pm-danger);
+}
+
+.pm-americano-v2-detail-player-points {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--pm-warm);
+}
+
+.pm-americano-v2-detail-live-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--pm-accent);
+  color: var(--pm-on-accent);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.pm-americano-v2-detail-result-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--pm-border);
+  border-radius: 10px;
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.pm-americano-v2-detail-results {
+  margin-top: 8px;
+}
+
+.pm-americano-v2-detail-completed {
+  margin-top: 8px;
+}
+
+.pm-americano-v2-completed-embed {
+  margin-top: 8px;
+}
+

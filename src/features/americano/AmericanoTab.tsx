@@ -7,7 +7,12 @@ import { Court } from '../../api/base44Client'
 import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
 import { AmericanoCompletedCard } from './AmericanoCompletedCard'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
-import { AmericanoOpenCard } from './AmericanoOpenCard'
+import { AmericanoListCard } from './AmericanoListCard'
+import { AmericanoDetailSheet, type AmericanoDetailPlayer } from './AmericanoDetailSheet'
+import {
+  computeAmericanoActiveRound,
+  resolveAmericanoCourtName,
+} from './americanoDisplayUtils'
 import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
 import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
@@ -18,35 +23,9 @@ import { notifyAmericanoTournamentFull } from '../../lib/notifyKampeEntityFull'
 import { notifyAmericanoTournamentStarted } from '../../lib/notifyKampeEntityStarted'
 import { notifyAmericanoSpotOpened } from '../../lib/notifyKampeEntityRoster'
 import { useScrollIntoViewWhen } from '../../lib/useScrollIntoViewWhen'
-
-import { isAvatarUrl } from '../../lib/avatarUpload'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
 
 const font = 'var(--pm-font)'
-
-/** Renderer emoji eller profilbillede-URL korrekt i en cirkel */
-function AvatarInCircle({ av, size = 36, fontSize = 18, bg = 'var(--pm-border)' }: { av: string; size?: number; fontSize?: number; bg?: string }) {
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: bg,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize,
-        flexShrink: 0,
-        overflow: 'hidden',
-      }}
-    >
-      {isAvatarUrl(av)
-        ? <img src={av} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        : av}
-    </div>
-  )
-}
 
 type ProfileLike = {
   id: string
@@ -91,6 +70,7 @@ type ProfileSnippet = {
   avatar?: string | null
   full_name?: string | null
   name?: string | null
+  americano_elo_rating?: number | null
 }
 
 function resolveName(p: ProfileLike | null | undefined, authEmail?: string | null) {
@@ -152,13 +132,23 @@ export function AmericanoTab({
 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [americanoView, setAmericanoView] = useState<AmericanoSubTab>(() => initialSubTab ?? 'open')
-  /** Afsluttede: kun én "Resultater og stilling" åben ad gangen (som Baner-accordion) */
-  const [openCompletedSummaryId, setOpenCompletedSummaryId] = useState<string | null>(null)
+  const [detailTournamentId, setDetailTournamentId] = useState<string | null>(null)
+  const [listMeta, setListMeta] = useState<{
+    myEloChange: Record<string, number>
+    liveRound: Record<string, number>
+  }>({ myEloChange: {}, liveRound: {} })
+  const [completedDetailCache, setCompletedDetailCache] = useState<
+    Record<
+      string,
+      {
+        pointsByUserId: Record<string, number>
+        eloByUserId: Record<string, { change: number }>
+      }
+    >
+  >({})
   const [participantsByTournament, setParticipantsByTournament] = useState<
     Record<string, ParticipantListRow[]>
   >({})
-  /** Under "I gang" + "Afsluttede": deltagerlisten er sammenklappet som standard for at spare plads */
-  const [participantListsOpen, setParticipantListsOpen] = useState<Set<string>>(() => new Set())
   const [openManageTools, setOpenManageTools] = useState<Set<string>>(() => new Set())
   const [participantSnippets, setParticipantSnippets] = useState<Record<string, ProfileSnippet>>({})
   const [participantStatsPick, setParticipantStatsPick] = useState<{
@@ -277,45 +267,9 @@ export function AmericanoTab({
     if (st === 'registration') setAmericanoView('open')
     else if (st === 'playing') setAmericanoView('playing')
     else setAmericanoView('completed')
-
-    const scrollToCard = () => {
-      const el = document.getElementById(`pm-americano-${tid}`)
-      if (!el) return false
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      onFocusTournamentHandled?.()
-      return true
-    }
-
-    if (scrollToCard()) return undefined
-
-    let cancelled = false
-    let attempts = 0
-    const retry = () => {
-      if (cancelled) return
-      if (scrollToCard() || attempts >= 15) {
-        if (attempts >= 15) onFocusTournamentHandled?.()
-        return
-      }
-      attempts += 1
-      window.setTimeout(retry, 80)
-    }
-    const raf = window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(retry)
-    })
-    return () => {
-      cancelled = true
-      window.cancelAnimationFrame(raf)
-    }
+    setDetailTournamentId(t.id)
+    onFocusTournamentHandled?.()
   }, [focusTournamentId, tabActive, loading, rows, onFocusTournamentHandled])
-
-  useEffect(() => {
-    if (americanoView !== 'completed') setOpenCompletedSummaryId(null)
-  }, [americanoView])
-
-  useEffect(() => {
-    if (!openCompletedSummaryId) return
-    if (!rows.some((t) => t.id === openCompletedSummaryId)) setOpenCompletedSummaryId(null)
-  }, [rows, openCompletedSummaryId])
 
   useEffect(() => {
     const uidSet = new Set<string>()
@@ -335,7 +289,7 @@ export function AmericanoTab({
     ;(async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, avatar, full_name, name')
+        .select('id, avatar, full_name, name, americano_elo_rating')
         .in('id', idList)
       if (cancelled) return
       if (error) {
@@ -344,11 +298,12 @@ export function AmericanoTab({
         return
       }
       const next: Record<string, ProfileSnippet> = {}
-      ;(data || []).forEach((r: { id: string; avatar?: string | null; full_name?: string | null; name?: string | null }) => {
+      ;(data || []).forEach((r: { id: string; avatar?: string | null; full_name?: string | null; name?: string | null; americano_elo_rating?: number | null }) => {
         next[String(r.id)] = {
           avatar: r.avatar,
           full_name: r.full_name,
           name: r.name,
+          americano_elo_rating: r.americano_elo_rating,
         }
       })
       setParticipantSnippets(next)
@@ -357,6 +312,139 @@ export function AmericanoTab({
       cancelled = true
     }
   }, [rows, participantsByTournament])
+
+  useEffect(() => {
+    if (!profileId || loading) return
+
+    const matchesScope = (t: AmericanoTournament) => {
+      if (scope === 'mine' && !joinedIds.has(t.id)) return false
+      if (searchQuery && searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        if ((t.name || '').toLowerCase().includes(q)) return true
+        const parts = participantsByTournament[t.id] || []
+        return parts.some((p) => (p.display_name || '').toLowerCase().includes(q))
+      }
+      return true
+    }
+
+    const filtered = rows.filter(matchesScope)
+    const viewRows =
+      americanoView === 'open'
+        ? filtered.filter((t) => t.status === 'registration')
+        : americanoView === 'playing'
+          ? filtered.filter((t) => t.status === 'playing')
+          : filtered.filter((t) => t.status === 'completed')
+
+    const completedJoined = viewRows.filter((t) => t.status === 'completed' && joinedIds.has(t.id))
+    const playing = viewRows.filter((t) => t.status === 'playing')
+
+    if (completedJoined.length === 0 && playing.length === 0) {
+      setListMeta({ myEloChange: {}, liveRound: {} })
+      return undefined
+    }
+
+    let cancelled = false
+    ;(async () => {
+      const myEloChange: Record<string, number> = {}
+      const liveRound: Record<string, number> = {}
+
+      if (completedJoined.length > 0) {
+        const tids = completedJoined.map((t) => t.id)
+        const { data } = await supabase
+          .from('americano_elo_history')
+          .select('tournament_id, change')
+          .in('tournament_id', tids)
+          .eq('user_id', profileId)
+        ;(data || []).forEach((row: { tournament_id: string; change: number | null }) => {
+          myEloChange[String(row.tournament_id)] = Number(row.change) || 0
+        })
+      }
+
+      if (playing.length > 0) {
+        const tids = playing.map((t) => t.id)
+        const { data } = await supabase
+          .from('americano_matches')
+          .select('tournament_id, round_number, team_a_score, team_b_score, results_locked')
+          .in('tournament_id', tids)
+        const byTournament: Record<
+          string,
+          {
+            round_number: number
+            team_a_score: number | null
+            team_b_score: number | null
+            results_locked?: boolean | null
+          }[]
+        > = {}
+        ;(data || []).forEach((m) => {
+          const tid = String(m.tournament_id)
+          if (!byTournament[tid]) byTournament[tid] = []
+          byTournament[tid].push(m)
+        })
+        playing.forEach((t) => {
+          const round = computeAmericanoActiveRound(byTournament[t.id] || [])
+          if (round != null) liveRound[t.id] = round
+        })
+      }
+
+      if (!cancelled) setListMeta({ myEloChange, liveRound })
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [rows, joinedIds, profileId, loading, americanoView, scope, searchQuery, participantsByTournament])
+
+  useEffect(() => {
+    if (!detailTournamentId || !profileId) return undefined
+    const t = rows.find((x) => x.id === detailTournamentId)
+    if (!t || t.status !== 'completed') return undefined
+    if (completedDetailCache[detailTournamentId]) return undefined
+
+    let cancelled = false
+    ;(async () => {
+      const ppm = Number(t.points_per_match)
+      const P = ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
+      const parts = participantsByTournament[t.id] || []
+      const partIdToUser = new Map(parts.map((p) => [p.id, p.user_id]))
+      const [matchesRes, eloRes] = await Promise.all([
+        supabase.from('americano_matches').select('*').eq('tournament_id', t.id),
+        supabase.from('americano_elo_history').select('user_id, change').eq('tournament_id', t.id),
+      ])
+      if (cancelled) return
+      const pointsByUserId: Record<string, number> = {}
+      parts.forEach((p) => {
+        pointsByUserId[p.user_id] = 0
+      })
+      ;(matchesRes.data || []).forEach((m) => {
+        if (m.team_a_score == null || m.team_b_score == null) return
+        const a = m.team_a_score
+        const b = m.team_b_score
+        if (a + b !== P) return
+        const add = (partId: string, pts: number) => {
+          const uid = partIdToUser.get(partId)
+          if (uid) pointsByUserId[uid] = (pointsByUserId[uid] ?? 0) + pts
+        }
+        add(m.team_a_p1, a)
+        add(m.team_a_p2, a)
+        add(m.team_b_p1, b)
+        add(m.team_b_p2, b)
+      })
+      const eloByUserId: Record<string, { change: number }> = {}
+      ;(eloRes.data || []).forEach((row: { user_id: string; change: number | null }) => {
+        eloByUserId[String(row.user_id)] = { change: Number(row.change) || 0 }
+      })
+      if (!cancelled) {
+        setCompletedDetailCache((prev) => ({
+          ...prev,
+          [t.id]: { pointsByUserId, eloByUserId },
+        }))
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [detailTournamentId, rows, profileId, participantsByTournament])
 
   const startTournament = async (t: AmericanoTournament, forceAsAdmin = false) => {
     const isCreatorOrAdmin = String(t.creator_id) === String(profileId) || isAdmin
@@ -547,6 +635,7 @@ export function AmericanoTab({
       const { error } = await supabase.from('americano_tournaments').delete().eq('id', t.id)
       if (error) throw error
       showToast('Turnering slettet.')
+      setDetailTournamentId(null)
       await load()
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -631,6 +720,43 @@ export function AmericanoTab({
     { id: 'playing' as const, label: `I gang (${playingAmericanosFiltered.length})` },
     { id: 'completed' as const, label: `Afsluttede (${completedAmericanosFiltered.length})` },
   ]
+
+  const detailTournament = detailTournamentId
+    ? rows.find((x) => x.id === detailTournamentId) ?? null
+    : null
+
+  const buildDetailPlayers = (
+    t: AmericanoTournament,
+    manageToolsOpen: boolean,
+    canManageTournament: boolean
+  ): AmericanoDetailPlayer[] => {
+    const parts = participantsByTournament[t.id] || []
+    const cache = completedDetailCache[t.id]
+    return parts.map((p) => {
+      const snap = participantSnippets[p.user_id]
+      const name = String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name
+      const isMe = String(p.user_id) === String(profileId)
+      const canKickPlayer = canManageTournament && manageToolsOpen && !isMe
+      const eloRaw = snap?.americano_elo_rating
+      return {
+        id: p.id,
+        user_id: p.user_id,
+        name,
+        avatar: snap?.avatar || null,
+        isMe,
+        elo: eloRaw != null && Number.isFinite(Number(eloRaw)) ? Math.round(Number(eloRaw)) : null,
+        points: cache?.pointsByUserId[p.user_id],
+        eloChange: cache?.eloByUserId[p.user_id]?.change,
+        onView: () => openParticipantProfile(p.user_id, p.display_name),
+        ...(canKickPlayer
+          ? {
+              onKick: () => kickParticipant(t.id, p.id),
+              kickBusy: busyId === t.id + '-kick-' + p.id,
+            }
+          : {}),
+      }
+    })
+  }
 
   return (
     <div style={{ fontFamily: font }}>
@@ -756,397 +882,260 @@ export function AmericanoTab({
           <div className="pm-state-copy">Prøv en anden statusfane, eller opret en ny turnering.</div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="pm-kampe-v2-list">
           {visibleRows.map((t) => {
-            const isCreator = String(t.creator_id) === String(profileId)
-            const joined = joinedIds.has(t.id)
-            const partCount = (participantsByTournament[t.id] || []).length
-            const slotsConfigured = Number(t.player_slots)
-            const tournamentFull = partCount === slotsConfigured
-            const canManageTournament = (isCreator || isAdmin) && t.status === 'registration'
-            const manageToolsOpen = openManageTools.has(t.id)
-            const statusMeta =
+            const parts = participantsByTournament[t.id] || []
+            const listParticipants = parts.map((p) => {
+              const snap = participantSnippets[p.user_id]
+              return {
+                user_id: p.user_id,
+                display_name:
+                  String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name,
+                avatar: snap?.avatar || null,
+              }
+            })
+            const cardStatus =
               t.status === 'registration'
-                ? { label: 'Tilmelding åben', tone: 'warm' }
+                ? ('registration' as const)
                 : t.status === 'playing'
-                  ? { label: 'I gang', tone: 'accent' }
-                  : { label: 'Afsluttet', tone: 'neutral' }
+                  ? ('playing' as const)
+                  : ('completed' as const)
+            return (
+              <AmericanoListCard
+                key={t.id}
+                tournament={t}
+                courtName={resolveAmericanoCourtName(t.court_id, courts)}
+                participants={listParticipants}
+                status={cardStatus}
+                joined={joinedIds.has(t.id)}
+                tournamentFull={parts.length === Number(t.player_slots)}
+                liveRound={listMeta.liveRound[t.id] ?? null}
+                myEloChange={listMeta.myEloChange[t.id] ?? null}
+                onClick={() => setDetailTournamentId(t.id)}
+              />
+            )
+          })}
+        </div>
+      )}
+        </>
+      )}
 
-            /* Status "completed" bruger det nye redesignede trofæ-kort */
-            if (t.status === 'completed') {
-              const parts = participantsByTournament[t.id] || []
-              const dateLabel = `${formatMatchDateDa(t.tournament_date)} kl. ${formatTimeSlotDa(t.time_slot)}`
-              const enrichedParts = parts.map((p) => {
-                const snap = participantSnippets[p.user_id]
-                return {
-                  id: p.id,
-                  user_id: p.user_id,
-                  display_name:
-                    String(snap?.full_name || snap?.name || p.display_name).trim() ||
-                    p.display_name,
-                  avatar: snap?.avatar || null,
-                  full_name: snap?.full_name || null,
-                }
-              })
-              return (
-                <AmericanoCompletedCard
-                  key={t.id}
-                  domId={`pm-americano-${t.id}`}
-                  tournament={t}
-                  dateLabel={dateLabel}
-                  participants={enrichedParts}
-                  currentUserId={profileId}
-                  summaryOpen={openCompletedSummaryId === t.id}
-                  onSummaryToggle={() =>
-                    setOpenCompletedSummaryId((cur) => (cur === t.id ? null : t.id))
-                  }
-                  onParticipantView={openParticipantProfile}
-                  isCreator={String(t.creator_id) === String(profileId)}
-                />
-              )
-            }
+      {detailTournament ? (() => {
+        const t = detailTournament
+        const isCreator = String(t.creator_id) === String(profileId)
+        const joined = joinedIds.has(t.id)
+        const partCount = (participantsByTournament[t.id] || []).length
+        const slotsConfigured = Number(t.player_slots)
+        const tournamentFull = partCount === slotsConfigured
+        const canManageTournament = (isCreator || isAdmin) && t.status === 'registration'
+        const manageToolsOpen = openManageTools.has(t.id)
+        const dateLabel = `${formatMatchDateDa(t.tournament_date)} kl. ${formatTimeSlotDa(t.time_slot)}`
+        const detailStatus =
+          t.status === 'registration'
+            ? ('registration' as const)
+            : t.status === 'playing'
+              ? ('playing' as const)
+              : ('completed' as const)
+        const detailPlayers = buildDetailPlayers(t, manageToolsOpen, canManageTournament)
+        const enrichedParts = (participantsByTournament[t.id] || []).map((p) => {
+          const snap = participantSnippets[p.user_id]
+          return {
+            id: p.id,
+            user_id: p.user_id,
+            display_name:
+              String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name,
+            avatar: snap?.avatar || null,
+            full_name: snap?.full_name || null,
+          }
+        })
 
-            /* Status "registration" bruger det nye visuelle kort fra Claude Design.
-               Playing beholder det eksisterende layout. */
-            if (t.status === 'registration') {
-              const parts = participantsByTournament[t.id] || []
-              const dateLabel = `${formatMatchDateDa(t.tournament_date)} kl. ${formatTimeSlotDa(t.time_slot)}`
-              const players = parts.map((p) => {
-                const snap = participantSnippets[p.user_id]
-                const name = String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name
-                const isMe = String(p.user_id) === String(profileId)
-                const canKickPlayer = canManageTournament && manageToolsOpen && !isMe
-                return {
-                  id: p.id,
-                  name,
-                  avatar: snap?.avatar || null,
-                  isMe,
-                  onView: () => openParticipantProfile(p.user_id, p.display_name),
-                  ...(canKickPlayer
-                    ? {
-                        onKick: () => kickParticipant(t.id, p.id),
-                        kickBusy: busyId === t.id + '-kick-' + p.id,
-                      }
-                    : {}),
-                }
-              })
-              const actions = (
-                <>
-                  {!joined && (
-                    <button
-                      type="button"
-                      disabled={busyId === t.id}
-                      onClick={() => joinTournament(t)}
-                      style={{
-                        ...btn(true),
-                        width: '100%',
-                        justifyContent: 'center',
-                        padding: '12px',
-                        fontSize: 14,
-                        fontWeight: 700,
-                        borderRadius: 10,
-                        cursor: busyId === t.id ? 'wait' : 'pointer',
-                      }}
-                    >
-                      {busyId === t.id ? 'Vent…' : `Tilmeld dig · ${slotsConfigured - partCount} ${(slotsConfigured - partCount) === 1 ? 'plads' : 'pladser'} tilbage`}
-                    </button>
-                  )}
-                  {joined && !isCreator && (
-                    <button
-                      type="button"
-                      disabled={busyId === t.id}
-                      onClick={() => leaveTournament(t.id)}
-                      style={{
-                        ...btn(false),
-                        width: '100%',
-                        justifyContent: 'center',
-                        padding: '12px',
-                        fontSize: 14,
-                        fontWeight: 700,
-                        borderRadius: 10,
-                        cursor: busyId === t.id ? 'wait' : 'pointer',
-                      }}
-                    >
-                      Afmeld
-                    </button>
-                  )}
-                </>
-              )
-              const joinedNote = joined ? (
-                <span
-                  className="pm-feedback-inline-note pm-feedback-inline-note--info"
-                  style={{ alignSelf: 'center' }}
+        const registrationActions =
+          t.status === 'registration' ? (
+            <>
+              {!joined && (
+                <button
+                  type="button"
+                  disabled={busyId === t.id}
+                  onClick={() => joinTournament(t)}
+                  style={{
+                    ...btn(true),
+                    width: '100%',
+                    justifyContent: 'center',
+                    padding: '12px',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    borderRadius: 10,
+                    cursor: busyId === t.id ? 'wait' : 'pointer',
+                  }}
                 >
-                  Du er tilmeldt
-                </span>
-              ) : null
-              const extras = canManageTournament ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                  {busyId === t.id
+                    ? 'Vent…'
+                    : `Tilmeld dig · ${slotsConfigured - partCount} ${slotsConfigured - partCount === 1 ? 'plads' : 'pladser'} tilbage`}
+                </button>
+              )}
+              {joined && !isCreator && (
+                <button
+                  type="button"
+                  disabled={busyId === t.id}
+                  onClick={() => leaveTournament(t.id)}
+                  style={{
+                    ...btn(false),
+                    width: '100%',
+                    justifyContent: 'center',
+                    padding: '12px',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    borderRadius: 10,
+                    cursor: busyId === t.id ? 'wait' : 'pointer',
+                  }}
+                >
+                  Afmeld
+                </button>
+              )}
+            </>
+          ) : null
+
+        const joinedNote =
+          joined && t.status === 'registration' ? (
+            <span
+              className="pm-feedback-inline-note pm-feedback-inline-note--info"
+              style={{ alignSelf: 'center' }}
+            >
+              Du er tilmeldt
+            </span>
+          ) : null
+
+        const manageExtras = canManageTournament ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+            <button
+              type="button"
+              disabled={busyId === t.id || !tournamentFull}
+              title={
+                tournamentFull
+                  ? 'Generér runder og start turneringen'
+                  : `Kræver ${slotsConfigured} tilmeldte (nu ${partCount})`
+              }
+              onClick={() => startTournament(t)}
+              style={{
+                ...btn(true),
+                fontSize: 13,
+                padding: '8px 14px',
+                background: tournamentFull ? theme.warm : theme.border,
+                borderColor: tournamentFull ? theme.warm : theme.border,
+                color: tournamentFull ? theme.onAccent : theme.textLight,
+                cursor: busyId === t.id ? 'wait' : tournamentFull ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setOpenManageTools((prev) => {
+                  const next = new Set(prev)
+                  if (next.has(t.id)) next.delete(t.id)
+                  else next.add(t.id)
+                  return next
+                })
+              }
+              style={{
+                ...btn(false),
+                padding: '7px 12px',
+                fontSize: '12px',
+                color: theme.warm,
+                borderColor: theme.warm + '55',
+                background: theme.warmBg,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 6,
+              }}
+            >
+              <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
+              {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {manageToolsOpen && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                {isAdmin && !tournamentFull && partCount >= 5 && (
                   <button
                     type="button"
-                    disabled={busyId === t.id || !tournamentFull}
-                    title={
-                      tournamentFull
-                        ? 'Generér runder og start turneringen'
-                        : `Kræver ${slotsConfigured} tilmeldte (nu ${partCount})`
-                    }
-                    onClick={() => startTournament(t)}
-                    style={{
-                      ...btn(true),
-                      fontSize: 13,
-                      padding: '8px 14px',
-                      background: tournamentFull ? theme.warm : theme.border,
-                      borderColor: tournamentFull ? theme.warm : theme.border,
-                      color: tournamentFull ? theme.onAccent : theme.textLight,
-                      cursor: busyId === t.id ? 'wait' : tournamentFull ? 'pointer' : 'not-allowed',
-                    }}
-                  >
-                    {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setOpenManageTools((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(t.id)) next.delete(t.id)
-                        else next.add(t.id)
-                        return next
-                      })
-                    }
+                    disabled={busyId === t.id}
+                    onClick={() => startTournament(t, true)}
                     style={{
                       ...btn(false),
-                      padding: '7px 12px',
-                      fontSize: '12px',
+                      fontSize: 13,
+                      padding: '8px 14px',
+                      borderColor: theme.warm,
                       color: theme.warm,
-                      borderColor: theme.warm + '55',
-                      background: theme.warmBg,
+                      cursor: busyId === t.id ? 'wait' : 'pointer',
+                    }}
+                  >
+                    ⚡ Gennemtving start (Admin)
+                  </button>
+                )}
+                {isCreator && (
+                  <button
+                    type="button"
+                    disabled={busyId === t.id}
+                    onClick={() => void deleteTournament(t)}
+                    style={{
+                      ...btn(false),
+                      fontSize: 13,
+                      padding: '8px 14px',
+                      border: '1px solid var(--pm-danger-border)',
+                      color: theme.red,
+                      cursor: busyId === t.id ? 'wait' : 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
                       gap: 6,
                     }}
                   >
-                    <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
-                    {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    <Trash2 size={14} aria-hidden />
+                    Slet turnering
                   </button>
-                  {manageToolsOpen && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                      {isAdmin && !tournamentFull && partCount >= 5 && (
-                        <button
-                          type="button"
-                          disabled={busyId === t.id}
-                          onClick={() => startTournament(t, true)}
-                          style={{
-                            ...btn(false),
-                            fontSize: 13,
-                            padding: '8px 14px',
-                            borderColor: theme.warm,
-                            color: theme.warm,
-                            cursor: busyId === t.id ? 'wait' : 'pointer',
-                          }}
-                        >
-                          ⚡ Gennemtving start (Admin)
-                        </button>
-                      )}
-                      {isCreator && (
-                        <button
-                          type="button"
-                          disabled={busyId === t.id}
-                          onClick={() => deleteTournament(t)}
-                          style={{
-                            ...btn(false),
-                            fontSize: 13,
-                            padding: '8px 14px',
-                            border: '1px solid var(--pm-danger-border)',
-                            color: theme.red,
-                            cursor: busyId === t.id ? 'wait' : 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 6,
-                          }}
-                        >
-                          <Trash2 size={14} aria-hidden />
-                          Slet turnering
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : null
-              return (
-                <AmericanoOpenCard
-                  key={t.id}
-                  tournamentName={t.name}
-                  dateLabel={dateLabel}
-                  description={t.description}
-                  maxPlayers={t.player_slots}
-                  opponentPasses={t.opponent_passes ?? null}
-                  players={players}
-                  actions={actions}
-                  joinedNote={joinedNote}
-                  extras={extras}
-                />
-              )
+                )}
+              </div>
+            )}
+          </div>
+        ) : null
+
+        const playingPrimaryAction =
+          t.status === 'playing' && joined ? (
+            <button
+              type="button"
+              className="pm-americano-v2-detail-live-btn"
+              onClick={() => {
+                const el = document.querySelector('.pm-americano-v2-detail-results')
+                el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }}
+            >
+              Se live scoreboard
+            </button>
+          ) : null
+
+        return (
+          <AmericanoDetailSheet
+            open
+            onClose={() => setDetailTournamentId(null)}
+            tournament={t}
+            courts={courts}
+            dateLabel={dateLabel}
+            status={detailStatus}
+            participants={detailPlayers}
+            joined={joined}
+            tournamentFull={tournamentFull}
+            liveRound={listMeta.liveRound[t.id] ?? null}
+            description={t.description}
+            actions={
+              <>
+                {registrationActions}
+                {playingPrimaryAction}
+              </>
             }
-
-            return (
-            <div key={t.id} id={`pm-americano-${t.id}`} className="pm-ui-card pm-match-surface-card" style={{ scrollMarginTop: '88px' }}>
-              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t.name}</div>
-              <div className="pm-card-meta-row" style={{ marginBottom: 6 }}>
-                <span className={`pm-status-badge pm-status-badge--${statusMeta.tone}`}>{statusMeta.label}</span>
-                <span className="pm-status-badge pm-status-badge--blue">
-                  {partCount}/{slotsConfigured} spillere
-                </span>
-                <span className="pm-status-badge">
-                  {t.points_per_match} point{Number(t.opponent_passes) === 2 ? ' · lang' : ''}
-                </span>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--pm-text-mid)' }}>
-                {formatMatchDateDa(t.tournament_date)} · {formatTimeSlotDa(t.time_slot)}
-                {' · '}
-                {t.player_slots} spillere
-              </div>
-              {t.description && (
-                <div style={{ fontSize: 12, color: 'var(--pm-text-light)', marginTop: 8, fontStyle: 'italic' }}>{t.description}</div>
-              )}
-              {(() => {
-                const parts = participantsByTournament[t.id] || []
-                const maxSlots = t.player_slots
-                const participantsCollapsible = t.status === 'playing'
-                const listOpen = !participantsCollapsible || participantListsOpen.has(t.id)
-                const toggleParticipants = () => {
-                  setParticipantListsOpen((prev) => {
-                    const next = new Set(prev)
-                    if (next.has(t.id)) next.delete(t.id)
-                    else next.add(t.id)
-                    return next
-                  })
-                }
-                return (
-                  <div
-                      className="pm-card-subpanel"
-                      style={{
-                        marginTop: 12,
-                        padding: participantsCollapsible && !listOpen ? '8px 12px' : '10px 12px',
-                      }}
-                    >
-                    {participantsCollapsible ? (
-                      <button
-                        type="button"
-                        onClick={toggleParticipants}
-                        aria-expanded={listOpen}
-                        aria-label={listOpen ? 'Skjul deltagerliste' : 'Vis deltagerliste'}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 10,
-                          width: '100%',
-                          margin: 0,
-                          padding: 0,
-                          border: 'none',
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          fontFamily: font,
-                          textAlign: 'left',
-                        }}
-                      >
-                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--pm-text)' }}>
-                          Deltagere ({parts.length}/{maxSlots})
-                        </span>
-                        <ChevronDown
-                          size={18}
-                          color={theme.textMid}
-                          strokeWidth={2}
-                          style={{
-                            flexShrink: 0,
-                            transform: listOpen ? 'rotate(180deg)' : 'none',
-                            transition: 'transform 0.2s ease',
-                          }}
-                          aria-hidden
-                        />
-                      </button>
-                    ) : (
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--pm-text)', marginBottom: 8 }}>
-                        Deltagere ({parts.length}/{maxSlots})
-                      </div>
-                    )}
-                    {listOpen &&
-                      (parts.length === 0 ? (
-                        <div className="pm-data-empty-note" style={{ marginTop: participantsCollapsible ? 10 : 0 }}>
-                          Ingen tilmeldt endnu — vær den første.
-                        </div>
-                      ) : t.status === 'playing' ? (
-                        <div
-                          style={{
-                            marginTop: participantsCollapsible ? 10 : 0,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 8,
-                          }}
-                        >
-                          {parts.map((p) => {
-                            const snap = participantSnippets[p.user_id]
-                            const av = snap?.avatar || '🎾'
-                            const label = String(snap?.full_name || snap?.name || p.display_name).trim() || p.display_name
-                            const isMe = String(p.user_id) === String(profileId)
-                            return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => openParticipantProfile(p.user_id, p.display_name)}
-                                className="pm-card-row-item"
-                                style={{
-                                  cursor: 'pointer',
-                                  textAlign: 'left',
-                                  fontFamily: font,
-                                }}
-                              >
-
-                                <AvatarInCircle av={av} />
-
-                                <span
-                                  style={{
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    color: 'var(--pm-text)',
-                                    flex: 1,
-                                    minWidth: 0,
-                                  }}
-                                >
-                                  {label}
-                                  {isMe ? (
-                                    <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
-                                  ) : null}
-                                </span>
-                              </button>
-                            )
-                          })}
-                        </div>
-                      ) : (
-                        <ul
-                          style={{
-                            margin: participantsCollapsible ? '10px 0 0' : 0,
-                            paddingLeft: 18,
-                            fontSize: 12,
-                            color: 'var(--pm-text-mid)',
-                            lineHeight: 1.65,
-                          }}
-                        >
-                          {parts.map((p) => (
-                            <li key={p.id}>
-                              {p.display_name}
-                              {String(p.user_id) === String(profileId) ? (
-                                <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
-                              ) : null}
-                            </li>
-                          ))}
-                        </ul>
-                      ))}
-                  </div>
-                )
-              })()}
-              {joined && t.status === 'playing' && (
+            joinedNote={joinedNote}
+            extras={manageExtras}
+            resultsPanel={
+              joined && t.status === 'playing' ? (
                 <AmericanoResultsPanel
                   tournament={t}
                   currentUserId={profileId}
@@ -1154,13 +1143,27 @@ export function AmericanoTab({
                   showToast={showToast}
                   onProfileStatsRefresh={refreshProfileQuiet}
                 />
-              )}
-            </div>
-          );})}
-        </div>
-      )}
-        </>
-      )}
+              ) : null
+            }
+            completedResults={
+              t.status === 'completed' ? (
+                <AmericanoCompletedCard
+                  tournament={t}
+                  dateLabel={dateLabel}
+                  participants={enrichedParts}
+                  currentUserId={profileId}
+                  summaryOpen
+                  onSummaryToggle={() => {}}
+                  onParticipantView={openParticipantProfile}
+                  isCreator={isCreator}
+                  embedInSheet
+                  sheetResultsOnly
+                />
+              ) : null
+            }
+          />
+        )
+      })() : null}
 
       {participantStatsPick && (
         <PlayerStatsModal
