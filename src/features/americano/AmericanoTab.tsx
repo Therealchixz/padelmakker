@@ -5,7 +5,6 @@ import { useAuth } from '../../lib/AuthContext'
 import { useConfirm } from '../../lib/ConfirmDialogProvider'
 import { Court } from '../../api/base44Client'
 import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
-import { AmericanoCompletedCard } from './AmericanoCompletedCard'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { AmericanoListCard } from './AmericanoListCard'
 import { AmericanoDetailSheet, type AmericanoDetailPlayer } from './AmericanoDetailSheet'
@@ -1145,21 +1144,15 @@ export function AmericanoTab({
                 />
               ) : null
             }
-            completedResults={
-              t.status === 'completed' ? (
-                <AmericanoCompletedCard
-                  tournament={t}
-                  dateLabel={dateLabel}
-                  participants={enrichedParts}
-                  currentUserId={profileId}
-                  summaryOpen
-                  onSummaryToggle={() => {}}
-                  onParticipantView={openParticipantProfile}
-                  isCreator={isCreator}
-                  embedInSheet
-                  sheetResultsOnly
-                />
-              ) : null
+            completedTournament={
+              t.status === 'completed'
+                ? {
+                    participants: enrichedParts,
+                    currentUserId: profileId,
+                    isCreator,
+                    onParticipantView: openParticipantProfile,
+                  }
+                : null
             }
           />
         )

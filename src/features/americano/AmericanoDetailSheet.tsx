@@ -8,7 +8,16 @@ import {
   playerInitials,
   resolveAmericanoCourtName,
 } from './americanoDisplayUtils'
+import { AmericanoCompletedCard } from './AmericanoCompletedCard'
 import type { AmericanoTournament } from './types'
+
+type CompletedParticipant = {
+  id: string
+  user_id: string
+  display_name: string
+  avatar?: string | null
+  full_name?: string | null
+}
 
 export type AmericanoDetailPlayer = {
   id: string
@@ -40,7 +49,12 @@ type Props = {
   joinedNote?: ReactNode
   extras?: ReactNode
   resultsPanel?: ReactNode
-  completedResults?: ReactNode
+  completedTournament?: {
+    participants: CompletedParticipant[]
+    currentUserId: string
+    isCreator: boolean
+    onParticipantView: (userId: string, name: string) => void
+  } | null
 }
 
 function badgeToneClass(tone: string) {
@@ -146,7 +160,7 @@ export function AmericanoDetailSheet({
   joinedNote,
   extras,
   resultsPanel,
-  completedResults,
+  completedTournament,
 }: Props) {
   const [resultsExpanded, setResultsExpanded] = useState(false)
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
@@ -277,20 +291,22 @@ export function AmericanoDetailSheet({
           <p className="pm-kampe-v2-detail-desc">{description}</p>
         ) : null}
 
-        <div className="pm-americano-v2-detail-players-section">
-          <div className="pm-americano-v2-detail-players-label">Spillere</div>
-          <div
-            className="pm-americano-v2-detail-players-grid"
-            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
-          >
-            {participants.map((p) => (
-              <PlayerTile key={p.id} player={p} />
-            ))}
-            {Array.from({ length: emptySlots }).map((_, i) => (
-              <PlayerTile key={`empty-${i}`} empty />
-            ))}
+        {!isCompleted ? (
+          <div className="pm-americano-v2-detail-players-section">
+            <div className="pm-americano-v2-detail-players-label">Spillere</div>
+            <div
+              className="pm-americano-v2-detail-players-grid"
+              style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+            >
+              {participants.map((p) => (
+                <PlayerTile key={p.id} player={p} />
+              ))}
+              {Array.from({ length: emptySlots }).map((_, i) => (
+                <PlayerTile key={`empty-${i}`} empty />
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {joinedNote}
         {actions}
@@ -299,8 +315,21 @@ export function AmericanoDetailSheet({
           <div className="pm-americano-v2-detail-results">{resultsPanel}</div>
         ) : null}
 
-        {isCompleted && completedResults ? (
+        {isCompleted && completedTournament ? (
           <div className="pm-americano-v2-detail-completed">
+            <AmericanoCompletedCard
+              tournament={tournament}
+              dateLabel={dateLabel}
+              participants={completedTournament.participants}
+              currentUserId={completedTournament.currentUserId}
+              summaryOpen={false}
+              onSummaryToggle={() => {}}
+              onParticipantView={completedTournament.onParticipantView}
+              isCreator={completedTournament.isCreator}
+              embedInSheet
+              sheetSplitView
+              matchesExpanded={resultsExpanded}
+            />
             {!resultsExpanded ? (
               <button
                 type="button"
@@ -309,9 +338,7 @@ export function AmericanoDetailSheet({
               >
                 Se resultat
               </button>
-            ) : (
-              <div className="pm-americano-v2-detail-completed-body">{completedResults}</div>
-            )}
+            ) : null}
           </div>
         ) : null}
 

@@ -7099,6 +7099,19 @@ button,
   margin-left: -8px;
 }
 
+/* Blå ring om spillere — samme stil som 2v2-kampe på listen */
+.pm-americano-v2-list-avatar-stack > .pm-avatar-circle {
+  border: 1.5px solid color-mix(in srgb, var(--pm-accent) 50%, var(--pm-border));
+  background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface));
+  box-sizing: border-box;
+}
+
+.pm-americano-v2-avatar-ring {
+  border: 1.5px solid color-mix(in srgb, var(--pm-accent) 50%, var(--pm-border)) !important;
+  background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface)) !important;
+  box-sizing: border-box;
+}
+
 .pm-americano-v2-list-overflow {
   font-size: 11px;
   font-weight: 700;
@@ -7298,7 +7311,8 @@ button,
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--pm-accent) 14%, var(--pm-surface));
+  border: 1.5px solid color-mix(in srgb, var(--pm-accent) 50%, var(--pm-border));
+  background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface));
   color: var(--pm-accent);
   display: flex;
   align-items: center;
@@ -7306,6 +7320,7 @@ button,
   font-size: 13px;
   font-weight: 800;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .pm-americano-v2-detail-player-avatar img {
@@ -7414,5 +7429,145 @@ button,
 
 .pm-americano-v2-completed-embed {
   margin-top: 8px;
+}
+
+.pm-americano-v2-sheet-split {
+  width: 100%;
+}
+
+.pm-americano-v2-standings-wrap {
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--pm-border);
+  border-radius: 12px;
+  background: var(--pm-surface);
+  overflow: hidden;
+}
+
+.pm-americano-v2-standings-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pm-text-light);
+  padding: 12px 14px 8px;
+}
+
+.pm-americano-v2-standings-table {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  width: 100%;
+}
+
+.pm-americano-v2-standings-table .pm-data-table-head,
+.pm-americano-v2-standings-table .pm-data-table-row {
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.pm-americano-v2-sheet-loading,
+.pm-americano-v2-sheet-error {
+  font-size: 13px;
+  padding: 12px 0;
+  color: var(--pm-text-mid);
+}
+
+.pm-americano-v2-sheet-error {
+  color: var(--pm-danger);
+}
+
+.pm-americano-v2-matches-wrap {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.pm-americano-v2-matches-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pm-text-light);
+  margin-bottom: 8px;
+}
+
+.pm-americano-v2-matches-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-americano-v2-match-row {
+  padding: 10px 12px;
+  background: var(--pm-surface);
+  border-radius: 10px;
+  border: 1px solid var(--pm-border);
+  border-left-width: 4px;
+  font-size: 12px;
+  color: var(--pm-text);
+}
+
+.pm-americano-v2-match-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pm-americano-v2-match-round {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--pm-text-light);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pm-americano-v2-match-status {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.pm-americano-v2-match-team {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: var(--pm-surface-alt);
+  border: 1px solid var(--pm-border);
+}
+
+.pm-americano-v2-match-team--highlight {
+  border-width: 1px;
+}
+
+.pm-americano-v2-match-vs {
+  font-size: 10px;
+  color: var(--pm-text-light);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 4px 0;
+}
+
+.pm-americano-v2-match-score {
+  min-width: 30px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.pm-americano-v2-match-foot {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--pm-text-light);
+}
+
+.pm-americano-v2-detail-completed .pm-americano-v2-detail-result-btn {
+  margin-top: 12px;
 }
 

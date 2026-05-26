@@ -110,13 +110,15 @@ function StandingsMiniAvatar({
 }) {
   return (
     <div
-      className={clickable ? 'pm-avatar-circle pm-avatar-circle--clickable' : 'pm-avatar-circle'}
+      className={
+        clickable
+          ? 'pm-avatar-circle pm-avatar-circle--clickable pm-americano-v2-avatar-ring'
+          : 'pm-avatar-circle pm-americano-v2-avatar-ring'
+      }
       style={{
         width: 28,
         height: 28,
         borderRadius: '50%',
-        background: theme.surfaceAlt,
-        border: `1px solid ${theme.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -282,6 +284,9 @@ type Props = {
   embedInSheet?: boolean
   /** Kun fuld stilling/resultater (accordion-indhold) */
   sheetResultsOnly?: boolean
+  /** Bottom sheet: stillingstabellen først, kampe når matchesExpanded */
+  sheetSplitView?: boolean
+  matchesExpanded?: boolean
 }
 
 export function AmericanoCompletedCard({
@@ -296,6 +301,8 @@ export function AmericanoCompletedCard({
   isCreator = false,
   embedInSheet = false,
   sheetResultsOnly = false,
+  sheetSplitView = false,
+  matchesExpanded = false,
 }: Props) {
   const [matches, setMatches] = useState<AmericanoMatchRow[] | undefined>(undefined)
   const [eloByUserId, setEloByUserId] = useState<Record<string, AmericanoEloSnap>>({})
@@ -403,9 +410,263 @@ export function AmericanoCompletedCard({
   const podiumEmoji = (place: number) =>
     place === 1 ? '🥇' : place === 2 ? '🥈' : '🥉'
 
-  const showCompactSections = !sheetResultsOnly
+  const showCompactSections = !sheetResultsOnly && !sheetSplitView
   const outerTag = embedInSheet ? 'div' : 'div'
   const Outer = outerTag as 'div'
+
+  const standingsTable = (
+    <>
+      <div className="pm-americano-v2-standings-title">Samlet stilling</div>
+      {leaderboard.length === 0 ? (
+        <div className="pm-data-empty-note">Ingen deltagere.</div>
+      ) : (
+        <div
+          className="pm-data-table pm-americano-v2-standings-table"
+          style={
+            {
+              '--pm-table-cols': '36px minmax(0, 1fr) 52px minmax(72px, 1fr)',
+            } as CSSProperties
+          }
+        >
+          <div className="pm-data-table-head">
+            <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>
+              #
+            </div>
+            <div className="pm-data-table-cell-head">Spiller</div>
+            <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>
+              Point
+            </div>
+            <div className="pm-data-table-cell-head" style={{ textAlign: 'right' }}>
+              ELO
+            </div>
+          </div>
+          {leaderboard.map((row, idx) => {
+            const pu = participants.find((p) => p.id === row.id)
+            const isMe = pu && String(pu.user_id) === String(currentUserId)
+            const eloSnap = pu ? eloByUserId[String(pu.user_id)] : null
+            const openProfile =
+              pu && onParticipantView
+                ? () => onParticipantView(pu.user_id, row.name)
+                : undefined
+            const playerLabel = (
+              <>
+                {row.name}
+                {isMe ? (
+                  <span style={{ color: theme.accent, fontWeight: 600 }}> (dig)</span>
+                ) : null}
+              </>
+            )
+            return (
+              <div
+                key={row.id}
+                className={`pm-data-table-row${isMe ? ' pm-data-table-row--highlight' : ''}`}
+              >
+                <div
+                  className="pm-data-table-cell"
+                  style={{
+                    textAlign: 'center',
+                    fontWeight: 700,
+                    color: idx < 3 ? theme.warm : theme.textLight,
+                  }}
+                >
+                  {standingsRankLabel(idx)}
+                </div>
+                <div className="pm-data-table-cell" style={{ minWidth: 0 }}>
+                  {openProfile ? (
+                    <button
+                      type="button"
+                      onClick={openProfile}
+                      aria-label={`Åbn statistik for ${row.name}`}
+                      title="Se Americano-statistik"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        minWidth: 0,
+                        width: '100%',
+                        border: 'none',
+                        background: 'transparent',
+                        padding: 0,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      <StandingsMiniAvatar avatar={pu?.avatar} name={row.name} clickable />
+                      <div
+                        style={{
+                          minWidth: 0,
+                          fontSize: 13,
+                          fontWeight: isMe ? 700 : 600,
+                          color: theme.text,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {playerLabel}
+                      </div>
+                    </button>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                      <StandingsMiniAvatar avatar={pu?.avatar} name={row.name} />
+                      <div
+                        style={{
+                          minWidth: 0,
+                          fontSize: 13,
+                          fontWeight: isMe ? 700 : 600,
+                          color: theme.text,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {playerLabel}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div
+                  className="pm-data-table-cell"
+                  style={{ textAlign: 'center', fontWeight: 700, color: theme.text }}
+                >
+                  {row.points}
+                </div>
+                <div className="pm-data-table-cell" style={{ textAlign: 'right' }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: eloSnap ? eloDeltaColor(eloSnap.change) : theme.textLight,
+                    }}
+                  >
+                    {eloSnap ? `${eloSnap.change > 0 ? '+' : ''}${eloSnap.change}` : '–'}
+                  </div>
+                  {eloSnap?.newRating != null ? (
+                    <div style={{ fontSize: 10, color: theme.textLight, marginTop: 2 }}>
+                      nu {eloSnap.newRating}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </>
+  )
+
+  const matchesList = (
+    <>
+      <div className="pm-americano-v2-matches-title">Kamp for kamp (format {P} point)</div>
+      <div className="pm-americano-v2-matches-list">
+        {sortedMatches.length === 0 ? (
+          <div style={{ fontSize: 12, color: theme.textLight }}>Ingen kampe i turneringen.</div>
+        ) : (
+          sortedMatches.map((m) => {
+            const a = m.team_a_score
+            const b = m.team_b_score
+            const ok = a != null && b != null && isValidScore(a, b, P)
+            const n1 = nameBy(m.team_a_p1)
+            const n2 = nameBy(m.team_a_p2)
+            const n3 = nameBy(m.team_b_p1)
+            const n4 = nameBy(m.team_b_p2)
+            const onCourt = userIsOnCourtInAmericanoMatch(m, userIdByPartId, currentUserId)
+            const vOut = ok
+              ? americanoOutcomeForUserInMatch(m, userIdByPartId, currentUserId, P)
+              : 'neutral'
+            const statusLabel = americanoViewerStatusLabel(vOut, onCourt)
+            const palKey =
+              vOut === 'win' ? 'win' : vOut === 'loss' ? 'loss' : vOut === 'tie' ? 'tie' : 'neutral'
+            const mpal = americanoOutcomeColors[palKey]
+            const meOnA =
+              userIdByPartId.get(m.team_a_p1) === String(currentUserId) ||
+              userIdByPartId.get(m.team_a_p2) === String(currentUserId)
+            const meOnB =
+              userIdByPartId.get(m.team_b_p1) === String(currentUserId) ||
+              userIdByPartId.get(m.team_b_p2) === String(currentUserId)
+            const teamAWin = ok && (a as number) > (b as number)
+            const teamBWin = ok && (b as number) > (a as number)
+            const tieMatch = ok && a === b
+            const teamAHighlighted = Boolean(teamAWin || tieMatch)
+            const teamBHighlighted = Boolean(teamBWin || tieMatch)
+            return (
+              <div
+                key={m.id}
+                className="pm-americano-v2-match-row"
+                style={{ borderLeftColor: mpal.border }}
+              >
+                <div className="pm-americano-v2-match-row-head">
+                  <span className="pm-americano-v2-match-round">Runde {m.round_number}</span>
+                  <span
+                    className="pm-americano-v2-match-status"
+                    style={{ color: mpal.text, background: mpal.bg }}
+                  >
+                    {statusLabel}
+                  </span>
+                </div>
+                <div
+                  className={`pm-americano-v2-match-team${teamAHighlighted ? ' pm-americano-v2-match-team--highlight' : ''}`}
+                  style={
+                    teamAHighlighted
+                      ? { background: mpal.bg, borderColor: mpal.border }
+                      : undefined
+                  }
+                >
+                  <span>
+                    <strong>{n1}</strong> & <strong>{n2}</strong>
+                    {meOnA ? (
+                      <span style={{ color: theme.accent, fontWeight: 700 }}> (jeres hold)</span>
+                    ) : null}
+                  </span>
+                  <span className="pm-americano-v2-match-score">{ok ? a : '–'}</span>
+                </div>
+                <div className="pm-americano-v2-match-vs">mod</div>
+                <div
+                  className={`pm-americano-v2-match-team${teamBHighlighted ? ' pm-americano-v2-match-team--highlight' : ''}`}
+                  style={
+                    teamBHighlighted
+                      ? { background: mpal.bg, borderColor: mpal.border }
+                      : undefined
+                  }
+                >
+                  <span>
+                    <strong>{n3}</strong> & <strong>{n4}</strong>
+                    {meOnB ? (
+                      <span style={{ color: theme.accent, fontWeight: 700 }}> (jeres hold)</span>
+                    ) : null}
+                  </span>
+                  <span className="pm-americano-v2-match-score">{ok ? b : '–'}</span>
+                </div>
+                <div className="pm-americano-v2-match-foot">
+                  {ok ? 'Slutresultat registreret' : 'Resultat ikke registreret'}
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+    </>
+  )
+
+  if (sheetSplitView) {
+    return (
+      <Outer className="pm-americano-v2-completed-embed pm-americano-v2-sheet-split">
+        {loading && (
+          <div className="pm-americano-v2-sheet-loading">Henter resultater…</div>
+        )}
+        {fetchErr && !loading && (
+          <div className="pm-americano-v2-sheet-error">{fetchErr}</div>
+        )}
+        {!loading && matches !== undefined && (
+          <div className="pm-americano-v2-standings-wrap">{standingsTable}</div>
+        )}
+        {!loading && matches !== undefined && matchesExpanded ? (
+          <div className="pm-americano-v2-matches-wrap">{matchesList}</div>
+        ) : null}
+      </Outer>
+    )
+  }
 
   return (
     <Outer
