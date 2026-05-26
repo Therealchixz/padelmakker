@@ -14,7 +14,7 @@ const SNAP_MS = 240;
  * with React drawer UX.
  * @see https://github.com/material-components/material-components-android/blob/master/lib/java/com/google/android/material/bottomsheet/BottomSheetBehavior.java
  */
-export const BOTTOM_SHEET_CLOSE_THRESHOLD = 0.25;
+export const BOTTOM_SHEET_CLOSE_THRESHOLD = 0.4;
 /** Vaul default; velocity alone must not dismiss tiny pulls. */
 export const BOTTOM_SHEET_VELOCITY_THRESHOLD_PX_PER_MS = 0.4;
 /** Fast flick must still move the sheet at least this far (avoids accidental close on release). */
@@ -31,7 +31,7 @@ export function getBottomSheetCloseDistanceThresholdPx(sheetHeightPx = getEstima
 }
 
 /**
- * Vaul-style release: fast flick past min distance, or slow drag past 25% of sheet height.
+ * Vaul-style release: fast flick past min distance, or slow drag past 40% of sheet height.
  */
 export function shouldCloseBottomSheetDrag({ dy, sheetHeightPx, elapsedMs }) {
   const distance = Math.max(0, dy);
