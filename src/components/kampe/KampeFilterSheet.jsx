@@ -13,6 +13,7 @@ import { isSeekingActiveProfile } from '../../lib/makkerSearchFilterCore';
 import { isProfileMatchFeedVisible } from '../../lib/seekingFeedTtl';
 import { btn } from '../../lib/platformTheme';
 import { FILTER_RETURN_KAMPE } from '../../lib/filterReturnNavigation';
+import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 
 function ToggleSwitch({ checked, onChange, disabled, ariaLabel }) {
   return (
@@ -44,6 +45,10 @@ export function KampeFilterSheet({
   const navigate = useNavigate();
   const { updateProfile } = useAuth();
   const [toggling, setToggling] = useState(false);
+  const { dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
+    onClose,
+    enabled: open,
+  });
 
   const prefs = useMemo(
     () => normalizeMatchSearchPrefs(user?.match_search_prefs, user),
@@ -94,8 +99,16 @@ export function KampeFilterSheet({
         aria-label="Luk filter"
         onClick={onClose}
       />
-      <div className="pm-kampe-v2-sheet" role="dialog" aria-modal="true" aria-label="Filtrer kampe">
-        <div className="pm-kampe-v2-sheet-handle" aria-hidden />
+      <div
+        className={`pm-kampe-v2-sheet${sheetClassName ? ` ${sheetClassName}` : ''}`}
+        style={sheetStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Filtrer kampe"
+      >
+        <div {...dragZoneProps}>
+          <div className="pm-kampe-v2-sheet-handle" />
+        </div>
         <div className="pm-kampe-v2-sheet-head">
           <div>
             <div className="pm-kampe-v2-sheet-title">Filter</div>

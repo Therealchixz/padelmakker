@@ -2,6 +2,7 @@ import { MapPin, X } from 'lucide-react';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { btn } from '../../lib/platformTheme';
+import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { MatchCourtView } from './MatchCourtView';
 
 function badgeToneClass(tone) {
@@ -43,6 +44,11 @@ export function KampeMatchDetailSheet({
   onKickPlayer,
   onProfileClick,
 }) {
+  const { dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
+    onClose,
+    enabled: open,
+  });
+
   if (!open || !match) return null;
 
   const venue =
@@ -66,8 +72,16 @@ export function KampeMatchDetailSheet({
         aria-label="Luk kampdetaljer"
         onClick={onClose}
       />
-      <div className="pm-kampe-v2-sheet pm-kampe-v2-detail-sheet" role="dialog" aria-modal="true" aria-label="Kampdetaljer">
-        <div className="pm-kampe-v2-sheet-handle" aria-hidden />
+      <div
+        className={`pm-kampe-v2-sheet pm-kampe-v2-detail-sheet${sheetClassName ? ` ${sheetClassName}` : ''}`}
+        style={sheetStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Kampdetaljer"
+      >
+        <div {...dragZoneProps}>
+          <div className="pm-kampe-v2-sheet-handle" />
+        </div>
         <div className="pm-kampe-v2-detail-head">
           <div className="pm-kampe-v2-detail-head-main">
             <div className="pm-kampe-v2-detail-venue">{venue}</div>

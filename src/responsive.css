@@ -6103,12 +6103,37 @@ button,
   overflow-y: auto;
 }
 
+.pm-kampe-v2-sheet-handle-zone {
+  flex-shrink: 0;
+  padding: 10px 0 6px;
+  touch-action: none;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.pm-kampe-v2-sheet-handle-zone:active {
+  cursor: grabbing;
+}
+
 .pm-kampe-v2-sheet-handle {
   width: 36px;
   height: 4px;
   border-radius: 999px;
   background: var(--pm-border);
-  margin: 4px auto 12px;
+  margin: 0 auto;
+}
+
+.pm-kampe-v2-detail-sheet .pm-kampe-v2-sheet-handle-zone {
+  margin-bottom: 6px;
+}
+
+.pm-kampe-v2-sheet:not(.pm-kampe-v2-detail-sheet) .pm-kampe-v2-sheet-handle-zone {
+  margin-bottom: 6px;
+}
+
+.pm-kampe-v2-sheet--dragging {
+  will-change: transform;
 }
 
 .pm-kampe-v2-sheet-head {
