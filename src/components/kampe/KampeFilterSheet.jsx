@@ -45,7 +45,7 @@ export function KampeFilterSheet({
   const navigate = useNavigate();
   const { updateProfile } = useAuth();
   const [toggling, setToggling] = useState(false);
-  const { dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
+  const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
     enabled: open,
   });
@@ -100,6 +100,7 @@ export function KampeFilterSheet({
         onClick={onClose}
       />
       <div
+        ref={sheetRef}
         className={`pm-kampe-v2-sheet${sheetClassName ? ` ${sheetClassName}` : ''}`}
         style={sheetStyle}
         role="dialog"

@@ -6101,6 +6101,7 @@ button,
   box-shadow: 0 -12px 40px rgba(2, 6, 23, 0.18);
   max-height: min(85vh, 640px);
   overflow-y: auto;
+  transform: translateY(var(--sheet-drag-y, 0px));
 }
 
 .pm-kampe-v2-sheet-handle-zone {
@@ -6704,7 +6705,7 @@ button,
   .pm-kampe-v2-sheet {
     left: 50%;
     right: auto;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateY(var(--sheet-drag-y, 0px));
     width: min(480px, calc(100vw - 32px));
     border-radius: 18px;
     bottom: 24px;

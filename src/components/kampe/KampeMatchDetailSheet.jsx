@@ -44,7 +44,7 @@ export function KampeMatchDetailSheet({
   onKickPlayer,
   onProfileClick,
 }) {
-  const { dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
+  const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
     enabled: open,
   });
@@ -73,6 +73,7 @@ export function KampeMatchDetailSheet({
         onClick={onClose}
       />
       <div
+        ref={sheetRef}
         className={`pm-kampe-v2-sheet pm-kampe-v2-detail-sheet${sheetClassName ? ` ${sheetClassName}` : ''}`}
         style={sheetStyle}
         role="dialog"
