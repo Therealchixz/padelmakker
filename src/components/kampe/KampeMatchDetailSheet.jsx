@@ -1,5 +1,5 @@
-import { CalendarDays, MapPin, X } from 'lucide-react';
-import { formatMatchDateDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
+import { MapPin, X } from 'lucide-react';
+import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { btn } from '../../lib/platformTheme';
 import { MatchCourtView } from './MatchCourtView';
@@ -28,7 +28,7 @@ export function KampeMatchDetailSheet({
   winnerTeam,
   description,
   primaryAction,
-  onExpandFull,
+  managePanel = null,
   unreadCount = 0,
   onProfileClick,
 }) {
@@ -58,11 +58,10 @@ export function KampeMatchDetailSheet({
       <div className="pm-kampe-v2-sheet pm-kampe-v2-detail-sheet" role="dialog" aria-modal="true" aria-label="Kampdetaljer">
         <div className="pm-kampe-v2-sheet-handle" aria-hidden />
         <div className="pm-kampe-v2-detail-head">
-          <div>
+          <div className="pm-kampe-v2-detail-head-main">
             <div className="pm-kampe-v2-detail-venue">{venue}</div>
-            <div className="pm-kampe-v2-detail-datetime">
-              <CalendarDays size={13} aria-hidden />
-              {formatMatchDateDa(match.date)} kl. {matchTimeLabel(match)}
+            <div className="pm-kampe-v2-detail-datetime pm-kampe-v2-detail-datetime--primary">
+              {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
             </div>
             <div className="pm-kampe-v2-detail-location">
               <MapPin size={12} aria-hidden />
@@ -119,10 +118,8 @@ export function KampeMatchDetailSheet({
           </button>
         ) : null}
 
-        {onExpandFull ? (
-          <button type="button" className="pm-kampe-v2-detail-expand" onClick={onExpandFull}>
-            Fuld kampvisning (chat, admin m.m.) ›
-          </button>
+        {managePanel ? (
+          <div className="pm-kampe-v2-detail-manage">{managePanel}</div>
         ) : null}
       </div>
     </>

@@ -231,7 +231,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [padelHelpOpen, setPadelHelpOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [detailMatchId, setDetailMatchId] = useState(null);
-  const [expandedMatchIds, setExpandedMatchIds] = useState(() => new Set());
 
   useScrollIntoViewWhen(showCreate, padelCreateFormRef, {
     enabled: kampeFormat === 'padel' && !loadingMatches,
@@ -2730,10 +2729,351 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return null;
   }, [busyId, confirmResult, isAdmin, requestJoin, startMatch, user.id]);
 
+  const renderDetailManagePanel = (m, bundle) => {
+    const { mp, mr, status } = bundle;
+    const {
+      joined,
+      isCreator,
+      busy,
+      left,
+      isClosed,
+      pendingRequests,
+      canUseMatchChat,
+      canWriteMatchChat,
+      chatOpen,
+      chatMessages,
+      chatDraft,
+      chatLoading,
+      chatSending,
+      chatError,
+      unreadChatCount,
+      adminActionsOpen,
+      isPlayerInMatch,
+    } = bundle.cardState;
+
+    const showShareLink = status === "open" || status === "full" || status === "in_progress";
+    const hasSecondaryLinks =
+      showShareLink ||
+      (joined && status !== "completed") ||
+      (isCreator && status === "open" && mp.length === 3);
+    const adminCanForceStart = isAdmin && (status === "open" || status === "full");
+    const adminCanForceReport = isAdmin && !isPlayerInMatch && status === "in_progress" && !mr;
+    const adminCanForceConfirm = isAdmin && !isPlayerInMatch && mr && !mr.confirmed;
+    const canDeleteMatch =
+      (isCreator || isAdmin) && status !== "completed" && status !== "in_progress";
+    const showToolsAccordion =
+      adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch;
+    const showPendingRequests = isCreator && isClosed && pendingRequests.length > 0;
+    const hasManage =
+      canUseMatchChat || hasSecondaryLinks || showPendingRequests || showToolsAccordion;
+
+    if (!hasManage) return null;
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        {canUseMatchChat ? (
+          <>
+            <button
+              type="button"
+              onClick={() => { void toggleMatchChat(m.id); }}
+              className="pm-accordion-trigger"
+              style={{
+                ...btn(false),
+                marginBottom: chatOpen ? "8px" : 0,
+                padding: "8px 12px",
+                fontSize: "12px",
+                color: theme.textMid,
+                borderColor: theme.border,
+                background: theme.surfaceAlt,
+              }}
+            >
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "7px" }}>
+                <MessageCircle size={14} />
+                Match chat {(() => {
+                  const total = Math.max(matchChatTotalById[String(m.id)] || 0, chatMessages.length);
+                  return total > 0 ? `(${total})` : "";
+                })()}
+                {unreadChatCount > 0 ? (
+                  <span
+                    style={{
+                      background: theme.red,
+                      color: theme.onAccent,
+                      borderRadius: "999px",
+                      minWidth: "16px",
+                      height: "16px",
+                      padding: "0 5px",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {unreadChatCount > 9 ? "9+" : unreadChatCount}
+                  </span>
+                ) : null}
+              </span>
+              {chatOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+
+            {chatOpen ? (
+              <div className="pm-card-subpanel pm-match-chat-panel" style={{ marginBottom: "4px" }}>
+                {!canWriteMatchChat && isAdmin ? (
+                  <div className="pm-match-chat-empty" style={{ marginBottom: "8px" }}>
+                    Admin-visning: Kun tilmeldte spillere kan skrive i chatten.
+                  </div>
+                ) : null}
+                <div
+                  className="pm-match-chat-list"
+                  ref={(node) => {
+                    const key = String(m.id);
+                    if (node) {
+                      matchChatListRefs.current[key] = node;
+                    } else {
+                      delete matchChatListRefs.current[key];
+                    }
+                  }}
+                >
+                  {chatLoading ? (
+                    <div className="pm-match-chat-empty">Henter beskeder...</div>
+                  ) : null}
+                  {!chatLoading && chatError ? (
+                    <div className="pm-match-chat-empty">{chatError}</div>
+                  ) : null}
+                  {!chatLoading && !chatError && chatMessages.length === 0 ? (
+                    <div className="pm-match-chat-empty">Ingen beskeder endnu. Skriv den første besked til kampen.</div>
+                  ) : null}
+                  {!chatLoading && !chatError && chatMessages.map((msg) => {
+                    const mine = String(msg.sender_id) === String(user.id);
+                    const displayName = (msg.sender_name || "Spiller").trim();
+                    return (
+                      <div key={msg.id} className={`pm-match-chat-row ${mine ? "pm-match-chat-row--mine" : ""}`}>
+                        <div className={`pm-match-chat-bubble ${mine ? "pm-match-chat-bubble--mine" : ""}`}>
+                          <div className="pm-match-chat-meta">
+                            <span className="pm-match-chat-author">{mine ? "Dig" : displayName}</span>
+                            <span>{formatChatClock(msg.created_at)}</span>
+                          </div>
+                          <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="pm-match-chat-composer">
+                  <input
+                    value={chatDraft}
+                    onChange={(e) => {
+                      const next = e.target.value.slice(0, 1000);
+                      setMatchChatDraftById((prev) => ({ ...prev, [m.id]: next }));
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        void submitMatchChat(m.id, canWriteMatchChat);
+                      }
+                    }}
+                    placeholder={canWriteMatchChat ? "Skriv til holdet..." : "Kun tilmeldte kan skrive"}
+                    className="pm-match-chat-input"
+                    maxLength={1000}
+                    disabled={!canWriteMatchChat || chatSending}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { void submitMatchChat(m.id, canWriteMatchChat); }}
+                    disabled={!canWriteMatchChat || chatSending || !chatDraft.trim()}
+                    style={{
+                      ...btn(true),
+                      justifyContent: "center",
+                      minWidth: "92px",
+                      padding: "8px 10px",
+                      fontSize: "12px",
+                      opacity: chatSending || !chatDraft.trim() ? 0.7 : 1,
+                    }}
+                  >
+                    <SendHorizontal size={13} />
+                    {chatSending ? "Sender..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </>
+        ) : null}
+
+        {showPendingRequests ? (
+          <div className="pm-card-subpanel">
+            <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
+              🔒 Tilmeldingsanmodninger ({pendingRequests.length})
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {pendingRequests.map((req) => (
+                <div key={req.id} className="pm-card-row-item" style={{ justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600 }}>
+                    <AvatarCircle
+                      avatar={profilesById[String(req.user_id)]?.avatar || req.user_emoji || "🎾"}
+                      size={28}
+                      emojiSize="13px"
+                      style={{ background: theme.accentBg, border: "1px solid " + theme.border, flexShrink: 0 }}
+                    />
+                    <span>{req.user_name || "Ukendt"}</span>
+                  </div>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <button
+                      type="button"
+                      onClick={() => approveJoinRequest(m.id, req.id, req.user_id, req.user_name, req.user_emoji)}
+                      disabled={busyId === m.id + "-approve-" + req.id}
+                      style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 700, background: theme.accent, color: theme.onAccent, border: "none", borderRadius: "6px", cursor: "pointer" }}
+                    >
+                      {busyId === m.id + "-approve-" + req.id ? "..." : "✓ Godkend"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => rejectJoinRequest(m.id, req.id, req.user_id, req.user_name)}
+                      disabled={busyId === m.id + "-reject-" + req.id}
+                      style={{ padding: "5px 10px", fontSize: "12px", fontWeight: 700, background: theme.surface, color: theme.red, border: "1px solid " + theme.red + "55", borderRadius: "6px", cursor: "pointer" }}
+                    >
+                      {busyId === m.id + "-reject-" + req.id ? "..." : "✕ Afvis"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {hasSecondaryLinks ? (
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "8px 14px", padding: "2px 0", fontSize: "12px", color: theme.textMid }}>
+            {showShareLink ? (
+              <button
+                type="button"
+                onClick={() => void shareMatch(m)}
+                style={{ background: "none", border: "none", padding: 0, color: theme.accent, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(37,99,235,0.25)", display: "inline-flex", alignItems: "center", gap: "4px" }}
+              >
+                <Share2 size={12} /> Del kamp
+              </button>
+            ) : null}
+            {joined && status !== "completed" ? (
+              <span style={{ color: theme.green, fontWeight: 700 }}>✅ Du er tilmeldt</span>
+            ) : null}
+            {joined && status !== "completed" ? (
+              <button
+                type="button"
+                onClick={() => addMatchToCalendar(m)}
+                style={{ background: "none", border: "none", padding: 0, color: theme.textMid, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(0,0,0,0.2)", display: "inline-flex", alignItems: "center", gap: "4px" }}
+              >
+                <CalendarPlus size={12} /> Tilføj til kalender
+              </button>
+            ) : null}
+            {isCreator && status === "open" && mp.length === 3 ? (
+              <button
+                type="button"
+                onClick={() => toggleSeekingPlayer(m)}
+                disabled={busyId === m.id + "-seek"}
+                style={{ background: "none", border: "none", padding: 0, color: m.seeking_player ? theme.warm : theme.textMid, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: m.seeking_player ? "rgba(217,119,6,0.3)" : "rgba(0,0,0,0.2)", display: "inline-flex", alignItems: "center", gap: "4px" }}
+              >
+                <Zap size={12} />
+                {busyId === m.id + "-seek" ? "Sender..." : m.seeking_player ? "Stop råb" : "Råb op for spiller"}
+              </button>
+            ) : null}
+            {joined && !isCreator && (status === "open" || status === "full") ? (
+              <button
+                type="button"
+                onClick={() => leaveMatch(m.id)}
+                disabled={busy}
+                style={{ background: "none", border: "none", padding: 0, color: theme.red, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(220,38,38,0.3)", display: "inline-flex", alignItems: "center", gap: "4px" }}
+              >
+                <UserMinus size={12} /> Afmeld mig
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {showToolsAccordion ? (
+          <div style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "55", borderRadius: "10px", overflow: "hidden" }}>
+            <button
+              type="button"
+              onClick={() => setExpandedAdminActions((prev) => ({ ...prev, [m.id]: !prev[m.id] }))}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "transparent",
+                border: "none",
+                padding: "9px 14px",
+                fontSize: "12px",
+                fontWeight: 700,
+                color: theme.warm,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <span>🛠 {isAdmin && !isCreator ? "Admin-værktøjer" : isAdmin ? "Admin / creator-værktøjer" : "Creator-værktøjer"}</span>
+              {adminActionsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {adminActionsOpen ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px 12px 12px", borderTop: "1px solid " + theme.warm + "33" }}>
+                {adminCanForceStart ? (
+                  <button
+                    type="button"
+                    onClick={() => startMatch(m.id)}
+                    disabled={busy}
+                    style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
+                  >
+                    ⚡ Gennemtving start (Admin)
+                  </button>
+                ) : null}
+                {adminCanForceReport ? (
+                  <button
+                    type="button"
+                    onClick={() => setResultMatch(m.id)}
+                    disabled={busy}
+                    style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
+                  >
+                    📊 Indrapportér resultat (Admin)
+                  </button>
+                ) : null}
+                {adminCanForceConfirm ? (
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok ? (
+                      <button
+                        type="button"
+                        onClick={() => confirmResult(m.id)}
+                        disabled={busy}
+                        style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
+                      >
+                        ✅ Bekræft (Admin)
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => rejectResult(m.id)}
+                      disabled={busy}
+                      style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.warm, borderColor: theme.warm + "55" }}
+                    >
+                      ❌ Slet (Admin)
+                    </button>
+                  </div>
+                ) : null}
+                {canDeleteMatch ? (
+                  <button
+                    type="button"
+                    onClick={() => deleteMatch(m.id)}
+                    disabled={busy}
+                    style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}
+                  >
+                    <Trash2 size={14} /> {isAdmin ? "Slet kamp (Admin)" : "Slet kamp"}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   const renderPadelListItem = useCallback((m) => {
-    if (expandedMatchIds.has(m.id)) {
-      return renderMatchCard(m);
-    }
     const bundle = getMatchCardBundle(m);
     const { cardState, matchPrefs, status } = bundle;
     return (
@@ -2752,7 +3092,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         onClick={() => setDetailMatchId(m.id)}
       />
     );
-  }, [expandedMatchIds, getMatchCardBundle, profilesById, renderMatchCard]);
+  }, [getMatchCardBundle, profilesById]);
 
   const toolbarFormatTabs = [
     {
@@ -3198,13 +3538,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           primaryAction={buildMatchPrimaryAction(detailMatch, detailBundle)}
           unreadCount={detailBundle.cardState.unreadMatchCount}
           onProfileClick={(prof) => setViewPlayer(prof)}
-          onExpandFull={() => {
-            setExpandedMatchIds((prev) => new Set(prev).add(detailMatch.id));
-            setDetailMatchId(null);
-            requestAnimationFrame(() => {
-              document.getElementById(`pm-match-${detailMatch.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-            });
-          }}
+          managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
         />
       ) : null}
       </>
