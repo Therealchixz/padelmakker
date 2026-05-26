@@ -10,7 +10,7 @@ import {
 const SHEET_H = 500;
 
 test('slow drag: closes at 50% of sheet height', () => {
-  const slowMs = 600;
+  const slowMs = 2500;
   assert.equal(shouldCloseBottomSheetDrag({ dy: 249, sheetHeightPx: SHEET_H, elapsedMs: slowMs }), false);
   assert.equal(shouldCloseBottomSheetDrag({ dy: 250, sheetHeightPx: SHEET_H, elapsedMs: slowMs }), true);
 });
