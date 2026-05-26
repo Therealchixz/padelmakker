@@ -76,6 +76,16 @@ function matchPlayerTeam(p) {
   return Number(p?.team);
 }
 
+function teamMoveErrorMessage(data, fallbackTeam) {
+  const code = data?.error;
+  if (code === "team_full") return `Hold ${data?.team ?? fallbackTeam} er fuldt.`;
+  if (code === "match_not_open") return "Hold kan kun skiftes før kampen er startet.";
+  if (code === "not_authorized") return "Du har ikke lov til at flytte denne spiller.";
+  if (code === "player_not_in_match") return "Spilleren er ikke i kampen.";
+  if (code === "match_not_found") return "Kampen blev ikke fundet.";
+  return code || "Ukendt fejl";
+}
+
 function nearestHalfHour() {
   const now = new Date();
   const h = now.getHours();
@@ -906,50 +916,67 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     finally { setBusyId(null); }
   };
 
+  const patchMatchPlayerTeamLocally = useCallback((matchId, targetUserId, newTeam) => {
+    const key = String(matchId);
+    setMatchPlayers((prev) => {
+      const rows = prev[key];
+      if (!rows?.length) return prev;
+      return {
+        ...prev,
+        [key]: rows.map((p) => (
+          String(p.user_id) === String(targetUserId) ? { ...p, team: newTeam } : p
+        )),
+      };
+    });
+  }, []);
+
+  const applyMatchPlayerTeam = useCallback(async (matchId, targetUserId, newTeam) => {
+    const { data, error } = await supabase.rpc("set_match_player_team", {
+      p_match_id: matchId,
+      p_user_id: targetUserId,
+      p_team: newTeam,
+    });
+    if (error) throw error;
+    if (!data?.success) {
+      throw new Error(teamMoveErrorMessage(data, newTeam));
+    }
+    return data;
+  }, []);
+
   const switchTeam = async (matchId, newTeam) => {
-    const myCurrent = (matchPlayers[matchId] || []).find(p => p.user_id === user.id);
-    if (myCurrent && myCurrent.team === newTeam) return;
-    setBusyId(matchId + '-switch');
+    const myCurrent = (matchPlayers[String(matchId)] || []).find((p) => String(p.user_id) === String(user.id));
+    if (myCurrent && matchPlayerTeam(myCurrent) === Number(newTeam)) return;
+    setBusyId(matchId + "-switch");
     try {
-      const { error } = await supabase
-        .from("match_players")
-        .update({ team: newTeam })
-        .eq("match_id", matchId)
-        .eq("user_id", user.id);
-      if (error) throw error;
-      showToast(`Skiftet til Hold ${newTeam}! ⚔️`);
+      const data = await applyMatchPlayerTeam(matchId, user.id, newTeam);
+      if (!data?.unchanged) {
+        patchMatchPlayerTeamLocally(matchId, user.id, newTeam);
+        showToast(`Skiftet til Hold ${newTeam}! ⚔️`);
+      }
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }
   };
 
-  // Creator/admin kan flytte vilkårlig spiller mellem Hold 1/2 (hvis målholdet har plads).
   const switchPlayerTeam = async (matchId, targetUserId, newTeam) => {
     const match = matches.find((m) => String(m.id) === String(matchId));
     const isCreator = match && String(match.creator_id) === String(user.id);
     if (!isCreator && !isAdmin) return;
 
-    const mp = matchPlayers[matchId] || [];
+    const mp = matchPlayers[String(matchId)] || [];
     const target = mp.find((p) => String(p.user_id) === String(targetUserId));
     if (!target) return;
-    if (target.team === newTeam) return;
+    if (matchPlayerTeam(target) === Number(newTeam)) return;
 
-    const targetTeamCount = mp.filter((p) => matchPlayerTeam(p) === Number(newTeam)).length;
-    if (targetTeamCount >= 2) {
-      showToast(`Hold ${newTeam} er fuldt.`);
-      return;
-    }
-
-    setBusyId(matchId + '-switch-player-' + targetUserId + '-' + newTeam);
+    setBusyId(matchId + "-switch-player-" + targetUserId);
     try {
-      const { error } = await supabase
-        .from("match_players")
-        .update({ team: newTeam })
-        .eq("match_id", matchId)
-        .eq("user_id", targetUserId);
-      if (error) throw error;
-
-      showToast(`Flyttet til Hold ${newTeam}! ⚔️`);
+      const data = await applyMatchPlayerTeam(matchId, targetUserId, newTeam);
+      if (!data?.unchanged) {
+        patchMatchPlayerTeamLocally(matchId, targetUserId, newTeam);
+        const name = (target.user_name || "Spiller").split(" ")[0];
+        const isSelf = String(targetUserId) === String(user.id);
+        showToast(isSelf ? `Skiftet til Hold ${newTeam}! ⚔️` : `${name} er flyttet til Hold ${newTeam}! ⚔️`);
+      }
       await loadData();
     } catch (e) {
       showToast("Fejl: " + (e.message || "Prøv igen"));

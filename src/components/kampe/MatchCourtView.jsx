@@ -42,7 +42,7 @@ export function MatchCourtView({
       (isCreator || isAdmin) &&
       (status === 'open' || status === 'full') &&
       otherTeamPlayerCount < 2 &&
-      busyId !== matchId + '-switch-player-' + p.user_id;
+      !String(busyId || '').startsWith(String(matchId) + '-switch-player-' + p.user_id);
 
     const teamColor = teamNum === 1 ? theme.accent : theme.blue;
     const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
