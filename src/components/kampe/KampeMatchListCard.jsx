@@ -1,6 +1,6 @@
-import { CalendarDays, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
-import { formatMatchDateDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
+import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
 
 function badgeToneClass(tone) {
@@ -34,6 +34,8 @@ export function KampeMatchListCard({
   const t2 = teamStats?.t2 || [];
   const filledCount = t1.length + t2.length;
   const maxPlayers = match?.max_players || 4;
+  const dateHeadline = formatMatchDateHeadlineDa(match.date);
+  const timeLabel = matchTimeLabel(match);
 
   return (
     <button
@@ -45,8 +47,7 @@ export function KampeMatchListCard({
       <div className="pm-kampe-v2-list-card-top">
         <div className="pm-kampe-v2-list-card-main">
           <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary">
-            <CalendarDays size={13} aria-hidden />
-            {formatMatchDateDa(match.date)} · {matchTimeLabel(match)}
+            {dateHeadline} · {timeLabel}
           </div>
           <div className="pm-kampe-v2-list-venue">
             <MapPin size={12} aria-hidden />
@@ -76,9 +77,6 @@ export function KampeMatchListCard({
                 style={{ border: '1.5px solid var(--pm-border)' }}
               />
             ))}
-            {left > 0 ? (
-              <span className="pm-kampe-v2-list-slots-plus">+{left}</span>
-            ) : null}
           </div>
           <span className="pm-kampe-v2-list-count">
             {filledCount}/{maxPlayers}

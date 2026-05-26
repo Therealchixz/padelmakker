@@ -6272,23 +6272,31 @@ button,
   margin-bottom: 10px;
 }
 
+.pm-kampe-v2-list-card-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
 .pm-kampe-v2-list-venue {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 5px;
+  width: 100%;
   font-size: 13px;
   font-weight: 500;
   color: var(--pm-text-mid);
-  line-height: 1.25;
-  margin-top: 4px;
+  line-height: 1.3;
 }
 
 .pm-kampe-v2-list-datetime {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  display: block;
   font-size: 12px;
   color: var(--pm-text-mid);
+  line-height: 1.3;
 }
 
 .pm-kampe-v2-list-datetime--primary {
@@ -6388,13 +6396,6 @@ button,
 
 .pm-kampe-v2-list-avatars > * + * {
   margin-left: -8px;
-}
-
-.pm-kampe-v2-list-slots-plus {
-  margin-left: 4px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--pm-accent);
 }
 
 .pm-kampe-v2-list-count {
