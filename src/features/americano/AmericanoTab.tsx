@@ -23,6 +23,14 @@ import { btn, theme } from '../../lib/platformTheme'
 import { notifyAmericanoTournamentFull } from '../../lib/notifyKampeEntityFull'
 import { notifyAmericanoTournamentStarted } from '../../lib/notifyKampeEntityStarted'
 import { notifyAmericanoSpotOpened } from '../../lib/notifyKampeEntityRoster'
+import {
+  TOURNAMENT_EMPTY,
+  TOURNAMENT_LOAD_ERROR_TITLE,
+  TOURNAMENT_LOAD_ERROR_TOAST,
+  TOURNAMENT_LOADING,
+  TOURNAMENT_LOGIN_REQUIRED,
+  TOURNAMENT_SECTION_LABEL,
+} from '../../lib/tournamentCopy'
 import { useScrollIntoViewWhen } from '../../lib/useScrollIntoViewWhen'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
 
@@ -239,8 +247,8 @@ export function AmericanoTab({
       }
     } catch (e) {
       console.warn(e)
-      setLoadError('Kunne ikke hente Americano-data lige nu.')
-      showToast('Kunne ikke hente Americano-data. Tjek din forbindelse og prøv igen.')
+      setLoadError(`${TOURNAMENT_LOAD_ERROR_TITLE} lige nu.`)
+      showToast(TOURNAMENT_LOAD_ERROR_TOAST)
       setRows([])
       setParticipantsByTournament({})
     } finally {
@@ -679,7 +687,7 @@ export function AmericanoTab({
       return
     }
     const okDelete = await ask({
-      message: 'Slette denne Americano-turnering? Alle tilmeldinger fjernes.',
+      message: 'Slette denne turnering? Alle tilmeldinger fjernes.',
       confirmLabel: 'Ja, slet',
       danger: true,
     })
@@ -703,7 +711,7 @@ export function AmericanoTab({
     return (
       <div className="pm-state-card pm-state-card--loading" style={{ fontFamily: font }}>
         <div className="pm-spinner pm-state-spinner" />
-        <div className="pm-state-title">Indlæser Americano…</div>
+        <div className="pm-state-title">{TOURNAMENT_LOADING}</div>
         <div className="pm-state-copy">Vi henter turneringer og deltagere.</div>
       </div>
     )
@@ -713,7 +721,7 @@ export function AmericanoTab({
     return (
       <div className="pm-state-card pm-state-card--error" style={{ fontFamily: font }}>
         <div className="pm-state-icon">⚠️</div>
-        <div className="pm-state-title">Kunne ikke hente Americano</div>
+        <div className="pm-state-title">{TOURNAMENT_LOAD_ERROR_TITLE}</div>
         <div className="pm-state-copy">{loadError}</div>
         <div className="pm-state-actions">
           <button type="button" onClick={() => void load()} style={{ ...btn(true), fontSize: 13 }}>
@@ -729,7 +737,7 @@ export function AmericanoTab({
       <div className="pm-state-card pm-state-card--warning" style={{ fontFamily: font }}>
         <div className="pm-state-icon">🔒</div>
         <div className="pm-state-title">Du skal være logget ind</div>
-        <div className="pm-state-copy">Log ind for at bruge Americano-modulet.</div>
+        <div className="pm-state-copy">{TOURNAMENT_LOGIN_REQUIRED}</div>
       </div>
     )
   }
@@ -826,7 +834,7 @@ export function AmericanoTab({
           }}
         >
           <h2 style={{ fontSize: 'clamp(20px, 4.5vw, 24px)', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-            Americano
+            {TOURNAMENT_SECTION_LABEL}
           </h2>
           <button
             type="button"
@@ -921,7 +929,7 @@ export function AmericanoTab({
           setAmericanoView(nextTab)
           onAmericanoSubTabChange?.(nextTab)
         }}
-        ariaLabel="Americano status"
+        ariaLabel="Turneringsstatus"
         size="sm"
         className=""
         style={{ marginBottom: 16 }}
@@ -930,18 +938,18 @@ export function AmericanoTab({
       {rows.length === 0 ? (
         <div className="pm-state-card pm-state-card--empty">
           <div className="pm-state-icon">🏟️</div>
-          <div className="pm-state-title">Ingen Americano-turneringer endnu</div>
-          <div className="pm-state-copy">Opret en turnering for at komme i gang.</div>
+          <div className="pm-state-title">{TOURNAMENT_EMPTY.none}</div>
+          <div className="pm-state-copy">{TOURNAMENT_EMPTY.createPrompt}</div>
         </div>
       ) : visibleRows.length === 0 ? (
         <div className="pm-state-card pm-state-card--empty">
           <div className="pm-state-icon">📭</div>
           <div className="pm-state-title">
-            {americanoView === 'open' && 'Ingen åbne Americano-turneringer'}
-            {americanoView === 'playing' && 'Ingen Americano i gang'}
-            {americanoView === 'completed' && 'Ingen afsluttede Americano endnu'}
+            {americanoView === 'open' && TOURNAMENT_EMPTY.noneOpen}
+            {americanoView === 'playing' && TOURNAMENT_EMPTY.nonePlaying}
+            {americanoView === 'completed' && TOURNAMENT_EMPTY.noneCompleted}
           </div>
-          <div className="pm-state-copy">Prøv en anden statusfane, eller opret en ny turnering.</div>
+          <div className="pm-state-copy">{TOURNAMENT_EMPTY.tryOtherTab}</div>
         </div>
       ) : (
         <div className="pm-kampe-v2-list">

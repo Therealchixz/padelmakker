@@ -12,6 +12,14 @@ import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PillTabs } from '../components/PillTabs';
+import {
+  TOURNAMENT_ELO_LABEL,
+  TOURNAMENT_MODE_LABEL,
+  TOURNAMENT_RANKING_ALL_TIME,
+  TOURNAMENT_RANKING_CTA,
+  TOURNAMENT_RANKING_EMPTY_MONTH,
+  TOURNAMENT_RANKING_EMPTY_WEEK,
+} from '../lib/tournamentCopy';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
 
 const RANKING_PAGE_SIZE = 50;
@@ -510,7 +518,7 @@ export function RankingTab({ user }) {
   }, [loadingMore, hasMore, period, fetchProfilePage, periodRankList.length]);
 
   const medals = ['🥇', '🥈', '🥉'];
-  const rankModeLabel = isAmericano ? 'Americano' : '2v2';
+  const rankModeLabel = isAmericano ? TOURNAMENT_MODE_LABEL : '2v2';
 
   const periodLabels = {
     week: 'Denne uge',
@@ -521,7 +529,7 @@ export function RankingTab({ user }) {
   const periodInfo = {
     week: 'Nulstilles hver mandag',
     month: 'Nulstilles d. 1 i måneden',
-    all: isAmericano ? 'Samlet Americano ELO-rating' : 'Samlet 2v2 ELO-rating',
+    all: isAmericano ? TOURNAMENT_RANKING_ALL_TIME : 'Samlet 2v2 ELO-rating',
   };
 
   const rankTotalLabel =
@@ -533,7 +541,7 @@ export function RankingTab({ user }) {
 
   const rankModeTabs = [
     { id: '2v2', label: '2v2 ELO' },
-    { id: 'americano', label: 'Americano ELO' },
+    { id: 'americano', label: TOURNAMENT_ELO_LABEL },
   ];
   const periodTabs = [
     { id: 'week', label: 'Uge' },
@@ -640,7 +648,7 @@ export function RankingTab({ user }) {
                     : displayScore}
             </div>
             <div style={{ fontSize: '10px', opacity: 0.65, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              {period === 'all' ? (isAmericano ? 'Americano ELO' : '2v2 ELO') : 'ELO ændring'}
+              {period === 'all' ? (isAmericano ? TOURNAMENT_ELO_LABEL : '2v2 ELO') : 'ELO ændring'}
             </div>
           </div>
         </div>
@@ -681,17 +689,17 @@ export function RankingTab({ user }) {
           <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
             {period === 'week'
               ? isAmericano
-                ? 'Ingen Americano-turneringer denne uge endnu'
+                ? TOURNAMENT_RANKING_EMPTY_WEEK
                 : 'Ingen kampe denne uge endnu'
               : period === 'month'
                 ? isAmericano
-                  ? 'Ingen Americano-turneringer denne måned endnu'
+                  ? TOURNAMENT_RANKING_EMPTY_MONTH
                   : 'Ingen kampe denne måned endnu'
                 : 'Ingen spillere fundet'}
           </div>
           <div style={{ fontSize: '13px', lineHeight: 1.5 }}>
             {isAmericano
-              ? 'Afslut en Americano-turnering for at komme på ranglisten!'
+              ? TOURNAMENT_RANKING_CTA
               : 'Spil en kamp for at komme på ranglisten!'}
           </div>
         </div>

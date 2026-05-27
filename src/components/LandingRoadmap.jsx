@@ -22,7 +22,7 @@ const roadmapColumns = [
     items: [
       { icon: Users, title: 'Find makker', detail: 'Se spillere tæt på dit niveau og område.' },
       { icon: TrendingUp, title: 'Dynamisk 2v2-ELO', detail: 'Individuel forventning, K-faktor og sejrsmargin i alle 2v2-kampe.' },
-      { icon: Trophy, title: 'Separat Americano-ELO', detail: 'Egen rating for Americano, beregnet ved afslutning af turneringen.' },
+      { icon: Trophy, title: 'Separat Turnerings-ELO', detail: 'Egen rating for Americano og Mexicano, beregnet ved afslutning af turneringen.' },
       { icon: MapPinned, title: 'Baneoversigt', detail: 'Udvalgte centre med direkte bookingvej.' },
     ],
   },

@@ -13,6 +13,7 @@ import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
+import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
 import {
@@ -25,7 +26,7 @@ const HOME_FEED_CACHE_BY_USER = new Map();
 const HOME_ELO_MODE_STORAGE_PREFIX = "pm-home-elo-mode:";
 const HOME_FEED_FILTERS = [
   { id: 'kampe', label: 'Kampe', icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
-  { id: 'americano', label: 'Americano', icon: '🎾', types: ['americano_winner', 'americano_registration'] },
+  { id: 'americano', label: TOURNAMENT_MODE_LABEL, icon: '🎾', types: ['americano_winner', 'americano_registration'] },
   { id: 'liga', label: 'Liga', icon: '🏆', types: ['liga_completed', 'league_new'] },
   { id: 'spillere', label: 'Spillere', icon: '⚡', types: ['elo_milestone', 'seeking_player'] },
 ];
@@ -860,14 +861,14 @@ export function HomeTab({ user, setTab }) {
                 2v2
               </button>
               <button onClick={() => setEloMode('americano')} style={{ ...btn(eloMode === 'americano'), padding: "5px 10px", fontSize: "11px" }}>
-                Americano
+                {TOURNAMENT_MODE_LABEL}
               </button>
             </div>
           </div>
 
           <div className="pm-home-player-card-head">
             <div className="pm-home-premium-elo-block">
-              <div className="pm-home-premium-kicker">{eloMode === 'americano' ? 'Americano ELO rating' : '2v2 ELO rating'}</div>
+              <div className="pm-home-premium-kicker">{eloMode === 'americano' ? `${TOURNAMENT_ELO_LABEL} rating` : '2v2 ELO rating'}</div>
               <div className="pm-home-premium-elo">{activeElo}</div>
             </div>
             <div
@@ -905,7 +906,7 @@ export function HomeTab({ user, setTab }) {
                   {item.label}
                 </span>
               )) : (
-                <small>{eloMode === 'americano' ? 'Afslut en Americano-turnering for at se din form' : 'Spil en kamp for at se din form'}</small>
+                <small>{eloMode === 'americano' ? 'Afslut en turnering for at se din form' : 'Spil en kamp for at se din form'}</small>
               )}
             </div>
           </div>
@@ -1090,11 +1091,11 @@ export function HomeTab({ user, setTab }) {
                       <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                     </div>
                   ),
-                  tag: "Americano",
+                  tag: TOURNAMENT_MODE_LABEL,
                   meta: formatTimeAgo(row.created_at),
                   title: (
                     <>
-                      <span onClick={() => setViewPlayer(player)} style={{ cursor: "pointer", fontWeight: 700 }}>{row.name}</span> vandt Americano
+                      <span onClick={() => setViewPlayer(player)} style={{ cursor: "pointer", fontWeight: 700 }}>{row.name}</span> vandt en turnering
                     </>
                   ),
                   subtitle: row.tournamentName ? `"${row.tournamentName}"` : null,
@@ -1175,7 +1176,7 @@ export function HomeTab({ user, setTab }) {
                       🎾
                     </div>
                   ),
-                  tag: "Americano",
+                  tag: TOURNAMENT_MODE_LABEL,
                   meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.name}</span>,
                   subtitle: `${dateStr}${row.time ? ` · ${row.time}` : ""} · ${row.participants}/${row.slots} tilmeldt`,
@@ -1357,7 +1358,7 @@ export function HomeTab({ user, setTab }) {
       {/* Modals */}
       <AppModal
         open={Boolean(viewTournament)}
-        ariaLabel="Americano resultatdetaljer"
+        ariaLabel="Turneringsresultat"
         onClose={closeViewTournament}
         maxWidth="400px"
         zIndex={1000}
@@ -1366,7 +1367,7 @@ export function HomeTab({ user, setTab }) {
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Americano Resultat</div>
+                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Turneringsresultat</div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewTournament.tournamentName}</h3>
               </div>
               <button type="button" aria-label="Luk turneringsdetaljer" onClick={closeViewTournament} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} aria-hidden="true" /></button>

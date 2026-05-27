@@ -1,4 +1,5 @@
 import { createNotification } from './notifications';
+import { tournamentDefaultName } from './tournamentCopy';
 
 /**
  * Opretter: plads åbnet igen — kun ved tilmelding og når turneringen var/næsten fuld.
@@ -22,13 +23,13 @@ export async function notifyAmericanoSpotOpened(
   const wasAlmostFull = before >= max - 1;
   if (!wasFull && !wasAlmostFull) return;
 
-  const name = String(tournament.name || 'Americano').trim() || 'Americano';
+  const name = tournamentDefaultName(tournament);
   const remaining = Math.max(0, max - (before - 1));
 
   await createNotification(
     creatorId,
     'americano_spot_open',
-    'Plads frigjort i Americano',
+    'Plads frigjort i turnering',
     wasFull
       ? `"${name}" er ikke længere fuld — ${remaining} ${remaining === 1 ? 'plads' : 'pladser'} tilbage.`
       : `"${name}" har nu ${remaining} ${remaining === 1 ? 'plads' : 'pladser'} tilbage.`,

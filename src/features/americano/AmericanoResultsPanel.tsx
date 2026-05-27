@@ -10,6 +10,7 @@ import {
   userIsOnCourtInAmericanoMatch,
 } from './americanoOutcomeColors'
 import { notifyAmericanoTournamentCompleted } from '../../lib/notifyKampeEntityComplete'
+import { TOURNAMENT_ELO_LABEL } from '../../lib/tournamentCopy'
 import { advanceMexicanoRoundIfReady, mexicanoProgressLabel } from '../../lib/mexicanoAdvance.js'
 import {
   buildNextMexicanoRoundIfReady,
@@ -569,18 +570,18 @@ export function AmericanoResultsPanel({
       if (eloErrorMessage) {
         console.warn('Americano ELO rpc error:', eloErrorMessage)
         if (usedLegacyFallback) {
-          showToast('Turnering afsluttet. Americano-ELO blev ikke opdateret endnu (mangler DB-migration).')
+          showToast(`Turnering afsluttet. ${TOURNAMENT_ELO_LABEL} blev ikke opdateret endnu (mangler DB-migration).`)
         } else {
           throw new Error(eloErrorMessage)
         }
       } else if (eloData?.error) {
-        showToast('Turnering afsluttet. Americano-ELO kunne ikke beregnes: ' + String(eloData.error))
+        showToast(`Turnering afsluttet. ${TOURNAMENT_ELO_LABEL} kunne ikke beregnes: ` + String(eloData.error))
       } else if (eloData?.success) {
         const playersUpdated = Number(eloData.players_updated) || 0
         if (eloData.already_applied) {
-          showToast('Turnering afsluttet. Americano-ELO var allerede beregnet.')
+          showToast(`Turnering afsluttet. ${TOURNAMENT_ELO_LABEL} var allerede beregnet.`)
         } else {
-          showToast(`Turnering afsluttet. Americano-ELO opdateret for ${playersUpdated} spillere.`)
+          showToast(`Turnering afsluttet. ${TOURNAMENT_ELO_LABEL} opdateret for ${playersUpdated} spillere.`)
         }
       } else {
         showToast('Turnering afsluttet.')

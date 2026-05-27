@@ -220,7 +220,7 @@ export function AmericanoDetailSheet({
         style={sheetStyle}
         role="dialog"
         aria-modal="true"
-        aria-label="Americano-detaljer"
+        aria-label="Turneringsdetaljer"
       >
         <div {...dragZoneProps} aria-label="Træk her for at lukke">
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />

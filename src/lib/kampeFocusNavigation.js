@@ -1,3 +1,5 @@
+import { TOURNAMENT_KAMPE_TAB_LABEL } from './tournamentCopy';
+
 /** Kampe-formatter som understøtter ?format= & ?focus= deep links fra notifikationer. */
 export const KAMPE_FORMAT_PADEL = 'padel';
 export const KAMPE_FORMAT_AMERICANO = 'americano';
@@ -47,9 +49,9 @@ export function notificationKampeTarget(notif) {
 export function kampeFocusFooterLabel(format, notifType) {
   const type = String(notifType || '').toLowerCase();
   if (format === KAMPE_FORMAT_AMERICANO) {
-    if (type === 'americano_completed') return 'Tryk for at åbne Americano → Afsluttede →';
-    if (type === 'americano_started') return 'Tryk for at åbne Americano → I gang →';
-    return 'Tryk for at åbne Americano → Åbne →';
+    if (type === 'americano_completed') return `Tryk for at åbne ${TOURNAMENT_KAMPE_TAB_LABEL} → Afsluttede →`;
+    if (type === 'americano_started') return `Tryk for at åbne ${TOURNAMENT_KAMPE_TAB_LABEL} → I gang →`;
+    return `Tryk for at åbne ${TOURNAMENT_KAMPE_TAB_LABEL} → Åbne →`;
   }
   if (format === KAMPE_FORMAT_LIGA) {
     if (type === 'league_completed') return 'Tryk for at åbne Liga → Afsluttede →';

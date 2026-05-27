@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { createNotificationsForUsers } from './notifications';
+import { TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy';
 
 function isMissingEntityRpc(error) {
   const msg = String(error?.message || error || '').toLowerCase();
@@ -17,7 +18,7 @@ export async function notifyAmericanoTournamentStarted(tournament, actorUserId) 
     console.warn('notifyAmericano started participants:', error.message);
     return;
   }
-  const name = String(tournament.name || 'Americano').trim() || 'Americano';
+  const name = tournamentDefaultName(tournament);
   const ids = [...new Set((parts || []).map((p) => p.user_id).filter(Boolean))]
     .filter((id) => String(id) !== String(actorUserId));
   if (ids.length === 0) return;
@@ -25,8 +26,8 @@ export async function notifyAmericanoTournamentStarted(tournament, actorUserId) 
   const err = await createNotificationsForUsers(
     ids,
     'americano_started',
-    'Americano er startet 🎾',
-    `"${name}" er i gang. Se runder og resultater under Kampe → Americano.`,
+    'Turneringen er startet 🎾',
+    `"${name}" er i gang. Se runder og resultater under ${TOURNAMENT_KAMPE_PATH}.`,
     null,
     { entityType: 'americano', entityId: tournament.id },
   );

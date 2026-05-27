@@ -28,10 +28,18 @@ import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avata
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PillTabs } from '../components/PillTabs';
+import {
+  TOURNAMENT_DATA_SOURCE,
+  TOURNAMENT_ELO_GRAPH_EMPTY,
+  TOURNAMENT_ELO_GRAPH_LABEL,
+  TOURNAMENT_ELO_LABEL,
+  TOURNAMENT_MODE_LABEL,
+  TOURNAMENT_RANKING_LABEL,
+} from '../lib/tournamentCopy';
 
 const PROFILE_OVERVIEW_TABS = [
   { id: '2v2', label: '2v2' },
-  { id: 'americano', label: 'Americano' },
+  { id: 'americano', label: TOURNAMENT_MODE_LABEL },
   { id: 'liga', label: 'Liga' },
 ];
 
@@ -233,7 +241,7 @@ function persistRankingModeForProfile(mode) {
 
 const PROFILE_MODE_LABELS = {
   "2v2": "2v2",
-  americano: "Americano",
+  americano: TOURNAMENT_MODE_LABEL,
   liga: "Liga",
 };
 
@@ -613,9 +621,9 @@ export function ProfilTab({ user, showToast, setTab }) {
   const activeModeLabel = PROFILE_MODE_LABELS[overviewMode] || overviewMode;
   const activeEloGraphData = isAmericanoMode ? americanoEloHistoryRows : eloHistory;
   const activeEloGraphLoading = isAmericanoMode ? americanoEloHistoryLoading : statsLoading;
-  const activeEloGraphLabel = isAmericanoMode ? "Americano ELO" : "ELO";
+  const activeEloGraphLabel = isAmericanoMode ? TOURNAMENT_ELO_GRAPH_LABEL : "ELO";
   const activeEloGraphEmptyText = isAmericanoMode
-    ? "Afslut mindst 2 Americano-turneringer for at se din Americano-ELO graf."
+    ? TOURNAMENT_ELO_GRAPH_EMPTY
     : "Spil mindst 2 kampe for at se din ELO-graf.";
   const showPerformanceSection = is2v2Mode || isAmericanoMode;
   const show2v2RelationsSection =
@@ -648,7 +656,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     show2v2RelationsSection || showAmericanoRelationsSection || showLigaRelationsSection;
   const activeOverviewSource =
     overviewMode === "americano"
-      ? "Datakilde: Americano-turneringer"
+      ? TOURNAMENT_DATA_SOURCE
       : overviewMode === "liga"
         ? "Datakilde: Liga-hold og rapporterede ligakampe"
         : "Datakilde: 2v2 kamphistorik";
@@ -721,7 +729,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div className="pm-profile-email" style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
               <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
                 {!statsLoading && is2v2Mode && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
-                {!statsLoading && isAmericanoMode && <span style={tag(theme.blueBg, theme.blue)}>Americano ELO {americanoElo}</span>}
+                {!statsLoading && isAmericanoMode && <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}
                 {!statsLoading && isLigaMode && !ligaLoading && ligaStats.matches > 0 && (
                   <span style={tag(theme.blueBg, theme.blue)}>{ligaStats.matches} ligakampe</span>
                 )}
@@ -1191,7 +1199,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           {isAmericanoMode ? (
             <button onClick={() => { persistRankingModeForProfile("americano"); setTab("ranking"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
               <Trophy size={18} color={theme.warm} />
-              <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Americano-ranking</div>
+              <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>{TOURNAMENT_RANKING_LABEL}</div>
               <div style={{ fontSize: "11px", color: theme.textLight }}>ELO {americanoElo}</div>
             </button>
           ) : null}

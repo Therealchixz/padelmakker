@@ -12,6 +12,7 @@ import { getPlayerSeekingDetails } from '../lib/seekingActivityLabel';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
 import { SeekingCallout, SeekingCalloutDetail } from '../components/SeekingCallout';
+import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
   const [dataLoading, setDataLoading] = useState(true);
@@ -215,7 +216,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
             <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', wordBreak: 'break-word' }}>{pRef.full_name || pRef.name || 'Spiller'}</div>
             <div style={{ display: 'flex', gap: '5px', marginTop: '6px', flexWrap: 'wrap' }}>
               {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>2v2 ELO {elo}</span>}
-              {!dataLoading && <span style={tag(theme.blueBg, theme.blue)}>Americano ELO {americanoElo}</span>}
+              {!dataLoading && <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}
               {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
               {locationDisplay ? (
                 <span style={tag(theme.warmBg, theme.warm)}>
@@ -267,7 +268,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
             2v2
           </button>
           <button type="button" onClick={() => setStatsMode('americano')} style={{ ...btn(statsMode === 'americano'), padding: '5px 10px', fontSize: '11px' }}>
-            Americano
+            {TOURNAMENT_MODE_LABEL}
           </button>
           <button type="button" onClick={() => setStatsMode('liga')} style={{ ...btn(statsMode === 'liga'), padding: '5px 10px', fontSize: '11px' }}>
             Liga
@@ -323,7 +324,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
           )
         ) : statsMode === 'americano' ? (
           <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Americano form</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Turneringsform</div>
             <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginTop: '8px', marginBottom: '6px' }}>
               {americanoForm.length > 0 ? (
                 americanoForm.map((row) => (
@@ -335,10 +336,10 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
                   </div>
                 ))
               ) : (
-                <div style={{ fontSize: '12px', color: theme.textMid }}>Ingen afsluttede Americano-turneringer endnu.</div>
+                <div style={{ fontSize: '12px', color: theme.textMid }}>Ingen afsluttede turneringer endnu.</div>
               )}
             </div>
-            <div style={{ fontSize: '11px', color: theme.textMid }}>Seneste {americanoForm.length} Americano-turneringer</div>
+            <div style={{ fontSize: '11px', color: theme.textMid }}>Seneste {americanoForm.length} turneringer</div>
           </div>
         ) : statsMode === '2v2' ? (
           <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>

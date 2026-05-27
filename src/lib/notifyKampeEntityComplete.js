@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { createNotificationsForUsers } from './notifications';
+import { TOURNAMENT_ELO_LABEL, TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy';
 
 function isMissingEntityRpc(error) {
   const msg = String(error?.message || error || '').toLowerCase();
@@ -17,13 +18,13 @@ export async function notifyAmericanoTournamentCompleted(tournament, actorUserId
     console.warn('notifyAmericano participants:', error.message);
     return;
   }
-  const name = String(tournament.name || 'Americano').trim() || 'Americano';
+  const name = tournamentDefaultName(tournament);
   const ids = [...new Set((parts || []).map((p) => p.user_id).filter(Boolean))]
     .filter((id) => String(id) !== String(actorUserId));
   if (ids.length === 0) return;
 
-  const title = 'Americano afsluttet 🏆';
-  const body = `"${name}" er afsluttet. Se resultater og ELO under Kampe → Americano.`;
+  const title = 'Turnering afsluttet 🏆';
+  const body = `"${name}" er afsluttet. Se resultater og ${TOURNAMENT_ELO_LABEL} under ${TOURNAMENT_KAMPE_PATH}.`;
 
   const err = await createNotificationsForUsers(ids, 'americano_completed', title, body, null, {
     entityType: 'americano',

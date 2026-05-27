@@ -98,7 +98,7 @@ export function AdminAmericanoResultEditor({ tournament, onClose, onSaved }) {
 
     const ok = await ask({
       message:
-        'Ret alle turneringsresultater og genberegn Americano-ELO for deltagerne? Dette kan ikke fortrydes automatisk.',
+        'Ret alle turneringsresultater og genberegn Turnerings-ELO for deltagerne? Dette kan ikke fortrydes automatisk.',
       confirmLabel: 'Ja, ret og genberegn',
       danger: true,
     });
@@ -108,7 +108,7 @@ export function AdminAmericanoResultEditor({ tournament, onClose, onSaved }) {
     try {
       const res = await adminCorrectAmericanoTournament(tournament.id, payload);
       await ask({
-        message: `Resultater opdateret. Americano-ELO genberegnet for ${res.elo?.players_updated ?? 'alle'} spillere.`,
+        message: `Resultater opdateret. Turnerings-ELO genberegnet for ${res.elo?.players_updated ?? 'alle'} spillere.`,
         notice: true,
       });
       onSaved?.();
@@ -124,7 +124,7 @@ export function AdminAmericanoResultEditor({ tournament, onClose, onSaved }) {
     <AppModal
       open
       onClose={onClose}
-      ariaLabel="Ret Americano-resultater (admin)"
+      ariaLabel="Ret turneringsresultater (admin)"
       maxWidth={560}
       zIndex={1100}
       closeOnBackdrop={!busy}
@@ -133,10 +133,10 @@ export function AdminAmericanoResultEditor({ tournament, onClose, onSaved }) {
     >
       <div className="pm-modal-body pm-modal-body--compact" style={{ overflowY: 'auto', maxHeight: '92vh' }}>
         <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: theme.text }}>
-          Ret Americano-resultater (admin)
+          Ret turneringsresultater (admin)
         </h3>
         <p style={{ margin: '0 0 14px', fontSize: 12, color: theme.textMid, lineHeight: 1.45 }}>
-          {tournament.name} · Format {P} point · Americano-ELO genberegnes for alle deltagere.
+          {tournament.name} · Format {P} point · Turnerings-ELO genberegnes for alle deltagere.
         </p>
 
         {loading ? (

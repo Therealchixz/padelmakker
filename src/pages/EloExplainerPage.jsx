@@ -7,7 +7,7 @@ export function EloExplainerPage() {
     <LegalPageLayout title="Sådan virker ELO på PadelMakker">
       <p style={{ marginTop: 0, color: theme.textMid }}>
         ELO afspejler dit niveau ud fra resultater mod andre spillere. Her er, hvordan 2v2-ELO beregnes i PadelMakker, og hvordan
-        Americano-ELO holdes separat.
+        Turnerings-ELO (Americano og Mexicano) holdes separat.
       </p>
 
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Hvornår opdateres min rating?</h2>
@@ -64,10 +64,10 @@ export function EloExplainerPage() {
         omkring 1000 ELO, og rating kan ikke falde under 100.
       </p>
 
-      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Americano og ELO</h2>
+      <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Turneringer og ELO</h2>
       <p style={{ color: theme.textMid }}>
-        Americano bruger et separat ratingspor og påvirker ikke din almindelige 2v2-ELO. Når en Americano afsluttes, beregnes
-        Americano-ELO ud fra slutstillingen (samlede kamp-point), og ændringen gemmes i dit Americano-historikspor.
+        Americano og Mexicano deler Turnerings-ELO og påvirker ikke din almindelige 2v2-ELO. Når en turnering afsluttes, beregnes
+        Turnerings-ELO ud fra slutstillingen (samlede kamp-point), og ændringen gemmes i dit turnerings-historikspor.
       </p>
 
       <p style={{ marginTop: '28px', marginBottom: 0, fontSize: '14px', color: theme.textLight }}>

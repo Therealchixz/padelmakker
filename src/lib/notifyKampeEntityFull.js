@@ -1,4 +1,5 @@
 import { createNotification } from './notifications';
+import { TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy';
 
 function isMissingEntityRpc(error) {
   const msg = String(error?.message || error || '').toLowerCase();
@@ -12,15 +13,15 @@ export async function notifyAmericanoTournamentFull(tournament, actorUserId) {
   if (String(tournament.status || '').toLowerCase() !== 'registration') return;
   if (String(actorUserId) === String(creatorId)) return;
 
-  const name = String(tournament.name || 'Americano').trim() || 'Americano';
+  const name = tournamentDefaultName(tournament);
   const slots = Number(tournament.player_slots) || 0;
   const slotsLabel = slots > 0 ? `${slots} ` : '';
 
   const err = await createNotification(
     creatorId,
     'americano_full',
-    'Americano er fuld! 🎾',
-    `Alle ${slotsLabel}pladser er tilmeldt i "${name}". Du kan starte turneringen under Kampe → Americano.`,
+    'Turneringen er fuld! 🎾',
+    `Alle ${slotsLabel}pladser er tilmeldt i "${name}". Du kan starte turneringen under ${TOURNAMENT_KAMPE_PATH}.`,
     null,
     { entityType: 'americano', entityId: tournament.id },
   );

@@ -845,7 +845,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         selector: tabTourSelector('kampe'),
         title: 'Kampe',
         description:
-          'I Kampe opretter du 2v2-kampe, Americano og liga — her tilmelder du dig, ser invitationer og håndterer resultater.',
+          'I Kampe opretter du 2v2-kampe, turneringer (Americano/Mexicano) og liga — her tilmelder du dig, ser invitationer og håndterer resultater.',
       },
     ];
 

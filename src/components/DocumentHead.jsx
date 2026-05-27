@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { absoluteUrl } from '../lib/siteMeta'
 
 const DEFAULT_DESC =
-  'Find padelspillere på dit niveau, opret kampe, se ledige baner og følg både 2v2-ELO og separat Americano-ELO. PadelMakker er en dansk padel-platform med gratis profil.'
+  'Find padelspillere på dit niveau, opret kampe, se ledige baner og følg både 2v2-ELO og separat Turnerings-ELO (Americano/Mexicano). PadelMakker er en dansk padel-platform med gratis profil.'
 
 const ORGANIZATION_LOGO_PATH = '/icon-512-v2.png'
 const ORGANIZATION_LOGO_WIDTH = 512
@@ -34,21 +34,21 @@ const ROUTE_META = {
       'Bekræft dit telefonnummer med SMS-kode for at afslutte sikkerhedsflowet ved oprettelse.',
   },
   '/events': {
-    title: 'Kommende events og Americano | PadelMakker',
-    description: 'Se kommende Americano-turneringer på PadelMakker. Log ind for at tilmelde dig.',
+    title: 'Kommende events og turneringer | PadelMakker',
+    description: 'Se kommende Americano- og Mexicano-turneringer på PadelMakker. Log ind for at tilmelde dig.',
   },
   '/om': {
     title: 'Om PadelMakker',
-    description: 'Hvad PadelMakker er: makkere, kampe, 2v2-ELO, separat Americano-ELO og baner-overblik i Danmark.',
+    description: 'Hvad PadelMakker er: makkere, kampe, 2v2-ELO, separat Turnerings-ELO og baner-overblik i Danmark.',
   },
   '/faq': {
     title: 'Ofte stillede spørgsmål | PadelMakker',
-    description: 'FAQ om PadelMakker: pris, 2v2-ELO, Americano-ELO, booking af baner, regioner og konto.',
+    description: 'FAQ om PadelMakker: pris, 2v2-ELO, Turnerings-ELO, booking af baner, regioner og konto.',
   },
   '/elo': {
     title: 'Sådan virker ELO | PadelMakker',
     description:
-      'Forklaring af ELO på PadelMakker: individuel forventning mod modstanderholdets snit, dynamisk K pr. spiller, sejrsmargin og separat Americano-ELO.',
+      'Forklaring af ELO på PadelMakker: individuel forventning mod modstanderholdets snit, dynamisk K pr. spiller, sejrsmargin og separat Turnerings-ELO.',
   },
   '/privatlivspolitik': {
     title: 'Privatlivspolitik | PadelMakker',

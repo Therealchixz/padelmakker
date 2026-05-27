@@ -3325,7 +3325,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       count: openMatches.length + activeMatches.length,
       unread: padelUnreadCounts.total,
     },
-    { id: "americano", label: "Americano" },
+    { id: "americano", label: "Turnering" },
     { id: "liga", label: "Liga" },
   ];
   const padelSubTabs = [
@@ -3467,7 +3467,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         <Suspense fallback={
           <div className="pm-state-card pm-state-card--loading">
             <div className="pm-spinner pm-state-spinner" />
-            <div className="pm-state-title">Indlæser Americano…</div>
+            <div className="pm-state-title">Indlæser turneringer…</div>
             <div className="pm-state-copy">Vi henter turneringer og deltagere.</div>
           </div>
         }>

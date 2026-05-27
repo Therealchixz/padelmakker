@@ -122,7 +122,7 @@ export function PublicEventsPage() {
                 Kommende på PadelMakker
               </p>
               <h1 style={{ ...heading('clamp(22px, 5vw, 28px)'), margin: 0, letterSpacing: '-0.02em' }}>
-                Americano & events
+                Turneringer & events
               </h1>
               <p style={{ fontSize: '15px', color: theme.textMid, lineHeight: 1.6, margin: '12px 0 0' }}>
                 Åben oversigt over turneringer med tilmelding eller i gang. Log ind for at tilmelde dig — vi viser ikke navne på
@@ -180,8 +180,8 @@ export function PublicEventsPage() {
 
         {!loading && !error && rows.length === 0 && (
           <p style={{ fontSize: '15px', color: theme.textMid, lineHeight: 1.65, padding: '12px 4px 0' }}>
-            Der er ingen kommende Americano-turneringer lige nu. Opret en selv under{' '}
-            <strong style={{ color: theme.text }}>Kampe → Americano</strong>, når du er logget ind.
+            Der er ingen kommende turneringer lige nu. Opret en selv under{' '}
+            <strong style={{ color: theme.text }}>Kampe → Turnering</strong>, når du er logget ind.
           </p>
         )}
 
@@ -218,7 +218,7 @@ export function PublicEventsPage() {
                         color: st.color,
                       }}
                     >
-                      Americano · {st.text}
+                      Turnering · {st.text}
                     </span>
                     <span style={{ fontSize: '14px', fontWeight: 700, color: theme.text }}>
                       {formatMatchDateDa(row.tournament_date)} kl. {formatTimeSlotDa(row.time_slot)}

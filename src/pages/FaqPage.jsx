@@ -41,9 +41,9 @@ export function FaqPage() {
         </p>
       </Q>
 
-      <Q title="Tæller Americano med i min almindelige ELO?">
+      <Q title="Tæller turneringer (Americano/Mexicano) med i min almindelige ELO?">
         <p style={{ margin: 0 }}>
-          Nej. Americano bruger <strong style={{ color: theme.text }}>sin egen separate rating</strong>. Din 2v2-ELO og din Americano-ELO holdes adskilt, så de to formater ikke påvirker hinanden.
+          Nej. Americano og Mexicano deler <strong style={{ color: theme.text }}>Turnerings-ELO</strong>, som holdes adskilt fra din 2v2-ELO, så de to spor ikke påvirker hinanden.
         </p>
       </Q>
 
