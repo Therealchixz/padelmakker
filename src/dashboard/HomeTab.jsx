@@ -17,7 +17,7 @@ import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { parseMatchLevelRange } from '../lib/matchLevelRange';
 import { matchTimeLabel } from '../lib/matchDisplayUtils';
 import { regionDisplayLabel } from '../lib/appRegions';
-import { resolveAmericanoCourtName } from '../features/americano/americanoDisplayUtils';
+import { getTournamentFormatLabel, resolveAmericanoCourtName } from '../features/americano/americanoDisplayUtils';
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
@@ -257,7 +257,7 @@ export function HomeTab({ user, setTab }) {
           .neq('change', 0).not('change', 'is', null).neq('result', 'adjustment')
           .order('created_at', { ascending: false, nullsFirst: false }).limit(100),
         supabase.from('americano_tournaments')
-          .select('id, name, tournament_date, updated_at').eq('status', 'completed')
+          .select('id, name, tournament_date, updated_at, format').eq('status', 'completed')
           .order('updated_at', { ascending: false }).limit(5),
         supabase.from('leagues')
           .select('id, name, updated_at').eq('status', 'completed')
@@ -266,7 +266,7 @@ export function HomeTab({ user, setTab }) {
           .select('id, creator_id, date, time, time_end, court_name, level_range, description, created_at').eq('status', 'open')
           .gte('date', today).order('created_at', { ascending: false }).limit(5),
         supabase.from('americano_tournaments')
-          .select('id, name, tournament_date, time_slot, player_slots, court_id, creator_id, created_at').eq('status', 'registration')
+          .select('id, name, tournament_date, time_slot, player_slots, court_id, creator_id, created_at, format').eq('status', 'registration')
           .order('created_at', { ascending: false }).limit(5),
         supabase.from('profiles')
           .select('id, full_name, name, avatar, level, area, intent_now, seeking_match_at, match_search_prefs, makker_search_prefs')
@@ -417,6 +417,7 @@ export function HomeTab({ user, setTab }) {
         const winnerRow = leaderboard[0] || null;
         return {
           type: 'americano_winner',
+          format: t.format || 'americano',
           userId: bestPart.user_id,
           name: bestPart.display_name,
           points: bestPts,
@@ -507,6 +508,7 @@ export function HomeTab({ user, setTab }) {
         const location = activityLocationLabel(courtName, creatorArea);
         return {
           type: 'americano_registration',
+          format: t.format || 'americano',
           tournamentId: t.id,
           name: t.name,
           date: t.tournament_date,
@@ -1166,6 +1168,7 @@ export function HomeTab({ user, setTab }) {
 
               if (row.type === 'americano_winner') {
                 const player = { id: row.userId, name: row.name };
+                const formatLabel = getTournamentFormatLabel(row.format);
                 const winnerEloChange = Number(row.winnerEloChange);
                 const hasWinnerElo = Number.isFinite(winnerEloChange);
                 const winnerEloTone =
@@ -1179,11 +1182,11 @@ export function HomeTab({ user, setTab }) {
                       <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                     </div>
                   ),
-                  tag: TOURNAMENT_MODE_LABEL,
+                  tag: formatLabel,
                   meta: formatTimeAgo(row.created_at),
                   title: (
                     <>
-                      <span onClick={() => setViewPlayer(player)} style={{ cursor: "pointer", fontWeight: 700 }}>{row.name}</span> vandt en turnering
+                      <span onClick={() => setViewPlayer(player)} style={{ cursor: "pointer", fontWeight: 700 }}>{row.name}</span> vandt en {formatLabel}
                     </>
                   ),
                   subtitle: row.tournamentName ? `"${row.tournamentName}"` : null,
@@ -1268,6 +1271,7 @@ export function HomeTab({ user, setTab }) {
               }
 
               if (row.type === 'americano_registration') {
+                const formatLabel = getTournamentFormatLabel(row.format);
                 const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                 const subtitleParts = [
                   dateStr,
@@ -1284,7 +1288,7 @@ export function HomeTab({ user, setTab }) {
                       🎾
                     </div>
                   ),
-                  tag: TOURNAMENT_MODE_LABEL,
+                  tag: formatLabel,
                   meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.name}</span>,
                   subtitle: subtitleParts.join(' · '),
@@ -1478,7 +1482,7 @@ export function HomeTab({ user, setTab }) {
       {/* Modals */}
       <AppModal
         open={Boolean(viewTournament)}
-        ariaLabel="Turneringsresultat"
+        ariaLabel={viewTournament ? `${getTournamentFormatLabel(viewTournament.format)} resultat` : 'Turneringsresultat'}
         onClose={closeViewTournament}
         maxWidth="400px"
         zIndex={1000}
@@ -1487,7 +1491,9 @@ export function HomeTab({ user, setTab }) {
           <>
             <div style={{ padding: "20px", borderBottom: "1px solid " + theme.border, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Turneringsresultat</div>
+                <div style={{ fontSize: "10px", color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                  {getTournamentFormatLabel(viewTournament.format)} resultat
+                </div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewTournament.tournamentName}</h3>
               </div>
               <button type="button" aria-label="Luk turneringsdetaljer" onClick={closeViewTournament} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} aria-hidden="true" /></button>
