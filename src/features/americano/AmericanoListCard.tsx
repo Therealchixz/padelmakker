@@ -2,6 +2,7 @@ import { CalendarDays, Clock, LayoutGrid, MapPin } from 'lucide-react'
 import { AvatarCircle } from '../../components/AvatarCircle'
 import { formatMatchDateHeadlineDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import {
+  formatCourtsBenchCompact,
   getAmericanoTournamentMeta,
   getAmericanoDurationLabel,
   getTournamentFormatLabel,
@@ -139,7 +140,7 @@ export function AmericanoListCard({
             </span>
             <span className="pm-americano-v2-list-meta-pill">
               <LayoutGrid size={11} aria-hidden />
-              {courts} bane{courts !== 1 ? 'r' : ''}{bench > 0 ? ` · ${bench} over` : ''}
+              {formatCourtsBenchCompact(courts, bench)}
             </span>
             <span className="pm-americano-v2-list-meta-pill">
               {durationLabel}

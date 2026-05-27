@@ -4,6 +4,7 @@ import { MapPin, Plus, X } from 'lucide-react'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
 import {
+  formatCourtsBenchDetail,
   getAmericanoTournamentMeta,
   getAmericanoDurationLabel,
   getTournamentFormatLabel,
@@ -180,6 +181,7 @@ export function AmericanoDetailSheet({
 
   const courtName = resolveAmericanoCourtName(tournament.court_id, courts)
   const { maxPlayers, totalRounds, estMinutes, courts: courtsPerRound, bench } = getAmericanoTournamentMeta(tournament)
+  const courtsBenchDetail = formatCourtsBenchDetail(courtsPerRound, bench)
   const durationLabel = getAmericanoDurationLabel(status, playedDurationMinutes, estMinutes)
   const filled = participants.length
   const emptySlots = Math.max(0, maxPlayers - filled)
@@ -261,9 +263,15 @@ export function AmericanoDetailSheet({
             <span className="pm-americano-v2-detail-stat-label">Varighed</span>
             <span className="pm-americano-v2-detail-stat-value">{durationLabel}</span>
           </div>
-          <div className="pm-americano-v2-detail-stat">
-            <span className="pm-americano-v2-detail-stat-label">Baner pr. runde</span>
-            <span className="pm-americano-v2-detail-stat-value">{courtsPerRound}{bench > 0 ? ` · ${bench} over` : ''}</span>
+          <div
+            className="pm-americano-v2-detail-stat"
+            aria-label={courtsBenchDetail.ariaLabel}
+          >
+            <span className="pm-americano-v2-detail-stat-label">Pr. runde</span>
+            <span className="pm-americano-v2-detail-stat-value">{courtsBenchDetail.primary}</span>
+            {courtsBenchDetail.secondary ? (
+              <span className="pm-americano-v2-detail-stat-value-sub">{courtsBenchDetail.secondary}</span>
+            ) : null}
           </div>
         </div>
 

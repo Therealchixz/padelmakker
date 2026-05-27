@@ -27,6 +27,40 @@ export function getAmericanoTournamentMeta(
   return { maxPlayers, totalRounds, estMinutes, courts, bench }
 }
 
+function courtsLabel(courts: number) {
+  return courts === 1 ? '1 bane' : `${courts} baner`
+}
+
+function benchLabel(bench: number) {
+  if (bench <= 0) return null
+  return bench === 1 ? '1 spiller sidder over' : `${bench} spillere sidder over`
+}
+
+/** Kompakt tekst til listekort-pill. */
+export function formatCourtsBenchCompact(courts: number, bench: number) {
+  const courtsPart = courtsLabel(courts)
+  const benchPart = benchLabel(bench)
+  if (!benchPart) return courtsPart
+  return `${courtsPart} · ${benchPart}`
+}
+
+/** Detail-sheet: tydelig hovedlinje + undertekst for bænk. */
+export function formatCourtsBenchDetail(courts: number, bench: number) {
+  const benchPart = benchLabel(bench)
+  if (!benchPart) {
+    return {
+      primary: courtsLabel(courts),
+      secondary: 'Alle spillere er på banen',
+      ariaLabel: `${courtsLabel(courts)} pr. runde — alle spillere er på banen`,
+    }
+  }
+  return {
+    primary: courtsLabel(courts),
+    secondary: benchPart,
+    ariaLabel: `${courtsLabel(courts)} pr. runde — ${benchPart}`,
+  }
+}
+
 export function getAmericanoDurationLabel(
   status: 'registration' | 'playing' | 'completed',
   playedDurationMinutes: number | null | undefined,

@@ -7301,6 +7301,16 @@ button,
   font-size: 14px;
   font-weight: 800;
   color: var(--pm-text);
+  line-height: 1.25;
+}
+
+.pm-americano-v2-detail-stat-value-sub {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--pm-text-mid);
 }
 
 .pm-americano-v2-detail-fill {
