@@ -3,6 +3,7 @@ import { AvatarCircle } from '../../components/AvatarCircle'
 import { formatMatchDateHeadlineDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import {
   getAmericanoTournamentMeta,
+  getAmericanoDurationLabel,
   playerInitials,
 } from './americanoDisplayUtils'
 import type { AmericanoTournament } from './types'
@@ -22,6 +23,7 @@ type Props = {
   tournamentFull?: boolean
   liveRound?: number | null
   myEloChange?: number | null
+  playedDurationMinutes?: number | null
   onClick?: () => void
 }
 
@@ -44,9 +46,11 @@ export function AmericanoListCard({
   tournamentFull = false,
   liveRound = null,
   myEloChange = null,
+  playedDurationMinutes = null,
   onClick,
 }: Props) {
   const { maxPlayers, totalRounds, estMinutes } = getAmericanoTournamentMeta(tournament)
+  const durationLabel = getAmericanoDurationLabel(status, playedDurationMinutes, estMinutes)
   const filled = participants.length
   const fillPct = maxPlayers > 0 ? Math.min(100, Math.round((filled / maxPlayers) * 100)) : 0
   const dateHeadline = formatMatchDateHeadlineDa(tournament.tournament_date)
@@ -134,7 +138,7 @@ export function AmericanoListCard({
             </span>
             <span className="pm-americano-v2-list-meta-pill">
               <LayoutGrid size={11} aria-hidden />
-              ~{estMinutes} min
+              {durationLabel}
             </span>
           </div>
 

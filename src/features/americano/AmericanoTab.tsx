@@ -12,6 +12,7 @@ import {
   computeAmericanoActiveRound,
   resolveAmericanoCourtName,
 } from './americanoDisplayUtils'
+import { computeAmericanoPlayedDurationMinutes } from '../../lib/americanoPlayedDuration.js'
 import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
 import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
@@ -135,13 +136,15 @@ export function AmericanoTab({
   const [listMeta, setListMeta] = useState<{
     myEloChange: Record<string, number>
     liveRound: Record<string, number>
-  }>({ myEloChange: {}, liveRound: {} })
+    playedDurationMinutes: Record<string, number>
+  }>({ myEloChange: {}, liveRound: {}, playedDurationMinutes: {} })
   const [completedDetailCache, setCompletedDetailCache] = useState<
     Record<
       string,
       {
         pointsByUserId: Record<string, number>
         eloByUserId: Record<string, { change: number }>
+        playedDurationMinutes: number | null
       }
     >
   >({})
@@ -335,10 +338,11 @@ export function AmericanoTab({
           : filtered.filter((t) => t.status === 'completed')
 
     const completedJoined = viewRows.filter((t) => t.status === 'completed' && joinedIds.has(t.id))
+    const completedInView = viewRows.filter((t) => t.status === 'completed')
     const playing = viewRows.filter((t) => t.status === 'playing')
 
-    if (completedJoined.length === 0 && playing.length === 0) {
-      setListMeta({ myEloChange: {}, liveRound: {} })
+    if (completedInView.length === 0 && playing.length === 0) {
+      setListMeta({ myEloChange: {}, liveRound: {}, playedDurationMinutes: {} })
       return undefined
     }
 
@@ -346,6 +350,7 @@ export function AmericanoTab({
     ;(async () => {
       const myEloChange: Record<string, number> = {}
       const liveRound: Record<string, number> = {}
+      const playedDurationMinutes: Record<string, number> = {}
 
       if (completedJoined.length > 0) {
         const tids = completedJoined.map((t) => t.id)
@@ -356,6 +361,26 @@ export function AmericanoTab({
           .eq('user_id', profileId)
         ;(data || []).forEach((row: { tournament_id: string; change: number | null }) => {
           myEloChange[String(row.tournament_id)] = Number(row.change) || 0
+        })
+      }
+
+      if (completedInView.length > 0) {
+        const tids = completedInView.map((t) => t.id)
+        const { data: matchRows } = await supabase
+          .from('americano_matches')
+          .select(
+            'tournament_id, created_at, updated_at, team_a_score, team_b_score, results_locked',
+          )
+          .in('tournament_id', tids)
+        const byTournament: Record<string, typeof matchRows> = {}
+        ;(matchRows || []).forEach((m) => {
+          const tid = String(m.tournament_id)
+          if (!byTournament[tid]) byTournament[tid] = []
+          byTournament[tid].push(m)
+        })
+        completedInView.forEach((t) => {
+          const mins = computeAmericanoPlayedDurationMinutes(t, byTournament[t.id] || [])
+          if (mins != null) playedDurationMinutes[t.id] = mins
         })
       }
 
@@ -385,7 +410,7 @@ export function AmericanoTab({
         })
       }
 
-      if (!cancelled) setListMeta({ myEloChange, liveRound })
+      if (!cancelled) setListMeta({ myEloChange, liveRound, playedDurationMinutes })
     })()
 
     return () => {
@@ -432,10 +457,14 @@ export function AmericanoTab({
       ;(eloRes.data || []).forEach((row: { user_id: string; change: number | null }) => {
         eloByUserId[String(row.user_id)] = { change: Number(row.change) || 0 }
       })
+      const playedDurationMinutes = computeAmericanoPlayedDurationMinutes(
+        t,
+        matchesRes.data || [],
+      )
       if (!cancelled) {
         setCompletedDetailCache((prev) => ({
           ...prev,
-          [t.id]: { pointsByUserId, eloByUserId },
+          [t.id]: { pointsByUserId, eloByUserId, playedDurationMinutes },
         }))
       }
     })()
@@ -910,6 +939,7 @@ export function AmericanoTab({
                 tournamentFull={parts.length === Number(t.player_slots)}
                 liveRound={listMeta.liveRound[t.id] ?? null}
                 myEloChange={listMeta.myEloChange[t.id] ?? null}
+                playedDurationMinutes={listMeta.playedDurationMinutes[t.id] ?? null}
                 onClick={() => setDetailTournamentId(t.id)}
               />
             )
@@ -1124,6 +1154,13 @@ export function AmericanoTab({
             joined={joined}
             tournamentFull={tournamentFull}
             liveRound={listMeta.liveRound[t.id] ?? null}
+            playedDurationMinutes={
+              t.status === 'completed'
+                ? completedDetailCache[t.id]?.playedDurationMinutes ??
+                  listMeta.playedDurationMinutes[t.id] ??
+                  null
+                : null
+            }
             description={t.description}
             actions={
               <>

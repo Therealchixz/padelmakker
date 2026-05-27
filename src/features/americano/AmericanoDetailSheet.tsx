@@ -5,6 +5,7 @@ import { isAvatarUrl } from '../../lib/avatarUpload'
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
 import {
   getAmericanoTournamentMeta,
+  getAmericanoDurationLabel,
   playerInitials,
   resolveAmericanoCourtName,
 } from './americanoDisplayUtils'
@@ -44,6 +45,7 @@ type Props = {
   joined?: boolean
   tournamentFull?: boolean
   liveRound?: number | null
+  playedDurationMinutes?: number | null
   description?: string | null
   actions?: ReactNode
   joinedNote?: ReactNode
@@ -155,6 +157,7 @@ export function AmericanoDetailSheet({
   joined: _joined = false,
   tournamentFull = false,
   liveRound = null,
+  playedDurationMinutes = null,
   description,
   actions,
   joinedNote,
@@ -176,6 +179,7 @@ export function AmericanoDetailSheet({
 
   const courtName = resolveAmericanoCourtName(tournament.court_id, courts)
   const { maxPlayers, totalRounds, estMinutes } = getAmericanoTournamentMeta(tournament)
+  const durationLabel = getAmericanoDurationLabel(status, playedDurationMinutes, estMinutes)
   const filled = participants.length
   const emptySlots = Math.max(0, maxPlayers - filled)
   const fillPct = maxPlayers > 0 ? Math.min(100, Math.round((filled / maxPlayers) * 100)) : 0
@@ -254,7 +258,7 @@ export function AmericanoDetailSheet({
           </div>
           <div className="pm-americano-v2-detail-stat">
             <span className="pm-americano-v2-detail-stat-label">Varighed</span>
-            <span className="pm-americano-v2-detail-stat-value">~{estMinutes} min</span>
+            <span className="pm-americano-v2-detail-stat-value">{durationLabel}</span>
           </div>
           <div className="pm-americano-v2-detail-stat">
             <span className="pm-americano-v2-detail-stat-label">Format</span>

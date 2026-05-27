@@ -1,4 +1,13 @@
 import type { AmericanoTournament } from './types'
+import {
+  computeAmericanoPlayedDurationMinutes,
+  formatAmericanoDurationLabel,
+} from '../../lib/americanoPlayedDuration.js'
+
+export {
+  computeAmericanoPlayedDurationMinutes,
+  formatAmericanoDurationLabel,
+} from '../../lib/americanoPlayedDuration.js'
 
 /** Antal runder per spiller-count — matcher schedule578.ts og schedule8.ts. */
 export const ROUNDS_BY_SLOTS: Record<number, number> = {
@@ -17,6 +26,17 @@ export function getAmericanoTournamentMeta(tournament: Pick<AmericanoTournament,
   const totalRounds = baseRounds * passes
   const estMinutes = totalRounds * MIN_PER_ROUND
   return { maxPlayers, totalRounds, estMinutes }
+}
+
+export function getAmericanoDurationLabel(
+  status: 'registration' | 'playing' | 'completed',
+  playedDurationMinutes: number | null | undefined,
+  estMinutes: number,
+) {
+  if (status === 'completed') {
+    return formatAmericanoDurationLabel(playedDurationMinutes ?? null, estMinutes)
+  }
+  return formatAmericanoDurationLabel(null, estMinutes)
 }
 
 export function resolveAmericanoCourtName(
