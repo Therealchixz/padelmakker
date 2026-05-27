@@ -1,0 +1,20 @@
+---
+description: Commit og push automatisk efter implementering
+alwaysApply: true
+---
+
+# Auto commit + push
+
+Når du har **fuldført en implementeringsopgave** (ikke ren Q&A, review eller planlægning):
+
+1. Kør relevante tests/lint hvis ændringen berører dem.
+2. **Commit** med kort dansk/engelsk besked (fokus på hvorfor).
+3. **Push** til `origin` på den aktuelle branch — medmindre brugeren eksplicit har sagt "commit uden push" eller "ingen push".
+
+Gør det **uden at spørge om lov**, medmindre:
+- der ingen filændringer er,
+- ændringerne indeholder secrets (.env, tokens),
+- brugeren har sagt "commit ikke" / "vent med push",
+- eller opgaven var ren undersøgelse uden kodeændringer.
+
+Afslut gerne med commit-hash og kort opsummering af hvad der blev pushet.
