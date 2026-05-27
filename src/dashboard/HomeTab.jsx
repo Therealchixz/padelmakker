@@ -13,6 +13,8 @@ import { PlayerProfileModal } from './PlayerProfileModal';
 import { HOME_FEED_CACHE_TTL_MS } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
+import { parseMatchLevelRange } from '../lib/matchLevelRange';
+import { matchTimeLabel } from '../lib/matchDisplayUtils';
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
@@ -145,6 +147,11 @@ export function HomeTab({ user, setTab }) {
   const closeViewTournament = useCallback(() => setViewTournament(null), []);
   const closeViewMatch = useCallback(() => setViewMatch(null), []);
   const closeViewLeague = useCallback(() => setViewLeague(null), []);
+  const openMatchInKampe = useCallback((matchId) => {
+    setViewMatch(null);
+    mergeKampeSessionPrefs(user.id, { format: 'padel' });
+    setTab('kampe', { search: `focus=${encodeURIComponent(String(matchId))}` });
+  }, [setTab, user.id]);
 
   const FEED_INITIAL_COUNT = 10;
   const FEED_PAGE_SIZE = 10;
@@ -237,7 +244,7 @@ export function HomeTab({ user, setTab }) {
           .select('id, name, updated_at').eq('status', 'completed')
           .order('updated_at', { ascending: false }).limit(5),
         supabase.from('matches')
-          .select('id, creator_id, date, court_name, created_at').eq('status', 'open')
+          .select('id, creator_id, date, time, time_end, court_name, level_range, description, created_at').eq('status', 'open')
           .gte('date', today).order('created_at', { ascending: false }).limit(5),
         supabase.from('americano_tournaments')
           .select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration')
@@ -273,6 +280,7 @@ export function HomeTab({ user, setTab }) {
       const completedAmIds = completedAm.map(t => t.id);
       const completedLgIds = completedLg.map(l => l.id);
       const creatorIds     = [...new Set(openMatches.map(m => m.creator_id))];
+      const openMatchIds   = openMatches.map(m => m.id);
       const regAmIds       = regAm.map(t => t.id);
       const newLigaIds     = newLiga.map(l => l.id);
 
@@ -282,6 +290,7 @@ export function HomeTab({ user, setTab }) {
         amPartsRes, amMatchesRes, amEloRes,
         lgTeamsRes, lgMatchesRes,
         creatorProfilesRes, regAmPartsRes, newLgTeamsRes,
+        openMatchPlayersRes,
       ] = await Promise.allSettled([
         matchIds.length       ? supabase.from('match_results').select('match_id, score_display, match_winner').in('match_id', matchIds)                                                                                                       : Promise.resolve({ data: [] }),
         matchIds.length       ? supabase.from('matches').select('id, court_name, description').in('id', matchIds)                                                                                                                                : Promise.resolve({ data: [] }),
@@ -293,9 +302,10 @@ export function HomeTab({ user, setTab }) {
         creatorIds.length     ? supabase.from('profiles').select('id, full_name, name, avatar').in('id', creatorIds)                                                                                                                             : Promise.resolve({ data: [] }),
         regAmIds.length       ? supabase.from('americano_participants').select('tournament_id').in('tournament_id', regAmIds)                                                                                                                     : Promise.resolve({ data: [] }),
         newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
+        openMatchIds.length   ? supabase.from('match_players').select('match_id, user_id, user_name, user_emoji, team').in('match_id', openMatchIds)                                                                                            : Promise.resolve({ data: [] }),
       ]);
       const round2Results = {
-        mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, amEloRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes,
+        mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, amEloRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes, openMatchPlayersRes,
       };
       for (const [key, result] of Object.entries(round2Results)) {
         if (result.status === 'rejected') console.warn('[home-feed] Round2 query fejlede:', key, result.reason);
@@ -420,9 +430,45 @@ export function HomeTab({ user, setTab }) {
       // Åbne kampe
       const pMap = {};
       (creatorProfilesRes.value?.data || []).forEach(p => { pMap[p.id] = p; });
+      const openPlayersByMatch = {};
+      (openMatchPlayersRes.value?.data || []).forEach((pl) => {
+        if (!openPlayersByMatch[pl.match_id]) openPlayersByMatch[pl.match_id] = [];
+        openPlayersByMatch[pl.match_id].push(pl);
+      });
       const openMatchFeed_ = openMatches.map(m => {
         const p = pMap[m.creator_id] || {};
-        return { type: 'open_match', matchId: m.id, creatorName: p.full_name || p.name || 'En spiller', creatorAvatar: p.avatar || '🎾', creatorId: m.creator_id, date: m.date, court: m.court_name || 'Ukendt bane', created_at: m.created_at };
+        const { min: eloMin, max: eloMax, booked } = parseMatchLevelRange(m.level_range);
+        const players = (openPlayersByMatch[m.id] || []).map((pl) => ({
+          userId: pl.user_id,
+          name: pl.user_name || 'Spiller',
+          avatar: pl.user_emoji || '🎾',
+          team: pl.team,
+        }));
+        const courtRaw = String(m.court_name || '').trim();
+        const court =
+          courtRaw && courtRaw.toLowerCase() !== 'bane ikke valgt'
+            ? courtRaw
+            : booked === false
+              ? 'Bane ikke valgt endnu'
+              : 'Ukendt bane';
+        return {
+          type: 'open_match',
+          matchId: m.id,
+          creatorName: p.full_name || p.name || 'En spiller',
+          creatorAvatar: p.avatar || '🎾',
+          creatorId: m.creator_id,
+          date: m.date,
+          time: m.time,
+          timeEnd: m.time_end,
+          court,
+          booked,
+          eloMin,
+          eloMax,
+          description: m.description || '',
+          players,
+          playerCount: players.length,
+          created_at: m.created_at,
+        };
       });
 
       // Americano under tilmelding
@@ -1130,6 +1176,9 @@ export function HomeTab({ user, setTab }) {
 
               if (row.type === 'open_match') {
                 const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
+                const timeStr = row.time ? matchTimeLabel({ time: row.time, time_end: row.timeEnd }) : '';
+                const eloStr = row.eloMin != null && row.eloMax != null ? `ELO ${row.eloMin}–${row.eloMax}` : '';
+                const subtitleParts = [dateStr, timeStr, row.court !== 'Ukendt bane' ? row.court : null, eloStr].filter(Boolean);
                 const player = { id: row.creatorId, name: row.creatorName };
                 return renderActivityRowCard({
                   key: `open-${i}`,
@@ -1143,18 +1192,27 @@ export function HomeTab({ user, setTab }) {
                   tag: "2v2",
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewPlayer(player)}>{row.creatorName}</span> søger spillere til <strong>2v2</strong></>,
-                  subtitle: `${dateStr}${row.court ? ` · ${row.court}` : ""}`,
+                  subtitle: subtitleParts.join(' · ') || 'Åben kamp',
                   action: (
                     <button
                       onClick={() =>
                         setViewMatch({
                           kind: "open",
+                          matchId: row.matchId,
                           title: `${row.creatorName} søger spillere`,
                           createdAt: row.created_at,
                           date: row.date,
+                          time: row.time,
+                          timeEnd: row.timeEnd,
                           court: row.court,
+                          booked: row.booked,
+                          eloMin: row.eloMin,
+                          eloMax: row.eloMax,
+                          description: row.description,
                           creatorName: row.creatorName,
                           creatorAvatar: row.creatorAvatar,
+                          players: row.players,
+                          playerCount: row.playerCount,
                         })
                       }
                       style={activityActionBtnStyle(theme.green)}
@@ -1462,6 +1520,26 @@ export function HomeTab({ user, setTab }) {
                     {DateTime.fromISO(viewMatch.date).setLocale("da").toFormat("EEE d. MMM")}
                   </span>
                 ) : null}
+                {viewMatch.time ? (
+                  <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.textMid, background: theme.surfaceAlt }}>
+                    {matchTimeLabel({ time: viewMatch.time, time_end: viewMatch.timeEnd })}
+                  </span>
+                ) : null}
+                {viewMatch.eloMin != null && viewMatch.eloMax != null ? (
+                  <span style={{ fontSize: "11px", border: "1px solid " + theme.green + "33", borderRadius: "999px", padding: "4px 10px", color: theme.green, background: theme.greenBg || theme.surfaceAlt }}>
+                    ELO {viewMatch.eloMin}–{viewMatch.eloMax}
+                  </span>
+                ) : null}
+                {viewMatch.kind === "open" && viewMatch.booked != null ? (
+                  <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: viewMatch.booked ? theme.green : theme.warm, background: theme.surfaceAlt }}>
+                    {viewMatch.booked ? 'Bane booket' : 'Bane ikke booket'}
+                  </span>
+                ) : null}
+                {viewMatch.kind === "open" && viewMatch.playerCount != null ? (
+                  <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.textMid, background: theme.surfaceAlt }}>
+                    {viewMatch.playerCount}/4 spillere
+                  </span>
+                ) : null}
                 {viewMatch.createdAt ? (
                   <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.textMid, background: theme.surfaceAlt }}>
                     {formatTimeAgo(viewMatch.createdAt)}
@@ -1508,22 +1586,71 @@ export function HomeTab({ user, setTab }) {
                   ) : null}
                 </>
               ) : (
-                <div className="pm-ui-card" style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
-                  <AvatarCircle avatar={viewMatch.creatorAvatar || "🎾"} size={34} emojiSize="18px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {viewMatch.creatorName || "Spiller"}
-                    </div>
-                    <div style={{ fontSize: "12px", color: theme.textMid }}>
-                      Søger spillere til en åben 2v2 kamp
+                <>
+                  <div className="pm-ui-card" style={{ padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+                    <AvatarCircle avatar={viewMatch.creatorAvatar || "🎾"} size={34} emojiSize="18px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: "14px", fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {viewMatch.creatorName || "Spiller"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: theme.textMid }}>
+                        Opretter · søger spillere til en åben 2v2 kamp
+                      </div>
                     </div>
                   </div>
-                </div>
+
+                  <div className="pm-ui-card" style={{ padding: "12px" }}>
+                    <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
+                      Spillere ({viewMatch.playerCount ?? 0}/4)
+                    </div>
+                    {(viewMatch.players || []).length > 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {(viewMatch.players || []).map((p, idx) => (
+                          <div key={`${p.userId || idx}`} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <AvatarCircle avatar={p.avatar} size={30} emojiSize="15px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                            <div style={{ flex: 1, minWidth: 0, fontSize: "14px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {p.name}
+                            </div>
+                            {p.team != null ? (
+                              <span style={{ fontSize: "11px", color: theme.textLight, fontWeight: 600 }}>
+                                Hold {p.team}
+                              </span>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.45 }}>
+                        Ingen tilmeldt endnu — bliv den første!
+                      </div>
+                    )}
+                  </div>
+
+                  {viewMatch.description ? (
+                    <div className="pm-ui-card" style={{ padding: "12px" }}>
+                      <div style={{ fontSize: "11px", color: theme.textLight, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
+                        Beskrivelse
+                      </div>
+                      <div style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.45 }}>
+                        {viewMatch.description}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
               )}
             </div>
 
-            <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border }}>
-              <button type="button" onClick={closeViewMatch} style={{ ...btn(true), width: "100%", justifyContent: "center" }}>Luk</button>
+            <div style={{ padding: "16px 20px", borderTop: "1px solid " + theme.border, display: "flex", flexDirection: "column", gap: "8px" }}>
+              {viewMatch.kind === "open" && viewMatch.matchId ? (
+                <button
+                  type="button"
+                  onClick={() => openMatchInKampe(viewMatch.matchId)}
+                  style={{ ...btn(true), width: "100%", justifyContent: "center" }}
+                >
+                  Gå til kamp
+                </button>
+              ) : null}
+              <button type="button" onClick={closeViewMatch} style={{ ...btn(viewMatch.kind !== "open"), width: "100%", justifyContent: "center" }}>Luk</button>
             </div>
           </>
         ) : null}
