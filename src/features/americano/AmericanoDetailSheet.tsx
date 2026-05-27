@@ -213,7 +213,7 @@ export function AmericanoDetailSheet({
       <button
         type="button"
         className="pm-kampe-v2-sheet-backdrop"
-        aria-label="Luk turneringsdetaljer"
+        aria-label="Luk Americano/Mexicano-detaljer"
         onClick={onClose}
       />
       <div
@@ -222,7 +222,7 @@ export function AmericanoDetailSheet({
         style={sheetStyle}
         role="dialog"
         aria-modal="true"
-        aria-label="Turneringsdetaljer"
+        aria-label="Americano/Mexicano-detaljer"
       >
         <div {...dragZoneProps} aria-label="Træk her for at lukke">
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />

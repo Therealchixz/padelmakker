@@ -324,7 +324,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
           )
         ) : statsMode === 'americano' ? (
           <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Turneringsform</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Americano/Mexicano-form</div>
             <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginTop: '8px', marginBottom: '6px' }}>
               {americanoForm.length > 0 ? (
                 americanoForm.map((row) => (
@@ -336,10 +336,10 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
                   </div>
                 ))
               ) : (
-                <div style={{ fontSize: '12px', color: theme.textMid }}>Ingen afsluttede turneringer endnu.</div>
+                <div style={{ fontSize: '12px', color: theme.textMid }}>Ingen afsluttede Americano/Mexicano endnu.</div>
               )}
             </div>
-            <div style={{ fontSize: '11px', color: theme.textMid }}>Seneste {americanoForm.length} turneringer</div>
+            <div style={{ fontSize: '11px', color: theme.textMid }}>Seneste {americanoForm.length} Americano/Mexicano</div>
           </div>
         ) : statsMode === '2v2' ? (
           <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>

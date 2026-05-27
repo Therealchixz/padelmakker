@@ -670,8 +670,8 @@ export function RankingTab({ user }) {
           <div style={{ marginTop: '12px', fontSize: '12px', opacity: 0.7 }}>
             {isAmericano
               ? period === 'all'
-                ? `${userEntry.periodGames} turneringer · ${userEntry.periodWins} vundne runder`
-                : `${userEntry.periodGames} turneringer · ${userEntry.periodPoints || 0} point`
+                ? `${userEntry.periodGames} Americano/Mexicano · ${userEntry.periodWins} vundne runder`
+                : `${userEntry.periodGames} Americano/Mexicano · ${userEntry.periodPoints || 0} point`
               : `${userEntry.periodGames} kampe · ${userEntry.periodWins} sejre`}
           </div>
         )}
@@ -774,8 +774,8 @@ export function RankingTab({ user }) {
                   <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '1px' }}>
                     {isAmericano
                       ? period === 'all'
-                        ? `${p.area || '?'} · ${p.periodGames} turneringer · ${p.periodWins} vundne runder`
-                        : `${p.periodGames} turneringer · ${p.periodPoints || 0} point`
+                        ? `${p.area || '?'} · ${p.periodGames} Americano/Mexicano · ${p.periodWins} vundne runder`
+                        : `${p.periodGames} Americano/Mexicano · ${p.periodPoints || 0} point`
                       : period === 'all'
                         ? `${p.area || '?'} · ${p.periodGames} kampe · ${p.periodWins} sejre`
                         : `${p.periodGames} kampe · ${p.periodWins} sejre`}

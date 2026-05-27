@@ -1,6 +1,6 @@
 /** Push-kanaler (matcher notificationPolicy.channel). */
 export const NOTIFICATION_PUSH_CHANNELS = Object.freeze([
-  { id: 'kampe', label: 'Kampe & turneringer' },
+  { id: 'kampe', label: 'Kampe & Americano/Mexicano' },
   { id: 'opdagelse', label: 'Nye kampe der passer' },
   { id: 'resultat', label: 'Resultater & bekræftelser' },
   { id: 'liga', label: 'Liga & hold' },

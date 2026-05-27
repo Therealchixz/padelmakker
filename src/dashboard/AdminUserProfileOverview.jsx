@@ -95,7 +95,7 @@ export function AdminUserProfileOverview({ profile, formatDateTime }) {
             {p.elo_rating != null ? (
               <span style={tag(theme.accentBg, theme.accent)}>2v2 ELO {p.elo_rating}</span>
             ) : null}
-            <span style={tag(theme.blueBg, theme.blue)}>Turnerings-ELO {americanoElo}</span>
+            <span style={tag(theme.blueBg, theme.blue)}>Americano/Mexicano ELO {americanoElo}</span>
             {age ? <span style={tag(theme.blueBg, theme.blue)}>{age} år</span> : null}
             {location ? (
               <span style={tag(theme.warmBg, theme.warm)}>
@@ -145,9 +145,9 @@ export function AdminUserProfileOverview({ profile, formatDateTime }) {
         <InfoRow label="Win %" value={winPct} />
       </Section>
 
-      <Section title="Statistik (turnering)">
+      <Section title="Statistik (Americano/Mexicano)">
         <InfoRow label="ELO" value={String(americanoElo)} />
-        <InfoRow label="Turneringer spillet" value={amPlayed > 0 ? String(amPlayed) : amPlayed === 0 ? '0' : null} />
+        <InfoRow label="Americano/Mexicano spillet" value={amPlayed > 0 ? String(amPlayed) : amPlayed === 0 ? '0' : null} />
         <InfoRow label="V / U / T" value={
           amPlayed > 0
             ? `${Number(p.americano_wins) || 0} / ${Number(p.americano_draws) || 0} / ${Number(p.americano_losses) || 0}`

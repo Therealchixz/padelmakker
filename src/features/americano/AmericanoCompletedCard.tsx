@@ -561,7 +561,7 @@ export function AmericanoCompletedCard({
       <div className="pm-americano-v2-matches-title">Kamp for kamp (format {P} point)</div>
       <div className="pm-americano-v2-matches-list">
         {sortedMatches.length === 0 ? (
-          <div style={{ fontSize: 12, color: theme.textLight }}>Ingen kampe i turneringen.</div>
+          <div style={{ fontSize: 12, color: theme.textLight }}>Ingen kampe i Americano/Mexicano.</div>
         ) : (
           sortedMatches.map((m) => {
             const a = m.team_a_score
@@ -1397,7 +1397,7 @@ export function AmericanoCompletedCard({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {sortedMatches.length === 0 ? (
                   <div style={{ fontSize: 12, color: theme.textLight }}>
-                    Ingen kampe i turneringen.
+                    Ingen kampe i Americano/Mexicano.
                   </div>
                 ) : (
                   sortedMatches.map((m, i) => {

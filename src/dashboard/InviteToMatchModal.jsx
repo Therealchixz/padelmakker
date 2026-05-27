@@ -79,8 +79,8 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
     const notifyError = await createNotification(
       invitee.id,
       'americano_invite',
-      `${senderName} inviterer dig til en turnering!`,
-      `Du er inviteret til "${tournament.name}" ${dateStr} kl. ${timeStr}${desc}. Gå til Kampe → Turnering for at tilmelde dig.`,
+      `${senderName} inviterer dig til en Americano/Mexicano!`,
+      `Du er inviteret til "${tournament.name}" ${dateStr} kl. ${timeStr}${desc}. Gå til Kampe → Americano/Mexicano for at tilmelde dig.`,
       null,
       {
         entityType: 'americano',
@@ -113,7 +113,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
           Inviter {inviteeName}
         </h3>
         <p style={{ fontSize: '13px', color: theme.textMid, marginBottom: '20px', lineHeight: 1.5 }}>
-          Vælg hvilken af dine kampe eller turneringer du vil invitere dem til:
+          Vælg hvilken af dine kampe eller Americano/Mexicano du vil invitere dem til:
         </p>
 
         {loading ? (
@@ -127,7 +127,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
               Ingen åbne kampe
             </p>
             <p style={{ fontSize: '13px', lineHeight: 1.5 }}>
-              Opret en kamp eller turnering under fanen &quot;Kampe&quot;, så kan du invitere spillere til den.
+              Opret en kamp eller Americano/Mexicano under fanen &quot;Kampe&quot;, så kan du invitere spillere til den.
             </p>
           </div>
         ) : (
@@ -191,7 +191,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
                     marginBottom: '2px',
                   }}
                 >
-                  Turneringer
+                  Americano/Mexicano
                 </div>
                 {tournaments.map((tournament) => {
                   const key = `americano-${tournament.id}`;

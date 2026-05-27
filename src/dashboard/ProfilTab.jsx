@@ -594,7 +594,7 @@ export function ProfilTab({ user, showToast, setTab }) {
   ];
   const americanoOverviewCards = [
     { label: "ELO", value: americanoElo, color: theme.accent },
-    { label: "Turneringer", value: americanoPlayed, color: theme.text },
+    { label: "Americano/Mexicano", value: americanoPlayed, color: theme.text },
     { label: "Runder i alt", value: americanoRounds, color: theme.blue },
     { label: "Runder vundet", value: americanoWins, color: americanoOutcomeColors.win.text },
     { label: "Runder uafgjort", value: americanoDraws, color: americanoOutcomeColors.tie.text },
@@ -939,7 +939,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         {isAmericanoMode && !americanoRelationLoading && americanoRelationStats
           && !showAmericanoRelationsSection && americanoRounds > 0 && (
           <div style={{ fontSize: "12px", color: theme.textMid, marginBottom: "16px", lineHeight: 1.45 }}>
-            Spil kampe på banen med makkere og modstandere i afsluttede turneringer — så vises dine relationer her.
+            Spil kampe på banen med makkere og modstandere i afsluttede Americano/Mexicano — så vises dine relationer her.
           </div>
         )}
         {isLigaMode && ligaRelationLoading && (
@@ -1178,7 +1178,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           {isAmericanoMode ? (
             <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: "americano", americanoView: "completed", scope: "mine" }); setTab("kampe"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
               <Swords size={18} color={theme.accent} />
-              <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine turneringer</div>
+              <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>Mine Americano/Mexicano</div>
               <div style={{ fontSize: "11px", color: theme.textLight }}>{americanoPlayed} deltaget</div>
             </button>
           ) : null}

@@ -547,7 +547,7 @@ export function AdminTab({ initialSubTab = null }) {
 
   const deleteAmericano = async (id, name) => {
     const ok = await ask({
-      message: `Slet turneringen "${name}"? Dette kan ikke fortrydes.`,
+      message: `Slet Americano/Mexicano "${name}"? Dette kan ikke fortrydes.`,
       confirmLabel: 'Ja, slet',
       danger: true,
     });
@@ -1148,7 +1148,7 @@ export function AdminTab({ initialSubTab = null }) {
 
   const matchTypePills = [
     { id: '2v2', label: '2v2-kampe' },
-    { id: 'americano', label: 'Turnering' },
+    { id: 'americano', label: 'Americano/Mexicano' },
     { id: 'liga', label: '🏆 Liga' },
   ];
 
@@ -1414,10 +1414,10 @@ export function AdminTab({ initialSubTab = null }) {
           {/* ── Americano ── */}
           {matchSubTab === 'americano' && (
             <div className="pm-admin-list">
-              <h3 className="pm-admin-section-title">Turneringer (Americano/Mexicano)</h3>
-              {americanoTournaments.length === 0 && <div className="pm-admin-empty">Ingen turneringer fundet.</div>}
+              <h3 className="pm-admin-section-title">Americano/Mexicano</h3>
+              {americanoTournaments.length === 0 && <div className="pm-admin-empty">Ingen Americano/Mexicano fundet.</div>}
               {americanoTournaments.length > 0 && filteredAmericano.length === 0 && (
-                <div className="pm-admin-empty">Ingen turneringer i denne kategori.</div>
+                <div className="pm-admin-empty">Ingen Americano/Mexicano i denne kategori.</div>
               )}
               {filteredAmericano.map(t => {
                 const statusLabel = t.status === 'completed' ? 'Afsluttet' : t.status === 'playing' || t.status === 'active' ? 'I gang' : 'Åben';
@@ -1438,7 +1438,7 @@ export function AdminTab({ initialSubTab = null }) {
                           type="button"
                           onClick={() => setEditAmericanoTarget(t)}
                           className="pm-admin-action-btn pm-admin-action-btn--edit"
-                          title="Ret resultater og genberegn Turnerings-ELO"
+                          title="Ret resultater og genberegn Americano/Mexicano ELO"
                         >
                           <Edit2 size={16} />
                           Ret resultater
@@ -1448,7 +1448,7 @@ export function AdminTab({ initialSubTab = null }) {
                         type="button"
                         onClick={() => deleteAmericano(t.id, t.name)}
                         className="pm-admin-action-btn pm-admin-action-btn--delete"
-                        title="Slet turnering"
+                        title="Slet Americano/Mexicano"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -2065,7 +2065,7 @@ export function AdminTab({ initialSubTab = null }) {
                               <strong>Kamp:</strong> {flag.match_id || '-'}
                             </div>
                             <div style={{ marginTop: '4px' }}>
-                              <strong>Turnering:</strong> {flag.tournament_id || '-'}
+                              <strong>Americano/Mexicano:</strong> {flag.tournament_id || '-'}
                             </div>
                             <div style={{ marginTop: '4px' }}>
                               <strong>Teknisk kode:</strong> {explanation.technicalReason || '-'}

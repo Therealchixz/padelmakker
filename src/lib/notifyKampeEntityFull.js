@@ -20,8 +20,8 @@ export async function notifyAmericanoTournamentFull(tournament, actorUserId) {
   const err = await createNotification(
     creatorId,
     'americano_full',
-    'Turneringen er fuld! 🎾',
-    `Alle ${slotsLabel}pladser er tilmeldt i "${name}". Du kan starte turneringen under ${TOURNAMENT_KAMPE_PATH}.`,
+    'Americano/Mexicano er fuld! 🎾',
+    `Alle ${slotsLabel}pladser er tilmeldt i "${name}". Du kan starte Americano/Mexicano under ${TOURNAMENT_KAMPE_PATH}.`,
     null,
     { entityType: 'americano', entityId: tournament.id },
   );

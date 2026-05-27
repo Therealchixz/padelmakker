@@ -29,7 +29,7 @@ export async function notifyAmericanoSpotOpened(
   await createNotification(
     creatorId,
     'americano_spot_open',
-    'Plads frigjort i turnering',
+    'Plads frigjort i Americano/Mexicano',
     wasFull
       ? `"${name}" er ikke længere fuld — ${remaining} ${remaining === 1 ? 'plads' : 'pladser'} tilbage.`
       : `"${name}" har nu ${remaining} ${remaining === 1 ? 'plads' : 'pladser'} tilbage.`,

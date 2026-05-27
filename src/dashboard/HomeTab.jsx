@@ -996,7 +996,7 @@ export function HomeTab({ user, setTab }) {
                   {item.label}
                 </span>
               )) : (
-                <small>{eloMode === 'americano' ? 'Afslut en turnering for at se din form' : 'Spil en kamp for at se din form'}</small>
+                <small>{eloMode === 'americano' ? 'Afslut en Americano/Mexicano for at se din form' : 'Spil en kamp for at se din form'}</small>
               )}
             </div>
           </div>
@@ -1482,7 +1482,7 @@ export function HomeTab({ user, setTab }) {
       {/* Modals */}
       <AppModal
         open={Boolean(viewTournament)}
-        ariaLabel={viewTournament ? `${getTournamentFormatLabel(viewTournament.format)} resultat` : 'Turneringsresultat'}
+        ariaLabel={viewTournament ? `${getTournamentFormatLabel(viewTournament.format)} resultat` : 'Americano/Mexicano resultat'}
         onClose={closeViewTournament}
         maxWidth="400px"
         zIndex={1000}
@@ -1496,7 +1496,7 @@ export function HomeTab({ user, setTab }) {
                 </div>
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: theme.text, margin: 0 }}>{viewTournament.tournamentName}</h3>
               </div>
-              <button type="button" aria-label="Luk turneringsdetaljer" onClick={closeViewTournament} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} aria-hidden="true" /></button>
+              <button type="button" aria-label="Luk Americano/Mexicano-detaljer" onClick={closeViewTournament} style={{ border: "none", background: "none", cursor: "pointer", color: theme.textLight }}><X size={20} aria-hidden="true" /></button>
             </div>
             
             <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>

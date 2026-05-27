@@ -562,12 +562,12 @@ export function AmericanoTab({
   const startTournament = async (t: AmericanoTournament, forceAsAdmin = false) => {
     const isCreatorOrAdmin = String(t.creator_id) === String(profileId) || isAdmin
     if (!isCreatorOrAdmin) {
-      showToast('Kun opretteren eller en admin kan starte turneringen.')
+      showToast('Kun opretteren eller en admin kan starte Americano/Mexicano.')
       return
     }
     if (forceAsAdmin) {
       const ok = await ask({
-        message: `Gennemtving start af "${t.name}" som admin? Turneringen er ikke fyldt endnu.`,
+        message: `Gennemtving start af "${t.name}" som admin? Americano/Mexicano er ikke fyldt endnu.`,
         confirmLabel: 'Ja, start',
       })
       if (!ok) return
@@ -604,7 +604,7 @@ export function AmericanoTab({
         }
       } else {
         if (n !== slots) {
-          showToast(`Turneringen skal være fyldt før start: ${slots} tilmeldte kræves (nu: ${n}).`)
+          showToast(`Americano/Mexicano skal være fyldt før start: ${slots} tilmeldte kræves (nu: ${n}).`)
           return
         }
         if (n < 4 || n > 16) {
@@ -635,7 +635,7 @@ export function AmericanoTab({
       showToast(
         isMexicanoFormat(format)
           ? 'Mexicano startet — runde 1 er klar. Næste runder genereres når resultater gemmes.'
-          : 'Turnering startet — runder genereret.',
+          : 'Americano startet — runder genereret.',
       )
       await load()
     } catch (e: unknown) {
@@ -657,7 +657,7 @@ export function AmericanoTab({
         .eq('tournament_id', tournamentId)
       if (cErr) throw cErr
       if ((count ?? 0) >= maxSlots) {
-        showToast('Turneringen er fuld.')
+        showToast('Americano/Mexicano er fuld.')
         return
       }
       const { error } = await supabase.from('americano_participants').insert({
@@ -737,15 +737,15 @@ export function AmericanoTab({
   /** Kun under tilmelding — som almindelig kamp (opretter). CASCADE sletter deltagere + kampe. */
   const deleteTournament = async (t: AmericanoTournament) => {
     if (String(t.creator_id) !== String(profileId)) {
-      showToast('Kun opretteren kan slette turneringen.')
+      showToast('Kun opretteren kan slette Americano/Mexicano.')
       return
     }
     if (t.status !== 'registration') {
-      showToast('Du kan kun slette turneringer der endnu ikke er startet.')
+      showToast('Du kan kun slette Americano/Mexicano der endnu ikke er startet.')
       return
     }
     const okDelete = await ask({
-      message: 'Slette denne turnering? Alle tilmeldinger fjernes.',
+      message: 'Slette denne Americano/Mexicano? Alle tilmeldinger fjernes.',
       confirmLabel: 'Ja, slet',
       danger: true,
     })
@@ -754,7 +754,7 @@ export function AmericanoTab({
     try {
       const { error } = await supabase.from('americano_tournaments').delete().eq('id', t.id)
       if (error) throw error
-      showToast('Turnering slettet.')
+      showToast('Americano/Mexicano slettet.')
       setDetailTournamentId(null)
       await load()
     } catch (e: unknown) {
@@ -770,7 +770,7 @@ export function AmericanoTab({
       <div className="pm-state-card pm-state-card--loading" style={{ fontFamily: font }}>
         <div className="pm-spinner pm-state-spinner" />
         <div className="pm-state-title">{TOURNAMENT_LOADING}</div>
-        <div className="pm-state-copy">Vi henter turneringer og deltagere.</div>
+        <div className="pm-state-copy">Vi henter Americano/Mexicano og deltagere.</div>
       </div>
     )
   }
@@ -867,7 +867,7 @@ export function AmericanoTab({
               fontSize: 14,
             }}
           >
-            {showCreate ? 'Annullér' : '+ Opret turnering'}
+            {showCreate ? 'Annullér' : '+ Opret Americano/Mexicano'}
           </button>
         </div>
       )}
@@ -880,7 +880,7 @@ export function AmericanoTab({
             courts={courts}
             onCreated={async () => {
               setShowCreate(false)
-              showToast('Turnering oprettet — del link eller invitér spillere.')
+              showToast('Americano/Mexicano oprettet — del link eller invitér spillere.')
               await load()
             }}
             onCancel={() => setShowCreate(false)}
@@ -927,11 +927,11 @@ export function AmericanoTab({
             </div>
             <div className="pm-help-box-item">
               <span style={{ flexShrink: 0 }}>4.</span>
-              <span>Stillingen er <strong>individuel</strong>: dine kamp-point lægges sammen, og spilleren med flest point vinder turneringen.</span>
+              <span>Stillingen er <strong>individuel</strong>: dine kamp-point lægges sammen, og spilleren med flest point vinder Americano/Mexicano.</span>
             </div>
             <div className="pm-help-box-item">
               <span style={{ flexShrink: 0 }}>5.</span>
-              <span><strong>Americano:</strong> Hele rundeplanen laves når turneringen startes — alle kampe er kendt på forhånd.</span>
+              <span><strong>Americano:</strong> Hele rundeplanen laves når Americano startes — alle kampe er kendt på forhånd.</span>
             </div>
             <div className="pm-help-box-item">
               <span style={{ flexShrink: 0 }}>6.</span>
@@ -954,7 +954,7 @@ export function AmericanoTab({
           setAmericanoView(nextTab)
           onAmericanoSubTabChange?.(nextTab)
         }}
-        ariaLabel="Turneringsstatus"
+        ariaLabel="Americano/Mexicano-status"
         size="sm"
         className=""
         style={{ marginBottom: 16 }}
@@ -1108,7 +1108,7 @@ export function AmericanoTab({
               disabled={busyId === t.id || !tournamentFull}
               title={
                 tournamentFull
-                  ? 'Generér runder og start turneringen'
+                  ? 'Generér runder og start Americano/Mexicano'
                   : `Kræver ${slotsConfigured} tilmeldte (nu ${partCount})`
               }
               onClick={() => startTournament(t)}
@@ -1122,7 +1122,7 @@ export function AmericanoTab({
                 cursor: busyId === t.id ? 'wait' : tournamentFull ? 'pointer' : 'not-allowed',
               }}
             >
-              {busyId === t.id ? 'Starter…' : 'Start turnering (generér runder)'}
+              {busyId === t.id ? 'Starter…' : 'Start Americano/Mexicano (generér runder)'}
             </button>
             <button
               type="button"
@@ -1187,7 +1187,7 @@ export function AmericanoTab({
                     }}
                   >
                     <Trash2 size={14} aria-hidden />
-                    Slet turnering
+                    Slet Americano/Mexicano
                   </button>
                 )}
               </div>

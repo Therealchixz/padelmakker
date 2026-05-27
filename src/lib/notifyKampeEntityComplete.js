@@ -23,7 +23,7 @@ export async function notifyAmericanoTournamentCompleted(tournament, actorUserId
     .filter((id) => String(id) !== String(actorUserId));
   if (ids.length === 0) return;
 
-  const title = 'Turnering afsluttet 🏆';
+  const title = 'Americano/Mexicano afsluttet 🏆';
   const body = `"${name}" er afsluttet. Se resultater og ${TOURNAMENT_ELO_LABEL} under ${TOURNAMENT_KAMPE_PATH}.`;
 
   const err = await createNotificationsForUsers(ids, 'americano_completed', title, body, null, {

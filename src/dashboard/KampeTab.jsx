@@ -3345,7 +3345,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       count: openMatches.length + activeMatches.length,
       unread: padelUnreadCounts.total,
     },
-    { id: "americano", label: "Turnering" },
+    { id: "americano", label: "Americano/Mexicano" },
     { id: "liga", label: "Liga" },
   ];
   const padelSubTabs = [
@@ -3407,7 +3407,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     kampeFormat === "padel"
       ? "Opret kamp"
       : kampeFormat === "americano"
-        ? "Opret turnering"
+        ? "Opret Americano/Mexicano"
         : "Opret liga";
   const detailMatch = detailMatchId
     ? [...openMatches, ...activeMatches, ...completedMatches].find((m) => String(m.id) === String(detailMatchId))
@@ -3516,8 +3516,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         <Suspense fallback={
           <div className="pm-state-card pm-state-card--loading">
             <div className="pm-spinner pm-state-spinner" />
-            <div className="pm-state-title">Indlæser turneringer…</div>
-            <div className="pm-state-copy">Vi henter turneringer og deltagere.</div>
+            <div className="pm-state-title">Indlæser Americano/Mexicano…</div>
+            <div className="pm-state-copy">Vi henter Americano/Mexicano og deltagere.</div>
           </div>
         }>
         <AmericanoTab

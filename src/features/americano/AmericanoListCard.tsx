@@ -90,7 +90,7 @@ export function AmericanoListCard({
       id={`pm-americano-${tournament.id}`}
       className="pm-americano-v2-list-card"
       onClick={onClick}
-      aria-label={`Åbn turnering: ${tournament.name}`}
+      aria-label={`Åbn Americano/Mexicano: ${tournament.name}`}
       style={{ scrollMarginTop: '88px' }}
     >
       <div className="pm-americano-v2-list-top">

@@ -90,7 +90,7 @@ export function CreateAmericanoTournamentForm({
     setError(null)
     const n = name.trim()
     if (!n) {
-      setError('Angiv et turneringsnavn.')
+      setError('Angiv et navn.')
       return
     }
     setSubmitting(true)
@@ -149,9 +149,9 @@ export function CreateAmericanoTournamentForm({
         maxWidth: 520,
       }}
     >
-      <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Opret turnering</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Opret Americano/Mexicano</h3>
       <p style={{ fontSize: 13, color: 'var(--pm-text-mid)', marginBottom: 14, lineHeight: 1.5 }}>
-        Individuel turnering med skiftende makkere. <strong>Separat turnerings-ELO</strong> beregnes ved afslutning (adskilt fra normal 2v2-ELO). Du tilmeldes automatisk som første spiller.
+        Individuelt format med skiftende makkere. <strong>Separat Americano/Mexicano ELO</strong> beregnes ved afslutning (adskilt fra normal 2v2-ELO). Du tilmeldes automatisk som første spiller.
       </p>
 
       <div style={{ marginBottom: 14 }}>
@@ -187,14 +187,14 @@ export function CreateAmericanoTournamentForm({
             </>
           ) : (
             <>
-              <strong>Americano:</strong> Hele rundeplanen genereres når turneringen startes — alle møder er planlagt på forhånd.
+              <strong>Americano:</strong> Hele rundeplanen genereres når Americano startes — alle møder er planlagt på forhånd.
             </>
           )}
         </p>
       </div>
 
       <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--pm-text)' }}>
-        Turneringsnavn
+        Navn
       </label>
       <input
         value={name}
@@ -223,7 +223,7 @@ export function CreateAmericanoTournamentForm({
           onChange={setCourtId}
           options={selectOptions}
           placeholder="Ikke valgt / anden bane"
-          ariaLabel="Vælg bane til turnering"
+          ariaLabel="Vælg bane til Americano/Mexicano"
         />
         <p style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 6, lineHeight: 1.45 }}>
           Samme steder som under fanen Baner. Matcher automatisk til baner i databasen når navnet stemmer overens.
@@ -268,7 +268,7 @@ export function CreateAmericanoTournamentForm({
       </div>
 
       <div style={{ marginTop: 14 }}>
-        <label style={labelSmall}>Turneringens længde</label>
+        <label style={labelSmall}>Længde</label>
         <select
           value={opponentPasses}
           onChange={(e) => setOpponentPasses(Number(e.target.value) as AmericanoOpponentPasses)}
@@ -278,7 +278,7 @@ export function CreateAmericanoTournamentForm({
           <option value={2}>Lang — samme rundeplan to gange (dobbelt så mange kampe)</option>
         </select>
         <p style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 6 }}>
-          Ved &quot;Lang&quot; gentages hele rotationsplanen; du møder de andre oftere som modstander og makker uden at oprette en ny turnering.
+          Ved &quot;Lang&quot; gentages hele rotationsplanen; du møder de andre oftere som modstander og makker uden at oprette en ny Americano/Mexicano.
         </p>
       </div>
 
@@ -324,7 +324,7 @@ export function CreateAmericanoTournamentForm({
             cursor: submitting ? 'wait' : 'pointer',
           }}
         >
-          {submitting ? 'Opretter…' : 'Opret turnering'}
+          {submitting ? 'Opretter…' : 'Opret Americano/Mexicano'}
         </button>
         {onCancel ? (
           <button

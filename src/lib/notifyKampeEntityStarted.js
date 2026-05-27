@@ -26,7 +26,7 @@ export async function notifyAmericanoTournamentStarted(tournament, actorUserId) 
   const err = await createNotificationsForUsers(
     ids,
     'americano_started',
-    'Turneringen er startet 🎾',
+    'Americano/Mexicano er startet 🎾',
     `"${name}" er i gang. Se runder og resultater under ${TOURNAMENT_KAMPE_PATH}.`,
     null,
     { entityType: 'americano', entityId: tournament.id },

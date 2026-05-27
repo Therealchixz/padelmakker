@@ -570,21 +570,21 @@ export function AmericanoResultsPanel({
       if (eloErrorMessage) {
         console.warn('Americano ELO rpc error:', eloErrorMessage)
         if (usedLegacyFallback) {
-          showToast(`Turnering afsluttet. ${TOURNAMENT_ELO_LABEL} blev ikke opdateret endnu (mangler DB-migration).`)
+          showToast(`Americano/Mexicano afsluttet. ${TOURNAMENT_ELO_LABEL} blev ikke opdateret endnu (mangler DB-migration).`)
         } else {
           throw new Error(eloErrorMessage)
         }
       } else if (eloData?.error) {
-        showToast(`Turnering afsluttet. ${TOURNAMENT_ELO_LABEL} kunne ikke beregnes: ` + String(eloData.error))
+        showToast(`Americano/Mexicano afsluttet. ${TOURNAMENT_ELO_LABEL} kunne ikke beregnes: ` + String(eloData.error))
       } else if (eloData?.success) {
         const playersUpdated = Number(eloData.players_updated) || 0
         if (eloData.already_applied) {
-          showToast(`Turnering afsluttet. ${TOURNAMENT_ELO_LABEL} var allerede beregnet.`)
+          showToast(`Americano/Mexicano afsluttet. ${TOURNAMENT_ELO_LABEL} var allerede beregnet.`)
         } else {
-          showToast(`Turnering afsluttet. ${TOURNAMENT_ELO_LABEL} opdateret for ${playersUpdated} spillere.`)
+          showToast(`Americano/Mexicano afsluttet. ${TOURNAMENT_ELO_LABEL} opdateret for ${playersUpdated} spillere.`)
         }
       } else {
-        showToast('Turnering afsluttet.')
+        showToast('Americano/Mexicano afsluttet.')
       }
       onProfileStatsRefresh?.()
       void notifyAmericanoTournamentCompleted(tournament, currentUserId)
@@ -645,7 +645,7 @@ export function AmericanoResultsPanel({
                   Ved <strong>Mexicano</strong> genereres næste runde automatisk når alle kampe i runden er gemt (1.+4. vs 2.+3. efter stilling).{' '}
                 </>
               ) : null}
-              Når du afslutter turneringen, beregnes separat {formatLabel}-ELO ud fra slutstillingen.
+              Når du afslutter Americano/Mexicano, beregnes separat {formatLabel}-ELO ud fra slutstillingen.
             </>
           ) : (
             <>
@@ -689,7 +689,7 @@ export function AmericanoResultsPanel({
         {matchesDisplay.length === 0 && (
           <div className="pm-data-empty-note" style={{ marginBottom: 8 }}>
             {isMexicano
-              ? 'Ingen kampe endnu — start turneringen for at oprette runde 1.'
+              ? 'Ingen kampe endnu — start Americano/Mexicano for at oprette runde 1.'
               : 'Kampplan er ikke genereret endnu.'}
           </div>
         )}
@@ -1024,7 +1024,7 @@ export function AmericanoResultsPanel({
             cursor: saving ? 'wait' : 'pointer',
           }}
         >
-          Afslut turnering (alle resultater indtastet)
+          Afslut Americano/Mexicano (alle resultater indtastet)
         </button>
       )}
     </div>

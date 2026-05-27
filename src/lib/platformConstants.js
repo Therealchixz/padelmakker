@@ -168,7 +168,7 @@ export const INTENTS = [
   { value: 'træning',     label: 'Træning',       desc: 'Fokus på at forbedre mit spil' },
   { value: 'konkurrence', label: 'Konkurrence',   desc: 'Vil gerne vinde og teste mit niveau' },
   { value: 'fast_makker', label: 'Fast makker',   desc: 'Søger en fast partner at spille med' },
-  { value: 'turnering',   label: 'Turnering',     desc: 'Klar til turneringer og ligaer' },
+  { value: 'turnering',   label: 'Americano/Mexicano', desc: 'Klar til Americano/Mexicano og ligaer' },
 ];
 
 export const INTENT_LABELS = Object.fromEntries(INTENTS.map((i) => [i.value, i.label]));
