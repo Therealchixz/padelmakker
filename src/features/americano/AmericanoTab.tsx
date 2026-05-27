@@ -897,7 +897,9 @@ export function AmericanoTab({
             </div>
             <div className="pm-help-box-item">
               <span style={{ flexShrink: 0 }}>7.</span>
-              <span>5–7 spillere på én bane: fire spiller, resten sidder over. Start når turneringen er fyldt.</span>
+              <span>
+                Antal baner pr. runde betyder: på hver bane spiller <strong>4 (2v2)</strong>, og resten sidder over pr. runde (i Mexicano kan det være forskellige spillere fra runde til runde).
+              </span>
             </div>
           </div>
         ) : null}

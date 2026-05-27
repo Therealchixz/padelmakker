@@ -40,8 +40,8 @@ function benchLabel(bench: number) {
 export function formatCourtsBenchCompact(courts: number, bench: number) {
   const courtsPart = courtsLabel(courts)
   const benchPart = benchLabel(bench)
-  if (!benchPart) return courtsPart
-  return `${courtsPart} · ${benchPart}`
+  if (!benchPart) return `${courtsPart} pr. runde`
+  return `${courtsPart} pr. runde · ${benchPart}`
 }
 
 /** Detail-sheet: tydelig hovedlinje + undertekst for bænk. */
@@ -51,13 +51,13 @@ export function formatCourtsBenchDetail(courts: number, bench: number) {
     return {
       primary: courtsLabel(courts),
       secondary: 'Alle spillere er på banen',
-      ariaLabel: `${courtsLabel(courts)} pr. runde — alle spillere er på banen`,
+      ariaLabel: `${courtsLabel(courts)} pr. runde — alle spillere er på banen (4 spillere pr. bane)`,
     }
   }
   return {
     primary: courtsLabel(courts),
-    secondary: benchPart,
-    ariaLabel: `${courtsLabel(courts)} pr. runde — ${benchPart}`,
+    secondary: `${benchPart} · 4 spillere pr. bane (2v2)`,
+    ariaLabel: `${courtsLabel(courts)} pr. runde — ${benchPart} · 4 spillere pr. bane (2v2)`,
   }
 }
 
