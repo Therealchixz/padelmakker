@@ -55,8 +55,8 @@ test('americanoBaseRounds: 5 spillere, 1 bane → 5 runder', () => {
 test('americanoBaseRounds: 6 spillere, 1 bane → 8 runder (makker+modstander)', () => {
   assert.equal(americanoBaseRounds(6, 1), 8)
 })
-test('americanoBaseRounds: 8 spillere, 2 baner → 7 runder', () => {
-  assert.equal(americanoBaseRounds(8, 2), 7)
+test('americanoBaseRounds: 8 spillere, 2 baner → 9 runder (fuld dækning)', () => {
+  assert.equal(americanoBaseRounds(8, 2), 9)
 })
 test('americanoTotalRounds: 6 spillere Lang → 16 runder', () => {
   assert.equal(americanoTotalRounds(6, 1, 2), 16)
@@ -89,8 +89,16 @@ test('5 spillere, 1 bane: makker og modstander med alle', () => {
 
 test('6 spillere, 1 bane Normal: 8 runder og fuld dækning', () => {
   const rows = buildAmericanoRoundRobinMatchRows('tid', ids(6), 1, 1)
+  assert.equal(americanoBaseRounds(6, 1), 8)
   assert.equal(new Set(rows.map((r) => r.round_number)).size, 8)
   const c = coverage(rows, 6)
+  assert.equal(c.allPartners, true)
+  assert.equal(c.allOpponents, true)
+})
+
+test('7 spillere, 1 bane: fuld makker og modstander-dækning', () => {
+  const rows = buildAmericanoRoundRobinMatchRows('tid', ids(7), 1, 1)
+  const c = coverage(rows, 7)
   assert.equal(c.allPartners, true)
   assert.equal(c.allOpponents, true)
 })

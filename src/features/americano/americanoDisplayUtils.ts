@@ -9,22 +9,108 @@ export {
   formatAmericanoDurationLabel,
 } from '../../lib/americanoPlayedDuration.js'
 
+import { getMexicanoTotalRounds } from '../../lib/mexicanoSchedule.js'
 import { americanoBaseRounds, americanoTotalRounds, benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
 export { benchCountPerRound, americanoBaseRounds, americanoTotalRounds }
 
+/** Legacy default — brug estimateMinutesPerRound(points) til nye estimater. */
 export const MIN_PER_ROUND = 12
 
+/** Grov minutter pr. runde efter pointformat (inkl. skift/pause). */
+export function estimateMinutesPerRound(pointsPerMatch: number): number {
+  if (pointsPerMatch === 32) return 16
+  if (pointsPerMatch === 24) return 12
+  return 9
+}
+
+export function formatEstimatedDuration(minutes: number): string {
+  if (!Number.isFinite(minutes) || minutes <= 0) return '—'
+  if (minutes >= 60) {
+    const h = Math.floor(minutes / 60)
+    const m = minutes % 60
+    return m > 0 ? `ca. ${h} t ${m} min` : `ca. ${h} t`
+  }
+  return `ca. ${minutes} min`
+}
+
+export type CreateFormSchedulePreview = {
+  format: AmericanoTournament['format']
+  normalRounds: number
+  longRounds: number
+  selectedRounds: number
+  bench: number
+  minPerRound: number
+  estNormalMin: number
+  estLongMin: number
+  estSelectedMin: number
+  estSelectedLabel: string
+  lengthLabel: 'Normal' | 'Lang'
+}
+
+/** Forhåndsvisning i opret-form: runder + tid ud fra alle valg. */
+export function getCreateFormSchedulePreview(input: {
+  format: AmericanoTournament['format']
+  playerSlots: number
+  courtsPerRound: number
+  opponentPasses: number
+  pointsPerMatch: number
+}): CreateFormSchedulePreview {
+  const format = input.format ?? 'americano'
+  const playerSlots = Math.max(4, Number(input.playerSlots) || 6)
+  const courts = Math.max(1, Number(input.courtsPerRound) || 1)
+  const passes = Number(input.opponentPasses) === 2 ? 2 : 1
+  const points = Number(input.pointsPerMatch) || 16
+  const minPerRound = estimateMinutesPerRound(points)
+  const bench = benchCountPerRound(playerSlots, courts)
+
+  const normalRounds =
+    format === 'mexicano'
+      ? getMexicanoTotalRounds(playerSlots, 1)
+      : americanoBaseRounds(playerSlots, courts)
+  const longRounds =
+    format === 'mexicano'
+      ? getMexicanoTotalRounds(playerSlots, 2)
+      : americanoTotalRounds(playerSlots, courts, 2)
+  const selectedRounds = passes === 2 ? longRounds : normalRounds
+
+  const estSelectedMin = selectedRounds * minPerRound
+  return {
+    format,
+    normalRounds,
+    longRounds,
+    selectedRounds,
+    bench,
+    minPerRound,
+    estNormalMin: normalRounds * minPerRound,
+    estLongMin: longRounds * minPerRound,
+    estSelectedMin,
+    estSelectedLabel: formatEstimatedDuration(estSelectedMin),
+    lengthLabel: passes === 2 ? 'Lang' : 'Normal',
+  }
+}
+
 export function getAmericanoTournamentMeta(
-  tournament: Pick<AmericanoTournament, 'player_slots' | 'opponent_passes' | 'courts_per_round'>,
+  tournament: Pick<
+    AmericanoTournament,
+    'player_slots' | 'opponent_passes' | 'courts_per_round' | 'points_per_match' | 'format'
+  >,
 ) {
+  const preview = getCreateFormSchedulePreview({
+    format: tournament.format ?? 'americano',
+    playerSlots: Number(tournament.player_slots) || 5,
+    courtsPerRound: Number(tournament.courts_per_round) || 1,
+    opponentPasses: Number(tournament.opponent_passes) || 1,
+    pointsPerMatch: Number(tournament.points_per_match) || 16,
+  })
   const maxPlayers = Number(tournament.player_slots) || 5
-  const passes = Number(tournament.opponent_passes) === 2 ? 2 : 1
   const courts = Math.max(1, Number(tournament.courts_per_round) || 1)
-  const baseRounds = americanoBaseRounds(maxPlayers, courts)
-  const totalRounds = americanoTotalRounds(maxPlayers, courts, passes === 2 ? 2 : 1)
-  const estMinutes = totalRounds * MIN_PER_ROUND
-  const bench = benchCountPerRound(maxPlayers, courts)
-  return { maxPlayers, totalRounds, estMinutes, courts, bench }
+  return {
+    maxPlayers,
+    totalRounds: preview.selectedRounds,
+    estMinutes: preview.estSelectedMin,
+    courts,
+    bench: preview.bench,
+  }
 }
 
 function courtsLabel(courts: number) {

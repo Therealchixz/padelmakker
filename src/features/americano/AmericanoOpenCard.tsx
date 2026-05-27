@@ -3,8 +3,7 @@ import { CalendarDays } from 'lucide-react'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { theme } from '../../lib/platformTheme'
 
-import { americanoBaseRounds } from '../../lib/americanoRoundRobinSchedule'
-import { MIN_PER_ROUND } from './americanoDisplayUtils'
+import { getCreateFormSchedulePreview } from './americanoDisplayUtils'
 
 type AmericanoOpenCardPlayer = {
   id: string
@@ -25,6 +24,9 @@ type AmericanoOpenCardProps = {
   maxPlayers: number
   players: AmericanoOpenCardPlayer[]
   opponentPasses?: number | null
+  courtsPerRound?: number | null
+  pointsPerMatch?: number | null
+  tournamentFormat?: 'americano' | 'mexicano' | null
   /** Tekst der vises i bunden — typisk Tilmeld/Afmeld og evt. start/admin-knapper */
   actions?: ReactNode
   /** "Du er tilmeldt"-note der vises mellem footer og actions hvis sat */
@@ -104,6 +106,9 @@ export function AmericanoOpenCard({
   maxPlayers,
   players,
   opponentPasses,
+  courtsPerRound,
+  pointsPerMatch,
+  tournamentFormat,
   actions,
   joinedNote,
   extras,
@@ -114,10 +119,15 @@ export function AmericanoOpenCard({
   const isAlmostFull = emptySlots === 1
   const fillPct = Math.min(100, Math.round((filled / maxPlayers) * 100))
 
-  const baseRounds = americanoBaseRounds(maxPlayers, 1)
-  const passes = opponentPasses === 2 ? 2 : 1
-  const totalRounds = baseRounds * passes
-  const estMinutes = totalRounds * MIN_PER_ROUND
+  const schedule = getCreateFormSchedulePreview({
+    format: tournamentFormat ?? 'americano',
+    playerSlots: maxPlayers,
+    courtsPerRound: courtsPerRound ?? 1,
+    opponentPasses: opponentPasses ?? 1,
+    pointsPerMatch: pointsPerMatch ?? 16,
+  })
+  const totalRounds = schedule.selectedRounds
+  const estMinutes = schedule.estSelectedMin
 
   /** Grid columns afhænger af spillerantal — undgår at en enkelt række ikke fyldes ud */
   const gridCols = maxPlayers <= 4 ? 4 : maxPlayers <= 6 ? 3 : 4

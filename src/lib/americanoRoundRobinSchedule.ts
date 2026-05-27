@@ -29,19 +29,34 @@ function totalPairCombinations(n: number): number {
   return (n * (n - 1)) / 2
 }
 
+/** Teoretisk minimum (makker- og modstanderpar) før planlægger-justering. */
+function theoreticalMinRounds(n: number, courts: number): number {
+  const pairs = totalPairCombinations(n)
+  const forPartners = Math.ceil(pairs / (2 * courts))
+  const forOpponents = Math.ceil(pairs / (4 * courts))
+  return Math.max(roundRobinTotalRounds(n), forPartners, forOpponents)
+}
+
+function coverageComplete(n: number, partnerMet: Set<string>, oppMet: Set<string>): boolean {
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const key = pairKey(i, j)
+      if (!partnerMet.has(key) || !oppMet.has(key)) return false
+    }
+  }
+  return true
+}
+
 /**
- * Minimum runder (Normal) så alle makkerpar og alle modstanderpar kan dækkes.
- * Makker: 2 nye par pr. bane pr. runde. Modstander: 4 nye par pr. bane pr. runde.
+ * Antal runder (Normal) — plan bygges så alle er makker og modstander med alle andre.
  */
 export function americanoBaseRounds(n: number, courtsPerRound = 1): number {
   if (n < 4 || n > 16) {
     throw new Error(`Americano kræver 4–16 spillere, fik ${n}`)
   }
   const courts = clampCourts(n, courtsPerRound)
-  const pairs = totalPairCombinations(n)
-  const forPartners = Math.ceil(pairs / (2 * courts))
-  const forOpponents = Math.ceil(pairs / (4 * courts))
-  return Math.max(roundRobinTotalRounds(n), forPartners, forOpponents)
+  const minRounds = theoreticalMinRounds(n, courts)
+  return buildScheduleRounds(n, courts, minRounds).length
 }
 
 export function americanoTotalRounds(
@@ -237,16 +252,13 @@ function pickPlayersForRound(n: number, courts: number, playCount: number[]): nu
 /** Byg rundeplan med mindst targetRounds runder; cirkel + greedy-udvidelse. */
 function buildScheduleRounds(n: number, courts: number, targetRounds: number): RoundIdx[] {
   const circle = circleRoundsToMatches(n, courts)
-  if (targetRounds <= circle.length) {
-    return circle.slice(0, targetRounds)
-  }
 
   const partnerMet = new Set<string>()
   const oppMet = new Set<string>()
   const playCount = Array(n).fill(0)
   const rounds: RoundIdx[] = []
 
-  for (const round of circle) {
+  for (const round of circle.slice(0, Math.min(circle.length, targetRounds))) {
     for (const m of round) recordMatch(m, partnerMet, oppMet)
     for (const m of round) {
       for (const p of [...m.teamA, ...m.teamB]) playCount[p]++
@@ -255,6 +267,15 @@ function buildScheduleRounds(n: number, courts: number, targetRounds: number): R
   }
 
   while (rounds.length < targetRounds) {
+    const selected = pickPlayersForRound(n, courts, playCount)
+    const matches = bestRoundMatches(selected, courts, partnerMet, oppMet)
+    for (const m of matches) recordMatch(m, partnerMet, oppMet)
+    for (const p of selected) playCount[p]++
+    rounds.push(matches)
+  }
+
+  const maxRounds = targetRounds + n * 4
+  while (!coverageComplete(n, partnerMet, oppMet) && rounds.length < maxRounds) {
     const selected = pickPlayersForRound(n, courts, playCount)
     const matches = bestRoundMatches(selected, courts, partnerMet, oppMet)
     for (const m of matches) recordMatch(m, partnerMet, oppMet)
@@ -277,10 +298,10 @@ export function buildAmericanoRoundRobinMatchRows(
   const n = participantIds.length
   if (n < 4 || n > 16) throw new Error(`Americano kræver 4–16 spillere, fik ${n}`)
   const courts = clampCourts(n, courtsPerRound)
-  const baseRounds = americanoBaseRounds(n, courts)
+  const minRounds = theoreticalMinRounds(n, courts)
+  const schedule = buildScheduleRounds(n, courts, minRounds)
+  const baseRounds = schedule.length
   const passCount: 1 | 2 = passes === 2 ? 2 : 1
-
-  const schedule = buildScheduleRounds(n, courts, baseRounds)
   const out: AmericanoMatchInsert[] = []
 
   for (let pass = 0; pass < passCount; pass++) {

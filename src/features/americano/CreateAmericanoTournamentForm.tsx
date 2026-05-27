@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { americanoBaseRounds, americanoTotalRounds, benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
-import { MIN_PER_ROUND } from './americanoDisplayUtils'
+import { benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
+import { formatEstimatedDuration, getCreateFormSchedulePreview } from './americanoDisplayUtils'
 
 function nearestHalfHour(): string {
   const now = new Date()
@@ -70,13 +70,17 @@ export function CreateAmericanoTournamentForm({
   const maxCourts = Math.floor(playerSlots / 4)
   const COURT_OPTIONS = Array.from({ length: maxCourts }, (_, i) => i + 1)
 
-  const schedulePreview = useMemo(() => {
-    if (tournamentFormat !== 'americano') return null
-    const base = americanoBaseRounds(playerSlots, courtsPerRound)
-    const total = americanoTotalRounds(playerSlots, courtsPerRound, opponentPasses === 2 ? 2 : 1)
-    const bench = benchCountPerRound(playerSlots, courtsPerRound)
-    return { base, total, estMinutes: total * MIN_PER_ROUND, bench }
-  }, [tournamentFormat, playerSlots, courtsPerRound, opponentPasses])
+  const schedulePreview = useMemo(
+    () =>
+      getCreateFormSchedulePreview({
+        format: tournamentFormat,
+        playerSlots,
+        courtsPerRound,
+        opponentPasses,
+        pointsPerMatch,
+      }),
+    [tournamentFormat, playerSlots, courtsPerRound, opponentPasses, pointsPerMatch],
+  )
 
   const handlePlayerSlotsChange = useCallback((n: AmericanoPlayerSlots) => {
     setPlayerSlots(n)
@@ -287,18 +291,19 @@ export function CreateAmericanoTournamentForm({
           <option value={2}>Lang — samme rundeplan to gange (dobbelt så mange kampe)</option>
         </select>
         <p style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 6, lineHeight: 1.45 }}>
-          {schedulePreview ? (
+          {tournamentFormat === 'americano' ? (
             <>
-              <strong>Americano:</strong> Normal = {schedulePreview.base} runder
+              <strong>Normal</strong> = {schedulePreview.normalRounds} runder
               {schedulePreview.bench > 0
                 ? ` (${schedulePreview.bench} sidder over pr. runde)`
                 : ' (alle på banen)'}
-              — planlagt så I når makker og modstander med alle. Lang = {schedulePreview.total} runder
-              (ca. {schedulePreview.estMinutes} min). Mexicano bruger samme længde, men parres efter stilling.
+              — planlagt så I når makker og modstander med alle. <strong>Lang</strong> ={' '}
+              {schedulePreview.longRounds} runder (samme plan to gange).
             </>
           ) : (
             <>
-              Ved &quot;Lang&quot; gentages hele rotationsplanen. Mexicano parres efter stilling runde for runde.
+              <strong>Normal</strong> = {schedulePreview.normalRounds} runder · <strong>Lang</strong> ={' '}
+              {schedulePreview.longRounds} runder. Næste runde parres ud fra stilling når resultater er gemt.
             </>
           )}
         </p>
@@ -331,6 +336,42 @@ export function CreateAmericanoTournamentForm({
           placeholder="Regler, niveau, osv."
           style={{ ...inputStyle, resize: 'vertical' }}
         />
+      </div>
+
+      <div
+        style={{
+          marginTop: 18,
+          padding: '14px 16px',
+          borderRadius: 10,
+          border: '1px solid color-mix(in srgb, var(--pm-accent) 35%, var(--pm-border))',
+          background: 'color-mix(in srgb, var(--pm-accent) 6%, var(--pm-surface))',
+        }}
+        aria-live="polite"
+      >
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--pm-text)', marginBottom: 8 }}>
+          Estimeret spilletid
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--pm-text)', margin: 0, lineHeight: 1.5 }}>
+          <strong>{schedulePreview.lengthLabel}</strong> · {schedulePreview.selectedRounds} runder ·{' '}
+          {playerSlots} spillere · {courtsPerRound} bane{courtsPerRound !== 1 ? 'r' : ''} · spil til{' '}
+          {pointsPerMatch} point
+        </p>
+        <p
+          style={{
+            fontSize: 20,
+            fontWeight: 800,
+            color: 'var(--pm-accent)',
+            margin: '8px 0 0',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          {schedulePreview.estSelectedLabel}
+        </p>
+        <p style={{ fontSize: 11, color: 'var(--pm-text-light)', margin: '8px 0 0', lineHeight: 1.45 }}>
+          Baseret på ~{schedulePreview.minPerRound} min pr. runde ved {pointsPerMatch} point (inkl. skift).
+          Normal ≈ {formatEstimatedDuration(schedulePreview.estNormalMin)}, Lang ≈{' '}
+          {formatEstimatedDuration(schedulePreview.estLongMin)}.
+        </p>
       </div>
 
       {error && (
