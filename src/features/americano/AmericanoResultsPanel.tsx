@@ -300,7 +300,7 @@ export function AmericanoResultsPanel({
   const P: 16 | 24 | 32 =
     ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
   const isCreator = String(tournament.creator_id) === String(currentUserId)
-  const isMexicano = isMexicanoFormat(tournament.format)
+  const isMexicano = isMexicanoFormat(tournament.format ?? 'americano')
   const formatLabel = getTournamentFormatLabel(tournament.format)
 
   const participantIdsOrdered = useMemo(
@@ -363,7 +363,7 @@ export function AmericanoResultsPanel({
       setScores(sc)
       setUnlockedIds(new Set())
 
-      if (isCreator && isMexicanoFormat(tournament.format)) {
+      if (isCreator && isMexicanoFormat(tournament.format ?? 'americano')) {
         const advanced = await advanceMexicanoRoundIfReady({
           supabase,
           tournament,
@@ -975,9 +975,10 @@ export function AmericanoResultsPanel({
               try {
                 const { error } = await supabase
                   .from('americano_matches')
-                  .insert(pendingNextMexicanoRound)
+                  .insert(pendingNextMexicanoRound!)
                 if (error) throw error
-                showToast(`Runde ${pendingNextMexicanoRound.round_number} er genereret.`)
+                const roundNum = Array.isArray(pendingNextMexicanoRound) ? pendingNextMexicanoRound[0]?.round_number : (pendingNextMexicanoRound as { round_number?: number })?.round_number
+                showToast(`Runde ${roundNum} er genereret.`)
                 await load()
                 onSaved()
               } catch (e: unknown) {
@@ -1002,7 +1003,7 @@ export function AmericanoResultsPanel({
             width: '100%',
           }}
         >
-          Generér runde {pendingNextMexicanoRound.round_number}
+          Generér runde {Array.isArray(pendingNextMexicanoRound) ? pendingNextMexicanoRound[0]?.round_number : (pendingNextMexicanoRound as { round_number?: number } | null)?.round_number}
         </button>
       ) : null}
       {isCreator && (

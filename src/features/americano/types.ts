@@ -1,5 +1,5 @@
-/** Nye turneringer: 5, 6 eller 7. 8 = kun ældre rækker fra før skiftet (stadig startbar med 8 deltagere). */
-export type AmericanoPlayerSlots = 5 | 6 | 7 | 8
+/** 4–16 spillere. 5–8 er de klassiske værdier; 4 og 9–16 kræver den nye round-robin generator. */
+export type AmericanoPlayerSlots = 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16
 export type AmericanoPoints = 16 | 24 | 32
 export type AmericanoStatus = 'registration' | 'playing' | 'completed'
 
@@ -16,6 +16,7 @@ export type AmericanoTournament = {
   time_slot: string
   court_id: string | null
   player_slots: AmericanoPlayerSlots
+  courts_per_round?: number | null
   points_per_match: AmericanoPoints
   opponent_passes?: AmericanoOpponentPasses | null
   format?: AmericanoTournamentFormat | null

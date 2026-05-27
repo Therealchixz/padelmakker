@@ -29,12 +29,14 @@ export async function advanceMexicanoRoundIfReady({
   )
   if (!next) return false
 
-  const { error } = await supabase.from('americano_matches').insert(next)
+  const rows = Array.isArray(next) ? next : [next]
+  const { error } = await supabase.from('americano_matches').insert(rows)
   if (error) throw error
 
   const passes = Number(tournament.opponent_passes) === 2 ? 2 : 1
   const total = getMexicanoTotalRounds(participantIdsInJoinOrder.length, passes)
-  showToast?.(`Runde ${next.round_number} af ${total} er genereret.`)
+  const roundNumber = rows[0]?.round_number ?? '?'
+  showToast?.(`Runde ${roundNumber} af ${total} er genereret (${rows.length} kamp${rows.length !== 1 ? 'e' : ''}).`)
   return true
 }
 

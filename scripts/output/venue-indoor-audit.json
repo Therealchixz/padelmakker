@@ -1,0 +1,78 @@
+{
+  "mismatches": [
+    {
+      "id": "matchi_padelyard",
+      "current": true,
+      "verified": true,
+      "live": false,
+      "liveKind": "both",
+      "note": "MATCHi live probe differs from verified map"
+    }
+  ],
+  "matchiLive": {
+    "matchi_padel99": {
+      "kind": "both",
+      "live": true
+    },
+    "matchi_skagen_padelcenter": {
+      "kind": "both",
+      "live": true
+    },
+    "matchi_padelnord": {
+      "kind": "indoor",
+      "live": true
+    },
+    "matchi_padel8500": {
+      "kind": "indoor",
+      "live": true
+    },
+    "matchi_padelland": {
+      "kind": "indoor",
+      "live": true
+    },
+    "matchi_vipadelaarhus": {
+      "kind": "indoor",
+      "live": true
+    },
+    "matchi_vissenbjerg_padel": {
+      "kind": "indoor",
+      "live": true
+    },
+    "matchi_breintholt_esbjerg": {
+      "kind": "outdoor",
+      "live": false
+    },
+    "matchi_k7_padel_losning": {
+      "kind": "indoor",
+      "live": true
+    },
+    "matchi_nr_lyndelse_padel": {
+      "kind": "outdoor",
+      "live": false
+    },
+    "matchi_padelyard": {
+      "kind": "both",
+      "live": false
+    },
+    "matchi_padel4alle": {
+      "kind": "both",
+      "live": true
+    },
+    "matchi_padelnorth": {
+      "kind": "indoor",
+      "live": true
+    },
+    "matchi_vipadelslagelse": {
+      "kind": "indoor",
+      "live": true
+    },
+    "matchi_racketclub_taastrup": {
+      "kind": "both",
+      "live": true
+    },
+    "matchi_padelground_viborg": {
+      "kind": "outdoor",
+      "live": false
+    }
+  }
+}

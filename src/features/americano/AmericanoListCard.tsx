@@ -50,7 +50,7 @@ export function AmericanoListCard({
   playedDurationMinutes = null,
   onClick,
 }: Props) {
-  const { maxPlayers, totalRounds, estMinutes } = getAmericanoTournamentMeta(tournament)
+  const { maxPlayers, totalRounds, estMinutes, courts, bench } = getAmericanoTournamentMeta(tournament)
   const durationLabel = getAmericanoDurationLabel(status, playedDurationMinutes, estMinutes)
   const filled = participants.length
   const fillPct = maxPlayers > 0 ? Math.min(100, Math.round((filled / maxPlayers) * 100)) : 0
@@ -139,6 +139,9 @@ export function AmericanoListCard({
             </span>
             <span className="pm-americano-v2-list-meta-pill">
               <LayoutGrid size={11} aria-hidden />
+              {courts} bane{courts !== 1 ? 'r' : ''}{bench > 0 ? ` · ${bench} over` : ''}
+            </span>
+            <span className="pm-americano-v2-list-meta-pill">
               {durationLabel}
             </span>
           </div>

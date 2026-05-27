@@ -179,7 +179,7 @@ export function AmericanoDetailSheet({
   if (!open || !tournament) return null
 
   const courtName = resolveAmericanoCourtName(tournament.court_id, courts)
-  const { maxPlayers, totalRounds, estMinutes } = getAmericanoTournamentMeta(tournament)
+  const { maxPlayers, totalRounds, estMinutes, courts: courtsPerRound, bench } = getAmericanoTournamentMeta(tournament)
   const durationLabel = getAmericanoDurationLabel(status, playedDurationMinutes, estMinutes)
   const filled = participants.length
   const emptySlots = Math.max(0, maxPlayers - filled)
@@ -262,8 +262,8 @@ export function AmericanoDetailSheet({
             <span className="pm-americano-v2-detail-stat-value">{durationLabel}</span>
           </div>
           <div className="pm-americano-v2-detail-stat">
-            <span className="pm-americano-v2-detail-stat-label">Format</span>
-            <span className="pm-americano-v2-detail-stat-value">Alle m/ alle</span>
+            <span className="pm-americano-v2-detail-stat-label">Baner pr. runde</span>
+            <span className="pm-americano-v2-detail-stat-value">{courtsPerRound}{bench > 0 ? ` · ${bench} over` : ''}</span>
           </div>
         </div>
 

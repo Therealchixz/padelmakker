@@ -9,23 +9,22 @@ export {
   formatAmericanoDurationLabel,
 } from '../../lib/americanoPlayedDuration.js'
 
-/** Antal runder per spiller-count — matcher schedule578.ts og schedule8.ts. */
-export const ROUNDS_BY_SLOTS: Record<number, number> = {
-  5: 5,
-  6: 6,
-  7: 7,
-  8: 7,
-}
+import { roundRobinTotalRounds, benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
+export { benchCountPerRound }
 
 export const MIN_PER_ROUND = 12
 
-export function getAmericanoTournamentMeta(tournament: Pick<AmericanoTournament, 'player_slots' | 'opponent_passes'>) {
+export function getAmericanoTournamentMeta(
+  tournament: Pick<AmericanoTournament, 'player_slots' | 'opponent_passes' | 'courts_per_round'>,
+) {
   const maxPlayers = Number(tournament.player_slots) || 5
   const passes = Number(tournament.opponent_passes) === 2 ? 2 : 1
-  const baseRounds = ROUNDS_BY_SLOTS[maxPlayers] ?? maxPlayers
+  const courts = Math.max(1, Number(tournament.courts_per_round) || 1)
+  const baseRounds = roundRobinTotalRounds(maxPlayers)
   const totalRounds = baseRounds * passes
   const estMinutes = totalRounds * MIN_PER_ROUND
-  return { maxPlayers, totalRounds, estMinutes }
+  const bench = benchCountPerRound(maxPlayers, courts)
+  return { maxPlayers, totalRounds, estMinutes, courts, bench }
 }
 
 export function getAmericanoDurationLabel(

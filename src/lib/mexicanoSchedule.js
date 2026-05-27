@@ -1,19 +1,19 @@
 /**
  * Mexicano scheduling: efter hver runde sorteres spillere efter point.
- * De fire på banen vælges med færrest kampe (fair bænk), parres 1+4 vs 2+3.
+ * De spillere der er på banen vælges med færrest kampe (fair bænk), parres 1+4 vs 2+3 pr. bane.
+ * Understøtter 4–16 spillere og 1..floor(n/4) baner pr. runde.
  */
-
-/** Matcher schedule578.ts / americanoDisplayUtils ROUNDS_BY_SLOTS */
-const ROUNDS_BY_SLOTS = { 5: 5, 6: 6, 7: 7, 8: 7 }
 
 /** @typedef {{ id: string, tournament_id?: string, round_number: number, court_index?: number, team_a_p1: string, team_a_p2: string, team_b_p1: string, team_b_p2: string, team_a_score?: number | null, team_b_score?: number | null, results_locked?: boolean | null, created_at?: string, updated_at?: string }} MexicanoMatchRow */
 
 /**
+ * Total antal runder for n spillere (ulige n → n runder, lige n → n−1 runder).
  * @param {number} playerCount
  * @param {1 | 2} [passes]
  */
 export function getMexicanoTotalRounds(playerCount, passes = 1) {
-  const base = ROUNDS_BY_SLOTS[playerCount] ?? playerCount
+  const n = Math.max(4, playerCount)
+  const base = n % 2 === 0 ? n - 1 : n
   const p = passes === 2 ? 2 : 1
   return base * p
 }
@@ -93,10 +93,12 @@ export function computeMexicanoStandings(participantIdsInJoinOrder, priorMatches
 }
 
 /**
- * Vælg 4 spillere på banen: færrest kampe først, derefter højeste point, derefter tilmeldingsrækkefølge.
+ * Vælg de 4*courts spillere på banen: færrest kampe først, derefter højeste point, derefter tilmeldingsrækkefølge.
  * @param {ReturnType<typeof computeMexicanoStandings>} standings
+ * @param {number} [courts]
  */
-export function selectMexicanoCourtPlayers(standings) {
+export function selectMexicanoCourtPlayers(standings, courts = 1) {
+  const n = Math.max(1, Math.min(courts, Math.floor(standings.length / 4)))
   const sorted = [...standings].sort((x, y) => {
     if (x.courtAppearances !== y.courtAppearances) {
       return x.courtAppearances - y.courtAppearances
@@ -104,12 +106,12 @@ export function selectMexicanoCourtPlayers(standings) {
     if (y.points !== x.points) return y.points - x.points
     return x.sortIndex - y.sortIndex
   })
-  return sorted.slice(0, 4)
+  return sorted.slice(0, 4 * n)
 }
 
 /**
- * Mexicano-parring på banen: 1.+4. vs 2.+3. (efter point inden for de fire).
- * @param {ReturnType<typeof selectMexicanoCourtPlayers>} courtPlayers length 4
+ * Mexicano-parring for én bane: 1.+4. vs 2.+3. (efter point inden for de fire).
+ * @param {ReturnType<typeof computeMexicanoStandings>} courtPlayers length 4
  */
 export function pairMexicanoOnCourt(courtPlayers) {
   if (courtPlayers.length !== 4) {
@@ -127,6 +129,7 @@ export function pairMexicanoOnCourt(courtPlayers) {
 }
 
 /**
+ * Byg matches for én runde med N baner.
  * @param {object} params
  * @param {string} params.tournamentId
  * @param {number} params.roundNumber
@@ -134,41 +137,54 @@ export function pairMexicanoOnCourt(courtPlayers) {
  * @param {MexicanoMatchRow[]} params.priorMatches
  * @param {number} params.pointsPerMatch
  * @param {number} params.totalRounds
- * @returns {import('../features/americano/types').AmericanoMatchInsert | null}
+ * @param {number} [params.courtsPerRound]
+ * @returns {import('../features/americano/types').AmericanoMatchInsert[]}
  */
-export function buildMexicanoRoundMatch({
+export function buildMexicanoRoundMatches({
   tournamentId,
   roundNumber,
   participantIdsInJoinOrder,
   priorMatches,
   pointsPerMatch,
   totalRounds,
+  courtsPerRound = 1,
 }) {
-  if (roundNumber < 1 || roundNumber > totalRounds) return null
-  if (participantIdsInJoinOrder.length < 5 || participantIdsInJoinOrder.length > 7) {
-    throw new Error(
-      `Mexicano understøtter 5–7 spillere, fik ${participantIdsInJoinOrder.length}`,
-    )
+  const n = participantIdsInJoinOrder.length
+  if (n < 4 || n > 16) {
+    throw new Error(`Mexicano understøtter 4–16 spillere, fik ${n}`)
   }
+  if (roundNumber < 1 || roundNumber > totalRounds) return []
 
+  const courts = Math.max(1, Math.min(courtsPerRound, Math.floor(n / 4)))
   const prior = (priorMatches || []).filter((m) => m.round_number < roundNumber)
-  const standings = computeMexicanoStandings(
-    participantIdsInJoinOrder,
-    prior,
-    pointsPerMatch,
-  )
-  const court = selectMexicanoCourtPlayers(standings)
-  const { teamA, teamB } = pairMexicanoOnCourt(court)
+  const standings = computeMexicanoStandings(participantIdsInJoinOrder, prior, pointsPerMatch)
+  const courtPlayers = selectMexicanoCourtPlayers(standings, courts)
 
-  return {
-    tournament_id: tournamentId,
-    round_number: roundNumber,
-    court_index: 0,
-    team_a_p1: teamA[0],
-    team_a_p2: teamA[1],
-    team_b_p1: teamB[0],
-    team_b_p2: teamB[1],
+  const rows = []
+  for (let c = 0; c < courts; c++) {
+    const group = courtPlayers.slice(c * 4, c * 4 + 4)
+    if (group.length !== 4) break
+    const { teamA, teamB } = pairMexicanoOnCourt(group)
+    rows.push({
+      tournament_id: tournamentId,
+      round_number: roundNumber,
+      court_index: c,
+      team_a_p1: teamA[0],
+      team_a_p2: teamA[1],
+      team_b_p1: teamB[0],
+      team_b_p2: teamB[1],
+    })
   }
+  return rows
+}
+
+/**
+ * Legacy single-match API (bagudkompatibilitet).
+ * @deprecated Brug buildMexicanoRoundMatches i stedet.
+ */
+export function buildMexicanoRoundMatch(params) {
+  const rows = buildMexicanoRoundMatches({ ...params, courtsPerRound: 1 })
+  return rows[0] ?? null
 }
 
 /**
@@ -176,9 +192,11 @@ export function buildMexicanoRoundMatch({
  * @param {string[]} participantIdsInJoinOrder
  * @param {MexicanoMatchRow[]} matches
  * @param {number} pointsPerMatch
+ * @returns {import('../features/americano/types').AmericanoMatchInsert[] | null}
  */
 export function buildNextMexicanoRoundIfReady(tournament, participantIdsInJoinOrder, matches, pointsPerMatch) {
   const passes = Number(tournament.opponent_passes) === 2 ? 2 : 1
+  const courts = Math.max(1, Number(tournament.courts_per_round) || 1)
   const totalRounds = getMexicanoTotalRounds(participantIdsInJoinOrder.length, passes)
   const maxRound = getMaxRoundNumber(matches)
 
@@ -186,40 +204,46 @@ export function buildNextMexicanoRoundIfReady(tournament, participantIdsInJoinOr
   if (!isRoundComplete(matches, maxRound)) return null
   if (matches.some((m) => m.round_number > maxRound)) return null
 
-  return buildMexicanoRoundMatch({
+  const rows = buildMexicanoRoundMatches({
     tournamentId: tournament.id,
     roundNumber: maxRound + 1,
     participantIdsInJoinOrder,
     priorMatches: matches,
     pointsPerMatch,
     totalRounds,
+    courtsPerRound: courts,
   })
+  return rows.length > 0 ? rows : null
 }
 
 /**
  * Første runde ved turneringsstart.
  * @param {string} tournamentId
  * @param {string[]} participantIdsInJoinOrder
+ * @param {number} pointsPerMatch
  * @param {number} [passes]
+ * @param {number} [courtsPerRound]
  */
 export function buildMexicanoStartRoundRows(
   tournamentId,
   participantIdsInJoinOrder,
   pointsPerMatch,
   passes = 1,
+  courtsPerRound = 1,
 ) {
   const p = passes === 2 ? 2 : 1
   const totalRounds = getMexicanoTotalRounds(participantIdsInJoinOrder.length, p)
-  const row = buildMexicanoRoundMatch({
+  const rows = buildMexicanoRoundMatches({
     tournamentId,
     roundNumber: 1,
     participantIdsInJoinOrder,
     priorMatches: [],
     pointsPerMatch,
     totalRounds,
+    courtsPerRound,
   })
-  if (!row) throw new Error('Kunne ikke oprette Mexicano runde 1')
-  return [row]
+  if (!rows.length) throw new Error('Kunne ikke oprette Mexicano runde 1')
+  return rows
 }
 
 /**

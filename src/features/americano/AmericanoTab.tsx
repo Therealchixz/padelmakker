@@ -14,8 +14,7 @@ import {
 } from './americanoDisplayUtils'
 import { computeAmericanoPlayedDurationMinutes } from '../../lib/americanoPlayedDuration.js'
 import { buildMexicanoStartRoundRows, isMexicanoFormat } from '../../lib/mexicanoSchedule.js'
-import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
-import { buildAmericano8MatchRows } from './schedule8'
+import { buildAmericanoRoundRobinMatchRows } from '../../lib/americanoRoundRobinSchedule'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import { PillTabs } from '../../components/PillTabs'
@@ -511,54 +510,36 @@ export function AmericanoTab({
       const participantIds = list.map((p) => p.id)
       const format = t.format ?? 'americano'
       let matchRows
+      const passes: 1 | 2 = Number(t.opponent_passes) === 2 ? 2 : 1
+      const courts = Math.max(1, Number(t.courts_per_round) || 1)
       if (forceAsAdmin) {
-        // Admin: brug faktisk antal spillere som schedule-basis (skal være 5–8)
-        if (n >= 5 && n <= 7) {
-          const passes = Number(t.opponent_passes) === 2 ? 2 : 1
-          if (isMexicanoFormat(format)) {
-            const ppm = Number(t.points_per_match)
-            const P = ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
-            matchRows = buildMexicanoStartRoundRows(t.id, participantIds, P, passes)
-          } else {
-            matchRows = buildAmericano578MatchRows(t.id, participantIds, passes)
-          }
-        } else if (n === 8) {
-          if (isMexicanoFormat(format)) {
-            showToast('Mexicano understøtter 5–7 spillere (ikke 8).')
-            return
-          }
-          matchRows = buildAmericano8MatchRows(t.id, participantIds)
-        } else {
-          showToast(`Kan ikke gennemtvinge: ${n} tilmeldte er ikke gyldigt (kræver 5–8).`)
+        // Admin: brug faktisk antal tilmeldte som schedule-basis (kræver 4–16)
+        if (n < 4 || n > 16) {
+          showToast(`Kan ikke gennemtvinge: ${n} tilmeldte er ikke gyldigt (kræver 4–16).`)
           return
+        }
+        if (isMexicanoFormat(format)) {
+          const ppm = Number(t.points_per_match)
+          const P = ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
+          matchRows = buildMexicanoStartRoundRows(t.id, participantIds, P, passes, courts)
+        } else {
+          matchRows = buildAmericanoRoundRobinMatchRows(t.id, participantIds, courts, passes)
         }
       } else {
         if (n !== slots) {
           showToast(`Turneringen skal være fyldt før start: ${slots} tilmeldte kræves (nu: ${n}).`)
           return
         }
-        if (canStartAmericano5767(n, slots)) {
-          const passes = Number(t.opponent_passes) === 2 ? 2 : 1
-          if (isMexicanoFormat(format)) {
-            const ppm = Number(t.points_per_match)
-            const P = ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
-            matchRows = buildMexicanoStartRoundRows(t.id, participantIds, P, passes)
-          } else {
-            matchRows = buildAmericano578MatchRows(t.id, participantIds, passes)
-          }
-        } else if (slots === 8 && n === 8) {
-          if (isMexicanoFormat(format)) {
-            showToast('Mexicano understøtter 5–7 spillere.')
-            return
-          }
-          matchRows = buildAmericano8MatchRows(t.id, participantIds)
-        } else {
-          showToast(
-            slots === 8
-              ? `Denne turnering kræver præcis 8 tilmeldte (gammel type). Nu: ${n}.`
-              : `Du skal have præcis ${slots} tilmeldte for at starte. Nu: ${n}.`
-          )
+        if (n < 4 || n > 16) {
+          showToast(`Ugyldigt antal spillere: ${n}. Kræver 4–16.`)
           return
+        }
+        if (isMexicanoFormat(format)) {
+          const ppm = Number(t.points_per_match)
+          const P = ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
+          matchRows = buildMexicanoStartRoundRows(t.id, participantIds, P, passes, courts)
+        } else {
+          matchRows = buildAmericanoRoundRobinMatchRows(t.id, participantIds, courts, passes)
         }
       }
 

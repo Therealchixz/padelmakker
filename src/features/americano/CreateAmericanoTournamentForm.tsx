@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
 
 function nearestHalfHour(): string {
   const now = new Date()
@@ -32,7 +33,7 @@ type Props = {
   onCancel?: () => void
 }
 
-const PLAYER_OPTIONS: AmericanoPlayerSlots[] = [5, 6, 7]
+const PLAYER_OPTIONS: AmericanoPlayerSlots[] = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 const POINT_OPTIONS: AmericanoPoints[] = [16, 24, 32]
 
 /** Særlig select-værdi når ingen bane i DB — turnering kan stadig oprettes */
@@ -59,10 +60,19 @@ export function CreateAmericanoTournamentForm({
   const [courtId, setCourtId] = useState(
     () => getMatchVenueOptions([])[0]?.id ?? AMERICANO_COURT_NONE
   )
-  const [playerSlots, setPlayerSlots] = useState<AmericanoPlayerSlots>(5)
+  const [playerSlots, setPlayerSlots] = useState<AmericanoPlayerSlots>(6)
+  const [courtsPerRound, setCourtsPerRound] = useState(1)
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
   const [opponentPasses, setOpponentPasses] = useState<AmericanoOpponentPasses>(1)
   const [tournamentFormat, setTournamentFormat] = useState<AmericanoTournamentFormat>('americano')
+
+  const maxCourts = Math.floor(playerSlots / 4)
+  const COURT_OPTIONS = Array.from({ length: maxCourts }, (_, i) => i + 1)
+
+  const handlePlayerSlotsChange = useCallback((n: AmericanoPlayerSlots) => {
+    setPlayerSlots(n)
+    setCourtsPerRound((prev) => Math.min(prev, Math.floor(n / 4)))
+  }, [])
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -94,6 +104,7 @@ export function CreateAmericanoTournamentForm({
           time_slot: timeSlot,
           court_id: courtIdFromVenueSelection(courtId, selectOptions),
           player_slots: playerSlots,
+          courts_per_round: courtsPerRound,
           points_per_match: pointsPerMatch,
           opponent_passes: opponentPasses,
           format: tournamentFormat,
@@ -223,7 +234,7 @@ export function CreateAmericanoTournamentForm({
         <label style={labelSmall}>Antal spillere</label>
         <select
           value={playerSlots}
-          onChange={(e) => setPlayerSlots(Number(e.target.value) as AmericanoPlayerSlots)}
+          onChange={(e) => handlePlayerSlotsChange(Number(e.target.value) as AmericanoPlayerSlots)}
           style={inputStyle}
         >
           {PLAYER_OPTIONS.map((p) => (
@@ -233,7 +244,26 @@ export function CreateAmericanoTournamentForm({
           ))}
         </select>
         <p style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 6 }}>
-          Én bane: fire på banen, resten sidder over (5: én over, 6: to over, 7: tre over). Start når præcis dette antal har tilmeldt sig.
+          Start når præcis dette antal har tilmeldt sig. Ved ulige antal sidder én spiller over pr. runde.
+        </p>
+      </div>
+
+      <div style={{ marginTop: 14 }}>
+        <label style={labelSmall}>Antal baner pr. runde</label>
+        <select
+          value={courtsPerRound}
+          onChange={(e) => setCourtsPerRound(Number(e.target.value))}
+          style={inputStyle}
+          disabled={maxCourts <= 1}
+        >
+          {COURT_OPTIONS.map((c) => (
+            <option key={c} value={c}>
+              {c} bane{c !== 1 ? 'r' : ''} ({benchCountPerRound(playerSlots, c)} sidder over)
+            </option>
+          ))}
+        </select>
+        <p style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 6 }}>
+          Maks {maxCourts} {maxCourts === 1 ? 'bane' : 'baner'} (floor({playerSlots}/4)). Vælg flere baner for at minimere bænk ved mange spillere.
         </p>
       </div>
 

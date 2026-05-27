@@ -1,0 +1,1386 @@
+{
+  "generatedAt": "2026-05-22T21:32:06.044Z",
+  "failedMunicipalities": [
+    "Holbæk",
+    "Billund",
+    "Fredericia",
+    "Langeland",
+    "Odense",
+    "Tønder",
+    "Juelsminde"
+  ],
+  "total": 97,
+  "integrated": 80,
+  "all": [
+    {
+      "facilityId": "1598",
+      "shortname": "padeleast",
+      "name": "PADEL EAST FREDERIKSSUND",
+      "city": "Frederikssund",
+      "zipcode": "3600",
+      "address": "Centervej 2",
+      "municipalities": [
+        "Frederikssund"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padeleast"
+    },
+    {
+      "facilityId": "2783",
+      "shortname": "padelsocialvarlose",
+      "name": "Padel Social",
+      "city": "Værløse",
+      "zipcode": "3500 ",
+      "address": "Kirke Værløsevej 58",
+      "municipalities": [
+        "Furesø"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelsocialvarlose"
+    },
+    {
+      "facilityId": "2166",
+      "shortname": "padelhuset.dk",
+      "name": "Padelhuset Gilleleje",
+      "city": "Gilleleje",
+      "zipcode": "3250",
+      "address": "Stæremosen 11",
+      "municipalities": [
+        "Gribskov"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelhuset.dk"
+    },
+    {
+      "facilityId": "2388",
+      "shortname": "PadelhusetHelsinge",
+      "name": "Padelhuset Helsinge",
+      "city": "Helsinge",
+      "zipcode": "3200",
+      "address": "Bomose Alle 26",
+      "municipalities": [
+        "Gribskov"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/PadelhusetHelsinge"
+    },
+    {
+      "facilityId": "2596",
+      "shortname": "halsnæspadelcenter",
+      "name": "Halsnæs Padel Center",
+      "city": "Frederiksværk",
+      "zipcode": "3300 ",
+      "address": "Sportsvej 3 ",
+      "municipalities": [
+        "Halsnæs"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/halsnæspadelcenter"
+    },
+    {
+      "facilityId": "2810",
+      "shortname": "padelnorth",
+      "name": "Padel North - Spar Nord Arena",
+      "city": "Kokkedal",
+      "zipcode": "2980",
+      "address": "Kokkedal Industripark 36",
+      "municipalities": [
+        "Hørsholm"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelnorth"
+    },
+    {
+      "facilityId": "2834",
+      "shortname": "padelyardjernbanebyen",
+      "name": "Padel Yard Jernbanebyen",
+      "city": "København",
+      "zipcode": "2450",
+      "address": "Otto Busses Vej 7X",
+      "municipalities": [
+        "København"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelyardjernbanebyen"
+    },
+    {
+      "facilityId": "917",
+      "shortname": "padelyard",
+      "name": "Padel Yard Reffen",
+      "city": "Kobenhavn",
+      "zipcode": "1432",
+      "address": "Refshalevej 179 (outdoor) & Refshalevej 167E (indoor)",
+      "municipalities": [
+        "København"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelyard"
+    },
+    {
+      "facilityId": "3180",
+      "shortname": "vedbaekpadelklub",
+      "name": "Vedbæk Padel",
+      "city": "Vedbæk",
+      "zipcode": "2950",
+      "address": "Vedbæk Stadion, Gøngehusvej 27",
+      "municipalities": [
+        "Rudersdal"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/vedbaekpadelklub"
+    },
+    {
+      "facilityId": "2228",
+      "shortname": "vipadelrodovre",
+      "name": "ViPadel Rødovre - The Factory (Singlebaner)",
+      "city": "Rødovre",
+      "zipcode": "2610",
+      "address": "Valhøjs allé 180",
+      "municipalities": [
+        "Rødovre"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/vipadelrodovre"
+    },
+    {
+      "facilityId": "2072",
+      "shortname": "Padelland",
+      "name": "Padel Land",
+      "city": "Skødstrup",
+      "zipcode": "8541",
+      "address": "Hjelmagervej 6",
+      "municipalities": [
+        "Aarhus"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/Padelland"
+    },
+    {
+      "facilityId": "3124",
+      "shortname": "padelprofessorclub",
+      "name": "Padel Professor Club",
+      "city": "Hasselager",
+      "zipcode": "8361",
+      "address": "Elmegårdsvej 5",
+      "municipalities": [
+        "Aarhus"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelprofessorclub"
+    },
+    {
+      "facilityId": "1747",
+      "shortname": "padelstar",
+      "name": "Padel Star",
+      "city": "Højbjerg",
+      "zipcode": "8270",
+      "address": "Axel Kiers Vej 13C",
+      "municipalities": [
+        "Aarhus"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelstar"
+    },
+    {
+      "facilityId": "1063",
+      "shortname": "padelground",
+      "name": "Padelground.dk",
+      "city": "Åbyhøj",
+      "zipcode": "8230",
+      "address": "Sylbækvej 17",
+      "municipalities": [
+        "Aarhus"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelground"
+    },
+    {
+      "facilityId": "2347",
+      "shortname": "padeltonhorning",
+      "name": "Padelton Hørning - BetaPack Arena",
+      "city": "Hørning",
+      "zipcode": "8362",
+      "address": "Agerbakken 18",
+      "municipalities": [
+        "Aarhus"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padeltonhorning"
+    },
+    {
+      "facilityId": "2106",
+      "shortname": "Pakhus77",
+      "name": "Pakhus77",
+      "city": "Aarhus C",
+      "zipcode": "8000",
+      "address": "Hveensgade 5",
+      "municipalities": [
+        "Aarhus"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/Pakhus77"
+    },
+    {
+      "facilityId": "1062",
+      "shortname": "ViPadelAarhus",
+      "name": "Vipadel Aarhus",
+      "city": "Brabrand",
+      "zipcode": "8220",
+      "address": "Holmstrupgårdvej 18A",
+      "municipalities": [
+        "Aarhus"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/ViPadelAarhus"
+    },
+    {
+      "facilityId": "3038",
+      "shortname": "wepadel",
+      "name": "WePadel",
+      "city": "Harlev",
+      "zipcode": "8462",
+      "address": "Hørslevvej 151C",
+      "municipalities": [
+        "Aarhus"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/wepadel"
+    },
+    {
+      "facilityId": "2625",
+      "shortname": "bamsebocamping",
+      "name": "Bamsebo Camping",
+      "city": "Ulstrup",
+      "zipcode": "8860",
+      "address": "Hagenstrupvej 28C",
+      "municipalities": [
+        "Favrskov"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/bamsebocamping"
+    },
+    {
+      "facilityId": "1922",
+      "shortname": "favrskovpadel",
+      "name": "Favrskov Padel",
+      "city": "Hadsten",
+      "zipcode": "8370",
+      "address": "Toftegårdsvej 8",
+      "municipalities": [
+        "Favrskov"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/favrskovpadel"
+    },
+    {
+      "facilityId": "1297",
+      "shortname": "hogpadel",
+      "name": "HOG Padel",
+      "city": "Hinnerup",
+      "zipcode": "8382",
+      "address": "Ådalsvej 94",
+      "municipalities": [
+        "Favrskov"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/hogpadel"
+    },
+    {
+      "facilityId": "1369",
+      "shortname": "BKI",
+      "name": "Barrit Kultur- og Idrætscenter / Barrit GIF",
+      "city": "Barrit",
+      "zipcode": "7150",
+      "address": "Kirkebro 4A",
+      "municipalities": [
+        "Hedensted"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/BKI"
+    },
+    {
+      "facilityId": "2307",
+      "shortname": "hedenstedcentretpadel",
+      "name": "Hedensted Centret Padel",
+      "city": "Hedensted",
+      "zipcode": "8722",
+      "address": "Mosetoften 3",
+      "municipalities": [
+        "Hedensted"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/hedenstedcentretpadel"
+    },
+    {
+      "facilityId": "2774",
+      "shortname": "juelsminde",
+      "name": "Juelsminde Hallerne",
+      "city": "Juelsminde",
+      "zipcode": "7130 ",
+      "address": "Tofteskovvej 12 D",
+      "municipalities": [
+        "Hedensted"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/juelsminde"
+    },
+    {
+      "facilityId": "2650",
+      "shortname": "k7-padel",
+      "name": "K7 Padel - Løsning",
+      "city": "Løsning",
+      "zipcode": "8723",
+      "address": "Lundagervej 57",
+      "municipalities": [
+        "Hedensted"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/k7-padel"
+    },
+    {
+      "facilityId": "2250",
+      "shortname": "torringifpadel",
+      "name": "Middelfart Sparekasse - Tørring Padel",
+      "city": "Tørring",
+      "zipcode": "7160",
+      "address": "Kirkevej 10",
+      "municipalities": [
+        "Hedensted"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/torringifpadel"
+    },
+    {
+      "facilityId": "766",
+      "shortname": "padelarenahedensted",
+      "name": "Padel Arena Hedensted",
+      "city": "Hedensted",
+      "zipcode": "8722",
+      "address": "Lundagervej 22",
+      "municipalities": [
+        "Hedensted"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelarenahedensted"
+    },
+    {
+      "facilityId": "903",
+      "shortname": "BaboonCityPadleTennis",
+      "name": "Baboon City Padel Tennis",
+      "city": "Herning",
+      "zipcode": "7400",
+      "address": "Dueoddevej 5  7400 Herning - Bagved Baboon City - Åkirkebyvej 10",
+      "municipalities": [
+        "Herning"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/BaboonCityPadleTennis"
+    },
+    {
+      "facilityId": "3010",
+      "shortname": "padelworldherning",
+      "name": "PadelWorld Herning",
+      "city": "Herning",
+      "zipcode": "7400",
+      "address": "Holingvej 2",
+      "municipalities": [
+        "Herning"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelworldherning"
+    },
+    {
+      "facilityId": "2184",
+      "shortname": "padel7500",
+      "name": "Padel 7500",
+      "city": "Holstebro",
+      "zipcode": "7500",
+      "address": "Lægårdvej 112c",
+      "municipalities": [
+        "Holstebro"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padel7500"
+    },
+    {
+      "facilityId": "2437",
+      "shortname": "bankagerpadel",
+      "name": "Bankager Padel",
+      "city": "Horsens",
+      "zipcode": "8700",
+      "address": "Ternevej 79B",
+      "municipalities": [
+        "Horsens"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/bankagerpadel"
+    },
+    {
+      "facilityId": "2131",
+      "shortname": "gedvedifpadel",
+      "name": "Gedved IF Padel",
+      "city": "Gedved",
+      "zipcode": "8751",
+      "address": "Kirkevej 16",
+      "municipalities": [
+        "Horsens"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/gedvedifpadel"
+    },
+    {
+      "facilityId": "3009",
+      "shortname": "padelworldikast",
+      "name": "PadelWorld Ikast",
+      "city": "Ikast",
+      "zipcode": "7430",
+      "address": "La Cours Vej 10",
+      "municipalities": [
+        "Ikast-Brande"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelworldikast"
+    },
+    {
+      "facilityId": "1920",
+      "shortname": "fjelleruptennisanlægpadeltennis",
+      "name": "Fjellerup Tennisanlæg Padel & Tennis",
+      "city": "Glesborg",
+      "zipcode": "8585 ",
+      "address": "Møllebækvej 2B",
+      "municipalities": [
+        "Norddjurs"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/fjelleruptennisanlægpadeltennis"
+    },
+    {
+      "facilityId": "2229",
+      "shortname": "padel8500",
+      "name": "Padel8500",
+      "city": "Grenaa",
+      "zipcode": "8500",
+      "address": "Teknologivej 16",
+      "municipalities": [
+        "Norddjurs"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padel8500"
+    },
+    {
+      "facilityId": "1519",
+      "shortname": "borrispadeltennis",
+      "name": "Borris Padel",
+      "city": "Skjern",
+      "zipcode": "6900",
+      "address": "Stadionallé 10",
+      "municipalities": [
+        "Ringkøbing-Skjern"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/borrispadeltennis"
+    },
+    {
+      "facilityId": "524",
+      "shortname": "SkjernTennisogPadel",
+      "name": "Skjern Tennis og Padel Klub",
+      "city": "Skjern",
+      "zipcode": "6900",
+      "address": "Skovløkken 4",
+      "municipalities": [
+        "Ringkøbing-Skjern"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/SkjernTennisogPadel"
+    },
+    {
+      "facilityId": "1150",
+      "shortname": "BryrupTennisklub",
+      "name": "Bryrup Tennis- & Padelklub",
+      "city": "Bryrup",
+      "zipcode": "8654",
+      "address": "Sportsvej 20",
+      "municipalities": [
+        "Silkeborg"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/BryrupTennisklub"
+    },
+    {
+      "facilityId": "2170",
+      "shortname": "FlowPadelGalten",
+      "name": "Flow Padel Galten",
+      "city": "Galten",
+      "zipcode": "8464",
+      "address": "Erhvervsparken Klank 1",
+      "municipalities": [
+        "Skanderborg"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/FlowPadelGalten"
+    },
+    {
+      "facilityId": "1857",
+      "shortname": "giryepadeltennis",
+      "name": "Gl. Rye Padel & Tennis",
+      "city": "Ry",
+      "zipcode": "8680",
+      "address": "Storesand 17, Gl. Rye",
+      "municipalities": [
+        "Skanderborg"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/giryepadeltennis"
+    },
+    {
+      "facilityId": "1813",
+      "shortname": "jebjerglybytennisklub",
+      "name": "Jebjerg-Lyby Tennisklub",
+      "city": "Roslev",
+      "zipcode": "7870 ",
+      "address": "Østergade 22 A, Jebjerg",
+      "municipalities": [
+        "Skive"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/jebjerglybytennisklub"
+    },
+    {
+      "facilityId": "481",
+      "shortname": "padelhall.dk",
+      "name": "Padelhall.dk Skive",
+      "city": "Skive",
+      "zipcode": "7800",
+      "address": "Bjørnevej 7b",
+      "municipalities": [
+        "Skive"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelhall.dk"
+    },
+    {
+      "facilityId": "2298",
+      "shortname": "hessellundsocamping",
+      "name": "Hessellund Sø Camping",
+      "city": "Karup",
+      "zipcode": "dk7470",
+      "address": "Hessellundvej 12",
+      "municipalities": [
+        "Viborg"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/hessellundsocamping"
+    },
+    {
+      "facilityId": "1534",
+      "shortname": "PadelgroundViborg",
+      "name": "Padelground Viborg",
+      "city": "Viborg",
+      "zipcode": "8800",
+      "address": "Gyldenrisvej 9",
+      "municipalities": [
+        "Viborg"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/PadelgroundViborg"
+    },
+    {
+      "facilityId": "1981",
+      "shortname": "lunden",
+      "name": "Lunden",
+      "city": "Brønderslev",
+      "zipcode": "9700",
+      "address": "Assenbækvej 33",
+      "municipalities": [
+        "Brønderslev"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/lunden"
+    },
+    {
+      "facilityId": "2445",
+      "shortname": "padelnord",
+      "name": "Padel Nord",
+      "city": "Brønderslev",
+      "zipcode": "9700",
+      "address": "Velkomstcenter Syd 10",
+      "municipalities": [
+        "Brønderslev"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelnord"
+    },
+    {
+      "facilityId": "2840",
+      "shortname": "padel99",
+      "name": "Padel 99",
+      "city": "Frederikshavn",
+      "zipcode": "9900",
+      "address": "Apholmenvej 11",
+      "municipalities": [
+        "Frederikshavn"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padel99"
+    },
+    {
+      "facilityId": "2615",
+      "shortname": "bannerslundhallen",
+      "name": "SEIF Padel",
+      "city": "Frederikshavn",
+      "zipcode": "9900",
+      "address": "Grundtvigsvej 73",
+      "municipalities": [
+        "Frederikshavn"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/bannerslundhallen"
+    },
+    {
+      "facilityId": "2430",
+      "shortname": "SkagenPadelcenter",
+      "name": "Skagen Padelcenter",
+      "city": "Skagen",
+      "zipcode": "9990",
+      "address": "Nordmarksvænget 1",
+      "municipalities": [
+        "Frederikshavn"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/SkagenPadelcenter"
+    },
+    {
+      "facilityId": "1266",
+      "shortname": "Lokken Klit Camping",
+      "name": "Løkken Klit Camping",
+      "city": "Løkken",
+      "zipcode": "9480",
+      "address": "Jørgen Jensensvej 2",
+      "municipalities": [
+        "Hjørring"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/Lokken Klit Camping"
+    },
+    {
+      "facilityId": "510",
+      "shortname": "BlokhusGolfcenterpadel",
+      "name": "BLOKHUS GOLFCENTER - Padel",
+      "city": "Pandrup",
+      "zipcode": "9490",
+      "address": "Hunetorpvej 115",
+      "municipalities": [
+        "Jammerbugt"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/BlokhusGolfcenterpadel"
+    },
+    {
+      "facilityId": "2574",
+      "shortname": "ingstruppadelbane",
+      "name": "Ingstrup Padelbane",
+      "city": "Løkken",
+      "zipcode": "9480 ",
+      "address": "Sportsvej 5",
+      "municipalities": [
+        "Jammerbugt"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/ingstruppadelbane"
+    },
+    {
+      "facilityId": "1828",
+      "shortname": "sportkulturcenterbrovst",
+      "name": "Sport & Kulturcenter Brovst",
+      "city": "Brovst",
+      "zipcode": "DK9460",
+      "address": "Damengvej 2",
+      "municipalities": [
+        "Jammerbugt"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/sportkulturcenterbrovst"
+    },
+    {
+      "facilityId": "1642",
+      "shortname": "rcm",
+      "name": "MORS PADEL - Sparekassen Danmark Arena",
+      "city": "Nykøbing Mors",
+      "zipcode": "7900",
+      "address": "H C Ørstedsvej 6",
+      "municipalities": [
+        "Morsø"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/rcm"
+    },
+    {
+      "facilityId": "2313",
+      "shortname": "sicenter",
+      "name": "Skørping Idrætscenter",
+      "city": "Skørping",
+      "zipcode": "9520",
+      "address": "Himmerlandsvej 59",
+      "municipalities": [
+        "Rebild"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/sicenter"
+    },
+    {
+      "facilityId": "2323",
+      "shortname": "ThyPadel",
+      "name": "Sparekassen Thy Padel Arena",
+      "city": "Thisted",
+      "zipcode": "7700",
+      "address": "Vilhelmsborgvej 18",
+      "municipalities": [
+        "Thisted"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/ThyPadel"
+    },
+    {
+      "facilityId": "1865",
+      "shortname": "westpadelklitmoller",
+      "name": "WestPadel Klitmøller",
+      "city": "",
+      "zipcode": "7700",
+      "address": "Vangvej 35",
+      "municipalities": [
+        "Thisted"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/westpadelklitmoller"
+    },
+    {
+      "facilityId": "1866",
+      "shortname": "westpadelvorupor",
+      "name": "WestPadel Vorupør",
+      "city": "Vorupør",
+      "zipcode": "7700 ",
+      "address": "Vesterhavsgade 9A",
+      "municipalities": [
+        "Thisted"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/westpadelvorupor"
+    },
+    {
+      "facilityId": "1591",
+      "shortname": "Haslevpadelklub",
+      "name": "Haslev Padel Klub",
+      "city": "Haslev",
+      "zipcode": "4690 ",
+      "address": "Grønlandsgade 3C",
+      "municipalities": [
+        "Faxe"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/Haslevpadelklub"
+    },
+    {
+      "facilityId": "2310",
+      "shortname": "padelronnede",
+      "name": "Padel Rønnede",
+      "city": "Rønnede",
+      "zipcode": "4683",
+      "address": "Industrivej 44",
+      "municipalities": [
+        "Faxe"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelronnede"
+    },
+    {
+      "facilityId": "2585",
+      "shortname": "padelhornbæk",
+      "name": "Padel Hornbæk og Reformer Hornbæk",
+      "city": "Hornbæk",
+      "zipcode": "3100",
+      "address": "Havrevangsvej 1",
+      "municipalities": [
+        "Hornbæk"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelhornbæk"
+    },
+    {
+      "facilityId": "2364",
+      "shortname": "Padel4alle",
+      "name": "Padel4alle Køge",
+      "city": "Køge",
+      "zipcode": "4600",
+      "address": "Stormøllevej 100",
+      "municipalities": [
+        "Køge"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/Padel4alle"
+    },
+    {
+      "facilityId": "1912",
+      "shortname": "apn",
+      "name": "All-Padel - Nakskov",
+      "city": "Nakskov",
+      "zipcode": "4900",
+      "address": "Søvej 8",
+      "municipalities": [
+        "Lolland"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/apn"
+    },
+    {
+      "facilityId": "2421",
+      "shortname": "farevejleboldklub",
+      "name": "Fårevejle Boldklub - Padel",
+      "city": "Fårevejle",
+      "zipcode": "4540",
+      "address": "Fårevejle Kanalvej 11",
+      "municipalities": [
+        "Odsherred"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/farevejleboldklub"
+    },
+    {
+      "facilityId": "3153",
+      "shortname": "padel4540",
+      "name": "Padel4540",
+      "city": "Fårevejle",
+      "zipcode": "4540",
+      "address": "Kalundborgvej 21",
+      "municipalities": [
+        "Odsherred"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padel4540"
+    },
+    {
+      "facilityId": "2354",
+      "shortname": "orslevidrotsforning",
+      "name": "Ørslev Idrætsforening",
+      "city": "",
+      "zipcode": "4100",
+      "address": "Terslevvej 71 b",
+      "municipalities": [
+        "Ringsted"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/orslevidrotsforning"
+    },
+    {
+      "facilityId": "1911",
+      "shortname": "aps",
+      "name": "All-Padel - Skælskør",
+      "city": "Skælskør",
+      "zipcode": "4230",
+      "address": "Sorøvej 86",
+      "municipalities": [
+        "Slagelse"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/aps"
+    },
+    {
+      "facilityId": "1925",
+      "shortname": "vipadelslagelse",
+      "name": "Vipadel Slagelse",
+      "city": "Slagelse",
+      "zipcode": "4200",
+      "address": "Trafikcenter Alle 12",
+      "municipalities": [
+        "Slagelse"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/vipadelslagelse"
+    },
+    {
+      "facilityId": "2501",
+      "shortname": "dianalundpadelklub",
+      "name": "Dianalund Padel Klub",
+      "city": "Dianalund",
+      "zipcode": "4293",
+      "address": "Sømosevej 46",
+      "municipalities": [
+        "Sorø"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/dianalundpadelklub"
+    },
+    {
+      "facilityId": "2612",
+      "shortname": "padelaarup",
+      "name": "Aarup Padel",
+      "city": "aarup",
+      "zipcode": "5560",
+      "address": "Ormehøjvej 4",
+      "municipalities": [
+        "Assens"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelaarup"
+    },
+    {
+      "facilityId": "2823",
+      "shortname": "arenaassens",
+      "name": "Arena Assens",
+      "city": " Assens",
+      "zipcode": "5610",
+      "address": "Rådhus Allé 25",
+      "municipalities": [
+        "Assens"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/arenaassens"
+    },
+    {
+      "facilityId": "2041",
+      "shortname": "Glamsbjergpadel",
+      "name": "Glamsbjerg Padel",
+      "city": "Glamsbjerg",
+      "zipcode": "5620",
+      "address": "Mågevej 4",
+      "municipalities": [
+        "Assens"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/Glamsbjergpadel"
+    },
+    {
+      "facilityId": "3112",
+      "shortname": "vissenbjergpadel",
+      "name": "Vissenbjerg Padel",
+      "city": "Vissenbjerg",
+      "zipcode": "5492",
+      "address": "Idrætsvej 3",
+      "municipalities": [
+        "Assens"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/vissenbjergpadel"
+    },
+    {
+      "facilityId": "2232",
+      "shortname": "breinhotlgardpadel",
+      "name": "Breintholtgård Golf & Padel",
+      "city": "Esbjerg V",
+      "zipcode": "6710",
+      "address": "Kokspangvej 17-19 ",
+      "municipalities": [
+        "Esbjerg"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/breinhotlgardpadel"
+    },
+    {
+      "facilityId": "1475",
+      "shortname": "faaborgpadelklub",
+      "name": "Forum Faaborg Aps - Padel og Golf",
+      "city": "Faaborg",
+      "zipcode": "5600",
+      "address": "Sundvænget 8",
+      "municipalities": [
+        "Faaborg-Midtfyn"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/faaborgpadelklub"
+    },
+    {
+      "facilityId": "870",
+      "shortname": "NrLyndelsePadeltennis",
+      "name": "Nr. Lyndelse Padeltennis",
+      "city": "Årslev",
+      "zipcode": "5792",
+      "address": "Lumbyvej 64",
+      "municipalities": [
+        "Faaborg-Midtfyn"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/NrLyndelsePadeltennis"
+    },
+    {
+      "facilityId": "1380",
+      "shortname": "padelhouse",
+      "name": "PadelHouse",
+      "city": "Kerteminde",
+      "zipcode": "5300",
+      "address": "Vejlevangen 13",
+      "municipalities": [
+        "Kerteminde"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelhouse"
+    },
+    {
+      "facilityId": "1439",
+      "shortname": "forumkolding",
+      "name": "Forum Kolding Bramdrupdam",
+      "city": "Kolding",
+      "zipcode": "6000 ",
+      "address": "Bramdrupskovvej 110, 6000 Kolding",
+      "municipalities": [
+        "Kolding"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/forumkolding"
+    },
+    {
+      "facilityId": "1810",
+      "shortname": "baringgf",
+      "name": "Båring GF",
+      "city": "Asperup",
+      "zipcode": "5466",
+      "address": "Kærbyvej 2a",
+      "municipalities": [
+        "Middelfart"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/baringgf"
+    },
+    {
+      "facilityId": "2524",
+      "shortname": "bogensepadelarena",
+      "name": "Bogense Padel Arena",
+      "city": "Bogense",
+      "zipcode": "5400",
+      "address": "Gyvelvænget 12",
+      "municipalities": [
+        "Nordfyns"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/bogensepadelarena"
+    },
+    {
+      "facilityId": "639",
+      "shortname": "SøndersøHallernesPadelcenter",
+      "name": "Nordfyns Padel Center",
+      "city": "Søndersø",
+      "zipcode": "5471",
+      "address": "Ullerupvænget 4",
+      "municipalities": [
+        "Nordfyns"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/SøndersøHallernesPadelcenter"
+    },
+    {
+      "facilityId": "2290",
+      "shortname": "skebygf",
+      "name": "Otterup Padel v. Skeby GF",
+      "city": "5450",
+      "zipcode": "Otterup",
+      "address": "Stadionvej 50 ",
+      "municipalities": [
+        "Nordfyns"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/skebygf"
+    },
+    {
+      "facilityId": "1977",
+      "shortname": "padelspace",
+      "name": "Padel Space",
+      "city": "Risskov",
+      "zipcode": "8240",
+      "address": "Vejlbjergvej 31",
+      "municipalities": [
+        "Risskov"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelspace"
+    },
+    {
+      "facilityId": "2800",
+      "shortname": "bollemosenpadel",
+      "name": "Bøllemosen Padel",
+      "city": "Stenstrup",
+      "zipcode": "5771",
+      "address": "Bøllemosen 4-6",
+      "municipalities": [
+        "Svendborg"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/bollemosenpadel"
+    },
+    {
+      "facilityId": "1290",
+      "shortname": "PadelTimeNorreNebel",
+      "name": "Købmand Hansen Padel",
+      "city": "Nørre Nebel",
+      "zipcode": "6830",
+      "address": " Klintingvej 21",
+      "municipalities": [
+        "Varde"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/PadelTimeNorreNebel"
+    },
+    {
+      "facilityId": "2465",
+      "shortname": "skylightpadel",
+      "name": "SKY-LIGHT Padel",
+      "city": "Varde",
+      "zipcode": "6800",
+      "address": "Snedkervej 5",
+      "municipalities": [
+        "Varde"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/skylightpadel"
+    },
+    {
+      "facilityId": "1728",
+      "shortname": "vardepadel",
+      "name": "Varde Padel",
+      "city": "Varde",
+      "zipcode": "6800",
+      "address": "Borgpladsen 7",
+      "municipalities": [
+        "Varde"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/vardepadel"
+    },
+    {
+      "facilityId": "2238",
+      "shortname": "daugardsports",
+      "name": "Daugård Idræt",
+      "city": "Daugård",
+      "zipcode": "8721",
+      "address": "Gl Vejlevej 47",
+      "municipalities": [
+        "Vejle"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/daugardsports"
+    },
+    {
+      "facilityId": "2694",
+      "shortname": "engumuipadel",
+      "name": "Engum UI - Padel",
+      "city": "Vejle Øst",
+      "zipcode": "7120",
+      "address": "Engum Møllevej 7",
+      "municipalities": [
+        "Vejle"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/engumuipadel"
+    },
+    {
+      "facilityId": "1491",
+      "shortname": "givepadel",
+      "name": "Give Padel",
+      "city": "Give",
+      "zipcode": "7323",
+      "address": "Søndermarken 1",
+      "municipalities": [
+        "Vejle"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/givepadel"
+    },
+    {
+      "facilityId": "1946",
+      "shortname": "gormshallen",
+      "name": "Gormshallen",
+      "city": "Jelling ",
+      "zipcode": "7300",
+      "address": "Kathrinelund 1",
+      "municipalities": [
+        "Vejle"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/gormshallen"
+    },
+    {
+      "facilityId": "2075",
+      "shortname": "grejsstadion",
+      "name": "Grejs-Dalen IK Padel",
+      "city": "Vejle",
+      "zipcode": "7100",
+      "address": "Vestermarksvej 5 B",
+      "municipalities": [
+        "Vejle"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/grejsstadion"
+    },
+    {
+      "facilityId": "2412",
+      "shortname": "jellingpadel",
+      "name": "Jelling Padel",
+      "city": "Jelling",
+      "zipcode": "7300",
+      "address": "Sydkrogen 10 B",
+      "municipalities": [
+        "Vejle"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/jellingpadel"
+    },
+    {
+      "facilityId": "1962",
+      "shortname": "pjpadel",
+      "name": "PJ Padel",
+      "city": "Tørring",
+      "zipcode": "7160",
+      "address": "Erhvervsparken 7",
+      "municipalities": [
+        "Vejle"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/pjpadel"
+    },
+    {
+      "facilityId": "2410",
+      "shortname": "thyregodpadel",
+      "name": "Thyregod Padel",
+      "city": "Give",
+      "zipcode": "7323 ",
+      "address": "Thyregodvej 29",
+      "municipalities": [
+        "Vejle"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/thyregodpadel"
+    },
+    {
+      "facilityId": "2256",
+      "shortname": "vejlepadelcenter",
+      "name": "Vejle Padelcenter",
+      "city": "Vejle",
+      "zipcode": "7100",
+      "address": "Hellumvej 7",
+      "municipalities": [
+        "Vejle"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/vejlepadelcenter"
+    },
+    {
+      "facilityId": "2042",
+      "shortname": "brenderuppadeltennis",
+      "name": "Brenderup Padel Tennis",
+      "city": "Brenderup",
+      "zipcode": "5464",
+      "address": "Kirkevej 13",
+      "municipalities": [
+        "Brenderup"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/brenderuppadeltennis"
+    }
+  ],
+  "missing": [
+    {
+      "facilityId": "2625",
+      "shortname": "bamsebocamping",
+      "name": "Bamsebo Camping",
+      "city": "Ulstrup",
+      "zipcode": "8860",
+      "address": "Hagenstrupvej 28C",
+      "municipalities": [
+        "Favrskov"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/bamsebocamping"
+    },
+    {
+      "facilityId": "903",
+      "shortname": "BaboonCityPadleTennis",
+      "name": "Baboon City Padel Tennis",
+      "city": "Herning",
+      "zipcode": "7400",
+      "address": "Dueoddevej 5  7400 Herning - Bagved Baboon City - Åkirkebyvej 10",
+      "municipalities": [
+        "Herning"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/BaboonCityPadleTennis"
+    },
+    {
+      "facilityId": "2437",
+      "shortname": "bankagerpadel",
+      "name": "Bankager Padel",
+      "city": "Horsens",
+      "zipcode": "8700",
+      "address": "Ternevej 79B",
+      "municipalities": [
+        "Horsens"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/bankagerpadel"
+    },
+    {
+      "facilityId": "2131",
+      "shortname": "gedvedifpadel",
+      "name": "Gedved IF Padel",
+      "city": "Gedved",
+      "zipcode": "8751",
+      "address": "Kirkevej 16",
+      "municipalities": [
+        "Horsens"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/gedvedifpadel"
+    },
+    {
+      "facilityId": "1150",
+      "shortname": "BryrupTennisklub",
+      "name": "Bryrup Tennis- & Padelklub",
+      "city": "Bryrup",
+      "zipcode": "8654",
+      "address": "Sportsvej 20",
+      "municipalities": [
+        "Silkeborg"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/BryrupTennisklub"
+    },
+    {
+      "facilityId": "2298",
+      "shortname": "hessellundsocamping",
+      "name": "Hessellund Sø Camping",
+      "city": "Karup",
+      "zipcode": "dk7470",
+      "address": "Hessellundvej 12",
+      "municipalities": [
+        "Viborg"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/hessellundsocamping"
+    },
+    {
+      "facilityId": "1266",
+      "shortname": "Lokken Klit Camping",
+      "name": "Løkken Klit Camping",
+      "city": "Løkken",
+      "zipcode": "9480",
+      "address": "Jørgen Jensensvej 2",
+      "municipalities": [
+        "Hjørring"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/Lokken Klit Camping"
+    },
+    {
+      "facilityId": "510",
+      "shortname": "BlokhusGolfcenterpadel",
+      "name": "BLOKHUS GOLFCENTER - Padel",
+      "city": "Pandrup",
+      "zipcode": "9490",
+      "address": "Hunetorpvej 115",
+      "municipalities": [
+        "Jammerbugt"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/BlokhusGolfcenterpadel"
+    },
+    {
+      "facilityId": "2313",
+      "shortname": "sicenter",
+      "name": "Skørping Idrætscenter",
+      "city": "Skørping",
+      "zipcode": "9520",
+      "address": "Himmerlandsvej 59",
+      "municipalities": [
+        "Rebild"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/sicenter"
+    },
+    {
+      "facilityId": "1912",
+      "shortname": "apn",
+      "name": "All-Padel - Nakskov",
+      "city": "Nakskov",
+      "zipcode": "4900",
+      "address": "Søvej 8",
+      "municipalities": [
+        "Lolland"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/apn"
+    },
+    {
+      "facilityId": "1911",
+      "shortname": "aps",
+      "name": "All-Padel - Skælskør",
+      "city": "Skælskør",
+      "zipcode": "4230",
+      "address": "Sorøvej 86",
+      "municipalities": [
+        "Slagelse"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/aps"
+    },
+    {
+      "facilityId": "2501",
+      "shortname": "dianalundpadelklub",
+      "name": "Dianalund Padel Klub",
+      "city": "Dianalund",
+      "zipcode": "4293",
+      "address": "Sømosevej 46",
+      "municipalities": [
+        "Sorø"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/dianalundpadelklub"
+    },
+    {
+      "facilityId": "2232",
+      "shortname": "breinhotlgardpadel",
+      "name": "Breintholtgård Golf & Padel",
+      "city": "Esbjerg V",
+      "zipcode": "6710",
+      "address": "Kokspangvej 17-19 ",
+      "municipalities": [
+        "Esbjerg"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/breinhotlgardpadel"
+    },
+    {
+      "facilityId": "1380",
+      "shortname": "padelhouse",
+      "name": "PadelHouse",
+      "city": "Kerteminde",
+      "zipcode": "5300",
+      "address": "Vejlevangen 13",
+      "municipalities": [
+        "Kerteminde"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/padelhouse"
+    },
+    {
+      "facilityId": "1810",
+      "shortname": "baringgf",
+      "name": "Båring GF",
+      "city": "Asperup",
+      "zipcode": "5466",
+      "address": "Kærbyvej 2a",
+      "municipalities": [
+        "Middelfart"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/baringgf"
+    },
+    {
+      "facilityId": "2465",
+      "shortname": "skylightpadel",
+      "name": "SKY-LIGHT Padel",
+      "city": "Varde",
+      "zipcode": "6800",
+      "address": "Snedkervej 5",
+      "municipalities": [
+        "Varde"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/skylightpadel"
+    },
+    {
+      "facilityId": "1728",
+      "shortname": "vardepadel",
+      "name": "Varde Padel",
+      "city": "Varde",
+      "zipcode": "6800",
+      "address": "Borgpladsen 7",
+      "municipalities": [
+        "Varde"
+      ],
+      "bookingUrl": "https://www.matchi.se/facilities/vardepadel"
+    }
+  ]
+}

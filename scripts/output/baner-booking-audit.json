@@ -1,0 +1,1281 @@
+{
+  "scannedAt": "2026-05-22T21:20:27.553Z",
+  "totals": {
+    "integrated": 122,
+    "links": 115,
+    "matchiAllowlist": 88,
+    "halbookingAllowlist": 32
+  },
+  "integratedBroken": [
+    {
+      "id": "matchi_padel99",
+      "title": "Padel99 (MATCHi)",
+      "kind": "matchi",
+      "region": "Nordjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_skagen_padelcenter",
+      "title": "Skagen Padelcenter (MATCHi)",
+      "kind": "matchi",
+      "region": "Nordjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_padelland",
+      "title": "Padel Land (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_padelground_aarhus",
+      "title": "Padelground Aarhus (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_jelling_gormshallen",
+      "title": "Jelling Padel / Gormshallen (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_padel_arena_hedensted",
+      "title": "Padel Arena Hedensted (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_padelground_viborg",
+      "title": "Padelground Viborg (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_padel_time_norre_nebel",
+      "title": "Padel Time Nørre Nebel (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_vissenbjerg_padel",
+      "title": "Vissenbjerg Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_nr_lyndelse_padel",
+      "title": "Nr. Lyndelse Padeltennis (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_k7_padel_losning",
+      "title": "K7 Padel, Løsning (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_padelnorth",
+      "title": "Padel North Kokkedal (MATCHi)",
+      "kind": "matchi",
+      "region": "Sjælland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_vipadelslagelse",
+      "title": "VI Padel Slagelse (MATCHi)",
+      "kind": "matchi",
+      "region": "Sjælland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_arenaassens",
+      "title": "Arena Assens (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_bki",
+      "title": "Barrit Kultur- og Idrætscenter / Barrit GIF (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_bogensepadelarena",
+      "title": "Bogense Padel Arena (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_borrispadeltennis",
+      "title": "Borris Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_brenderuppadeltennis",
+      "title": "Brenderup Padel Tennis (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_brolokkepadel",
+      "title": "BROLØKKES PADELBANE (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_bollemosenpadel",
+      "title": "Bøllemosen Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_daugardsports",
+      "title": "Daugård Idræt (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_engumuipadel",
+      "title": "Engum UI - Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_favrskovpadel",
+      "title": "Favrskov Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_fjelleruptennisanl_gpadeltennis",
+      "title": "Fjellerup Tennisanlæg Padel & Tennis (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_flowpadelgalten",
+      "title": "Flow Padel Galten (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_faaborgpadelklub",
+      "title": "Forum Faaborg Aps - Padel og Golf (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_forumkolding",
+      "title": "Forum Kolding Bramdrupdam (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_farevejleboldklub",
+      "title": "Fårevejle Boldklub - Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Sjælland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_givepadel",
+      "title": "Give Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_giryepadeltennis",
+      "title": "Gl. Rye Padel & Tennis (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Uventet svar fra MATCHi (ingen kalender)"
+      }
+    },
+    {
+      "id": "matchi_glamsbjergpadel",
+      "title": "Glamsbjerg Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_grejsstadion",
+      "title": "Grejs-Dalen IK Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_halsn_spadelcenter",
+      "title": "Halsnæs Padel Center (MATCHi)",
+      "kind": "matchi",
+      "region": "Hovedstaden",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_haslevpadelklub",
+      "title": "Haslev Padel Klub (MATCHi)",
+      "kind": "matchi",
+      "region": "Sjælland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_hedenstedcentretpadel",
+      "title": "Hedensted Centret Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_hogpadel",
+      "title": "HOG Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_ingstruppadelbane",
+      "title": "Ingstrup Padelbane (MATCHi)",
+      "kind": "matchi",
+      "region": "Nordjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_jebjerglybytennisklub",
+      "title": "Jebjerg-Lyby Tennisklub (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_jellingpadel",
+      "title": "Jelling Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_juelsminde",
+      "title": "Juelsminde Hallerne (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_lunden",
+      "title": "Lunden (MATCHi)",
+      "kind": "matchi",
+      "region": "Nordjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "Kunne ikke læse baner fra MATCHi-kalenderen"
+      }
+    },
+    {
+      "id": "matchi_torringifpadel",
+      "title": "Middelfart Sparekasse - Tørring Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_rcm",
+      "title": "MORS PADEL - Sparekassen Danmark Arena (MATCHi)",
+      "kind": "matchi",
+      "region": "Nordjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_s_nders_hallernespadelcenter",
+      "title": "Nordfyns Padel Center (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_odensecitypadel",
+      "title": "Odense City Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_skebygf",
+      "title": "Otterup Padel v. Skeby GF (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padel7500",
+      "title": "Padel 7500 (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padeleast",
+      "title": "PADEL EAST FREDERIKSSUND (MATCHi)",
+      "kind": "matchi",
+      "region": "Sjælland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelhornb_k",
+      "title": "Padel Hornbæk og Reformer Hornbæk (MATCHi)",
+      "kind": "matchi",
+      "region": "Hovedstaden",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelprofessorclub",
+      "title": "Padel Professor Club (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelronnede",
+      "title": "Padel Rønnede (MATCHi)",
+      "kind": "matchi",
+      "region": "Sjælland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelsocialvarlose",
+      "title": "Padel Social (MATCHi)",
+      "kind": "matchi",
+      "region": "Hovedstaden",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelspace",
+      "title": "Padel Space (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padeltonhorning",
+      "title": "Padel Tonhøring (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelyardjernbanebyen",
+      "title": "Padel Yard Jernbanebyen (MATCHi)",
+      "kind": "matchi",
+      "region": "Hovedstaden",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padel4540",
+      "title": "Padel4540 (MATCHi)",
+      "kind": "matchi",
+      "region": "Sjælland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padel4life",
+      "title": "Padel4Life (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelhall",
+      "title": "Padelhall.dk Skive (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelhuset",
+      "title": "Padelhuset Gilleleje (MATCHi)",
+      "kind": "matchi",
+      "region": "Hovedstaden",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelhusethelsinge",
+      "title": "Padelhuset Helsinge (MATCHi)",
+      "kind": "matchi",
+      "region": "Hovedstaden",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelsportdk",
+      "title": "Padelsport.dk (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelstar",
+      "title": "Padelstar (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelworldherning",
+      "title": "PadelWorld Herning (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelworldikast",
+      "title": "PadelWorld Ikast (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_pakhus77",
+      "title": "Pakhus77 (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_pjpadel",
+      "title": "PJ Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_bannerslundhallen",
+      "title": "SEIF Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Nordjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_skjerntennisogpadel",
+      "title": "Skjern Tennis og Padel Klub (MATCHi)",
+      "kind": "matchi",
+      "region": "Vestjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_sk_rb_kpadelogtennis",
+      "title": "Skærbækcentret Padel og Tennis (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_thypadel",
+      "title": "Sparekassen Thy Padel Arena (MATCHi)",
+      "kind": "matchi",
+      "region": "Nordjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_sportkulturcenterbrovst",
+      "title": "Sport & Kulturcenter Brovst (MATCHi)",
+      "kind": "matchi",
+      "region": "Nordjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_tgipadel",
+      "title": "TGI Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_thyregodpadel",
+      "title": "Thyregod Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_vedbaekpadelklub",
+      "title": "Vedbæk Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Hovedstaden",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_vejlepadelcenter",
+      "title": "Vejle Padelcenter (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_vipadelrodovre",
+      "title": "ViPadel Rødovre - The Factory (Singlebaner) (MATCHi)",
+      "kind": "matchi",
+      "region": "Hovedstaden",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_vorbassetennispadel",
+      "title": "Vorbasse Tennis og Padelklub (MATCHi)",
+      "kind": "matchi",
+      "region": "Sønderjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_wepadel",
+      "title": "WePadel (MATCHi)",
+      "kind": "matchi",
+      "region": "Østjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_westpadelklitmoller",
+      "title": "WestPadel Klitmøller (MATCHi)",
+      "kind": "matchi",
+      "region": "Nordjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_westpadelvorupor",
+      "title": "WestPadel Vorupør (MATCHi)",
+      "kind": "matchi",
+      "region": "Nordjylland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_orslevidrotsforning",
+      "title": "Ørslev Idrætsforening (MATCHi)",
+      "kind": "matchi",
+      "region": "Sjælland",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    },
+    {
+      "id": "matchi_padelaarup",
+      "title": "Aarup Padel (MATCHi)",
+      "kind": "matchi",
+      "region": "Fyn",
+      "probe": {
+        "ok": false,
+        "courts": 0,
+        "freeSlots": 0,
+        "error": "MATCHi fejl: 429"
+      }
+    }
+  ],
+  "missedIntegration": [
+    {
+      "id": "matchi_breintholt_esbjerg",
+      "title": "Breintholtgård Padel, Esbjerg (MATCHi)",
+      "region": "Sønderjylland",
+      "bookingUrl": "https://www.matchi.se/facilities/breinhotlgardpadel",
+      "directType": "matchi-direct",
+      "discovered": [
+        {
+          "type": "matchi",
+          "url": "https://www.matchi.se/facilities/breinhotlgardpadel"
+        }
+      ],
+      "reason": "bookingUrl is already open booking API"
+    },
+    {
+      "id": "matchi_racketclub_taastrup",
+      "title": "Racket Club Taastrup (MATCHi)",
+      "region": "Sjælland",
+      "bookingUrl": "https://www.matchi.se/facilities/RacketClubTaastrup",
+      "directType": "matchi-direct",
+      "discovered": [
+        {
+          "type": "matchi",
+          "url": "https://www.matchi.se/facilities/RacketClubTaastrup"
+        }
+      ],
+      "reason": "bookingUrl is already open booking API"
+    },
+    {
+      "id": "link_k_benhavn_nv_arbejdernes_tennisklub",
+      "title": "Arbejdernes Tennisklub",
+      "region": "Hovedstaden",
+      "bookingUrl": "http://www.atk-tennis.dk/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "halbooking",
+          "url": "https://atk.halbooking.dk/newlook/proc_baner.asp"
+        }
+      ]
+    },
+    {
+      "id": "link_erslev_mors_midtmors_sport",
+      "title": "Midtmors Sport",
+      "region": "Nordjylland",
+      "bookingUrl": "https://www.midtmorssport.dk/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "halbooking",
+          "url": "https://midtmors-sport.halbooking.dk/newlook/proc_baner.asp"
+        }
+      ]
+    },
+    {
+      "id": "link_k_ge_padel_club_k_ge",
+      "title": "Padel Club Køge",
+      "region": "Sjælland",
+      "bookingUrl": "https://padelclub.dk/koege/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "bookli",
+          "url": "https://bookli.app/u/booking/create"
+        },
+        {
+          "type": "bookli",
+          "url": "https://bookli.app/go/location/cl6kkzj108249110ds68hhwggm8"
+        }
+      ]
+    },
+    {
+      "id": "link_ringsted_padel_club_ringsted",
+      "title": "Padel Club Ringsted",
+      "region": "Sjælland",
+      "bookingUrl": "https://padelclubringsted.dk/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "bookli",
+          "url": "https://bookli.app/sign-in"
+        }
+      ]
+    },
+    {
+      "id": "link_esbjerg_v_breinholtgard_golf_klub",
+      "title": "Breinholtgård Golf Klub",
+      "region": "Sønderjylland",
+      "bookingUrl": "https://padel-esbjerg.dk/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "matchi",
+          "url": "https://www.matchi.se/facilities/BreinholtgardGolfPadel"
+        },
+        {
+          "type": "matchi",
+          "url": "https://www.matchi.se/facilities/breinhotlgardpadel"
+        }
+      ]
+    },
+    {
+      "id": "link_t_nder_padel_club_t_nder",
+      "title": "Padel Club Tønder",
+      "region": "Sønderjylland",
+      "bookingUrl": "https://padeltoender.dk/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "bookli",
+          "url": "https://bookli.app"
+        }
+      ]
+    },
+    {
+      "id": "link_bjerringbro_bjerringbro_idr_ts_og_kulturcenter",
+      "title": "Bjerringbro Idræts og Kulturcenter",
+      "region": "Østjylland",
+      "bookingUrl": "https://bjerringbroip.dk/padel/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "halbooking",
+          "url": "https://bjerringbroip.halbooking.dk/newlook/proc_baner.asp"
+        },
+        {
+          "type": "halbooking",
+          "url": "https://bjerringbroip.halbooking.dk/newlook/proc_baner.asp"
+        }
+      ]
+    },
+    {
+      "id": "link_jelling_jelling_forenede_sportsklubber",
+      "title": "Jelling Forenede Sportsklubber",
+      "region": "Østjylland",
+      "bookingUrl": "https://jellingfs.dk/padel_tennis/velkommen/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "matchi",
+          "url": "https://www.matchi.se/facilities/gormshallen"
+        }
+      ]
+    },
+    {
+      "id": "link_odder_odder_padel_center",
+      "title": "Odder Padel Center",
+      "region": "Østjylland",
+      "bookingUrl": "https://www.odderpadelcenter.dk/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "bookli",
+          "url": "https://bookli.app/"
+        },
+        {
+          "type": "bookli",
+          "url": "https://play.google.com/store/apps/details"
+        }
+      ]
+    },
+    {
+      "id": "link_randers_padel_lounge_randers",
+      "title": "Padel Lounge Randers",
+      "region": "Østjylland",
+      "bookingUrl": "https://padellounge.dk/padel/centre/randers/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "halbooking",
+          "url": "https://padellounge.halbooking.dk/newlook/proc_baner.asp"
+        }
+      ]
+    },
+    {
+      "id": "link_arhus_padel_lounge_skejby",
+      "title": "Padel Lounge Skejby",
+      "region": "Østjylland",
+      "bookingUrl": "https://padellounge.dk/padel/centre/aarhus/",
+      "directType": "other",
+      "discovered": [
+        {
+          "type": "halbooking",
+          "url": "https://padellounge.halbooking.dk/newlook/proc_baner.asp"
+        },
+        {
+          "type": "halbooking",
+          "url": "https://padellounge.halbooking.dk/newlook/proc_baner.asp"
+        }
+      ]
+    }
+  ],
+  "fetchFailed": [
+    {
+      "id": "link_r_nne_match_padel_bornholm_indend_rs",
+      "title": "Match Padel Bornholm (indendørs)",
+      "bookingUrl": "https://matchpadel.dk/afdelinger/bornholm-padelcenter",
+      "error": "HTTP 404"
+    },
+    {
+      "id": "link_r_nne_match_padel_bornholm_udend_rs",
+      "title": "Match Padel Bornholm (udendørs)",
+      "bookingUrl": "https://matchpadel.dk/afdelinger/bornholm-outdoor",
+      "error": "HTTP 404"
+    },
+    {
+      "id": "link_odense_odense_eventyr_padel",
+      "title": "Odense Eventyr Padel",
+      "bookingUrl": "https://www.eventyrpadel.dk/",
+      "error": "HTTP 403"
+    },
+    {
+      "id": "link_otterup_otterup_pade",
+      "title": "Otterup Pade",
+      "bookingUrl": "https://www.otterup-padel.dk/",
+      "error": "fetch failed"
+    },
+    {
+      "id": "link_munkebo_padel_club_munkebo",
+      "title": "Padel Club Munkebo",
+      "bookingUrl": "https://padelclub.dk/l/munkebo",
+      "error": "fetch failed"
+    },
+    {
+      "id": "link_amager_amager_lawn_tennisklub",
+      "title": "Amager Lawn Tennisklub",
+      "bookingUrl": "http://www.altennis.mono.net/",
+      "error": "This operation was aborted"
+    },
+    {
+      "id": "link_k_benhavn_v_match_padel_dgi_byen",
+      "title": "Match Padel DGI Byen",
+      "bookingUrl": "https://matchpadel.dk/afdelinger/dgi-vesterbro",
+      "error": "HTTP 404"
+    },
+    {
+      "id": "link_k_benhavn_s_sundby_tennisklub",
+      "title": "Sundby Tennisklub",
+      "bookingUrl": "https://www.sundbytennisklub.dk/da",
+      "error": "HTTP 404"
+    },
+    {
+      "id": "link_v_ggerl_se_golf_fun_park",
+      "title": "Golf & Fun Park",
+      "bookingUrl": "https://golffunpark.dk/aktiviteter/padel-tennis",
+      "error": "HTTP 404"
+    },
+    {
+      "id": "link_stege_m_ns_padel_center",
+      "title": "Møns Padel Center",
+      "bookingUrl": "https://sportyfriends.com/da/moens-padel-center",
+      "error": "HTTP 404"
+    },
+    {
+      "id": "link_n_stved_n_stved_firma_sport",
+      "title": "Næstved Firma Sport",
+      "bookingUrl": "https://www.naestvedfirmasport.dk/aktiviteter/padeltennis",
+      "error": "HTTP 404"
+    },
+    {
+      "id": "link_tune_tune_if_tennis_og_padel",
+      "title": "Tune IF Tennis og Padel",
+      "bookingUrl": "https://tune-if.dk/afdelinger/tennis-og-padel/indhold/forside/",
+      "error": "HTTP 404"
+    },
+    {
+      "id": "link_fredericia_egif_tennis_og_padel",
+      "title": "EGIF Tennis og Padel",
+      "bookingUrl": "https://www.egiftennis.dk/newlook/default.asp?f=skiftprefix",
+      "error": "fetch failed"
+    },
+    {
+      "id": "link_grindsted_grindsted_tennis_klub",
+      "title": "Grindsted Tennis Klub",
+      "bookingUrl": "https://www.grindstedtk.dk/",
+      "error": "fetch failed"
+    },
+    {
+      "id": "link_skanderborg_skanderborg_lawn_tennis_klub",
+      "title": "Skanderborg Lawn Tennis Klub",
+      "bookingUrl": "https://sportyfriends.com/da/skanderborg-lawn-tennisklub/",
+      "error": "HTTP 404"
+    }
+  ],
+  "integratedOk": 40
+}
