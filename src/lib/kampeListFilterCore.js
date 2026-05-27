@@ -5,7 +5,7 @@
 
 import { REGIONS } from './platformConstants.js';
 import { BANER_VENUES } from './banerVenues.js';
-import { parseMatchLevelRange } from './matchLevelRange.js';
+import { clampElo, parseMatchLevelRange } from './matchLevelRange.js';
 
 /** Baner-fane landsdele → profil-region (REGIONS). */
 const BANER_TO_PROFILE_REGION = {
@@ -122,13 +122,26 @@ export const KAMPE_LIST_REGION_OPTIONS = [
   })),
 ];
 
+/** Relative ELO-presets — samme som ved oprettelse af kamp. */
 export const KAMPE_LIST_ELO_BANDS = [
-  { id: '', label: 'Alle', min: null, max: null },
-  { id: '800-1100', label: '800–1100', min: 800, max: 1100 },
-  { id: '1100-1300', label: '1100–1300', min: 1100, max: 1300 },
-  { id: '1300-1500', label: '1300–1500', min: 1300, max: 1500 },
-  { id: '1500+', label: '1500+', min: 1500, max: 3000 },
+  { id: '', label: 'Alle', delta: null },
+  { id: 'tight', label: 'Tæt på mig (±100)', delta: 100 },
+  { id: 'flex', label: 'Fleksibel (±200)', delta: 200 },
+  { id: 'open', label: 'Åben (±350)', delta: 350 },
 ];
+
+const LEGACY_ELO_BAND_IDS = new Set(['800-1100', '1100-1300', '1300-1500', '1500+']);
+
+/** Beregnet filter-interval omkring brugerens ELO. */
+export function kampeEloFilterRangeFromUser(eloBandId, userElo) {
+  const band = KAMPE_LIST_ELO_BANDS.find((o) => o.id === eloBandId);
+  if (!band?.delta) return { min: null, max: null };
+  const elo = clampElo(userElo, 1000);
+  return {
+    min: clampElo(elo - band.delta, elo),
+    max: clampElo(elo + band.delta, elo),
+  };
+}
 
 export function defaultKampeListFilter() {
   return { regionId: '', eloBandId: '' };
@@ -146,7 +159,9 @@ export function normalizeKampeListFilter(raw) {
   const base = defaultKampeListFilter();
   if (!raw || typeof raw !== 'object') return base;
   const regionId = resolveListRegionId(raw.regionId);
-  const eloBandId = KAMPE_LIST_ELO_BANDS.some((o) => o.id === raw.eloBandId) ? raw.eloBandId : '';
+  let eloBandId = String(raw.eloBandId ?? '').trim();
+  if (LEGACY_ELO_BAND_IDS.has(eloBandId)) eloBandId = '';
+  eloBandId = KAMPE_LIST_ELO_BANDS.some((o) => o.id === eloBandId) ? eloBandId : '';
   return { regionId, eloBandId };
 }
 
@@ -161,8 +176,15 @@ export function getKampeListRegionLabel(regionId) {
   return regionShortLabel(canonical);
 }
 
-export function getKampeListEloBandLabel(eloBandId) {
-  return KAMPE_LIST_ELO_BANDS.find((o) => o.id === eloBandId)?.label || '';
+export function getKampeListEloBandLabel(eloBandId, userElo = null) {
+  const band = KAMPE_LIST_ELO_BANDS.find((o) => o.id === eloBandId);
+  if (!band?.delta) return band?.label || '';
+  const elo = Number(userElo);
+  if (Number.isFinite(elo)) {
+    const { min, max } = kampeEloFilterRangeFromUser(eloBandId, elo);
+    return `${min}–${max}`;
+  }
+  return band.label;
 }
 
 /** Sammenlign profil-region (area) med valgt regionsfilter. */
@@ -180,14 +202,14 @@ function eloRangesOverlap(aMin, aMax, bMin, bMax) {
   return aMin <= bMax && bMin <= aMax;
 }
 
-/** 2v2-kamp: overlap mellem kampens ELO-interval og valgt bånd. */
-export function matchPassesKampeEloBandFilter(match, eloBandId) {
+/** 2v2-kamp: overlap mellem kampens ELO-interval og brugerens valgte spænd. */
+export function matchPassesKampeEloBandFilter(match, eloBandId, userElo = null) {
   if (!eloBandId) return true;
-  const band = KAMPE_LIST_ELO_BANDS.find((o) => o.id === eloBandId);
-  if (!band || band.min == null) return true;
-  const { min, max } = parseMatchLevelRange(match?.level_range);
+  const { min, max } = kampeEloFilterRangeFromUser(eloBandId, userElo ?? 1000);
   if (min == null || max == null) return true;
-  return eloRangesOverlap(min, max, band.min, band.max);
+  const { min: matchMin, max: matchMax } = parseMatchLevelRange(match?.level_range);
+  if (matchMin == null || matchMax == null) return true;
+  return eloRangesOverlap(matchMin, matchMax, min, max);
 }
 
 /** 2v2-kamp: bane-region slår opretter-region; uden bane → opretterens profil. */
@@ -197,10 +219,10 @@ export function matchPassesKampeRegionFilter(match, regionId, profilesById = {})
   return effectiveRegionMatchesFilter(effective, regionId);
 }
 
-export function matchPassesKampeListFilter(match, filter, { profilesById } = {}) {
+export function matchPassesKampeListFilter(match, filter, { profilesById, userElo } = {}) {
   const f = normalizeKampeListFilter(filter);
   if (!matchPassesKampeRegionFilter(match, f.regionId, profilesById)) return false;
-  if (!matchPassesKampeEloBandFilter(match, f.eloBandId)) return false;
+  if (!matchPassesKampeEloBandFilter(match, f.eloBandId, userElo)) return false;
   return true;
 }
 

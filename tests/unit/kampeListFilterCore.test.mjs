@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   getKampeListRegionLabel,
+  kampeEloFilterRangeFromUser,
   matchPassesKampeEloBandFilter,
   matchPassesKampeRegionFilter,
   normalizeKampeListFilter,
@@ -61,10 +62,19 @@ test('kamp med bane bruger centerets region (ikke opretter)', () => {
   assert.equal(matchPassesKampeRegionFilter(match, 'Region Hovedstaden', profiles), false);
 });
 
-test('ELO-bånd overlapper kamp-interval', () => {
+test('legacy elo-bånd migreres væk', () => {
+  const f = normalizeKampeListFilter({ regionId: '', eloBandId: '1100-1300' });
+  assert.equal(f.eloBandId, '');
+});
+
+test('ELO-filter beregnes omkring brugerens rating', () => {
+  assert.deepEqual(kampeEloFilterRangeFromUser('tight', 1250), { min: 1150, max: 1350 });
+});
+
+test('ELO-filter overlapper kamp-interval relativt til bruger', () => {
   const match = { level_range: 'elo:1200-1400|booked:yes' };
-  assert.equal(matchPassesKampeEloBandFilter(match, '1100-1300'), true);
-  assert.equal(matchPassesKampeEloBandFilter(match, '800-1100'), false);
+  assert.equal(matchPassesKampeEloBandFilter(match, 'tight', 1250), true);
+  assert.equal(matchPassesKampeEloBandFilter(match, 'tight', 900), false);
 });
 
 test('turnering med bane filtreres på centerets region', () => {

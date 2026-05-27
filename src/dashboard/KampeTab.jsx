@@ -1694,8 +1694,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     searchQuery,
     listFilter: kampeListFilter,
     profilesById,
+    userElo: myElo,
     completedSortMs: matchCompletedSortMs,
-  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById]);
+  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById, myElo]);
 
   /* Notifikation: ?format=americano|liga&focus=<id> eller ?focus=<matchId> (padel) */
   useEffect(() => {
@@ -3376,7 +3377,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     if (kampeListFilter.eloBandId && kampeFormat === "padel") {
       chips.push({
         id: "elo",
-        label: `ELO ${getKampeListEloBandLabel(kampeListFilter.eloBandId)} ×`,
+        label: `ELO ${getKampeListEloBandLabel(kampeListFilter.eloBandId, myElo)} ×`,
         onClick: () => onListFilterChange({ ...kampeListFilter, eloBandId: "" }),
       });
     }
@@ -3446,6 +3447,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         onScopeChange={onScopeChange}
         listFilter={kampeListFilter}
         onListFilterChange={onListFilterChange}
+        myElo={myElo}
         format={kampeFormat}
         resultCount={
           kampeFormat === "padel"

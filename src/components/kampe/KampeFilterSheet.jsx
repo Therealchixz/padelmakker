@@ -43,6 +43,7 @@ export function KampeFilterSheet({
   onScopeChange,
   listFilter,
   onListFilterChange,
+  myElo = null,
   resultCount,
   format = 'padel',
   showSeekingToggle = true,
@@ -206,10 +207,15 @@ export function KampeFilterSheet({
         {showEloFilter ? (
           <div className="pm-kampe-v2-sheet-section">
             <div className="pm-kampe-v2-sheet-label">ELO-niveau</div>
+            {myElo != null ? (
+              <p className="pm-kampe-v2-sheet-copy" style={{ marginTop: 0, marginBottom: 10 }}>
+                Din ELO <strong>{Math.round(Number(myElo) || 1000)}</strong> — vælg hvor tæt kampe skal matche dit niveau.
+              </p>
+            ) : null}
             <div className="pm-kampe-v2-sheet-pills">
-              {KAMPE_LIST_ELO_BANDS.filter((b) => b.id !== '').map((band) => (
+              {KAMPE_LIST_ELO_BANDS.map((band) => (
                 <button
-                  key={band.id}
+                  key={band.id || 'alle'}
                   type="button"
                   className={`pm-kampe-v2-sheet-pill${filter.eloBandId === band.id ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
                   onClick={() => setEloBand(band.id)}
@@ -218,7 +224,9 @@ export function KampeFilterSheet({
                 </button>
               ))}
             </div>
-            <p className="pm-kampe-v2-sheet-copy">Viser kampe der overlapper det valgte ELO-interval.</p>
+            <p className="pm-kampe-v2-sheet-copy">
+              Viser kampe hvor kampens ELO-interval overlapper dit valgte spænd.
+            </p>
           </div>
         ) : null}
 
