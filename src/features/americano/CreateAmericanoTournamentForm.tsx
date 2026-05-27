@@ -21,7 +21,9 @@ import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses, Am
 import {
   getMatchVenueOptions,
   courtIdFromVenueSelection,
+  AMERICANO_VENUE_NONE,
 } from '../../lib/matchVenueOptions'
+import { VenueRegionPicker } from '../../components/VenueRegionPicker'
 
 type CourtOption = { id: string; name: string }
 
@@ -36,8 +38,8 @@ type Props = {
 const PLAYER_OPTIONS: AmericanoPlayerSlots[] = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 const POINT_OPTIONS: AmericanoPoints[] = [16, 24, 32]
 
-/** Særlig select-værdi når ingen bane i DB — turnering kan stadig oprettes */
-export const AMERICANO_COURT_NONE = '__none'
+/** Særlig værdi når ingen bane i DB — turnering kan stadig oprettes */
+export const AMERICANO_COURT_NONE = AMERICANO_VENUE_NONE
 
 export function CreateAmericanoTournamentForm({
   userId,
@@ -218,13 +220,12 @@ export function CreateAmericanoTournamentForm({
 
       <div style={{ marginTop: 14 }}>
         <label style={labelSmall}>Bane</label>
-        <select value={courtId} onChange={(e) => setCourtId(e.target.value)} style={inputStyle}>
-          {selectOptions.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <VenueRegionPicker
+          value={courtId}
+          onChange={setCourtId}
+          options={selectOptions}
+          ariaLabel="Vælg bane til turnering"
+        />
         <p style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 6, lineHeight: 1.45 }}>
           Samme steder som under fanen Baner. Matcher automatisk til baner i databasen når navnet stemmer overens.
         </p>

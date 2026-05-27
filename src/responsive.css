@@ -3561,6 +3561,102 @@ button,
   color: var(--pm-text-light);
 }
 
+.pm-venue-region-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pm-venue-region-picker-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--pm-text-mid);
+  padding: 12px 14px;
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius-md);
+  background: var(--pm-surface-alt);
+}
+
+.pm-venue-region-picker-selected {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--pm-accent);
+  border-radius: var(--pm-radius-md);
+  background: var(--pm-accent-bg);
+}
+
+.pm-venue-region-picker-selected-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pm-accent);
+}
+
+.pm-venue-region-picker-selected-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-text);
+}
+
+.pm-venue-region-picker-special {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pm-venue-region-picker-regions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.pm-venue-region-picker-region {
+  margin-bottom: 0;
+}
+
+.pm-venue-region-picker-venue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pm-venue-region-picker-option {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius-sm);
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.pm-venue-region-picker-option:hover {
+  border-color: var(--pm-accent);
+  background: var(--pm-surface-alt);
+}
+
+.pm-venue-region-picker-option--active {
+  border-color: var(--pm-accent);
+  background: var(--pm-accent-bg);
+  color: var(--pm-accent);
+}
+
+.pm-venue-region-picker-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .pm-baner-venue-list {
   display: flex;
   flex-direction: column;

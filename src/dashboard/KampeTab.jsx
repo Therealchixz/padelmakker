@@ -64,6 +64,7 @@ import {
   KampeActiveFilterChips,
 } from '../components/kampe/KampeRedesignToolbar';
 import { KampeFilterSheet } from '../components/kampe/KampeFilterSheet';
+import { VenueRegionPicker } from '../components/VenueRegionPicker';
 import { KampeMatchListCard } from '../components/kampe/KampeMatchListCard';
 import { KampeMatchDetailSheet } from '../components/kampe/KampeMatchDetailSheet';
 import { isProfileMatchFeedVisible } from '../lib/seekingFeedTtl';
@@ -3591,19 +3592,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <label style={labelStyle}>
                 {newMatch.court_booked ? "Hvilken bane er booket?" : "Hvor vil du helst spille? (valgfrit)"}
               </label>
-              <select
+              <VenueRegionPicker
                 value={newMatch.court_id}
-                onChange={(e) => setNewMatch((m) => ({ ...m, court_id: e.target.value }))}
-                style={{ ...inputStyle, fontSize: "13px" }}
-              >
-                {createVenueOptions.length === 0 ? (
-                  <option value="">Indlæser…</option>
-                ) : (
-                  createVenueOptions.map((o) => (
-                    <option key={o.id} value={o.id}>{o.label}</option>
-                  ))
-                )}
-              </select>
+                onChange={(id) => setNewMatch((m) => ({ ...m, court_id: id }))}
+                options={createVenueOptions}
+                emptyLabel="Indlæser centre…"
+                ariaLabel={newMatch.court_booked ? "Vælg booket bane" : "Vælg foretrukket center"}
+              />
               <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
                 {newMatch.court_booked
                   ? "Vælg det center, hvor du har booket tid."
