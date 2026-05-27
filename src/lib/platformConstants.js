@@ -1,3 +1,5 @@
+import { APP_REGIONS, DEFAULT_APP_REGION } from './appRegions.js';
+
 export const LEVELS = [
   'Begynder (1.0–1.9)',
   'Let øvet (2.0–2.9)',
@@ -136,15 +138,9 @@ export function levelStringFromNum(num) {
 export const PLAY_STYLES = ['Offensiv', 'Defensiv', 'Allround', 'Ved ikke endnu'];
 export const COURT_SIDES = ['Venstre side', 'Højre side', 'Begge sider'];
 
-/** Danmarks fem regioner (administrativ inddeling) */
-export const REGIONS = [
-  'Region Hovedstaden',
-  'Region Midtjylland',
-  'Region Nordjylland',
-  'Region Sjælland',
-  'Region Syddanmark',
-];
-export const DEFAULT_REGION = REGIONS[0];
+/** Landsdele — samme som Baner-fanen og bane-vælger (Nordjylland, Østjylland, …). */
+export const REGIONS = APP_REGIONS;
+export const DEFAULT_REGION = DEFAULT_APP_REGION;
 
 export const AVAILABILITY = ['Morgener', 'Formiddage', 'Eftermiddage', 'Aftener', 'Weekender', 'Flexibel'];
 

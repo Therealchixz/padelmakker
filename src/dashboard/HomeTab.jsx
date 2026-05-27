@@ -16,7 +16,7 @@ import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { parseMatchLevelRange } from '../lib/matchLevelRange';
 import { matchTimeLabel } from '../lib/matchDisplayUtils';
-import { regionShortLabel } from '../lib/kampeListFilterCore';
+import { regionDisplayLabel } from '../lib/appRegions';
 import { resolveAmericanoCourtName } from '../features/americano/americanoDisplayUtils';
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
@@ -68,7 +68,7 @@ function openMatchLocationChipLabel(court, creatorArea) {
   if (!unset) return c;
   const area = String(creatorArea || '').trim();
   if (!area) return null;
-  return regionShortLabel(area) || area;
+  return regionDisplayLabel(area) || area;
 }
 
 export function HomeTab({ user, setTab }) {

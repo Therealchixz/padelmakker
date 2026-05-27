@@ -1,4 +1,8 @@
-import { REGIONS, DEFAULT_REGION } from "./platformConstants"
+import { DEFAULT_REGION } from "./platformConstants"
+import { canonicalAppRegion, isValidAppRegion } from "./appRegions.js"
+
+export const canonicalRegionForForm = canonicalAppRegion
+export const isValidProfileRegion = isValidAppRegion
 
 /** Beregn præcis alder ud fra fødselsår, evt. måned og dag */
 export function calcAge(birth_year, birth_month, birth_day) {
@@ -12,31 +16,6 @@ export function calcAge(birth_year, birth_month, birth_day) {
     if (!hadBirthday) age--;
   }
   return age;
-}
-
-/**
- * Map DB-værdi til den kanoniske regionsstreng fra REGIONS (knapper bruger fuldt navn).
- * Fx "Nordjylland" / "nordjylland" → "Region Nordjylland"
- */
-export function canonicalRegionForForm(stored) {
-  const raw = String(stored ?? "").trim()
-  if (!raw) return ""
-  const lower = raw.toLowerCase()
-  const exact = REGIONS.find((r) => r.toLowerCase() === lower)
-  if (exact) return exact
-  for (const r of REGIONS) {
-    const tail = r.replace(/^Region\s+/i, "").toLowerCase()
-    if (lower === tail || lower.endsWith(tail) || tail.includes(lower) || lower.includes(tail)) {
-      return r
-    }
-  }
-  return raw
-}
-
-/** Er `area` en af de fem danske regioner (REGIONS)? */
-export function isValidProfileRegion(area) {
-  const canonical = canonicalRegionForForm(area)
-  return REGIONS.includes(canonical)
 }
 
 /**

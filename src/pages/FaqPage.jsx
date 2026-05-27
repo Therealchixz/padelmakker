@@ -56,8 +56,8 @@ export function FaqPage() {
 
       <Q title="Hvilke regioner understøttes?">
         <p style={{ margin: 0 }}>
-          Profilen bruger Danmarks officielle regioner, så du kan angive, hvor du helst spiller. Platformen kan bruges på tværs af
-          landet; flest spillere og baner er i starten samlet omkring Nordjylland og tilkoblede centre.
+          Profilen bruger de samme otte landsdele som under Baner (Nordjylland, Vestjylland, Østjylland, Sønderjylland,
+          Fyn, Sjælland, Hovedstaden og Bornholm), så du kan angive præcis hvor du helst spiller.
         </p>
       </Q>
 

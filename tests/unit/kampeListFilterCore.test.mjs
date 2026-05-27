@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { APP_REGIONS, canonicalAppRegion, isValidAppRegion } from '../../src/lib/appRegions.js';
 import {
   getKampeListRegionLabel,
   kampeEloFilterRangeFromUser,
@@ -12,28 +13,45 @@ import {
   tournamentPassesKampeRegionFilter,
 } from '../../src/lib/kampeListFilterCore.js';
 
-test('region options bruger danske regioner', () => {
-  const f = normalizeKampeListFilter({ regionId: 'Region Midtjylland', eloBandId: '' });
-  assert.equal(f.regionId, 'Region Midtjylland');
-  assert.equal(getKampeListRegionLabel('Region Midtjylland'), 'Midtjylland');
+test('app har otte landsdele som Baner-fanen', () => {
+  assert.equal(APP_REGIONS.length, 8);
+  assert.ok(APP_REGIONS.includes('Nordjylland'));
+  assert.ok(APP_REGIONS.includes('Bornholm'));
 });
 
-test('legacy by-id migreres til region', () => {
+test('legacy admin-region migreres til app-landsdel', () => {
+  assert.equal(canonicalAppRegion('Region Hovedstaden'), 'Hovedstaden');
+  assert.equal(canonicalAppRegion('Region Midtjylland'), 'Østjylland');
+  assert.equal(isValidAppRegion('Region Nordjylland'), true);
+});
+
+test('region options bruger app-landsdele', () => {
+  const f = normalizeKampeListFilter({ regionId: 'Østjylland', eloBandId: '' });
+  assert.equal(f.regionId, 'Østjylland');
+  assert.equal(getKampeListRegionLabel('Østjylland'), 'Østjylland');
+});
+
+test('legacy by-id migreres til landsdel', () => {
   const f = normalizeKampeListFilter({ regionId: 'kbh', eloBandId: '' });
-  assert.equal(f.regionId, 'Region Hovedstaden');
+  assert.equal(f.regionId, 'Hovedstaden');
 });
 
-test('Skansen Padel mappes til Region Nordjylland', () => {
-  assert.equal(resolveVenueProfileRegion('Skansen Padel'), 'Region Nordjylland');
+test('legacy admin filter-id migreres til landsdel', () => {
+  const f = normalizeKampeListFilter({ regionId: 'Region Hovedstaden', eloBandId: '' });
+  assert.equal(f.regionId, 'Hovedstaden');
+});
+
+test('Skansen Padel mappes til Nordjylland', () => {
+  assert.equal(resolveVenueProfileRegion('Skansen Padel'), 'Nordjylland');
 });
 
 test('profil-region matcher valgt region', () => {
   assert.equal(
-    profileAreaMatchesKampeRegionFilter('Region Hovedstaden', 'Region Hovedstaden'),
+    profileAreaMatchesKampeRegionFilter('Hovedstaden', 'Hovedstaden'),
     true,
   );
   assert.equal(
-    profileAreaMatchesKampeRegionFilter('Region Midtjylland', 'Region Hovedstaden'),
+    profileAreaMatchesKampeRegionFilter('Østjylland', 'Hovedstaden'),
     false,
   );
 });
@@ -44,10 +62,10 @@ test('kamp uden bane bruger opretterens region', () => {
     level_range: 'elo:1200-1300|booked:no',
     creator_id: 'u1',
   };
-  const profiles = { u1: { area: 'Region Hovedstaden' } };
-  assert.equal(resolveMatchEffectiveRegion(match, profiles), 'Region Hovedstaden');
-  assert.equal(matchPassesKampeRegionFilter(match, 'Region Hovedstaden', profiles), true);
-  assert.equal(matchPassesKampeRegionFilter(match, 'Region Nordjylland', profiles), false);
+  const profiles = { u1: { area: 'Hovedstaden' } };
+  assert.equal(resolveMatchEffectiveRegion(match, profiles), 'Hovedstaden');
+  assert.equal(matchPassesKampeRegionFilter(match, 'Hovedstaden', profiles), true);
+  assert.equal(matchPassesKampeRegionFilter(match, 'Nordjylland', profiles), false);
 });
 
 test('kamp med bane bruger centerets region (ikke opretter)', () => {
@@ -56,10 +74,10 @@ test('kamp med bane bruger centerets region (ikke opretter)', () => {
     level_range: 'elo:1200-1300|booked:yes',
     creator_id: 'u1',
   };
-  const profiles = { u1: { area: 'Region Hovedstaden' } };
-  assert.equal(resolveMatchEffectiveRegion(match, profiles), 'Region Nordjylland');
-  assert.equal(matchPassesKampeRegionFilter(match, 'Region Nordjylland', profiles), true);
-  assert.equal(matchPassesKampeRegionFilter(match, 'Region Hovedstaden', profiles), false);
+  const profiles = { u1: { area: 'Hovedstaden' } };
+  assert.equal(resolveMatchEffectiveRegion(match, profiles), 'Nordjylland');
+  assert.equal(matchPassesKampeRegionFilter(match, 'Nordjylland', profiles), true);
+  assert.equal(matchPassesKampeRegionFilter(match, 'Hovedstaden', profiles), false);
 });
 
 test('legacy elo-bånd migreres væk', () => {
@@ -81,8 +99,8 @@ test('turnering med bane filtreres på centerets region', () => {
   assert.equal(
     tournamentPassesKampeRegionFilter(
       { name: 'Fredags turnering' },
-      'Region Nordjylland',
-      'Region Hovedstaden',
+      'Nordjylland',
+      'Hovedstaden',
       'Skansen Padel',
     ),
     true,
@@ -90,8 +108,8 @@ test('turnering med bane filtreres på centerets region', () => {
   assert.equal(
     tournamentPassesKampeRegionFilter(
       { name: 'Fredags turnering' },
-      'Region Hovedstaden',
-      'Region Hovedstaden',
+      'Hovedstaden',
+      'Hovedstaden',
       'Skansen Padel',
     ),
     false,
@@ -102,8 +120,8 @@ test('turnering uden bane filtreres på opretterens region', () => {
   assert.equal(
     tournamentPassesKampeRegionFilter(
       { name: 'Fredags turnering' },
-      'Region Hovedstaden',
-      'Region Hovedstaden',
+      'Hovedstaden',
+      'Hovedstaden',
       'Bane ikke valgt',
     ),
     true,

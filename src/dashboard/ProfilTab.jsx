@@ -1275,7 +1275,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         <div style={labelStyle}>Region <span style={{ color: theme.red }}>*</span></div>
         <PillTabs
           tabs={REGION_PILL_TABS}
-          value={REGIONS.includes(form.area) ? form.area : ''}
+          value={canonicalRegionForForm(form.area) || ''}
           onChange={(id) => set('area', id)}
           ariaLabel="Region"
           size="sm"

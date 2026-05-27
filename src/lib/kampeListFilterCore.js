@@ -6,18 +6,11 @@
 import { REGIONS } from './platformConstants.js';
 import { BANER_VENUES } from './banerVenues.js';
 import { clampElo, parseMatchLevelRange } from './matchLevelRange.js';
-
-/** Baner-fane landsdele → profil-region (REGIONS). */
-const BANER_TO_PROFILE_REGION = {
-  Nordjylland: 'Region Nordjylland',
-  Vestjylland: 'Region Midtjylland',
-  Østjylland: 'Region Midtjylland',
-  Sønderjylland: 'Region Syddanmark',
-  Fyn: 'Region Syddanmark',
-  Sjælland: 'Region Sjælland',
-  Hovedstaden: 'Region Hovedstaden',
-  Bornholm: 'Region Hovedstaden',
-};
+import {
+  canonicalAppRegion,
+  LEGACY_CITY_ID_TO_APP_REGION,
+  regionDisplayLabel,
+} from './appRegions.js';
 
 function normVenueText(s) {
   return String(s || '')
@@ -38,13 +31,11 @@ function findBanerVenueByCourtName(courtName) {
   );
 }
 
-/** Region for et kendt center (Skansen → Region Nordjylland). */
+/** Region for et kendt center (Skansen → Nordjylland). */
 export function resolveVenueProfileRegion(courtName) {
   const venue = findBanerVenueByCourtName(courtName);
   if (!venue?.region) return null;
-  const mapped = BANER_TO_PROFILE_REGION[venue.region];
-  if (mapped && REGIONS.includes(mapped)) return mapped;
-  return canonicalListRegion(venue.region);
+  return canonicalAppRegion(venue.region);
 }
 
 /** Har kampen/turneringen et valgt sted (ikke «Ikke valgt endnu»)? */
@@ -87,31 +78,15 @@ function effectiveRegionMatchesFilter(effectiveRegion, regionId) {
   return effectiveRegion === target;
 }
 
-/** Gamle by-id'er fra før regions-skift — migreres til kanonisk region. */
-const LEGACY_CITY_TO_REGION = {
-  kbh: 'Region Hovedstaden',
-  aarhus: 'Region Midtjylland',
-  odense: 'Region Syddanmark',
-  aalborg: 'Region Nordjylland',
-};
+/** Gamle by-id'er fra før regions-skift — migreres til kanonisk landsdel. */
+const LEGACY_CITY_TO_REGION = LEGACY_CITY_ID_TO_APP_REGION;
 
 function canonicalListRegion(stored) {
-  const raw = String(stored ?? '').trim();
-  if (!raw) return '';
-  const lower = raw.toLowerCase();
-  const exact = REGIONS.find((r) => r.toLowerCase() === lower);
-  if (exact) return exact;
-  for (const r of REGIONS) {
-    const tail = r.replace(/^Region\s+/i, '').toLowerCase();
-    if (lower === tail || lower.endsWith(tail) || tail.includes(lower) || lower.includes(tail)) {
-      return r;
-    }
-  }
-  return raw;
+  return canonicalAppRegion(stored);
 }
 
 export function regionShortLabel(fullRegion) {
-  return String(fullRegion || '').replace(/^Region\s+/i, '').trim() || fullRegion;
+  return regionDisplayLabel(fullRegion);
 }
 
 export const KAMPE_LIST_REGION_OPTIONS = [
