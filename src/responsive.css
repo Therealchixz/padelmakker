@@ -6331,6 +6331,18 @@ button,
   color: var(--pm-text-mid);
 }
 
+.pm-kampe-v2-sheet-advanced-link {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pm-accent);
+  cursor: pointer;
+  text-align: left;
+}
+
 .pm-kampe-v2-sheet-toggle-row {
   display: flex;
   align-items: center;

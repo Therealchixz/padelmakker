@@ -20,6 +20,7 @@ import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
 import { useScrollIntoViewWhen } from '../lib/useScrollIntoViewWhen';
 import { DateInputField } from '../components/DateInputField';
+import { textMatchesKampeRegionFilter } from '../lib/kampeListFilterCore';
 
 function isTiebreakScore(scoreText) {
   return !!(scoreText && /7-6|6-7/.test(scoreText));
@@ -712,6 +713,8 @@ export function LigaTab({
   onScopeChange,
   searchQuery: searchQueryProp,
   onSearchQueryChange,
+  listRegionFilter = '',
+  onFilteredCountChange,
 }) {
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
@@ -1213,12 +1216,17 @@ export function LigaTab({
   const visibleLeagues = leagues.filter(l => {
     if (l.status !== view) return false;
     if (scope === 'mine' && !myTeamByLeague[l.id] && l.created_by !== user.id) return false;
+    if (listRegionFilter && !textMatchesKampeRegionFilter([l.name, l.description], listRegionFilter)) return false;
     if (search) {
       const q = search.toLowerCase();
       if (!l.name?.toLowerCase().includes(q) && !l.description?.toLowerCase().includes(q)) return false;
     }
     return true;
   });
+
+  useEffect(() => {
+    onFilteredCountChange?.(visibleLeagues.length);
+  }, [visibleLeagues.length, onFilteredCountChange]);
   const leagueScopeTabs = [
     { id: 'alle', label: 'Alle ligaer' },
     { id: 'mine', label: 'Mine ligaer' },

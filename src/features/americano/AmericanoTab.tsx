@@ -32,6 +32,7 @@ import {
 } from '../../lib/tournamentCopy'
 import { useScrollIntoViewWhen } from '../../lib/useScrollIntoViewWhen'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
+import { tournamentPassesKampeRegionFilter } from '../../lib/kampeListFilterCore'
 
 const font = 'var(--pm-font)'
 
@@ -64,6 +65,8 @@ type Props = {
   /** Filtrering fra overordnet Kampe-fane */
   scope?: 'mine' | 'alle'
   searchQuery?: string
+  listRegionFilter?: string
+  onFilteredCountChange?: (count: number) => void
 }
 
 type ParticipantListRow = {
@@ -103,6 +106,8 @@ export function AmericanoTab({
   onCreateOpenChange,
   scope = 'mine',
   searchQuery = '',
+  listRegionFilter = '',
+  onFilteredCountChange,
   focusTournamentId = null,
   onFocusTournamentHandled,
 }: Props) {
@@ -328,6 +333,10 @@ export function AmericanoTab({
 
     const matchesScope = (t: AmericanoTournament) => {
       if (scope === 'mine' && !joinedIds.has(t.id)) return false
+      if (listRegionFilter) {
+        const courtName = resolveAmericanoCourtName(t.court_id, courts)
+        if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, courtName)) return false
+      }
       if (searchQuery && searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
         if ((t.name || '').toLowerCase().includes(q)) return true
@@ -424,7 +433,7 @@ export function AmericanoTab({
     return () => {
       cancelled = true
     }
-  }, [rows, joinedIds, profileId, loading, americanoView, scope, searchQuery, participantsByTournament])
+  }, [rows, joinedIds, profileId, loading, americanoView, scope, searchQuery, participantsByTournament, listRegionFilter, courts])
 
   useEffect(() => {
     if (!detailTournamentId || !profileId) return undefined
@@ -730,6 +739,11 @@ export function AmericanoTab({
       if (!joinedIds.has(t.id)) return false
     }
 
+    if (listRegionFilter) {
+      const courtName = resolveAmericanoCourtName(t.court_id, courts)
+      if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, courtName)) return false
+    }
+
     // 2. Search filter
     if (searchQuery && searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
@@ -757,6 +771,10 @@ export function AmericanoTab({
       : americanoView === 'playing'
         ? playingAmericanosFiltered
         : completedAmericanosFiltered
+
+  useEffect(() => {
+    onFilteredCountChange?.(visibleRows.length)
+  }, [visibleRows.length, onFilteredCountChange])
 
   const americanoSubTabs = [
     { id: 'open' as const, label: `Åbne (${openAmericanos.length})` },

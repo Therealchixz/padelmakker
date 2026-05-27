@@ -4,14 +4,17 @@ import { useAuth } from '../../lib/AuthContext';
 import { seekingVisibleDurationLabel } from '../../lib/platformConstants';
 import {
   normalizeMatchSearchPrefs,
-  describeMatchFilter,
-  resolveFilterRegion,
   buildProfilePatchFromMatchSearchPrefs,
 } from '../../lib/matchSearchFilterUtils';
 import { notifyMakkerWatchersForProfile } from '../../lib/makkerWatchUtils';
 import { isSeekingActiveProfile } from '../../lib/makkerSearchFilterCore';
 import { isProfileMatchFeedVisible } from '../../lib/seekingFeedTtl';
-import { btn } from '../../lib/platformTheme';
+import { resolveFilterRegion } from '../../lib/matchSearchFilterCore';
+import {
+  KAMPE_LIST_REGION_OPTIONS,
+  KAMPE_LIST_ELO_BANDS,
+  normalizeKampeListFilter,
+} from '../../lib/kampeListFilterCore';
 import { FILTER_RETURN_KAMPE } from '../../lib/filterReturnNavigation';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 
@@ -38,9 +41,13 @@ export function KampeFilterSheet({
   showToast,
   scope,
   onScopeChange,
+  listFilter,
+  onListFilterChange,
   resultCount,
+  format = 'padel',
   showSeekingToggle = true,
-  showMatchFilterSection = true,
+  showRegionFilter = true,
+  showEloFilter = true,
 }) {
   const navigate = useNavigate();
   const { updateProfile } = useAuth();
@@ -54,12 +61,19 @@ export function KampeFilterSheet({
     () => normalizeMatchSearchPrefs(user?.match_search_prefs, user),
     [user],
   );
-  const info = useMemo(() => describeMatchFilter(prefs, user), [prefs, user]);
+  const filter = useMemo(() => normalizeKampeListFilter(listFilter), [listFilter]);
   const feedVisibleNow = isProfileMatchFeedVisible(user);
   const regionOk = Boolean(resolveFilterRegion(prefs, user) || prefs.region);
   const durationLabel = seekingVisibleDurationLabel('kamp');
 
-  const openFilterPage = () => {
+  const resultLabel =
+    format === 'padel'
+      ? `${resultCount ?? 0} kampe matcher`
+      : format === 'americano'
+        ? `${resultCount ?? 0} turneringer matcher`
+        : `${resultCount ?? 0} ligaer matcher`;
+
+  const openAdvancedFilterPage = () => {
     navigate('/dashboard/kamp-filter', { state: { filterReturnTo: FILTER_RETURN_KAMPE } });
     onClose?.();
   };
@@ -67,8 +81,8 @@ export function KampeFilterSheet({
   const handleToggleFeed = async (nextVisible) => {
     if (toggling) return;
     if (nextVisible && !regionOk) {
-      showToast('Vælg region under Mit kamp-filter først.');
-      openFilterPage();
+      showToast('Vælg region på din profil under avanceret filter først.');
+      openAdvancedFilterPage();
       return;
     }
     setToggling(true);
@@ -89,7 +103,24 @@ export function KampeFilterSheet({
     }
   };
 
+  const setRegion = (regionId) => {
+    onListFilterChange?.({ ...filter, regionId });
+  };
+
+  const setEloBand = (eloBandId) => {
+    onListFilterChange?.({ ...filter, eloBandId: filter.eloBandId === eloBandId ? '' : eloBandId });
+  };
+
   if (!open) return null;
+
+  const scopeAllLabel =
+    format === 'americano' ? 'Alle turneringer' : format === 'liga' ? 'Alle ligaer' : 'Alle kampe';
+  const scopeMineLabel =
+    format === 'americano'
+      ? 'Kun mine turneringer'
+      : format === 'liga'
+        ? 'Kun mine ligaer'
+        : 'Kun mine kampe';
 
   return (
     <>
@@ -113,7 +144,7 @@ export function KampeFilterSheet({
             <div>
               <div className="pm-kampe-v2-sheet-title">Filter</div>
               {resultCount != null ? (
-                <div className="pm-kampe-v2-sheet-sub">{resultCount} kampe matcher</div>
+                <div className="pm-kampe-v2-sheet-sub">{resultLabel}</div>
               ) : null}
             </div>
             <button
@@ -135,25 +166,59 @@ export function KampeFilterSheet({
               className={`pm-kampe-v2-sheet-pill${scope === 'alle' ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
               onClick={() => onScopeChange('alle')}
             >
-              Alle kampe
+              {scopeAllLabel}
             </button>
             <button
               type="button"
               className={`pm-kampe-v2-sheet-pill${scope === 'mine' ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
               onClick={() => onScopeChange('mine')}
             >
-              Kun mine kampe
+              {scopeMineLabel}
             </button>
           </div>
         </div>
 
-        {showMatchFilterSection ? (
+        {showRegionFilter ? (
           <div className="pm-kampe-v2-sheet-section">
-            <div className="pm-kampe-v2-sheet-label">Mit kamp-filter</div>
-            <p className="pm-kampe-v2-sheet-copy">{info.configured ? info.summary : info.detail}</p>
-            <button type="button" onClick={openFilterPage} style={{ ...btn(false), width: '100%', marginTop: 8, fontSize: 13 }}>
-              Rediger region og ELO ›
-            </button>
+            <div className="pm-kampe-v2-sheet-label">Region</div>
+            <div className="pm-kampe-v2-sheet-pills">
+              {KAMPE_LIST_REGION_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id || 'alle'}
+                  type="button"
+                  className={`pm-kampe-v2-sheet-pill${filter.regionId === opt.id ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
+                  onClick={() => setRegion(opt.id)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="pm-kampe-v2-sheet-copy">
+              {format === 'americano'
+                ? 'Filtrer turneringer efter bane/sted.'
+                : format === 'liga'
+                  ? 'Filtrer ligaer efter navn/beskrivelse og sted.'
+                  : 'Filtrer listen efter hvor kampen spilles.'}
+            </p>
+          </div>
+        ) : null}
+
+        {showEloFilter ? (
+          <div className="pm-kampe-v2-sheet-section">
+            <div className="pm-kampe-v2-sheet-label">ELO-niveau</div>
+            <div className="pm-kampe-v2-sheet-pills">
+              {KAMPE_LIST_ELO_BANDS.filter((b) => b.id !== '').map((band) => (
+                <button
+                  key={band.id}
+                  type="button"
+                  className={`pm-kampe-v2-sheet-pill${filter.eloBandId === band.id ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
+                  onClick={() => setEloBand(band.id)}
+                >
+                  {band.label}
+                </button>
+              ))}
+            </div>
+            <p className="pm-kampe-v2-sheet-copy">Viser kampe der overlapper det valgte ELO-interval.</p>
           </div>
         ) : null}
 
@@ -173,6 +238,18 @@ export function KampeFilterSheet({
               disabled={toggling}
               ariaLabel={prefs.feedVisible ? 'Skjul søger-synlighed' : 'Vis at jeg søger kamp'}
             />
+          </div>
+        ) : null}
+
+        {showSeekingToggle ? (
+          <div className="pm-kampe-v2-sheet-section" style={{ marginTop: 4 }}>
+            <button
+              type="button"
+              className="pm-kampe-v2-sheet-advanced-link"
+              onClick={openAdvancedFilterPage}
+            >
+              Notifikationer og avanceret filter ›
+            </button>
           </div>
         ) : null}
       </div>

@@ -32,6 +32,12 @@ import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from 
 import { groupUnreadNotificationsByMatchId, groupRelevantUnreadNotificationsByMatchId, removeUnreadForMatch, shouldRefreshKampeUnreadForNotificationType } from '../lib/kampeNotificationBadges';
 import { buildMatchCardState } from '../lib/matchCardState';
 import { buildKampeMatchLists } from '../lib/matchListFilters';
+import {
+  normalizeKampeListFilter,
+  kampeListFilterIsActive,
+  getKampeListRegionLabel,
+  getKampeListEloBandLabel,
+} from '../lib/kampeListFilterCore';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { buildMatchLevelRange, clampElo, parseMatchLevelRange } from '../lib/matchLevelRange';
 import {
@@ -258,6 +264,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     if (s?.scope === "mine" || s?.scope === "alle") return s.scope;
     return "alle";
   }); // "mine" | "alle"
+  const [kampeListFilter, setKampeListFilter] = useState(() =>
+    normalizeKampeListFilter(readKampeSessionPrefs(user.id)?.listFilter),
+  );
+  const [americanoFilteredCount, setAmericanoFilteredCount] = useState(null);
+  const [ligaFilteredCount, setLigaFilteredCount] = useState(null);
   const [padelHelpOpen, setPadelHelpOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [detailMatchId, setDetailMatchId] = useState(null);
@@ -1681,8 +1692,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     isMine,
     currentUserId: myUidStr,
     searchQuery,
+    listFilter: kampeListFilter,
+    profilesById,
     completedSortMs: matchCompletedSortMs,
-  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery]);
+  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById]);
 
   /* Notifikation: ?format=americano|liga&focus=<id> eller ?focus=<matchId> (padel) */
   useEffect(() => {
@@ -2729,6 +2742,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     mergeKampeSessionPrefs(user.id, { scope: nextScope });
     setSearchQuery("");
   };
+  const onListFilterChange = (nextFilter) => {
+    const normalized = normalizeKampeListFilter(nextFilter);
+    setKampeListFilter(normalized);
+    mergeKampeSessionPrefs(user.id, { listFilter: normalized });
+  };
   const onViewTabChange = (nextView) => {
     setViewTab(nextView);
     mergeKampeSessionPrefs(user.id, { view: nextView });
@@ -3336,7 +3354,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const currentPadelMatches =
     viewTab === "open" ? openMatches : viewTab === "active" ? activeMatches : completedMatches;
   const filterActive =
-    kampeScope === "mine" || (kampeFormat === "padel" && isProfileMatchFeedVisible(user));
+    kampeScope === "mine"
+    || kampeListFilterIsActive(kampeListFilter)
+    || (kampeFormat === "padel" && isProfileMatchFeedVisible(user));
   const activeFilterChips = useMemo(() => {
     const chips = [];
     if (kampeScope === "mine") {
@@ -3344,6 +3364,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         id: "mine",
         label: "Kun mine kampe ×",
         onClick: () => onScopeChange("alle"),
+      });
+    }
+    if (kampeListFilter.regionId) {
+      chips.push({
+        id: "region",
+        label: `${getKampeListRegionLabel(kampeListFilter.regionId)} ×`,
+        onClick: () => onListFilterChange({ ...kampeListFilter, regionId: "" }),
+      });
+    }
+    if (kampeListFilter.eloBandId && kampeFormat === "padel") {
+      chips.push({
+        id: "elo",
+        label: `ELO ${getKampeListEloBandLabel(kampeListFilter.eloBandId)} ×`,
+        onClick: () => onListFilterChange({ ...kampeListFilter, eloBandId: "" }),
       });
     }
     if (kampeFormat === "padel" && isProfileMatchFeedVisible(user)) {
@@ -3355,7 +3389,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       });
     }
     return chips;
-  }, [kampeScope, kampeFormat, user]);
+  }, [kampeScope, kampeFormat, user, kampeListFilter]);
   const showCreatePanel =
     (kampeFormat === "padel" && showCreate) ||
     (kampeFormat === "americano" && showAmericanoCreate) ||
@@ -3410,9 +3444,19 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         showToast={showToast}
         scope={kampeScope}
         onScopeChange={onScopeChange}
-        resultCount={kampeFormat === "padel" ? currentPadelMatches.length : undefined}
+        listFilter={kampeListFilter}
+        onListFilterChange={onListFilterChange}
+        format={kampeFormat}
+        resultCount={
+          kampeFormat === "padel"
+            ? currentPadelMatches.length
+            : kampeFormat === "americano"
+              ? americanoFilteredCount
+              : ligaFilteredCount
+        }
         showSeekingToggle={kampeFormat === "padel"}
-        showMatchFilterSection={kampeFormat === "padel"}
+        showRegionFilter
+        showEloFilter={kampeFormat === "padel"}
       />
       {kampeFormat === "liga" && (
         <Suspense
@@ -3436,6 +3480,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             onScopeChange={onScopeChange}
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
+            listRegionFilter={kampeListFilter.regionId}
+            onFilteredCountChange={setLigaFilteredCount}
           />
         </Suspense>
       )}
@@ -3478,8 +3524,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           tabActive={tabActive && kampeFormat === "americano"}
           createOpen={showAmericanoCreate}
           onCreateOpenChange={setShowAmericanoCreate}
-          scope={kampeScope}
-          searchQuery={searchQuery}
+            scope={kampeScope}
+            onScopeChange={onScopeChange}
+            searchQuery={searchQuery}
+            listRegionFilter={kampeListFilter.regionId}
+            onFilteredCountChange={setAmericanoFilteredCount}
           focusTournamentId={focusScrollAmericanoId}
           onFocusTournamentHandled={() => setFocusScrollAmericanoId(null)}
           initialSubTab={(() => {
