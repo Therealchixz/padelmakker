@@ -22,7 +22,7 @@ const roadmapColumns = [
     items: [
       { icon: Users, title: 'Find makker', detail: 'Se spillere tæt på dit niveau og område.' },
       { icon: TrendingUp, title: 'Dynamisk 2v2-ELO', detail: 'Individuel forventning, K-faktor og sejrsmargin i alle 2v2-kampe.' },
-      { icon: Trophy, title: 'Separat Turnerings-ELO', detail: 'Egen rating for Americano og Mexicano, beregnet ved afslutning af turneringen.' },
+      { icon: Trophy, title: 'Separat Americano/Mexicano ELO', detail: 'Egen rating for Americano og Mexicano, beregnet ved afslutning af Americano/Mexicano.' },
       { icon: MapPinned, title: 'Baneoversigt', detail: 'Udvalgte centre med direkte bookingvej.' },
     ],
   },
@@ -44,7 +44,7 @@ const roadmapColumns = [
     tone: 'later',
     icon: Lightbulb,
     items: [
-      { icon: Target, title: 'Flere turneringsformater', detail: 'Endnu flere formater til klubber, grupper og events.' },
+      { icon: Target, title: 'Flere Americano/Mexicano-formater', detail: 'Endnu flere formater til klubber, grupper og events.' },
       { icon: UserRoundCog, title: 'Udvidede profiler', detail: 'Spillestil, favoritcentre og tilgængelighed.' },
       { icon: MessageCircleHeart, title: 'Brugerønsker', detail: 'Stem på de forbedringer der betyder mest.' },
       { icon: ClipboardList, title: 'Klubfunktioner', detail: 'Flere værktøjer til arrangører og admins.' },

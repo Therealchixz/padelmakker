@@ -29,7 +29,7 @@ export const landingEloExplainerSteps = [
     key: 'after',
     label: 'Ny rating',
     title: 'Udviklingen gemmes',
-    detail: 'Din 2v2-ELO opdateres. Turnerings-ELO (Americano/Mexicano) er separat.',
+    detail: 'Din 2v2-ELO opdateres. Americano/Mexicano ELO er separat.',
   },
 ];
 

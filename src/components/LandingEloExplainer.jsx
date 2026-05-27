@@ -97,7 +97,7 @@ export function LandingEloExplainer() {
           </h2>
           <p>
             2v2-rating opdateres med individuel forventning, dynamisk K-værdi og sejrsmargin.
-            Turnerings-ELO (Americano og Mexicano) holdes separat fra 2v2, så formaterne påvirker ikke hinanden.
+            Americano/Mexicano ELO holdes separat fra 2v2, så formaterne påvirker ikke hinanden.
           </p>
         </div>
 
