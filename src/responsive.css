@@ -7300,8 +7300,8 @@ button,
 
 .pm-americano-v2-list-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 10px;
 }
 
@@ -7324,13 +7324,39 @@ button,
   border-radius: 999px;
   padding: 4px 8px;
   white-space: nowrap;
+  max-width: 100%;
+}
+
+.pm-americano-v2-list-meta-pill--courts {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pm-americano-v2-list-participants {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 6px;
-  flex-shrink: 0;
+  min-width: 0;
+}
+
+@media (min-width: 520px) {
+  .pm-americano-v2-list-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .pm-americano-v2-list-participants {
+    flex-shrink: 0;
+    justify-content: flex-end;
+  }
+
+  .pm-americano-v2-list-meta-pill--courts {
+    max-width: 220px;
+  }
 }
 
 .pm-americano-v2-list-avatar-stack {

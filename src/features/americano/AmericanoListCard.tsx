@@ -138,7 +138,7 @@ export function AmericanoListCard({
               <Clock size={11} aria-hidden />
               {totalRounds} runder
             </span>
-            <span className="pm-americano-v2-list-meta-pill">
+            <span className="pm-americano-v2-list-meta-pill pm-americano-v2-list-meta-pill--courts">
               <LayoutGrid size={11} aria-hidden />
               {formatCourtsBenchCompact(courts, bench)}
             </span>
