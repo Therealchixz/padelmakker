@@ -5,6 +5,7 @@ import { theme, btn, font } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
+import { Court } from '../api/base44Client';
 import { Users, MapPin, Swords, Trophy, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
@@ -16,6 +17,7 @@ import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { parseMatchLevelRange } from '../lib/matchLevelRange';
 import { matchTimeLabel } from '../lib/matchDisplayUtils';
 import { regionShortLabel } from '../lib/kampeListFilterCore';
+import { resolveAmericanoCourtName } from '../features/americano/americanoDisplayUtils';
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
@@ -51,6 +53,11 @@ function writeHomeEloMode(userId, mode) {
   } catch {
     // Ignore localStorage limitations (private mode / quota).
   }
+}
+
+/** Sted for turnering/kamp: bane-navn, ellers opretterens region. */
+function activityLocationLabel(courtName, creatorArea) {
+  return openMatchLocationChipLabel(courtName, creatorArea);
 }
 
 /** Chip-tekst for sted: bane-navn, eller opretterens region når bane ikke er valgt. */
@@ -259,7 +266,7 @@ export function HomeTab({ user, setTab }) {
           .select('id, creator_id, date, time, time_end, court_name, level_range, description, created_at').eq('status', 'open')
           .gte('date', today).order('created_at', { ascending: false }).limit(5),
         supabase.from('americano_tournaments')
-          .select('id, name, tournament_date, time_slot, player_slots, created_at').eq('status', 'registration')
+          .select('id, name, tournament_date, time_slot, player_slots, court_id, creator_id, created_at').eq('status', 'registration')
           .order('created_at', { ascending: false }).limit(5),
         supabase.from('profiles')
           .select('id, full_name, name, avatar, level, area, intent_now, seeking_match_at, match_search_prefs, makker_search_prefs')
@@ -291,7 +298,10 @@ export function HomeTab({ user, setTab }) {
       const matchIds       = [...new Set(eloFull.filter(r => r.match_id).map(r => r.match_id))];
       const completedAmIds = completedAm.map(t => t.id);
       const completedLgIds = completedLg.map(l => l.id);
-      const creatorIds     = [...new Set(openMatches.map(m => m.creator_id))];
+      const creatorIds     = [...new Set([
+        ...openMatches.map(m => m.creator_id),
+        ...regAm.map(t => t.creator_id),
+      ].filter(Boolean))];
       const openMatchIds   = openMatches.map(m => m.id);
       const regAmIds       = regAm.map(t => t.id);
       const newLigaIds     = newLiga.map(l => l.id);
@@ -303,6 +313,7 @@ export function HomeTab({ user, setTab }) {
         lgTeamsRes, lgMatchesRes,
         creatorProfilesRes, regAmPartsRes, newLgTeamsRes,
         openMatchPlayersRes,
+        courtsRes,
       ] = await Promise.allSettled([
         matchIds.length       ? supabase.from('match_results').select('match_id, score_display, match_winner').in('match_id', matchIds)                                                                                                       : Promise.resolve({ data: [] }),
         matchIds.length       ? supabase.from('matches').select('id, court_name, description').in('id', matchIds)                                                                                                                                : Promise.resolve({ data: [] }),
@@ -315,9 +326,10 @@ export function HomeTab({ user, setTab }) {
         regAmIds.length       ? supabase.from('americano_participants').select('tournament_id').in('tournament_id', regAmIds)                                                                                                                     : Promise.resolve({ data: [] }),
         newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
         openMatchIds.length   ? supabase.from('match_players').select('match_id, user_id, user_name, user_emoji, team').in('match_id', openMatchIds)                                                                                            : Promise.resolve({ data: [] }),
+        Court.filter().catch(() => []),
       ]);
       const round2Results = {
-        mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, amEloRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes, openMatchPlayersRes,
+        mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, amEloRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes, openMatchPlayersRes, courtsRes,
       };
       for (const [key, result] of Object.entries(round2Results)) {
         if (result.status === 'rejected') console.warn('[home-feed] Round2 query fejlede:', key, result.reason);
@@ -487,7 +499,24 @@ export function HomeTab({ user, setTab }) {
       // Americano under tilmelding
       const regCounts = {};
       (regAmPartsRes.value?.data || []).forEach(p => { regCounts[p.tournament_id] = (regCounts[p.tournament_id] || 0) + 1; });
-      const americanoRegFeed_ = regAm.map(t => ({ type: 'americano_registration', tournamentId: t.id, name: t.name, date: t.tournament_date, time: t.time_slot, slots: t.player_slots, participants: regCounts[t.id] || 0, created_at: t.created_at }));
+      const courtsList = (courtsRes.status === 'fulfilled' ? courtsRes.value : []) || [];
+      const courtsForAm = courtsList.map((c) => ({ id: String(c.id), name: String(c.name || 'Bane') }));
+      const americanoRegFeed_ = regAm.map(t => {
+        const creatorArea = pMap[t.creator_id]?.area || '';
+        const courtName = resolveAmericanoCourtName(t.court_id, courtsForAm);
+        const location = activityLocationLabel(courtName, creatorArea);
+        return {
+          type: 'americano_registration',
+          tournamentId: t.id,
+          name: t.name,
+          date: t.tournament_date,
+          time: t.time_slot,
+          location,
+          slots: t.player_slots,
+          participants: regCounts[t.id] || 0,
+          created_at: t.created_at,
+        };
+      });
 
       // ELO milepæle (fra det fulde opslag)
       const MILESTONES = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
@@ -1240,6 +1269,12 @@ export function HomeTab({ user, setTab }) {
 
               if (row.type === 'americano_registration') {
                 const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
+                const subtitleParts = [
+                  dateStr,
+                  row.time || null,
+                  row.location || null,
+                  `${row.participants}/${row.slots} tilmeldt`,
+                ].filter(Boolean);
                 return renderActivityRowCard({
                   key: `amreg-${i}`,
                   isHighlight,
@@ -1252,7 +1287,7 @@ export function HomeTab({ user, setTab }) {
                   tag: TOURNAMENT_MODE_LABEL,
                   meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.name}</span>,
-                  subtitle: `${dateStr}${row.time ? ` · ${row.time}` : ""} · ${row.participants}/${row.slots} tilmeldt`,
+                  subtitle: subtitleParts.join(' · '),
                   action: (
                     <button
                       onClick={() => {
