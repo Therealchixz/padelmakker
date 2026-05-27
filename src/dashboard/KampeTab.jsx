@@ -3596,6 +3596,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 value={newMatch.court_id}
                 onChange={(id) => setNewMatch((m) => ({ ...m, court_id: id }))}
                 options={createVenueOptions}
+                placeholder={newMatch.court_booked ? 'Vælg booket center' : 'Ikke valgt endnu'}
                 emptyLabel="Indlæser centre…"
                 ariaLabel={newMatch.court_booked ? "Vælg booket bane" : "Vælg foretrukket center"}
               />

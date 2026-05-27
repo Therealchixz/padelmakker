@@ -54,14 +54,12 @@ export function CreateAmericanoTournamentForm({
   const venueOptions = useMemo(() => getMatchVenueOptions(courts), [courts])
   const selectOptions = useMemo(
     () => [
-      ...venueOptions,
       { id: AMERICANO_COURT_NONE, label: 'Ikke valgt / anden bane', courtId: null as string | null },
+      ...venueOptions,
     ],
     [venueOptions]
   )
-  const [courtId, setCourtId] = useState(
-    () => getMatchVenueOptions([])[0]?.id ?? AMERICANO_COURT_NONE
-  )
+  const [courtId, setCourtId] = useState(AMERICANO_COURT_NONE)
   const [playerSlots, setPlayerSlots] = useState<AmericanoPlayerSlots>(6)
   const [courtsPerRound, setCourtsPerRound] = useState(1)
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
@@ -83,7 +81,7 @@ export function CreateAmericanoTournamentForm({
     setCourtId((prev: string) => {
       const ids = new Set(selectOptions.map((o) => o.id))
       if (ids.has(prev)) return prev
-      return selectOptions[0]?.id ?? AMERICANO_COURT_NONE
+      return AMERICANO_COURT_NONE
     })
   }, [selectOptions])
 
@@ -224,6 +222,7 @@ export function CreateAmericanoTournamentForm({
           value={courtId}
           onChange={setCourtId}
           options={selectOptions}
+          placeholder="Ikke valgt / anden bane"
           ariaLabel="Vælg bane til turnering"
         />
         <p style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 6, lineHeight: 1.45 }}>
