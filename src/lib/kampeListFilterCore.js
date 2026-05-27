@@ -4,7 +4,88 @@
  */
 
 import { REGIONS } from './platformConstants.js';
+import { BANER_VENUES } from './banerVenues.js';
 import { parseMatchLevelRange } from './matchLevelRange.js';
+
+/** Baner-fane landsdele → profil-region (REGIONS). */
+const BANER_TO_PROFILE_REGION = {
+  Nordjylland: 'Region Nordjylland',
+  Vestjylland: 'Region Midtjylland',
+  Østjylland: 'Region Midtjylland',
+  Sønderjylland: 'Region Syddanmark',
+  Fyn: 'Region Syddanmark',
+  Sjælland: 'Region Sjælland',
+  Hovedstaden: 'Region Hovedstaden',
+  Bornholm: 'Region Hovedstaden',
+};
+
+function normVenueText(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .trim();
+}
+
+function findBanerVenueByCourtName(courtName) {
+  const t = normVenueText(courtName);
+  if (!t) return null;
+  return (
+    BANER_VENUES.find((v) => {
+      const vt = normVenueText(v.title);
+      return vt === t || vt.includes(t) || t.includes(vt);
+    }) ?? null
+  );
+}
+
+/** Region for et kendt center (Skansen → Region Nordjylland). */
+export function resolveVenueProfileRegion(courtName) {
+  const venue = findBanerVenueByCourtName(courtName);
+  if (!venue?.region) return null;
+  const mapped = BANER_TO_PROFILE_REGION[venue.region];
+  if (mapped && REGIONS.includes(mapped)) return mapped;
+  return canonicalListRegion(venue.region);
+}
+
+/** Har kampen/turneringen et valgt sted (ikke «Ikke valgt endnu»)? */
+export function entityHasSelectedVenue({ courtName = '', booked = null } = {}) {
+  const name = String(courtName || '').trim();
+  if (!name || normVenueText(name) === normVenueText('Bane ikke valgt')) return false;
+  if (booked === false) return false;
+  return true;
+}
+
+/**
+ * Effektiv region: valgt bane/centers region slår opretterens profil-region.
+ * Uden valgt bane → opretterens profil (area).
+ */
+export function resolveEntityEffectiveRegion({ courtName = '', booked = null, creatorArea = '' } = {}) {
+  if (entityHasSelectedVenue({ courtName, booked })) {
+    const fromVenue = resolveVenueProfileRegion(courtName);
+    if (fromVenue) return fromVenue;
+  }
+  const fromCreator = canonicalListRegion(creatorArea);
+  return REGIONS.includes(fromCreator) ? fromCreator : null;
+}
+
+/** Effektiv region for en 2v2-kamp. */
+export function resolveMatchEffectiveRegion(match, profilesById = {}) {
+  const { booked } = parseMatchLevelRange(match?.level_range);
+  const creator = profilesById[String(match?.creator_id)] || {};
+  return resolveEntityEffectiveRegion({
+    courtName: match?.court_name,
+    booked,
+    creatorArea: creator?.area,
+  });
+}
+
+function effectiveRegionMatchesFilter(effectiveRegion, regionId) {
+  if (!regionId) return true;
+  const target = resolveListRegionId(regionId);
+  if (!target) return true;
+  if (!effectiveRegion) return false;
+  return effectiveRegion === target;
+}
 
 /** Gamle by-id'er fra før regions-skift — migreres til kanonisk region. */
 const LEGACY_CITY_TO_REGION = {
@@ -109,11 +190,11 @@ export function matchPassesKampeEloBandFilter(match, eloBandId) {
   return eloRangesOverlap(min, max, band.min, band.max);
 }
 
-/** 2v2-kamp: region via opretterens profil (area). */
+/** 2v2-kamp: bane-region slår opretter-region; uden bane → opretterens profil. */
 export function matchPassesKampeRegionFilter(match, regionId, profilesById = {}) {
   if (!regionId) return true;
-  const creator = profilesById[String(match?.creator_id)] || {};
-  return profileAreaMatchesKampeRegionFilter(creator?.area, regionId);
+  const effective = resolveMatchEffectiveRegion(match, profilesById);
+  return effectiveRegionMatchesFilter(effective, regionId);
 }
 
 export function matchPassesKampeListFilter(match, filter, { profilesById } = {}) {
@@ -123,8 +204,18 @@ export function matchPassesKampeListFilter(match, filter, { profilesById } = {})
   return true;
 }
 
-/** Turnering/liga: region via opretterens profil (area). */
-export function tournamentPassesKampeRegionFilter(_tournament, regionId, creatorArea = '') {
+/** Turnering/liga: bane-region slår opretter-region; uden bane → opretterens profil. */
+export function tournamentPassesKampeRegionFilter(
+  _tournament,
+  regionId,
+  creatorArea = '',
+  courtName = '',
+) {
   if (!regionId) return true;
-  return profileAreaMatchesKampeRegionFilter(creatorArea, regionId);
+  const effective = resolveEntityEffectiveRegion({
+    courtName,
+    booked: entityHasSelectedVenue({ courtName }) ? true : false,
+    creatorArea,
+  });
+  return effectiveRegionMatchesFilter(effective, regionId);
 }

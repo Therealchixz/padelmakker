@@ -351,7 +351,8 @@ export function AmericanoTab({
       if (scope === 'mine' && !joinedIds.has(t.id)) return false
       if (listRegionFilter) {
         const creatorArea = creatorAreasByUserId[String(t.creator_id)] || ''
-        if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, creatorArea)) return false
+        const courtName = resolveAmericanoCourtName(t.court_id, courts)
+        if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, creatorArea, courtName)) return false
       }
       if (searchQuery && searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
@@ -757,7 +758,8 @@ export function AmericanoTab({
 
     if (listRegionFilter) {
       const creatorArea = creatorAreasByUserId[String(t.creator_id)] || ''
-      if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, creatorArea)) return false
+      const courtName = resolveAmericanoCourtName(t.court_id, courts)
+      if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, creatorArea, courtName)) return false
     }
 
     // 2. Search filter
