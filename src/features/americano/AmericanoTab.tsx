@@ -13,6 +13,7 @@ import {
   resolveAmericanoCourtName,
 } from './americanoDisplayUtils'
 import { computeAmericanoPlayedDurationMinutes } from '../../lib/americanoPlayedDuration.js'
+import { buildMexicanoStartRoundRows, isMexicanoFormat } from '../../lib/mexicanoSchedule.js'
 import { buildAmericano578MatchRows, canStartAmericano5767 } from './schedule578'
 import { buildAmericano8MatchRows } from './schedule8'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
@@ -499,14 +500,26 @@ export function AmericanoTab({
       const list = (parts || []) as Pick<AmericanoParticipant, 'id' | 'joined_at'>[]
       const slots = Number(t.player_slots)
       const n = list.length
+      const participantIds = list.map((p) => p.id)
+      const format = t.format ?? 'americano'
       let matchRows
       if (forceAsAdmin) {
         // Admin: brug faktisk antal spillere som schedule-basis (skal være 5–8)
         if (n >= 5 && n <= 7) {
           const passes = Number(t.opponent_passes) === 2 ? 2 : 1
-          matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id), passes)
+          if (isMexicanoFormat(format)) {
+            const ppm = Number(t.points_per_match)
+            const P = ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
+            matchRows = buildMexicanoStartRoundRows(t.id, participantIds, P, passes)
+          } else {
+            matchRows = buildAmericano578MatchRows(t.id, participantIds, passes)
+          }
         } else if (n === 8) {
-          matchRows = buildAmericano8MatchRows(t.id, list.map((p) => p.id))
+          if (isMexicanoFormat(format)) {
+            showToast('Mexicano understøtter 5–7 spillere (ikke 8).')
+            return
+          }
+          matchRows = buildAmericano8MatchRows(t.id, participantIds)
         } else {
           showToast(`Kan ikke gennemtvinge: ${n} tilmeldte er ikke gyldigt (kræver 5–8).`)
           return
@@ -518,10 +531,19 @@ export function AmericanoTab({
         }
         if (canStartAmericano5767(n, slots)) {
           const passes = Number(t.opponent_passes) === 2 ? 2 : 1
-          matchRows = buildAmericano578MatchRows(t.id, list.map((p) => p.id), passes)
+          if (isMexicanoFormat(format)) {
+            const ppm = Number(t.points_per_match)
+            const P = ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
+            matchRows = buildMexicanoStartRoundRows(t.id, participantIds, P, passes)
+          } else {
+            matchRows = buildAmericano578MatchRows(t.id, participantIds, passes)
+          }
         } else if (slots === 8 && n === 8) {
-          // Gamle turneringer oprettet med 8 pladser (før skift til 5–7)
-          matchRows = buildAmericano8MatchRows(t.id, list.map((p) => p.id))
+          if (isMexicanoFormat(format)) {
+            showToast('Mexicano understøtter 5–7 spillere.')
+            return
+          }
+          matchRows = buildAmericano8MatchRows(t.id, participantIds)
         } else {
           showToast(
             slots === 8
@@ -544,7 +566,11 @@ export function AmericanoTab({
       if (uErr) throw uErr
 
       void notifyAmericanoTournamentStarted(t, profileId)
-      showToast('Turnering startet — runder genereret.')
+      showToast(
+        isMexicanoFormat(format)
+          ? 'Mexicano startet — runde 1 er klar. Næste runder genereres når resultater gemmes.'
+          : 'Turnering startet — runder genereret.',
+      )
       await load()
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -823,7 +849,7 @@ export function AmericanoTab({
             courts={courts}
             onCreated={async () => {
               setShowCreate(false)
-              showToast('Americano oprettet — del link eller invitér spillere.')
+              showToast('Turnering oprettet — del link eller invitér spillere.')
               await load()
             }}
             onCancel={() => setShowCreate(false)}
@@ -849,7 +875,7 @@ export function AmericanoTab({
             textAlign: 'left',
           }}
         >
-          <span className="pm-help-box-title">Sådan fungerer Americano</span>
+          <span className="pm-help-box-title">Sådan fungerer Americano & Mexicano</span>
           <span className="pm-help-box-chevron">
             {americanoHelpOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </span>
@@ -874,7 +900,15 @@ export function AmericanoTab({
             </div>
             <div className="pm-help-box-item">
               <span style={{ flexShrink: 0 }}>5.</span>
-              <span>Planlægning: minimum 4 spillere; bedst når antal går op i 4 (4/8/12/16), så rotationen bliver mest fair og enkel.</span>
+              <span><strong>Americano:</strong> Hele rundeplanen laves når turneringen startes — alle kampe er kendt på forhånd.</span>
+            </div>
+            <div className="pm-help-box-item">
+              <span style={{ flexShrink: 0 }}>6.</span>
+              <span><strong>Mexicano:</strong> Runde 1 ved start; derefter parres næste kamp ud fra stilling (1.+4. vs 2.+3. på banen). Nye runder genereres når resultater er gemt.</span>
+            </div>
+            <div className="pm-help-box-item">
+              <span style={{ flexShrink: 0 }}>7.</span>
+              <span>5–7 spillere på én bane: fire spiller, resten sidder over. Start når turneringen er fyldt.</span>
             </div>
           </div>
         ) : null}

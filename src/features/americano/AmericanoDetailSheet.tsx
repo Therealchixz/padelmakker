@@ -6,6 +6,7 @@ import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
 import {
   getAmericanoTournamentMeta,
   getAmericanoDurationLabel,
+  getTournamentFormatLabel,
   playerInitials,
   resolveAmericanoCourtName,
 } from './americanoDisplayUtils'
@@ -225,7 +226,7 @@ export function AmericanoDetailSheet({
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />
           <div className="pm-americano-v2-detail-head">
             <div className="pm-americano-v2-detail-head-main">
-              <div className="pm-americano-v2-detail-type">Americano</div>
+              <div className="pm-americano-v2-detail-type">{getTournamentFormatLabel(tournament.format)}</div>
               <h2 className="pm-americano-v2-detail-title">{tournament.name}</h2>
               <div className="pm-americano-v2-detail-location">
                 <MapPin size={12} aria-hidden />

@@ -4,6 +4,7 @@ import { formatMatchDateHeadlineDa, formatTimeSlotDa } from '../../lib/matchDisp
 import {
   getAmericanoTournamentMeta,
   getAmericanoDurationLabel,
+  getTournamentFormatLabel,
   playerInitials,
 } from './americanoDisplayUtils'
 import type { AmericanoTournament } from './types'
@@ -93,7 +94,7 @@ export function AmericanoListCard({
     >
       <div className="pm-americano-v2-list-top">
         <div className="pm-americano-v2-list-top-main">
-          <div className="pm-americano-v2-list-type">Americano</div>
+          <div className="pm-americano-v2-list-type">{getTournamentFormatLabel(tournament.format)}</div>
           <div className="pm-americano-v2-list-title">{tournament.name}</div>
           <div className="pm-americano-v2-list-datetime">
             <CalendarDays size={13} strokeWidth={2} aria-hidden />

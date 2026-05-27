@@ -16,7 +16,7 @@ for (let h = 6; h <= 23; h++) {
 }
 import { supabase } from '../../lib/supabase'
 import { theme, btn } from '../../lib/platformTheme'
-import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses } from './types'
+import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses, AmericanoTournamentFormat } from './types'
 import {
   getMatchVenueOptions,
   courtIdFromVenueSelection,
@@ -62,6 +62,7 @@ export function CreateAmericanoTournamentForm({
   const [playerSlots, setPlayerSlots] = useState<AmericanoPlayerSlots>(5)
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
   const [opponentPasses, setOpponentPasses] = useState<AmericanoOpponentPasses>(1)
+  const [tournamentFormat, setTournamentFormat] = useState<AmericanoTournamentFormat>('americano')
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -95,6 +96,7 @@ export function CreateAmericanoTournamentForm({
           player_slots: playerSlots,
           points_per_match: pointsPerMatch,
           opponent_passes: opponentPasses,
+          format: tournamentFormat,
           description: description.trim() || null,
           status: 'registration',
         })
@@ -136,10 +138,49 @@ export function CreateAmericanoTournamentForm({
         maxWidth: 520,
       }}
     >
-      <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Opret Americano</h3>
-      <p style={{ fontSize: 13, color: 'var(--pm-text-mid)', marginBottom: 18, lineHeight: 1.5 }}>
-        Individuel turnering med skiftende makkere. <strong>Separat Americano-ELO</strong> beregnes ved afslutning (adskilt fra normal 2v2-ELO). Du tilmeldes automatisk som første spiller.
+      <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Opret turnering</h3>
+      <p style={{ fontSize: 13, color: 'var(--pm-text-mid)', marginBottom: 14, lineHeight: 1.5 }}>
+        Individuel turnering med skiftende makkere. <strong>Separat turnerings-ELO</strong> beregnes ved afslutning (adskilt fra normal 2v2-ELO). Du tilmeldes automatisk som første spiller.
       </p>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={labelSmall}>Format</label>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setTournamentFormat('americano')}
+            style={{
+              ...btn(tournamentFormat === 'americano'),
+              fontSize: 13,
+              padding: '8px 14px',
+            }}
+          >
+            Americano
+          </button>
+          <button
+            type="button"
+            onClick={() => setTournamentFormat('mexicano')}
+            style={{
+              ...btn(tournamentFormat === 'mexicano'),
+              fontSize: 13,
+              padding: '8px 14px',
+            }}
+          >
+            Mexicano
+          </button>
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 8, lineHeight: 1.45 }}>
+          {tournamentFormat === 'mexicano' ? (
+            <>
+              <strong>Mexicano:</strong> Efter hver runde parres næste kamp ud fra stilling (1.+4. vs 2.+3. på banen). Runder genereres løbende når resultater er gemt.
+            </>
+          ) : (
+            <>
+              <strong>Americano:</strong> Hele rundeplanen genereres når turneringen startes — alle møder er planlagt på forhånd.
+            </>
+          )}
+        </p>
+      </div>
 
       <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--pm-text)' }}>
         Turneringsnavn

@@ -39,6 +39,12 @@ export function getAmericanoDurationLabel(
   return formatAmericanoDurationLabel(null, estMinutes)
 }
 
+export function getTournamentFormatLabel(
+  format: AmericanoTournament['format'] | null | undefined,
+) {
+  return format === 'mexicano' ? 'Mexicano' : 'Americano'
+}
+
 export function resolveAmericanoCourtName(
   courtId: string | null | undefined,
   courts: { id: string; name: string }[]

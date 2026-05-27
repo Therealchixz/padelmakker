@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef, useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import { Check, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -10,6 +10,14 @@ import {
   userIsOnCourtInAmericanoMatch,
 } from './americanoOutcomeColors'
 import { notifyAmericanoTournamentCompleted } from '../../lib/notifyKampeEntityComplete'
+import { advanceMexicanoRoundIfReady, mexicanoProgressLabel } from '../../lib/mexicanoAdvance.js'
+import {
+  buildNextMexicanoRoundIfReady,
+  getMaxRoundNumber,
+  getMexicanoTotalRounds,
+  isMexicanoFormat,
+} from '../../lib/mexicanoSchedule.js'
+import { getTournamentFormatLabel } from './americanoDisplayUtils'
 
 const font = 'var(--pm-font)'
 
@@ -291,6 +299,36 @@ export function AmericanoResultsPanel({
   const P: 16 | 24 | 32 =
     ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
   const isCreator = String(tournament.creator_id) === String(currentUserId)
+  const isMexicano = isMexicanoFormat(tournament.format)
+  const formatLabel = getTournamentFormatLabel(tournament.format)
+
+  const participantIdsOrdered = useMemo(
+    () =>
+      [...participants]
+        .sort((a, b) => {
+          const ta = new Date(a.joined_at).getTime()
+          const tb = new Date(b.joined_at).getTime()
+          if (ta !== tb) return ta - tb
+          return String(a.id).localeCompare(String(b.id))
+        })
+        .map((p) => p.id),
+    [participants],
+  )
+
+  const mexicanoProgress = useMemo(() => {
+    if (!isMexicano || participantIdsOrdered.length === 0) return null
+    return mexicanoProgressLabel(tournament, participantIdsOrdered, matches)
+  }, [isMexicano, tournament, participantIdsOrdered, matches])
+
+  const pendingNextMexicanoRound = useMemo(() => {
+    if (!isMexicano || !isCreator) return null
+    return buildNextMexicanoRoundIfReady(
+      tournament,
+      participantIdsOrdered,
+      matches,
+      P,
+    )
+  }, [isMexicano, isCreator, tournament, participantIdsOrdered, matches, P])
 
   const nameByPartId = useCallback(
     (pid: string) => participants.find((p) => p.id === pid)?.display_name || '?',
@@ -323,12 +361,48 @@ export function AmericanoResultsPanel({
       })
       setScores(sc)
       setUnlockedIds(new Set())
+
+      if (isCreator && isMexicanoFormat(tournament.format)) {
+        const advanced = await advanceMexicanoRoundIfReady({
+          supabase,
+          tournament,
+          participantIdsInJoinOrder: [...plist]
+            .sort((a, b) => {
+              const ta = new Date(a.joined_at).getTime()
+              const tb = new Date(b.joined_at).getTime()
+              if (ta !== tb) return ta - tb
+              return String(a.id).localeCompare(String(b.id))
+            })
+            .map((p) => p.id),
+          matches: mlist,
+          showToast,
+        })
+        if (advanced) {
+          const { data: m2 } = await supabase
+            .from('americano_matches')
+            .select('*')
+            .eq('tournament_id', tournament.id)
+            .order('round_number', { ascending: true })
+            .order('court_index', { ascending: true })
+          const refreshed = (m2 || []) as AmericanoMatchRow[]
+          setMatches(refreshed)
+          const sc2: Record<string, { a: string; b: string }> = {}
+          refreshed.forEach((m) => {
+            const bothSet = m.team_a_score != null && m.team_b_score != null
+            sc2[m.id] = {
+              a: bothSet ? String(m.team_a_score) : '',
+              b: bothSet ? String(m.team_b_score) : '',
+            }
+          })
+          setScores(sc2)
+        }
+      }
     } catch (e) {
       console.warn(e)
     } finally {
       setLoading(false)
     }
-  }, [tournament.id])
+  }, [tournament, isCreator, showToast])
 
   useEffect(() => {
     load()
@@ -436,6 +510,18 @@ export function AmericanoResultsPanel({
   }
 
   const completeTournament = async () => {
+    if (isMexicano && participantIdsOrdered.length > 0) {
+      const passes = Number(tournament.opponent_passes) === 2 ? 2 : 1
+      const total = getMexicanoTotalRounds(participantIdsOrdered.length, passes)
+      const maxR = getMaxRoundNumber(matches)
+      if (maxR < total) {
+        showToast(
+          `Mexicano: alle ${total} runder skal spilles før afslutning (nu ${maxR}/${total}).`,
+        )
+        return
+      }
+    }
+
     const incomplete = matches.some((m) => {
       const s = scores[m.id]
       if (!s) return true
@@ -542,19 +628,29 @@ export function AmericanoResultsPanel({
   return (
     <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.line}` }}>
       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: c.text, fontFamily: font }}>
-        Resultater (Americano-ELO)
+        Resultater ({formatLabel}-ELO)
+        {mexicanoProgress ? (
+          <span style={{ fontWeight: 600, color: c.muted, marginLeft: 8 }}>· {mexicanoProgress}</span>
+        ) : null}
       </div>
       <div className="pm-help-box" style={{ marginBottom: 14 }}>
         <div className="pm-help-box-copy" style={{ fontFamily: font }}>
           {isCreator ? (
             <>
               <strong>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
-              <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette. Når du afslutter turneringen, beregnes separat Americano-ELO ud fra slutstillingen.
+              <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette.{' '}
+              {isMexicano ? (
+                <>
+                  Ved <strong>Mexicano</strong> genereres næste runde automatisk når alle kampe i runden er gemt (1.+4. vs 2.+3. efter stilling).{' '}
+                </>
+              ) : null}
+              Når du afslutter turneringen, beregnes separat {formatLabel}-ELO ud fra slutstillingen.
             </>
           ) : (
             <>
               <strong>Format {P} point:</strong> Her ser du stilling og alle kampe. Kun{' '}
-              <strong>opretteren</strong> kan indtaste og rette resultater. Americano-ELO beregnes ved afslutning.
+              <strong>opretteren</strong> kan indtaste og rette resultater. {formatLabel}-ELO beregnes ved afslutning.
+              {isMexicano ? ' Mexicano: nye runder kommer når forrige runde er færdig.' : ''}
             </>
           )}
         </div>
@@ -591,7 +687,9 @@ export function AmericanoResultsPanel({
       <div style={{ fontFamily: font }}>
         {matchesDisplay.length === 0 && (
           <div className="pm-data-empty-note" style={{ marginBottom: 8 }}>
-            Kampplan er ikke genereret endnu.
+            {isMexicano
+              ? 'Ingen kampe endnu — start turneringen for at oprette runde 1.'
+              : 'Kampplan er ikke genereret endnu.'}
           </div>
         )}
         {matchesDisplay.map((m, displayIdx) => {
@@ -680,7 +778,8 @@ export function AmericanoResultsPanel({
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: c.text, lineHeight: 1.3 }}>
                     #{matchNum}
-                    {isLastInPlan ? ' · Sidste i plan' : ''}
+                    {isLastInPlan && !isMexicano ? ' · Sidste i plan' : ''}
+                    {isLastInPlan && isMexicano ? ' · Seneste runde' : ''}
                   </div>
                   <div
                     style={{
@@ -865,6 +964,46 @@ export function AmericanoResultsPanel({
           )
         })}
       </div>
+      {isCreator && pendingNextMexicanoRound ? (
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => {
+            void (async () => {
+              setSaving(true)
+              try {
+                const { error } = await supabase
+                  .from('americano_matches')
+                  .insert(pendingNextMexicanoRound)
+                if (error) throw error
+                showToast(`Runde ${pendingNextMexicanoRound.round_number} er genereret.`)
+                await load()
+                onSaved()
+              } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : String(e)
+                showToast('Kunne ikke generere runde: ' + msg)
+              } finally {
+                setSaving(false)
+              }
+            })()
+          }}
+          style={{
+            marginTop: 12,
+            fontFamily: font,
+            fontSize: 13,
+            fontWeight: 700,
+            padding: '10px 14px',
+            borderRadius: 8,
+            border: 'none',
+            background: 'var(--pm-accent)',
+            color: c.onAccent,
+            cursor: saving ? 'wait' : 'pointer',
+            width: '100%',
+          }}
+        >
+          Generér runde {pendingNextMexicanoRound.round_number}
+        </button>
+      ) : null}
       {isCreator && (
         <button
           type="button"
