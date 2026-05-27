@@ -15,6 +15,7 @@ import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { parseMatchLevelRange } from '../lib/matchLevelRange';
 import { matchTimeLabel } from '../lib/matchDisplayUtils';
+import { regionShortLabel } from '../lib/kampeListFilterCore';
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
@@ -50,6 +51,17 @@ function writeHomeEloMode(userId, mode) {
   } catch {
     // Ignore localStorage limitations (private mode / quota).
   }
+}
+
+/** Chip-tekst for sted: bane-navn, eller opretterens region når bane ikke er valgt. */
+function openMatchLocationChipLabel(court, creatorArea) {
+  const c = String(court || '').trim();
+  const unset =
+    !c || c.toLowerCase() === 'bane ikke valgt' || c === 'Bane ikke valgt endnu' || c === 'Ukendt bane';
+  if (!unset) return c;
+  const area = String(creatorArea || '').trim();
+  if (!area) return null;
+  return regionShortLabel(area) || area;
 }
 
 export function HomeTab({ user, setTab }) {
@@ -299,7 +311,7 @@ export function HomeTab({ user, setTab }) {
         completedAmIds.length ? supabase.from('americano_elo_history').select('tournament_id, user_id, old_rating, new_rating, change').in('tournament_id', completedAmIds)                                                                     : Promise.resolve({ data: [] }),
         completedLgIds.length ? supabase.from('league_teams').select('id, league_id, name, player1_id, player1_name, player1_avatar, player2_id, player2_name, player2_avatar').eq('status', 'ready').in('league_id', completedLgIds)            : Promise.resolve({ data: [] }),
         completedLgIds.length ? supabase.from('league_matches').select('league_id, team1_id, team2_id, winner_id, score_text').eq('status', 'reported').in('league_id', completedLgIds)                                                         : Promise.resolve({ data: [] }),
-        creatorIds.length     ? supabase.from('profiles').select('id, full_name, name, avatar').in('id', creatorIds)                                                                                                                             : Promise.resolve({ data: [] }),
+        creatorIds.length     ? supabase.from('profiles').select('id, full_name, name, avatar, area').in('id', creatorIds)                                                                                                                       : Promise.resolve({ data: [] }),
         regAmIds.length       ? supabase.from('americano_participants').select('tournament_id').in('tournament_id', regAmIds)                                                                                                                     : Promise.resolve({ data: [] }),
         newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
         openMatchIds.length   ? supabase.from('match_players').select('match_id, user_id, user_name, user_emoji, team').in('match_id', openMatchIds)                                                                                            : Promise.resolve({ data: [] }),
@@ -456,6 +468,7 @@ export function HomeTab({ user, setTab }) {
           matchId: m.id,
           creatorName: p.full_name || p.name || 'En spiller',
           creatorAvatar: p.avatar || '🎾',
+          creatorArea: p.area || '',
           creatorId: m.creator_id,
           date: m.date,
           time: m.time,
@@ -1178,7 +1191,8 @@ export function HomeTab({ user, setTab }) {
                 const dateStr = row.date ? DateTime.fromISO(row.date).setLocale('da').toFormat('EEE d. MMM') : '';
                 const timeStr = row.time ? matchTimeLabel({ time: row.time, time_end: row.timeEnd }) : '';
                 const eloStr = row.eloMin != null && row.eloMax != null ? `ELO ${row.eloMin}–${row.eloMax}` : '';
-                const subtitleParts = [dateStr, timeStr, row.court !== 'Ukendt bane' ? row.court : null, eloStr].filter(Boolean);
+                const locLabel = openMatchLocationChipLabel(row.court, row.creatorArea);
+                const subtitleParts = [dateStr, timeStr, locLabel, eloStr].filter(Boolean);
                 const player = { id: row.creatorId, name: row.creatorName };
                 return renderActivityRowCard({
                   key: `open-${i}`,
@@ -1211,6 +1225,7 @@ export function HomeTab({ user, setTab }) {
                           description: row.description,
                           creatorName: row.creatorName,
                           creatorAvatar: row.creatorAvatar,
+                          creatorArea: row.creatorArea,
                           players: row.players,
                           playerCount: row.playerCount,
                         })
@@ -1505,7 +1520,16 @@ export function HomeTab({ user, setTab }) {
 
             <div style={{ padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {viewMatch.court ? (
+                {viewMatch.kind === "open" ? (
+                  (() => {
+                    const loc = openMatchLocationChipLabel(viewMatch.court, viewMatch.creatorArea);
+                    return loc ? (
+                      <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.textMid, background: theme.surfaceAlt }}>
+                        {loc}
+                      </span>
+                    ) : null;
+                  })()
+                ) : viewMatch.court ? (
                   <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.textMid, background: theme.surfaceAlt }}>
                     {viewMatch.court}
                   </span>
@@ -1533,11 +1557,6 @@ export function HomeTab({ user, setTab }) {
                 {viewMatch.kind === "open" && viewMatch.booked != null ? (
                   <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: viewMatch.booked ? theme.green : theme.warm, background: theme.surfaceAlt }}>
                     {viewMatch.booked ? 'Bane booket' : 'Bane ikke booket'}
-                  </span>
-                ) : null}
-                {viewMatch.kind === "open" && viewMatch.playerCount != null ? (
-                  <span style={{ fontSize: "11px", border: "1px solid " + theme.border, borderRadius: "999px", padding: "4px 10px", color: theme.textMid, background: theme.surfaceAlt }}>
-                    {viewMatch.playerCount}/4 spillere
                   </span>
                 ) : null}
                 {viewMatch.createdAt ? (
