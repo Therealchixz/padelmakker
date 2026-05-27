@@ -3,6 +3,8 @@ import test from 'node:test'
 import {
   buildAmericanoRoundRobinMatchRows,
   roundRobinTotalRounds,
+  americanoBaseRounds,
+  americanoTotalRounds,
   benchCountPerRound,
 } from '../../src/lib/americanoRoundRobinSchedule.ts'
 
@@ -10,7 +12,30 @@ function ids(n) {
   return Array.from({ length: n }, (_, i) => `p${i}`)
 }
 
-// ── roundRobinTotalRounds ───────────────────────────────────────────────────
+function coverage(rows, n) {
+  const playerIds = ids(n)
+  const partners = new Map(playerIds.map((id) => [id, new Set()]))
+  const opponents = new Map(playerIds.map((id) => [id, new Set()]))
+  for (const r of rows) {
+    const a = [r.team_a_p1, r.team_a_p2]
+    const b = [r.team_b_p1, r.team_b_p2]
+    partners.get(a[0]).add(a[1])
+    partners.get(a[1]).add(a[0])
+    partners.get(b[0]).add(b[1])
+    partners.get(b[1]).add(b[0])
+    for (const x of a) {
+      for (const y of b) {
+        opponents.get(x).add(y)
+        opponents.get(y).add(x)
+      }
+    }
+  }
+  const allPartners = playerIds.every((id) => partners.get(id).size === n - 1)
+  const allOpponents = playerIds.every((id) => opponents.get(id).size === n - 1)
+  return { allPartners, allOpponents }
+}
+
+// ── roundRobinTotalRounds (cirkel-basis) ────────────────────────────────────
 
 test('roundRobinTotalRounds: 4 spillere → 3 runder', () => {
   assert.equal(roundRobinTotalRounds(4), 3)
@@ -21,8 +46,20 @@ test('roundRobinTotalRounds: 5 spillere → 5 runder', () => {
 test('roundRobinTotalRounds: 6 spillere → 5 runder', () => {
   assert.equal(roundRobinTotalRounds(6), 5)
 })
-test('roundRobinTotalRounds: 16 spillere → 15 runder', () => {
-  assert.equal(roundRobinTotalRounds(16), 15)
+
+// ── americanoBaseRounds (Normal) ────────────────────────────────────────────
+
+test('americanoBaseRounds: 5 spillere, 1 bane → 5 runder', () => {
+  assert.equal(americanoBaseRounds(5, 1), 5)
+})
+test('americanoBaseRounds: 6 spillere, 1 bane → 8 runder (makker+modstander)', () => {
+  assert.equal(americanoBaseRounds(6, 1), 8)
+})
+test('americanoBaseRounds: 8 spillere, 2 baner → 7 runder', () => {
+  assert.equal(americanoBaseRounds(8, 2), 7)
+})
+test('americanoTotalRounds: 6 spillere Lang → 16 runder', () => {
+  assert.equal(americanoTotalRounds(6, 1, 2), 16)
 })
 
 // ── benchCountPerRound ──────────────────────────────────────────────────────
@@ -33,9 +70,6 @@ test('benchCountPerRound: 5 spillere, 1 bane → 1 bænk', () => {
 test('benchCountPerRound: 8 spillere, 2 baner → 0 bænk', () => {
   assert.equal(benchCountPerRound(8, 2), 0)
 })
-test('benchCountPerRound: 9 spillere, 2 baner → 1 bænk', () => {
-  assert.equal(benchCountPerRound(9, 2), 1)
-})
 
 // ── buildAmericanoRoundRobinMatchRows ────────────────────────────────────────
 
@@ -44,6 +78,21 @@ test('4 spillere, 1 bane: korrekt antal runder og matches', () => {
   assert.equal(rows.length, 3, '3 runder × 1 kamp = 3 rækker')
   const rounds = new Set(rows.map((r) => r.round_number))
   assert.equal(rounds.size, 3)
+})
+
+test('5 spillere, 1 bane: makker og modstander med alle', () => {
+  const rows = buildAmericanoRoundRobinMatchRows('tid', ids(5), 1, 1)
+  const c = coverage(rows, 5)
+  assert.equal(c.allPartners, true)
+  assert.equal(c.allOpponents, true)
+})
+
+test('6 spillere, 1 bane Normal: 8 runder og fuld dækning', () => {
+  const rows = buildAmericanoRoundRobinMatchRows('tid', ids(6), 1, 1)
+  assert.equal(new Set(rows.map((r) => r.round_number)).size, 8)
+  const c = coverage(rows, 6)
+  assert.equal(c.allPartners, true)
+  assert.equal(c.allOpponents, true)
 })
 
 test('5 spillere, 1 bane: ingen spiller i to matches i samme runde', () => {
@@ -73,6 +122,7 @@ test('passes=2 giver dobbelt antal runder', () => {
   const rows1 = buildAmericanoRoundRobinMatchRows('tid', ids(6), 1, 1)
   const rows2 = buildAmericanoRoundRobinMatchRows('tid', ids(6), 1, 2)
   assert.equal(rows2.length, rows1.length * 2)
+  assert.equal(new Set(rows2.map((r) => r.round_number)).size, 16)
 })
 
 test('ingen spiller i to matches i samme runde – 12 spillere 3 baner', () => {

@@ -9,8 +9,8 @@ export {
   formatAmericanoDurationLabel,
 } from '../../lib/americanoPlayedDuration.js'
 
-import { roundRobinTotalRounds, benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
-export { benchCountPerRound }
+import { americanoBaseRounds, americanoTotalRounds, benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
+export { benchCountPerRound, americanoBaseRounds, americanoTotalRounds }
 
 export const MIN_PER_ROUND = 12
 
@@ -20,8 +20,8 @@ export function getAmericanoTournamentMeta(
   const maxPlayers = Number(tournament.player_slots) || 5
   const passes = Number(tournament.opponent_passes) === 2 ? 2 : 1
   const courts = Math.max(1, Number(tournament.courts_per_round) || 1)
-  const baseRounds = roundRobinTotalRounds(maxPlayers)
-  const totalRounds = baseRounds * passes
+  const baseRounds = americanoBaseRounds(maxPlayers, courts)
+  const totalRounds = americanoTotalRounds(maxPlayers, courts, passes === 2 ? 2 : 1)
   const estMinutes = totalRounds * MIN_PER_ROUND
   const bench = benchCountPerRound(maxPlayers, courts)
   return { maxPlayers, totalRounds, estMinutes, courts, bench }

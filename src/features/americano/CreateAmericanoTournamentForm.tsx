@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
+import { americanoBaseRounds, americanoTotalRounds, benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
+import { MIN_PER_ROUND } from './americanoDisplayUtils'
 
 function nearestHalfHour(): string {
   const now = new Date()
@@ -68,6 +69,14 @@ export function CreateAmericanoTournamentForm({
 
   const maxCourts = Math.floor(playerSlots / 4)
   const COURT_OPTIONS = Array.from({ length: maxCourts }, (_, i) => i + 1)
+
+  const schedulePreview = useMemo(() => {
+    if (tournamentFormat !== 'americano') return null
+    const base = americanoBaseRounds(playerSlots, courtsPerRound)
+    const total = americanoTotalRounds(playerSlots, courtsPerRound, opponentPasses === 2 ? 2 : 1)
+    const bench = benchCountPerRound(playerSlots, courtsPerRound)
+    return { base, total, estMinutes: total * MIN_PER_ROUND, bench }
+  }, [tournamentFormat, playerSlots, courtsPerRound, opponentPasses])
 
   const handlePlayerSlotsChange = useCallback((n: AmericanoPlayerSlots) => {
     setPlayerSlots(n)
@@ -277,8 +286,21 @@ export function CreateAmericanoTournamentForm({
           <option value={1}>Normal — én gennemgang af alle runder</option>
           <option value={2}>Lang — samme rundeplan to gange (dobbelt så mange kampe)</option>
         </select>
-        <p style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 6 }}>
-          Ved &quot;Lang&quot; gentages hele rotationsplanen; du møder de andre oftere som modstander og makker uden at oprette en ny Americano/Mexicano.
+        <p style={{ fontSize: 11, color: 'var(--pm-text-light)', marginTop: 6, lineHeight: 1.45 }}>
+          {schedulePreview ? (
+            <>
+              <strong>Americano:</strong> Normal = {schedulePreview.base} runder
+              {schedulePreview.bench > 0
+                ? ` (${schedulePreview.bench} sidder over pr. runde)`
+                : ' (alle på banen)'}
+              — planlagt så I når makker og modstander med alle. Lang = {schedulePreview.total} runder
+              (ca. {schedulePreview.estMinutes} min). Mexicano bruger samme længde, men parres efter stilling.
+            </>
+          ) : (
+            <>
+              Ved &quot;Lang&quot; gentages hele rotationsplanen. Mexicano parres efter stilling runde for runde.
+            </>
+          )}
         </p>
       </div>
 

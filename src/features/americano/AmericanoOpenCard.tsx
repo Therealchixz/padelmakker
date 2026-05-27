@@ -3,14 +3,8 @@ import { CalendarDays } from 'lucide-react'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { theme } from '../../lib/platformTheme'
 
-/** Antal runder per spiller-count, matcher schedule578.ts og schedule8.ts. */
-const ROUNDS_BY_SLOTS: Record<number, number> = {
-  5: 5,
-  6: 6,
-  7: 7,
-  8: 7,
-}
-const MIN_PER_ROUND = 12
+import { americanoBaseRounds } from '../../lib/americanoRoundRobinSchedule'
+import { MIN_PER_ROUND } from './americanoDisplayUtils'
 
 type AmericanoOpenCardPlayer = {
   id: string
@@ -120,7 +114,7 @@ export function AmericanoOpenCard({
   const isAlmostFull = emptySlots === 1
   const fillPct = Math.min(100, Math.round((filled / maxPlayers) * 100))
 
-  const baseRounds = ROUNDS_BY_SLOTS[maxPlayers] ?? maxPlayers
+  const baseRounds = americanoBaseRounds(maxPlayers, 1)
   const passes = opponentPasses === 2 ? 2 : 1
   const totalRounds = baseRounds * passes
   const estMinutes = totalRounds * MIN_PER_ROUND

@@ -1,30 +1,66 @@
 /**
  * Generisk Americano round-robin schedule for 4–16 spillere og 1–N baner.
  *
- * Algoritme: "circle method" (Berger-tabel) på spillerindeks.
- * - Ved ulige antal spillere indsættes én "dummy" (bænk-markering).
- * - Hver runde giver n/2 par. De første (2 * courtsPerRound) par bruges til kampe;
- *   resten er bænket.
- * - pairs[0]+pairs[1] → bane 0, pairs[2]+pairs[3] → bane 1, ...
+ * Antal runder (Normal) beregnes så alle kan nå at være makker og modstander med alle andre,
+ * når det er matematisk muligt med valgte baner. "Lang" = samme plan to gange.
  */
 
 import type { AmericanoMatchInsert } from '../features/americano/types'
 
-/** Total antal runder for n spillere (ulige n → n runder, lige n → n−1 runder). */
+type MatchIdx = { teamA: [number, number]; teamB: [number, number] }
+type RoundIdx = MatchIdx[]
+
+/** Klassisk cirkel-round-robin (ulige n → n runder, lige n → n−1). */
 export function roundRobinTotalRounds(n: number): number {
   return n % 2 === 0 ? n - 1 : n
 }
 
+function clampCourts(n: number, courtsPerRound: number): number {
+  const maxCourts = Math.floor(n / 4)
+  return Math.max(1, Math.min(courtsPerRound, maxCourts))
+}
+
+function pairKey(i: number, j: number): string {
+  return i < j ? `${i},${j}` : `${j},${i}`
+}
+
+/** Par-kombinationer der skal dækkes (makker + modstander). */
+function totalPairCombinations(n: number): number {
+  return (n * (n - 1)) / 2
+}
+
 /**
- * Returner alle runder for round-robin med n spillere.
- * Returnerer indeks-par (ikke UUIDs) for hvert par i runden.
- * Indeks -1 = dummy (sidder over).
+ * Minimum runder (Normal) så alle makkerpar og alle modstanderpar kan dækkes.
+ * Makker: 2 nye par pr. bane pr. runde. Modstander: 4 nye par pr. bane pr. runde.
+ */
+export function americanoBaseRounds(n: number, courtsPerRound = 1): number {
+  if (n < 4 || n > 16) {
+    throw new Error(`Americano kræver 4–16 spillere, fik ${n}`)
+  }
+  const courts = clampCourts(n, courtsPerRound)
+  const pairs = totalPairCombinations(n)
+  const forPartners = Math.ceil(pairs / (2 * courts))
+  const forOpponents = Math.ceil(pairs / (4 * courts))
+  return Math.max(roundRobinTotalRounds(n), forPartners, forOpponents)
+}
+
+export function americanoTotalRounds(
+  n: number,
+  courtsPerRound = 1,
+  passes: 1 | 2 = 1,
+): number {
+  const base = americanoBaseRounds(n, courtsPerRound)
+  return base * (passes === 2 ? 2 : 1)
+}
+
+/**
+ * Returner alle runder for round-robin med n spillere (cirkelmetode).
+ * Indeks -1 eller n (ulige) = dummy (sidder over).
  */
 function circleRounds(n: number): Array<Array<[number, number]>> {
   const even = n % 2 === 0
-  const size = even ? n : n + 1 // arbejd med lige antal (tilføj dummy = size-1)
+  const size = even ? n : n + 1
   const numRounds = size - 1
-  // Placér spillerne: index 0 er fast, resten roterer
   const rotate = Array.from({ length: size - 1 }, (_, i) => i + 1)
 
   const rounds: Array<Array<[number, number]>> = []
@@ -32,24 +68,205 @@ function circleRounds(n: number): Array<Array<[number, number]>> {
     const order = [0, ...rotate]
     const pairs: Array<[number, number]> = []
     for (let i = 0; i < size / 2; i++) {
-      const a = order[i]
-      const b = order[size - 1 - i]
-      pairs.push([a, b])
+      pairs.push([order[i], order[size - 1 - i]])
     }
     rounds.push(pairs)
-    // Roter: sidste element af rotate går forrest
     rotate.unshift(rotate.pop()!)
   }
   return rounds
 }
 
+function circleRoundsToMatches(n: number, courts: number): RoundIdx[] {
+  const dummy = n % 2 === 0 ? -1 : n
+  const out: RoundIdx[] = []
+  for (const pairs of circleRounds(n)) {
+    const realPairs = pairs.filter(([a, b]) => a !== dummy && b !== dummy)
+    const round: MatchIdx[] = []
+    for (let c = 0; c < courts; c++) {
+      const pairA = realPairs[c * 2]
+      const pairB = realPairs[c * 2 + 1]
+      if (!pairA || !pairB) break
+      round.push({
+        teamA: [pairA[0], pairA[1]],
+        teamB: [pairB[0], pairB[1]],
+      })
+    }
+    if (round.length > 0) out.push(round)
+  }
+  return out
+}
+
+function bestMatchForFour(
+  players: [number, number, number, number],
+  partnerMet: Set<string>,
+  oppMet: Set<string>,
+): MatchIdx {
+  const [p0, p1, p2, p3] = players
+  const options: MatchIdx[] = [
+    { teamA: [p0, p1], teamB: [p2, p3] },
+    { teamA: [p0, p2], teamB: [p1, p3] },
+    { teamA: [p0, p3], teamB: [p1, p2] },
+  ]
+  let best = options[0]
+  let bestScore = -1
+  for (const o of options) {
+    let score = 0
+    const [a1, a2] = o.teamA
+    const [b1, b2] = o.teamB
+    if (!partnerMet.has(pairKey(a1, a2))) score += 10
+    if (!partnerMet.has(pairKey(b1, b2))) score += 10
+    for (const a of o.teamA) {
+      for (const b of o.teamB) {
+        if (!oppMet.has(pairKey(a, b))) score += 5
+      }
+    }
+    if (score > bestScore) {
+      bestScore = score
+      best = o
+    }
+  }
+  return best
+}
+
+function recordMatch(m: MatchIdx, partnerMet: Set<string>, oppMet: Set<string>) {
+  const [a1, a2] = m.teamA
+  const [b1, b2] = m.teamB
+  partnerMet.add(pairKey(a1, a2))
+  partnerMet.add(pairKey(b1, b2))
+  for (const a of m.teamA) {
+    for (const b of m.teamB) {
+      oppMet.add(pairKey(a, b))
+    }
+  }
+}
+
+/** Del 4*k spillere i k kampe (1 bane = ét match). */
+function bestRoundMatches(
+  selected: number[],
+  courts: number,
+  partnerMet: Set<string>,
+  oppMet: Set<string>,
+): MatchIdx[] {
+  const k = courts
+  if (selected.length !== 4 * k) {
+    throw new Error(`Forventede ${4 * k} spillere på banen, fik ${selected.length}`)
+  }
+
+  if (k === 1) {
+    const m = bestMatchForFour(
+      selected as [number, number, number, number],
+      partnerMet,
+      oppMet,
+    )
+    return [m]
+  }
+
+  // 2+ baner: prøv op til 24 tilfældige partitioner (hurtigt for n≤16)
+  let bestRound: MatchIdx[] | null = null
+  let bestScore = -1
+  const nSel = selected.length
+
+  const tryPartition = (groupA: number[]) => {
+    const setA = new Set(groupA)
+    const groupB = selected.filter((p) => !setA.has(p))
+    if (groupB.length !== 4 * k - 4) return
+    const m1 = bestMatchForFour(groupA as [number, number, number, number], partnerMet, oppMet)
+    const m2 = bestMatchForFour(groupB as [number, number, number, number], partnerMet, oppMet)
+    let score = 0
+    for (const m of [m1, m2]) {
+      const [a1, a2] = m.teamA
+      const [b1, b2] = m.teamB
+      if (!partnerMet.has(pairKey(a1, a2))) score += 10
+      if (!partnerMet.has(pairKey(b1, b2))) score += 10
+      for (const a of m.teamA) {
+        for (const b of m.teamB) {
+          if (!oppMet.has(pairKey(a, b))) score += 5
+        }
+      }
+    }
+    if (score > bestScore) {
+      bestScore = score
+      bestRound = [m1, m2]
+    }
+  }
+
+  if (k === 2) {
+    const combos: number[][] = [
+      [0, 1, 2, 3],
+      [0, 1, 4, 5],
+      [0, 2, 4, 6],
+      [0, 3, 5, 6],
+      [1, 2, 5, 6],
+      [2, 3, 4, 5],
+    ]
+    for (const idxs of combos) {
+      tryPartition(idxs.map((i) => selected[i]))
+    }
+  } else {
+    // 3–4 baner: grupper af 4 i rækkefølge efter playCount-sortering
+    const groups: number[][] = []
+    for (let c = 0; c < k; c++) {
+      groups.push(selected.slice(c * 4, c * 4 + 4))
+    }
+    bestRound = groups.map((g) =>
+      bestMatchForFour(g as [number, number, number, number], partnerMet, oppMet),
+    )
+  }
+
+  if (!bestRound) {
+    const groups: number[][] = []
+    for (let c = 0; c < k; c++) {
+      groups.push(selected.slice(c * 4, c * 4 + 4))
+    }
+    bestRound = groups.map((g) =>
+      bestMatchForFour(g as [number, number, number, number], partnerMet, oppMet),
+    )
+  }
+  return bestRound
+}
+
+function pickPlayersForRound(n: number, courts: number, playCount: number[]): number[] {
+  const onCourt = Math.min(n, courts * 4)
+  const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => {
+    const d = playCount[a] - playCount[b]
+    return d !== 0 ? d : a - b
+  })
+  return order.slice(0, onCourt)
+}
+
+/** Byg rundeplan med mindst targetRounds runder; cirkel + greedy-udvidelse. */
+function buildScheduleRounds(n: number, courts: number, targetRounds: number): RoundIdx[] {
+  const circle = circleRoundsToMatches(n, courts)
+  if (targetRounds <= circle.length) {
+    return circle.slice(0, targetRounds)
+  }
+
+  const partnerMet = new Set<string>()
+  const oppMet = new Set<string>()
+  const playCount = Array(n).fill(0)
+  const rounds: RoundIdx[] = []
+
+  for (const round of circle) {
+    for (const m of round) recordMatch(m, partnerMet, oppMet)
+    for (const m of round) {
+      for (const p of [...m.teamA, ...m.teamB]) playCount[p]++
+    }
+    rounds.push(round)
+  }
+
+  while (rounds.length < targetRounds) {
+    const selected = pickPlayersForRound(n, courts, playCount)
+    const matches = bestRoundMatches(selected, courts, partnerMet, oppMet)
+    for (const m of matches) recordMatch(m, partnerMet, oppMet)
+    for (const p of selected) playCount[p]++
+    rounds.push(matches)
+  }
+
+  return rounds
+}
+
 /**
  * Byg fuld Americano matchplan for n spillere og courtsPerRound baner.
- *
- * @param tournamentId  UUID af turneringen
- * @param participantIds  Sorteret liste af deltager-UUIDs (joined_at-rækkefølge)
- * @param courtsPerRound  Antal baner pr. runde (1..floor(n/4))
- * @param passes  1 = normal, 2 = dobbelt rundeplan
  */
 export function buildAmericanoRoundRobinMatchRows(
   tournamentId: string,
@@ -59,38 +276,28 @@ export function buildAmericanoRoundRobinMatchRows(
 ): AmericanoMatchInsert[] {
   const n = participantIds.length
   if (n < 4 || n > 16) throw new Error(`Americano kræver 4–16 spillere, fik ${n}`)
-  const maxCourts = Math.floor(n / 4)
-  const courts = Math.max(1, Math.min(courtsPerRound, maxCourts))
-
-  const rounds = circleRounds(n)
-  const dummy = n % 2 === 0 ? -1 : n // dummy indeks (aldrig i participantIds)
-  const out: AmericanoMatchInsert[] = []
-
+  const courts = clampCourts(n, courtsPerRound)
+  const baseRounds = americanoBaseRounds(n, courts)
   const passCount: 1 | 2 = passes === 2 ? 2 : 1
-  const baseRounds = rounds.length
+
+  const schedule = buildScheduleRounds(n, courts, baseRounds)
+  const out: AmericanoMatchInsert[] = []
 
   for (let pass = 0; pass < passCount; pass++) {
     const roundOffset = pass * baseRounds
-    rounds.forEach((pairs, ri) => {
+    schedule.forEach((round, ri) => {
       const roundNumber = roundOffset + ri + 1
-      // Filtrer par hvor ingen er dummy
-      const realPairs = pairs.filter(([a, b]) => a !== dummy && b !== dummy)
-      // Tag de første (2 * courts) indeks der danner kampe
-      // Hvert par af to par → én kamp på én bane
-      for (let c = 0; c < courts; c++) {
-        const pairA = realPairs[c * 2]
-        const pairB = realPairs[c * 2 + 1]
-        if (!pairA || !pairB) break
+      round.forEach((m, courtIndex) => {
         out.push({
           tournament_id: tournamentId,
           round_number: roundNumber,
-          court_index: c,
-          team_a_p1: participantIds[pairA[0]],
-          team_a_p2: participantIds[pairA[1]],
-          team_b_p1: participantIds[pairB[0]],
-          team_b_p2: participantIds[pairB[1]],
+          court_index: courtIndex,
+          team_a_p1: participantIds[m.teamA[0]],
+          team_a_p2: participantIds[m.teamA[1]],
+          team_b_p1: participantIds[m.teamB[0]],
+          team_b_p2: participantIds[m.teamB[1]],
         })
-      }
+      })
     })
   }
   return out
@@ -98,9 +305,8 @@ export function buildAmericanoRoundRobinMatchRows(
 
 /**
  * Antal "siddende over"-spillere pr. runde for n spillere og courtsPerRound baner.
- * Bruges til hjælpetekst og visning.
  */
 export function benchCountPerRound(n: number, courtsPerRound: number): number {
-  const courts = Math.max(1, Math.min(courtsPerRound, Math.floor(n / 4)))
+  const courts = clampCourts(n, courtsPerRound)
   return n - courts * 4
 }
