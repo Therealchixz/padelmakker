@@ -166,6 +166,7 @@ export function AmericanoTab({
   >({})
   const [openManageTools, setOpenManageTools] = useState<Set<string>>(() => new Set())
   const [participantSnippets, setParticipantSnippets] = useState<Record<string, ProfileSnippet>>({})
+  const [creatorAreasByUserId, setCreatorAreasByUserId] = useState<Record<string, string>>({})
   const [participantStatsPick, setParticipantStatsPick] = useState<{
     userId: string
     name: string
@@ -208,6 +209,21 @@ export function AmericanoTab({
       if (trRes.error) throw trRes.error
       const tournamentList: AmericanoTournament[] = (trRes.data || []) as AmericanoTournament[]
       setRows(tournamentList)
+
+      const creatorIds = [...new Set(tournamentList.map((t) => t.creator_id).filter(Boolean))]
+      if (creatorIds.length > 0) {
+        const { data: creatorProfiles } = await supabase
+          .from('profiles')
+          .select('id, area')
+          .in('id', creatorIds)
+        const areaMap: Record<string, string> = {}
+        ;(creatorProfiles || []).forEach((p: { id: string; area?: string | null }) => {
+          areaMap[String(p.id)] = String(p.area || '')
+        })
+        setCreatorAreasByUserId(areaMap)
+      } else {
+        setCreatorAreasByUserId({})
+      }
       if (!myRes.error && myRes.data) {
         setJoinedIds(new Set(myRes.data.map((r: { tournament_id: string }) => r.tournament_id)))
       } else {
@@ -334,8 +350,8 @@ export function AmericanoTab({
     const matchesScope = (t: AmericanoTournament) => {
       if (scope === 'mine' && !joinedIds.has(t.id)) return false
       if (listRegionFilter) {
-        const courtName = resolveAmericanoCourtName(t.court_id, courts)
-        if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, courtName)) return false
+        const creatorArea = creatorAreasByUserId[String(t.creator_id)] || ''
+        if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, creatorArea)) return false
       }
       if (searchQuery && searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
@@ -433,7 +449,7 @@ export function AmericanoTab({
     return () => {
       cancelled = true
     }
-  }, [rows, joinedIds, profileId, loading, americanoView, scope, searchQuery, participantsByTournament, listRegionFilter, courts])
+  }, [rows, joinedIds, profileId, loading, americanoView, scope, searchQuery, participantsByTournament, listRegionFilter, creatorAreasByUserId])
 
   useEffect(() => {
     if (!detailTournamentId || !profileId) return undefined
@@ -740,8 +756,8 @@ export function AmericanoTab({
     }
 
     if (listRegionFilter) {
-      const courtName = resolveAmericanoCourtName(t.court_id, courts)
-      if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, courtName)) return false
+      const creatorArea = creatorAreasByUserId[String(t.creator_id)] || ''
+      if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, creatorArea)) return false
     }
 
     // 2. Search filter

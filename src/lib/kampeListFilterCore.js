@@ -3,30 +3,42 @@
  * Adskilt fra "Mit kamp-filter" på profilen (notifikationer + søger-synlighed).
  */
 
+import { REGIONS } from './platformConstants.js';
 import { parseMatchLevelRange } from './matchLevelRange.js';
 
+/** Gamle by-id'er fra før regions-skift — migreres til kanonisk region. */
+const LEGACY_CITY_TO_REGION = {
+  kbh: 'Region Hovedstaden',
+  aarhus: 'Region Midtjylland',
+  odense: 'Region Syddanmark',
+  aalborg: 'Region Nordjylland',
+};
+
+function canonicalListRegion(stored) {
+  const raw = String(stored ?? '').trim();
+  if (!raw) return '';
+  const lower = raw.toLowerCase();
+  const exact = REGIONS.find((r) => r.toLowerCase() === lower);
+  if (exact) return exact;
+  for (const r of REGIONS) {
+    const tail = r.replace(/^Region\s+/i, '').toLowerCase();
+    if (lower === tail || lower.endsWith(tail) || tail.includes(lower) || lower.includes(tail)) {
+      return r;
+    }
+  }
+  return raw;
+}
+
+export function regionShortLabel(fullRegion) {
+  return String(fullRegion || '').replace(/^Region\s+/i, '').trim() || fullRegion;
+}
+
 export const KAMPE_LIST_REGION_OPTIONS = [
-  { id: '', label: 'Alle', keywords: [] },
-  {
-    id: 'kbh',
-    label: 'København',
-    keywords: ['københavn', 'copenhagen', 'hovedstaden', 'frederiksberg', 'gentofte', 'gladsaxe'],
-  },
-  {
-    id: 'aarhus',
-    label: 'Aarhus',
-    keywords: ['aarhus', 'århus', 'midtjylland', 'randers', 'silkeborg'],
-  },
-  {
-    id: 'odense',
-    label: 'Odense',
-    keywords: ['odense', 'fyn', 'syddanmark', 'svendborg', 'nyborg'],
-  },
-  {
-    id: 'aalborg',
-    label: 'Aalborg',
-    keywords: ['aalborg', 'nordjylland', 'hjørring', 'frederikshavn'],
-  },
+  { id: '', label: 'Alle' },
+  ...REGIONS.map((r) => ({
+    id: r,
+    label: regionShortLabel(r),
+  })),
 ];
 
 export const KAMPE_LIST_ELO_BANDS = [
@@ -41,10 +53,18 @@ export function defaultKampeListFilter() {
   return { regionId: '', eloBandId: '' };
 }
 
+function resolveListRegionId(raw) {
+  if (!raw) return '';
+  let id = String(raw).trim();
+  if (LEGACY_CITY_TO_REGION[id]) id = LEGACY_CITY_TO_REGION[id];
+  const canonical = canonicalListRegion(id);
+  return REGIONS.includes(canonical) ? canonical : '';
+}
+
 export function normalizeKampeListFilter(raw) {
   const base = defaultKampeListFilter();
   if (!raw || typeof raw !== 'object') return base;
-  const regionId = KAMPE_LIST_REGION_OPTIONS.some((o) => o.id === raw.regionId) ? raw.regionId : '';
+  const regionId = resolveListRegionId(raw.regionId);
   const eloBandId = KAMPE_LIST_ELO_BANDS.some((o) => o.id === raw.eloBandId) ? raw.eloBandId : '';
   return { regionId, eloBandId };
 }
@@ -55,28 +75,23 @@ export function kampeListFilterIsActive(filter) {
 }
 
 export function getKampeListRegionLabel(regionId) {
-  return KAMPE_LIST_REGION_OPTIONS.find((o) => o.id === regionId)?.label || '';
+  const canonical = resolveListRegionId(regionId);
+  if (!canonical) return '';
+  return regionShortLabel(canonical);
 }
 
 export function getKampeListEloBandLabel(eloBandId) {
   return KAMPE_LIST_ELO_BANDS.find((o) => o.id === eloBandId)?.label || '';
 }
 
-function normalizeHaystack(values) {
-  return values
-    .filter(Boolean)
-    .map((v) => String(v).toLowerCase())
-    .join(' ');
-}
-
-/** Match tekst mod valgt by/region (tom id = ingen filtrering). */
-export function textMatchesKampeRegionFilter(textFields, regionId) {
+/** Sammenlign profil-region (area) med valgt regionsfilter. */
+export function profileAreaMatchesKampeRegionFilter(area, regionId) {
   if (!regionId) return true;
-  const opt = KAMPE_LIST_REGION_OPTIONS.find((o) => o.id === regionId);
-  if (!opt || opt.keywords.length === 0) return true;
-  const hay = normalizeHaystack(textFields);
-  if (!hay.trim()) return false;
-  return opt.keywords.some((kw) => hay.includes(kw));
+  const target = resolveListRegionId(regionId);
+  if (!target) return true;
+  const fromProfile = canonicalListRegion(area);
+  if (!fromProfile || !REGIONS.includes(fromProfile)) return false;
+  return fromProfile === target;
 }
 
 function eloRangesOverlap(aMin, aMax, bMin, bMax) {
@@ -94,14 +109,11 @@ export function matchPassesKampeEloBandFilter(match, eloBandId) {
   return eloRangesOverlap(min, max, band.min, band.max);
 }
 
-/** 2v2-kamp: region via bane-navn + opretters område. */
+/** 2v2-kamp: region via opretterens profil (area). */
 export function matchPassesKampeRegionFilter(match, regionId, profilesById = {}) {
   if (!regionId) return true;
   const creator = profilesById[String(match?.creator_id)] || {};
-  return textMatchesKampeRegionFilter(
-    [match?.court_name, creator?.area, creator?.city],
-    regionId,
-  );
+  return profileAreaMatchesKampeRegionFilter(creator?.area, regionId);
 }
 
 export function matchPassesKampeListFilter(match, filter, { profilesById } = {}) {
@@ -111,8 +123,8 @@ export function matchPassesKampeListFilter(match, filter, { profilesById } = {})
   return true;
 }
 
-/** Turnering: region via bane-navn. */
-export function tournamentPassesKampeRegionFilter(tournament, regionId, courtName = '') {
+/** Turnering/liga: region via opretterens profil (area). */
+export function tournamentPassesKampeRegionFilter(_tournament, regionId, creatorArea = '') {
   if (!regionId) return true;
-  return textMatchesKampeRegionFilter([courtName, tournament?.name, tournament?.description], regionId);
+  return profileAreaMatchesKampeRegionFilter(creatorArea, regionId);
 }

@@ -195,10 +195,10 @@ export function KampeFilterSheet({
             </div>
             <p className="pm-kampe-v2-sheet-copy">
               {format === 'americano'
-                ? 'Filtrer turneringer efter bane/sted.'
+                ? 'Vis turneringer fra oprettere i den valgte region.'
                 : format === 'liga'
-                  ? 'Filtrer ligaer efter navn/beskrivelse og sted.'
-                  : 'Filtrer listen efter hvor kampen spilles.'}
+                  ? 'Vis ligaer oprettet af spillere i den valgte region.'
+                  : 'Vis kampe fra spillere i den valgte region.'}
             </p>
           </div>
         ) : null}

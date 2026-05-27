@@ -20,7 +20,7 @@ import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
 import { useScrollIntoViewWhen } from '../lib/useScrollIntoViewWhen';
 import { DateInputField } from '../components/DateInputField';
-import { textMatchesKampeRegionFilter } from '../lib/kampeListFilterCore';
+import { profileAreaMatchesKampeRegionFilter } from '../lib/kampeListFilterCore';
 
 function isTiebreakScore(scoreText) {
   return !!(scoreText && /7-6|6-7/.test(scoreText));
@@ -745,6 +745,7 @@ export function LigaTab({
   const [pendingInvites, setPendingInvites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [creatorAreasByUserId, setCreatorAreasByUserId] = useState({});
   const [busyId, setBusyId] = useState(null);
   const [openStandings, setOpenStandings] = useState(new Set());
   const [openManageTools, setOpenManageTools] = useState({});
@@ -781,6 +782,21 @@ export function LigaTab({
       if (teamsRes.error) throw teamsRes.error;
       const lgList = lgRes.data || [];
       setLeagues(lgList);
+
+      const creatorIds = [...new Set(lgList.map((l) => l.created_by).filter(Boolean))];
+      if (creatorIds.length > 0) {
+        const { data: creatorProfiles } = await supabase
+          .from('profiles')
+          .select('id, area')
+          .in('id', creatorIds);
+        const areaMap = {};
+        (creatorProfiles || []).forEach((p) => {
+          areaMap[String(p.id)] = String(p.area || '');
+        });
+        setCreatorAreasByUserId(areaMap);
+      } else {
+        setCreatorAreasByUserId({});
+      }
 
       const myTeams = teamsRes.data || [];
       // Invitationer: hold hvor jeg er player2 og status = pending
@@ -1216,7 +1232,7 @@ export function LigaTab({
   const visibleLeagues = leagues.filter(l => {
     if (l.status !== view) return false;
     if (scope === 'mine' && !myTeamByLeague[l.id] && l.created_by !== user.id) return false;
-    if (listRegionFilter && !textMatchesKampeRegionFilter([l.name, l.description], listRegionFilter)) return false;
+    if (listRegionFilter && !profileAreaMatchesKampeRegionFilter(creatorAreasByUserId[String(l.created_by)], listRegionFilter)) return false;
     if (search) {
       const q = search.toLowerCase();
       if (!l.name?.toLowerCase().includes(q) && !l.description?.toLowerCase().includes(q)) return false;
