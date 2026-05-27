@@ -191,6 +191,37 @@ type MatchRow = {
   results_locked?: boolean | null
 }
 
+export function isAmericanoMatchLocked(m: MatchRow): boolean {
+  const hasScores = m.team_a_score != null && m.team_b_score != null
+  return hasScores && m.results_locked !== false
+}
+
+/** Antal planlagte runder + gennemførte runder ud fra faktiske kampe i DB. */
+export function getAmericanoRoundProgressFromMatches(matches: MatchRow[]) {
+  if (!matches.length) return null
+  const byRound = new Map<number, MatchRow[]>()
+  for (const m of matches) {
+    const rn = Number(m.round_number) || 0
+    if (rn <= 0) continue
+    const list = byRound.get(rn) || []
+    list.push(m)
+    byRound.set(rn, list)
+  }
+  if (byRound.size === 0) return null
+  const totalRounds = Math.max(...byRound.keys())
+  let completedRounds = 0
+  for (const roundMatches of byRound.values()) {
+    if (roundMatches.length > 0 && roundMatches.every(isAmericanoMatchLocked)) {
+      completedRounds += 1
+    }
+  }
+  return {
+    totalRounds,
+    completedRounds,
+    liveRound: computeAmericanoActiveRound(matches),
+  }
+}
+
 /** Første runde uden låst resultat — bruges til «Live Runde X/Y» på listekort. */
 export function computeAmericanoActiveRound(matches: MatchRow[]) {
   const sorted = [...matches].sort((a, b) => {
@@ -198,9 +229,7 @@ export function computeAmericanoActiveRound(matches: MatchRow[]) {
     return 0
   })
   for (const m of sorted) {
-    const hasScores = m.team_a_score != null && m.team_b_score != null
-    const locked = hasScores && m.results_locked !== false
-    if (!locked) return m.round_number
+    if (!isAmericanoMatchLocked(m)) return m.round_number
   }
   if (sorted.length === 0) return null
   return sorted[sorted.length - 1]?.round_number ?? null

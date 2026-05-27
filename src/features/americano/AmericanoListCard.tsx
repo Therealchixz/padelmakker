@@ -24,6 +24,12 @@ type Props = {
   joined?: boolean
   tournamentFull?: boolean
   liveRound?: number | null
+  /** Fra faktiske kampe i DB (i gang / afsluttet). */
+  roundProgress?: {
+    totalRounds: number
+    completedRounds: number
+    liveRound: number | null
+  } | null
   myEloChange?: number | null
   playedDurationMinutes?: number | null
   onClick?: () => void
@@ -47,19 +53,30 @@ export function AmericanoListCard({
   joined = false,
   tournamentFull = false,
   liveRound = null,
+  roundProgress = null,
   myEloChange = null,
   playedDurationMinutes = null,
   onClick,
 }: Props) {
-  const { maxPlayers, totalRounds, estMinutes, courts, bench } = getAmericanoTournamentMeta(tournament)
+  const { maxPlayers, totalRounds: metaTotalRounds, estMinutes, courts, bench } =
+    getAmericanoTournamentMeta(tournament)
+  const totalRounds = roundProgress?.totalRounds ?? metaTotalRounds
+  const completedRounds = roundProgress?.completedRounds ?? 0
   const durationLabel = getAmericanoDurationLabel(status, playedDurationMinutes, estMinutes)
   const filled = participants.length
   const fillPct = maxPlayers > 0 ? Math.min(100, Math.round((filled / maxPlayers) * 100)) : 0
-  const dateHeadline = formatMatchDateHeadlineDa(tournament.tournament_date)
-  const timeLabel = formatTimeSlotDa(tournament.time_slot)
   const isCompleted = status === 'completed'
   const isPlaying = status === 'playing'
-  const isFullBar = isPlaying || isCompleted || tournamentFull
+  const showRoundProgress = (isPlaying || isCompleted) && roundProgress != null && totalRounds > 0
+  const roundPct =
+    showRoundProgress && totalRounds > 0
+      ? Math.min(100, Math.round((completedRounds / totalRounds) * 100))
+      : 0
+  const dateHeadline = formatMatchDateHeadlineDa(tournament.tournament_date)
+  const timeLabel = formatTimeSlotDa(tournament.time_slot)
+  const isFullBar =
+    (!showRoundProgress && (isPlaying || isCompleted || tournamentFull)) ||
+    (showRoundProgress && isCompleted && completedRounds >= totalRounds)
 
   const showMyEloDelta =
     isCompleted && joined && myEloChange != null && Number.isFinite(Number(myEloChange))
@@ -73,8 +90,8 @@ export function AmericanoListCard({
   } else if (isPlaying) {
     badgeTone = 'live'
     badgeLabel =
-      liveRound != null && totalRounds > 0
-        ? `Live Runde ${liveRound}/${totalRounds}`
+      (roundProgress?.liveRound ?? liveRound) != null && totalRounds > 0
+        ? `Live Runde ${roundProgress?.liveRound ?? liveRound}/${totalRounds}`
         : 'I gang'
   } else if (tournamentFull) {
     badgeLabel = 'Fuld'
@@ -118,17 +135,22 @@ export function AmericanoListCard({
           <div
             className={`pm-americano-v2-list-progress${isFullBar ? ' pm-americano-v2-list-progress--full' : ''}`}
             role="progressbar"
-            aria-valuenow={filled}
+            aria-valuenow={showRoundProgress ? completedRounds : filled}
             aria-valuemin={0}
-            aria-valuemax={maxPlayers}
+            aria-valuemax={showRoundProgress ? totalRounds : maxPlayers}
+            aria-label={
+              showRoundProgress
+                ? `${completedRounds} af ${totalRounds} runder gennemført`
+                : `${filled} af ${maxPlayers} spillere tilmeldt`
+            }
           >
             <div
               className="pm-americano-v2-list-progress-fill"
-              style={{ width: `${isFullBar ? 100 : fillPct}%` }}
+              style={{ width: `${showRoundProgress ? roundPct : isFullBar ? 100 : fillPct}%` }}
             />
           </div>
           <span className={`pm-americano-v2-list-progress-count${isFullBar ? ' pm-americano-v2-list-progress-count--full' : ''}`}>
-            {filled}/{maxPlayers}
+            {showRoundProgress ? `${completedRounds}/${totalRounds}` : `${filled}/${maxPlayers}`}
           </span>
         </div>
 

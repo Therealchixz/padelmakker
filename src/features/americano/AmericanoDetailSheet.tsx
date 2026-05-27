@@ -47,6 +47,11 @@ type Props = {
   joined?: boolean
   tournamentFull?: boolean
   liveRound?: number | null
+  roundProgress?: {
+    totalRounds: number
+    completedRounds: number
+    liveRound: number | null
+  } | null
   playedDurationMinutes?: number | null
   description?: string | null
   actions?: ReactNode
@@ -159,6 +164,7 @@ export function AmericanoDetailSheet({
   joined: _joined = false,
   tournamentFull = false,
   liveRound = null,
+  roundProgress = null,
   playedDurationMinutes = null,
   description,
   actions,
@@ -180,7 +186,10 @@ export function AmericanoDetailSheet({
   if (!open || !tournament) return null
 
   const courtName = resolveAmericanoCourtName(tournament.court_id, courts)
-  const { maxPlayers, totalRounds, estMinutes, courts: courtsPerRound, bench } = getAmericanoTournamentMeta(tournament)
+  const { maxPlayers, totalRounds: metaTotalRounds, estMinutes, courts: courtsPerRound, bench } =
+    getAmericanoTournamentMeta(tournament)
+  const totalRounds = roundProgress?.totalRounds ?? metaTotalRounds
+  const activeLiveRound = roundProgress?.liveRound ?? liveRound
   const courtsBenchDetail = formatCourtsBenchDetail(courtsPerRound, bench)
   const durationLabel = getAmericanoDurationLabel(status, playedDurationMinutes, estMinutes)
   const filled = participants.length
@@ -198,8 +207,8 @@ export function AmericanoDetailSheet({
   } else if (isPlaying) {
     badgeTone = 'live'
     badgeLabel =
-      liveRound != null && totalRounds > 0
-        ? `Live Runde ${liveRound}/${totalRounds}`
+      activeLiveRound != null && totalRounds > 0
+        ? `Live Runde ${activeLiveRound}/${totalRounds}`
         : 'I gang'
   } else if (tournamentFull) {
     badgeLabel = 'Fuld'
