@@ -1253,7 +1253,19 @@ export function HomeTab({ user, setTab }) {
                   meta: formatTimeAgo(row.created_at),
                   title: <span style={{ fontWeight: 700 }}>{row.name}</span>,
                   subtitle: `${dateStr}${row.time ? ` · ${row.time}` : ""} · ${row.participants}/${row.slots} tilmeldt`,
-                  action: <button onClick={() => { mergeKampeSessionPrefs(user.id, { format: 'americano' }); setTab('kampe'); }} style={activityActionBtnStyle(theme.warm)}>Tilmeld</button>,
+                  action: (
+                    <button
+                      onClick={() => {
+                        mergeKampeSessionPrefs(user.id, { format: 'americano', americanoView: 'open' });
+                        setTab('kampe', {
+                          search: `format=americano&focus=${encodeURIComponent(String(row.tournamentId))}`,
+                        });
+                      }}
+                      style={activityActionBtnStyle(theme.warm)}
+                    >
+                      Tilmeld
+                    </button>
+                  ),
                 });
               }
 

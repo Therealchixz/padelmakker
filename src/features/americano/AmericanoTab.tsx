@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
@@ -508,6 +508,57 @@ export function AmericanoTab({
     }
   }, [detailTournamentId, rows, profileId, participantsByTournament])
 
+  const filterTournamentRow = useCallback(
+    (t: AmericanoTournament) => {
+      if (scope === 'mine' && !joinedIds.has(t.id)) return false
+      if (listRegionFilter) {
+        const creatorArea = creatorAreasByUserId[String(t.creator_id)] || ''
+        const courtName = resolveAmericanoCourtName(t.court_id, courts)
+        if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, creatorArea, courtName)) return false
+      }
+      if (searchQuery && searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        if ((t.name || '').toLowerCase().includes(q)) return true
+        const parts = participantsByTournament[t.id] || []
+        return parts.some((p) => (p.display_name || '').toLowerCase().includes(q))
+      }
+      return true
+    },
+    [scope, joinedIds, listRegionFilter, creatorAreasByUserId, courts, searchQuery, participantsByTournament],
+  )
+
+  const filteredRows = useMemo(
+    () => (loading || !profileId ? [] : rows.filter(filterTournamentRow)),
+    [loading, profileId, rows, filterTournamentRow],
+  )
+
+  const openAmericanos = useMemo(
+    () => filteredRows.filter((t) => t.status === 'registration'),
+    [filteredRows],
+  )
+  const playingAmericanosFiltered = useMemo(
+    () => filteredRows.filter((t) => t.status === 'playing'),
+    [filteredRows],
+  )
+  const completedAmericanosFiltered = useMemo(
+    () => filteredRows.filter((t) => t.status === 'completed'),
+    [filteredRows],
+  )
+
+  const visibleRows = useMemo(
+    () =>
+      americanoView === 'open'
+        ? openAmericanos
+        : americanoView === 'playing'
+          ? playingAmericanosFiltered
+          : completedAmericanosFiltered,
+    [americanoView, openAmericanos, playingAmericanosFiltered, completedAmericanosFiltered],
+  )
+
+  useEffect(() => {
+    onFilteredCountChange?.(visibleRows.length)
+  }, [visibleRows.length, onFilteredCountChange])
+
   const startTournament = async (t: AmericanoTournament, forceAsAdmin = false) => {
     const isCreatorOrAdmin = String(t.creator_id) === String(profileId) || isAdmin
     if (!isCreatorOrAdmin) {
@@ -748,51 +799,6 @@ export function AmericanoTab({
       </div>
     )
   }
-
-  // Filtering based on scope and search
-  const filteredRows = rows.filter(t => {
-    // 1. Scope filter
-    if (scope === 'mine') {
-      if (!joinedIds.has(t.id)) return false
-    }
-
-    if (listRegionFilter) {
-      const creatorArea = creatorAreasByUserId[String(t.creator_id)] || ''
-      const courtName = resolveAmericanoCourtName(t.court_id, courts)
-      if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, creatorArea, courtName)) return false
-    }
-
-    // 2. Search filter
-    if (searchQuery && searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      const tName = (t.name || '').toLowerCase()
-      if (tName.includes(q)) return true
-
-      const parts = participantsByTournament[t.id] || []
-      const hasPartMatch = parts.some(p => (p.display_name || '').toLowerCase().includes(q))
-      if (hasPartMatch) return true
-
-      return false
-    }
-
-    return true
-  })
-
-  // Group by status after filtering
-  const openAmericanos = filteredRows.filter((t) => t.status === 'registration')
-  const playingAmericanosFiltered = filteredRows.filter((t) => t.status === 'playing')
-  const completedAmericanosFiltered = filteredRows.filter((t) => t.status === 'completed')
-
-  const visibleRows =
-    americanoView === 'open'
-      ? openAmericanos
-      : americanoView === 'playing'
-        ? playingAmericanosFiltered
-        : completedAmericanosFiltered
-
-  useEffect(() => {
-    onFilteredCountChange?.(visibleRows.length)
-  }, [visibleRows.length, onFilteredCountChange])
 
   const americanoSubTabs = [
     { id: 'open' as const, label: `Åbne (${openAmericanos.length})` },
