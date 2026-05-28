@@ -5,6 +5,7 @@ import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { AdminUserProfileOverview } from './AdminUserProfileOverview';
 import { theme, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
 import { PLAY_STYLES, REGIONS } from '../lib/platformConstants';
+import { TOURNAMENT_ELO_LABEL } from '../lib/tournamentCopy';
 
 const ProfileOverview = memo(AdminUserProfileOverview);
 
@@ -79,7 +80,7 @@ export function AdminUserEditModal({
           </div>
 
           <form onSubmit={onSubmit} className="pm-admin-form-stack">
-            <div className="pm-admin-form-grid-2">
+            <div className="pm-admin-form-elo-block">
               <div>
                 <label style={{ ...labelStyle, marginBottom: '4px', display: 'block' }}>Fulde Navn</label>
                 <input
@@ -99,8 +100,8 @@ export function AdminUserEditModal({
                 />
               </div>
               <div>
-                <label style={{ ...labelStyle, marginBottom: '4px', display: 'block' }}>
-                  Americano/Mexicano ELO
+                <label className="pm-admin-label-nowrap" style={{ ...labelStyle, marginBottom: '4px', display: 'block' }}>
+                  {TOURNAMENT_ELO_LABEL}
                 </label>
                 <input
                   type="number"

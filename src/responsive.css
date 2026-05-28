@@ -5594,6 +5594,16 @@ button,
   gap: 16px;
 }
 
+.pm-admin-form-elo-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pm-admin-label-nowrap {
+  white-space: nowrap;
+}
+
 .pm-admin-form-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
