@@ -57,8 +57,8 @@ function Section({ title, children }) {
 }
 
 const COURT_SIDE_LABELS = {
-  backhand: 'Backhand',
-  forehand: 'Forehand',
+  backhand: 'Venstre side',
+  forehand: 'Højre side',
   both: 'Begge sider',
 };
 

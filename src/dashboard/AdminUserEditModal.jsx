@@ -1,13 +1,27 @@
 import { memo } from 'react';
 import { X, Smartphone } from 'lucide-react';
 import { AppModal } from '../components/AppModal';
+import { PillTabs } from '../components/PillTabs';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { AdminUserProfileOverview } from './AdminUserProfileOverview';
 import { theme, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { PLAY_STYLES, REGIONS } from '../lib/platformConstants';
+import { PLAY_STYLES, REGIONS, COURT_SIDES } from '../lib/platformConstants';
 import { TOURNAMENT_ELO_LABEL } from '../lib/tournamentCopy';
 
 const ProfileOverview = memo(AdminUserProfileOverview);
+
+/** Gamle værdier (backhand/forehand/both) → samme labels som profil/onboarding. */
+function courtSideForEdit(value) {
+  if (!value) return '';
+  if (COURT_SIDES.includes(value)) return value;
+  const legacy = { backhand: 'Venstre side', forehand: 'Højre side', both: 'Begge sider' };
+  return legacy[value] || '';
+}
+
+const COURT_SIDE_EDIT_TABS = [
+  { id: '', label: 'Ikke valgt' },
+  ...COURT_SIDES.map((s) => ({ id: s, label: s })),
+];
 
 export function AdminUserEditModal({
   open,
@@ -120,18 +134,16 @@ export function AdminUserEditModal({
                   onChange={(n) => onChange({ ...user, level: n })}
                 />
               </div>
-              <div>
-                <label style={{ ...labelStyle, marginBottom: '4px', display: 'block' }}>Foretrukket side</label>
-                <select
-                  value={user.court_side || ''}
-                  onChange={(e) => onChange({ ...user, court_side: e.target.value })}
-                  style={inputStyle}
-                >
-                  <option value="">Ikke valgt</option>
-                  <option value="backhand">Backhand</option>
-                  <option value="forehand">Forehand</option>
-                  <option value="both">Begge sider</option>
-                </select>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ ...labelStyle, marginBottom: '6px', display: 'block' }}>Foretrukket side</label>
+                <PillTabs
+                  tabs={COURT_SIDE_EDIT_TABS}
+                  value={courtSideForEdit(user.court_side)}
+                  onChange={(id) => onChange({ ...user, court_side: id || null })}
+                  ariaLabel="Foretrukket side"
+                  size="sm"
+                  className="pm-pill-tabs--wrap"
+                />
               </div>
             </div>
 
