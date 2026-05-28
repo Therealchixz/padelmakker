@@ -393,8 +393,8 @@ export function buildAmericanoRoundRobinMatchRows(
   const courts = clampCourts(n, courtsPerRound)
   const baseRounds = computeFairBaseRounds(n, courts)
   let schedule = buildScheduleExact(n, courts, baseRounds).rounds
-  // UX-fairness: ved 6 spillere / 1 bane undgå bench 2 runder i træk.
-  if (n === 6 && courts === 1 && baseRounds === 9) {
+  // UX-fairness: ved 6-7 spillere / 1 bane undgå bench 2 runder i træk.
+  if ((n === 6 && baseRounds === 9 && courts === 1) || (n === 7 && baseRounds === 14 && courts === 1)) {
     schedule = reorderRoundsNoConsecutiveBench(n, schedule)
   }
   const passCount: 1 | 2 = passes === 2 ? 2 : 1
