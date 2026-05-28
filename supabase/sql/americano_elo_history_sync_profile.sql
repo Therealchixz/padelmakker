@@ -12,6 +12,10 @@ AS $$
 DECLARE
   uid uuid;
 BEGIN
+  IF COALESCE(current_setting('app.skip_americano_elo_sync', true), '') = '1' THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
   uid := COALESCE(NEW.user_id, OLD.user_id);
   IF uid IS NOT NULL THEN
     PERFORM public.recalc_americano_elo_from_history(uid);

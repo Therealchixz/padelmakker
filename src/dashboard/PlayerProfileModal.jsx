@@ -13,6 +13,7 @@ import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
 import { SeekingCallout, SeekingCalloutDetail } from '../components/SeekingCallout';
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
+import { resolveAmericanoEloDisplay } from '../features/americano/americanoDisplayUtils';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
   const [dataLoading, setDataLoading] = useState(true);
@@ -136,15 +137,10 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
   const wins = dataLoading ? null : (histStatsModal?.wins ?? (pRef.games_won || 0));
   const winPct = games != null && games > 0 ? Math.round((wins / games) * 100) : 0;
 
-  const americanoElo = useMemo(() => {
-    if (americanoHistoryRows.length > 0) {
-      const last = americanoHistoryRows[americanoHistoryRows.length - 1];
-      if (last?.new_rating != null && Number.isFinite(Number(last.new_rating))) {
-        return Math.round(Number(last.new_rating));
-      }
-    }
-    return Math.round(Number(pRef.americano_elo_rating) || 1000);
-  }, [americanoHistoryRows, pRef.americano_elo_rating]);
+  const americanoElo = useMemo(
+    () => resolveAmericanoEloDisplay(pRef.americano_elo_rating, americanoHistoryRows),
+    [americanoHistoryRows, pRef.americano_elo_rating],
+  );
 
   const americanoPlayed = Number(pRef.americano_played) || americanoHistoryRows.length || 0;
   const americanoWins = Number(pRef.americano_wins) || 0;

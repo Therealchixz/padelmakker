@@ -7,6 +7,7 @@ import { getPlayerSeekingDetails, seekingActivityLabelDisplay } from '../lib/see
 import { isProfileMatchFeedVisible, isProfileMakkerFeedVisible } from '../lib/seekingFeedTtl';
 import { DAYS_OF_WEEK } from '../lib/platformConstants';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { resolveAmericanoEloDisplay } from '../features/americano/americanoDisplayUtils';
 
 function InfoRow({ label, value }) {
   if (value == null || value === '' || value === '—') return null;
@@ -73,10 +74,10 @@ export function AdminUserProfileOverview({ profile, formatDateTime }) {
   const age = calcAge(p.birth_year, p.birth_month, p.birth_day);
   const location = [p.city, p.area].filter(Boolean).join(', ') || null;
   const levelDisplay = profileLevelDisplayText(p.level);
-  const americanoElo =
-    p._americanoEloDisplay != null && Number.isFinite(Number(p._americanoEloDisplay))
-      ? Math.round(Number(p._americanoEloDisplay))
-      : Math.round(Number(p.americano_elo_rating) || 1000);
+  const americanoElo = resolveAmericanoEloDisplay(
+    p._americanoEloDisplay ?? p.americano_elo_rating,
+    p._americanoEloHistoryPreview,
+  );
   const amPlayed = Number(p.americano_played) || 0;
   const seekingDetails = getPlayerSeekingDetails(p);
   const avail = availabilityTags(p);

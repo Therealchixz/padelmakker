@@ -234,6 +234,24 @@ export function formatAmericanoLiveRoundLabel(liveRound: number, totalRounds: nu
   return `Live ${liveRound}/${totalRounds}`
 }
 
+/** Turnerings-ELO til visning: profilfelt er sandheden; historik er fallback. */
+export function resolveAmericanoEloDisplay(
+  profileRating: unknown,
+  historyRows: Array<{ new_rating?: unknown }> | null | undefined,
+): number {
+  if (profileRating != null && Number.isFinite(Number(profileRating))) {
+    return Math.round(Number(profileRating))
+  }
+  const rows = historyRows ?? []
+  if (rows.length > 0) {
+    const last = rows[rows.length - 1]
+    if (last?.new_rating != null && Number.isFinite(Number(last.new_rating))) {
+      return Math.round(Number(last.new_rating))
+    }
+  }
+  return 1000
+}
+
 /** Første runde uden låst resultat — bruges til live-badge på listekort. */
 export function computeAmericanoActiveRound(matches: MatchRow[]) {
   const sorted = [...matches].sort((a, b) => {

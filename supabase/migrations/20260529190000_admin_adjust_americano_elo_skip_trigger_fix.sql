@@ -1,6 +1,4 @@
--- =============================================================================
--- Admin: Juster Americano/Mexicano ELO manuelt
--- =============================================================================
+-- Skip per-row recalc during admin batch; force final profile ELO to p_new_elo
 
 CREATE OR REPLACE FUNCTION public.trg_americano_elo_history_sync_profile()
 RETURNS trigger
