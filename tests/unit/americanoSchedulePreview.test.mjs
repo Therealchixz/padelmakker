@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { americanoBaseRounds, americanoTotalRounds } from '../../src/lib/americanoRoundRobinSchedule.ts'
+import {
+  americanoBaseRounds,
+  americanoTotalRounds,
+  recommendedCourtsPerRound,
+} from '../../src/lib/americanoRoundRobinSchedule.ts'
 
 function estimateMinutesPerRound(pointsPerMatch) {
   if (pointsPerMatch === 32) return 16
@@ -11,7 +15,7 @@ function estimateMinutesPerRound(pointsPerMatch) {
 function getCreateFormSchedulePreview(input) {
   const format = input.format ?? 'americano'
   const playerSlots = Math.max(4, Number(input.playerSlots) || 6)
-  const courts = Math.max(1, Number(input.courtsPerRound) || 1)
+  const courts = Math.max(recommendedCourtsPerRound(playerSlots), Number(input.courtsPerRound) || 1)
   const passes = Number(input.opponentPasses) === 2 ? 2 : 1
   const points = Number(input.pointsPerMatch) || 16
   const minPerRound = estimateMinutesPerRound(points)
@@ -28,7 +32,7 @@ function getCreateFormSchedulePreview(input) {
   return { normalRounds, longRounds, selectedRounds, estSelectedMin }
 }
 
-test('6 spillere Americano: Normal 8 runder, Lang 16 runder', () => {
+test('6 spillere Americano: Normal 9 runder, Lang 18 runder', () => {
   const normal = getCreateFormSchedulePreview({
     format: 'americano',
     playerSlots: 6,
@@ -43,11 +47,11 @@ test('6 spillere Americano: Normal 8 runder, Lang 16 runder', () => {
     opponentPasses: 2,
     pointsPerMatch: 16,
   })
-  assert.equal(normal.normalRounds, 8)
-  assert.equal(normal.longRounds, 16)
-  assert.equal(normal.selectedRounds, 8)
-  assert.equal(lang.selectedRounds, 16)
-  assert.equal(lang.estSelectedMin, 16 * estimateMinutesPerRound(16))
+  assert.equal(normal.normalRounds, 9)
+  assert.equal(normal.longRounds, 18)
+  assert.equal(normal.selectedRounds, 9)
+  assert.equal(lang.selectedRounds, 18)
+  assert.equal(lang.estSelectedMin, 18 * estimateMinutesPerRound(16))
 })
 
 test('pointformat skalerer estimat', () => {

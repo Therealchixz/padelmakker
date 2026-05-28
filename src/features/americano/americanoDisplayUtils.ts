@@ -10,8 +10,13 @@ export {
 } from '../../lib/americanoPlayedDuration.js'
 
 import { getMexicanoTotalRounds } from '../../lib/mexicanoSchedule.js'
-import { americanoBaseRounds, americanoTotalRounds, benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
-export { benchCountPerRound, americanoBaseRounds, americanoTotalRounds }
+import {
+  americanoBaseRounds,
+  americanoTotalRounds,
+  benchCountPerRound,
+  recommendedCourtsPerRound,
+} from '../../lib/americanoRoundRobinSchedule'
+export { benchCountPerRound, americanoBaseRounds, americanoTotalRounds, recommendedCourtsPerRound }
 
 /** Legacy default — brug estimateMinutesPerRound(points) til nye estimater. */
 export const MIN_PER_ROUND = 12
@@ -35,6 +40,7 @@ export function formatEstimatedDuration(minutes: number): string {
 
 export type CreateFormSchedulePreview = {
   format: AmericanoTournament['format']
+  effectiveCourts: number
   normalRounds: number
   longRounds: number
   selectedRounds: number
@@ -58,24 +64,26 @@ export function getCreateFormSchedulePreview(input: {
   const format = input.format ?? 'americano'
   const playerSlots = Math.max(4, Number(input.playerSlots) || 6)
   const courts = Math.max(1, Number(input.courtsPerRound) || 1)
+  const effectiveCourts = Math.max(recommendedCourtsPerRound(playerSlots), courts)
   const passes = Number(input.opponentPasses) === 2 ? 2 : 1
   const points = Number(input.pointsPerMatch) || 16
   const minPerRound = estimateMinutesPerRound(points)
-  const bench = benchCountPerRound(playerSlots, courts)
+  const bench = benchCountPerRound(playerSlots, effectiveCourts)
 
   const normalRounds =
     format === 'mexicano'
       ? getMexicanoTotalRounds(playerSlots, 1)
-      : americanoBaseRounds(playerSlots, courts)
+      : americanoBaseRounds(playerSlots, effectiveCourts)
   const longRounds =
     format === 'mexicano'
       ? getMexicanoTotalRounds(playerSlots, 2)
-      : americanoTotalRounds(playerSlots, courts, 2)
+      : americanoTotalRounds(playerSlots, effectiveCourts, 2)
   const selectedRounds = passes === 2 ? longRounds : normalRounds
 
   const estSelectedMin = selectedRounds * minPerRound
   return {
     format,
+    effectiveCourts,
     normalRounds,
     longRounds,
     selectedRounds,
@@ -103,12 +111,11 @@ export function getAmericanoTournamentMeta(
     pointsPerMatch: Number(tournament.points_per_match) || 16,
   })
   const maxPlayers = Number(tournament.player_slots) || 5
-  const courts = Math.max(1, Number(tournament.courts_per_round) || 1)
   return {
     maxPlayers,
     totalRounds: preview.selectedRounds,
     estMinutes: preview.estSelectedMin,
-    courts,
+    courts: preview.effectiveCourts,
     bench: preview.bench,
   }
 }
