@@ -1485,6 +1485,28 @@ button,
   flex-shrink: 0;
 }
 
+.pm-notification-bell-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--pm-danger);
+  color: var(--pm-on-accent);
+  font-size: 9px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-sizing: border-box;
+  border: 2px solid var(--pm-surface);
+  box-shadow: 0 1px 3px rgba(2, 6, 23, 0.18);
+  pointer-events: none;
+}
+
 /* Panel: på smal skærm vises i toppen under headeren */
 @media (max-width: 480px) {
   .pm-notification-panel {
@@ -1649,6 +1671,32 @@ button,
   .pm-dash-header-actions-mobile {
     display: flex;
     margin-left: auto;
+    align-items: center;
+  }
+
+  .pm-notification-bell-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px !important;
+  }
+
+  .pm-notification-bell-icon {
+    width: 22px !important;
+    height: 22px !important;
+    color: var(--pm-text) !important;
+    stroke-width: 2.25;
+  }
+
+  .pm-notification-bell-badge {
+    top: 5px;
+    right: 5px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-weight: 800;
+    border-width: 2px;
+    box-shadow: 0 1px 5px rgba(2, 6, 23, 0.28);
   }
 
   .pm-dash-user {
