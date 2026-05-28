@@ -334,9 +334,9 @@ export function AdminTab({ initialSubTab = null }) {
         full_name: fresh.full_name || fresh.name || userRow.full_name || userRow.name || '',
         email: userRow.email ?? fresh.email ?? '',
         elo_rating: eloFromHistory,
+        americano_elo_rating: americanoEloDisplay,
         games_played: stats?.games ?? fresh.games_played,
         games_won: stats?.wins ?? fresh.games_won,
-        _americanoEloDisplay: americanoEloDisplay,
       });
     } catch (err) {
       console.warn('AdminTab openUserEditor:', err?.message || err);
@@ -960,6 +960,14 @@ export function AdminTab({ initialSubTab = null }) {
         });
 
       if (eloErr) throw eloErr;
+
+      const { error: americanoEloErr } = await supabase
+        .rpc('admin_adjust_americano_elo', {
+          p_user_id: editingUser.id,
+          p_new_elo: Number(editingUser.americano_elo_rating),
+        });
+
+      if (americanoEloErr) throw americanoEloErr;
 
       const { data: exemptData, error: exemptRpcErr } = await supabase.rpc(
         'admin_set_phone_verification_exempt',
@@ -2219,6 +2227,19 @@ export function AdminTab({ initialSubTab = null }) {
                     type="number" 
                     value={editingUser.elo_rating} 
                     onChange={(e) => setEditingUser({ ...editingUser, elo_rating: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>
+                    Americano/Mexicano ELO
+                  </label>
+                  <input
+                    type="number"
+                    value={editingUser.americano_elo_rating}
+                    onChange={(e) =>
+                      setEditingUser({ ...editingUser, americano_elo_rating: e.target.value })
+                    }
                     style={inputStyle}
                   />
                 </div>
