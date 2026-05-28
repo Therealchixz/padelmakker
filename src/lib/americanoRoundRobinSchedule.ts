@@ -298,47 +298,102 @@ function benchSetForRound(n: number, round: RoundIdx): Set<number> {
 }
 
 /**
- * Reorder kun runder (ændrer ikke kampe) for at undgå samme bench to runder i træk.
- * Bruges pt. til 6 spillere / 1 bane, hvor vi vil have max 1 bench-streak.
+ * Reorder runder (ændrer ikke kampe) for at minimere bench-overlap mellem nabo-runder.
+ * Prøver først "ingen overlap" (hård anti-streak), ellers bedste mulige overlap.
  */
-function reorderRoundsNoConsecutiveBench(n: number, rounds: RoundIdx[]): RoundIdx[] {
+function reorderRoundsMinBenchOverlap(n: number, rounds: RoundIdx[]): RoundIdx[] {
+  if (rounds.length <= 1) return rounds
   const benchSets = rounds.map((r) => benchSetForRound(n, r))
+  const benchSize = benchSets[0]?.size ?? 0
+  if (benchSize <= 0) return rounds
   const used = Array(rounds.length).fill(false)
   const order: number[] = []
 
-  const conflicts = (prevIdx: number, nextIdx: number): boolean => {
-    if (prevIdx < 0) return false
+  const overlapCount = (prevIdx: number, nextIdx: number): number => {
+    if (prevIdx < 0) return 0
     const prev = benchSets[prevIdx]
     const next = benchSets[nextIdx]
+    let overlap = 0
     for (const p of prev) {
-      if (next.has(p)) return true
+      if (next.has(p)) overlap += 1
     }
-    return false
+    return overlap
   }
 
-  const dfs = (prevIdx: number): boolean => {
+  const dfsNoOverlap = (prevIdx: number): boolean => {
     if (order.length === rounds.length) return true
 
     const candidates: number[] = []
     for (let i = 0; i < rounds.length; i++) {
       if (used[i]) continue
-      if (!conflicts(prevIdx, i)) candidates.push(i)
+      if (overlapCount(prevIdx, i) === 0) candidates.push(i)
     }
-    // Hvis ingen kandidater findes, fail hårdt (ingen fallback her for 6/1 fairness-mode).
     if (candidates.length === 0) return false
 
     for (const i of candidates) {
       used[i] = true
       order.push(i)
-      if (dfs(i)) return true
+      if (dfsNoOverlap(i)) return true
       order.pop()
       used[i] = false
     }
     return false
   }
 
-  if (!dfs(-1)) return rounds
+  if (dfsNoOverlap(-1)) {
+    return order.map((idx) => rounds[idx])
+  }
+
+  // Fallback: greedy min-overlap (stadig bedre end original rækkefølge).
+  used.fill(false)
+  order.length = 0
+  let prev = -1
+  while (order.length < rounds.length) {
+    const candidates = Array.from({ length: rounds.length }, (_, i) => i).filter((i) => !used[i])
+    candidates.sort((a, b) => {
+      const oa = overlapCount(prev, a)
+      const ob = overlapCount(prev, b)
+      if (oa !== ob) return oa - ob
+      return a - b
+    })
+    const pick = candidates[0]
+    used[pick] = true
+    order.push(pick)
+    prev = pick
+  }
   return order.map((idx) => rounds[idx])
+}
+
+function rotateRounds(rounds: RoundIdx[], start: number): RoundIdx[] {
+  if (rounds.length === 0) return rounds
+  const s = ((start % rounds.length) + rounds.length) % rounds.length
+  return [...rounds.slice(s), ...rounds.slice(0, s)]
+}
+
+function findBestStartToMinimizeBoundaryOverlap(
+  n: number,
+  previousLastRound: RoundIdx | null,
+  candidateRounds: RoundIdx[],
+): number {
+  if (!previousLastRound || candidateRounds.length === 0) return 0
+  const prevBench = benchSetForRound(n, previousLastRound)
+  if (prevBench.size === 0) return 0
+
+  let bestStart = 0
+  let bestOverlap = Number.POSITIVE_INFINITY
+  for (let i = 0; i < candidateRounds.length; i++) {
+    const firstBench = benchSetForRound(n, candidateRounds[i])
+    let overlap = 0
+    for (const p of prevBench) {
+      if (firstBench.has(p)) overlap += 1
+    }
+    if (overlap < bestOverlap) {
+      bestOverlap = overlap
+      bestStart = i
+      if (bestOverlap === 0) break
+    }
+  }
+  return bestStart
 }
 
 function computeFairBaseRounds(n: number, courts: number): number {
@@ -392,16 +447,18 @@ export function buildAmericanoRoundRobinMatchRows(
 
   const courts = clampCourts(n, courtsPerRound)
   const baseRounds = computeFairBaseRounds(n, courts)
-  let schedule = buildScheduleExact(n, courts, baseRounds).rounds
-  // UX-fairness: ved 6-7 spillere / 1 bane undgå bench 2 runder i træk.
-  if ((n === 6 && baseRounds === 9 && courts === 1) || (n === 7 && baseRounds === 14 && courts === 1)) {
-    schedule = reorderRoundsNoConsecutiveBench(n, schedule)
-  }
+  const baseSchedule = reorderRoundsMinBenchOverlap(
+    n,
+    buildScheduleExact(n, courts, baseRounds).rounds,
+  )
   const passCount: 1 | 2 = passes === 2 ? 2 : 1
   const out: AmericanoMatchInsert[] = []
+  let previousLastRound: RoundIdx | null = null
 
   for (let pass = 0; pass < passCount; pass++) {
     const roundOffset = pass * baseRounds
+    const start = findBestStartToMinimizeBoundaryOverlap(n, previousLastRound, baseSchedule)
+    const schedule = rotateRounds(baseSchedule, start)
     schedule.forEach((round, ri) => {
       const roundNumber = roundOffset + ri + 1
       round.forEach((m, courtIndex) => {
@@ -416,6 +473,7 @@ export function buildAmericanoRoundRobinMatchRows(
         })
       })
     })
+    previousLastRound = schedule[schedule.length - 1] || previousLastRound
   }
 
   return out

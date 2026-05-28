@@ -177,6 +177,68 @@ test('7 spillere, 1 bane: ingen sidder over 2 runder i træk', () => {
   }
 })
 
+test('10 spillere, 2 baner: anti-streak holder i Normal', () => {
+  const playerIds = ids(10)
+  const rows = buildAmericanoRoundRobinMatchRows('tid', playerIds, 2, 1)
+  const rounds = [...new Set(rows.map((r) => r.round_number))].sort((a, b) => a - b)
+  const sitPatterns = new Map(playerIds.map((id) => [id, []]))
+
+  for (const rn of rounds) {
+    const roundRows = rows.filter((r) => r.round_number === rn)
+    const onCourt = new Set(
+      roundRows.flatMap((r) => [r.team_a_p1, r.team_a_p2, r.team_b_p1, r.team_b_p2]),
+    )
+    for (const id of playerIds) {
+      sitPatterns.get(id).push(onCourt.has(id) ? 0 : 1)
+    }
+  }
+
+  for (const [id, pattern] of sitPatterns) {
+    let current = 0
+    let maxStreak = 0
+    for (const v of pattern) {
+      if (v === 1) {
+        current += 1
+        if (current > maxStreak) maxStreak = current
+      } else {
+        current = 0
+      }
+    }
+    assert.ok(maxStreak <= 1, `${id} har bench-streak ${maxStreak}: ${pattern.join('')}`)
+  }
+})
+
+test('10 spillere, 2 baner: anti-streak holder i Lang', () => {
+  const playerIds = ids(10)
+  const rows = buildAmericanoRoundRobinMatchRows('tid', playerIds, 2, 2)
+  const rounds = [...new Set(rows.map((r) => r.round_number))].sort((a, b) => a - b)
+  const sitPatterns = new Map(playerIds.map((id) => [id, []]))
+
+  for (const rn of rounds) {
+    const roundRows = rows.filter((r) => r.round_number === rn)
+    const onCourt = new Set(
+      roundRows.flatMap((r) => [r.team_a_p1, r.team_a_p2, r.team_b_p1, r.team_b_p2]),
+    )
+    for (const id of playerIds) {
+      sitPatterns.get(id).push(onCourt.has(id) ? 0 : 1)
+    }
+  }
+
+  for (const [id, pattern] of sitPatterns) {
+    let current = 0
+    let maxStreak = 0
+    for (const v of pattern) {
+      if (v === 1) {
+        current += 1
+        if (current > maxStreak) maxStreak = current
+      } else {
+        current = 0
+      }
+    }
+    assert.ok(maxStreak <= 1, `${id} har bench-streak ${maxStreak}: ${pattern.join('')}`)
+  }
+})
+
 test('5 spillere, 1 bane: ingen spiller i to matches i samme runde', () => {
   const rows = buildAmericanoRoundRobinMatchRows('tid', ids(5), 1, 1)
   for (const round of new Set(rows.map((r) => r.round_number))) {
