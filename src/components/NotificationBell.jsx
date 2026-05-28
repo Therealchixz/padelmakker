@@ -630,12 +630,14 @@ export function NotificationBell({ tourForceOpen = false }) {
         }
         aria-expanded={open}
       >
-        <Bell className="pm-notification-bell-icon" size={20} color={theme.textMid} strokeWidth={2} />
-        {unreadCount > 0 && (
-          <span className="pm-notification-bell-badge" aria-hidden>
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
+        <span className="pm-notification-bell-icon-wrap" aria-hidden>
+          <Bell className="pm-notification-bell-icon" size={20} color={theme.textMid} strokeWidth={2} />
+          {unreadCount > 0 && (
+            <span className="pm-notification-bell-badge">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </span>
       </button>
 
       {open && (

@@ -1485,10 +1485,18 @@ button,
   flex-shrink: 0;
 }
 
+.pm-notification-bell-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .pm-notification-bell-badge {
   position: absolute;
-  top: -2px;
-  right: -2px;
+  top: -5px;
+  right: -6px;
   min-width: 17px;
   height: 17px;
   padding: 0 4px;
@@ -1505,6 +1513,7 @@ button,
   border: 2px solid var(--pm-surface);
   box-shadow: 0 1px 3px rgba(2, 6, 23, 0.18);
   pointer-events: none;
+  z-index: 1;
 }
 
 /* Panel: på smal skærm vises i toppen under headeren */
@@ -1662,6 +1671,8 @@ button,
   .pm-dash-header {
     flex-wrap: nowrap;
     align-items: center;
+    overflow: visible;
+    padding-right: max(16px, calc(env(safe-area-inset-right, 0px) + 12px)) !important;
   }
 
   .pm-dash-account-desktop {
@@ -1672,12 +1683,20 @@ button,
     display: flex;
     margin-left: auto;
     align-items: center;
+    flex-shrink: 0;
+    overflow: visible;
+    padding-right: 2px;
+  }
+
+  .pm-notification-bell-root {
+    overflow: visible;
   }
 
   .pm-notification-bell-btn {
     min-width: 44px;
     min-height: 44px;
-    padding: 10px !important;
+    padding: 10px 12px 10px 10px !important;
+    overflow: visible;
   }
 
   .pm-notification-bell-icon {
@@ -1687,9 +1706,10 @@ button,
     stroke-width: 2.25;
   }
 
+  /* Badge på klokke-ikonet (ikke skærmkant) — undgår clip ved overflow-x på #root */
   .pm-notification-bell-badge {
-    top: 5px;
-    right: 5px;
+    top: -7px;
+    right: -9px;
     min-width: 20px;
     height: 20px;
     padding: 0 5px;
