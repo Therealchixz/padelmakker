@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { X, Smartphone } from 'lucide-react';
 import { AppModal } from '../components/AppModal';
-import { PillTabs } from '../components/PillTabs';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { AdminUserProfileOverview } from './AdminUserProfileOverview';
 import { theme, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
@@ -17,11 +16,6 @@ function courtSideForEdit(value) {
   const legacy = { backhand: 'Venstre side', forehand: 'Højre side', both: 'Begge sider' };
   return legacy[value] || '';
 }
-
-const COURT_SIDE_EDIT_TABS = [
-  { id: '', label: 'Ikke valgt' },
-  ...COURT_SIDES.map((s) => ({ id: s, label: s })),
-];
 
 export function AdminUserEditModal({
   open,
@@ -134,17 +128,22 @@ export function AdminUserEditModal({
                   onChange={(n) => onChange({ ...user, level: n })}
                 />
               </div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ ...labelStyle, marginBottom: '6px', display: 'block' }}>Foretrukket side</label>
-                <PillTabs
-                  tabs={COURT_SIDE_EDIT_TABS}
-                  value={courtSideForEdit(user.court_side)}
-                  onChange={(id) => onChange({ ...user, court_side: id || null })}
-                  ariaLabel="Foretrukket side"
-                  size="sm"
-                  className="pm-pill-tabs--wrap"
-                />
-              </div>
+            </div>
+
+            <div>
+              <label style={{ ...labelStyle, marginBottom: '4px', display: 'block' }}>Foretrukket side</label>
+              <select
+                value={courtSideForEdit(user.court_side)}
+                onChange={(e) => onChange({ ...user, court_side: e.target.value || null })}
+                style={inputStyle}
+              >
+                <option value="">Ikke valgt</option>
+                {COURT_SIDES.map((side) => (
+                  <option key={side} value={side}>
+                    {side}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
