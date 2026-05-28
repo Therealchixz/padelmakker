@@ -12,9 +12,7 @@ DECLARE
   v_current_elo int;
   v_first_id uuid;
   v_diff int;
-  v_sum_change int := 0;
   v_played int := 0;
-  v_base int := NULL;
 BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'Adgang nægtet: Kun admins kan justere Americano/Mexicano ELO manuelt.';
@@ -51,18 +49,15 @@ BEGIN
     SET old_rating = old_rating + v_diff
     WHERE id = v_first_id;
 
-    SELECT
-      MIN(old_rating)::int,
-      COALESCE(SUM(change), 0)::int,
-      COUNT(*)::int
-    INTO v_base, v_sum_change, v_played
+    PERFORM public.recalc_americano_elo_from_history(p_user_id);
+
+    SELECT COUNT(*)::int
+    INTO v_played
     FROM public.americano_elo_history
     WHERE user_id = p_user_id;
 
     UPDATE public.profiles
-    SET
-      americano_elo_rating = GREATEST(100, COALESCE(v_base, p_new_elo) + COALESCE(v_sum_change, 0)),
-      americano_played = COALESCE(v_played, americano_played)
+    SET americano_played = COALESCE(v_played, americano_played)
     WHERE id = p_user_id;
   ELSE
     UPDATE public.profiles

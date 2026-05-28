@@ -130,6 +130,7 @@ export function AdminTab({ initialSubTab = null }) {
   const [search, setSearch] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [editingUserLoading, setEditingUserLoading] = useState(false);
+  const [editingUserSaving, setEditingUserSaving] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'asc' });
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const [deletePinOpen, setDeletePinOpen] = useState(false);
@@ -301,21 +302,15 @@ export function AdminTab({ initialSubTab = null }) {
     setEditingUserLoading(false);
   }, []);
 
-  /** Hent frisk profil + ELO fra historik (samme kilde som Find makker) — ikke snapshot fra listen. */
+  /** Hent frisk profil + ELO — ikke snapshot fra listen. */
   const openUserEditor = useCallback(async (userRow) => {
     if (!userRow?.id) return;
     setEditingUserLoading(true);
     try {
       const uid = String(userRow.id);
-      const [profileRes, eloBatch, amHistRes] = await Promise.all([
+      const [profileRes, eloBatch] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', uid).maybeSingle(),
         fetchEloStatsBatchByUserIds([uid]),
-        supabase
-          .from('americano_elo_history')
-          .select('new_rating')
-          .eq('user_id', uid)
-          .order('created_at', { ascending: false })
-          .limit(1),
       ]);
       if (profileRes.error) throw profileRes.error;
       const fresh = normalizeProfileRow(profileRes.data || userRow);
@@ -324,11 +319,7 @@ export function AdminTab({ initialSubTab = null }) {
         stats != null && Number.isFinite(Number(stats.elo))
           ? Math.round(Number(stats.elo))
           : eloOf(fresh);
-      const amRow = (amHistRes.data || [])[0];
-      const americanoEloDisplay =
-        amRow?.new_rating != null && Number.isFinite(Number(amRow.new_rating))
-          ? Math.round(Number(amRow.new_rating))
-          : Math.round(Number(fresh.americano_elo_rating) || 1000);
+      const americanoEloDisplay = Math.round(Number(fresh.americano_elo_rating) || 1000);
       setEditingUser({
         ...fresh,
         full_name: fresh.full_name || fresh.name || userRow.full_name || userRow.name || '',
@@ -933,9 +924,10 @@ export function AdminTab({ initialSubTab = null }) {
 
   const handleUpdateUser = async (e) => {
     e.preventDefault();
-    if (!editingUser) return;
+    if (!editingUser || editingUserSaving) return;
 
     try {
+      setEditingUserSaving(true);
       const { error: profErr } = await supabase
         .from('profiles')
         .update({
@@ -983,8 +975,11 @@ export function AdminTab({ initialSubTab = null }) {
       
       closeUserEditor();
       setTimeout(() => fetchUsers(), 300);
+      await ask({ message: 'Bruger blev opdateret.', notice: true });
     } catch (err) {
       await ask({ message: 'Fejl ved opdatering: ' + (err.message || 'Ukendt fejl'), notice: true });
+    } finally {
+      setEditingUserSaving(false);
     }
   };
 
@@ -2380,11 +2375,11 @@ export function AdminTab({ initialSubTab = null }) {
               </div>
 
               <div className="pm-admin-form-actions">
-                <button type="button" onClick={closeUserEditor} style={{ ...btn(false), flex: 1 }} disabled={editingUserLoading}>
+                <button type="button" onClick={closeUserEditor} style={{ ...btn(false), flex: 1 }} disabled={editingUserLoading || editingUserSaving}>
                   Annuller
                 </button>
-                <button type="submit" style={{ ...btn(true), flex: 1 }} disabled={editingUserLoading}>
-                  Gem ændringer
+                <button type="submit" style={{ ...btn(true), flex: 1 }} disabled={editingUserLoading || editingUserSaving}>
+                  {editingUserSaving ? 'Gemmer...' : 'Gem ændringer'}
                 </button>
               </div>
             </form>

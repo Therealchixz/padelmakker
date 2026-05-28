@@ -1,5 +1,5 @@
 -- =============================================================================
--- Admin: Juster Americano/Mexicano ELO manuelt
+-- Fix admin Americano/Mexicano ELO adjustment recalculation
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION public.admin_adjust_americano_elo(p_user_id uuid, p_new_elo int)
