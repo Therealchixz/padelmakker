@@ -91,7 +91,7 @@ export function AdminUserEditModal({
                 />
               </div>
               <div>
-                <label style={{ ...labelStyle, marginBottom: '4px', display: 'block' }}>ELO Rating</label>
+                <label style={{ ...labelStyle, marginBottom: '4px', display: 'block' }}>2v2 ELO Rating</label>
                 <input
                   type="number"
                   value={user.elo_rating}
