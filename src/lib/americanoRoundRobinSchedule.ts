@@ -282,6 +282,65 @@ function buildScheduleExact(n: number, courts: number, targetRounds: number): Bu
   return { rounds, playCount, partnerMet, oppMet }
 }
 
+function benchSetForRound(n: number, round: RoundIdx): Set<number> {
+  const onCourt = new Set<number>()
+  for (const m of round) {
+    onCourt.add(m.teamA[0])
+    onCourt.add(m.teamA[1])
+    onCourt.add(m.teamB[0])
+    onCourt.add(m.teamB[1])
+  }
+  const bench = new Set<number>()
+  for (let p = 0; p < n; p++) {
+    if (!onCourt.has(p)) bench.add(p)
+  }
+  return bench
+}
+
+/**
+ * Reorder kun runder (ændrer ikke kampe) for at undgå samme bench to runder i træk.
+ * Bruges pt. til 6 spillere / 1 bane, hvor vi vil have max 1 bench-streak.
+ */
+function reorderRoundsNoConsecutiveBench(n: number, rounds: RoundIdx[]): RoundIdx[] {
+  const benchSets = rounds.map((r) => benchSetForRound(n, r))
+  const used = Array(rounds.length).fill(false)
+  const order: number[] = []
+
+  const conflicts = (prevIdx: number, nextIdx: number): boolean => {
+    if (prevIdx < 0) return false
+    const prev = benchSets[prevIdx]
+    const next = benchSets[nextIdx]
+    for (const p of prev) {
+      if (next.has(p)) return true
+    }
+    return false
+  }
+
+  const dfs = (prevIdx: number): boolean => {
+    if (order.length === rounds.length) return true
+
+    const candidates: number[] = []
+    for (let i = 0; i < rounds.length; i++) {
+      if (used[i]) continue
+      if (!conflicts(prevIdx, i)) candidates.push(i)
+    }
+    // Hvis ingen kandidater findes, fail hårdt (ingen fallback her for 6/1 fairness-mode).
+    if (candidates.length === 0) return false
+
+    for (const i of candidates) {
+      used[i] = true
+      order.push(i)
+      if (dfs(i)) return true
+      order.pop()
+      used[i] = false
+    }
+    return false
+  }
+
+  if (!dfs(-1)) return rounds
+  return order.map((idx) => rounds[idx])
+}
+
 function computeFairBaseRounds(n: number, courts: number): number {
   const theoretical = theoreticalMinRounds(n, courts)
   const step = fairnessRoundStep(n, courts)
@@ -333,7 +392,11 @@ export function buildAmericanoRoundRobinMatchRows(
 
   const courts = clampCourts(n, courtsPerRound)
   const baseRounds = computeFairBaseRounds(n, courts)
-  const schedule = buildScheduleExact(n, courts, baseRounds).rounds
+  let schedule = buildScheduleExact(n, courts, baseRounds).rounds
+  // UX-fairness: ved 6 spillere / 1 bane undgå bench 2 runder i træk.
+  if (n === 6 && courts === 1 && baseRounds === 9) {
+    schedule = reorderRoundsNoConsecutiveBench(n, schedule)
+  }
   const passCount: 1 | 2 = passes === 2 ? 2 : 1
   const out: AmericanoMatchInsert[] = []
 
