@@ -1485,37 +1485,6 @@ button,
   flex-shrink: 0;
 }
 
-.pm-notification-bell-icon-wrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.pm-notification-bell-badge {
-  position: absolute;
-  top: -5px;
-  right: -6px;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--pm-danger);
-  color: var(--pm-on-accent);
-  font-size: 9px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  box-sizing: border-box;
-  border: 2px solid var(--pm-surface);
-  box-shadow: 0 1px 3px rgba(2, 6, 23, 0.18);
-  pointer-events: none;
-  z-index: 1;
-}
-
 /* Panel: på smal skærm vises i toppen under headeren */
 @media (max-width: 480px) {
   .pm-notification-panel {
@@ -1671,8 +1640,6 @@ button,
   .pm-dash-header {
     flex-wrap: nowrap;
     align-items: center;
-    overflow: visible;
-    padding-right: max(16px, calc(env(safe-area-inset-right, 0px) + 12px)) !important;
   }
 
   .pm-dash-account-desktop {
@@ -1682,44 +1649,6 @@ button,
   .pm-dash-header-actions-mobile {
     display: flex;
     margin-left: auto;
-    align-items: center;
-    flex-shrink: 0;
-    overflow: visible;
-    padding-right: 2px;
-  }
-
-  .pm-notification-bell-root {
-    overflow: visible;
-  }
-
-  .pm-notification-bell-btn {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 10px 12px 10px 10px !important;
-    overflow: visible;
-  }
-
-  .pm-notification-bell-icon {
-    width: 22px !important;
-    height: 22px !important;
-    color: var(--pm-text) !important;
-    stroke-width: 2.25;
-  }
-
-  /* Badge øverst til venstre på klokken — væk fra skærmkant, tydelig som bund-menu */
-  .pm-notification-bell-badge {
-    top: -9px;
-    right: auto;
-    left: -11px;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 6px;
-    font-size: 12px;
-    font-weight: 800;
-    border: 3px solid var(--pm-surface);
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--pm-danger) 40%, transparent),
-      0 2px 8px rgba(185, 28, 28, 0.45);
   }
 
   .pm-dash-user {
@@ -5220,20 +5149,36 @@ button,
 
 .pm-admin-subtabs {
   max-width: 100%;
+  padding-top: 6px;
+  overflow: visible;
+}
+
+.pm-admin-subtabs .pm-pill-tab {
+  overflow: visible;
 }
 
 .pm-admin-subtab-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pm-admin-subtab-main {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
 .pm-admin-subtab-badge {
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
+  position: absolute;
+  top: -9px;
+  right: -10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
   border-radius: 999px;
-  background: var(--pm-red);
+  background: var(--pm-danger);
   color: var(--pm-on-accent);
   font-size: 10px;
   font-weight: 800;
@@ -5241,6 +5186,27 @@ button,
   align-items: center;
   justify-content: center;
   line-height: 1;
+  box-sizing: border-box;
+  border: 2px solid var(--pm-surface-alt);
+  box-shadow: 0 1px 4px rgba(185, 28, 28, 0.35);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.pm-pill-tab-active .pm-admin-subtab-badge,
+.pm-pill-tab[aria-selected="true"] .pm-admin-subtab-badge {
+  border-color: var(--pm-surface);
+}
+
+@media (max-width: 768px) {
+  .pm-admin-subtab-badge {
+    top: -10px;
+    right: -11px;
+    min-width: 20px;
+    height: 20px;
+    font-size: 11px;
+    box-shadow: 0 2px 6px rgba(185, 28, 28, 0.4);
+  }
 }
 
 .pm-admin-search {

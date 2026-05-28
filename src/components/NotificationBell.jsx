@@ -620,24 +620,17 @@ export function NotificationBell({ tourForceOpen = false }) {
     <div ref={panelRef} className="pm-notification-bell-root" data-tour="notification-bell" style={{ position: "relative", flexShrink: 0 }}>
       <button
         type="button"
-        className="pm-notification-bell-btn"
         onClick={() => { setOpen(!open); if (!open) load(); }}
         style={{ ...iconBtn, position: "relative" }}
-        aria-label={
-          unreadCount > 0
-            ? `Notifikationer, ${unreadCount} ulæste`
-            : 'Notifikationer'
-        }
+        aria-label="Notifikationer"
         aria-expanded={open}
       >
-        <span className="pm-notification-bell-icon-wrap" aria-hidden>
-          <Bell className="pm-notification-bell-icon" size={20} color={theme.textMid} strokeWidth={2} />
-          {unreadCount > 0 && (
-            <span className="pm-notification-bell-badge">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </span>
+        <Bell size={20} color={theme.textMid} strokeWidth={2} />
+        {unreadCount > 0 && (
+          <span style={{ position: "absolute", top: "-2px", right: "-2px", minWidth: "17px", height: "17px", padding: "0 4px", borderRadius: "999px", background: theme.red, color: theme.onAccent, fontSize: "9px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, boxSizing: "border-box" }}>
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
       </button>
 
       {open && (

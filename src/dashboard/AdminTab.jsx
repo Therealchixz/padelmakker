@@ -1136,8 +1136,10 @@ export function AdminTab({ initialSubTab = null }) {
           id: t.id,
           label: (
             <span className="pm-admin-subtab-label">
-              <Icon size={14} aria-hidden />
-              {isMobile ? t.shortLabel : t.label}
+              <span className="pm-admin-subtab-main">
+                <Icon size={14} aria-hidden />
+                {isMobile ? t.shortLabel : t.label}
+              </span>
               {badgeCount > 0 ? (
                 <span className="pm-admin-subtab-badge" aria-hidden>
                   {badgeCount > 9 ? '9+' : badgeCount}
