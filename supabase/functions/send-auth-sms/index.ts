@@ -17,6 +17,34 @@ const AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN') ?? ''
 const MESSAGING_SERVICE_SID = Deno.env.get('TWILIO_MESSAGING_SERVICE_SID') ?? ''
 const FROM_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER') ?? ''
 
+/** Twilio Messaging error codes → dansk (docs: twilio.com/docs/api/errors) */
+const TWILIO_SMS_ERROR_DA: Record<number, string> = {
+  21211:
+    'Telefonnummeret ser ugyldigt ud. Brug landekode, fx +45 12 34 56 78.',
+  21217: 'Telefonnummeret ser ugyldigt ud. Tjek cifrene og landekoden.',
+  21408:
+    'SMS til dette land/område er ikke tilladt på Twilio-kontoen. Kontakt support.',
+  21607:
+    'SMS-afsender er ikke konfigureret korrekt (Twilio trial). Kontakt support.',
+  21608:
+    'Dette nummer kan ikke modtage SMS på testkontoen. Brug et verificeret nummer eller kontakt os.',
+  21610: 'Dette nummer kan ikke modtage SMS (afmeldt).',
+  21612: 'SMS kan ikke sendes til dette nummer med den nuværende afsender.',
+  21614:
+    'Nummeret ser ikke ud til at kunne modtage SMS (fx fastnet). Prøv et mobilnummer.',
+  21705: 'SMS-tjenesten er ikke konfigureret korrekt. Kontakt support.',
+  20429: 'For mange SMS-forsøg. Vent et øjeblik og prøv igen.',
+}
+
+function twilioUserMessage(data: { code?: number; message?: string }): string {
+  const code = Number(data?.code)
+  if (Number.isFinite(code) && TWILIO_SMS_ERROR_DA[code]) {
+    return TWILIO_SMS_ERROR_DA[code]
+  }
+  const apiMsg = String(data?.message || '').trim()
+  return apiMsg ? `Twilio: ${apiMsg}` : 'Kunne ikke sende SMS'
+}
+
 function hookSecret(): string {
   return HOOK_SECRET_RAW.replace(/^v1,whsec_/, '')
 }
@@ -54,10 +82,15 @@ async function sendTwilioSms(to: string, body: string) {
     body: params,
   })
 
-  const data = await res.json().catch(() => ({}))
+  const data = (await res.json().catch(() => ({}))) as {
+    code?: number
+    message?: string
+    status?: string
+  }
   if (!res.ok) {
-    const msg = data?.message || res.statusText
-    throw new Error(`Twilio fejl: ${msg}`)
+    const err = new Error(twilioUserMessage(data)) as Error & { twilioCode?: number }
+    if (data?.code != null) err.twilioCode = Number(data.code)
+    throw err
   }
   return data
 }

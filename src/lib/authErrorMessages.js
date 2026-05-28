@@ -2,6 +2,8 @@
  * Danske fejltekster til Supabase Auth (login, nulstilling af adgangskode).
  */
 
+import { mapTwilioSmsErrorMessage } from './twilioSmsErrors.js';
+
 export function mapAuthErrorMessage(message, context = 'login') {
   const m = String(message || '').toLowerCase();
 
@@ -40,6 +42,9 @@ export function mapAuthErrorMessage(message, context = 'login') {
 
 /** SMS / OTP under oprettelse og telefonbekræftelse */
 export function mapPhoneAuthErrorMessage(message) {
+  const twilioMapped = mapTwilioSmsErrorMessage(message);
+  if (twilioMapped) return twilioMapped;
+
   const m = String(message || '').toLowerCase();
 
   if ((m.includes('expired') || m.includes('expire')) && (m.includes('otp') || m.includes('token') || m.includes('sms'))) {

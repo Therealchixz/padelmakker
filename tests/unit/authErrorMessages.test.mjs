@@ -30,4 +30,20 @@ describe('mapAuthErrorMessage', () => {
       'Koden er udløbet. Send en ny SMS-kode og prøv igen.',
     );
   });
+
+  it('maps Twilio invalid To (21211)', () => {
+    assert.equal(
+      mapPhoneAuthErrorMessage('Twilio fejl: error code 21211'),
+      'Telefonnummeret ser ugyldigt ud. Brug landekode, fx +45 12 34 56 78.',
+    );
+  });
+
+  it('maps Twilio trial unverified To (21608)', () => {
+    assert.match(
+      mapPhoneAuthErrorMessage(
+        "The 'to' phone number provided is not yet verified for this account.",
+      ),
+      /testkonto/,
+    );
+  });
 });
