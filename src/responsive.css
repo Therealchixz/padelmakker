@@ -6075,9 +6075,60 @@ button,
 }
 
 .pm-admin-modal-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  max-height: 85vh;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  contain: layout style paint;
   padding: 24px;
+  transform: translateZ(0);
+}
+
+.pm-admin-profile-overview-fold {
+  margin-bottom: 14px;
+  border: 1px solid var(--pm-border);
+  border-radius: 10px;
+  background: var(--pm-surface-alt);
+}
+
+.pm-admin-profile-overview-fold-summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-text-mid);
+  user-select: none;
+}
+
+.pm-admin-profile-overview-fold-summary::-webkit-details-marker {
+  display: none;
+}
+
+.pm-admin-profile-overview-fold[open] .pm-admin-profile-overview-fold-summary {
+  border-bottom: 1px solid var(--pm-border);
+  margin-bottom: 4px;
+}
+
+.pm-admin-profile-overview-fold .pm-admin-profile-overview-fold-summary::before {
+  content: '▸ ';
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.pm-admin-profile-overview-fold[open] .pm-admin-profile-overview-fold-summary::before {
+  transform: rotate(90deg);
+}
+
+.pm-admin-profile-overview-fold > :not(summary) {
+  padding: 0 10px 10px;
+}
+
+@media (max-width: 640px) {
+  .pm-admin-profile-overview-fold:not([open]) {
+    margin-bottom: 10px;
+  }
 }
 
 /* Kampe v2 redesign (2v2 toolbar, filter sheet, compact cards) */

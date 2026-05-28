@@ -21,7 +21,7 @@ import { AdminReportDmViewer } from '../components/AdminReportDmViewer';
 import { AdminMatchResultEditor } from '../components/AdminMatchResultEditor';
 import { AdminAmericanoResultEditor } from '../components/AdminAmericanoResultEditor';
 import { AdminLeagueResultEditor } from '../components/AdminLeagueResultEditor';
-import { AdminUserProfileOverview } from './AdminUserProfileOverview';
+import { AdminUserEditModal } from './AdminUserEditModal';
 import { fetchEloStatsBatchByUserIds, formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { normalizeProfileRow } from '../lib/profileUtils';
@@ -32,9 +32,6 @@ import {
   computeAdminConsoleStats,
   filterRatingAdminFlags,
 } from '../lib/adminConsoleUtils';
-
-import { PLAY_STYLES, REGIONS } from '../lib/platformConstants';
-import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 
 function adminDisplayName(user) {
   const fullName = String(user?.full_name || '').trim();
@@ -129,6 +126,7 @@ export function AdminTab({ initialSubTab = null }) {
   const [ligaLeagues, setLigaLeagues] = useState([]);
   const [search, setSearch] = useState('');
   const [editingUser, setEditingUser] = useState(null);
+  const [editingUserOverview, setEditingUserOverview] = useState(null);
   const [editingUserLoading, setEditingUserLoading] = useState(false);
   const [editingUserSaving, setEditingUserSaving] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'asc' });
@@ -299,6 +297,7 @@ export function AdminTab({ initialSubTab = null }) {
 
   const closeUserEditor = useCallback(() => {
     setEditingUser(null);
+    setEditingUserOverview(null);
     setEditingUserLoading(false);
   }, []);
 
@@ -320,7 +319,7 @@ export function AdminTab({ initialSubTab = null }) {
           ? Math.round(Number(stats.elo))
           : eloOf(fresh);
       const americanoEloDisplay = Math.round(Number(fresh.americano_elo_rating) || 1000);
-      setEditingUser({
+      const editorState = {
         ...fresh,
         full_name: fresh.full_name || fresh.name || userRow.full_name || userRow.name || '',
         email: userRow.email ?? fresh.email ?? '',
@@ -328,7 +327,9 @@ export function AdminTab({ initialSubTab = null }) {
         americano_elo_rating: americanoEloDisplay,
         games_played: stats?.games ?? fresh.games_played,
         games_won: stats?.wins ?? fresh.games_won,
-      });
+      };
+      setEditingUser(editorState);
+      setEditingUserOverview(editorState);
     } catch (err) {
       console.warn('AdminTab openUserEditor:', err?.message || err);
       await ask({ message: 'Kunne ikke hente opdateret profil. Prøv igen.', notice: true });
@@ -2161,231 +2162,17 @@ export function AdminTab({ initialSubTab = null }) {
           </div>
         </div>
       )}
-      <AppModal
+      <AdminUserEditModal
         open={Boolean(editingUser) || editingUserLoading}
+        loading={editingUserLoading}
+        saving={editingUserSaving}
+        user={editingUser}
+        profileOverview={editingUserOverview}
+        formatDateTime={formatDateTimeDa}
         onClose={closeUserEditor}
-        ariaLabel="Rediger spiller"
-        maxWidthPreset="sm"
-        zIndex={1000}
-        contentStyle={{ maxHeight: '90vh', overflow: 'hidden' }}
-      >
-        {editingUserLoading && !editingUser ? (
-          <div className="pm-admin-modal-body" style={{ padding: '32px 20px', textAlign: 'center' }}>
-            <div className="pm-spinner" style={{ margin: '0 auto 12px' }} />
-            <div style={{ fontSize: 14, color: theme.textMid }}>Henter opdateret profil…</div>
-          </div>
-        ) : null}
-        {editingUser ? (
-          <div className="pm-admin-modal-scroll pm-admin-modal-body">
-            <button
-              type="button"
-              onClick={closeUserEditor}
-              className="pm-admin-modal-close"
-              aria-label="Luk redigering"
-            >
-              <X size={20} />
-            </button>
-            <h3 style={{ ...heading('18px'), marginBottom: '8px' }}>Rediger spiller</h3>
-            <p className="pm-admin-help-copy" style={{ marginBottom: '12px' }}>
-              Profil hentes frisk fra databasen. Felter nedenfor kan redigeres; oversigten viser alt som på Find makker.
-            </p>
-
-            <AdminUserProfileOverview profile={editingUser} formatDateTime={formatDateTimeDa} />
-
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: theme.textLight,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                marginBottom: 10,
-              }}
-            >
-              Rediger felter
-            </div>
-
-            <form onSubmit={handleUpdateUser} className="pm-admin-form-stack">
-              <div className="pm-admin-form-grid-2">
-                <div>
-                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Fulde Navn</label>
-                  <input 
-                    type="text" 
-                    value={editingUser.full_name ?? editingUser.name ?? ''} 
-                    onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>ELO Rating</label>
-                  <input 
-                    type="number" 
-                    value={editingUser.elo_rating} 
-                    onChange={(e) => setEditingUser({ ...editingUser, elo_rating: e.target.value })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>
-                    Americano/Mexicano ELO
-                  </label>
-                  <input
-                    type="number"
-                    value={editingUser.americano_elo_rating}
-                    onChange={(e) =>
-                      setEditingUser({ ...editingUser, americano_elo_rating: e.target.value })
-                    }
-                    style={inputStyle}
-                  />
-                </div>
-              </div>
-
-              <div className="pm-admin-form-grid-2">
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ ...labelStyle, marginBottom: "6px", display: "block" }}>Niveau (Playtomic)</label>
-                  <PlaytomicLevelPicker
-                    value={editingUser.level}
-                    onChange={(n) => setEditingUser({ ...editingUser, level: n })}
-                  />
-                </div>
-                <div>
-                  <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Foretrukket side</label>
-                  <select 
-                    value={editingUser.court_side || ''} 
-                    onChange={(e) => setEditingUser({ ...editingUser, court_side: e.target.value })}
-                    style={inputStyle}
-                  >
-                    <option value="">Ikke valgt</option>
-                    <option value="backhand">Backhand</option>
-                    <option value="forehand">Forehand</option>
-                    <option value="both">Begge sider</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Område</label>
-                <select
-                  value={editingUser.area || ''}
-                  onChange={(e) => setEditingUser({ ...editingUser, area: e.target.value })}
-                  style={inputStyle}
-                >
-                  <option value="" disabled>Vælg område</option>
-                  {REGIONS.map((regionOption) => (
-                    <option key={regionOption} value={regionOption}>{regionOption}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Spillestil</label>
-                <select
-                  value={editingUser.play_style || ''}
-                  onChange={(e) => setEditingUser({ ...editingUser, play_style: e.target.value })}
-                  style={inputStyle}
-                >
-                  <option value="" disabled>Vælg spillestil</option>
-                  {PLAY_STYLES.map((styleOption) => (
-                    <option key={styleOption} value={styleOption}>{styleOption}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ ...labelStyle, marginBottom: "4px", display: "block" }}>Bio / Om mig</label>
-                <textarea 
-                  value={editingUser.bio || ''} 
-                  onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })}
-                  style={{ ...inputStyle, minHeight: "60px", resize: "vertical" }}
-                />
-              </div>
-              
-              <div className={`pm-admin-panel-box ${editingUser.is_banned ? 'pm-admin-panel-box--danger' : ''}`}>
-                <div className="pm-admin-panel-head">
-                  <div>
-                    <div className={`pm-admin-panel-title ${editingUser.is_banned ? 'pm-admin-panel-title--danger' : ''}`}>
-                      {editingUser.is_banned ? 'Brugeren er UDELUKKET' : 'Status: Aktiv'}
-                    </div>
-                    <div className="pm-admin-panel-copy">
-                      {editingUser.is_banned ? 'Brugeren kan ikke logge ind.' : 'Brugeren har normal adgang.'}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setEditingUser({ ...editingUser, is_banned: !editingUser.is_banned })}
-                    className="pm-admin-action-chip"
-                    style={{
-                      ...btn(editingUser.is_banned),
-                      background: editingUser.is_banned ? theme.accent : theme.red,
-                      borderColor: editingUser.is_banned ? theme.accent : theme.red,
-                    }}
-                  >
-                    {editingUser.is_banned ? 'Ophæv ban' : 'Udeluk spiller'}
-                  </button>
-                </div>
-
-                {editingUser.is_banned ? (
-                  <div style={{ marginTop: '12px' }}>
-                    <label style={{ ...labelStyle, marginBottom: '4px', display: 'block' }}>Begrundelse (vises til spilleren)</label>
-                    <textarea
-                      value={editingUser.ban_reason || ''}
-                      onChange={(e) => setEditingUser({ ...editingUser, ban_reason: e.target.value })}
-                      placeholder="Skriv hvorfor spilleren er udelukket..."
-                      style={{ ...inputStyle, minHeight: '50px', fontSize: '12px', background: theme.surface, borderColor: `${theme.red}40` }}
-                    />
-                  </div>
-                ) : null}
-              </div>
-
-              <div className={`pm-admin-panel-box ${editingUser.phone_verification_exempt ? 'pm-admin-panel-box--accent' : ''}`}>
-                <div className="pm-admin-panel-head pm-admin-panel-head--start">
-                  <Smartphone
-                    size={16}
-                    style={{ color: editingUser.phone_verification_exempt ? theme.accent : theme.textLight, flexShrink: 0, marginTop: '2px' }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className={`pm-admin-panel-title ${editingUser.phone_verification_exempt ? 'pm-admin-panel-title--accent' : ''}`}>
-                      {editingUser.phone_verification_exempt ? 'Ingen telefon-SMS påkrævet' : 'Telefon-SMS påkrævet ved login'}
-                    </div>
-                    <div className="pm-admin-panel-copy">
-                      {editingUser.phone_verification_exempt
-                        ? 'Brugeren kan bruge appen uden bekræftet telefonnummer (fx testkonto).'
-                        : 'Brugeren skal bekræfte telefonnummer med SMS, hvis de mangler det ved login.'}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditingUser({
-                        ...editingUser,
-                        phone_verification_exempt: !editingUser.phone_verification_exempt,
-                      })
-                    }
-                    className="pm-admin-action-chip"
-                    style={{
-                      ...btn(editingUser.phone_verification_exempt),
-                      background: editingUser.phone_verification_exempt ? theme.textMid : theme.accent,
-                      borderColor: editingUser.phone_verification_exempt ? theme.textMid : theme.accent,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {editingUser.phone_verification_exempt ? 'Kræv telefon igen' : 'Undtag (test)'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="pm-admin-form-actions">
-                <button type="button" onClick={closeUserEditor} style={{ ...btn(false), flex: 1 }} disabled={editingUserLoading || editingUserSaving}>
-                  Annuller
-                </button>
-                <button type="submit" style={{ ...btn(true), flex: 1 }} disabled={editingUserLoading || editingUserSaving}>
-                  {editingUserSaving ? 'Gemmer...' : 'Gem ændringer'}
-                </button>
-              </div>
-            </form>
-          </div>
-        ) : null}
-      </AppModal>
+        onChange={setEditingUser}
+        onSubmit={handleUpdateUser}
+      />
       <AdminReportDmViewer
         open={!!dmViewerReport}
         onClose={() => setDmViewerReport(null)}

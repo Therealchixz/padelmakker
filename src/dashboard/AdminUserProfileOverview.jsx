@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { MapPin } from 'lucide-react';
 import { theme, tag } from '../lib/platformTheme';
 import { availabilityTags } from '../lib/platformUtils';
@@ -64,7 +65,7 @@ const COURT_SIDE_LABELS = {
 /**
  * Read-only profiloversigt i admin — samme kerneinformation som Find makker / profil-modal.
  */
-export function AdminUserProfileOverview({ profile, formatDateTime }) {
+export const AdminUserProfileOverview = memo(function AdminUserProfileOverview({ profile, formatDateTime }) {
   if (!profile) return null;
 
   const p = profile;
@@ -232,4 +233,4 @@ export function AdminUserProfileOverview({ profile, formatDateTime }) {
       </Section>
     </div>
   );
-}
+});
