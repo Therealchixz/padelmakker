@@ -2,6 +2,7 @@ import { CalendarDays, Clock, LayoutGrid, MapPin } from 'lucide-react'
 import { AvatarCircle } from '../../components/AvatarCircle'
 import { formatMatchDateHeadlineDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import {
+  formatAmericanoLiveRoundLabel,
   formatCourtsBenchCompact,
   getAmericanoTournamentMeta,
   getAmericanoDurationLabel,
@@ -89,9 +90,10 @@ export function AmericanoListCard({
     badgeTone = 'closed'
   } else if (isPlaying) {
     badgeTone = 'live'
+    const activeRound = roundProgress?.liveRound ?? liveRound
     badgeLabel =
-      (roundProgress?.liveRound ?? liveRound) != null && totalRounds > 0
-        ? `Live Runde ${roundProgress?.liveRound ?? liveRound}/${totalRounds}`
+      activeRound != null && totalRounds > 0
+        ? formatAmericanoLiveRoundLabel(activeRound, totalRounds)
         : 'I gang'
   } else if (tournamentFull) {
     badgeLabel = 'Fuld'

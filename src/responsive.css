@@ -6331,7 +6331,7 @@ button,
   z-index: 49;
   background: var(--pm-surface);
   border-radius: 18px 18px 0 0;
-  padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+  padding: max(12px, env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom));
   box-shadow: 0 -12px 40px rgba(2, 6, 23, 0.18);
   max-height: min(85vh, 640px);
   overflow-y: auto;
@@ -6909,10 +6909,13 @@ button,
 
 .pm-kampe-v2-detail-head-right {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   flex-shrink: 0;
+  max-width: min(168px, 46vw);
 }
 
 .pm-kampe-v2-detail-type {
@@ -7392,7 +7395,7 @@ button,
 }
 
 .pm-americano-v2-detail-sheet {
-  max-height: min(92vh, 860px);
+  max-height: min(92vh, calc(100dvh - env(safe-area-inset-top, 0px) - 12px), 860px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -7428,10 +7431,13 @@ button,
 
 .pm-americano-v2-detail-head-right {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   flex-shrink: 0;
+  max-width: min(168px, 46vw);
 }
 
 .pm-americano-v2-detail-type {

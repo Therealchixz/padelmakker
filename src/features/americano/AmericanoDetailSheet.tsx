@@ -4,6 +4,7 @@ import { MapPin, Plus, X } from 'lucide-react'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
 import {
+  formatAmericanoLiveRoundLabel,
   formatCourtsBenchDetail,
   getAmericanoTournamentMeta,
   getAmericanoDurationLabel,
@@ -208,7 +209,7 @@ export function AmericanoDetailSheet({
     badgeTone = 'live'
     badgeLabel =
       activeLiveRound != null && totalRounds > 0
-        ? `Live Runde ${activeLiveRound}/${totalRounds}`
+        ? formatAmericanoLiveRoundLabel(activeLiveRound, totalRounds)
         : 'I gang'
   } else if (tournamentFull) {
     badgeLabel = 'Fuld'

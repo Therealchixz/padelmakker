@@ -229,7 +229,12 @@ export function getAmericanoRoundProgressFromMatches(matches: MatchRow[]) {
   }
 }
 
-/** Første runde uden låst resultat — bruges til «Live Runde X/Y» på listekort. */
+/** Kompakt live-badge (undgår overlap med statusbar på små skærme). */
+export function formatAmericanoLiveRoundLabel(liveRound: number, totalRounds: number): string {
+  return `Live ${liveRound}/${totalRounds}`
+}
+
+/** Første runde uden låst resultat — bruges til live-badge på listekort. */
 export function computeAmericanoActiveRound(matches: MatchRow[]) {
   const sorted = [...matches].sort((a, b) => {
     if (a.round_number !== b.round_number) return a.round_number - b.round_number
