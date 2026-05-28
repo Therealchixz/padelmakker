@@ -1,5 +1,5 @@
 -- =============================================================================
--- Fix admin Americano/Mexicano ELO adjustment recalculation
+-- Ensure admin Americano ELO edits keep history chain + profile in sync
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION public.admin_adjust_americano_elo(p_user_id uuid, p_new_elo int)
@@ -55,7 +55,6 @@ BEGIN
     v_target_base := p_new_elo - v_total_change;
     v_running_rating := v_target_base;
 
-    -- Rebuild old/new rating chain deterministically so history and profile stay in sync.
     FOR v_row IN
       SELECT id, change
       FROM public.americano_elo_history
@@ -71,7 +70,6 @@ BEGIN
       v_running_rating := v_running_rating + COALESCE(v_row.change, 0);
     END LOOP;
 
-    -- Final safeguard in case no rows were updated in the loop.
     UPDATE public.americano_elo_history
     SET
       old_rating = v_target_base,

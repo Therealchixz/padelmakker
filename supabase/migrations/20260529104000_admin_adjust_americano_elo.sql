@@ -11,8 +11,11 @@ AS $$
 DECLARE
   v_current_elo int;
   v_first_id uuid;
-  v_diff int;
+  v_target_base int;
   v_played int := 0;
+  v_total_change int := 0;
+  v_running_rating int;
+  v_row record;
 BEGIN
   IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'Adgang nægtet: Kun admins kan justere Americano/Mexicano ELO manuelt.';
@@ -44,9 +47,35 @@ BEGIN
   LIMIT 1;
 
   IF v_first_id IS NOT NULL THEN
-    v_diff := p_new_elo - v_current_elo;
+    SELECT COALESCE(SUM(change), 0)::int
+    INTO v_total_change
+    FROM public.americano_elo_history
+    WHERE user_id = p_user_id;
+
+    v_target_base := p_new_elo - v_total_change;
+    v_running_rating := v_target_base;
+
+    -- Rebuild old/new rating chain deterministically so history and profile stay in sync.
+    FOR v_row IN
+      SELECT id, change
+      FROM public.americano_elo_history
+      WHERE user_id = p_user_id
+      ORDER BY created_at ASC, tournament_id ASC, id ASC
+    LOOP
+      UPDATE public.americano_elo_history
+      SET
+        old_rating = v_running_rating,
+        new_rating = v_running_rating + COALESCE(v_row.change, 0)
+      WHERE id = v_row.id;
+
+      v_running_rating := v_running_rating + COALESCE(v_row.change, 0);
+    END LOOP;
+
+    -- Final safeguard in case no rows were updated in the loop.
     UPDATE public.americano_elo_history
-    SET old_rating = old_rating + v_diff
+    SET
+      old_rating = v_target_base,
+      new_rating = v_target_base + COALESCE(change, 0)
     WHERE id = v_first_id;
 
     PERFORM public.recalc_americano_elo_from_history(p_user_id);
