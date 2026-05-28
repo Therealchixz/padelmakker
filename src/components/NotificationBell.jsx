@@ -621,6 +621,7 @@ export function NotificationBell({ tourForceOpen = false }) {
       <button
         type="button"
         className="pm-notification-bell-btn"
+        data-has-unread={unreadCount > 0 ? 'true' : undefined}
         onClick={() => { setOpen(!open); if (!open) load(); }}
         style={{ ...iconBtn, position: "relative" }}
         aria-label={
