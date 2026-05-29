@@ -13,7 +13,8 @@ export const LEGACY_ADMIN_REGION_TO_APP = {
   'Region Nordjylland': 'Nordjylland',
   'Region Hovedstaden': 'Hovedstaden',
   'Region Sjælland': 'Sjælland',
-  'Region Syddanmark': 'Sønderjylland',
+  'Region Syddanmark': 'Sydjylland',
+  Sønderjylland: 'Sydjylland',
   'Region Midtjylland': 'Østjylland',
 };
 

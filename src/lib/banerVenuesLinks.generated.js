@@ -677,7 +677,7 @@ export const BANER_VENUES_LINKS = [
     "title": "Breinholtgård Golf Klub",
     "address": "Esbjerg V — se booking-link",
     "indoor": false,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "https://padel-esbjerg.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
@@ -687,7 +687,7 @@ export const BANER_VENUES_LINKS = [
     "title": "EGIF Tennis og Padel",
     "address": "Fredericia — se booking-link",
     "indoor": false,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "https://www.egiftennis.dk/newlook/default.asp?f=skiftprefix",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
@@ -697,7 +697,7 @@ export const BANER_VENUES_LINKS = [
     "title": "Hjerting IF Padel",
     "address": "Esbjerg — se booking-link",
     "indoor": false,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "http://hjertingif.dk/Padel/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
@@ -707,7 +707,7 @@ export const BANER_VENUES_LINKS = [
     "title": "Løgum IF Tennis",
     "address": "Løgumkloster — se booking-link",
     "indoor": false,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "https://loegumif.dk/idraetstilbud/tennis-padeltennis/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
@@ -717,7 +717,7 @@ export const BANER_VENUES_LINKS = [
     "title": "Padel Club Sønderborg",
     "address": "Sønderborg — se booking-link",
     "indoor": true,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "https://padelsoenderborg.dk/da",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
@@ -727,7 +727,7 @@ export const BANER_VENUES_LINKS = [
     "title": "Padel Club Tønder",
     "address": "Tønder — se booking-link",
     "indoor": true,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "https://padeltoender.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
@@ -737,7 +737,7 @@ export const BANER_VENUES_LINKS = [
     "title": "Rocket Padel Esbjerg",
     "address": "Esbjerg — se booking-link",
     "indoor": true,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "https://rocketpadel.dk/centre/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
@@ -747,7 +747,7 @@ export const BANER_VENUES_LINKS = [
     "title": "Rocket Padel Sønderborg",
     "address": "Sønderborg — se booking-link",
     "indoor": true,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "https://rocketpadel.dk/centre/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
@@ -757,7 +757,7 @@ export const BANER_VENUES_LINKS = [
     "title": "Sig Tennis og Padelklub",
     "address": "Varde — se booking-link",
     "indoor": false,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "https://sig.dk/sport/sig-tennisklub",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
@@ -767,7 +767,7 @@ export const BANER_VENUES_LINKS = [
     "title": "Sport & Event Park Esbjerg",
     "address": "Esbjerg — se booking-link",
     "indoor": true,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "https://www.sepe.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },
@@ -777,7 +777,7 @@ export const BANER_VENUES_LINKS = [
     "title": "Vilstrup Ungdoms og Idrætsforening",
     "address": "Haderslev — se booking-link",
     "indoor": true,
-    "region": "Sønderjylland",
+    "region": "Sydjylland",
     "bookingUrl": "http://www.vuif.dk/",
     "note": "Fra Padellife-oversigten. Ledige tider vises på centrets side — PadelMakker henter dem ikke inline."
   },

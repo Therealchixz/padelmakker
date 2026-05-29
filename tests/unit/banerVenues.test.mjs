@@ -166,12 +166,12 @@ test('Skagen Padelcenter er indendørs (MATCHi: Padel INDOORS)', () => {
   assert.match(skagen?.bookingUrl || '', /SkagenPadelcenter$/);
 });
 
-test('Odense is on Fyn; Sønderjylland has southern Jutland venues', () => {
+test('Odense is on Fyn; Sydjylland has southern Jutland venues', () => {
   const odense = BANER_VENUES.find((v) => v.id === 'match_padel_odense');
   assert.equal(odense?.region, 'Fyn');
   assert.ok(BANER_REGION_ORDER.includes('Fyn'));
-  assert.ok(BANER_REGION_ORDER.includes('Sønderjylland'));
+  assert.ok(BANER_REGION_ORDER.includes('Sydjylland'));
   assert.ok(!BANER_REGION_ORDER.includes('Syddanmark'));
-  const sonder = BANER_VENUES.filter((v) => v.region === 'Sønderjylland');
+  const sonder = BANER_VENUES.filter((v) => v.region === 'Sydjylland');
   assert.ok(sonder.length >= 2);
 });

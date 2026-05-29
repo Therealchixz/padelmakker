@@ -56,7 +56,7 @@ export function FaqPage() {
 
       <Q title="Hvilke regioner understøttes?">
         <p style={{ margin: 0 }}>
-          Profilen bruger de samme otte landsdele som under Baner (Nordjylland, Vestjylland, Østjylland, Sønderjylland,
+          Profilen bruger de samme otte landsdele som under Baner (Nordjylland, Vestjylland, Østjylland, Sydjylland,
           Fyn, Sjælland, Hovedstaden og Bornholm), så du kan angive præcis hvor du helst spiller.
         </p>
       </Q>

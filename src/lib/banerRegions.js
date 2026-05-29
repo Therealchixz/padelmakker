@@ -3,7 +3,7 @@
  * @see https://www.dst.dk/da/Statistik/dokumentation/nomenklaturer/nuts
  *
  * Region Midtjylland opdeles statistisk i Vestjylland + Østjylland.
- * Region Syddanmark (Jylland-delen) svarer til Sønderjylland i appen (syd for Kongeå + vestkysten).
+ * Region Syddanmark (Jylland-delen) svarer til Sydjylland i appen (syd for Kongeå + vestkysten).
  */
 
 /** @typedef {typeof BANER_REGION_ORDER[number]} BanerRegion */
@@ -12,7 +12,7 @@ export const BANER_REGION_ORDER = [
   'Nordjylland',
   'Vestjylland',
   'Østjylland',
-  'Sønderjylland',
+  'Sydjylland',
   'Fyn',
   'Sjælland',
   'Hovedstaden',
@@ -20,11 +20,7 @@ export const BANER_REGION_ORDER = [
 ];
 
 /** Kort forklaring under overskrift (valgfri) */
-export const BANER_REGION_SUBTITLE = {
-  Sønderjylland: 'også kaldet sydjylland',
-  Vestjylland: 'Herning, Holstebro, Lemvig, Viborg m.fl.',
-  Østjylland: 'Aarhus, Randers, Horsens, Silkeborg, Djursland m.fl.',
-};
+export const BANER_REGION_SUBTITLE = {};
 
 /**
  * Byer/kommuner i DST-landsdelen Vestjylland (groft match på stednavn i adresse).
