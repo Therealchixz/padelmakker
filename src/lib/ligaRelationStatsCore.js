@@ -1,3 +1,5 @@
+import { pickHardestOpponents, pickToughestByWinRate } from './relationRankingUtils.js';
+
 const MIN_MATCHES_TOGETHER = 1;
 const TOP_N = 3;
 
@@ -81,37 +83,20 @@ export function aggregateLigaRelationStats({ matches, teamsById, userId }) {
   const eligiblePartners = all.filter((p) => p.asPartner.matches >= MIN_MATCHES_TOGETHER);
   const eligibleOpponents = all.filter((p) => p.asOpponent.matches >= MIN_MATCHES_TOGETHER);
 
+  const partnerRate = (p) => winRate(p.asPartner.wins, p.asPartner.matches);
+  const opponentRate = (p) => winRate(p.asOpponent.wins, p.asOpponent.matches);
+
   const bestPartners = [...eligiblePartners]
-    .sort(
-      (a, b) =>
-        winRate(b.asPartner.wins, b.asPartner.matches)
-        - winRate(a.asPartner.wins, a.asPartner.matches),
-    )
+    .sort((a, b) => partnerRate(b) - partnerRate(a))
     .slice(0, TOP_N);
 
-  const toughestPartners = [...eligiblePartners]
-    .sort(
-      (a, b) =>
-        winRate(a.asPartner.wins, a.asPartner.matches)
-        - winRate(b.asPartner.wins, b.asPartner.matches),
-    )
-    .slice(0, TOP_N);
-
-  const hardestOpponents = [...eligibleOpponents]
-    .sort(
-      (a, b) =>
-        winRate(a.asOpponent.wins, a.asOpponent.matches)
-        - winRate(b.asOpponent.wins, b.asOpponent.matches),
-    )
-    .slice(0, TOP_N);
+  const toughestPartners = pickToughestByWinRate(eligiblePartners, partnerRate, TOP_N);
 
   const easiestOpponents = [...eligibleOpponents]
-    .sort(
-      (a, b) =>
-        winRate(b.asOpponent.wins, b.asOpponent.matches)
-        - winRate(a.asOpponent.wins, a.asOpponent.matches),
-    )
+    .sort((a, b) => opponentRate(b) - opponentRate(a))
     .slice(0, TOP_N);
+
+  const hardestOpponents = pickHardestOpponents(eligibleOpponents, opponentRate, TOP_N);
 
   return {
     bestPartners,

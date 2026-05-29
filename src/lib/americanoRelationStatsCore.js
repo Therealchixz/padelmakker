@@ -1,3 +1,5 @@
+import { pickHardestOpponents, pickToughestByWinRate } from './relationRankingUtils.js';
+
 const MIN_ROUNDS_TOGETHER = 1;
 const TOP_N = 3;
 
@@ -111,37 +113,20 @@ export function aggregateAmericanoRelationStats({
   const eligiblePartners = all.filter((p) => p.asPartner.rounds >= MIN_ROUNDS_TOGETHER);
   const eligibleOpponents = all.filter((p) => p.asOpponent.rounds >= MIN_ROUNDS_TOGETHER);
 
+  const partnerRate = (p) => winRate(p.asPartner.wins, p.asPartner.rounds);
+  const opponentRate = (p) => winRate(p.asOpponent.wins, p.asOpponent.rounds);
+
   const bestPartners = [...eligiblePartners]
-    .sort(
-      (a, b) =>
-        winRate(b.asPartner.wins, b.asPartner.rounds)
-        - winRate(a.asPartner.wins, a.asPartner.rounds),
-    )
+    .sort((a, b) => partnerRate(b) - partnerRate(a))
     .slice(0, TOP_N);
 
-  const toughestPartners = [...eligiblePartners]
-    .sort(
-      (a, b) =>
-        winRate(a.asPartner.wins, a.asPartner.rounds)
-        - winRate(b.asPartner.wins, b.asPartner.rounds),
-    )
-    .slice(0, TOP_N);
-
-  const hardestOpponents = [...eligibleOpponents]
-    .sort(
-      (a, b) =>
-        winRate(a.asOpponent.wins, a.asOpponent.rounds)
-        - winRate(b.asOpponent.wins, b.asOpponent.rounds),
-    )
-    .slice(0, TOP_N);
+  const toughestPartners = pickToughestByWinRate(eligiblePartners, partnerRate, TOP_N);
 
   const easiestOpponents = [...eligibleOpponents]
-    .sort(
-      (a, b) =>
-        winRate(b.asOpponent.wins, b.asOpponent.rounds)
-        - winRate(a.asOpponent.wins, a.asOpponent.rounds),
-    )
+    .sort((a, b) => opponentRate(b) - opponentRate(a))
     .slice(0, TOP_N);
+
+  const hardestOpponents = pickHardestOpponents(eligibleOpponents, opponentRate, TOP_N);
 
   return {
     bestPartners,

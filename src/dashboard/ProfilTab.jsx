@@ -1034,8 +1034,8 @@ export function ProfilTab({ user, showToast, setTab }) {
                       <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.rounds} runder sammen</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((p.asPartner.wins / p.asPartner.rounds) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr som makker</div>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((1 - p.asPartner.wins / p.asPartner.rounds) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>nederlag som makker</div>
                     </div>
                   </div>
                 ))}
@@ -1114,8 +1114,8 @@ export function ProfilTab({ user, showToast, setTab }) {
                       <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.matches} kampe sammen</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((p.asPartner.wins / p.asPartner.matches) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr som makker</div>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((1 - p.asPartner.wins / p.asPartner.matches) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>nederlag som makker</div>
                     </div>
                   </div>
                 ))}
