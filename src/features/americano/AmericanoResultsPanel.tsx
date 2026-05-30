@@ -19,6 +19,7 @@ import {
   isMexicanoFormat,
 } from '../../lib/mexicanoSchedule.js'
 import { getTournamentFormatLabel } from './americanoDisplayUtils'
+import { orderParticipantsForSchedule } from '../../lib/americanoParticipantOrder'
 
 const font = 'var(--pm-font)'
 
@@ -304,16 +305,8 @@ export function AmericanoResultsPanel({
   const formatLabel = getTournamentFormatLabel(tournament.format)
 
   const participantIdsOrdered = useMemo(
-    () =>
-      [...participants]
-        .sort((a, b) => {
-          const ta = new Date(a.joined_at).getTime()
-          const tb = new Date(b.joined_at).getTime()
-          if (ta !== tb) return ta - tb
-          return String(a.id).localeCompare(String(b.id))
-        })
-        .map((p) => p.id),
-    [participants],
+    () => orderParticipantsForSchedule(participants, tournament.id),
+    [participants, tournament.id],
   )
 
   const mexicanoProgress = useMemo(() => {
@@ -367,14 +360,7 @@ export function AmericanoResultsPanel({
         const advanced = await advanceMexicanoRoundIfReady({
           supabase,
           tournament,
-          participantIdsInJoinOrder: [...plist]
-            .sort((a, b) => {
-              const ta = new Date(a.joined_at).getTime()
-              const tb = new Date(b.joined_at).getTime()
-              if (ta !== tb) return ta - tb
-              return String(a.id).localeCompare(String(b.id))
-            })
-            .map((p) => p.id),
+          participantIdsInJoinOrder: orderParticipantsForSchedule(plist, tournament.id),
           matches: mlist,
           showToast,
         })

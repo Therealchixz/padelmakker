@@ -438,6 +438,7 @@ export function americanoTotalRounds(
 
 export function buildAmericanoRoundRobinMatchRows(
   tournamentId: string,
+  /** Deltager-ids i schedule-rækkefølge (shuffle ved start — ikke join-rækkefølge). */
   participantIds: string[],
   courtsPerRound = 1,
   passes: 1 | 2 = 1,

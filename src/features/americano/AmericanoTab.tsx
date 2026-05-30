@@ -15,6 +15,7 @@ import {
 import { computeAmericanoPlayedDurationMinutes } from '../../lib/americanoPlayedDuration.js'
 import { buildMexicanoStartRoundRows, isMexicanoFormat } from '../../lib/mexicanoSchedule.js'
 import { buildAmericanoRoundRobinMatchRows } from '../../lib/americanoRoundRobinSchedule'
+import { orderParticipantsForSchedule } from '../../lib/americanoParticipantOrder'
 import type { AmericanoTournament, AmericanoParticipant } from './types'
 import { formatMatchDateDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import { PillTabs } from '../../components/PillTabs'
@@ -599,7 +600,7 @@ export function AmericanoTab({
       const list = (parts || []) as Pick<AmericanoParticipant, 'id' | 'joined_at'>[]
       const slots = Number(t.player_slots)
       const n = list.length
-      const participantIds = list.map((p) => p.id)
+      const participantIds = orderParticipantsForSchedule(list, t.id)
       const format = t.format ?? 'americano'
       let matchRows
       const passes: 1 | 2 = Number(t.opponent_passes) === 2 ? 2 : 1
