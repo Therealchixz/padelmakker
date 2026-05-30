@@ -160,7 +160,6 @@ test('LIVE: opret turnering i Supabase, start med 5, ryd op', { skip: !forceLive
     assert.ifError(pErr);
     assert.equal(parts?.length, 5);
 
-    const joinOrder = parts.map((p) => p.id);
     const scheduleOrder = orderParticipantsForSchedule(
       parts.map((p) => ({ id: p.id, joined_at: p.joined_at })),
       tid,
