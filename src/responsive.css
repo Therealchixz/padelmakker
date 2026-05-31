@@ -8485,6 +8485,7 @@ button,
 .pm-kampe-v2-sheet.pm-liga-v2-team-sheet {
   display: flex;
   flex-direction: column;
+  height: min(85vh, 640px);
   max-height: min(92vh, 720px);
   overflow: hidden;
   padding-bottom: 0;
@@ -8522,7 +8523,7 @@ button,
 .pm-liga-v2-team-body {
   display: flex;
   flex-direction: column;
-  flex: 1 1 0;
+  flex: 1;
   min-height: 0;
   padding: 0 16px calc(12px + env(safe-area-inset-bottom));
 }
@@ -8534,7 +8535,7 @@ button,
 .pm-liga-v2-team-chat-wrap {
   display: flex;
   flex-direction: column;
-  flex: 1 1 0;
+  flex: 1;
   min-height: 0;
   margin-top: 12px;
   padding-top: 12px;
@@ -8666,7 +8667,7 @@ button,
 .pm-liga-v2-team-chat-panel {
   display: flex;
   flex-direction: column;
-  flex: 1 1 0;
+  flex: 1;
   min-height: 0;
   padding: 0;
   border-radius: 12px;
@@ -8686,9 +8687,8 @@ button,
 }
 
 .pm-liga-v2-team-chat-list.pm-match-chat-list {
-  flex: 1 1 0;
-  height: 0;
-  min-height: 120px;
+  flex: 1;
+  min-height: 0;
   max-height: none;
   overflow-y: auto;
   overflow-x: hidden;
@@ -8698,6 +8698,12 @@ button,
   padding: 8px 10px;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--pm-accent) 40%, var(--pm-border)) transparent;
+}
+
+@media (max-width: 768px) {
+  .pm-kampe-v2-sheet.pm-liga-v2-team-sheet {
+    height: min(88vh, 720px);
+  }
 }
 
 .pm-liga-v2-team-chat-panel .pm-match-chat-composer {
