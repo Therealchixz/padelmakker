@@ -3,17 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
-import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
-import { completionMsForLeague } from '../lib/resultErrorReports';
-import { Trophy, Users, Plus, Play, ChevronDown, ChevronUp, Search } from 'lucide-react';
-import { AvatarCircle } from '../components/AvatarCircle';
+import { Trophy, Plus } from 'lucide-react';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
-import { formatMatchDateDa } from '../lib/matchDisplayUtils';
-import { AppModal } from '../components/AppModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
-import { LigaOpenCard } from './LigaOpenCard';
+import { LigaListCard } from './LigaListCard';
+import { LigaDetailSheet } from './LigaDetailSheet';
+import { LigaScheduleSheet } from './LigaScheduleSheet';
+import { LigaTeamProfileSheet } from './LigaTeamProfileSheet';
+import { LigaSelectedDetail, SwissRulesBox } from './LigaSelectedDetail';
+import { computeStandings, generatePairings } from '../lib/ligaStandings';
+import { getLigaBadge } from '../lib/ligaDisplayUtils';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
@@ -22,682 +23,18 @@ import { useScrollIntoViewWhen } from '../lib/useScrollIntoViewWhen';
 import { DateInputField } from '../components/DateInputField';
 import { profileAreaMatchesKampeRegionFilter } from '../lib/kampeListFilterCore';
 
-function isTiebreakScore(scoreText) {
-  return !!(scoreText && /7-6|6-7/.test(scoreText));
-}
-
-function parseGameDiff(scoreText, winnerId, team1Id) {
-  if (!scoreText) return 0;
-  const m = scoreText.trim().match(/^(\d+)-(\d+)$/);
-  if (!m) return 0;
-  const a = parseInt(m[1], 10), b = parseInt(m[2], 10);
-  // max(a,b) always belongs to winner; min(a,b) to loser
-  const winnerGames = Math.max(a, b), loserGames = Math.min(a, b);
-  // return diff from team1 perspective
-  return winnerId === team1Id ? winnerGames - loserGames : loserGames - winnerGames;
-}
-
-function computeStandings(teams, matches) {
-  const map = {};
-  for (const t of teams) map[t.id] = { ...t, points: 0, wins: 0, losses: 0, played: 0, gameDiff: 0 };
-  for (const m of matches) {
-    if (m.status !== 'reported' || !m.winner_id) continue;
-    const winner = map[m.winner_id];
-    const loserId = m.winner_id === m.team1_id ? m.team2_id : m.team1_id;
-    const loser = loserId ? map[loserId] : null;
-    const tb = isTiebreakScore(m.score_text);
-    const diffT1 = parseGameDiff(m.score_text, m.winner_id, m.team1_id);
-    if (winner) {
-      winner.wins++; winner.points += 3; winner.played++;
-      winner.gameDiff += m.winner_id === m.team1_id ? diffT1 : -diffT1;
-    }
-    if (loser) {
-      loser.losses++; if (tb) loser.points += 1; loser.played++;
-      loser.gameDiff += loserId === m.team1_id ? diffT1 : -diffT1;
-    }
-  }
-  return Object.values(map).sort((a, b) =>
-    b.points   !== a.points   ? b.points   - a.points   :
-    b.gameDiff !== a.gameDiff ? b.gameDiff - a.gameDiff :
-    b.wins     !== a.wins     ? b.wins     - a.wins     :
-    b.elo_combined - a.elo_combined
-  );
-}
-
-function generatePairings(standings, allMatches) {
-  const played = new Set(
-    allMatches
-      .filter(m => m.team1_id && m.team2_id)
-      .map(m => [m.team1_id, m.team2_id].sort().join('|'))
-  );
-  const pairings = [];
-  const used = new Set();
-  for (let i = 0; i < standings.length; i++) {
-    if (used.has(standings[i].id)) continue;
-    const t1 = standings[i];
-    let paired = false;
-    for (let j = i + 1; j < standings.length; j++) {
-      if (used.has(standings[j].id)) continue;
-      const t2 = standings[j];
-      if (played.has([t1.id, t2.id].sort().join('|'))) continue;
-      pairings.push({ team1_id: t1.id, team2_id: t2.id });
-      used.add(t1.id); used.add(t2.id);
-      paired = true; break;
-    }
-    if (!paired && !used.has(t1.id)) {
-      pairings.push({ team1_id: t1.id, team2_id: null });
-      used.add(t1.id);
-    }
-  }
-  return pairings;
-}
-
-function validatePadelScore(score) {
-  const s = score.trim();
-  if (!s) return 'Angiv scoren før du indberetter resultatet.';
-  const m = s.match(/^(\d+)-(\d+)$/);
-  if (!m) return 'Scoren skal skrives som X-Y, f.eks. 6-4';
-  const a = parseInt(m[1], 10);
-  const b = parseInt(m[2], 10);
-  const hi = Math.max(a, b);
-  const lo = Math.min(a, b);
-  if ((hi === 6 && lo <= 4) || (hi === 7 && (lo === 5 || lo === 6))) return null;
-  return 'Ugyldig padel-score. Gyldige resultater: 6-0 → 6-4, 7-5 eller 7-6';
-}
-
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
-const STATUS_LABELS = { registration: 'Tilmelding åben', active: 'Aktiv', completed: 'Afsluttet' };
 
-const SWISS_RULES = [
-  { icon: '🎾', text: 'Hvert hold spiller én kamp per runde — ingen eliminering, alle spiller videre.' },
-  { icon: '📊', text: 'Hold parres mod andre med samme pointtal. Jo flere runder, jo mere præcis ranglisten bliver.' },
-  { icon: '🔁', text: 'To hold mødes aldrig hinanden mere end én gang i samme turnering.' },
-  { icon: '🏆', text: 'Point: Sejr = 3 · Tab i tiebreak (7-6) = 1 · Klart tab = 0.' },
-  { icon: '📏', text: 'Ved pointlighed afgøres placeringen af spilsforskel (antal games vundet minus tabt).' },
-  { icon: '🔢', text: 'Antal runder beregnes automatisk: 3 hold → 2 runder, 4 hold → 3 runder, 8 hold → 3 runder, 16 hold → 4 runder.' },
-  { icon: '🎯', text: 'Score er obligatorisk ved indberetning — gyldige: 6-0 til 6-4, 7-5 eller 7-6.' },
-  { icon: '⏸️', text: 'Næste runde genereres først når alle kampe i indeværende runde er indberettet.' },
-  { icon: '👥', text: 'Ulige antal hold? Ét hold får fri runde og tæller automatisk som sejr (3 point).' },
-  { icon: '📋', text: 'W = Wins (sejre) · L = Losses (nederlag) · Diff = spilsforskel (games vundet minus games tabt).' },
-];
-
-function SwissRulesBox({ collapsible = false, storageKey = '' }) {
-  const [open, setOpen] = useState(() => {
-    if (!collapsible) return true;
-    if (!storageKey) return false;
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved === null) return false;
-      return saved === '1' || saved.toLowerCase() === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    if (!collapsible || !storageKey) return;
-    try {
-      localStorage.setItem(storageKey, open ? '1' : '0');
-    } catch {
-      // ignore storage issues (private mode, quota, etc.)
-    }
-  }, [collapsible, storageKey, open]);
-  return (
-    <div className="pm-help-box">
-      <div className="pm-help-box-header">
-        <button
-          type="button"
-          onClick={() => collapsible && setOpen(o => !o)}
-          className="pm-help-box-toggle"
-          style={{ cursor: collapsible ? 'pointer' : 'default' }}
-        >
-          <span className="pm-help-box-title">Sådan fungerer Swiss-ligaen</span>
-          {collapsible && (
-            <span className="pm-help-box-chevron">
-              {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-            </span>
-          )}
-        </button>
-      </div>
-      {open && (
-        <div className="pm-help-box-content">
-          {SWISS_RULES.map((r, i) => (
-            <div key={i} className="pm-help-box-item">
-              <span style={{ flexShrink: 0 }}>{r.icon}</span>
-              <span>{r.text}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-const TEAM_PALETTE = [
-  'oklch(0.62 0.14 155)',
-  'oklch(0.55 0.14 255)',
-  'oklch(0.62 0.14 25)',
-  'oklch(0.58 0.15 295)',
-  'oklch(0.65 0.14 60)',
-  'oklch(0.55 0.14 195)',
-];
-
-function DotName({ teamId, name, teamColors }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-      <span style={{ width: 20, height: 20, borderRadius: '50%', background: teamColors[teamId] || theme.textLight, display: 'inline-grid', placeItems: 'center', fontSize: '10px', fontWeight: 700, color: theme.onAccent, flexShrink: 0 }}>
-        {name?.slice(0, 1).toUpperCase()}
-      </span>
-      <span style={{ fontFamily: 'system-ui', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em' }}>{name}</span>
-    </span>
-  );
-}
-
-function MatchDetailModal({ match, rn, teamMap, teamColors, prevStats, onClose }) {
-  const t1 = teamMap[match.team1_id];
-  const t2 = match.team2_id ? teamMap[match.team2_id] : null;
-  const reported = match.status === 'reported';
-  const t1Stats = prevStats[match.team1_id] || { wins: 0, losses: 0 };
-  const t2Stats = match.team2_id ? (prevStats[match.team2_id] || { wins: 0, losses: 0 }) : null;
-  const t1Wins = reported && (match.winner_id === match.team1_id || !match.team2_id);
-  const t2Wins = reported && !!t2 && match.winner_id === match.team2_id;
-
-  let t1Score = '—', t2Score = '—';
-  if (reported && match.score_text) {
-    const sp = match.score_text.match(/^(\d+)-(\d+)$/);
-    if (sp) {
-      const ws = Math.max(+sp[1], +sp[2]), ls = Math.min(+sp[1], +sp[2]);
-      t1Score = String(t1Wins ? ws : ls);
-      t2Score = String(t2Wins ? ws : ls);
-    }
-  }
-
-  const winner = t1Wins ? t1 : t2Wins ? t2 : null;
-  const statusLabel = !t2 ? 'Fri runde' : !reported ? 'Planlagt' : 'Afsluttet';
-  const resultLabel = !t2 ? `${t1?.name} — fri runde (automatisk sejr)` : !reported ? '—' : `${winner?.name} vinder ${Math.max(+t1Score || 0, +t2Score || 0)}–${Math.min(+t1Score || 0, +t2Score || 0)}`;
-
-  return (
-    <AppModal
-      open
-      onClose={onClose}
-      ariaLabel={`Ligakamp runde ${rn}`}
-      maxWidth={520}
-      zIndex={200}
-      contentStyle={{ padding: 0, overflow: 'hidden' }}
-    >
-      <div style={{ overflow: 'hidden' }}>
-        {/* Header */}
-        <div style={{ padding: '22px 26px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: theme.textLight, fontWeight: 600 }}>
-            Runde {rn}
-          </div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '8px', border: '1px solid ' + theme.border, background: theme.surfaceAlt, color: theme.textLight, cursor: 'pointer', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-            ×
-          </button>
-        </div>
-
-        {/* Score section */}
-        <div style={{ padding: '10px 26px 26px' }}>
-          {!t2 ? (
-            <div style={{ padding: '20px 0', borderBottom: `1px solid ${theme.border}`, textAlign: 'center' }}>
-              <DotName teamId={t1?.id} name={t1?.name} teamColors={teamColors} />
-              <div style={{ marginTop: '8px', fontSize: '12px', color: theme.textLight }}>{t1?.player1_name} · {t1?.player2_name}</div>
-              <div style={{ marginTop: '14px', fontSize: '13px', color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fri runde</div>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '16px', padding: '20px 0', borderBottom: `1px solid ${theme.border}` }}>
-              {/* Team 1 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', opacity: reported && !t1Wins ? 0.45 : 1 }}>
-                <DotName teamId={t1?.id} name={t1?.name} teamColors={teamColors} />
-                <div style={{ fontSize: '12px', color: theme.textLight }}>
-                  {[t1?.player1_name, t1?.player2_name].filter(Boolean).join(' · ')}
-                </div>
-                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t1Wins ? theme.text : theme.textLight, marginTop: '6px' }}>
-                  {t1Score}
-                </div>
-              </div>
-              {/* VS */}
-              <div style={{ color: theme.textLight, fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '18px', alignSelf: 'center' }}>vs</div>
-              {/* Team 2 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end', textAlign: 'right', opacity: reported && !t2Wins ? 0.45 : 1 }}>
-                <DotName teamId={t2?.id} name={t2?.name} teamColors={teamColors} />
-                <div style={{ fontSize: '12px', color: theme.textLight }}>
-                  {[t2?.player1_name, t2?.player2_name].filter(Boolean).join(' · ')}
-                </div>
-                <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '40px', fontWeight: 600, letterSpacing: '-0.02em', color: t2Wins ? theme.text : theme.textLight, marginTop: '6px' }}>
-                  {t2Score}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Info table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '16px', fontSize: '13px' }}>
-            <tbody>
-              {[
-                ['Runde', `Runde ${rn}`],
-                ['Status', statusLabel],
-                ['Resultat', resultLabel],
-                t2 && ['Records før', `${t1Stats.wins}W-${t1Stats.losses}L · ${t2Stats?.wins}W-${t2Stats?.losses}L`],
-              ].filter(Boolean).map(([label, value]) => (
-                <tr key={label} style={{ borderTop: `1px solid ${theme.border}` }}>
-                  <td style={{ padding: '10px 0', color: theme.textLight, fontSize: '12px' }}>{label}</td>
-                  <td style={{ padding: '10px 0', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, monospace', color: theme.text }}>{value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </AppModal>
-  );
-}
-
-function SwissBracket({ teams, matches, currentRound, totalRounds, myTeam }) {
-  const [open, setOpen] = useState(false);
-  const [highlightTeam, setHighlightTeam] = useState(null);
-  const [selectedMatch, setSelectedMatch] = useState(null);
-  const bracketRef = useRef(null);
-  const [connectors, setConnectors] = useState([]);
-  const [svgSize, setSvgSize] = useState({ w: 0, h: 0 });
-
-  const teamMap = useMemo(() => Object.fromEntries(teams.map(t => [t.id, t])), [teams]);
-
-  const teamColors = useMemo(() => {
-    const m = {};
-    teams.forEach((t, i) => { m[t.id] = TEAM_PALETTE[i % TEAM_PALETTE.length]; });
-    return m;
-  }, [teams]);
-
-  const teamMatchByRound = useMemo(() => {
-    const map = {};
-    for (const m of matches) {
-      for (const tid of [m.team1_id, m.team2_id].filter(Boolean)) {
-        if (!map[tid]) map[tid] = {};
-        map[tid][m.round_number] = m.id;
-      }
-    }
-    return map;
-  }, [matches]);
-
-  const { statsAfterRound, roundsMap, allRounds } = useMemo(() => {
-    const cumW = {}, cumL = {};
-    for (const t of teams) { cumW[t.id] = 0; cumL[t.id] = 0; }
-    const sar = {};
-    const rMap = {};
-    for (const m of matches) {
-      if (!rMap[m.round_number]) rMap[m.round_number] = [];
-      rMap[m.round_number].push(m);
-    }
-    const sortedRNs = Object.keys(rMap).map(Number).sort((a, b) => a - b);
-    for (const rn of sortedRNs) {
-      for (const m of rMap[rn]) {
-        if (m.status !== 'reported' || !m.winner_id) continue;
-        const loserId = m.winner_id === m.team1_id ? m.team2_id : m.team1_id;
-        if (cumW[m.winner_id] !== undefined) cumW[m.winner_id]++;
-        if (loserId && cumL[loserId] !== undefined) cumL[loserId]++;
-      }
-      sar[rn] = {};
-      for (const id of Object.keys(cumW)) sar[rn][id] = { wins: cumW[id], losses: cumL[id] };
-    }
-    const maxR = Math.max(totalRounds || 0, currentRound || 0, ...Object.keys(rMap).map(Number), 1);
-    const allR = Array.from({ length: maxR }, (_, i) => i + 1);
-    return { statsAfterRound: sar, roundsMap: rMap, allRounds: allR };
-  }, [matches, teams, totalRounds, currentRound]);
-
-  useEffect(() => {
-    if (!open) { setConnectors([]); return; }
-    const compute = () => {
-      if (!bracketRef.current) return;
-      const br = bracketRef.current;
-      const bracketRect = br.getBoundingClientRect();
-      setSvgSize({ w: br.scrollWidth, h: br.scrollHeight });
-      const lines = [];
-      for (let ri = 0; ri < allRounds.length - 1; ri++) {
-        const rn = allRounds[ri];
-        const roundMatches = roundsMap[rn] || [];
-        const teamsHere = new Set();
-        roundMatches.forEach(m => {
-          if (m.team1_id) teamsHere.add(m.team1_id);
-          if (m.team2_id) teamsHere.add(m.team2_id);
-        });
-        for (const tid of teamsHere) {
-          const srcMatch = roundMatches.find(m => m.team1_id === tid || m.team2_id === tid);
-          const nextMatchId = teamMatchByRound[tid]?.[rn + 1];
-          if (!srcMatch || !nextMatchId) continue;
-          const srcEl = br.querySelector(`[data-match-id="${srcMatch.id}"]`);
-          const tgtEl = br.querySelector(`[data-match-id="${nextMatchId}"]`);
-          if (!srcEl || !tgtEl) continue;
-          const sRect = srcEl.getBoundingClientRect();
-          const tRect = tgtEl.getBoundingClientRect();
-          const srcRow = srcEl.querySelector(`[data-team-row="${tid}"]`);
-          const tgtRow = tgtEl.querySelector(`[data-team-row="${tid}"]`);
-          const sr = srcRow ? srcRow.getBoundingClientRect() : sRect;
-          const tr = tgtRow ? tgtRow.getBoundingClientRect() : tRect;
-          let kind = 'pending';
-          if (srcMatch.status === 'reported') {
-            kind = (!srcMatch.team2_id || srcMatch.winner_id === tid) ? 'win' : 'lose';
-          }
-          const x1 = sRect.right - bracketRect.left;
-          const y1 = sr.top + sr.height / 2 - bracketRect.top;
-          const x2 = tRect.left - bracketRect.left;
-          const y2 = tr.top + tr.height / 2 - bracketRect.top;
-          const dx = x2 - x1;
-          lines.push({
-            path: `M ${x1} ${y1} C ${x1 + dx * 0.55} ${y1}, ${x2 - dx * 0.55} ${y2}, ${x2} ${y2}`,
-            kind, tid, x1, y1, x2, y2,
-          });
-        }
-      }
-      setConnectors(lines);
-    };
-    requestAnimationFrame(() => requestAnimationFrame(compute));
-    const ro = new ResizeObserver(compute);
-    if (bracketRef.current) ro.observe(bracketRef.current);
-    window.addEventListener('resize', compute);
-    return () => { ro.disconnect(); window.removeEventListener('resize', compute); };
-  }, [open, allRounds, roundsMap, teamMatchByRound]);
-
-  if (teams.length === 0) return null;
-
-  const orderedConnectors = [...connectors].sort((a, b) =>
-    ({ pending: 0, lose: 1, win: 2 }[a.kind] - { pending: 0, lose: 1, win: 2 }[b.kind])
-  );
-
-  return (
-    <div style={{ marginBottom: '10px' }}>
-      <button onClick={() => setOpen(o => !o)}
-        className="pm-accordion-trigger"
-        style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
-        <span>🏟️ Swiss-turneringsplan</span>
-        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-      </button>
-      {open && (
-        <div style={{ marginTop: '12px' }}>
-          {/* Legend */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '12px' }}>
-            {[['win', 'Vinder', theme.green, false], ['lose', 'Taber', theme.red, false], ['pending', 'Afventer', theme.border, true]].map(([kind, label, color, dashed]) => (
-              <div key={kind} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: theme.textMid }}>
-                <svg width="18" height="8" style={{ flexShrink: 0 }}>
-                  <line x1="0" y1="4" x2="18" y2="4" stroke={color} strokeWidth="2"
-                    strokeDasharray={dashed ? '4 5' : undefined} strokeLinecap="round" />
-                </svg>
-                {label}
-              </div>
-            ))}
-          </div>
-
-          {/* Team hover-highlight chips */}
-          {teams.length > 1 && (
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginRight: 4 }}>Hold:</span>
-              {teams.map(t => (
-                <span key={t.id}
-                  onMouseEnter={() => setHighlightTeam(t.id)}
-                  onMouseLeave={() => setHighlightTeam(null)}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    padding: '4px 10px 4px 4px', borderRadius: '999px',
-                    border: '1px solid ' + (highlightTeam === t.id ? theme.accent : theme.border),
-                    background: highlightTeam === t.id ? theme.accentBg : theme.surfaceAlt,
-                    color: highlightTeam === t.id ? theme.accent : theme.text,
-                    fontSize: '12px', fontWeight: 500, cursor: 'default', transition: 'all .15s',
-                  }}
-                >
-                  <span style={{ width: 14, height: 14, borderRadius: '50%', background: teamColors[t.id], display: 'inline-grid', placeItems: 'center', fontSize: '8px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
-                    {t.name.slice(0, 1).toUpperCase()}
-                  </span>
-                  {t.name}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Bracket */}
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            <div
-              style={{
-                width: 'max-content',
-                minWidth: '100%',
-                boxSizing: 'border-box',
-                background: theme.surface,
-                borderRadius: '14px',
-                border: '1px solid ' + theme.border,
-                padding: '20px 20px 24px',
-                boxShadow: theme.shadow,
-              }}
-            >
-              <div
-                ref={bracketRef}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${allRounds.length}, minmax(200px, 1fr))`,
-                  gap: '24px',
-                  position: 'relative',
-                  minWidth: Math.max(allRounds.length * 200 + (allRounds.length - 1) * 24, 400) + 'px',
-                }}
-              >
-                {/* SVG connector overlay */}
-                <svg style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', overflow: 'visible', zIndex: 0 }} width={svgSize.w} height={svgSize.h}>
-                  {orderedConnectors.map((c, i) => {
-                    const dim = highlightTeam && c.tid !== highlightTeam;
-                    const isHi = highlightTeam === c.tid;
-                    const stroke = c.kind === 'win' ? theme.green : c.kind === 'lose' ? theme.red : theme.border;
-                    return (
-                      <g key={i} style={{ opacity: dim ? 0.1 : 1 }}>
-                        <path d={c.path} fill="none" stroke={stroke} strokeWidth={isHi ? 3 : 2}
-                          strokeLinecap="round" strokeDasharray={c.kind === 'pending' ? '4 5' : undefined} />
-                        <circle cx={c.x1} cy={c.y1} r="3.5" fill="white" stroke={stroke} strokeWidth="2" />
-                        <circle cx={c.x2} cy={c.y2} r="3.5" fill="white" stroke={stroke} strokeWidth="2" />
-                      </g>
-                    );
-                  })}
-                </svg>
-
-                {/* Round columns */}
-                {allRounds.map(rn => {
-                  const roundMatches = roundsMap[rn] || [];
-                  const isCurrent = rn === currentRound;
-                  const isDone = roundMatches.length > 0 && roundMatches.every(m => m.status === 'reported');
-                  const isFuture = rn > (currentRound || 0);
-                  const prevStats = statsAfterRound[rn - 1] || {};
-
-                  return (
-                    <div key={rn} style={{ display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative', zIndex: 1 }}>
-                      {/* Round header */}
-                      <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '10px 14px', borderRadius: '10px',
-                        background: isDone ? theme.accentBg : theme.surfaceAlt,
-                        border: '1px solid ' + (isDone ? 'transparent' : theme.border),
-                        marginBottom: '6px',
-                      }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isDone ? theme.accent : isCurrent ? theme.textMid : theme.textLight }}>
-                          Runde {rn}{totalRounds ? ` / ${totalRounds}` : ''}
-                        </span>
-                        <span style={{ fontSize: '11px', color: isDone ? theme.accent : theme.textLight }}>
-                          {isDone ? '✓ Afsluttet' : isCurrent ? '● Aktiv' : 'Kommende'}
-                        </span>
-                      </div>
-
-                      {isFuture ? (
-                        <div className="pm-data-empty-note pm-data-empty-note--dashed" style={{ padding: '20px 12px', fontSize: '11px' }}>
-                          Genereres efter<br />runde {rn - 1}
-                        </div>
-                      ) : roundMatches.length === 0 ? (
-                        <div className="pm-data-empty-note" style={{ padding: '20px', fontSize: '11px' }}>
-                          Ingen kampe
-                        </div>
-                      ) : roundMatches.map(match => {
-                        const t1 = teamMap[match.team1_id];
-                        const t2 = match.team2_id ? teamMap[match.team2_id] : null;
-                        const reported = match.status === 'reported';
-                        const isMyMatch = myTeam && (match.team1_id === myTeam?.id || match.team2_id === myTeam?.id);
-                        const t1Stats = prevStats[match.team1_id] || { wins: 0, losses: 0 };
-                        const t2Stats = t2 ? (prevStats[match.team2_id] || { wins: 0, losses: 0 }) : null;
-                        const t1Wins = reported && (match.winner_id === match.team1_id || !match.team2_id);
-                        const t2Wins = reported && !!t2 && match.winner_id === match.team2_id;
-
-                        // Resolve per-team scores from score_text
-                        let t1Score = '—', t2Score = '—';
-                        if (reported && match.score_text) {
-                          const sp = match.score_text.match(/^(\d+)-(\d+)$/);
-                          if (sp) {
-                            const ws = Math.max(+sp[1], +sp[2]);
-                            const ls = Math.min(+sp[1], +sp[2]);
-                            t1Score = String(t1Wins ? ws : ls);
-                            t2Score = String(t2Wins ? ws : ls);
-                          }
-                        }
-
-                        const recStyle = (isWin, isLose) => ({
-                          fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-                          fontSize: '10px', fontWeight: 600,
-                          padding: '3px 6px', borderRadius: '5px',
-                          background: isWin ? theme.greenBg : isLose ? theme.redBg : theme.surfaceAlt,
-                          color: isWin ? theme.green : isLose ? theme.red : theme.textLight,
-                          minWidth: '44px', textAlign: 'center', flexShrink: 0, display: 'inline-block',
-                        });
-
-                        const dotStyle = (teamId) => ({
-                          width: 14, height: 14, borderRadius: '50%',
-                          background: teamColors[teamId] || theme.textLight,
-                          display: 'inline-grid', placeItems: 'center',
-                          fontSize: '8px', fontWeight: 700, color: theme.onAccent, flexShrink: 0,
-                        });
-
-                        return (
-                          <div key={match.id} data-match-id={match.id}
-                            onClick={() => setSelectedMatch({ match, rn, prevStats })}
-                            style={{
-                              background: theme.surface,
-                              border: '1px solid ' + (isMyMatch ? theme.accent + '60' : theme.border),
-                              borderRadius: '12px', padding: '10px 12px',
-                              display: 'grid', gap: '6px', cursor: 'pointer',
-                              boxShadow: isMyMatch ? '0 0 0 3px ' + theme.accentBg : '0 1px 2px rgba(0,0,0,0.04)',
-                              transition: 'border-color .18s, box-shadow .18s, transform .18s',
-                            }}
-                          >
-                            {!t2 ? (
-                              <>
-                                <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'center', gap: '8px', padding: '4px 2px' }}>
-                                  <span style={recStyle(reported, false)}>{t1Stats.wins}W-{t1Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: theme.text, overflow: 'hidden' }}>
-                                    <span style={dotStyle(t1.id)}>{t1.name.slice(0, 1).toUpperCase()}</span>
-                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t1.name}</span>
-                                  </span>
-                                </div>
-                                <div style={{ height: '1px', background: theme.border, margin: '0 2px' }} />
-                                <div style={{ textAlign: 'center', fontSize: '11px', color: theme.textLight, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 0' }}>Fri runde</div>
-                              </>
-                            ) : (
-                              <>
-                                <div data-team-row={match.team1_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px' }}>
-                                  <span style={recStyle(t1Wins, reported && !t1Wins)}>{t1Stats.wins}W-{t1Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t1Wins ? 600 : 500, color: theme.text, overflow: 'hidden' }}>
-                                    <span style={dotStyle(t1.id)}>{t1.name.slice(0, 1).toUpperCase()}</span>
-                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t1.name}</span>
-                                  </span>
-                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: theme.text, minWidth: '20px', textAlign: 'right' }}>{t1Score}</span>
-                                </div>
-                                <div style={{ height: '1px', background: theme.border, margin: '0 2px' }} />
-                                <div data-team-row={match.team2_id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '8px', padding: '4px 2px' }}>
-                                  <span style={recStyle(t2Wins, reported && !t2Wins)}>{t2Stats.wins}W-{t2Stats.losses}L</span>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: t2Wins ? 600 : 500, color: theme.text, overflow: 'hidden' }}>
-                                    <span style={dotStyle(t2.id)}>{t2.name.slice(0, 1).toUpperCase()}</span>
-                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t2.name}</span>
-                                  </span>
-                                  <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontSize: '15px', fontWeight: 600, color: theme.text, minWidth: '20px', textAlign: 'right' }}>{t2Score}</span>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Match detail modal */}
-      {selectedMatch && (
-        <MatchDetailModal
-          match={selectedMatch.match}
-          rn={selectedMatch.rn}
-          teamMap={teamMap}
-          teamColors={teamColors}
-          prevStats={selectedMatch.prevStats}
-          onClose={() => setSelectedMatch(null)}
-        />
-      )}
-    </div>
-  );
-}
-
-function PartnerSearch({ userId, onSelect }) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  useEffect(() => {
-    if (query.length < 2) { setResults([]); setOpen(false); return; }
-    const t = setTimeout(async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, name, avatar, elo_rating')
-        .or(`full_name.ilike.%${query}%,name.ilike.%${query}%`)
-        .neq('id', userId)
-        .limit(6);
-      setResults(data || []);
-      setOpen(true);
-    }, 280);
-    return () => clearTimeout(t);
-  }, [query, userId]);
-
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <div style={{ position: 'relative' }}>
-        <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: theme.textLight, pointerEvents: 'none' }} />
-        <input
-          value={query}
-          onChange={e => { setQuery(e.target.value); }}
-          placeholder="Søg efter makker..."
-          style={{ ...inputStyle, paddingLeft: '32px' }}
-        />
-      </div>
-      {open && results.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: theme.surface, border: '1px solid ' + theme.border, borderRadius: '8px', boxShadow: theme.shadow, zIndex: 100, marginTop: '4px' }}>
-          {results.map(p => {
-            const name = p.full_name || p.name || 'Spiller';
-            return (
-              <div
-                key={p.id}
-                onClick={() => { onSelect(p); setQuery(name); setOpen(false); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid ' + theme.border + '80' }}
-              >
-                <AvatarCircle avatar={p.avatar} size={30} emojiSize="14px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600 }}>{name}</div>
-                  <div style={{ fontSize: '11px', color: theme.textLight }}>ELO {Math.round(Number(p.elo_rating) || 1000)}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+function buildNextMatchLabel(league, myTeam, teams, matches) {
+  if (!myTeam || league.status !== 'active') return null;
+  const currentRoundMatches = matches.filter((m) => m.round_number === league.current_round);
+  const myMatch = currentRoundMatches.find((m) => m.team1_id === myTeam.id || m.team2_id === myTeam.id);
+  if (!myMatch) return null;
+  if (myMatch.team2_id === null) return 'Fri runde denne runde';
+  if (myMatch.status === 'reported') return null;
+  const oppId = myMatch.team1_id === myTeam.id ? myMatch.team2_id : myMatch.team1_id;
+  const opp = teams.find((t) => t.id === oppId);
+  return opp ? `Næste kamp mod ${opp.name}` : 'Næste kamp venter';
 }
 
 export function LigaTab({
@@ -747,7 +84,6 @@ export function LigaTab({
   const [loadError, setLoadError] = useState('');
   const [creatorAreasByUserId, setCreatorAreasByUserId] = useState({});
   const [busyId, setBusyId] = useState(null);
-  const [openStandings, setOpenStandings] = useState(new Set());
   const [openManageTools, setOpenManageTools] = useState({});
 
   // Create league form (admin) — controlled by parent if props provided
@@ -768,6 +104,10 @@ export function LigaTab({
   const [scoreText, setScoreText] = useState('');
   const [selectedWinnerId, setSelectedWinnerId] = useState(null);
   const [confirmPending, setConfirmPending] = useState(null); // { match, winnerId }
+  const [selectedLeagueId, setSelectedLeagueId] = useState(null);
+  const [scheduleLeagueId, setScheduleLeagueId] = useState(null);
+  const [profileTeam, setProfileTeam] = useState(null);
+  const [profileTeamLeagueId, setProfileTeamLeagueId] = useState(null);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -1178,13 +518,16 @@ export function LigaTab({
     finally { setBusyId(null); }
   };
 
-  const toggleStandings = (id) => setOpenStandings(s => {
-    const n = new Set(s);
-    if (n.has(id)) n.delete(id);
-    else n.add(id);
-    return n;
-  });
   const toggleManageTools = (id) => setOpenManageTools((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const closeDetailSheet = () => {
+    if (teamFormLeagueId === selectedLeagueId) {
+      setTeamFormLeagueId(null);
+      setTeamName('');
+      setSelectedPartner(null);
+    }
+    setSelectedLeagueId(null);
+  };
 
   useEffect(() => {
     const lid = focusLeagueId;
@@ -1198,35 +541,8 @@ export function LigaTab({
     if (st === 'registration' || st === 'active' || st === 'completed') {
       setView(st);
     }
-
-    const scrollToCard = () => {
-      const el = document.getElementById(`pm-liga-${lid}`);
-      if (!el) return false;
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      onFocusLeagueHandled?.();
-      return true;
-    };
-
-    if (scrollToCard()) return undefined;
-
-    let cancelled = false;
-    let attempts = 0;
-    const retry = () => {
-      if (cancelled) return;
-      if (scrollToCard() || attempts >= 15) {
-        if (attempts >= 15) onFocusLeagueHandled?.();
-        return;
-      }
-      attempts += 1;
-      window.setTimeout(retry, 80);
-    };
-    const raf = window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(retry);
-    });
-    return () => {
-      cancelled = true;
-      window.cancelAnimationFrame(raf);
-    };
+    setSelectedLeagueId(league.id);
+    onFocusLeagueHandled?.();
   }, [focusLeagueId, tabActive, embedInKampe, loading, leagues, onFocusLeagueHandled]);
 
   const visibleLeagues = leagues.filter(l => {
@@ -1254,10 +570,19 @@ export function LigaTab({
     completed: leagues.filter(l => l.status === 'completed').length,
   };
   const leagueStatusTabs = [
-    { id: 'registration', label: `Tilmelding${leagueStatusCount.registration > 0 ? ` (${leagueStatusCount.registration})` : ''}` },
-    { id: 'active', label: `Aktiv sæson${leagueStatusCount.active > 0 ? ` (${leagueStatusCount.active})` : ''}` },
-    { id: 'completed', label: `Afsluttede${leagueStatusCount.completed > 0 ? ` (${leagueStatusCount.completed})` : ''}` },
+    { id: 'registration', label: `Tilmelding${leagueStatusCount.registration > 0 ? ` ${leagueStatusCount.registration}` : ''}` },
+    { id: 'active', label: `Aktiv${leagueStatusCount.active > 0 ? ` ${leagueStatusCount.active}` : ''}` },
+    { id: 'completed', label: `Afsluttede${leagueStatusCount.completed > 0 ? ` ${leagueStatusCount.completed}` : ''}` },
   ];
+
+  const selectedLeague = useMemo(
+    () => (selectedLeagueId ? leagues.find((l) => l.id === selectedLeagueId) : null),
+    [selectedLeagueId, leagues],
+  );
+  const scheduleLeague = useMemo(
+    () => (scheduleLeagueId ? leagues.find((l) => l.id === scheduleLeagueId) : null),
+    [scheduleLeagueId, leagues],
+  );
 
   return (
     <div>
@@ -1464,592 +789,179 @@ export function LigaTab({
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {visibleLeagues.map(league => {
+          {visibleLeagues.map((league) => {
             const teams = teamsByLeague[league.id] || [];
+            const regTeams = allTeamsByLeague[league.id] || [];
             const matches = matchesByLeague[league.id] || [];
             const myTeam = myTeamByLeague[league.id];
-            const joined = !!myTeam;
             const standings = computeStandings(teams, matches);
-            const standingsOpen = openStandings.has(league.id);
-            const statusTone = league.status === 'registration'
-              ? 'warm'
-              : league.status === 'active'
-                ? 'green'
-                : 'neutral';
-            const busy = busyId === league.id || (typeof busyId === 'string' && busyId.startsWith(league.id + '-'));
-
-            const currentRoundMatches = matches.filter(m => m.round_number === league.current_round);
-            const myMatch = myTeam ? currentRoundMatches.find(m => m.team1_id === myTeam.id || m.team2_id === myTeam.id) : null;
-            const opponentTeamId = myMatch ? (myMatch.team1_id === myTeam?.id ? myMatch.team2_id : myMatch.team1_id) : null;
-            const opponentTeam = opponentTeamId ? teams.find(t => t.id === opponentTeamId) : null;
-
-            const showTeamForm = teamFormLeagueId === league.id;
-            const isCreator = league.created_by === user.id;
-            const canManageTeams = isAdmin || isCreator;
-            const manageToolsOpen = !!openManageTools[league.id];
-            const showManageToolsToggle =
-              (canManageTeams && league.status === 'registration') ||
-              (isAdmin && league.status === 'active');
-            const regTeamCount = (allTeamsByLeague[league.id] || []).length;
-            const isFull = league.max_teams && regTeamCount >= league.max_teams;
-
-            /* Status "registration" bruger det nye visuelle kort. Active/completed beholder layoutet. */
-            if (league.status === 'registration') {
-              const regTeams = allTeamsByLeague[league.id] || [];
-              const onKickTeamCb =
-                canManageTeams && manageToolsOpen
-                  ? (t) => {
-                      if (t.player1_id === user.id || t.player2_id === user.id) return;
-                      kickTeam(t);
-                    }
-                  : null;
-
-              const joinForm = (
-                <div className="pm-card-subpanel" style={{ padding: 14, marginTop: 6 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Tilmeld hold</div>
-                  <label style={labelStyle}>Holdnavn</label>
-                  <input
-                    value={teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
-                    placeholder="F.eks. Smash Bros"
-                    style={{ ...inputStyle, marginBottom: 10 }}
-                  />
-                  <label style={labelStyle}>Din makker</label>
-                  <PartnerSearch userId={user.id} onSelect={setSelectedPartner} />
-                  {selectedPartner && (
-                    <div className="pm-card-row-item pm-card-row-item--accent" style={{ marginTop: 8 }}>
-                      <AvatarCircle avatar={selectedPartner.avatar} size={24} emojiSize="12px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedPartner.full_name || selectedPartner.name}</span>
-                      <span style={{ fontSize: 11, color: theme.textLight }}>ELO {Math.round(Number(selectedPartner.elo_rating) || 1000)}</span>
-                      <button onClick={() => setSelectedPartner(null)} style={{ ...btn(false), padding: '2px 8px', fontSize: 11, marginLeft: 'auto' }}>×</button>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                    <button onClick={() => createTeam(league.id)} disabled={busyId === league.id + '-team'} style={{ ...btn(true), fontSize: 13, padding: '10px 14px' }}>
-                      {busyId === league.id + '-team' ? 'Tilmelder…' : 'Tilmeld hold'}
-                    </button>
-                    <button onClick={() => { setTeamFormLeagueId(null); setTeamName(''); setSelectedPartner(null); }} style={{ ...btn(false), fontSize: 13, padding: '10px 14px' }}>Annullér</button>
-                  </div>
-                </div>
-              );
-
-              let cardActions;
-              if (showTeamForm) {
-                cardActions = joinForm;
-              } else if (joined) {
-                cardActions = (
-                  <div
-                    className={`pm-card-subpanel ${myTeam.status === 'pending' ? '' : 'pm-card-subpanel--green'}`.trim()}
-                    style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
-                  >
-                    <div style={{ fontSize: 12, color: myTeam.status === 'pending' ? theme.warm : theme.green, fontWeight: 700 }}>
-                      {myTeam.status === 'pending'
-                        ? `⏳ Afventer godkendelse fra ${myTeam.player2_name}`
-                        : `✓ Du er tilmeldt som ${myTeam.name}`}
-                    </div>
-                    <button onClick={() => leaveLeague(league.id)} disabled={busy} style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}>
-                      Afmeld hold
-                    </button>
-                  </div>
-                );
-              } else if (isFull) {
-                cardActions = (
-                  <button
-                    type="button"
-                    disabled
-                    style={{ ...btn(true), width: '100%', justifyContent: 'center', padding: 12, fontSize: 14, fontWeight: 700, borderRadius: 10, opacity: 0.55, cursor: 'not-allowed' }}
-                  >
-                    Ligaen er fuld
-                  </button>
-                );
-              } else {
-                const pladserTilbage = Math.max(0, (league.max_teams || 0) - regTeamCount);
-                cardActions = (
-                  <button
-                    type="button"
-                    onClick={() => setTeamFormLeagueId(league.id)}
-                    style={{ ...btn(true), width: '100%', justifyContent: 'center', padding: 12, fontSize: 14, fontWeight: 700, borderRadius: 10 }}
-                  >
-                    <Plus size={14} /> Tilmeld hold{pladserTilbage > 0 ? ` · ${pladserTilbage} ${pladserTilbage === 1 ? 'plads' : 'pladser'} tilbage` : ''}
-                  </button>
-                );
-              }
-
-              const cardExtras = showManageToolsToggle ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                  <button
-                    onClick={() => toggleManageTools(league.id)}
-                    style={{
-                      ...btn(false),
-                      padding: '7px 12px',
-                      fontSize: 12,
-                      color: theme.warm,
-                      borderColor: theme.warm + '55',
-                      background: theme.warmBg,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 6,
-                    }}
-                  >
-                    <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
-                    {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  </button>
-                  {isAdmin && manageToolsOpen && (
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button onClick={() => startLeague(league)} disabled={busy} style={{ ...btn(true), padding: '7px 12px', fontSize: 12, background: theme.warm, borderColor: theme.warm }}>
-                        <Play size={13} /> Start liga
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : null;
-
-              return (
-                <div key={league.id} id={`pm-liga-${league.id}`} style={{ scrollMarginTop: '88px' }}>
-                  <LigaOpenCard
-                    league={league}
-                    teams={regTeams}
-                    myTeamId={myTeam?.id}
-                    onPlayerClick={openProfile}
-                    onKickTeam={onKickTeamCb}
-                    kickBusyId={typeof busyId === 'string' && busyId.endsWith('-kick') ? busyId.replace('-kick', '') : null}
-                    actions={cardActions}
-                    extras={cardExtras}
-                  />
-                </div>
-              );
-            }
+            const rankIdx = myTeam ? standings.findIndex((t) => t.id === myTeam.id) : -1;
+            const myTeamRank = rankIdx >= 0 ? rankIdx + 1 : null;
+            const regionLabel = creatorAreasByUserId[String(league.created_by)] || '';
+            const nextMatchLabel = buildNextMatchLabel(league, myTeam, teams, matches);
 
             return (
-              <div key={league.id} id={`pm-liga-${league.id}`} className="pm-ui-card pm-match-surface-card" style={{ scrollMarginTop: '88px' }}>
-
-                {/* Winner banner for completed leagues */}
-                {league.status === 'completed' && standings.length > 0 && (() => {
-                  const w = standings[0];
-                  return (
-                    <div className="pm-card-subpanel pm-card-subpanel--warm" style={{ marginBottom: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ fontSize: '28px', lineHeight: 1 }}>🏆</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: theme.warm, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Vinder</div>
-                        <div style={{ fontSize: '16px', fontWeight: 800, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-                          <span onClick={() => openProfile(w.player1_id, w.player1_name, w.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: theme.text }}>
-                            <AvatarCircle avatar={w.player1_avatar} size={20} emojiSize="10px" style={{ background: theme.surfaceAlt, border: '1px solid ' + theme.border }} />
-                            {w.player1_name}
-                          </span>
-                          <span style={{ color: theme.textMid, fontSize: '10px' }}>+</span>
-                          <span onClick={() => openProfile(w.player2_id, w.player2_name, w.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px', color: theme.text }}>
-                            <AvatarCircle avatar={w.player2_avatar} size={20} emojiSize="10px" style={{ background: theme.surfaceAlt, border: '1px solid ' + theme.border }} />
-                            {w.player2_name}
-                          </span>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: '20px', fontWeight: 800, color: theme.warm }}>{w.points}</div>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: theme.warm }}>point</div>
-                        <div style={{ fontSize: '10px', color: theme.textMid, marginTop: '2px' }}>{w.wins}W · {w.losses}L</div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: '16px', marginBottom: '4px' }}>{league.name}</div>
-                    <div style={{ fontSize: '12px', color: theme.textLight }}>
-                      {SEASON_LABELS[league.season_type]} · {formatMatchDateDa(league.start_date)} – {formatMatchDateDa(league.end_date)}
-                      {league.status === 'active' && <span style={{ color: theme.accent, fontWeight: 700 }}> · Runde {league.current_round}{league.total_rounds ? ` af ${league.total_rounds}` : ''}</span>}
-                    </div>
-                    {league.description && (
-                      <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '4px', fontStyle: 'italic' }}>{league.description}</div>
-                    )}
-                  </div>
-                  <div className="pm-card-meta-row" style={{ justifyContent: 'flex-end', flexShrink: 0 }}>
-                    <span className={`pm-status-badge pm-status-badge--${statusTone}`}>
-                      {STATUS_LABELS[league.status]}
-                    </span>
-                    <span className="pm-status-badge pm-status-badge--blue">
-                      <Users size={10} /> {(allTeamsByLeague[league.id] || []).length}{league.max_teams ? `/${league.max_teams}` : ''} hold
-                    </span>
-                  </div>
-                </div>
-
-                {/* Tilmelding */}
-                {league.status === 'registration' && (
-                  <div style={{ marginBottom: '12px' }}>
-                    {joined ? (
-                      <div className={`pm-card-subpanel ${myTeam.status === 'pending' ? '' : 'pm-card-subpanel--green'}`.trim()} style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: myTeam.status === 'pending' ? theme.warm : theme.green, marginBottom: '4px' }}>
-                            {myTeam.status === 'pending' ? '⏳ Afventer godkendelse' : '✓'} {myTeam.name}
-                          </div>
-                          <div style={{ fontSize: '12px', color: theme.textMid, display: 'flex', gap: '6px', alignItems: 'center' }}>
-                            <AvatarCircle avatar={myTeam.player1_avatar} size={20} emojiSize="10px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
-                            {myTeam.player1_name}
-                            <span style={{ color: theme.textLight }}>+</span>
-                            <AvatarCircle avatar={myTeam.player2_avatar} size={20} emojiSize="10px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
-                            {myTeam.player2_name}
-                            {myTeam.status === 'pending' && <span className="pm-feedback-inline-note pm-feedback-inline-note--warning" style={{ fontSize: '11px' }}>(venter på {myTeam.player2_name})</span>}
-                          </div>
-                        </div>
-                        <button onClick={() => leaveLeague(league.id)} disabled={busy} style={{ ...btn(false), padding: '6px 12px', fontSize: '12px' }}>Afmeld hold</button>
-                      </div>
-                    ) : showTeamForm ? (
-                      <div className="pm-card-subpanel" style={{ padding: '14px' }}>
-                        <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>Tilmeld hold</div>
-                        <label style={labelStyle}>Holdnavn</label>
-                        <input
-                          value={teamName}
-                          onChange={e => setTeamName(e.target.value)}
-                          placeholder="F.eks. Smash Bros"
-                          style={{ ...inputStyle, marginBottom: '10px' }}
-                        />
-                        <label style={labelStyle}>Din makker</label>
-                        <PartnerSearch userId={user.id} onSelect={setSelectedPartner} />
-                        {selectedPartner && (
-                          <div className="pm-card-row-item pm-card-row-item--accent" style={{ marginTop: '8px' }}>
-                            <AvatarCircle avatar={selectedPartner.avatar} size={24} emojiSize="12px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                            <span style={{ fontSize: '13px', fontWeight: 600 }}>{selectedPartner.full_name || selectedPartner.name}</span>
-                            <span style={{ fontSize: '11px', color: theme.textLight }}>ELO {Math.round(Number(selectedPartner.elo_rating) || 1000)}</span>
-                            <button onClick={() => setSelectedPartner(null)} style={{ ...btn(false), padding: '2px 8px', fontSize: '11px', marginLeft: 'auto' }}>×</button>
-                          </div>
-                        )}
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                          <button onClick={() => createTeam(league.id)} disabled={busyId === league.id + '-team'} className="pm-card-primary-cta" style={{ ...btn(true), fontSize: '13px' }}>
-                            {busyId === league.id + '-team' ? 'Tilmelder…' : 'Tilmeld hold'}
-                          </button>
-                          <button onClick={() => { setTeamFormLeagueId(null); setTeamName(''); setSelectedPartner(null); }} style={{ ...btn(false), fontSize: '13px' }}>Annullér</button>
-                        </div>
-                      </div>
-                    ) : isFull ? (
-                      <div style={{ fontSize: '13px', color: theme.textMid, padding: '8px 0' }}>
-                        Ligaen er fuld ({league.max_teams}/{league.max_teams} hold).
-                      </div>
-                    ) : (
-                      <button onClick={() => setTeamFormLeagueId(league.id)} className="pm-card-primary-cta" style={{ ...btn(true), padding: '8px 16px', fontSize: '13px' }}>
-                        <Plus size={14} /> Tilmeld hold
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Tilmeldte hold under tilmeldingsfasen */}
-                {league.status === 'registration' && (() => {
-                  const regTeams = allTeamsByLeague[league.id] || [];
-                  if (regTeams.length === 0) return null;
-                  return (
-                    <div style={{ marginBottom: '12px' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 700, color: theme.textMid, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-                        Tilmeldte hold ({regTeams.length})
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        {regTeams.map(t => (
-                          <div key={t.id} className={`pm-card-row-item ${t.status === 'pending' ? 'pm-card-row-item--neutral' : 'pm-card-row-item--green'}`}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
-                              <div style={{ fontSize: '11px', color: theme.text, display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>
-                                <span onClick={() => openProfile(t.player1_id, t.player1_name, t.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-                                  <AvatarCircle avatar={t.player1_avatar} size={18} emojiSize="9px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                                  {t.player1_name}
-                                </span>
-                                <span style={{ color: theme.textMid }}>+</span>
-                                <span onClick={() => openProfile(t.player2_id, t.player2_name, t.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-                                  <AvatarCircle avatar={t.player2_avatar} size={18} emojiSize="9px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                                  {t.player2_name}
-                                </span>
-                              </div>
-                            </div>
-                            {t.status === 'pending' && (
-                              <span className="pm-status-badge pm-status-badge--warm" style={{ flexShrink: 0 }}>Afventer</span>
-                            )}
-                            {canManageTeams && manageToolsOpen && (t.player1_id !== user.id && t.player2_id !== user.id) && (
-                              <button
-                                onClick={() => kickTeam(t)}
-                                disabled={busyId === t.id + '-kick'}
-                                style={{ ...btn(false), padding: '3px 9px', fontSize: '11px', color: theme.red, borderColor: 'var(--pm-danger-border)', flexShrink: 0 }}
-                              >
-                                Fjern
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Min kamp denne runde */}
-                {league.status === 'active' && joined && myMatch && (
-                  <div className="pm-card-subpanel pm-card-subpanel--accent" style={{ padding: '14px', marginBottom: '12px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: theme.accent, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
-                      Jeres kamp — runde {league.current_round}
-                    </div>
-                    {myMatch.team2_id === null ? (
-                      <div style={{ fontSize: '13px', color: theme.textMid }}>Fri runde — automatisk sejr 🎾</div>
-                    ) : myMatch.status === 'reported' ? (
-                      <div style={{ fontSize: '13px', color: theme.textMid }}>
-                        {myMatch.winner_id === myTeam.id ? '🏆 I vandt' : '😔 I tabte'}
-                        {myMatch.score_text && <span style={{ color: theme.textLight }}> · {myMatch.score_text}</span>}
-                        {opponentTeam && <span style={{ color: theme.textLight }}> mod {opponentTeam.name}</span>}
-                      </div>
-                    ) : opponentTeam ? (
-                      <div>
-                        {/* Vores hold vs modstanderhold */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                          <div style={{ flex: 1, textAlign: 'center' }}>
-                            <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>{myTeam.name}</div>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                              <span onClick={() => openProfile(myTeam.player1_id, myTeam.player1_name, myTeam.player1_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-                                <AvatarCircle avatar={myTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                                <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{myTeam.player1_name}</span>
-                              </span>
-                              <span onClick={() => openProfile(myTeam.player2_id, myTeam.player2_name, myTeam.player2_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-                                <AvatarCircle avatar={myTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                                <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{myTeam.player2_name}</span>
-                              </span>
-                            </div>
-                          </div>
-                          <div style={{ fontSize: '18px', fontWeight: 800, color: theme.textLight }}>vs</div>
-                          <div style={{ flex: 1, textAlign: 'center' }}>
-                            <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>{opponentTeam.name}</div>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                              <span onClick={() => openProfile(opponentTeam.player1_id, opponentTeam.player1_name, opponentTeam.player1_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-                                <AvatarCircle avatar={opponentTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                                <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{opponentTeam.player1_name}</span>
-                              </span>
-                              <span onClick={() => openProfile(opponentTeam.player2_id, opponentTeam.player2_name, opponentTeam.player2_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-                                <AvatarCircle avatar={opponentTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                                <span style={{ fontSize: '10px', color: theme.textMid, fontWeight: 600 }}>{opponentTeam.player2_name}</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        {reportingMatch === myMatch.id ? (
-                          confirmPending ? (
-                            /* Step 2: Confirmation */
-                            <div style={{ background: theme.surface, borderRadius: '10px', padding: '16px', border: '2px solid ' + (confirmPending.winnerId === myTeam.id ? theme.green : theme.red) }}>
-                              <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px', color: theme.text }}>Bekræft resultat</div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '12px 0', padding: '10px 12px', background: theme.surfaceAlt, borderRadius: '8px' }}>
-                                <span style={{ fontSize: '20px' }}>{confirmPending.winnerId === myTeam.id ? '🏆' : '😔'}</span>
-                                <div>
-                                  <div style={{ fontSize: '13px', fontWeight: 700, color: confirmPending.winnerId === myTeam.id ? theme.green : theme.red }}>
-                                    {confirmPending.winnerId === myTeam.id ? myTeam.name + ' vandt' : opponentTeam.name + ' vandt'}
-                                  </div>
-                                  <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '2px' }}>
-                                    Score: <strong>{confirmPending.score}</strong>
-                                    {' · '}{myTeam.name} vs {opponentTeam.name}
-                                  </div>
-                                </div>
-                              </div>
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <button onClick={() => reportResult(myMatch, confirmPending.winnerId, confirmPending.score)} disabled={busyId === myMatch.id}
-                                  style={{ ...btn(true), padding: '9px 16px', fontSize: '13px', background: theme.green, borderColor: theme.green }}>
-                                  {busyId === myMatch.id ? 'Gemmer…' : '✓ Bekræft'}
-                                </button>
-                                <button onClick={() => setConfirmPending(null)} style={{ ...btn(false), padding: '8px 14px', fontSize: '13px' }}>
-                                  ← Ret
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            /* Step 1: Score + winner selection */
-                            <div>
-                              {/* Score input */}
-                              <div style={{ marginBottom: '14px' }}>
-                                <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Score (påkrævet)</div>
-                                <input
-                                  value={scoreText}
-                                  onChange={e => setScoreText(e.target.value)}
-                                  placeholder="F.eks. 6-4"
-                                  style={{ ...inputStyle, fontSize: '18px', textAlign: 'center', fontWeight: 700, letterSpacing: '0.08em' }}
-                                />
-                              </div>
-
-                              {/* Winner selection */}
-                              <div style={{ fontSize: '11px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Hvem vandt?</div>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
-                                {[
-                                  { team: myTeam, label: 'Jeres hold' },
-                                  { team: opponentTeam, label: 'Modstanderne' },
-                                ].map(({ team, label }) => {
-                                  const isSelected = selectedWinnerId === team.id;
-                                  return (
-                                    <button
-                                      key={team.id}
-                                      onClick={() => setSelectedWinnerId(team.id)}
-                                      style={{ border: '2px solid ' + (isSelected ? theme.green : theme.border), background: isSelected ? theme.greenBg : theme.surface, borderRadius: '10px', padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}
-                                    >
-                                      <div style={{ fontSize: '9px', fontWeight: 700, color: isSelected ? theme.green : theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
-                                      <div style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? theme.green : theme.text, marginBottom: '8px' }}>{team.name}</div>
-                                      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-                                        {[{ avatar: team.player1_avatar, name: team.player1_name }, { avatar: team.player2_avatar, name: team.player2_name }].map(p => (
-                                          <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-                                            <AvatarCircle avatar={p.avatar} size={26} emojiSize="12px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border }} />
-                                            <span style={{ fontSize: '10px', color: isSelected ? theme.green : theme.textMid, fontWeight: 600 }}>{p.name.split(' ')[0]}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                      {isSelected && <div style={{ fontSize: '18px', marginTop: '6px' }}>🏆</div>}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <button
-                                  onClick={() => {
-                                    const err = validatePadelScore(scoreText);
-                                    if (err) { showToast(err); return; }
-                                    if (!selectedWinnerId) { showToast('Vælg en vinder.'); return; }
-                                    setConfirmPending({ winnerId: selectedWinnerId, score: scoreText.trim() });
-                                  }}
-                                  style={{ ...btn(true), padding: '9px 18px', fontSize: '13px', opacity: (!scoreText || !selectedWinnerId) ? 0.5 : 1 }}
-                                >
-                                  Fortsæt →
-                                </button>
-                                <button onClick={cancelReporting} style={{ ...btn(false), padding: '8px 12px', fontSize: '12px' }}>Annullér</button>
-                              </div>
-                            </div>
-                          )
-                        ) : (
-                          <button onClick={() => setReportingMatch(myMatch.id)}
-                            style={{ ...btn(true), padding: '8px 14px', fontSize: '13px' }}>
-                            Indberét resultat
-                          </button>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-
-                {/* Rangliste */}
-                {(league.status === 'active' || league.status === 'completed') && teams.length > 0 && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <button onClick={() => toggleStandings(league.id)}
-                      className="pm-accordion-trigger"
-                      style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
-                      <span>🏅 Holdrangliste</span>
-                      {standingsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
-                    {standingsOpen && (
-                      <div className="pm-data-table">
-                        <div className="pm-data-table-head">
-                          {['#', 'Hold', 'Pts', 'W', 'L', 'Diff'].map(h => (
-                            <div key={h} className="pm-data-table-cell-head" style={{ textAlign: h === 'Hold' ? 'left' : 'center' }}>{h}</div>
-                          ))}
-                        </div>
-                        {standings.map((t, i) => {
-                          const isMyTeam = myTeam?.id === t.id;
-                          const diffColor = t.gameDiff > 0 ? theme.green : t.gameDiff < 0 ? theme.red : theme.textLight;
-                          return (
-                            <div key={t.id} className={`pm-data-table-row${isMyTeam ? ' pm-data-table-row--highlight' : ''}`}>
-                              <div className="pm-data-table-cell" style={{ fontWeight: 700, color: i < 3 ? theme.warm : theme.textLight, textAlign: 'center' }}>
-                                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
-                              </div>
-                              <div className="pm-data-table-cell" style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: '13px', fontWeight: isMyTeam ? 700 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {t.name}{isMyTeam ? ' (jer)' : ''}
-                                </div>
-                                <div style={{ fontSize: '11px', color: theme.text, display: 'flex', gap: '4px', alignItems: 'center', marginTop: '2px', flexWrap: 'wrap' }}>
-                                  <span onClick={() => openProfile(t.player1_id, t.player1_name, t.player1_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer' }}>
-                                    <AvatarCircle avatar={t.player1_avatar} size={14} emojiSize="7px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                                    {t.player1_name}
-                                  </span>
-                                  <span style={{ color: theme.textMid }}>+</span>
-                                  <span onClick={() => openProfile(t.player2_id, t.player2_name, t.player2_avatar)} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', cursor: 'pointer' }}>
-                                    <AvatarCircle avatar={t.player2_avatar} size={14} emojiSize="7px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                                    {t.player2_name}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="pm-data-table-cell" style={{ fontSize: '13px', fontWeight: 700, color: theme.accent, textAlign: 'center' }}>{t.points}</div>
-                              <div className="pm-data-table-cell" style={{ fontWeight: 600, color: theme.green, textAlign: 'center' }}>{t.wins}</div>
-                              <div className="pm-data-table-cell" style={{ fontWeight: 600, color: theme.red, textAlign: 'center' }}>{t.losses}</div>
-                              <div className="pm-data-table-cell" style={{ fontWeight: 600, color: diffColor, textAlign: 'center' }}>{t.gameDiff > 0 ? '+' : ''}{t.gameDiff}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {league.status === 'completed' && isCreator ? (
-                  <ReportResultErrorButton
-                    sourceType="league"
-                    entityId={league.id}
-                    completedAtMs={completionMsForLeague(league)}
-                    isCreator={isCreator}
-                    entityLabel={`Liga · ${league.name}`}
-                  />
-                ) : null}
-
-                {/* Turneringsplan */}
-                {(league.status === 'active' || league.status === 'completed') && (
-                  <SwissBracket
-                    teams={teams}
-                    matches={matches}
-                    currentRound={league.current_round}
-                    totalRounds={league.total_rounds}
-                    myTeam={myTeam}
-                  />
-                )}
-
-                {showManageToolsToggle && (
-                  <button
-                    onClick={() => toggleManageTools(league.id)}
-                    className="pm-accordion-trigger"
-                    style={{
-                      ...btn(false),
-                      padding: '7px 12px',
-                      fontSize: '12px',
-                      marginBottom: '10px',
-                      color: theme.warm,
-                      borderColor: theme.warm + '55',
-                      background: theme.warmBg,
-                    }}
-                  >
-                    <span>{manageToolsOpen ? 'Skjul admin-værktøjer' : 'Vis admin-værktøjer'}</span>
-                    {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  </button>
-                )}
-
-                {/* Admin-panel */}
-                {isAdmin && manageToolsOpen && (
-                  <div style={{ borderTop: '1px solid ' + theme.border, paddingTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {league.status === 'registration' && (
-                      <button onClick={() => startLeague(league)} disabled={busy}
-                        style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: theme.warm, borderColor: theme.warm }}>
-                        <Play size={13} /> Start liga
-                      </button>
-                    )}
-                    {league.status === 'active' && (() => {
-                      const pendingCount = (matchesByLeague[league.id] || []).filter(m => m.round_number === league.current_round && m.status === 'pending').length;
-                      return (
-                        <>
-                          <button onClick={() => nextRound(league)} disabled={busy || pendingCount > 0}
-                            title={pendingCount > 0 ? `${pendingCount} kamp${pendingCount > 1 ? 'e' : ''} mangler resultat` : ''}
-                            style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', background: pendingCount > 0 ? theme.textLight : theme.warm, borderColor: pendingCount > 0 ? theme.textLight : theme.warm, opacity: pendingCount > 0 ? 0.7 : 1 }}>
-                            ⏭ Næste runde{pendingCount > 0 ? ` (${pendingCount} afventer)` : ''}
-                          </button>
-                          <button onClick={() => completeLeague(league)} disabled={busy}
-                            style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
-                            Afslut liga
-                          </button>
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
+              <LigaListCard
+                key={league.id}
+                league={league}
+                regionLabel={regionLabel}
+                teams={teams}
+                regTeams={regTeams}
+                standings={standings}
+                myTeam={myTeam}
+                myTeamRank={myTeamRank}
+                nextMatchLabel={nextMatchLabel}
+                onClick={() => setSelectedLeagueId(league.id)}
+              />
             );
           })}
         </div>
       )}
         </>
       )}
+
+      {selectedLeague && (() => {
+        const teams = teamsByLeague[selectedLeague.id] || [];
+        const regTeams = allTeamsByLeague[selectedLeague.id] || [];
+        const matches = matchesByLeague[selectedLeague.id] || [];
+        const myTeam = myTeamByLeague[selectedLeague.id];
+        const joined = !!myTeam;
+        const standings = computeStandings(teams, matches);
+        const maxTeams = selectedLeague.max_teams || regTeams.length || teams.length;
+        const regTeamCount = regTeams.length;
+        const isFull = selectedLeague.max_teams && regTeamCount >= selectedLeague.max_teams;
+        const showTeamForm = teamFormLeagueId === selectedLeague.id;
+        const isCreator = selectedLeague.created_by === user.id;
+        const canManageTeams = isAdmin || isCreator;
+        const manageToolsOpen = !!openManageTools[selectedLeague.id];
+        const busy = busyId === selectedLeague.id || (typeof busyId === 'string' && busyId.startsWith(selectedLeague.id + '-'));
+        const regionLabel = creatorAreasByUserId[String(selectedLeague.created_by)] || '';
+        const totalRounds = selectedLeague.total_rounds || (maxTeams > 0 ? Math.max(1, maxTeams - 1) : null);
+        const badge = getLigaBadge(selectedLeague, { regTeamCount, maxTeams, totalRounds });
+        const teamCount = selectedLeague.status === 'registration' ? regTeamCount : teams.length;
+
+        let footer = null;
+        if (selectedLeague.status === 'registration' && !joined && !isFull && !showTeamForm) {
+          footer = (
+            <button
+              type="button"
+              className="pm-liga-v2-primary-cta"
+              style={btn(true)}
+              onClick={() => setTeamFormLeagueId(selectedLeague.id)}
+            >
+              <Plus size={15} /> Tilmeld dit hold
+            </button>
+          );
+        } else if (selectedLeague.status === 'active') {
+          footer = (
+            <button
+              type="button"
+              className="pm-liga-v2-secondary-cta"
+              style={btn(false)}
+              onClick={() => setScheduleLeagueId(selectedLeague.id)}
+            >
+              Se kampplan & resultater
+            </button>
+          );
+        } else if (selectedLeague.status === 'completed') {
+          footer = (
+            <button
+              type="button"
+              className="pm-liga-v2-secondary-cta"
+              style={btn(false)}
+              onClick={() => setScheduleLeagueId(selectedLeague.id)}
+            >
+              Se sæsonoversigt
+            </button>
+          );
+        }
+
+        return (
+          <LigaDetailSheet
+            open
+            onClose={closeDetailSheet}
+            league={selectedLeague}
+            regionLabel={regionLabel}
+            teamCount={teamCount}
+            totalRounds={totalRounds}
+            badgeLabel={badge.label}
+            badgeTone={badge.tone}
+            footer={footer}
+          >
+            <LigaSelectedDetail
+              league={selectedLeague}
+              user={user}
+              teams={teams}
+              regTeams={regTeams}
+              matches={matches}
+              myTeam={myTeam}
+              standings={standings}
+              joined={joined}
+              maxTeams={maxTeams}
+              filled={regTeamCount}
+              busyId={busyId}
+              busy={busy}
+              isAdmin={isAdmin}
+              isCreator={isCreator}
+              canManageTeams={canManageTeams}
+              showTeamForm={showTeamForm}
+              teamName={teamName}
+              setTeamName={setTeamName}
+              selectedPartner={selectedPartner}
+              setSelectedPartner={setSelectedPartner}
+              onCreateTeam={() => createTeam(selectedLeague.id)}
+              onCancelTeamForm={() => { setTeamFormLeagueId(null); setTeamName(''); setSelectedPartner(null); }}
+              onLeaveLeague={() => leaveLeague(selectedLeague.id)}
+              onKickTeam={kickTeam}
+              onTeamProfile={(t) => { setProfileTeam(t); setProfileTeamLeagueId(selectedLeague.id); }}
+              onPlayerClick={openProfile}
+              manageToolsOpen={manageToolsOpen}
+              toggleManageTools={() => toggleManageTools(selectedLeague.id)}
+              onStartLeague={() => startLeague(selectedLeague)}
+              onNextRound={() => nextRound(selectedLeague)}
+              onCompleteLeague={() => completeLeague(selectedLeague)}
+              reportingMatch={reportingMatch}
+              setReportingMatch={setReportingMatch}
+              scoreText={scoreText}
+              setScoreText={setScoreText}
+              selectedWinnerId={selectedWinnerId}
+              setSelectedWinnerId={setSelectedWinnerId}
+              confirmPending={confirmPending}
+              setConfirmPending={setConfirmPending}
+              cancelReporting={cancelReporting}
+              reportResult={reportResult}
+              showToast={showToast}
+              matchesByLeague={matchesByLeague}
+            />
+          </LigaDetailSheet>
+        );
+      })()}
+
+      {scheduleLeague ? (
+        <LigaScheduleSheet
+          open
+          onClose={() => setScheduleLeagueId(null)}
+          league={scheduleLeague}
+          teams={teamsByLeague[scheduleLeague.id] || []}
+          matches={matchesByLeague[scheduleLeague.id] || []}
+          myTeam={myTeamByLeague[scheduleLeague.id]}
+          currentRound={scheduleLeague.current_round}
+          totalRounds={scheduleLeague.total_rounds}
+        />
+      ) : null}
+
+      {profileTeam ? (
+        <LigaTeamProfileSheet
+          open
+          onClose={() => { setProfileTeam(null); setProfileTeamLeagueId(null); }}
+          team={profileTeam}
+          matches={profileTeamLeagueId ? (matchesByLeague[profileTeamLeagueId] || []) : []}
+          onPlayerClick={openProfile}
+          onMessageTeam={profileTeam.player1_id
+            ? () => navigate('/dashboard/beskeder?med=' + profileTeam.player1_id)
+            : undefined}
+        />
+      ) : null}
     </div>
   );
 }
