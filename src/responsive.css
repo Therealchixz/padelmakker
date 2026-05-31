@@ -8967,10 +8967,13 @@ button,
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
-  height: auto;
+  top: 0;
+  height: 100dvh;
   max-height: none;
-  z-index: 30;
+  /* Above the app header and the mobile bottom nav (z-index 46) so the
+     conversation is a true full-screen overlay. top/height are overridden
+     inline from visualViewport so the panel tracks the iOS keyboard. */
+  z-index: 60;
 }
 
 .pm-chat-v2-thread-header {
@@ -9223,6 +9226,13 @@ button,
   border-radius: 22px;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
+  transition: border-color 0.15s ease;
+}
+
+/* Replace the browser's blue focus box with a subtle accent border on the
+   surrounding pill. */
+.pm-chat-v2-input-field-wrap:focus-within {
+  border-color: var(--pm-accent);
 }
 
 .pm-chat-v2-input-field {
@@ -9231,6 +9241,7 @@ button,
   outline: none;
   -webkit-appearance: none;
   appearance: none;
+  -webkit-tap-highlight-color: transparent;
   background: transparent;
   font-family: inherit;
   font-size: 15px;
@@ -9238,26 +9249,10 @@ button,
   padding: 8px 0;
 }
 
-/* Kill the default focus ring/box around the message field and replace it with
-   a clean accent border on the surrounding pill when focused. */
-.pm-chat-v2-input-bar {
-  -webkit-tap-highlight-color: transparent;
-}
-
-.pm-chat-v2-input-bar input:focus,
-.pm-chat-v2-input-bar input:focus-visible,
-.pm-chat-v2-input-bar button:focus,
-.pm-chat-v2-input-bar button:focus-visible {
+.pm-chat-v2-input-field:focus,
+.pm-chat-v2-input-field:focus-visible {
   outline: none;
   box-shadow: none;
-}
-
-.pm-chat-v2-input-field-wrap {
-  transition: border-color 0.15s ease;
-}
-
-.pm-chat-v2-input-field-wrap:focus-within {
-  border-color: var(--pm-accent);
 }
 
 .pm-chat-v2-input-emoji,

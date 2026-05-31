@@ -92,7 +92,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   const [composeSearching, setComposeSearching] = useState(false);
   const [chatVisibleCount, setChatVisibleCount] = useState(CHAT_WINDOW_SIZE);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 768 : false));
-  const [mobileChatOffsets, setMobileChatOffsets] = useState({ top: 0, height: 0 });
+  const [mobileChatViewport, setMobileChatViewport] = useState(null);
   const [dmHiddenIds, setDmHiddenIds] = useState(() => new Set());
   const [blockedByMeIds, setBlockedByMeIds] = useState(() => new Set());
   const bottomRef = useRef(null);
@@ -760,55 +760,54 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     navigate('/dashboard/beskeder', { replace: true });
   };
 
-  const updateMobileChatOffsets = useCallback(() => {
+  const mobileChatActive = Boolean((selectedId || selectedTeamId) && isMobileView);
+
+  // The mobile conversation is a full-screen overlay pinned to the *visual*
+  // viewport. On iOS the on-screen keyboard shifts the visual viewport down
+  // inside the layout viewport (vv.offsetTop > 0) and shrinks it (vv.height),
+  // while `position: fixed` stays anchored to the layout viewport. We therefore
+  // drive top/height from visualViewport directly so the input bar always sits
+  // right above the keyboard — and there's no dead space when it closes.
+  const updateMobileChatViewport = useCallback(() => {
     if (typeof window === 'undefined') return;
-    const headerEl = document.querySelector('.pm-dash-header');
-    const top = headerEl ? Math.max(0, Math.round(headerEl.getBoundingClientRect().bottom)) : 0;
-    // Size the chat to the *visual* viewport (excludes the on-screen keyboard)
-    // rather than relying on `bottom: 0`, which on iOS leaves dead space when
-    // the keyboard closes and a gap at the top once the page can be scrolled.
-    const vh = window.visualViewport?.height ?? window.innerHeight;
-    const height = Math.max(0, Math.round(vh - top));
-    setMobileChatOffsets((prev) => {
-      if (prev.top === top && prev.height === height) return prev;
-      return { top, height };
+    const vv = window.visualViewport;
+    const next = vv
+      ? { top: Math.round(vv.offsetTop), height: Math.round(vv.height) }
+      : { top: 0, height: window.innerHeight };
+    setMobileChatViewport((prev) => {
+      if (prev && prev.top === next.top && prev.height === next.height) return prev;
+      return next;
     });
   }, []);
 
-  const mobileChatActive = Boolean((selectedId || selectedTeamId) && isMobileView);
-
   useEffect(() => {
     if (!mobileChatActive || typeof window === 'undefined') return undefined;
-    const handleViewportResize = () => updateMobileChatOffsets();
-    updateMobileChatOffsets();
-    window.addEventListener('resize', handleViewportResize);
-    window.addEventListener('orientationchange', handleViewportResize);
-    window.visualViewport?.addEventListener('resize', handleViewportResize);
-    window.visualViewport?.addEventListener('scroll', handleViewportResize);
-    return () => {
-      window.removeEventListener('resize', handleViewportResize);
-      window.removeEventListener('orientationchange', handleViewportResize);
-      window.visualViewport?.removeEventListener('resize', handleViewportResize);
-      window.visualViewport?.removeEventListener('scroll', handleViewportResize);
-    };
-  }, [mobileChatActive, updateMobileChatOffsets]);
+    const handle = () => updateMobileChatViewport();
+    updateMobileChatViewport();
+    window.addEventListener('resize', handle);
+    window.addEventListener('orientationchange', handle);
+    window.visualViewport?.addEventListener('resize', handle);
+    window.visualViewport?.addEventListener('scroll', handle);
 
-  // Lock the page behind the full-screen mobile chat so dragging can't scroll
-  // the underlying dashboard (which otherwise pulls the sticky header away from
-  // the chat and opens a gap at the top).
-  useEffect(() => {
-    if (!mobileChatActive || typeof document === 'undefined') return undefined;
+    // Lock the page behind the overlay so the underlying dashboard can't be
+    // dragged (which would otherwise shift things and leave a gap on close).
     const body = document.body;
     const root = document.documentElement;
     const prevBodyOverflow = body.style.overflow;
     const prevRootOverflow = root.style.overflow;
     body.style.overflow = 'hidden';
     root.style.overflow = 'hidden';
+
     return () => {
+      window.removeEventListener('resize', handle);
+      window.removeEventListener('orientationchange', handle);
+      window.visualViewport?.removeEventListener('resize', handle);
+      window.visualViewport?.removeEventListener('scroll', handle);
       body.style.overflow = prevBodyOverflow;
       root.style.overflow = prevRootOverflow;
+      setMobileChatViewport(null);
     };
-  }, [mobileChatActive]);
+  }, [mobileChatActive, updateMobileChatViewport]);
 
   useEffect(() => {
     if (!onMobileConversationStateChange) return undefined;
@@ -939,11 +938,10 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     return (
       <div
         className={threadShellClass}
-        style={mobileChatActive ? {
-          top: `${mobileChatOffsets.top || 64}px`,
-          ...(mobileChatOffsets.height
-            ? { height: `${mobileChatOffsets.height}px`, bottom: 'auto' }
-            : {}),
+        style={mobileChatActive && mobileChatViewport ? {
+          top: `${mobileChatViewport.top}px`,
+          height: `${mobileChatViewport.height}px`,
+          bottom: 'auto',
         } : undefined}
       >
         <ChatThreadHeader
