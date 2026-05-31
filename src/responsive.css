@@ -9229,35 +9229,11 @@ button,
   flex: 1;
   border: none;
   outline: none;
-  -webkit-appearance: none;
-  appearance: none;
   background: transparent;
   font-family: inherit;
   font-size: 15px;
   color: var(--pm-text);
   padding: 8px 0;
-}
-
-/* Kill the default focus ring/box around the message field and replace it with
-   a clean accent border on the surrounding pill when focused. */
-.pm-chat-v2-input-bar {
-  -webkit-tap-highlight-color: transparent;
-}
-
-.pm-chat-v2-input-bar input:focus,
-.pm-chat-v2-input-bar input:focus-visible,
-.pm-chat-v2-input-bar button:focus,
-.pm-chat-v2-input-bar button:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
-
-.pm-chat-v2-input-field-wrap {
-  transition: border-color 0.15s ease;
-}
-
-.pm-chat-v2-input-field-wrap:focus-within {
-  border-color: var(--pm-accent);
 }
 
 .pm-chat-v2-input-emoji,
