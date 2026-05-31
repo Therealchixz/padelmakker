@@ -8633,6 +8633,26 @@ button,
   gap: 8px;
 }
 
+.pm-liga-v2-team-chat-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.pm-liga-v2-team-chat-list {
+  max-height: min(36vh, 280px);
+}
+
+.pm-liga-v2-team-chat-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--pm-text-mid);
+  line-height: 1.45;
+}
+
 .pm-liga-v2-primary-cta {
   width: 100%;
   justify-content: center;

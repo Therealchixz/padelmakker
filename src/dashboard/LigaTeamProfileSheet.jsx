@@ -1,7 +1,7 @@
-import { ChevronLeft, MessageCircle } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { useBottomSheetDragToClose } from '../lib/useBottomSheetDragToClose';
-import { btn } from '../lib/platformTheme';
+import { LigaTeamChatPanel } from './LigaTeamChatPanel';
 
 function computeStreak(matches, teamId) {
   const teamMatches = matches
@@ -29,9 +29,14 @@ export function LigaTeamProfileSheet({
   open,
   onClose,
   team,
+  leagueId = null,
   matches = [],
   onPlayerClick,
-  onMessageTeam,
+  userId = null,
+  userName = 'Spiller',
+  userAvatar = null,
+  canWriteTeamChat = false,
+  showToast,
 }) {
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
@@ -119,11 +124,17 @@ export function LigaTeamProfileSheet({
             ))}
           </div>
 
-          {onMessageTeam ? (
-            <button type="button" className="pm-liga-v2-team-message" style={btn(false)} onClick={onMessageTeam}>
-              <MessageCircle size={16} aria-hidden />
-              Skriv til holdet
-            </button>
+          {team?.id && leagueId ? (
+            <LigaTeamChatPanel
+              teamId={team.id}
+              leagueId={leagueId}
+              teamName={team.name}
+              userId={userId}
+              userName={userName}
+              userAvatar={userAvatar}
+              canWrite={canWriteTeamChat}
+              showToast={showToast}
+            />
           ) : null}
         </div>
       </div>

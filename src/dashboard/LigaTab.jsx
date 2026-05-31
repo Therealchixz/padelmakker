@@ -955,11 +955,17 @@ export function LigaTab({
           open
           onClose={() => { setProfileTeam(null); setProfileTeamLeagueId(null); }}
           team={profileTeam}
+          leagueId={profileTeamLeagueId}
           matches={profileTeamLeagueId ? (matchesByLeague[profileTeamLeagueId] || []) : []}
           onPlayerClick={openProfile}
-          onMessageTeam={profileTeam.player1_id
-            ? () => navigate('/dashboard/beskeder?med=' + profileTeam.player1_id)
-            : undefined}
+          userId={user.id}
+          userName={user.full_name || user.name || 'Spiller'}
+          userAvatar={user.avatar}
+          canWriteTeamChat={
+            isAdmin
+            || (profileTeamLeagueId ? !!myTeamByLeague[profileTeamLeagueId] : false)
+          }
+          showToast={showToast}
         />
       ) : null}
     </div>
