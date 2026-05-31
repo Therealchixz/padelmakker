@@ -9,6 +9,8 @@ import {
   fetchMessages,
   sendMessage,
   markMessagesRead,
+  setDmMessageReaction,
+  fetchChatPartnerProfile,
 } from '../lib/chatUtils';
 import {
   fetchLeagueTeamConversations,
@@ -16,7 +18,13 @@ import {
   fetchLeagueTeamMeta,
   sendLeagueTeamMessage,
   subscribeToLeagueTeamMessages,
+  setLeagueTeamMessageReaction,
 } from '../lib/leagueTeamChatUtils';
+import { fetchInvitableMatches, buildInvitePayloadForMatch, joinMatchFromChatInvite, fetchShareableCourts } from '../lib/chatInviteUtils';
+import { CHAT_MESSAGE_TYPES, buildTimeSuggestionPayload, buildVenueSharePayload, messagePreview } from '../lib/chatMessageUtils';
+import { isUserOnline, onlineStatusLabel } from '../lib/chatPresenceUtils';
+import { broadcastDmTyping, subscribeDmTyping, broadcastTeamTyping, subscribeTeamTyping } from '../lib/dmTypingUtils';
+import { ChatActionSheet } from '../components/chat/ChatActionSheet';
 import { fetchDmHiddenUserIds, fetchUsersIBlocked } from '../lib/userModeration';
 import { BeskedChatActions } from '../components/BeskedChatActions';
 import { ChatInbox } from '../components/chat/ChatInbox';
@@ -63,6 +71,14 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   const [teamLoadError, setTeamLoadError] = useState(null);
   const [teamSending, setTeamSending] = useState(false);
   const [inboxSearch, setInboxSearch] = useState('');
+  const [partnerProfile, setPartnerProfile] = useState(null);
+  const [otherTyping, setOtherTyping] = useState(false);
+  const [actionSheet, setActionSheet] = useState(null);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [invitableMatches, setInvitableMatches] = useState([]);
+  const [shareableCourts, setShareableCourts] = useState([]);
+  const [timeDraft, setTimeDraft] = useState({ date: '', time: '18:00' });
+  const [joiningInviteId, setJoiningInviteId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -121,7 +137,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('id, full_name, name, avatar')
+        .select('id, full_name, name, avatar, elo_rating, level, last_active_at')
         .eq('id', id)
         .maybeSingle();
       if (data) setProfiles(prev => ({ ...prev, [data.id]: data }));
@@ -229,7 +245,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         try {
           const { data } = await supabase
             .from('profiles')
-            .select('id, full_name, name, avatar')
+            .select('id, full_name, name, avatar, last_active_at, elo_rating, level')
             .in('id', missingIds);
           const map = {};
           for (const p of data || []) map[p.id] = p;
@@ -347,9 +363,40 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       )
       .subscribe();
 
+    const handleMessageUpdate = (payload) => {
+      const msg = payload.new;
+      const relevant =
+        (msg.sender_id === user.id && msg.receiver_id === selectedId) ||
+        (msg.sender_id === selectedId && msg.receiver_id === user.id);
+      if (!relevant) return;
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
+    };
+
+    const updateChannel = supabase
+      .channel(`chat-up-${user.id}-${selectedId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages' },
+        handleMessageUpdate
+      )
+      .subscribe();
+
+    fetchChatPartnerProfile(selectedId)
+      .then((p) => { if (p) { setPartnerProfile(p); setProfiles((prev) => ({ ...prev, [p.id]: p })); } })
+      .catch(() => {});
+
+    const typingUnsub = subscribeDmTyping(user.id, selectedId, () => {
+      setOtherTyping(true);
+      window.setTimeout(() => setOtherTyping(false), 2800);
+    });
+
     return () => {
       supabase.removeChannel(incomingChannel);
       supabase.removeChannel(outgoingChannel);
+      supabase.removeChannel(updateChannel);
+      typingUnsub();
+      setOtherTyping(false);
+      setPartnerProfile(null);
     };
   }, [clearConversationUnread, scheduleMarkRead, selectedId, upsertConversationFromMessage, user?.id]);
 
@@ -376,14 +423,28 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       })
       .finally(() => { if (!cancelled) setTeamLoading(false); });
 
-    const unsubscribe = subscribeToLeagueTeamMessages(selectedTeamId, (row) => {
-      if (!row?.id) return;
-      setTeamMessages((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
+    const unsubscribe = subscribeToLeagueTeamMessages(
+      selectedTeamId,
+      (row) => {
+        if (!row?.id) return;
+        setTeamMessages((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
+      },
+      (row) => {
+        if (!row?.id) return;
+        setTeamMessages((prev) => prev.map((m) => (m.id === row.id ? { ...m, ...row } : m)));
+      }
+    );
+
+    const typingUnsub = subscribeTeamTyping(selectedTeamId, user.id, () => {
+      setOtherTyping(true);
+      window.setTimeout(() => setOtherTyping(false), 2800);
     });
 
     return () => {
       cancelled = true;
       unsubscribe();
+      typingUnsub();
+      setOtherTyping(false);
     };
   }, [selectedTeamId, user?.id]);
 
@@ -392,7 +453,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     prevMessageCountRef.current = 0;
     shouldStickToBottomRef.current = true;
     lastScrolledMessageIdRef.current = null;
-  }, [selectedId]);
+  }, [selectedId, selectedTeamId]);
 
   useEffect(() => {
     const prevCount = prevMessageCountRef.current;
@@ -416,6 +477,30 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     setMessageThreadCache(`${user.id}:${selectedId}`, messages);
   }, [messages, selectedId, user?.id]);
 
+  const upsertTeamConversationFromMessage = useCallback((msg) => {
+    if (!msg || !selectedTeamId) return;
+    const previewText = messagePreview(msg);
+    setTeamConversations((prev) => {
+      const idx = prev.findIndex((c) => c.teamId === selectedTeamId);
+      const nextItem = {
+        type: 'league_team',
+        teamId: selectedTeamId,
+        teamName: teamMeta?.teamName || 'Hold',
+        leagueId: teamMeta?.leagueId,
+        leagueName: teamMeta?.leagueName || '',
+        lastMessage: msg,
+        preview: `Dig: ${previewText}`,
+        unread: 0,
+      };
+      if (idx >= 0) {
+        return prev.map((c, i) => (i === idx ? nextItem : c)).sort(
+          (a, b) => new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
+        );
+      }
+      return [nextItem, ...prev];
+    });
+  }, [selectedTeamId, teamMeta?.leagueId, teamMeta?.leagueName, teamMeta?.teamName]);
+
   const handleTeamSend = async () => {
     const text = inputText.trim();
     if (!text || !selectedTeamId || teamSending || !user?.id) return;
@@ -432,25 +517,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       });
       if (msg) {
         setTeamMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
-        setTeamConversations((prev) => {
-          const idx = prev.findIndex((c) => c.teamId === selectedTeamId);
-          const nextItem = {
-            type: 'league_team',
-            teamId: selectedTeamId,
-            teamName: teamMeta?.teamName || 'Hold',
-            leagueId: teamMeta?.leagueId,
-            leagueName: teamMeta?.leagueName || '',
-            lastMessage: msg,
-            preview: `Dig: ${msg.content}`,
-            unread: 0,
-          };
-          if (idx >= 0) {
-            return prev.map((c, i) => (i === idx ? nextItem : c)).sort(
-              (a, b) => new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
-            );
-          }
-          return [nextItem, ...prev];
-        });
+        upsertTeamConversationFromMessage(msg);
       }
     } catch {
       setInputText(text);
@@ -458,6 +525,175 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     } finally {
       setTeamSending(false);
     }
+  };
+
+  const sendRichMessage = async ({ messageType, payload, content = '' }) => {
+    if (selectedTeamId) {
+      if (teamSending || !user?.id) return;
+      setTeamSending(true);
+      try {
+        const msg = await sendLeagueTeamMessage({
+          teamId: selectedTeamId,
+          leagueId: teamMeta?.leagueId,
+          senderId: user.id,
+          senderName: user.full_name || user.name || 'Spiller',
+          senderAvatar: user.avatar || null,
+          content,
+          messageType,
+          payload,
+        });
+        if (msg) {
+          setTeamMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+          upsertTeamConversationFromMessage(msg);
+        }
+      } catch {
+        showToast?.('Kunne ikke sende besked. Prøv igen.');
+      } finally {
+        setTeamSending(false);
+      }
+      return;
+    }
+
+    if (!selectedId || sending || !user?.id) return;
+    setSending(true);
+    try {
+      const msg = await sendMessage(user.id, selectedId, content, { messageType, payload });
+      setMessages((prev) => (prev.find((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      upsertConversationFromMessage(msg);
+    } catch (e) {
+      const errMsg = String(e?.message || '');
+      if (errMsg.toLowerCase().includes('bloker')) {
+        void refreshBlockState();
+        showToast?.('Du kan ikke sende beskeder til denne bruger.');
+      } else {
+        showToast?.('Kunne ikke sende besked. Prøv igen.');
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleInputChange = useCallback((next) => {
+    setInputText(next);
+    if (selectedTeamId && user?.id) {
+      broadcastTeamTyping(selectedTeamId, user.id);
+    } else if (selectedId && user?.id) {
+      broadcastDmTyping(user.id, selectedId);
+    }
+  }, [selectedId, selectedTeamId, user?.id]);
+
+  const handleReact = useCallback(async (message, emoji) => {
+    const nextReaction = message.reaction === emoji ? '' : emoji;
+    try {
+      if (selectedTeamId) {
+        const updated = await setLeagueTeamMessageReaction(message.id, nextReaction);
+        if (updated) {
+          setTeamMessages((prev) => prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)));
+        }
+      } else {
+        const updated = await setDmMessageReaction(message.id, nextReaction);
+        if (updated) {
+          setMessages((prev) => prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)));
+        }
+      }
+    } catch {
+      showToast?.('Kunne ikke gemme reaktion.');
+    }
+  }, [selectedTeamId, showToast]);
+
+  const handleJoinInvite = useCallback(async (invite) => {
+    if (!invite?.match_id || !user?.id || joiningInviteId) return;
+    setJoiningInviteId(invite.match_id);
+    try {
+      const result = await joinMatchFromChatInvite({
+        matchId: invite.match_id,
+        userId: user.id,
+        userName: user.full_name || user.name || 'Spiller',
+        userEmail: user.email,
+        userAvatar: user.avatar,
+      });
+      showToast?.(result?.alreadyJoined ? 'Du er allerede tilmeldt kampen.' : 'Du er tilmeldt kampen!');
+    } catch {
+      showToast?.('Kunne ikke tilmelde kampen.');
+    } finally {
+      setJoiningInviteId(null);
+    }
+  }, [joiningInviteId, showToast, user]);
+
+  const openMatchPicker = async () => {
+    setActionSheet('match');
+    setPickerLoading(true);
+    try {
+      const rows = await fetchInvitableMatches(user.id);
+      setInvitableMatches(rows);
+    } catch {
+      showToast?.('Kunne ikke hente dine kampe.');
+      setActionSheet(null);
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const openVenuePicker = async () => {
+    setActionSheet('venue');
+    setPickerLoading(true);
+    try {
+      const rows = await fetchShareableCourts();
+      setShareableCourts(rows);
+    } catch {
+      showToast?.('Kunne ikke hente baner.');
+      setActionSheet(null);
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const openTimePicker = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setTimeDraft({
+      date: tomorrow.toISOString().slice(0, 10),
+      time: '18:00',
+    });
+    setActionSheet('time');
+  };
+
+  const handlePickMatch = async (match) => {
+    setActionSheet(null);
+    try {
+      const payload = await buildInvitePayloadForMatch(match);
+      await sendRichMessage({
+        messageType: CHAT_MESSAGE_TYPES.MATCH_INVITE,
+        payload,
+        content: payload.title,
+      });
+    } catch {
+      showToast?.('Kunne ikke sende invitation.');
+    }
+  };
+
+  const handlePickCourt = async (court) => {
+    setActionSheet(null);
+    const payload = buildVenueSharePayload(court);
+    await sendRichMessage({
+      messageType: CHAT_MESSAGE_TYPES.VENUE_SHARE,
+      payload,
+      content: payload.venue,
+    });
+  };
+
+  const handlePickTime = async () => {
+    if (!timeDraft.date) {
+      showToast?.('Vælg en dato.');
+      return;
+    }
+    setActionSheet(null);
+    const payload = buildTimeSuggestionPayload(timeDraft.date, timeDraft.time);
+    await sendRichMessage({
+      messageType: CHAT_MESSAGE_TYPES.TIME_SUGGESTION,
+      payload,
+      content: payload.label,
+    });
   };
 
   const handleSend = async () => {
@@ -618,6 +854,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     const dmItems = conversations.map((convo) => {
       const p = profiles[convo.otherId];
       const isFromMe = convo.lastMessage.sender_id === user.id;
+      const previewText = messagePreview(convo.lastMessage);
       return {
         key: `dm:${convo.otherId}`,
         kind: 'dm',
@@ -625,9 +862,10 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         title: p?.full_name || p?.name || 'Spiller',
         avatarId: convo.otherId,
         avatarUrl: p?.avatar || null,
-        preview: `${isFromMe ? 'Dig: ' : ''}${convo.lastMessage.content}`,
+        preview: `${isFromMe ? 'Dig: ' : ''}${previewText}`,
         time: convo.lastMessage.created_at,
         unread: convo.unread,
+        online: isUserOnline(p?.last_active_at),
       };
     });
 
@@ -654,9 +892,10 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   // ── Beskedtråd (DM eller liga-hold) ───────────────────────────────────────
   if (selectedId || selectedTeamId) {
     const isTeamThread = Boolean(selectedTeamId);
-    const otherProfile = !isTeamThread ? profiles[selectedId] : null;
+    const otherProfile = !isTeamThread ? (partnerProfile || profiles[selectedId]) : null;
     const chatIsBlocked = !isTeamThread && dmHiddenIds.has(String(selectedId));
     const iBlockedThem = !isTeamThread && blockedByMeIds.has(String(selectedId));
+    const partnerOnline = !isTeamThread && isUserOnline(otherProfile?.last_active_at);
     const hiddenMessageCount = isTeamThread
       ? 0
       : Math.max(0, messages.length - chatVisibleCount);
@@ -668,7 +907,10 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       : getName(selectedId);
     const threadSubtitle = isTeamThread
       ? (teamMeta?.leagueName ? `Liga · ${teamMeta.leagueName}` : 'Liga-hold')
-      : '';
+      : onlineStatusLabel(otherProfile?.last_active_at, {
+          elo: otherProfile?.elo_rating,
+          level: otherProfile?.level,
+        });
 
     return (
       <div
@@ -681,6 +923,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           avatarId={isTeamThread ? selectedTeamId : selectedId}
           avatarName={threadTitle}
           avatarUrl={otherProfile?.avatar || null}
+          online={partnerOnline}
           onBack={closeThread}
           actionsSlot={!isTeamThread ? (
             <BeskedChatActions
@@ -721,6 +964,10 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           }
           groupMode
           showSenderNames={isTeamThread}
+          typingVisible={otherTyping}
+          onReact={handleReact}
+          onJoinInvite={handleJoinInvite}
+          joiningInviteId={joiningInviteId}
           onScroll={updateStickToBottom}
           loadOlderSlot={!isTeamThread && hiddenMessageCount > 0 ? (
             <div className="pm-besked-load-older">
@@ -740,9 +987,13 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         <ChatInputBar
           inputRef={inputRef}
           value={inputText}
-          onChange={setInputText}
+          onChange={handleInputChange}
           onSend={handleSend}
           onKeyDown={handleKeyDown}
+          enableQuickActions={!chatIsBlocked}
+          onInviteMatch={() => void openMatchPicker()}
+          onShareVenue={() => void openVenuePicker()}
+          onSuggestTime={openTimePicker}
           placeholder={
             isTeamThread
               ? 'Skriv til holdet…'
@@ -751,6 +1002,84 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           disabled={!isTeamThread && chatIsBlocked}
           sending={isTeamThread ? teamSending : sending}
         />
+
+        <ChatActionSheet
+          open={actionSheet === 'match'}
+          title="Invitér til kamp"
+          onClose={() => setActionSheet(null)}
+        >
+          {pickerLoading ? (
+            <div className="pm-chat-v2-action-sheet-status">Henter kampe…</div>
+          ) : invitableMatches.length === 0 ? (
+            <div className="pm-chat-v2-action-sheet-status">Du har ingen åbne kampe at dele.</div>
+          ) : (
+            invitableMatches.map((match) => (
+              <button
+                key={match.id}
+                type="button"
+                className="pm-chat-v2-action-sheet-row"
+                onClick={() => void handlePickMatch(match)}
+              >
+                <span className="pm-chat-v2-action-sheet-row-title">{match.court_name || 'Kamp'}</span>
+                <span className="pm-chat-v2-action-sheet-row-sub">
+                  {match.date}{match.time ? ` · ${String(match.time).slice(0, 5)}` : ''}
+                </span>
+              </button>
+            ))
+          )}
+        </ChatActionSheet>
+
+        <ChatActionSheet
+          open={actionSheet === 'venue'}
+          title="Del bane"
+          onClose={() => setActionSheet(null)}
+        >
+          {pickerLoading ? (
+            <div className="pm-chat-v2-action-sheet-status">Henter baner…</div>
+          ) : shareableCourts.length === 0 ? (
+            <div className="pm-chat-v2-action-sheet-status">Ingen baner fundet.</div>
+          ) : (
+            shareableCourts.map((court) => (
+              <button
+                key={court.id}
+                type="button"
+                className="pm-chat-v2-action-sheet-row"
+                onClick={() => void handlePickCourt(court)}
+              >
+                <span className="pm-chat-v2-action-sheet-row-title">{court.name}</span>
+                {court.city ? <span className="pm-chat-v2-action-sheet-row-sub">{court.city}</span> : null}
+              </button>
+            ))
+          )}
+        </ChatActionSheet>
+
+        <ChatActionSheet
+          open={actionSheet === 'time'}
+          title="Foreslå tid"
+          onClose={() => setActionSheet(null)}
+        >
+          <div className="pm-chat-v2-time-picker">
+            <label>
+              Dato
+              <input
+                type="date"
+                value={timeDraft.date}
+                onChange={(e) => setTimeDraft((prev) => ({ ...prev, date: e.target.value }))}
+              />
+            </label>
+            <label>
+              Tid
+              <input
+                type="time"
+                value={timeDraft.time}
+                onChange={(e) => setTimeDraft((prev) => ({ ...prev, time: e.target.value }))}
+              />
+            </label>
+            <button type="button" className="pm-chat-v2-time-picker-send" onClick={() => void handlePickTime()}>
+              Send forslag
+            </button>
+          </div>
+        </ChatActionSheet>
       </div>
     );
   }

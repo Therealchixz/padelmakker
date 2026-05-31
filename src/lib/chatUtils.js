@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import { fetchDmHiddenUserIds } from './userModeration';
+import { messagePreview } from './chatMessageUtils';
 
 /** Seneste beskeder der dækker samtalelisten (undgår fuld tabel-scan). */
 const CONVERSATION_SCAN_LIMIT = 800;
+
+const DM_MESSAGE_SELECT = 'id, sender_id, receiver_id, content, created_at, is_read, message_type, payload, reaction';
 
 function mapRpcConversationRows(rows) {
   return (rows || []).map((row) => ({
@@ -78,7 +81,7 @@ export async function fetchConversations(userId) {
   if (latestMessageIds.length > 0) {
     const { data: lastMessages } = await supabase
       .from('messages')
-      .select('id, sender_id, receiver_id, content, created_at, is_read')
+      .select(DM_MESSAGE_SELECT)
       .in('id', latestMessageIds);
 
     const lastMessageMap = {};
@@ -104,7 +107,7 @@ export async function fetchConversations(userId) {
 export async function fetchMessages(userId, otherId) {
   const { data, error } = await supabase
     .from('messages')
-    .select('id, sender_id, receiver_id, content, created_at, is_read')
+    .select(DM_MESSAGE_SELECT)
     .or(
       `and(sender_id.eq.${userId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${userId})`
     )
@@ -114,13 +117,44 @@ export async function fetchMessages(userId, otherId) {
   return data || [];
 }
 
-/** Send en besked. */
-export async function sendMessage(senderId, receiverId, content) {
+/** Send en besked (tekst eller rich card). */
+export async function sendMessage(senderId, receiverId, content, options = {}) {
+  const messageType = options.messageType || 'text';
+  const payload = options.payload ?? null;
+  const trimmed = String(content || '').trim();
+  const preview = trimmed || messagePreview({ message_type: messageType, payload, content: trimmed });
+
   const { data, error } = await supabase
     .from('messages')
-    .insert({ sender_id: senderId, receiver_id: receiverId, content: content.trim() })
-    .select('id, sender_id, receiver_id, content, created_at, is_read')
+    .insert({
+      sender_id: senderId,
+      receiver_id: receiverId,
+      content: preview,
+      message_type: messageType,
+      payload,
+    })
+    .select(DM_MESSAGE_SELECT)
     .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function setDmMessageReaction(messageId, reaction) {
+  const { data, error } = await supabase.rpc('set_dm_message_reaction', {
+    p_message_id: messageId,
+    p_reaction: reaction || '',
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchChatPartnerProfile(otherId) {
+  if (!otherId) return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, name, avatar, elo_rating, level, last_active_at')
+    .eq('id', otherId)
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

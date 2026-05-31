@@ -1,4 +1,7 @@
 import { supabase } from './supabase';
+import { messagePreview } from './chatMessageUtils';
+
+const TEAM_MESSAGE_SELECT = 'id, team_id, league_id, sender_id, sender_name, sender_avatar, content, created_at, message_type, payload, reaction';
 
 export async function fetchLeagueTeamMessages(teamId, limit = 80) {
   if (!teamId) return [];
@@ -6,7 +9,7 @@ export async function fetchLeagueTeamMessages(teamId, limit = 80) {
 
   const { data, error } = await supabase
     .from('league_team_messages')
-    .select('id, team_id, league_id, sender_id, sender_name, sender_avatar, content, created_at')
+    .select(TEAM_MESSAGE_SELECT)
     .eq('team_id', teamId)
     .order('created_at', { ascending: true })
     .limit(safeLimit);
@@ -22,9 +25,12 @@ export async function sendLeagueTeamMessage({
   senderName,
   senderAvatar = null,
   content,
+  messageType = 'text',
+  payload = null,
 }) {
   const trimmed = String(content || '').trim();
-  if (!trimmed || !teamId) return null;
+  const preview = trimmed || messagePreview({ message_type: messageType, payload, content: trimmed });
+  if (!preview || !teamId) return null;
 
   const { data, error } = await supabase
     .from('league_team_messages')
@@ -34,17 +40,28 @@ export async function sendLeagueTeamMessage({
       sender_id: senderId,
       sender_name: senderName || 'Spiller',
       sender_avatar: senderAvatar || null,
-      content: trimmed,
+      content: preview,
+      message_type: messageType,
+      payload,
     })
-    .select('id, team_id, league_id, sender_id, sender_name, sender_avatar, content, created_at')
+    .select(TEAM_MESSAGE_SELECT)
     .single();
 
   if (error) throw error;
   return data;
 }
 
-export function subscribeToLeagueTeamMessages(teamId, onInsert) {
-  if (!teamId || typeof onInsert !== 'function') return () => {};
+export async function setLeagueTeamMessageReaction(messageId, reaction) {
+  const { data, error } = await supabase.rpc('set_league_team_message_reaction', {
+    p_message_id: messageId,
+    p_reaction: reaction || '',
+  });
+  if (error) throw error;
+  return data;
+}
+
+export function subscribeToLeagueTeamMessages(teamId, onInsert, onUpdate) {
+  if (!teamId) return () => {};
 
   const channel = supabase
     .channel(`liga-team-chat-${teamId}`)
@@ -56,9 +73,23 @@ export function subscribeToLeagueTeamMessages(teamId, onInsert) {
         table: 'league_team_messages',
         filter: `team_id=eq.${teamId}`,
       },
-      (payload) => onInsert(payload?.new || null)
-    )
-    .subscribe();
+      (payload) => onInsert?.(payload?.new || null)
+    );
+
+  if (typeof onUpdate === 'function') {
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'league_team_messages',
+        filter: `team_id=eq.${teamId}`,
+      },
+      (payload) => onUpdate?.(payload?.new || null)
+    );
+  }
+
+  channel.subscribe();
 
   return () => {
     supabase.removeChannel(channel);
@@ -108,7 +139,7 @@ export async function fetchLeagueTeamConversations(userId) {
 
   const { data: msgs, error: msgErr } = await supabase
     .from('league_team_messages')
-    .select('id, team_id, content, created_at, sender_id, sender_name')
+    .select('id, team_id, content, created_at, sender_id, sender_name, message_type, payload')
     .in('team_id', teamIds)
     .order('created_at', { ascending: false })
     .limit(400);
@@ -124,6 +155,7 @@ export async function fetchLeagueTeamConversations(userId) {
     .map(([teamId, lastMessage]) => {
       const team = (teams || []).find((t) => t.id === teamId);
       const isFromMe = String(lastMessage.sender_id) === String(userId);
+      const previewText = messagePreview(lastMessage);
       return {
         type: 'league_team',
         teamId,
@@ -131,7 +163,7 @@ export async function fetchLeagueTeamConversations(userId) {
         leagueId: team?.league_id,
         leagueName: team?.leagues?.name || '',
         lastMessage,
-        preview: isFromMe ? `Dig: ${lastMessage.content}` : `${lastMessage.sender_name || 'Spiller'}: ${lastMessage.content}`,
+        preview: isFromMe ? `Dig: ${previewText}` : `${lastMessage.sender_name || 'Spiller'}: ${previewText}`,
         unread: 0,
       };
     })

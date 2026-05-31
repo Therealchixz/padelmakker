@@ -5,7 +5,9 @@ import {
   fetchLeagueTeamMessages,
   sendLeagueTeamMessage,
   subscribeToLeagueTeamMessages,
+  setLeagueTeamMessageReaction,
 } from '../lib/leagueTeamChatUtils';
+import { broadcastTeamTyping, subscribeTeamTyping } from '../lib/dmTypingUtils';
 
 export function LigaTeamChatPanel({
   teamId,
@@ -22,6 +24,7 @@ export function LigaTeamChatPanel({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [otherTyping, setOtherTyping] = useState(false);
   const listRef = useRef(null);
 
   const scrollToBottom = useCallback((behavior = 'auto') => {
@@ -52,21 +55,42 @@ export function LigaTeamChatPanel({
         if (!cancelled) setLoading(false);
       });
 
-    const unsubscribe = subscribeToLeagueTeamMessages(teamId, (row) => {
-      if (!row?.id) return;
-      setMessages((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
-      window.requestAnimationFrame(() => scrollToBottom('smooth'));
-    });
+    const unsubscribe = subscribeToLeagueTeamMessages(
+      teamId,
+      (row) => {
+        if (!row?.id) return;
+        setMessages((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
+        window.requestAnimationFrame(() => scrollToBottom('smooth'));
+      },
+      (row) => {
+        if (!row?.id) return;
+        setMessages((prev) => prev.map((m) => (m.id === row.id ? { ...m, ...row } : m)));
+      }
+    );
+
+    const typingUnsub = userId
+      ? subscribeTeamTyping(teamId, userId, () => {
+          setOtherTyping(true);
+          window.setTimeout(() => setOtherTyping(false), 2800);
+        })
+      : () => {};
 
     return () => {
       cancelled = true;
       unsubscribe();
+      typingUnsub();
+      setOtherTyping(false);
     };
-  }, [teamId, scrollToBottom]);
+  }, [teamId, userId, scrollToBottom]);
 
   useEffect(() => {
     if (!loading && messages.length > 0) scrollToBottom('auto');
   }, [loading, messages.length, scrollToBottom]);
+
+  const handleDraftChange = (next) => {
+    setDraft(next);
+    if (teamId && userId) broadcastTeamTyping(teamId, userId);
+  };
 
   const handleSend = async () => {
     const text = draft.trim();
@@ -94,6 +118,18 @@ export function LigaTeamChatPanel({
     }
   };
 
+  const handleReact = async (message, emoji) => {
+    const nextReaction = message.reaction === emoji ? '' : emoji;
+    try {
+      const updated = await setLeagueTeamMessageReaction(message.id, nextReaction);
+      if (updated) {
+        setMessages((prev) => prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)));
+      }
+    } catch {
+      showToast?.('Kunne ikke gemme reaktion.');
+    }
+  };
+
   return (
     <div className="pm-liga-v2-team-chat-panel">
       <div className="pm-liga-v2-team-chat-label">
@@ -112,12 +148,14 @@ export function LigaTeamChatPanel({
         }
         groupMode
         showSenderNames
+        typingVisible={otherTyping}
+        onReact={handleReact}
         className="pm-liga-v2-team-chat-list pm-chat-v2-message-list"
       />
       {canWrite ? (
         <ChatInputBar
           value={draft}
-          onChange={setDraft}
+          onChange={handleDraftChange}
           onSend={handleSend}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {

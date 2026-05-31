@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { ChatBubble } from './ChatBubble';
+import { ChatTypingBubble } from './ChatTypingBubble';
 import { isSameSender, withDateDividers } from '../../lib/chatDisplayUtils';
+import { normalizeChatMessage } from '../../lib/chatMessageUtils';
 
 export function ChatMessageList({
   messages = [],
@@ -14,20 +16,15 @@ export function ChatMessageList({
   listRef: externalListRef,
   onScroll,
   className = '',
+  typingVisible = false,
+  onReact,
+  onJoinInvite,
+  joiningInviteId = null,
 }) {
   const internalRef = useRef(null);
   const listRef = externalListRef || internalRef;
 
-  const normalized = messages.map((msg) => ({
-    ...msg,
-    from: msg.from || (String(msg.sender_id || msg.senderId) === String(userId) ? 'me' : 'them'),
-    text: msg.text ?? msg.content ?? '',
-    createdAt: msg.createdAt ?? msg.created_at,
-    senderId: msg.senderId ?? msg.sender_id,
-    senderName: msg.senderName ?? msg.sender_name,
-    senderAvatar: msg.senderAvatar ?? msg.sender_avatar,
-    status: msg.status ?? (msg.is_read ? 'read' : undefined),
-  }));
+  const normalized = messages.map((msg) => normalizeChatMessage(msg, userId)).filter(Boolean);
 
   const withDates = withDateDividers(normalized, (m) => m.createdAt);
 
@@ -40,7 +37,7 @@ export function ChatMessageList({
     const el = listRef.current;
     if (!el || loading) return;
     el.scrollTop = el.scrollHeight;
-  }, [loading, messages.length, listRef]);
+  }, [loading, messages.length, typingVisible, listRef]);
 
   return (
     <div
@@ -50,7 +47,7 @@ export function ChatMessageList({
     >
       {loading && <div className="pm-chat-v2-message-status">Indlæser beskeder…</div>}
       {!loading && error && <div className="pm-chat-v2-message-status">{error}</div>}
-      {!loading && !error && messages.length === 0 && (
+      {!loading && !error && messages.length === 0 && !typingVisible && (
         <div className="pm-chat-v2-message-empty">{emptyText}</div>
       )}
       {loadOlderSlot}
@@ -68,8 +65,9 @@ export function ChatMessageList({
           const next = withDates[i + 1];
           const prevMsg = prev && prev.type !== 'date' ? prev : null;
           const nextMsg = next && next.type !== 'date' ? next : null;
-          const groupedWithPrev = prevMsg && isSameSender(prevMsg, item) && groupMode;
-          const groupedWithNext = nextMsg && isSameSender(nextMsg, item) && groupMode;
+          const sameType = (a, b) => isSameSender(a, b) && (a.messageType || 'text') === (b.messageType || 'text');
+          const groupedWithPrev = prevMsg && sameType(prevMsg, item) && groupMode;
+          const groupedWithNext = nextMsg && sameType(nextMsg, item) && groupMode;
           const showAvatar = groupMode && item.from === 'them' && !groupedWithNext;
 
           return (
@@ -87,10 +85,18 @@ export function ChatMessageList({
                 avatarId={item.senderId}
                 avatarName={item.senderName}
                 avatarUrl={item.senderAvatar}
+                onReact={onReact}
+                onJoinInvite={onJoinInvite}
+                joiningInviteId={joiningInviteId}
               />
             </div>
           );
         })}
+        {typingVisible ? (
+          <div className="pm-chat-v2-message-item pm-chat-v2-message-item--typing">
+            <ChatTypingBubble />
+          </div>
+        ) : null}
       </div>
     </div>
   );
