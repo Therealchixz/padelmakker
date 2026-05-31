@@ -8482,6 +8482,14 @@ button,
   z-index: 1050;
 }
 
+.pm-liga-v2-team-sheet {
+  display: flex;
+  flex-direction: column;
+  max-height: min(88vh, 720px);
+  overflow: hidden;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
 .pm-liga-v2-schedule-head {
   padding: 0 20px 8px;
 }
@@ -8508,7 +8516,28 @@ button,
 }
 
 .pm-liga-v2-team-body {
-  padding: 0 20px 32px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 0 20px 0;
+}
+
+.pm-liga-v2-team-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--pm-accent) 30%, var(--pm-border)) transparent;
+}
+
+.pm-liga-v2-team-chat-wrap {
+  flex-shrink: 0;
+  margin: 0 -20px;
+  padding: 12px 20px 0;
+  border-top: 1px solid var(--pm-border-soft);
+  background: var(--pm-surface);
 }
 
 .pm-liga-v2-team-head {
@@ -8595,7 +8624,7 @@ button,
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 4px;
 }
 
 .pm-liga-v2-team-player {
@@ -8633,7 +8662,16 @@ button,
   gap: 8px;
 }
 
+.pm-liga-v2-team-chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: min(38vh, 280px);
+  min-height: 220px;
+  padding: 0;
+}
+
 .pm-liga-v2-team-chat-label {
+  flex-shrink: 0;
   font-size: 12px;
   font-weight: 700;
   color: var(--pm-text-light);
@@ -8643,11 +8681,20 @@ button,
 }
 
 .pm-liga-v2-team-chat-list {
-  max-height: min(36vh, 280px);
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}
+
+.pm-liga-v2-team-chat-panel .pm-match-chat-composer {
+  flex-shrink: 0;
+  margin-top: 8px;
 }
 
 .pm-liga-v2-team-chat-note {
-  margin: 10px 0 0;
+  flex-shrink: 0;
+  margin: 8px 0 0;
   font-size: 12px;
   color: var(--pm-text-mid);
   line-height: 1.45;

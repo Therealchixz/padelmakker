@@ -96,7 +96,7 @@ export function LigaTeamChatPanel({
   };
 
   return (
-    <div className="pm-match-chat-panel" style={{ marginTop: 4 }}>
+    <div className="pm-liga-v2-team-chat-panel">
       <div className="pm-liga-v2-team-chat-label">
         Beskeder til {teamName || 'holdet'}
       </div>

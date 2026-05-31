@@ -78,6 +78,7 @@ export function LigaTeamProfileSheet({
           </button>
         </div>
         <div className="pm-liga-v2-team-body">
+          <div className="pm-liga-v2-team-scroll">
           <div className="pm-liga-v2-team-head">
             <div className="pm-liga-v2-team-avatars">
               <AvatarCircle avatar={team.player1_avatar} size={52} emojiSize="22px" className="pm-liga-v2-team-avatar" />
@@ -123,18 +124,21 @@ export function LigaTeamProfileSheet({
               </button>
             ))}
           </div>
+          </div>
 
           {team?.id && leagueId ? (
-            <LigaTeamChatPanel
-              teamId={team.id}
-              leagueId={leagueId}
-              teamName={team.name}
-              userId={userId}
-              userName={userName}
-              userAvatar={userAvatar}
-              canWrite={canWriteTeamChat}
-              showToast={showToast}
-            />
+            <div className="pm-liga-v2-team-chat-wrap">
+              <LigaTeamChatPanel
+                teamId={team.id}
+                leagueId={leagueId}
+                teamName={team.name}
+                userId={userId}
+                userName={userName}
+                userAvatar={userAvatar}
+                canWrite={canWriteTeamChat}
+                showToast={showToast}
+              />
+            </div>
           ) : null}
         </div>
       </div>
