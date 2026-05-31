@@ -789,12 +789,28 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     window.visualViewport?.addEventListener('resize', handle);
     window.visualViewport?.addEventListener('scroll', handle);
 
-    // Lock the page behind the overlay so the underlying dashboard can't be
-    // dragged (which would otherwise shift things and leave a gap on close).
+    // Lock the page behind the overlay. Plain `overflow: hidden` is not enough
+    // on iOS: focusing the input inside a fixed overlay makes Safari scroll the
+    // window to "reveal" it, so on close the dashboard is left scrolled up.
+    // Pinning the body with position:fixed at the current scroll offset prevents
+    // that, and we restore the exact scroll position on close.
     const body = document.body;
     const root = document.documentElement;
-    const prevBodyOverflow = body.style.overflow;
-    const prevRootOverflow = root.style.overflow;
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const prev = {
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyWidth: body.style.width,
+      bodyOverflow: body.style.overflow,
+      rootOverflow: root.style.overflow,
+    };
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
     body.style.overflow = 'hidden';
     root.style.overflow = 'hidden';
 
@@ -803,8 +819,17 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       window.removeEventListener('orientationchange', handle);
       window.visualViewport?.removeEventListener('resize', handle);
       window.visualViewport?.removeEventListener('scroll', handle);
-      body.style.overflow = prevBodyOverflow;
-      root.style.overflow = prevRootOverflow;
+      // Blur any focused field so iOS doesn't keep the keyboard/scroll state.
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.left = prev.bodyLeft;
+      body.style.right = prev.bodyRight;
+      body.style.width = prev.bodyWidth;
+      body.style.overflow = prev.bodyOverflow;
+      root.style.overflow = prev.rootOverflow;
+      // Restore the scroll position the dashboard had before the chat opened.
+      window.scrollTo(0, scrollY);
       setMobileChatViewport(null);
     };
   }, [mobileChatActive, updateMobileChatViewport]);
