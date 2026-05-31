@@ -206,12 +206,23 @@ function RegistrationDetail({
         </div>
       </div>
 
-      <div className="pm-liga-v2-list-progress-row" style={{ marginBottom: 6 }}>
-        <span className="pm-liga-v2-list-progress-label">{filled} af {maxTeams} hold tilmeldt</span>
-        <span className="pm-liga-v2-list-progress-spots">{emptySlots} pladser</span>
-      </div>
-      <div className="pm-liga-v2-list-progress" style={{ marginBottom: 16 }} aria-hidden>
-        <div className="pm-liga-v2-list-progress-fill" style={{ width: `${fillPct}%` }} />
+      <div className="pm-americano-v2-list-progress-row" style={{ marginBottom: 16 }}>
+        <div
+          className={`pm-americano-v2-list-progress${filled >= maxTeams ? ' pm-americano-v2-list-progress--full' : ''}`}
+          role="progressbar"
+          aria-valuenow={filled}
+          aria-valuemin={0}
+          aria-valuemax={maxTeams}
+          aria-label={`${filled} af ${maxTeams} hold tilmeldt`}
+        >
+          <div
+            className="pm-americano-v2-list-progress-fill"
+            style={{ width: `${filled >= maxTeams ? 100 : fillPct}%` }}
+          />
+        </div>
+        <span className={`pm-americano-v2-list-progress-count${filled >= maxTeams ? ' pm-americano-v2-list-progress-count--full' : ''}`}>
+          {filled}/{maxTeams}
+        </span>
       </div>
 
       {league.description ? (

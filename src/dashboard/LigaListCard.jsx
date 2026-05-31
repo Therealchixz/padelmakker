@@ -1,4 +1,6 @@
 import { CalendarDays, Clock, MapPin } from 'lucide-react';
+import { AvatarCircle } from '../components/AvatarCircle';
+import { isAvatarUrl } from '../lib/avatarUpload';
 import { shortLigaDate, getLigaBadge } from '../lib/ligaDisplayUtils';
 
 function badgeToneClass(tone) {
@@ -9,29 +11,27 @@ function badgeToneClass(tone) {
   return 'pm-kampe-v2-badge--neutral';
 }
 
-function teamInitials(name) {
-  return String(name || '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((s) => s[0]?.toUpperCase() || '')
-    .join('') || '?';
-}
-
-function hashStr(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-
-const TEAM_COLORS = ['#2563EB', '#059669', '#D97706', '#7C3AED', '#DC2626', '#0891B2'];
-
-function teamColor(teamId) {
-  return TEAM_COLORS[hashStr(String(teamId || 'x')) % TEAM_COLORS.length];
-}
-
 function shortDateLabel(dateVal) {
   return shortLigaDate(dateVal);
+}
+
+function playerPreviewAvatar(player) {
+  if (player?.avatar && isAvatarUrl(player.avatar)) return player.avatar;
+  const name = player?.name || '?';
+  return name.split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase() || '').join('') || '?';
+}
+
+function previewPlayersFromTeams(teams, max = 4) {
+  const out = [];
+  for (const team of teams) {
+    if (out.length < max) {
+      out.push({ id: `${team.id}-p1`, avatar: playerPreviewAvatar({ avatar: team.player1_avatar, name: team.player1_name }), name: team.player1_name });
+    }
+    if (out.length < max) {
+      out.push({ id: `${team.id}-p2`, avatar: playerPreviewAvatar({ avatar: team.player2_avatar, name: team.player2_name }), name: team.player2_name });
+    }
+  }
+  return out.slice(0, max);
 }
 
 function MiniStandings({ rows, myTeamId, limit = 3 }) {
@@ -85,7 +85,9 @@ export function LigaListCard({
     ? 'pm-liga-v2-list-top pm-liga-v2-list-top--done'
     : 'pm-liga-v2-list-top';
 
-  const previewTeams = (isRegistration ? regTeams : teams).slice(0, 4);
+  const previewPlayers = isRegistration ? previewPlayersFromTeams(regTeams) : [];
+  const playerOverflow = isRegistration ? Math.max(0, regTeams.length * 2 - previewPlayers.length) : 0;
+  const isFull = Boolean(maxTeams && filled >= maxTeams);
   const myStanding = myTeamRank != null && standings[myTeamRank - 1]
     ? standings[myTeamRank - 1]
     : myTeam && standings.find((t) => t.id === myTeam.id);
@@ -104,12 +106,21 @@ export function LigaListCard({
           <div className="pm-liga-v2-list-type">Liga · Swiss</div>
           <div className="pm-liga-v2-list-title">{league.name}</div>
           <div className="pm-liga-v2-list-meta">
-            <MapPin size={11} strokeWidth={2.5} aria-hidden />
-            <span>
-              {regionLabel || 'Danmark'}
-              {' · '}
-              {isRegistration ? `${maxTeams} hold max` : `${filled} hold`}
-            </span>
+            {isRegistration ? (
+              <>
+                <CalendarDays size={13} strokeWidth={2} aria-hidden />
+                <span>Start {shortDateLabel(league.start_date)}</span>
+              </>
+            ) : (
+              <>
+                <MapPin size={11} strokeWidth={2.5} aria-hidden />
+                <span>
+                  {regionLabel || 'Danmark'}
+                  {' · '}
+                  {filled} hold
+                </span>
+              </>
+            )}
           </div>
         </div>
         <span className={`pm-kampe-v2-badge pm-liga-v2-list-badge ${badgeToneClass(badgeTone)}`}>
@@ -121,40 +132,63 @@ export function LigaListCard({
       <div className="pm-liga-v2-list-body">
         {isRegistration ? (
           <>
-            <div className="pm-liga-v2-list-progress-row">
-              <span className="pm-liga-v2-list-progress-label">{filled} af {maxTeams} hold tilmeldt</span>
-              <span className="pm-liga-v2-list-progress-spots">{Math.max(0, maxTeams - filled)} pladser</span>
+            <div className="pm-americano-v2-list-venue">
+              <MapPin size={12} aria-hidden />
+              {regionLabel || 'Danmark'} · {maxTeams} hold max
             </div>
-            <div className="pm-liga-v2-list-progress" aria-hidden>
-              <div className="pm-liga-v2-list-progress-fill" style={{ width: `${fillPct}%` }} />
-            </div>
-            <div className="pm-liga-v2-list-pills">
-              <span className="pm-liga-v2-list-pill">
-                <CalendarDays size={10} strokeWidth={2.5} aria-hidden />
-                Start {shortDateLabel(league.start_date)}
-              </span>
-              {totalRounds ? <span className="pm-liga-v2-list-pill">{totalRounds} runder</span> : null}
-              <span className="pm-liga-v2-list-pill pm-liga-v2-list-pill--green">Frist {shortDateLabel(league.end_date)}</span>
-            </div>
-            {previewTeams.length > 0 ? (
-              <div className="pm-liga-v2-list-team-preview">
-                <div className="pm-liga-v2-list-team-badges" aria-hidden>
-                  {previewTeams.map((t) => (
-                    <span
-                      key={t.id}
-                      className="pm-liga-v2-list-team-badge"
-                      style={{ background: `${teamColor(t.id)}22`, color: teamColor(t.id) }}
-                    >
-                      {teamInitials(t.name)}
-                    </span>
-                  ))}
-                </div>
-                <span className="pm-liga-v2-list-team-names">
-                  {previewTeams.slice(0, 2).map((t) => t.name).join(', ')}
-                  {filled > 2 ? ` +${filled - 2} hold` : ''}
-                </span>
+
+            <div className="pm-americano-v2-list-progress-row">
+              <div
+                className={`pm-americano-v2-list-progress${isFull ? ' pm-americano-v2-list-progress--full' : ''}`}
+                role="progressbar"
+                aria-valuenow={filled}
+                aria-valuemin={0}
+                aria-valuemax={maxTeams}
+                aria-label={`${filled} af ${maxTeams} hold tilmeldt`}
+              >
+                <div
+                  className="pm-americano-v2-list-progress-fill"
+                  style={{ width: `${isFull ? 100 : fillPct}%` }}
+                />
               </div>
-            ) : null}
+              <span className={`pm-americano-v2-list-progress-count${isFull ? ' pm-americano-v2-list-progress-count--full' : ''}`}>
+                {filled}/{maxTeams}
+              </span>
+            </div>
+
+            <div className="pm-americano-v2-list-footer">
+              <div className="pm-americano-v2-list-meta">
+                {totalRounds ? (
+                  <span className="pm-americano-v2-list-meta-pill">
+                    <Clock size={11} aria-hidden />
+                    {totalRounds} runder
+                  </span>
+                ) : null}
+                <span className="pm-americano-v2-list-meta-pill">
+                  Frist {shortDateLabel(league.end_date)}
+                </span>
+                <span className="pm-americano-v2-list-meta-pill">2 spillere pr. hold</span>
+              </div>
+
+              {previewPlayers.length > 0 ? (
+                <div className="pm-americano-v2-list-participants">
+                  <div className="pm-americano-v2-list-avatar-stack" aria-hidden>
+                    {previewPlayers.map((p, idx) => (
+                      <AvatarCircle
+                        key={p.id}
+                        avatar={p.avatar}
+                        size={28}
+                        emojiSize="11px"
+                        style={{ zIndex: idx + 1 }}
+                      />
+                    ))}
+                  </div>
+                  {playerOverflow > 0 ? (
+                    <span className="pm-americano-v2-list-overflow">+{playerOverflow}</span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           </>
         ) : (
           <>
