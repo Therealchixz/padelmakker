@@ -1,12 +1,5 @@
 import { supabase } from './supabase';
 
-export function formatTeamChatClock(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
-}
-
 export async function fetchLeagueTeamMessages(teamId, limit = 80) {
   if (!teamId) return [];
   const safeLimit = Math.max(1, Math.min(Number(limit) || 80, 200));
@@ -70,4 +63,79 @@ export function subscribeToLeagueTeamMessages(teamId, onInsert) {
   return () => {
     supabase.removeChannel(channel);
   };
+}
+
+export async function fetchLeagueTeamMeta(teamId) {
+  if (!teamId) return null;
+  const { data, error } = await supabase
+    .from('league_teams')
+    .select('id, name, league_id, leagues(name)')
+    .eq('id', teamId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    teamId: data.id,
+    teamName: data.name || 'Hold',
+    leagueId: data.league_id,
+    leagueName: data.leagues?.name || 'Liga',
+  };
+}
+
+/** Samtaler med liga-hold (seneste besked per hold). */
+export async function fetchLeagueTeamConversations(userId) {
+  if (!userId) return [];
+
+  const { data: myTeams, error: myErr } = await supabase
+    .from('league_teams')
+    .select('league_id')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`);
+
+  if (myErr) throw myErr;
+
+  const leagueIds = [...new Set((myTeams || []).map((t) => t.league_id).filter(Boolean))];
+  if (leagueIds.length === 0) return [];
+
+  const { data: teams, error: teamErr } = await supabase
+    .from('league_teams')
+    .select('id, name, league_id, leagues(name)')
+    .in('league_id', leagueIds);
+
+  if (teamErr) throw teamErr;
+
+  const teamIds = (teams || []).map((t) => t.id).filter(Boolean);
+  if (teamIds.length === 0) return [];
+
+  const { data: msgs, error: msgErr } = await supabase
+    .from('league_team_messages')
+    .select('id, team_id, content, created_at, sender_id, sender_name')
+    .in('team_id', teamIds)
+    .order('created_at', { ascending: false })
+    .limit(400);
+
+  if (msgErr) throw msgErr;
+
+  const latestByTeam = {};
+  for (const msg of msgs || []) {
+    if (!latestByTeam[msg.team_id]) latestByTeam[msg.team_id] = msg;
+  }
+
+  return Object.entries(latestByTeam)
+    .map(([teamId, lastMessage]) => {
+      const team = (teams || []).find((t) => t.id === teamId);
+      const isFromMe = String(lastMessage.sender_id) === String(userId);
+      return {
+        type: 'league_team',
+        teamId,
+        teamName: team?.name || 'Hold',
+        leagueId: team?.league_id,
+        leagueName: team?.leagues?.name || '',
+        lastMessage,
+        preview: isFromMe ? `Dig: ${lastMessage.content}` : `${lastMessage.sender_name || 'Spiller'}: ${lastMessage.content}`,
+        unread: 0,
+      };
+    })
+    .sort(
+      (a, b) => new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime()
+    );
 }

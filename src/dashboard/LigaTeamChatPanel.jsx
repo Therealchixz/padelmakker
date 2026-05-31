@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SendHorizontal } from 'lucide-react';
-import { btn } from '../lib/platformTheme';
+import { ChatInputBar } from '../components/chat/ChatInputBar';
+import { ChatMessageList } from '../components/chat/ChatMessageList';
 import {
   fetchLeagueTeamMessages,
-  formatTeamChatClock,
   sendLeagueTeamMessage,
   subscribeToLeagueTeamMessages,
 } from '../lib/leagueTeamChatUtils';
@@ -100,70 +99,36 @@ export function LigaTeamChatPanel({
       <div className="pm-liga-v2-team-chat-label">
         Beskeder til {teamName || 'holdet'}
       </div>
-      <div
-        ref={listRef}
-        className="pm-match-chat-list pm-liga-v2-team-chat-list"
-        onTouchStart={(e) => e.stopPropagation()}
-        onTouchMove={(e) => e.stopPropagation()}
-      >
-        {loading && <div className="pm-match-chat-empty">Henter beskeder…</div>}
-        {!loading && error && <div className="pm-match-chat-empty">{error}</div>}
-        {!loading && !error && messages.length === 0 && (
-          <div className="pm-match-chat-empty">
-            {canWrite
-              ? 'Ingen beskeder endnu. Skriv den første til holdet.'
-              : 'Ingen beskeder endnu.'}
-          </div>
-        )}
-        {!loading && !error && messages.map((msg) => {
-          const mine = String(msg.sender_id) === String(userId);
-          const displayName = (msg.sender_name || 'Spiller').trim();
-          return (
-            <div key={msg.id} className={`pm-match-chat-row ${mine ? 'pm-match-chat-row--mine' : ''}`}>
-              <div className={`pm-match-chat-bubble ${mine ? 'pm-match-chat-bubble--mine' : ''}`}>
-                <div className="pm-match-chat-meta">
-                  <span className="pm-match-chat-author">{mine ? 'Dig' : displayName}</span>
-                  <span>{formatTeamChatClock(msg.created_at)}</span>
-                </div>
-                <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.content}</div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <ChatMessageList
+        listRef={listRef}
+        userId={userId}
+        messages={messages}
+        loading={loading}
+        error={error}
+        emptyText={
+          canWrite
+            ? 'Ingen beskeder endnu. Skriv den første til holdet.'
+            : 'Ingen beskeder endnu.'
+        }
+        groupMode
+        showSenderNames
+        className="pm-liga-v2-team-chat-list pm-chat-v2-message-list"
+      />
       {canWrite ? (
-        <div className="pm-match-chat-composer">
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value.slice(0, 1000))}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                void handleSend();
-              }
-            }}
-            placeholder="Skriv til holdet…"
-            className="pm-match-chat-input"
-            maxLength={1000}
-            disabled={sending}
-          />
-          <button
-            type="button"
-            onClick={() => { void handleSend(); }}
-            disabled={sending || !draft.trim()}
-            style={{
-              ...btn(true),
-              justifyContent: 'center',
-              minWidth: '92px',
-              padding: '8px 10px',
-              fontSize: '12px',
-              opacity: sending || !draft.trim() ? 0.7 : 1,
-            }}
-          >
-            <SendHorizontal size={13} aria-hidden />
-            {sending ? 'Sender…' : 'Send'}
-          </button>
-        </div>
+        <ChatInputBar
+          value={draft}
+          onChange={setDraft}
+          onSend={handleSend}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              void handleSend();
+            }
+          }}
+          placeholder="Skriv til holdet…"
+          disabled={false}
+          sending={sending}
+        />
       ) : (
         <p className="pm-liga-v2-team-chat-note">
           Tilmeld et hold i ligaen for at skrive til andre hold.

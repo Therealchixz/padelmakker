@@ -32,6 +32,7 @@ export function LigaTeamProfileSheet({
   leagueId = null,
   matches = [],
   onPlayerClick,
+  onOpenInMessages,
   userId = null,
   userName = 'Spiller',
   userAvatar = null,
@@ -128,6 +129,11 @@ export function LigaTeamProfileSheet({
 
           {team?.id && leagueId ? (
             <div className="pm-liga-v2-team-chat-wrap">
+              {onOpenInMessages ? (
+                <button type="button" className="pm-liga-v2-team-open-messages" onClick={() => onOpenInMessages(team.id)}>
+                  Åbn i Beskeder
+                </button>
+              ) : null}
               <LigaTeamChatPanel
                 teamId={team.id}
                 leagueId={leagueId}

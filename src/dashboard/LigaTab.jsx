@@ -958,6 +958,11 @@ export function LigaTab({
           leagueId={profileTeamLeagueId}
           matches={profileTeamLeagueId ? (matchesByLeague[profileTeamLeagueId] || []) : []}
           onPlayerClick={openProfile}
+          onOpenInMessages={(teamId) => {
+            setProfileTeam(null);
+            setProfileTeamLeagueId(null);
+            navigate(`/dashboard/beskeder?hold=${teamId}`);
+          }}
           userId={user.id}
           userName={user.full_name || user.name || 'Spiller'}
           userAvatar={user.avatar}
