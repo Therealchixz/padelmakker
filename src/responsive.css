@@ -8967,13 +8967,10 @@ button,
   position: fixed;
   left: 0;
   right: 0;
-  top: 0;
-  height: 100dvh;
+  bottom: 0;
+  height: auto;
   max-height: none;
-  /* Above the app header and the mobile bottom nav (z-index 46) so the
-     conversation is a true full-screen overlay. top/height are overridden
-     inline from visualViewport so the panel tracks the iOS keyboard. */
-  z-index: 60;
+  z-index: 30;
 }
 
 .pm-chat-v2-thread-header {
@@ -9229,8 +9226,7 @@ button,
   transition: border-color 0.15s ease;
 }
 
-/* Replace the browser's blue focus box with a subtle accent border on the
-   surrounding pill. */
+/* Replace the browser's blue focus box with a subtle accent border on the pill. */
 .pm-chat-v2-input-field-wrap:focus-within {
   border-color: var(--pm-accent);
 }
