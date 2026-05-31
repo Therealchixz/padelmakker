@@ -8105,6 +8105,19 @@ button,
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid var(--pm-border-soft);
+  min-width: 0;
+}
+
+.pm-americano-v2-list-footer .pm-liga-v2-list-team-preview {
+  padding-top: 0;
+  border-top: none;
+}
+
+@media (max-width: 519px) {
+  .pm-americano-v2-list-footer .pm-liga-v2-list-team-preview {
+    padding-top: 10px;
+    border-top: 1px solid var(--pm-border-soft);
+  }
 }
 
 .pm-liga-v2-list-team-badges {
@@ -8133,6 +8146,9 @@ button,
   font-size: 12px;
   font-weight: 600;
   color: var(--pm-text-mid);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pm-liga-v2-my-banner {
