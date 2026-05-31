@@ -78,7 +78,7 @@ export function LigaTeamProfileSheet({
           </button>
         </div>
         <div className="pm-liga-v2-team-body">
-          <div className="pm-liga-v2-team-scroll">
+          <div className="pm-liga-v2-team-info">
           <div className="pm-liga-v2-team-head">
             <div className="pm-liga-v2-team-avatars">
               <AvatarCircle avatar={team.player1_avatar} size={52} emojiSize="22px" className="pm-liga-v2-team-avatar" />

@@ -100,7 +100,12 @@ export function LigaTeamChatPanel({
       <div className="pm-liga-v2-team-chat-label">
         Beskeder til {teamName || 'holdet'}
       </div>
-      <div ref={listRef} className="pm-match-chat-list pm-liga-v2-team-chat-list">
+      <div
+        ref={listRef}
+        className="pm-match-chat-list pm-liga-v2-team-chat-list"
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+      >
         {loading && <div className="pm-match-chat-empty">Henter beskeder…</div>}
         {!loading && error && <div className="pm-match-chat-empty">{error}</div>}
         {!loading && !error && messages.length === 0 && (
