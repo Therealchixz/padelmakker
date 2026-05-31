@@ -92,7 +92,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   const [composeSearching, setComposeSearching] = useState(false);
   const [chatVisibleCount, setChatVisibleCount] = useState(CHAT_WINDOW_SIZE);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 768 : false));
-  const [mobileChatOffsets, setMobileChatOffsets] = useState({ top: 0 });
+  const [mobileChatOffsets, setMobileChatOffsets] = useState({ top: 0, height: 0 });
   const [dmHiddenIds, setDmHiddenIds] = useState(() => new Set());
   const [blockedByMeIds, setBlockedByMeIds] = useState(() => new Set());
   const bottomRef = useRef(null);
@@ -764,9 +764,14 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     if (typeof window === 'undefined') return;
     const headerEl = document.querySelector('.pm-dash-header');
     const top = headerEl ? Math.max(0, Math.round(headerEl.getBoundingClientRect().bottom)) : 0;
+    // Size the chat to the *visual* viewport (excludes the on-screen keyboard)
+    // rather than relying on `bottom: 0`, which on iOS leaves dead space when
+    // the keyboard closes and a gap at the top once the page can be scrolled.
+    const vh = window.visualViewport?.height ?? window.innerHeight;
+    const height = Math.max(0, Math.round(vh - top));
     setMobileChatOffsets((prev) => {
-      if (prev.top === top) return prev;
-      return { top };
+      if (prev.top === top && prev.height === height) return prev;
+      return { top, height };
     });
   }, []);
 
@@ -779,12 +784,31 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     window.addEventListener('resize', handleViewportResize);
     window.addEventListener('orientationchange', handleViewportResize);
     window.visualViewport?.addEventListener('resize', handleViewportResize);
+    window.visualViewport?.addEventListener('scroll', handleViewportResize);
     return () => {
       window.removeEventListener('resize', handleViewportResize);
       window.removeEventListener('orientationchange', handleViewportResize);
       window.visualViewport?.removeEventListener('resize', handleViewportResize);
+      window.visualViewport?.removeEventListener('scroll', handleViewportResize);
     };
   }, [mobileChatActive, updateMobileChatOffsets]);
+
+  // Lock the page behind the full-screen mobile chat so dragging can't scroll
+  // the underlying dashboard (which otherwise pulls the sticky header away from
+  // the chat and opens a gap at the top).
+  useEffect(() => {
+    if (!mobileChatActive || typeof document === 'undefined') return undefined;
+    const body = document.body;
+    const root = document.documentElement;
+    const prevBodyOverflow = body.style.overflow;
+    const prevRootOverflow = root.style.overflow;
+    body.style.overflow = 'hidden';
+    root.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = prevBodyOverflow;
+      root.style.overflow = prevRootOverflow;
+    };
+  }, [mobileChatActive]);
 
   useEffect(() => {
     if (!onMobileConversationStateChange) return undefined;
@@ -915,7 +939,12 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     return (
       <div
         className={threadShellClass}
-        style={mobileChatActive ? { top: `${mobileChatOffsets.top || 64}px` } : undefined}
+        style={mobileChatActive ? {
+          top: `${mobileChatOffsets.top || 64}px`,
+          ...(mobileChatOffsets.height
+            ? { height: `${mobileChatOffsets.height}px`, bottom: 'auto' }
+            : {}),
+        } : undefined}
       >
         <ChatThreadHeader
           title={threadTitle}
