@@ -92,7 +92,6 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   const [composeSearching, setComposeSearching] = useState(false);
   const [chatVisibleCount, setChatVisibleCount] = useState(CHAT_WINDOW_SIZE);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 768 : false));
-  const [mobileChatOffsets, setMobileChatOffsets] = useState({ top: 0 });
   const [dmHiddenIds, setDmHiddenIds] = useState(() => new Set());
   const [blockedByMeIds, setBlockedByMeIds] = useState(() => new Set());
   const bottomRef = useRef(null);
@@ -760,31 +759,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     navigate('/dashboard/beskeder', { replace: true });
   };
 
-  const updateMobileChatOffsets = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    const headerEl = document.querySelector('.pm-dash-header');
-    const top = headerEl ? Math.max(0, Math.round(headerEl.getBoundingClientRect().bottom)) : 0;
-    setMobileChatOffsets((prev) => {
-      if (prev.top === top) return prev;
-      return { top };
-    });
-  }, []);
-
   const mobileChatActive = Boolean((selectedId || selectedTeamId) && isMobileView);
-
-  useEffect(() => {
-    if (!mobileChatActive || typeof window === 'undefined') return undefined;
-    const handleViewportResize = () => updateMobileChatOffsets();
-    updateMobileChatOffsets();
-    window.addEventListener('resize', handleViewportResize);
-    window.addEventListener('orientationchange', handleViewportResize);
-    window.visualViewport?.addEventListener('resize', handleViewportResize);
-    return () => {
-      window.removeEventListener('resize', handleViewportResize);
-      window.removeEventListener('orientationchange', handleViewportResize);
-      window.visualViewport?.removeEventListener('resize', handleViewportResize);
-    };
-  }, [mobileChatActive, updateMobileChatOffsets]);
 
   useEffect(() => {
     if (!onMobileConversationStateChange) return undefined;
@@ -913,10 +888,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         });
 
     return (
-      <div
-        className={threadShellClass}
-        style={mobileChatActive ? { top: `${mobileChatOffsets.top || 64}px` } : undefined}
-      >
+      <div className={threadShellClass}>
         <ChatThreadHeader
           title={threadTitle}
           subtitle={threadSubtitle}
