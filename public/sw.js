@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v7-tour-mobile';
+const VERSION = 'padelmakker-sw-v8-chat-keyboard';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
