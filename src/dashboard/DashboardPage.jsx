@@ -1361,8 +1361,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
     body.style.width = "100%";
     body.style.overflow = "hidden";
 
+    // Fast basishøjde (fuld skærm) sat ved åbning, mens tastaturet er lukket.
+    // Robust mod at iOS i standalone også ændrer window.innerHeight når
+    // tastaturet vises — vi sammenligner altid mod denne basis.
+    const baseHeight = Math.max(vv.height, window.innerHeight);
+
     const apply = () => {
-      const keyboardOpen = window.innerHeight - vv.height > 120;
+      const keyboardOpen = vv.height < baseHeight - 100;
       root.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
       root.style.setProperty("--vv-top", `${Math.round(vv.offsetTop)}px`);
       root.style.setProperty(
