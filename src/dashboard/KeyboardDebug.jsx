@@ -29,6 +29,7 @@ export function KeyboardDebug() {
         vvTop: vv ? Math.round(vv.offsetTop) : 'n/a',
         cssVvh: cs.getPropertyValue('--vvh').trim() || '(unset)',
         cssVvTop: cs.getPropertyValue('--vv-top').trim() || '(unset)',
+        cssVvs: cs.getPropertyValue('--vvs').trim() || '(unset)',
         shellTop: rect ? Math.round(rect.top) : 'n/a',
         shellH: rect ? Math.round(rect.height) : 'n/a',
         shellBot: rect ? Math.round(rect.bottom) : 'n/a',
@@ -79,6 +80,7 @@ export function KeyboardDebug() {
 innerH:${v.innerH}  scrollY:${v.scrollY}
 vvH:${v.vvH}  vvTop:${v.vvTop}
 --vvh:${v.cssVvh}  --vv-top:${v.cssVvTop}
+--vvs:${v.cssVvs}
 shell top:${v.shellTop} h:${v.shellH} bot:${v.shellBot}
 safeBottom:${v.safeBottom}
 (tryk for at skjule)`}

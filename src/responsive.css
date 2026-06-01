@@ -9269,8 +9269,9 @@ button,
 
 .pm-chat-v2-input-field:focus,
 .pm-chat-v2-input-field:focus-visible {
-  outline: none;
-  box-shadow: none;
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .pm-chat-v2-input-emoji,
