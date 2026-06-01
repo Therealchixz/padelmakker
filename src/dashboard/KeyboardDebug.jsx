@@ -16,6 +16,8 @@ export function KeyboardDebug() {
     const read = () => {
       const shell = document.getElementById('pm-app-shell');
       const rect = shell ? shell.getBoundingClientRect() : null;
+      const bar = document.querySelector('.pm-chat-v2-input-bar');
+      const barRect = bar ? bar.getBoundingClientRect() : null;
       const cs = getComputedStyle(document.documentElement);
       const safe = safeRef.current ? safeRef.current.getBoundingClientRect().height : null;
       setV({
@@ -33,6 +35,7 @@ export function KeyboardDebug() {
         shellTop: rect ? Math.round(rect.top) : 'n/a',
         shellH: rect ? Math.round(rect.height) : 'n/a',
         shellBot: rect ? Math.round(rect.bottom) : 'n/a',
+        barBot: barRect ? Math.round(barRect.bottom) : 'n/a',
         bodyPos: getComputedStyle(document.body).position,
         safeBottom: safe != null ? Math.round(safe) : 'n/a',
       });
@@ -82,6 +85,7 @@ vvH:${v.vvH}  vvTop:${v.vvTop}
 --vvh:${v.cssVvh}  --vv-top:${v.cssVvTop}
 --vvs:${v.cssVvs}
 shell top:${v.shellTop} h:${v.shellH} bot:${v.shellBot}
+inputbar bot:${v.barBot}
 safeBottom:${v.safeBottom}
 (tryk for at skjule)`}
       </div>

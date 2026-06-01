@@ -1414,6 +1414,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
+              // Hvid bund: området under input-baren (home-indicator-zonen)
+              // skal være hvidt i ét med input-baren, ikke gråt.
+              background: "var(--pm-surface)",
             }
           : { minHeight: "100dvh", display: "flex", flexDirection: "column" }
       }

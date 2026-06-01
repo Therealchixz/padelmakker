@@ -8988,6 +8988,13 @@ button,
   min-height: 0;
   height: auto;
   max-height: none;
+  /* Hvid bund på mobil: beskedlisten har sin egen grå baggrund, så
+     området under input-baren (home-indicator-zonen) bliver hvidt. */
+  background: var(--pm-surface);
+}
+
+.pm-chat-v2-thread--mobile .pm-chat-v2-message-list {
+  background: #F2F2F7;
 }
 
 .pm-chat-v2-thread-header {
