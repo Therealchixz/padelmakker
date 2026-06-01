@@ -1403,9 +1403,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
       root.style.removeProperty("--vvh");
       root.style.removeProperty("--vv-top");
       root.style.removeProperty("--vvs");
-      // Gendan scroll-positionen (nudger samtidig iOS til at placere den
-      // fixed bund-navigation korrekt ved bunden igen).
-      window.scrollTo(0, scrollY);
+      // Gendan scroll-positionen EFTER næste frame (når besked-listen er
+      // tegnet og body er låst op), og fremtving en gen-beregning, så iOS
+      // placerer den fixed bund-navigation korrekt i bunden igen — i stedet
+      // for at lade den stå for højt indtil man selv scroller.
+      window.requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY);
+        // Læs en layout-egenskab for at fremtvinge reflow, og send en
+        // resize-event så fixed-elementer genberegnes mod den fulde viewport.
+        void document.body.offsetHeight;
+        window.dispatchEvent(new Event("resize"));
+      });
     };
   }, [hideMobileBottomNav]);
 
