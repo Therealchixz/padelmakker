@@ -1322,52 +1322,46 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
-  // Tastatur-håndtering på mobil-chat.
-  // I hvile (tastatur lukket) bruger vi en almindelig 100dvh-flex-kolonne —
-  // det er bevist korrekt i både Safari og standalone-PWA. FØRST når
-  // tastaturet faktisk er åbent pinner vi app-skallen til den synlige del af
-  // skærmen via VisualViewport (height = vv.height, top = vv.offsetTop), så
-  // input-baren sidder lige over tastaturet og headeren ikke skubbes væk.
-  // Vi rører altså ikke layoutet i hvile — det undgår iOS-standalone-quirken
-  // hvor visualViewport.height kan rapportere en for lav højde og efterlade
-  // et tomt rum i bunden.
-  const [chatKeyboardOpen, setChatKeyboardOpen] = useState(false);
-
+  // Tastatur + viewport på mobil-chat — research-baseret mønster
+  // (jf. mattpilott/ios-chat, purpose-built til chat-PWA på iOS):
+  // Vi sætter --vvh = visualViewport.height og lader app-skallen være
+  // præcis så høj. Når tastaturet åbner krymper vv.height → skallen krymper
+  // → input-baren forbliver synlig lige over tastaturet. Når det lukker,
+  // gendannes højden via 'resize'-eventet.
+  //
+  // Bevidste valg ud fra kendte iOS-fejl:
+  //  - INGEN position:fixed omkring formularen (WKWebViews scroll-into-view
+  //    bliver forvirret af fixed + overflow:hidden omkring inputs).
+  //  - INGEN brug af visualViewport.offsetTop (nulstilles ikke korrekt efter
+  //    tastatur-luk på iOS → fejlplacerede elementer).
+  //  - --vvs nulstiller safe-area-bunden mens tastaturet er åbent, så der
+  //    ikke opstår ekstra rum mellem input og tastatur.
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
-    const root = document.documentElement;
     const vv = window.visualViewport;
+    const body = document.body;
     if (!hideMobileBottomNav || !vv) {
-      root.style.removeProperty("--app-chat-vh");
-      root.style.removeProperty("--app-chat-offset");
-      setChatKeyboardOpen(false);
+      body.style.removeProperty("--vvh");
+      body.style.removeProperty("--vvs");
       return undefined;
     }
-    const prevBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const prevOverflow = body.style.overflow;
+    body.style.overflow = "hidden";
     const apply = () => {
-      // Tastaturet anses for åbent når det synlige viewport er markant
-      // lavere end vinduet (tærskel for at ignorere små UI-udsving).
       const keyboardOpen = window.innerHeight - vv.height > 120;
-      if (keyboardOpen) {
-        root.style.setProperty("--app-chat-vh", `${Math.round(vv.height)}px`);
-        root.style.setProperty("--app-chat-offset", `${Math.round(vv.offsetTop)}px`);
-      } else {
-        root.style.removeProperty("--app-chat-vh");
-        root.style.removeProperty("--app-chat-offset");
-      }
-      setChatKeyboardOpen(keyboardOpen);
+      body.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
+      body.style.setProperty(
+        "--vvs",
+        keyboardOpen ? "0px" : "env(safe-area-inset-bottom)"
+      );
     };
     apply();
     vv.addEventListener("resize", apply);
-    vv.addEventListener("scroll", apply);
     return () => {
       vv.removeEventListener("resize", apply);
-      vv.removeEventListener("scroll", apply);
-      document.body.style.overflow = prevBodyOverflow;
-      root.style.removeProperty("--app-chat-vh");
-      root.style.removeProperty("--app-chat-offset");
-      setChatKeyboardOpen(false);
+      body.style.overflow = prevOverflow;
+      body.style.removeProperty("--vvh");
+      body.style.removeProperty("--vvs");
     };
   }, [hideMobileBottomNav]);
 
@@ -1375,30 +1369,12 @@ export function DashboardPage({ user, onLogout, showToast }) {
     <div
       style={
         hideMobileBottomNav
-          ? chatKeyboardOpen
-            ? {
-                position: "fixed",
-                top: "var(--app-chat-offset, 0px)",
-                left: 0,
-                right: 0,
-                height: "var(--app-chat-vh, 100dvh)",
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-              }
-            : {
-                // Bulletproof fuld-skærm: top:0 + bottom:0 strækker til de
-                // faktiske viewport-kanter uden viewport-enheder, så iOS
-                // standalone-PWA ikke kan efterlade et tomt rum i bunden.
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-              }
+          ? {
+              height: "var(--vvh, 100dvh)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }
           : { minHeight: "100dvh", display: "flex", flexDirection: "column" }
       }
     >
