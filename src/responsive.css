@@ -9243,9 +9243,12 @@ button,
   transition: border-color 0.15s ease;
 }
 
-/* Replace the browser's blue focus box with a subtle accent border on the pill. */
+/* Ingen blå fokus-boks: pillen beholder sin neutrale kant når feltet er i
+   fokus (browserens fokus-ring er slået fra på selve input'et nedenfor). */
 .pm-chat-v2-input-field-wrap:focus-within {
-  border-color: var(--pm-accent);
+  border-color: var(--pm-border);
+  box-shadow: none;
+  outline: none;
 }
 
 .pm-chat-v2-input-field {
