@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v18-chat-inputlower';
+const VERSION = 'padelmakker-sw-v19-chat-safearea-only';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
