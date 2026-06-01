@@ -1345,6 +1345,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
       root.style.removeProperty("--vvs");
       return undefined;
     }
+    // Gem scroll-positionen så vi kan gendanne den ved exit (standard
+    // scroll-lock-mønster). Forhindrer at siden hopper, og det afsluttende
+    // scrollTo nudger iOS til at genberegne fixed-elementer (fx bund-nav),
+    // så den ikke står for højt indtil man scroller.
+    const scrollY = window.scrollY || window.pageYOffset || 0;
     const prev = {
       position: body.style.position,
       top: body.style.top,
@@ -1356,7 +1361,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       htmlBg: root.style.background,
     };
     body.style.position = "fixed";
-    body.style.top = "0";
+    body.style.top = `-${scrollY}px`;
     body.style.left = "0";
     body.style.right = "0";
     body.style.width = "100%";
@@ -1398,6 +1403,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
       root.style.removeProperty("--vvh");
       root.style.removeProperty("--vv-top");
       root.style.removeProperty("--vvs");
+      // Gendan scroll-positionen (nudger samtidig iOS til at placere den
+      // fixed bund-navigation korrekt ved bunden igen).
+      window.scrollTo(0, scrollY);
     };
   }, [hideMobileBottomNav]);
 
