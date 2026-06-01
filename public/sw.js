@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v11-chat-vvh';
+const VERSION = 'padelmakker-sw-v12-chat-bodylock';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

@@ -1322,46 +1322,68 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
-  // Tastatur + viewport på mobil-chat — research-baseret mønster
-  // (jf. mattpilott/ios-chat, purpose-built til chat-PWA på iOS):
-  // Vi sætter --vvh = visualViewport.height og lader app-skallen være
-  // præcis så høj. Når tastaturet åbner krymper vv.height → skallen krymper
-  // → input-baren forbliver synlig lige over tastaturet. Når det lukker,
-  // gendannes højden via 'resize'-eventet.
+  // Tastatur + viewport på mobil-chat — kanonisk iOS-løsning.
   //
-  // Bevidste valg ud fra kendte iOS-fejl:
-  //  - INGEN position:fixed omkring formularen (WKWebViews scroll-into-view
-  //    bliver forvirret af fixed + overflow:hidden omkring inputs).
-  //  - INGEN brug af visualViewport.offsetTop (nulstilles ikke korrekt efter
-  //    tastatur-luk på iOS → fejlplacerede elementer).
-  //  - --vvs nulstiller safe-area-bunden mens tastaturet er åbent, så der
-  //    ikke opstår ekstra rum mellem input og tastatur.
+  // Nøgle-indsigt: iOS resizer IKKE layout-viewporten når tastaturet vises
+  // (kun den visuelle viewport krymper). Derfor:
+  //  1) Vi LÅSER body med position:fixed, så iOS ikke kan scrolle dokumentet
+  //     (uden låsen scroller iOS hele siden for at vise input → header ryger
+  //     ud foroven og input havner øverst med tomt rum nedenunder).
+  //  2) App-skallen er position:fixed og limes til den VISUELLE viewport via
+  //     top = visualViewport.offsetTop og height = visualViewport.height,
+  //     opdateret på resize+scroll. Så fylder skallen altid præcis det
+  //     synlige område: header øverst, input lige over tastaturet.
+  //  3) --vvs nulstiller input-barens safe-area-bund mens tastaturet er åbent.
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const vv = window.visualViewport;
     const body = document.body;
+    const root = document.documentElement;
     if (!hideMobileBottomNav || !vv) {
-      body.style.removeProperty("--vvh");
-      body.style.removeProperty("--vvs");
+      root.style.removeProperty("--vvh");
+      root.style.removeProperty("--vv-top");
+      root.style.removeProperty("--vvs");
       return undefined;
     }
-    const prevOverflow = body.style.overflow;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    body.style.position = "fixed";
+    body.style.top = "0";
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
     body.style.overflow = "hidden";
+
     const apply = () => {
       const keyboardOpen = window.innerHeight - vv.height > 120;
-      body.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
-      body.style.setProperty(
+      root.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
+      root.style.setProperty("--vv-top", `${Math.round(vv.offsetTop)}px`);
+      root.style.setProperty(
         "--vvs",
         keyboardOpen ? "0px" : "env(safe-area-inset-bottom)"
       );
     };
     apply();
     vv.addEventListener("resize", apply);
+    vv.addEventListener("scroll", apply);
     return () => {
       vv.removeEventListener("resize", apply);
-      body.style.overflow = prevOverflow;
-      body.style.removeProperty("--vvh");
-      body.style.removeProperty("--vvs");
+      vv.removeEventListener("scroll", apply);
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.left = prev.left;
+      body.style.right = prev.right;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      root.style.removeProperty("--vvh");
+      root.style.removeProperty("--vv-top");
+      root.style.removeProperty("--vvs");
     };
   }, [hideMobileBottomNav]);
 
@@ -1370,6 +1392,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
       style={
         hideMobileBottomNav
           ? {
+              // Limet til den visuelle viewport (top=offsetTop, height=vvh).
+              // Bruger top (ikke transform) for ikke at lave en containing
+              // block der ville flytte fixed-positionerede modaler.
+              position: "fixed",
+              top: "var(--vv-top, 0px)",
+              left: 0,
+              right: 0,
               height: "var(--vvh, 100dvh)",
               display: "flex",
               flexDirection: "column",
