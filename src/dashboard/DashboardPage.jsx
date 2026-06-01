@@ -1323,7 +1323,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
   return (
-    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: hideMobileBottomNav ? "100dvh" : undefined, minHeight: "100dvh", display: "flex", flexDirection: "column", overflow: hideMobileBottomNav ? "hidden" : undefined }}>
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }} aria-label="Gå til Hjem">
@@ -1575,7 +1575,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
       </div>
 
-      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}`}>
+      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${hideMobileBottomNav ? " pm-dash-main--chat" : ""}`}>
         <Suspense
           fallback={
             <div

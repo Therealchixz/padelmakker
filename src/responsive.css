@@ -1604,6 +1604,18 @@ button,
   box-sizing: border-box;
 }
 
+/* Mobil besked-tråd: gør hovedområdet til en flex-kolonne uden polstring
+   eller maks-bredde, så chatten fylder hele området under app-headeren. */
+.pm-dash-main--chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
 .pm-profile-header {
   display: flex;
   gap: 16px;
@@ -8963,14 +8975,15 @@ button,
   background: #F2F2F7;
 }
 
+/* Mobil: tråden er et almindeligt flex-barn der fylder resten af siden
+   under den sticky app-header. Ingen position:fixed, ingen JS-måling og
+   ingen safe-area-matematik — beskedlisten scroller internt, og
+   input-baren bliver siddende i bunden. Virker ens på iOS og Android. */
 .pm-chat-v2-thread--mobile {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  flex: 1;
+  min-height: 0;
   height: auto;
   max-height: none;
-  z-index: 30;
 }
 
 .pm-chat-v2-thread-header {
