@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v10-chat-fullscreen';
+const VERSION = 'padelmakker-sw-v11-chat-vvh';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
