@@ -1322,12 +1322,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
-  // Tastatur-håndtering på mobil-chat: når en samtale er åben pinner vi
-  // app-skallen til den synlige del af skærmen via VisualViewport. Højden
-  // følger vv.height, så input-baren altid sidder lige over tastaturet, og
-  // top følger vv.offsetTop. Det fjerner både det tomme felt under input og
-  // at headeren skubbes væk — og det genskaber sig korrekt når tastaturet
-  // lukkes. Samme mekanisme virker på både iOS og Android.
+  // Tastatur-håndtering på mobil-chat.
+  // I hvile (tastatur lukket) bruger vi en almindelig 100dvh-flex-kolonne —
+  // det er bevist korrekt i både Safari og standalone-PWA. FØRST når
+  // tastaturet faktisk er åbent pinner vi app-skallen til den synlige del af
+  // skærmen via VisualViewport (height = vv.height, top = vv.offsetTop), så
+  // input-baren sidder lige over tastaturet og headeren ikke skubbes væk.
+  // Vi rører altså ikke layoutet i hvile — det undgår iOS-standalone-quirken
+  // hvor visualViewport.height kan rapportere en for lav højde og efterlade
+  // et tomt rum i bunden.
+  const [chatKeyboardOpen, setChatKeyboardOpen] = useState(false);
+
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const root = document.documentElement;
@@ -1335,13 +1340,23 @@ export function DashboardPage({ user, onLogout, showToast }) {
     if (!hideMobileBottomNav || !vv) {
       root.style.removeProperty("--app-chat-vh");
       root.style.removeProperty("--app-chat-offset");
+      setChatKeyboardOpen(false);
       return undefined;
     }
     const prevBodyOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const apply = () => {
-      root.style.setProperty("--app-chat-vh", `${Math.round(vv.height)}px`);
-      root.style.setProperty("--app-chat-offset", `${Math.round(vv.offsetTop)}px`);
+      // Tastaturet anses for åbent når det synlige viewport er markant
+      // lavere end vinduet (tærskel for at ignorere små UI-udsving).
+      const keyboardOpen = window.innerHeight - vv.height > 120;
+      if (keyboardOpen) {
+        root.style.setProperty("--app-chat-vh", `${Math.round(vv.height)}px`);
+        root.style.setProperty("--app-chat-offset", `${Math.round(vv.offsetTop)}px`);
+      } else {
+        root.style.removeProperty("--app-chat-vh");
+        root.style.removeProperty("--app-chat-offset");
+      }
+      setChatKeyboardOpen(keyboardOpen);
     };
     apply();
     vv.addEventListener("resize", apply);
@@ -1352,6 +1367,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
       document.body.style.overflow = prevBodyOverflow;
       root.style.removeProperty("--app-chat-vh");
       root.style.removeProperty("--app-chat-offset");
+      setChatKeyboardOpen(false);
     };
   }, [hideMobileBottomNav]);
 
@@ -1359,16 +1375,24 @@ export function DashboardPage({ user, onLogout, showToast }) {
     <div
       style={
         hideMobileBottomNav
-          ? {
-              position: "fixed",
-              top: "var(--app-chat-offset, 0px)",
-              left: 0,
-              right: 0,
-              height: "var(--app-chat-vh, 100dvh)",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }
+          ? chatKeyboardOpen
+            ? {
+                position: "fixed",
+                top: "var(--app-chat-offset, 0px)",
+                left: 0,
+                right: 0,
+                height: "var(--app-chat-vh, 100dvh)",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }
+            : {
+                height: "100dvh",
+                minHeight: "100dvh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }
           : { minHeight: "100dvh", display: "flex", flexDirection: "column" }
       }
     >

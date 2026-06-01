@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v8-chat-keyboard';
+const VERSION = 'padelmakker-sw-v9-chat-rest-layout';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
