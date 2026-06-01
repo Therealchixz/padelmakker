@@ -9208,10 +9208,12 @@ button,
   flex-shrink: 0;
   border-top: 1px solid var(--pm-border);
   background: var(--pm-surface);
-  /* Bund-afstanden er en lille ANDEL (30%) af enhedens safe-area, så baren
-     sidder tæt på skærmkanten men stadig skalerer per telefon: --vvs =
-     env(safe-area-inset-bottom) når tastaturet er lukket, 0 når det er åbent. */
-  padding: 8px 12px calc(var(--vvs, env(safe-area-inset-bottom)) * 0.3);
+  /* Bund-afstanden er PRÆCIS enhedens safe-area (home-indicator/gestus-zonen).
+     Det er den laveste position hvor knapperne er fuldt synlige — skæres der
+     mere af, klipper systemet knapperne væk i home-indicator-zonen. --vvs =
+     env(safe-area-inset-bottom) når tastaturet er lukket, 0 når det er åbent.
+     På telefoner uden home-indicator (mange Samsung) er værdien 0 → helt i bund. */
+  padding: 8px 12px var(--vvs, env(safe-area-inset-bottom));
 }
 
 .pm-chat-v2-input-row {
