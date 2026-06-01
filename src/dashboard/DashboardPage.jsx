@@ -1322,8 +1322,56 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
+  // Tastatur-håndtering på mobil-chat: når en samtale er åben pinner vi
+  // app-skallen til den synlige del af skærmen via VisualViewport. Højden
+  // følger vv.height, så input-baren altid sidder lige over tastaturet, og
+  // top følger vv.offsetTop. Det fjerner både det tomme felt under input og
+  // at headeren skubbes væk — og det genskaber sig korrekt når tastaturet
+  // lukkes. Samme mekanisme virker på både iOS og Android.
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const root = document.documentElement;
+    const vv = window.visualViewport;
+    if (!hideMobileBottomNav || !vv) {
+      root.style.removeProperty("--app-chat-vh");
+      root.style.removeProperty("--app-chat-offset");
+      return undefined;
+    }
+    const prevBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const apply = () => {
+      root.style.setProperty("--app-chat-vh", `${Math.round(vv.height)}px`);
+      root.style.setProperty("--app-chat-offset", `${Math.round(vv.offsetTop)}px`);
+    };
+    apply();
+    vv.addEventListener("resize", apply);
+    vv.addEventListener("scroll", apply);
+    return () => {
+      vv.removeEventListener("resize", apply);
+      vv.removeEventListener("scroll", apply);
+      document.body.style.overflow = prevBodyOverflow;
+      root.style.removeProperty("--app-chat-vh");
+      root.style.removeProperty("--app-chat-offset");
+    };
+  }, [hideMobileBottomNav]);
+
   return (
-    <div style={{ height: hideMobileBottomNav ? "100dvh" : undefined, minHeight: "100dvh", display: "flex", flexDirection: "column", overflow: hideMobileBottomNav ? "hidden" : undefined }}>
+    <div
+      style={
+        hideMobileBottomNav
+          ? {
+              position: "fixed",
+              top: "var(--app-chat-offset, 0px)",
+              left: 0,
+              right: 0,
+              height: "var(--app-chat-vh, 100dvh)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }
+          : { minHeight: "100dvh", display: "flex", flexDirection: "column" }
+      }
+    >
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }} aria-label="Gå til Hjem">
