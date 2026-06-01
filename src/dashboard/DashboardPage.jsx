@@ -7,7 +7,6 @@ import { font, theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, ChevronDown, Menu, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
-import { KeyboardDebug } from './KeyboardDebug';
 
 const loadHomeTab = () => import('./HomeTab');
 const HomeTabLazy = lazy(() => loadHomeTab().then((m) => ({ default: m.HomeTab })));
@@ -1353,6 +1352,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
       right: body.style.right,
       width: body.style.width,
       overflow: body.style.overflow,
+      bodyBg: body.style.background,
+      htmlBg: root.style.background,
     };
     body.style.position = "fixed";
     body.style.top = "0";
@@ -1360,6 +1361,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
     body.style.right = "0";
     body.style.width = "100%";
     body.style.overflow = "hidden";
+    // Hvidt "lærred": hele sidens baggrund (html+body) gøres hvid mens
+    // chatten er åben, så der ikke ses noget gråt felt under skallen i
+    // home-indicator-zonen. Besked-listen har sin egen grå baggrund.
+    body.style.background = "var(--pm-surface)";
+    root.style.background = "var(--pm-surface)";
 
     // Fast basishøjde (fuld skærm) sat ved åbning, mens tastaturet er lukket.
     // Robust mod at iOS i standalone også ændrer window.innerHeight når
@@ -1387,6 +1393,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
       body.style.right = prev.right;
       body.style.width = prev.width;
       body.style.overflow = prev.overflow;
+      body.style.background = prev.bodyBg;
+      root.style.background = prev.htmlBg;
       root.style.removeProperty("--vvh");
       root.style.removeProperty("--vv-top");
       root.style.removeProperty("--vvs");
@@ -1421,7 +1429,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
           : { minHeight: "100dvh", display: "flex", flexDirection: "column" }
       }
     >
-      {hideMobileBottomNav && <KeyboardDebug />}
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }} aria-label="Gå til Hjem">

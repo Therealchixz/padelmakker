@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v16-chat-whitebottom';
+const VERSION = 'padelmakker-sw-v17-chat-whitecanvas';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
