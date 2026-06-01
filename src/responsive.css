@@ -9208,11 +9208,10 @@ button,
   flex-shrink: 0;
   border-top: 1px solid var(--pm-border);
   background: var(--pm-surface);
-  /* Bund-afstanden er PRÆCIS enhedens safe-area (home-indicator/gestus-zone),
-     uden faste pixels: --vvs = env(safe-area-inset-bottom) når tastaturet er
-     lukket, 0 når det er åbent. Tilpasser sig automatisk hver telefon —
-     iPhone (34px), Samsung (egen værdi) eller enheder helt uden (0). */
-  padding: 8px 12px var(--vvs, env(safe-area-inset-bottom));
+  /* Bund-afstanden er en lille ANDEL (30%) af enhedens safe-area, så baren
+     sidder tæt på skærmkanten men stadig skalerer per telefon: --vvs =
+     env(safe-area-inset-bottom) når tastaturet er lukket, 0 når det er åbent. */
+  padding: 8px 12px calc(var(--vvs, env(safe-area-inset-bottom)) * 0.3);
 }
 
 .pm-chat-v2-input-row {
