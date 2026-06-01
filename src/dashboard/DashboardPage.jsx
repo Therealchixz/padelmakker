@@ -1400,13 +1400,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
         hideMobileBottomNav
           ? {
               // Limet til den visuelle viewport (top=offsetTop, height=vvh).
+              // Højden lægger safe-area-bunden (--vvs) oveni, fordi iOS
+              // rapporterer vvH UDEN home-indicator-zonen i standalone — uden
+              // dette efterlades en grå stribe forneden. --vvs er 0 når
+              // tastaturet er åbent, så vi ikke overdækker tastaturet.
               // Bruger top (ikke transform) for ikke at lave en containing
               // block der ville flytte fixed-positionerede modaler.
               position: "fixed",
               top: "var(--vv-top, 0px)",
               left: 0,
               right: 0,
-              height: "var(--vvh, 100dvh)",
+              height: "calc(var(--vvh, 100dvh) + var(--vvs, 0px))",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",

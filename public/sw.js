@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v14-chat-kbdetect';
+const VERSION = 'padelmakker-sw-v15-chat-safearea';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
