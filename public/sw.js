@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v32-chat-presence';
+const VERSION = 'padelmakker-sw-v33-profile-overview-tabs';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

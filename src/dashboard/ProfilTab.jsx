@@ -805,6 +805,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             onChange={setOverviewMode}
             ariaLabel="Statistik-type"
             size="sm"
+            className="pm-pill-tabs--wrap"
             style={{ marginBottom: "6px" }}
           />
 
