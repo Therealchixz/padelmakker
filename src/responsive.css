@@ -9400,12 +9400,15 @@ button,
   z-index: 2;
 }
 
+/* Anker reaktions-vælgeren INDAD mod chatten, så den ikke klippes ved
+   skærmkanten: egne beskeder (højre) udvides mod venstre, modtagne
+   (venstre) udvides mod højre. */
 .pm-chat-v2-reaction-picker--mine {
-  left: 0;
+  right: 0;
 }
 
 .pm-chat-v2-reaction-picker--them {
-  right: 0;
+  left: 0;
 }
 
 .pm-chat-v2-reaction-picker button {
