@@ -1326,9 +1326,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
   //
   // Nøgle-indsigt: iOS resizer IKKE layout-viewporten når tastaturet vises
   // (kun den visuelle viewport krymper). Derfor:
-  //  1) Vi LÅSER body med position:fixed, så iOS ikke kan scrolle dokumentet
-  //     (uden låsen scroller iOS hele siden for at vise input → header ryger
-  //     ud foroven og input havner øverst med tomt rum nedenunder).
+  //  1) Vi låser scroll med overflow:hidden på html+body (IKKE position:fixed,
+  //     da det flyttede den faste bund-navigation når man forlod chatten).
   //  2) App-skallen er position:fixed og limes til den VISUELLE viewport via
   //     top = visualViewport.offsetTop og height = visualViewport.height,
   //     opdateret på resize+scroll. Så fylder skallen altid præcis det
@@ -1345,27 +1344,18 @@ export function DashboardPage({ user, onLogout, showToast }) {
       root.style.removeProperty("--vvs");
       return undefined;
     }
-    // Gem scroll-positionen så vi kan gendanne den ved exit (standard
-    // scroll-lock-mønster). Forhindrer at siden hopper, og det afsluttende
-    // scrollTo nudger iOS til at genberegne fixed-elementer (fx bund-nav),
-    // så den ikke står for højt indtil man scroller.
-    const scrollY = window.scrollY || window.pageYOffset || 0;
+    // Lås kun scroll med overflow:hidden (IKKE position:fixed). position:fixed
+    // på body fik den faste bund-navigation til at stå for højt når man
+    // forlod chatten. Chat-skallen er selv position:fixed og limet til
+    // viewporten, så den behøver ikke body-låsen.
     const prev = {
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width,
-      overflow: body.style.overflow,
+      bodyOverflow: body.style.overflow,
+      htmlOverflow: root.style.overflow,
       bodyBg: body.style.background,
       htmlBg: root.style.background,
     };
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.left = "0";
-    body.style.right = "0";
-    body.style.width = "100%";
     body.style.overflow = "hidden";
+    root.style.overflow = "hidden";
     // Hvidt "lærred": hele sidens baggrund (html+body) gøres hvid mens
     // chatten er åben, så der ikke ses noget gråt felt under skallen i
     // home-indicator-zonen. Besked-listen har sin egen grå baggrund.
@@ -1392,28 +1382,13 @@ export function DashboardPage({ user, onLogout, showToast }) {
     return () => {
       vv.removeEventListener("resize", apply);
       vv.removeEventListener("scroll", apply);
-      body.style.position = prev.position;
-      body.style.top = prev.top;
-      body.style.left = prev.left;
-      body.style.right = prev.right;
-      body.style.width = prev.width;
-      body.style.overflow = prev.overflow;
+      body.style.overflow = prev.bodyOverflow;
+      root.style.overflow = prev.htmlOverflow;
       body.style.background = prev.bodyBg;
       root.style.background = prev.htmlBg;
       root.style.removeProperty("--vvh");
       root.style.removeProperty("--vv-top");
       root.style.removeProperty("--vvs");
-      // Gendan scroll-positionen EFTER næste frame (når besked-listen er
-      // tegnet og body er låst op), og fremtving en gen-beregning, så iOS
-      // placerer den fixed bund-navigation korrekt i bunden igen — i stedet
-      // for at lade den stå for højt indtil man selv scroller.
-      window.requestAnimationFrame(() => {
-        window.scrollTo(0, scrollY);
-        // Læs en layout-egenskab for at fremtvinge reflow, og send en
-        // resize-event så fixed-elementer genberegnes mod den fulde viewport.
-        void document.body.offsetHeight;
-        window.dispatchEvent(new Event("resize"));
-      });
     };
   }, [hideMobileBottomNav]);
 

@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v23-chat-navreflow';
+const VERSION = 'padelmakker-sw-v24-chat-nobodylock';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
