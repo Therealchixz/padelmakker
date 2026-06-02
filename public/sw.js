@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v27-chat-kbinset';
+const VERSION = 'padelmakker-sw-v28-chat-revert-v21';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
