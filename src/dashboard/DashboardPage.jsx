@@ -1322,16 +1322,18 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
-  // Tastatur + viewport på mobil-chat — kanonisk iOS-løsning.
+  // Tastatur + viewport på mobil-chat.
   //
-  // Nøgle-indsigt: iOS resizer IKKE layout-viewporten når tastaturet vises
-  // (kun den visuelle viewport krymper). Derfor:
-  //  1) Vi låser scroll med overflow:hidden på html+body (IKKE position:fixed,
-  //     da det flyttede den faste bund-navigation når man forlod chatten).
-  //  2) App-skallen er position:fixed og limes til den VISUELLE viewport via
-  //     top = visualViewport.offsetTop og height = visualViewport.height,
-  //     opdateret på resize+scroll. Så fylder skallen altid præcis det
-  //     synlige område: header øverst, input lige over tastaturet.
+  // Robust mønster der UNDGÅR visualViewport.offsetTop (den nulstilles ikke
+  // korrekt på iOS efter tastatur-luk → forskubbet layout + grå zone + bund-
+  // nav der står for højt):
+  //  1) Chat-skallen forankres med top:0 + bottom:var(--kb), hvor --kb er
+  //     tastaturets højde (innerHeight − visualViewport.height). I hvile er
+  //     --kb = 0 → skallen fylder hele skærmen; tastatur åbent → løftes op.
+  //  2) Body låses KUN mens tastaturet er åbent (holder viewporten stabil og
+  //     forhindrer at iOS scroller dokumentet under skrivning). Ved luk låses
+  //     op igen + scrollTo(0,0), så hverken chat eller bund-nav efterlades
+  //     forskubbet — heller ikke når man forlader chatten.
   //  3) --vvs nulstiller input-barens safe-area-bund mens tastaturet er åbent.
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -1339,40 +1341,57 @@ export function DashboardPage({ user, onLogout, showToast }) {
     const body = document.body;
     const root = document.documentElement;
     if (!hideMobileBottomNav || !vv) {
-      root.style.removeProperty("--vvh");
-      root.style.removeProperty("--vv-top");
+      root.style.removeProperty("--kb");
       root.style.removeProperty("--vvs");
       return undefined;
     }
-    // Lås kun scroll med overflow:hidden (IKKE position:fixed). position:fixed
-    // på body fik den faste bund-navigation til at stå for højt når man
-    // forlod chatten. Chat-skallen er selv position:fixed og limet til
-    // viewporten, så den behøver ikke body-låsen.
-    const prev = {
-      bodyOverflow: body.style.overflow,
-      bodyBg: body.style.background,
-      htmlBg: root.style.background,
-    };
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyBg = body.style.background;
+    const prevHtmlBg = root.style.background;
     body.style.overflow = "hidden";
-    // Hvidt "lærred": hele sidens baggrund (html+body) gøres hvid mens
-    // chatten er åben, så der ikke ses noget gråt felt under skallen i
-    // home-indicator-zonen. Besked-listen har sin egen grå baggrund.
+    // Hvidt "lærred" så home-indicator-zonen ikke viser et gråt felt.
     body.style.background = "var(--pm-surface)";
     root.style.background = "var(--pm-surface)";
 
-    // Fast basishøjde (fuld skærm) sat ved åbning, mens tastaturet er lukket.
-    // Robust mod at iOS i standalone også ændrer window.innerHeight når
-    // tastaturet vises — vi sammenligner altid mod denne basis.
-    const baseHeight = Math.max(vv.height, window.innerHeight);
+    let locked = false;
+    let lockedScrollY = 0;
+    const lockBody = () => {
+      if (locked) return;
+      lockedScrollY = window.scrollY || window.pageYOffset || 0;
+      body.style.position = "fixed";
+      body.style.top = `-${lockedScrollY}px`;
+      body.style.left = "0";
+      body.style.right = "0";
+      body.style.width = "100%";
+      locked = true;
+    };
+    const unlockBody = () => {
+      if (!locked) return;
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      locked = false;
+      window.scrollTo(0, lockedScrollY);
+    };
 
     const apply = () => {
-      const keyboardOpen = vv.height < baseHeight - 100;
-      root.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
-      root.style.setProperty("--vv-top", `${Math.round(vv.offsetTop)}px`);
+      const kb = Math.max(0, Math.round(window.innerHeight - vv.height));
+      const keyboardOpen = kb > 100;
+      root.style.setProperty("--kb", keyboardOpen ? `${kb}px` : "0px");
       root.style.setProperty(
         "--vvs",
         keyboardOpen ? "0px" : "env(safe-area-inset-bottom)"
       );
+      if (keyboardOpen) {
+        lockBody();
+      } else {
+        unlockBody();
+        // Nulstil iOS' viewport-offset efter tastatur-luk, så fixed-
+        // elementer (chat-input + bund-nav) ikke står forskudt.
+        window.scrollTo(0, 0);
+      }
     };
     apply();
     vv.addEventListener("resize", apply);
@@ -1380,11 +1399,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
     return () => {
       vv.removeEventListener("resize", apply);
       vv.removeEventListener("scroll", apply);
-      body.style.overflow = prev.bodyOverflow;
-      body.style.background = prev.bodyBg;
-      root.style.background = prev.htmlBg;
-      root.style.removeProperty("--vvh");
-      root.style.removeProperty("--vv-top");
+      unlockBody();
+      body.style.overflow = prevBodyOverflow;
+      body.style.background = prevBodyBg;
+      root.style.background = prevHtmlBg;
+      root.style.removeProperty("--kb");
       root.style.removeProperty("--vvs");
     };
   }, [hideMobileBottomNav]);
@@ -1395,17 +1414,16 @@ export function DashboardPage({ user, onLogout, showToast }) {
       style={
         hideMobileBottomNav
           ? {
-              // Limet til den visuelle viewport (top=offsetTop, height=vvh).
-              // vvH er den fulde synlige højde (inkl. home-indicator-zonen),
-              // så skallen skal præcis være vvH — input-barens egen safe-area-
-              // polstring (--vvs) holder pillen over home-indicator-stregen.
-              // Bruger top (ikke transform) for ikke at lave en containing
-              // block der ville flytte fixed-positionerede modaler.
+              // Forankret til viewporten: top:0 + bottom:var(--kb). I hvile er
+              // --kb=0 → fuld skærm; tastatur åbent → bunden løftes op over
+              // tastaturet. Ingen brug af visualViewport.offsetTop (buggy på
+              // iOS). Input-barens egen --vvs-polstring holder pillen over
+              // home-indicator-stregen.
               position: "fixed",
-              top: "var(--vv-top, 0px)",
+              top: 0,
               left: 0,
               right: 0,
-              height: "var(--vvh, 100dvh)",
+              bottom: "var(--kb, 0px)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
