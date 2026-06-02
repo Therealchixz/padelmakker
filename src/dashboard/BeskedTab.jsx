@@ -22,7 +22,8 @@ import {
 } from '../lib/leagueTeamChatUtils';
 import { fetchInvitableMatches, buildInvitePayloadForMatch, joinMatchFromChatInvite, fetchShareableCourts } from '../lib/chatInviteUtils';
 import { CHAT_MESSAGE_TYPES, buildTimeSuggestionPayload, buildVenueSharePayload, messagePreview } from '../lib/chatMessageUtils';
-import { isUserOnline, onlineStatusLabel } from '../lib/chatPresenceUtils';
+import { onlineStatusLabel } from '../lib/chatPresenceUtils';
+import { useOnlineIds } from '../lib/presence';
 import { broadcastDmTyping, subscribeDmTyping, broadcastTeamTyping, subscribeTeamTyping } from '../lib/dmTypingUtils';
 import { ChatActionSheet } from '../components/chat/ChatActionSheet';
 import { fetchDmHiddenUserIds, fetchUsersIBlocked } from '../lib/userModeration';
@@ -825,6 +826,8 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     return p?.full_name || p?.name || 'Spiller';
   };
 
+  const onlineIds = useOnlineIds();
+
   const inboxItems = useMemo(() => {
     const dmItems = conversations.map((convo) => {
       const p = profiles[convo.otherId];
@@ -840,7 +843,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         preview: `${isFromMe ? 'Dig: ' : ''}${previewText}`,
         time: convo.lastMessage.created_at,
         unread: convo.unread,
-        online: isUserOnline(p?.last_active_at),
+        online: onlineIds.has(String(convo.otherId)),
       };
     });
 
@@ -858,7 +861,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     return [...dmItems, ...teamItems].sort(
       (a, b) => new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime()
     );
-  }, [conversations, teamConversations, profiles, user.id]);
+  }, [conversations, teamConversations, profiles, user.id, onlineIds]);
 
   const threadShellClass = mobileChatActive
     ? 'pm-chat-v2-thread pm-chat-v2-thread--mobile'
@@ -870,7 +873,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     const otherProfile = !isTeamThread ? (partnerProfile || profiles[selectedId]) : null;
     const chatIsBlocked = !isTeamThread && dmHiddenIds.has(String(selectedId));
     const iBlockedThem = !isTeamThread && blockedByMeIds.has(String(selectedId));
-    const partnerOnline = !isTeamThread && isUserOnline(otherProfile?.last_active_at);
+    const partnerOnline = !isTeamThread && onlineIds.has(String(selectedId));
     const hiddenMessageCount = isTeamThread
       ? 0
       : Math.max(0, messages.length - chatVisibleCount);
@@ -882,7 +885,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       : getName(selectedId);
     const threadSubtitle = isTeamThread
       ? (teamMeta?.leagueName ? `Liga · ${teamMeta.leagueName}` : 'Liga-hold')
-      : onlineStatusLabel(otherProfile?.last_active_at, {
+      : onlineStatusLabel(partnerOnline, otherProfile?.last_active_at, {
           elo: otherProfile?.elo_rating,
           level: otherProfile?.level,
         });

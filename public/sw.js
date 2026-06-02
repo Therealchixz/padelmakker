@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v31-chat-reaction-size';
+const VERSION = 'padelmakker-sw-v32-chat-presence';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
