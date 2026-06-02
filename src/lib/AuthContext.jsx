@@ -6,6 +6,7 @@ import { applyPendingAvatar } from './avatarUpload'
 import { DEFAULT_REGION } from './platformConstants'
 import { isSeekingActiveProfile } from './seekingFeedTtl'
 import { BanNoticeModal } from '../components/BanNoticeModal'
+import { startPresence, stopPresence } from './presence'
 
 const AuthContext = createContext(null)
 
@@ -403,6 +404,19 @@ export function AuthProvider({ children }) {
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [loadProfile, touchLastActive])
+
+  /**
+   * Ægte online-presence: meld brugeren til den fælles presence-kanal mens
+   * han er logget ind, og frameld igen ved logout/skift.
+   */
+  useEffect(() => {
+    if (!user?.id) {
+      stopPresence()
+      return undefined
+    }
+    startPresence(user.id)
+    return () => stopPresence()
+  }, [user?.id])
 
   /**
    * Realtids-overvågning af ban-status — kører kun når user?.id ændres.
