@@ -3126,6 +3126,14 @@ button,
   min-width: max-content;
 }
 
+/* Fuld bredde, men fanerne tilpasser sig deres tekst (ingen afkortning):
+   boksen fylder hele bredden, og hver fane vokser for at udfylde den, men
+   kan ikke skrumpe under sin tekst. */
+.pm-pill-tabs--fill .pm-pill-tab {
+  flex: 1 1 auto;
+  min-width: max-content;
+}
+
 .pm-profile-top {
   display: flex;
   flex-direction: column;
