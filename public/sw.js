@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v28-chat-revert-v21';
+const VERSION = 'padelmakker-sw-v29-chat-menu-zindex';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

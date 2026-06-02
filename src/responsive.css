@@ -9007,6 +9007,11 @@ button,
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   flex-shrink: 0;
+  /* Løft headerens lag over beskedlistens scroll-lag (som danner egen
+     stacking context via -webkit-overflow-scrolling), så ⋮-menuen åbner
+     OVENPÅ chatten og ikke bagved. */
+  position: relative;
+  z-index: 5;
 }
 
 .pm-chat-v2-thread-back {
