@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v29-chat-menu-zindex';
+const VERSION = 'padelmakker-sw-v30-chat-popups';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

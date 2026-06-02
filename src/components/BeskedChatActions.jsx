@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { MoreVertical, Flag, Ban, UserCheck } from 'lucide-react';
 import { theme, btn, inputStyle } from '../lib/platformTheme';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
@@ -211,14 +212,14 @@ export function BeskedChatActions({
         )}
       </div>
 
-      {reportOpen ? (
+      {reportOpen ? createPortal((
         <div
           role="presentation"
           onClick={() => !busy && setReportOpen(false)}
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 100,
+            zIndex: 2147483600,
             background: 'rgba(15,23,42,0.45)',
             display: 'flex',
             alignItems: 'center',
@@ -291,7 +292,7 @@ export function BeskedChatActions({
             </div>
           </div>
         </div>
-      ) : null}
+      ), document.body) : null}
     </>
   );
 }
