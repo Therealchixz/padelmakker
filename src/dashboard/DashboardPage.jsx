@@ -7,7 +7,6 @@ import { font, theme, btn } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, ChevronDown, Menu, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
-import { KeyboardDebug } from './KeyboardDebug';
 
 const loadHomeTab = () => import('./HomeTab');
 const HomeTabLazy = lazy(() => loadHomeTab().then((m) => ({ default: m.HomeTab })));
@@ -1397,17 +1396,16 @@ export function DashboardPage({ user, onLogout, showToast }) {
         hideMobileBottomNav
           ? {
               // Limet til den visuelle viewport (top=offsetTop, height=vvh).
-              // Højden lægger safe-area-bunden (--vvs) oveni, fordi iOS
-              // rapporterer vvH UDEN home-indicator-zonen i standalone — uden
-              // dette efterlades en grå stribe forneden. --vvs er 0 når
-              // tastaturet er åbent, så vi ikke overdækker tastaturet.
+              // vvH er den fulde synlige højde (inkl. home-indicator-zonen),
+              // så skallen skal præcis være vvH — input-barens egen safe-area-
+              // polstring (--vvs) holder pillen over home-indicator-stregen.
               // Bruger top (ikke transform) for ikke at lave en containing
               // block der ville flytte fixed-positionerede modaler.
               position: "fixed",
               top: "var(--vv-top, 0px)",
               left: 0,
               right: 0,
-              height: "calc(var(--vvh, 100dvh) + var(--vvs, 0px))",
+              height: "var(--vvh, 100dvh)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
@@ -1418,7 +1416,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
           : { minHeight: "100dvh", display: "flex", flexDirection: "column" }
       }
     >
-      {hideMobileBottomNav && <KeyboardDebug />}
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }} aria-label="Gå til Hjem">

@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v25-chat-debug2';
+const VERSION = 'padelmakker-sw-v26-chat-shellheight';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
