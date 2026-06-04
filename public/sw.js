@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v48-home-invite-actions';
+const VERSION = 'padelmakker-sw-v49-feed-deeplink-fix';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
