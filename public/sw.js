@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v49-feed-deeplink-fix';
+const VERSION = 'padelmakker-sw-v50-feed-court-timeout';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
