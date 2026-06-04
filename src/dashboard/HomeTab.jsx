@@ -20,6 +20,7 @@ import { regionDisplayLabel } from '../lib/appRegions';
 import { getTournamentFormatLabel, resolveAmericanoCourtName } from '../features/americano/americanoDisplayUtils';
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
+import { createNotification } from '../lib/notifications';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
 import {
   normalizeMatchSearchPrefs,
@@ -261,7 +262,7 @@ export function HomeTab({ user, setTab }) {
       try {
         const [inboundRes, teamInvRes] = await Promise.all([
           supabase.from('match_join_requests')
-            .select('id, user_name, user_emoji, created_at, matches!inner(id, court_name, date, time, creator_id, status)')
+            .select('id, user_id, user_name, user_emoji, created_at, matches!inner(id, court_name, date, time, creator_id, status)')
             .eq('status', 'pending').eq('matches.creator_id', user.id),
           supabase.from('league_teams')
             .select('id, name, status, player1_name, league_id, leagues!inner(id, name)')
@@ -275,9 +276,10 @@ export function HomeTab({ user, setTab }) {
           const m = r.matches; if (!m) continue;
           const sd = shortDate(m.date);
           items.push({
-            key: `inb-${r.id}`, icon: r.user_emoji || '🎾', tone: theme.green, bg: theme.greenBg, tag: 'Anmodning',
+            key: `inb-${r.id}`, kind: 'inbound', icon: r.user_emoji || '🎾', tone: theme.green, bg: theme.greenBg, tag: 'Anmodning',
             title: `${r.user_name || 'En spiller'} vil være med`,
             subtitle: `${m.court_name || 'din kamp'}${sd ? ` · ${sd}` : ''}${m.time ? ` · ${m.time}` : ''}`,
+            reqId: r.id, matchId: m.id, reqUserId: r.user_id, reqUserName: r.user_name || 'En spiller', reqUserEmoji: r.user_emoji,
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
           });
         }
@@ -300,7 +302,46 @@ export function HomeTab({ user, setTab }) {
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  const fetchIdRef = useRef(0);
+  // Accepter/afvis en anmodning direkte fra Invitationer (samme logik som Kampe-fanen).
+  const [busyInviteId, setBusyInviteId] = useState(null);
+  const approveInvite = useCallback(async (it) => {
+    if (busyInviteId) return;
+    setBusyInviteId(it.key);
+    try {
+      const { data, error } = await supabase.rpc("approve_match_join_request", {
+        p_request_id: it.reqId,
+        p_match_id: it.matchId,
+        p_user_id: it.reqUserId,
+        p_user_name: it.reqUserName,
+        p_user_emoji: it.reqUserEmoji || "🎾",
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Ukendt fejl");
+      const myName = resolveDisplayName(user, user);
+      await createNotification(it.reqUserId, "match_invite", "Anmodning godkendt! 🎾",
+        `${myName} har godkendt din tilmeldingsanmodning.`, it.matchId).catch(() => {});
+      setInviteItems((prev) => prev.filter((x) => x.key !== it.key));
+    } catch (e) {
+      console.warn("home approve invite:", e?.message || e);
+      setBusyInviteId(null);
+    }
+  }, [busyInviteId, user]);
+  const rejectInvite = useCallback(async (it) => {
+    if (busyInviteId) return;
+    setBusyInviteId(it.key);
+    try {
+      const { error } = await supabase.from("match_join_requests")
+        .update({ status: "rejected" }).eq("id", it.reqId);
+      if (error) throw error;
+      await createNotification(it.reqUserId, "match_invite", "Anmodning afvist",
+        "Din anmodning om at deltage i kampen er desværre ikke godkendt.", it.matchId).catch(() => {});
+      setInviteItems((prev) => prev.filter((x) => x.key !== it.key));
+    } catch (e) {
+      console.warn("home reject invite:", e?.message || e);
+      setBusyInviteId(null);
+    }
+  }, [busyInviteId]);
+
   const [feed, setFeed] = useState([]);
   const [americanoFeed, setAmericanoFeed] = useState([]);
   const [ligaFeed, setLigaFeed] = useState([]);
@@ -790,12 +831,14 @@ export function HomeTab({ user, setTab }) {
     background: theme.surface,
   };
 
-  // Fyldt handlingsknap (farve + hvid tekst), farvematchet til korttypen — kompakt, så teksten får plads.
+  // Fyldt handlingsknap (farve + hvid tekst), farvematchet til korttypen — ens bredde på tværs af feedet.
   const activityActionBtnStyle = (tone) => ({
     ...btn(false),
-    minWidth: "56px",
+    width: "84px",
+    boxSizing: "border-box",
     justifyContent: "center",
-    padding: "8px 14px",
+    whiteSpace: "nowrap",
+    padding: "8px 8px",
     fontSize: "13px",
     fontWeight: 700,
     height: "auto",
@@ -805,6 +848,38 @@ export function HomeTab({ user, setTab }) {
     background: tone,
     flexShrink: 0,
   });
+  // Sekundær (afvis) knap til invitationer — outline, jf. mockup.
+  const inviteSecondaryBtnStyle = {
+    ...btn(false),
+    boxSizing: "border-box",
+    justifyContent: "center",
+    whiteSpace: "nowrap",
+    padding: "8px 12px",
+    fontSize: "13px",
+    fontWeight: 700,
+    height: "auto",
+    borderRadius: "10px",
+    border: "1px solid " + theme.border,
+    color: theme.textMid,
+    background: theme.surface,
+    flexShrink: 0,
+  };
+  // Primær (accepter) knap til invitationer — fyldt grøn, auto-bredde så parret passer.
+  const invitePrimaryBtnStyle = {
+    ...btn(false),
+    boxSizing: "border-box",
+    justifyContent: "center",
+    whiteSpace: "nowrap",
+    padding: "8px 14px",
+    fontSize: "13px",
+    fontWeight: 700,
+    height: "auto",
+    borderRadius: "10px",
+    border: "1px solid " + theme.green,
+    color: "#fff",
+    background: theme.green,
+    flexShrink: 0,
+  };
 
   const activityBodyStyle = {
     flex: 1,
@@ -1242,7 +1317,16 @@ export function HomeTab({ user, setTab }) {
               tag: it.tag,
               title: it.title,
               subtitle: it.subtitle,
-              action: (
+              action: it.kind === 'inbound' ? (
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button type="button" disabled={busyInviteId === it.key} onClick={() => rejectInvite(it)} style={{ ...inviteSecondaryBtnStyle, opacity: busyInviteId === it.key ? 0.5 : 1 }}>
+                    Afvis
+                  </button>
+                  <button type="button" disabled={busyInviteId === it.key} onClick={() => approveInvite(it)} style={{ ...invitePrimaryBtnStyle, opacity: busyInviteId === it.key ? 0.5 : 1 }}>
+                    Acceptér
+                  </button>
+                </div>
+              ) : (
                 <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })} style={activityActionBtnStyle(it.tone)}>
                   Se
                 </button>
