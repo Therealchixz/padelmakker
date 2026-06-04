@@ -174,6 +174,33 @@ export function HomeTab({ user, setTab }) {
     return () => { cancelled = true; };
   }, [user?.id]);
 
+  // Invitationer: spillere der har bedt om at komme med i kampe DU har oprettet (afventer godkendelse).
+  const [pendingInvites, setPendingInvites] = useState([]);
+  useEffect(() => {
+    if (!user?.id) {
+      setPendingInvites([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('match_join_requests')
+          .select('id, user_id, user_name, user_emoji, status, created_at, matches!inner(id, court_name, date, time, creator_id, status)')
+          .eq('status', 'pending')
+          .eq('matches.creator_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        if (cancelled) return;
+        setPendingInvites((data || []).filter((r) => r.matches).slice(0, 4));
+      } catch (err) {
+        console.warn('home pending invites load:', err?.message || err);
+        if (!cancelled) setPendingInvites([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const fetchIdRef = useRef(0);
   const [feed, setFeed] = useState([]);
   const [americanoFeed, setAmericanoFeed] = useState([]);
@@ -1139,6 +1166,54 @@ export function HomeTab({ user, setTab }) {
           ))}
         </div>
       </div>
+
+      {/* Invitationer (rigtige data: anmodninger om at komme med i dine kampe) */}
+      {pendingInvites.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Invitationer
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: "#EF4444", borderRadius: 999, minWidth: 18, height: 18, padding: "0 6px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              {pendingInvites.length}
+            </span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {pendingInvites.map((r) => {
+              const m = r.matches;
+              const d = m?.date ? new Date(`${m.date}T00:00:00`) : null;
+              const when = d && !Number.isNaN(d.getTime())
+                ? `${d.toLocaleDateString("da-DK", { day: "numeric", month: "short" }).replace(".", "")}${m.time ? ` · ${m.time}` : ""}`
+                : (m?.time || "");
+              const place = m?.court_name || "din kamp";
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setTab("kampe", { search: `focus=${encodeURIComponent(String(m?.id || ""))}` })}
+                  className="pm-ui-card pm-ui-card-interactive"
+                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", textAlign: "left", border: 0, cursor: "pointer", width: "100%", fontFamily: "inherit" }}
+                >
+                  <div style={{ width: 40, minWidth: 40, height: 40, borderRadius: "50%", background: theme.accentBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }} aria-hidden="true">
+                    {r.user_emoji || "🎾"}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {r.user_name || "En spiller"} vil være med
+                    </div>
+                    <div style={{ fontSize: 12.5, color: theme.textMid, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {place}{when ? ` · ${when}` : ""}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: theme.accent, background: theme.accentBg, borderRadius: 999, padding: "6px 12px", flexShrink: 0 }}>
+                    Se
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Kommende kampe (rigtige data: kampe du er tilmeldt, fra i dag og frem) */}
       {upcomingMatches.length > 0 && (
