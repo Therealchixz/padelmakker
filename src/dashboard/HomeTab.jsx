@@ -146,9 +146,16 @@ export function HomeTab({ user, setTab }) {
     const d = new Date(`${ymd}T00:00:00`);
     if (Number.isNaN(d.getTime())) return { top: "–", bottom: "" };
     return {
-      top: d.toLocaleDateString("da-DK", { day: "numeric" }),
+      top: d.toLocaleDateString("da-DK", { day: "numeric" }).replace(".", ""),
       bottom: d.toLocaleDateString("da-DK", { month: "short" }).replace(".", ""),
     };
+  };
+  // Kort dato til undertekst, fx "9. jun".
+  const shortDate = (ymd) => {
+    if (!ymd) return "";
+    const d = new Date(`${ymd}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("da-DK", { day: "numeric", month: "short" });
   };
 
   // Kommende kampe: 2v2-kampe, Americano/Mexicano og liga-kampe brugeren er en del af, fra i dag og frem.
@@ -253,16 +260,13 @@ export function HomeTab({ user, setTab }) {
     let cancelled = false;
     (async () => {
       try {
-        const [inboundRes, teamInvRes, outboundRes] = await Promise.all([
+        const [inboundRes, teamInvRes] = await Promise.all([
           supabase.from('match_join_requests')
             .select('id, user_name, user_emoji, created_at, matches!inner(id, court_name, date, time, creator_id, status)')
             .eq('status', 'pending').eq('matches.creator_id', user.id),
           supabase.from('league_teams')
             .select('id, name, status, player1_name, league_id, leagues!inner(id, name)')
             .eq('player2_id', user.id).eq('status', 'pending'),
-          supabase.from('match_join_requests')
-            .select('id, created_at, matches!inner(id, court_name, date, time, status)')
-            .eq('user_id', user.id).eq('status', 'pending'),
         ]);
         if (cancelled) return;
 
@@ -270,11 +274,11 @@ export function HomeTab({ user, setTab }) {
 
         for (const r of (inboundRes.data || [])) {
           const m = r.matches; if (!m) continue;
-          const b = dayMonBadge(m.date);
+          const sd = shortDate(m.date);
           items.push({
             key: `inb-${r.id}`, icon: r.user_emoji || '🎾', tone: '#10B981', tag: 'Anmodning',
             title: `${r.user_name || 'En spiller'} vil være med`,
-            subtitle: `${m.court_name || 'din kamp'}${b.bottom ? ` · ${b.top}. ${b.bottom}` : ''}${m.time ? ` · ${m.time}` : ''}`,
+            subtitle: `${m.court_name || 'din kamp'}${sd ? ` · ${sd}` : ''}${m.time ? ` · ${m.time}` : ''}`,
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
           });
         }
@@ -285,17 +289,6 @@ export function HomeTab({ user, setTab }) {
             title: t.name || 'Ligahold',
             subtitle: `${t.player1_name ? `${t.player1_name} · ` : ''}${t.leagues?.name || 'Liga'}`,
             target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(t.league_id))}` },
-          });
-        }
-
-        for (const r of (outboundRes.data || [])) {
-          const m = r.matches; if (!m) continue;
-          const b = dayMonBadge(m.date);
-          items.push({
-            key: `out-${r.id}`, icon: '⏳', tone: '#F59E0B', tag: 'Afventer',
-            title: 'Din anmodning afventer svar',
-            subtitle: `${m.court_name || 'Kamp'}${b.bottom ? ` · ${b.top}. ${b.bottom}` : ''}${m.time ? ` · ${m.time}` : ''}`,
-            target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
           });
         }
 
