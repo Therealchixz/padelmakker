@@ -791,16 +791,16 @@ export function HomeTab({ user, setTab }) {
     background: theme.surface,
   };
 
-  // Fyldt handlingsknap (farve + hvid tekst), farvematchet til korttypen — jf. mockup.
+  // Fyldt handlingsknap (farve + hvid tekst), farvematchet til korttypen — størrelse jf. mockup.
   const activityActionBtnStyle = (tone) => ({
     ...btn(false),
-    minWidth: "88px",
+    minWidth: "84px",
     justifyContent: "center",
-    padding: "6px 11px",
-    fontSize: "12px",
+    padding: "10px 18px",
+    fontSize: "13px",
     fontWeight: 700,
     height: "auto",
-    borderRadius: "999px",
+    borderRadius: "12px",
     border: "1px solid " + tone,
     color: "#fff",
     background: tone,
