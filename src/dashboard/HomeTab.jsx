@@ -140,11 +140,22 @@ export function HomeTab({ user, setTab }) {
     return () => { cancelled = true; };
   }, [user?.id, profileFresh?.americano_elo_rating]);
 
-  // Kommende kampe: kampe brugeren er tilmeldt, med dato fra i dag og frem (ikke afsluttet/aflyst).
-  const [upcomingMatches, setUpcomingMatches] = useState([]);
+  // Dato-badge (dag + måned) til kort.
+  const dayMonBadge = (ymd) => {
+    if (!ymd) return { top: "–", bottom: "" };
+    const d = new Date(`${ymd}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return { top: "–", bottom: "" };
+    return {
+      top: d.toLocaleDateString("da-DK", { day: "numeric" }),
+      bottom: d.toLocaleDateString("da-DK", { month: "short" }).replace(".", ""),
+    };
+  };
+
+  // Kommende kampe: 2v2-kampe, Americano/Mexicano og liga-kampe brugeren er en del af, fra i dag og frem.
+  const [upcomingItems, setUpcomingItems] = useState([]);
   useEffect(() => {
     if (!user?.id) {
-      setUpcomingMatches([]);
+      setUpcomingItems([]);
       return;
     }
     let cancelled = false;
@@ -152,50 +163,146 @@ export function HomeTab({ user, setTab }) {
       try {
         const now = new Date();
         const todayYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const { data, error } = await supabase
-          .from('match_players')
-          .select('matches!inner(id, date, time, court_name, status, current_players, max_players, match_type)')
-          .eq('user_id', user.id)
-          .gte('matches.date', todayYMD)
-          .in('matches.status', ['open', 'full', 'in_progress']);
-        if (error) throw error;
+        const [mRes, amRes, ltRes] = await Promise.all([
+          supabase.from('match_players')
+            .select('matches!inner(id, date, time, court_name, status, current_players, max_players)')
+            .eq('user_id', user.id)
+            .gte('matches.date', todayYMD)
+            .in('matches.status', ['open', 'full', 'in_progress']),
+          supabase.from('americano_participants')
+            .select('americano_tournaments!inner(id, name, tournament_date, time_slot, status, format)')
+            .eq('user_id', user.id)
+            .gte('americano_tournaments.tournament_date', todayYMD)
+            .neq('americano_tournaments.status', 'completed'),
+          supabase.from('league_teams')
+            .select('id, name, league_id, leagues!inner(id, name, status)')
+            .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`)
+            .eq('status', 'ready'),
+        ]);
         if (cancelled) return;
-        const rows = (data || [])
-          .map((r) => r.matches)
-          .filter(Boolean)
-          .sort((a, b) => (`${a.date} ${a.time || ''}`).localeCompare(`${b.date} ${b.time || ''}`))
-          .slice(0, 3);
-        setUpcomingMatches(rows);
+
+        const items = [];
+
+        for (const r of (mRes.data || [])) {
+          const m = r.matches;
+          if (!m) continue;
+          const tone = m.status === 'open' ? '#10B981' : m.status === 'in_progress' ? '#F59E0B' : '#2563EB';
+          const statusLabel = m.status === 'open' ? 'Åben' : m.status === 'in_progress' ? 'I gang' : 'Fuld';
+          const players = (m.current_players != null && m.max_players != null) ? ` · ${m.current_players}/${m.max_players} spillere` : '';
+          items.push({
+            key: `m-${m.id}`, kind: 'match', tone, badge: dayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
+            title: m.court_name || 'Padelkamp', pill: statusLabel,
+            subtitle: `${m.time || 'Tidspunkt ikke sat'}${players}`,
+            target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
+          });
+        }
+
+        for (const r of (amRes.data || [])) {
+          const t = r.americano_tournaments;
+          if (!t) continue;
+          const fmt = String(t.format || '').toLowerCase() === 'mexicano' ? 'Mexicano' : 'Americano';
+          items.push({
+            key: `am-${t.id}`, kind: 'americano', tone: '#F59E0B', badge: dayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
+            title: t.name || fmt, pill: fmt,
+            subtitle: `${t.time_slot ? `${t.time_slot} · ` : ''}${t.status === 'registration' ? 'Tilmelding åben' : 'Planlagt'}`,
+            target: { tab: 'kampe', search: `format=americano&focus=${encodeURIComponent(String(t.id))}` },
+          });
+        }
+
+        const myTeams = (ltRes.data || []).filter((t) => t.leagues && t.leagues.status !== 'completed');
+        if (myTeams.length) {
+          const leagueIds = [...new Set(myTeams.map((t) => t.league_id))];
+          const myTeamIds = new Set(myTeams.map((t) => t.id));
+          const [lmRes, allTeamsRes] = await Promise.all([
+            supabase.from('league_matches').select('id, league_id, round_number, team1_id, team2_id, status').in('league_id', leagueIds).eq('status', 'pending'),
+            supabase.from('league_teams').select('id, name, league_id').in('league_id', leagueIds),
+          ]);
+          if (cancelled) return;
+          const teamName = new Map((allTeamsRes.data || []).map((t) => [t.id, t.name]));
+          const leagueName = new Map(myTeams.map((t) => [t.league_id, t.leagues?.name]));
+          for (const lm of (lmRes.data || [])) {
+            const involvesMe = myTeamIds.has(lm.team1_id) || myTeamIds.has(lm.team2_id);
+            if (!involvesMe) continue;
+            const oppId = myTeamIds.has(lm.team1_id) ? lm.team2_id : lm.team1_id;
+            items.push({
+              key: `lm-${lm.id}`, kind: 'liga', tone: '#8B5CF6', badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
+              title: leagueName.get(lm.league_id) || 'Ligakamp', pill: 'Liga',
+              subtitle: `Runde ${lm.round_number ?? '?'}${oppId && teamName.get(oppId) ? ` mod ${teamName.get(oppId)}` : ''}`,
+              target: { tab: 'kampe', search: 'format=liga' },
+            });
+          }
+        }
+
+        items.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+        setUpcomingItems(items.slice(0, 5));
       } catch (err) {
-        console.warn('home upcoming matches load:', err?.message || err);
-        if (!cancelled) setUpcomingMatches([]);
+        console.warn('home upcoming items load:', err?.message || err);
+        if (!cancelled) setUpcomingItems([]);
       }
     })();
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  // Invitationer: spillere der har bedt om at komme med i kampe DU har oprettet (afventer godkendelse).
-  const [pendingInvites, setPendingInvites] = useState([]);
+  // Invitationer: (1) anmodninger om at komme med i DINE kampe, (2) holdinvitationer i ligaen, (3) dine egne ventende anmodninger.
+  const [inviteItems, setInviteItems] = useState([]);
   useEffect(() => {
     if (!user?.id) {
-      setPendingInvites([]);
+      setInviteItems([]);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const { data, error } = await supabase
-          .from('match_join_requests')
-          .select('id, user_id, user_name, user_emoji, status, created_at, matches!inner(id, court_name, date, time, creator_id, status)')
-          .eq('status', 'pending')
-          .eq('matches.creator_id', user.id)
-          .order('created_at', { ascending: false });
-        if (error) throw error;
+        const [inboundRes, teamInvRes, outboundRes] = await Promise.all([
+          supabase.from('match_join_requests')
+            .select('id, user_name, user_emoji, created_at, matches!inner(id, court_name, date, time, creator_id, status)')
+            .eq('status', 'pending').eq('matches.creator_id', user.id),
+          supabase.from('league_teams')
+            .select('id, name, status, player1_name, league_id, leagues!inner(id, name)')
+            .eq('player2_id', user.id).eq('status', 'pending'),
+          supabase.from('match_join_requests')
+            .select('id, created_at, matches!inner(id, court_name, date, time, status)')
+            .eq('user_id', user.id).eq('status', 'pending'),
+        ]);
         if (cancelled) return;
-        setPendingInvites((data || []).filter((r) => r.matches).slice(0, 4));
+
+        const items = [];
+
+        for (const r of (inboundRes.data || [])) {
+          const m = r.matches; if (!m) continue;
+          const b = dayMonBadge(m.date);
+          items.push({
+            key: `inb-${r.id}`, icon: r.user_emoji || '🎾', tone: '#10B981',
+            title: `${r.user_name || 'En spiller'} vil være med`,
+            subtitle: `${m.court_name || 'din kamp'}${b.bottom ? ` · ${b.top}. ${b.bottom}` : ''}${m.time ? ` · ${m.time}` : ''}`,
+            target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
+          });
+        }
+
+        for (const t of (teamInvRes.data || [])) {
+          items.push({
+            key: `team-${t.id}`, icon: '🏆', tone: '#8B5CF6',
+            title: `Holdinvitation: ${t.name || 'Ligahold'}`,
+            subtitle: `${t.player1_name ? `${t.player1_name} · ` : ''}${t.leagues?.name || 'Liga'}`,
+            target: { tab: 'kampe', search: 'format=liga' },
+          });
+        }
+
+        for (const r of (outboundRes.data || [])) {
+          const m = r.matches; if (!m) continue;
+          const b = dayMonBadge(m.date);
+          items.push({
+            key: `out-${r.id}`, icon: '⏳', tone: '#F59E0B',
+            title: 'Din anmodning afventer svar',
+            subtitle: `${m.court_name || 'Kamp'}${b.bottom ? ` · ${b.top}. ${b.bottom}` : ''}${m.time ? ` · ${m.time}` : ''}`,
+            target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
+          });
+        }
+
+        setInviteItems(items.slice(0, 6));
       } catch (err) {
-        console.warn('home pending invites load:', err?.message || err);
-        if (!cancelled) setPendingInvites([]);
+        console.warn('home invites load:', err?.message || err);
+        if (!cancelled) setInviteItems([]);
       }
     })();
     return () => { cancelled = true; };
@@ -1167,97 +1274,81 @@ export function HomeTab({ user, setTab }) {
         </div>
       </div>
 
-      {/* Invitationer (rigtige data: anmodninger om at komme med i dine kampe) */}
-      {pendingInvites.length > 0 && (
+      {/* Invitationer (rigtige data: anmodninger til dine kampe, holdinvitationer, dine ventende anmodninger) */}
+      {inviteItems.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Invitationer
             </div>
             <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: "#EF4444", borderRadius: 999, minWidth: 18, height: 18, padding: "0 6px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-              {pendingInvites.length}
+              {inviteItems.length}
             </span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {pendingInvites.map((r) => {
-              const m = r.matches;
-              const d = m?.date ? new Date(`${m.date}T00:00:00`) : null;
-              const when = d && !Number.isNaN(d.getTime())
-                ? `${d.toLocaleDateString("da-DK", { day: "numeric", month: "short" }).replace(".", "")}${m.time ? ` · ${m.time}` : ""}`
-                : (m?.time || "");
-              const place = m?.court_name || "din kamp";
-              return (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => setTab("kampe", { search: `focus=${encodeURIComponent(String(m?.id || ""))}` })}
-                  className="pm-ui-card pm-ui-card-interactive"
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", textAlign: "left", border: 0, cursor: "pointer", width: "100%", fontFamily: "inherit" }}
-                >
-                  <div style={{ width: 40, minWidth: 40, height: 40, borderRadius: "50%", background: theme.accentBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }} aria-hidden="true">
-                    {r.user_emoji || "🎾"}
+            {inviteItems.map((it) => (
+              <button
+                key={it.key}
+                type="button"
+                onClick={() => setTab(it.target.tab, { search: it.target.search })}
+                className="pm-ui-card pm-ui-card-interactive"
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", textAlign: "left", border: 0, cursor: "pointer", width: "100%", fontFamily: "inherit" }}
+              >
+                <div style={{ width: 40, minWidth: 40, height: 40, borderRadius: "50%", background: `${it.tone}1A`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }} aria-hidden="true">
+                  {it.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {it.title}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {r.user_name || "En spiller"} vil være med
-                    </div>
-                    <div style={{ fontSize: 12.5, color: theme.textMid, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {place}{when ? ` · ${when}` : ""}
-                    </div>
+                  <div style={{ fontSize: 12.5, color: theme.textMid, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {it.subtitle}
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: theme.accent, background: theme.accentBg, borderRadius: 999, padding: "6px 12px", flexShrink: 0 }}>
-                    Se
-                  </span>
-                </button>
-              );
-            })}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: it.tone, background: `${it.tone}1A`, borderRadius: 999, padding: "6px 12px", flexShrink: 0 }}>
+                  Se
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Kommende kampe (rigtige data: kampe du er tilmeldt, fra i dag og frem) */}
-      {upcomingMatches.length > 0 && (
+      {/* Kommende kampe (rigtige data: 2v2, Americano/Mexicano og liga) */}
+      {upcomingItems.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
             Kommende kampe
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {upcomingMatches.map((m) => {
-              const d = new Date(`${m.date}T00:00:00`);
-              const day = Number.isNaN(d.getTime()) ? "–" : d.toLocaleDateString("da-DK", { day: "numeric" });
-              const mon = Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("da-DK", { month: "short" }).replace(".", "");
-              const tone = m.status === "open" ? "#10B981" : m.status === "in_progress" ? "#F59E0B" : "#2563EB";
-              const statusLabel = m.status === "open" ? "Åben" : m.status === "in_progress" ? "I gang" : "Fuld";
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setTab("kampe", { search: `focus=${encodeURIComponent(String(m.id))}` })}
-                  className="pm-ui-card pm-ui-card-interactive"
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", textAlign: "left", border: 0, cursor: "pointer", width: "100%", fontFamily: "inherit" }}
-                >
-                  <div style={{ width: 46, minWidth: 46, height: 46, borderRadius: 12, background: `${tone}1A`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
-                    <span style={{ fontSize: 17, fontWeight: 800, color: tone }}>{day}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: tone, textTransform: "uppercase", marginTop: 1 }}>{mon}</span>
+            {upcomingItems.map((it) => (
+              <button
+                key={it.key}
+                type="button"
+                onClick={() => setTab(it.target.tab, { search: it.target.search })}
+                className="pm-ui-card pm-ui-card-interactive"
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", textAlign: "left", border: 0, cursor: "pointer", width: "100%", fontFamily: "inherit" }}
+              >
+                <div style={{ width: 46, minWidth: 46, height: 46, borderRadius: 12, background: `${it.tone}1A`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
+                  <span style={{ fontSize: it.kind === "liga" ? 15 : 17, fontWeight: 800, color: it.tone }}>{it.badge.top}</span>
+                  {it.badge.bottom ? <span style={{ fontSize: 10, fontWeight: 700, color: it.tone, textTransform: "uppercase", marginTop: 1 }}>{it.badge.bottom}</span> : null}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {it.title}
+                    </span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: it.tone, background: `${it.tone}1A`, borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: "0.04em", flexShrink: 0 }}>
+                      {it.pill}
+                    </span>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {m.court_name || "Padelkamp"}
-                      </span>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: tone, background: `${tone}1A`, borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: "0.04em", flexShrink: 0 }}>
-                        {statusLabel}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 12.5, color: theme.textMid, fontWeight: 600 }}>
-                      {m.time ? `${m.time}` : "Tidspunkt ikke sat"}
-                      {(m.current_players != null && m.max_players != null) ? ` · ${m.current_players}/${m.max_players} spillere` : ""}
-                    </div>
+                  <div style={{ fontSize: 12.5, color: theme.textMid, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {it.subtitle}
                   </div>
-                  <ChevronRight size={18} color={theme.textLight} aria-hidden="true" />
-                </button>
-              );
-            })}
+                </div>
+                <ChevronRight size={18} color={theme.textLight} aria-hidden="true" />
+              </button>
+            ))}
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v39-home-invitationer';
+const VERSION = 'padelmakker-sw-v40-home-scenarios';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
