@@ -29,6 +29,22 @@ import {
 } from '../lib/matchSearchFilterUtils';
 
 const HOME_FEED_CACHE_BY_USER = new Map();
+
+// Beskytter feed-fetchen mod at hænge på et enkelt kald der aldrig svarer
+// (fx en blokeret/utilgængelig ikke-Supabase entity-API som base44 Court).
+// Uden dette kan en hængende promise i Promise.allSettled blokere hele
+// fetchen, så "Seneste aktivitet" bliver ved med at vise loading-skelettet.
+function withTimeout(factory, ms, fallback) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (v) => { if (!settled) { settled = true; resolve(v); } };
+    const timer = setTimeout(() => done(fallback), ms);
+    Promise.resolve().then(factory).then(
+      (v) => { clearTimeout(timer); done(v); },
+      () => { clearTimeout(timer); done(fallback); },
+    );
+  });
+}
 const HOME_ELO_MODE_STORAGE_PREFIX = "pm-home-elo-mode:";
 const HOME_FEED_FILTERS = [
   { id: 'kampe', label: 'Kampe', icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
@@ -438,9 +454,13 @@ export function HomeTab({ user, setTab }) {
 
   const fetchFeed = useCallback(async ({ silent = false } = {}) => {
     const fetchId = ++fetchIdRef.current;
+    let watchdog = null;
     if (!silent) {
       setFeedLoading(true);
       setFeedLoadError(null);
+      // Sikkerhedsnet: hvis fetchen mod forventning hænger, så sluk skelettet
+      // alligevel, så brugeren ikke ser grå bokse i det uendelige.
+      watchdog = setTimeout(() => setFeedLoading(false), 15000);
     }
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -527,7 +547,7 @@ export function HomeTab({ user, setTab }) {
         regAmIds.length       ? supabase.from('americano_participants').select('tournament_id').in('tournament_id', regAmIds)                                                                                                                     : Promise.resolve({ data: [] }),
         newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
         openMatchIds.length   ? supabase.from('match_players').select('match_id, user_id, user_name, user_emoji, team').in('match_id', openMatchIds)                                                                                            : Promise.resolve({ data: [] }),
-        Court.filter().catch(() => []),
+        withTimeout(() => Court.filter(), 4000, []),
       ]);
       const round2Results = {
         mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, amEloRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes, openMatchPlayersRes, courtsRes,
@@ -765,6 +785,7 @@ export function HomeTab({ user, setTab }) {
         setFeedLoadError('Kunne ikke hente aktivitet. Tjek din forbindelse og prøv igen.');
       }
     } finally {
+      if (watchdog) clearTimeout(watchdog);
       // En ikke-silent fetch tænder loading-skelettet og skal altid slukke det igen,
       // også selvom en silent baggrunds-fetch i mellemtiden har bumpet fetchId
       // (ellers hænger skelettet for evigt).
