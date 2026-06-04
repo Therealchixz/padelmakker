@@ -193,11 +193,10 @@ export function HomeTab({ user, setTab }) {
         for (const r of (mRes.data || [])) {
           const m = r.matches;
           if (!m) continue;
-          const tone = m.status === 'open' ? '#10B981' : m.status === 'in_progress' ? '#F59E0B' : '#2563EB';
           const statusLabel = m.status === 'open' ? 'Åben' : m.status === 'in_progress' ? 'I gang' : 'Fuld';
           const players = (m.current_players != null && m.max_players != null) ? ` · ${m.current_players}/${m.max_players} spillere` : '';
           items.push({
-            key: `m-${m.id}`, kind: 'match', tone, badge: dayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
+            key: `m-${m.id}`, kind: 'match', tone: theme.green, bg: theme.greenBg, badge: dayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
             title: m.court_name || 'Padelkamp', tag: '2v2',
             subtitle: `${statusLabel} · ${m.time || 'Tidspunkt ikke sat'}${players}`,
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
@@ -209,7 +208,7 @@ export function HomeTab({ user, setTab }) {
           if (!t) continue;
           const fmt = String(t.format || '').toLowerCase() === 'mexicano' ? 'Mexicano' : 'Americano';
           items.push({
-            key: `am-${t.id}`, kind: 'americano', tone: '#F59E0B', badge: dayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
+            key: `am-${t.id}`, kind: 'americano', tone: theme.warm, bg: theme.warmBg, badge: dayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
             title: t.name || fmt, tag: fmt,
             subtitle: `${t.time_slot ? `${t.time_slot} · ` : ''}${t.status === 'registration' ? 'Tilmelding åben' : 'Planlagt'}`,
             target: { tab: 'kampe', search: `format=americano&focus=${encodeURIComponent(String(t.id))}` },
@@ -232,7 +231,7 @@ export function HomeTab({ user, setTab }) {
             if (!involvesMe) continue;
             const oppId = myTeamIds.has(lm.team1_id) ? lm.team2_id : lm.team1_id;
             items.push({
-              key: `lm-${lm.id}`, kind: 'liga', tone: '#8B5CF6', badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
+              key: `lm-${lm.id}`, kind: 'liga', tone: theme.accent, bg: theme.accentBg, badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
               title: leagueName.get(lm.league_id) || 'Ligakamp', tag: 'Liga',
               subtitle: `Runde ${lm.round_number ?? '?'}${oppId && teamName.get(oppId) ? ` mod ${teamName.get(oppId)}` : ''}`,
               target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(lm.league_id))}` },
@@ -276,7 +275,7 @@ export function HomeTab({ user, setTab }) {
           const m = r.matches; if (!m) continue;
           const sd = shortDate(m.date);
           items.push({
-            key: `inb-${r.id}`, icon: r.user_emoji || '🎾', tone: '#10B981', tag: 'Anmodning',
+            key: `inb-${r.id}`, icon: r.user_emoji || '🎾', tone: theme.green, bg: theme.greenBg, tag: 'Anmodning',
             title: `${r.user_name || 'En spiller'} vil være med`,
             subtitle: `${m.court_name || 'din kamp'}${sd ? ` · ${sd}` : ''}${m.time ? ` · ${m.time}` : ''}`,
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
@@ -285,7 +284,7 @@ export function HomeTab({ user, setTab }) {
 
         for (const t of (teamInvRes.data || [])) {
           items.push({
-            key: `team-${t.id}`, icon: '🏆', tone: '#8B5CF6', tag: 'Holdinvitation',
+            key: `team-${t.id}`, icon: '🏆', tone: theme.accent, bg: theme.accentBg, tag: 'Holdinvitation',
             title: t.name || 'Ligahold',
             subtitle: `${t.player1_name ? `${t.player1_name} · ` : ''}${t.leagues?.name || 'Liga'}`,
             target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(t.league_id))}` },
@@ -1236,7 +1235,7 @@ export function HomeTab({ user, setTab }) {
               key: it.key,
               tone: it.tone,
               leading: (
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: `${it.tone}1A`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }} aria-hidden="true">
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: it.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }} aria-hidden="true">
                   {it.icon}
                 </div>
               ),
@@ -1264,7 +1263,7 @@ export function HomeTab({ user, setTab }) {
               key: it.key,
               tone: it.tone,
               leading: (
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: `${it.tone}1A`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: it.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
                   <span style={{ fontSize: it.kind === "liga" ? 14 : 16, fontWeight: 800, color: it.tone }}>{it.badge.top}</span>
                   {it.badge.bottom ? <span style={{ fontSize: 9, fontWeight: 700, color: it.tone, textTransform: "uppercase", marginTop: 1 }}>{it.badge.bottom}</span> : null}
                 </div>
