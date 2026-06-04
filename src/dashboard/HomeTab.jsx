@@ -612,10 +612,10 @@ export function HomeTab({ user, setTab }) {
   };
 
   const actions = [
-    { icon: <Users   size={20} color={theme.accent} />, title: "Find en makker", desc: "Se ledige spillere",  tab: "makkere" },
-    { icon: <MapPin  size={20} color={theme.accent} />, title: "Book en bane",   desc: "Ledige tider",       tab: "baner"   },
-    { icon: <Swords  size={20} color={theme.accent} />, title: "Åbne kampe",     desc: "Tilmeld dig nu",     tab: "kampe"   },
-    { icon: <Trophy  size={20} color={theme.accent} />, title: "Se ranking",     desc: "Din placering",      tab: "ranking" },
+    { Icon: Users,  color: "#2563EB", title: "Find en makker", desc: "Se ledige spillere",  tab: "makkere" },
+    { Icon: MapPin, color: "#10B981", title: "Book en bane",   desc: "Ledige tider",       tab: "baner"   },
+    { Icon: Swords, color: "#F59E0B", title: "Åbne kampe",     desc: "Tilmeld dig nu",     tab: "kampe"   },
+    { Icon: Trophy, color: "#8B5CF6", title: "Se ranking",     desc: "Din placering",      tab: "ranking" },
   ];
 
   const activityRowBaseStyle = {
@@ -1082,6 +1082,30 @@ export function HomeTab({ user, setTab }) {
         </>
       )}
 
+      {/* Genveje (nyt design) */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+          Genveje
+        </div>
+        <div className="pm-home-grid">
+          {actions.map((a) => (
+            <button
+              key={a.tab}
+              type="button"
+              onClick={() => setTab(a.tab)}
+              data-tour={`quick-action-${a.tab}`}
+              className="pm-ui-card pm-ui-card-interactive pm-home-action-card"
+            >
+              <div className="pm-home-action-card-icon" style={{ background: `${a.color}1A` }}>
+                <a.Icon size={20} color={a.color} />
+              </div>
+              <div className="pm-home-action-card-title">{a.title}</div>
+              <div className="pm-home-action-card-desc">{a.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {matchFilterOn && filterMatchCount != null && filterMatchCount > 0 && (
         <button
           type="button"
@@ -1539,24 +1563,6 @@ export function HomeTab({ user, setTab }) {
           )}
         </div>
       )}
-
-      {/* Quick actions */}
-      <div className="pm-home-grid">
-        {actions.map((a, i) => (
-          <button
-            key={i}
-            onClick={() => setTab(a.tab)}
-            data-tour={`quick-action-${a.tab}`}
-            className="pm-ui-card pm-ui-card-interactive pm-home-action-card"
-          >
-            <div className="pm-home-action-card-icon">
-              {a.icon}
-            </div>
-            <div className="pm-home-action-card-title">{a.title}</div>
-            <div className="pm-home-action-card-desc">{a.desc}</div>
-          </button>
-        ))}
-      </div>
 
       {/* Modals */}
       <AppModal
