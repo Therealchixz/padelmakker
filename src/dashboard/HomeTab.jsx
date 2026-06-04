@@ -765,7 +765,10 @@ export function HomeTab({ user, setTab }) {
         setFeedLoadError('Kunne ikke hente aktivitet. Tjek din forbindelse og prøv igen.');
       }
     } finally {
-      if (fetchIdRef.current === fetchId && !silent) setFeedLoading(false);
+      // En ikke-silent fetch tænder loading-skelettet og skal altid slukke det igen,
+      // også selvom en silent baggrunds-fetch i mellemtiden har bumpet fetchId
+      // (ellers hænger skelettet for evigt).
+      if (!silent) setFeedLoading(false);
     }
   }, [applyFeedPayload, user.id]);
 

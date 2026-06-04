@@ -1740,6 +1740,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     if (st === "in_progress" && imIn) setViewTab("active");
     else if (st === "completed" && imIn) setViewTab("completed");
     else setViewTab("open");
+    // Åbn detaljer direkte, så deeplinket altid viser kampen — også hvis et
+    // aktivt filter ellers ville skjule den fra den synlige liste.
+    setDetailMatchId(String(focusId));
     clearFocusInUrl(KAMPE_FORMAT_PADEL);
   }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
 
@@ -3410,7 +3413,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         ? "Opret Americano/Mexicano"
         : "Opret liga";
   const detailMatch = detailMatchId
-    ? [...openMatches, ...activeMatches, ...completedMatches].find((m) => String(m.id) === String(detailMatchId))
+    ? ([...openMatches, ...activeMatches, ...completedMatches].find((m) => String(m.id) === String(detailMatchId))
+        // Fald tilbage til hele matches-listen, så detaljer kan åbnes via deeplink (?focus=)
+        // selv når et aktivt filter skjuler kampen fra den synlige liste.
+        || matches.find((m) => String(m.id) === String(detailMatchId)))
     : null;
   const detailBundle = detailMatch ? getMatchCardBundle(detailMatch) : null;
 
