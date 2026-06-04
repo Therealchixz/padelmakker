@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v45-home-btnsize';
+const VERSION = 'padelmakker-sw-v46-home-colors';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
