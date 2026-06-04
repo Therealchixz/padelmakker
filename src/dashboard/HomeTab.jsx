@@ -140,6 +140,40 @@ export function HomeTab({ user, setTab }) {
     return () => { cancelled = true; };
   }, [user?.id, profileFresh?.americano_elo_rating]);
 
+  // Kommende kampe: kampe brugeren er tilmeldt, med dato fra i dag og frem (ikke afsluttet/aflyst).
+  const [upcomingMatches, setUpcomingMatches] = useState([]);
+  useEffect(() => {
+    if (!user?.id) {
+      setUpcomingMatches([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const now = new Date();
+        const todayYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const { data, error } = await supabase
+          .from('match_players')
+          .select('matches!inner(id, date, time, court_name, status, current_players, max_players, match_type)')
+          .eq('user_id', user.id)
+          .gte('matches.date', todayYMD)
+          .in('matches.status', ['open', 'full', 'in_progress']);
+        if (error) throw error;
+        if (cancelled) return;
+        const rows = (data || [])
+          .map((r) => r.matches)
+          .filter(Boolean)
+          .sort((a, b) => (`${a.date} ${a.time || ''}`).localeCompare(`${b.date} ${b.time || ''}`))
+          .slice(0, 3);
+        setUpcomingMatches(rows);
+      } catch (err) {
+        console.warn('home upcoming matches load:', err?.message || err);
+        if (!cancelled) setUpcomingMatches([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const fetchIdRef = useRef(0);
   const [feed, setFeed] = useState([]);
   const [americanoFeed, setAmericanoFeed] = useState([]);
@@ -1105,6 +1139,53 @@ export function HomeTab({ user, setTab }) {
           ))}
         </div>
       </div>
+
+      {/* Kommende kampe (rigtige data: kampe du er tilmeldt, fra i dag og frem) */}
+      {upcomingMatches.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            Kommende kampe
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {upcomingMatches.map((m) => {
+              const d = new Date(`${m.date}T00:00:00`);
+              const day = Number.isNaN(d.getTime()) ? "–" : d.toLocaleDateString("da-DK", { day: "numeric" });
+              const mon = Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("da-DK", { month: "short" }).replace(".", "");
+              const tone = m.status === "open" ? "#10B981" : m.status === "in_progress" ? "#F59E0B" : "#2563EB";
+              const statusLabel = m.status === "open" ? "Åben" : m.status === "in_progress" ? "I gang" : "Fuld";
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setTab("kampe", { search: `focus=${encodeURIComponent(String(m.id))}` })}
+                  className="pm-ui-card pm-ui-card-interactive"
+                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", textAlign: "left", border: 0, cursor: "pointer", width: "100%", fontFamily: "inherit" }}
+                >
+                  <div style={{ width: 46, minWidth: 46, height: 46, borderRadius: 12, background: `${tone}1A`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
+                    <span style={{ fontSize: 17, fontWeight: 800, color: tone }}>{day}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: tone, textTransform: "uppercase", marginTop: 1 }}>{mon}</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {m.court_name || "Padelkamp"}
+                      </span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: tone, background: `${tone}1A`, borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: "0.04em", flexShrink: 0 }}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12.5, color: theme.textMid, fontWeight: 600 }}>
+                      {m.time ? `${m.time}` : "Tidspunkt ikke sat"}
+                      {(m.current_players != null && m.max_players != null) ? ` · ${m.current_players}/${m.max_players} spillere` : ""}
+                    </div>
+                  </div>
+                  <ChevronRight size={18} color={theme.textLight} aria-hidden="true" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {matchFilterOn && filterMatchCount != null && filterMatchCount > 0 && (
         <button
