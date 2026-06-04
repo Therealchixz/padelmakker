@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v50-feed-court-timeout';
+const VERSION = 'padelmakker-sw-v51-fix-fetchidref';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
