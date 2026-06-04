@@ -850,6 +850,23 @@ export function HomeTab({ user, setTab }) {
         result: row.result,
       }));
   }, [activeHistoryRows]);
+  // Ugentlig ELO-ændring = sum af 'change' for kampe inden for de sidste 7 dage.
+  const weeklyDelta = useMemo(() => {
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    let sum = 0;
+    for (const row of (activeHistoryRows || [])) {
+      const t = new Date(row.date || row.created_at || 0).getTime();
+      if (!Number.isNaN(t) && t >= weekAgo) sum += Number(row.change) || 0;
+    }
+    return Math.round(sum);
+  }, [activeHistoryRows]);
+  const greetingText = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 10) return 'Godmorgen';
+    if (h < 12) return 'God formiddag';
+    if (h < 18) return 'God eftermiddag';
+    return 'God aften';
+  }, []);
   const matchFilterPrefs = useMemo(
     () => normalizeMatchSearchPrefs(user?.match_search_prefs, user),
     [user],
@@ -943,64 +960,126 @@ export function HomeTab({ user, setTab }) {
       {bundleLoading ? (
         <div style={{ textAlign: "center", padding: "32px 16px", color: theme.textLight, fontSize: "14px", marginBottom: "24px" }}>Indlæser dine tal…</div>
       ) : (
-        <section className="pm-home-premium-hero" aria-label="Din ELO status">
-          <div className="pm-home-premium-top">
-            <h2>Hej {firstName}!</h2>
-            <div style={{ display: "flex", gap: "6px" }}>
-              <button onClick={() => setEloMode('2v2')} style={{ ...btn(eloMode === '2v2'), padding: "5px 10px", fontSize: "11px" }}>
-                2v2
-              </button>
-              <button onClick={() => setEloMode('americano')} style={{ ...btn(eloMode === 'americano'), padding: "5px 10px", fontSize: "11px" }}>
-                {TOURNAMENT_MODE_LABEL}
-              </button>
-            </div>
+        <>
+          {/* Hilsen */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: theme.textMid, letterSpacing: '-.01em' }}>{greetingText}</div>
+            <h2 style={{ fontSize: 26, fontWeight: 800, color: theme.text, letterSpacing: '-.03em', lineHeight: 1.05, margin: 0 }}>Hej {firstName}</h2>
           </div>
 
-          <div className="pm-home-player-card-head">
-            <div className="pm-home-premium-elo-block">
-              <div className="pm-home-premium-kicker">{eloMode === 'americano' ? `${TOURNAMENT_ELO_LABEL} rating` : '2v2 ELO rating'}</div>
-              <div className="pm-home-premium-elo">{activeElo}</div>
-            </div>
-            <div
-              className="pm-home-next-goal-card"
-              aria-label={`Næste mål: ${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`}
-            >
-              <span>Næste mål</span>
-              <strong>
-                {nextEloMilestone.remaining > 0
-                  ? `${nextEloMilestone.remaining} ELO til ${nextEloMilestone.target}`
-                  : `${nextEloMilestone.target} ELO nået`}
-              </strong>
-            </div>
-            <div className="pm-home-premium-stats" aria-label="Dine kampstatistikker">
-              <div className="pm-home-premium-stat">
-                <strong>{activeStats.primary.value}</strong>
-                <span>{activeStats.primary.label}</span>
-              </div>
-              <div className="pm-home-premium-stat">
-                <strong>{activeStats.secondary.value}</strong>
-                <span>{activeStats.secondary.label}</span>
-              </div>
-              <div className="pm-home-premium-stat pm-home-premium-stat--win">
-                <strong>{activeStats.tertiary.value}</strong>
-                <span>{activeStats.tertiary.label}</span>
-              </div>
-            </div>
-          </div>
+          {/* Blå ELO-hero (nyt design) */}
+          <section
+            aria-label="Din ELO status"
+            style={{
+              borderRadius: 20,
+              padding: '18px 20px 20px',
+              background: 'linear-gradient(150deg, #1E3A8A 0%, #1D4ED8 55%, #2563EB 100%)',
+              color: '#fff',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 8px 24px rgba(29,78,216,.28)',
+              marginBottom: 24,
+            }}
+          >
+            <div style={{ position: 'absolute', top: -60, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,.55), transparent 70%)' }} />
 
-          <div className="pm-home-form-row" aria-label="Seneste form">
-            <span>Seneste form</span>
-            <div className="pm-home-form-chips">
-              {recentForm.length > 0 ? recentForm.map((item) => (
-                <span key={item.key} className={`pm-home-form-chip pm-home-form-chip--${item.result}`}>
-                  {item.label}
+            {/* Top: label + 2v2/Americano-skift */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, position: 'relative' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.8)', letterSpacing: '.02em' }}>
+                {eloMode === 'americano' ? 'Americano' : '2v2'} ELO-rating
+              </div>
+              <div style={{ display: 'flex', background: 'rgba(255,255,255,.14)', borderRadius: 9, padding: 3, gap: 2, flexShrink: 0 }}>
+                {[{ k: '2v2', l: '2v2' }, { k: 'americano', l: 'Americano' }].map(({ k, l }) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setEloMode(k)}
+                    style={{
+                      fontFamily: 'inherit', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 7,
+                      border: 'none', cursor: 'pointer', letterSpacing: '-.01em',
+                      background: eloMode === k ? '#fff' : 'transparent',
+                      color: eloMode === k ? '#1D4ED8' : 'rgba(255,255,255,.85)',
+                      transition: 'background .2s, color .2s',
+                    }}
+                  >{l}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* ELO-tal + ugentlig delta-pille */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginTop: 6, position: 'relative', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: '-.04em', lineHeight: 1 }}>{activeElo}</div>
+              {(activeHistoryRows?.length > 0) && (() => {
+                const up = weeklyDelta >= 0;
+                return (
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 9,
+                    padding: '4px 11px 4px 6px', borderRadius: 99,
+                    background: up ? 'rgba(16,185,129,.2)' : 'rgba(239,68,68,.18)',
+                    border: `1px solid ${up ? 'rgba(110,231,183,.35)' : 'rgba(252,165,165,.32)'}`,
+                  }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', background: up ? '#10B981' : '#EF4444' }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">{up ? <polyline points="6 14 12 8 18 14" /> : <polyline points="6 10 12 16 18 10" />}</svg>
+                    </span>
+                    <span style={{ fontSize: 13.5, fontWeight: 800, color: up ? '#6EE7B7' : '#FCA5A5', letterSpacing: '-.01em' }}>{Math.abs(weeklyDelta)}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.55)', marginLeft: 1, whiteSpace: 'nowrap' }}>denne uge</span>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Fremgang mod næste mål */}
+            <div style={{ marginTop: 16, position: 'relative' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7, gap: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.85)' }}>Næste mål · {nextEloMilestone.target}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#BFDBFE', whiteSpace: 'nowrap' }}>
+                  {nextEloMilestone.remaining > 0 ? `${nextEloMilestone.remaining} ELO igen` : 'Nået! 🎉'}
                 </span>
-              )) : (
-                <small>{eloMode === 'americano' ? 'Afslut en Americano/Mexicano for at se din form' : 'Spil en kamp for at se din form'}</small>
-              )}
+              </div>
+              <div style={{ height: 8, borderRadius: 99, background: 'rgba(255,255,255,.18)', overflow: 'hidden' }}>
+                <div style={{
+                  width: `${Math.max(0, Math.min(1, (nextEloMilestone.remaining > 0 ? (50 - nextEloMilestone.remaining) / 50 : 1))) * 100}%`,
+                  height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #60A5FA, #93C5FD)', transition: 'width .6s ease',
+                }} />
+              </div>
             </div>
-          </div>
-        </section>
+
+            {/* Form + Kampe/Sejre */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.14)', position: 'relative', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.6)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Form</span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {recentForm.length > 0 ? (
+                    [...recentForm].reverse().map((item) => {
+                      const win = item.result === 'win';
+                      const draw = item.result === 'draw';
+                      return (
+                        <span key={item.key} style={{
+                          width: 20, height: 20, borderRadius: 6, fontSize: 11, fontWeight: 800,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: win ? 'rgba(110,231,183,.22)' : draw ? 'rgba(255,255,255,.18)' : 'rgba(252,165,165,.2)',
+                          color: win ? '#6EE7B7' : draw ? 'rgba(255,255,255,.85)' : '#FCA5A5',
+                        }}>{win ? 'S' : draw ? 'U' : 'T'}</span>
+                      );
+                    })
+                  ) : (
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,.55)' }}>Ingen kampe endnu</span>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 22 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1 }}>{activeStats.primary.value}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.6)', marginTop: 3 }}>{activeStats.primary.label}</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1 }}>{activeStats.tertiary.value}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.6)', marginTop: 3 }}>Sejre</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
       )}
 
       {matchFilterOn && filterMatchCount != null && filterMatchCount > 0 && (
