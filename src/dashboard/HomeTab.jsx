@@ -1047,29 +1047,6 @@ export function HomeTab({ user, setTab }) {
     return () => { cancelled = true; };
   }, [user, matchFilterPrefs, matchFilterOn]);
 
-  const seekingByChannel = useMemo(() => {
-    const makkerIds = new Set();
-    const kampIds = new Set();
-    for (const row of seekingFeed) {
-      if (row.seekingChannel === "makker") makkerIds.add(row.userId);
-      else if (row.seekingChannel === "kamp") kampIds.add(row.userId);
-    }
-    const total = new Set(seekingFeed.map((r) => r.userId)).size;
-    return { makker: makkerIds.size, kamp: kampIds.size, total };
-  }, [seekingFeed]);
-
-  const seekingTitle = feedLoading
-    ? "Finder spillere der søger"
-    : seekingByChannel.makker > 0 && seekingByChannel.kamp === 0
-      ? `${seekingByChannel.makker} ${seekingByChannel.makker === 1 ? "spiller" : "spillere"} søger makker`
-      : seekingByChannel.kamp > 0 && seekingByChannel.makker === 0
-        ? `${seekingByChannel.kamp} ${seekingByChannel.kamp === 1 ? "spiller" : "spillere"} søger kamp`
-        : seekingByChannel.total > 0
-          ? `${seekingByChannel.total} ${seekingByChannel.total === 1 ? "spiller" : "spillere"} søger makker eller kamp`
-          : "Find en makker";
-  const seekingSubtitle = seekingByChannel.total > 0
-    ? "Se dem under Find makker"
-    : "Se spillere på dit niveau";
   return (
     <div>
       {showNiveauEloHint && (
@@ -1325,20 +1302,6 @@ export function HomeTab({ user, setTab }) {
         </button>
       )}
 
-      <button
-        type="button"
-        className="pm-home-seeking-cta"
-        onClick={() => setTab("makkere", { search: seekingByChannel.total > 0 ? "seeking=1" : "" })}
-      >
-        <span className="pm-home-seeking-cta-icon" aria-hidden="true">
-          <Users size={20} />
-        </span>
-        <span className="pm-home-seeking-cta-copy">
-          <strong>{seekingTitle}</strong>
-          <small>{seekingSubtitle}</small>
-        </span>
-        <ChevronRight size={18} aria-hidden="true" />
-      </button>
       {/* Aktivitetsfeed */}
       {feedLoading ? (
         <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px" }}>
@@ -1634,22 +1597,25 @@ export function HomeTab({ user, setTab }) {
                   seekingChannel: row.seekingChannel === 'makker' ? 'makker' : row.seekingChannel === 'kamp' ? 'kamp' : undefined,
                 };
                 const openSeekingPlayer = () => setViewPlayer(player);
+                const writeToPlayer = () => setTab("beskeder", { search: `med=${encodeURIComponent(String(row.userId))}` });
+                const isMakker = row.seekingChannel === 'makker';
+                const seekTone = isMakker ? theme.green : theme.blue;
                 const levelStr = row.level != null && row.level !== '' ? formatPlaytomicLevel(row.level) : null;
                 const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                 return renderActivityRowCard({
                   key: `seek-${row.userId}-${row.seekingChannel || 'x'}-${i}`,
                   isHighlight,
-                  tone: theme.blue,
+                  tone: seekTone,
                   leading: (
                     <div onClick={openSeekingPlayer} style={{ cursor: "pointer" }}>
                       <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
                     </div>
                   ),
-                  tag: "Spiller",
+                  tag: isMakker ? "Søger makker" : "Søger kamp",
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={openSeekingPlayer}>{row.name}</span> {seekingActivityLabelForRow(row)}</>,
                   subtitle: sub || "Klar til kamp",
-                  action: <button onClick={openSeekingPlayer} style={activityActionBtnStyle(theme.blue)}>Detaljer</button>,
+                  action: <button onClick={writeToPlayer} style={activityActionBtnStyle(theme.green)}>Skriv</button>,
                 });
               }
 
@@ -2038,6 +2004,7 @@ export function HomeTab({ user, setTab }) {
         <PlayerProfileModal
           player={viewPlayer}
           onClose={() => setViewPlayer(null)}
+          onMessage={() => { const pid = viewPlayer.id; setViewPlayer(null); setTab("beskeder", { search: `med=${encodeURIComponent(String(pid))}` }); }}
         />
       )}
 
