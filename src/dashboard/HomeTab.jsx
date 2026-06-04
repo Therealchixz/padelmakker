@@ -191,8 +191,8 @@ export function HomeTab({ user, setTab }) {
           const players = (m.current_players != null && m.max_players != null) ? ` · ${m.current_players}/${m.max_players} spillere` : '';
           items.push({
             key: `m-${m.id}`, kind: 'match', tone, badge: dayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
-            title: m.court_name || 'Padelkamp', pill: statusLabel,
-            subtitle: `${m.time || 'Tidspunkt ikke sat'}${players}`,
+            title: m.court_name || 'Padelkamp', tag: '2v2',
+            subtitle: `${statusLabel} · ${m.time || 'Tidspunkt ikke sat'}${players}`,
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
           });
         }
@@ -203,7 +203,7 @@ export function HomeTab({ user, setTab }) {
           const fmt = String(t.format || '').toLowerCase() === 'mexicano' ? 'Mexicano' : 'Americano';
           items.push({
             key: `am-${t.id}`, kind: 'americano', tone: '#F59E0B', badge: dayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
-            title: t.name || fmt, pill: fmt,
+            title: t.name || fmt, tag: fmt,
             subtitle: `${t.time_slot ? `${t.time_slot} · ` : ''}${t.status === 'registration' ? 'Tilmelding åben' : 'Planlagt'}`,
             target: { tab: 'kampe', search: `format=americano&focus=${encodeURIComponent(String(t.id))}` },
           });
@@ -226,9 +226,9 @@ export function HomeTab({ user, setTab }) {
             const oppId = myTeamIds.has(lm.team1_id) ? lm.team2_id : lm.team1_id;
             items.push({
               key: `lm-${lm.id}`, kind: 'liga', tone: '#8B5CF6', badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
-              title: leagueName.get(lm.league_id) || 'Ligakamp', pill: 'Liga',
+              title: leagueName.get(lm.league_id) || 'Ligakamp', tag: 'Liga',
               subtitle: `Runde ${lm.round_number ?? '?'}${oppId && teamName.get(oppId) ? ` mod ${teamName.get(oppId)}` : ''}`,
-              target: { tab: 'kampe', search: 'format=liga' },
+              target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(lm.league_id))}` },
             });
           }
         }
@@ -272,7 +272,7 @@ export function HomeTab({ user, setTab }) {
           const m = r.matches; if (!m) continue;
           const b = dayMonBadge(m.date);
           items.push({
-            key: `inb-${r.id}`, icon: r.user_emoji || '🎾', tone: '#10B981',
+            key: `inb-${r.id}`, icon: r.user_emoji || '🎾', tone: '#10B981', tag: 'Anmodning',
             title: `${r.user_name || 'En spiller'} vil være med`,
             subtitle: `${m.court_name || 'din kamp'}${b.bottom ? ` · ${b.top}. ${b.bottom}` : ''}${m.time ? ` · ${m.time}` : ''}`,
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
@@ -281,10 +281,10 @@ export function HomeTab({ user, setTab }) {
 
         for (const t of (teamInvRes.data || [])) {
           items.push({
-            key: `team-${t.id}`, icon: '🏆', tone: '#8B5CF6',
-            title: `Holdinvitation: ${t.name || 'Ligahold'}`,
+            key: `team-${t.id}`, icon: '🏆', tone: '#8B5CF6', tag: 'Holdinvitation',
+            title: t.name || 'Ligahold',
             subtitle: `${t.player1_name ? `${t.player1_name} · ` : ''}${t.leagues?.name || 'Liga'}`,
-            target: { tab: 'kampe', search: 'format=liga' },
+            target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(t.league_id))}` },
           });
         }
 
@@ -292,7 +292,7 @@ export function HomeTab({ user, setTab }) {
           const m = r.matches; if (!m) continue;
           const b = dayMonBadge(m.date);
           items.push({
-            key: `out-${r.id}`, icon: '⏳', tone: '#F59E0B',
+            key: `out-${r.id}`, icon: '⏳', tone: '#F59E0B', tag: 'Afventer',
             title: 'Din anmodning afventer svar',
             subtitle: `${m.court_name || 'Kamp'}${b.bottom ? ` · ${b.top}. ${b.bottom}` : ''}${m.time ? ` · ${m.time}` : ''}`,
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
@@ -1250,105 +1250,62 @@ export function HomeTab({ user, setTab }) {
         </>
       )}
 
-      {/* Genveje (nyt design) */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-          Genveje
-        </div>
-        <div className="pm-home-grid">
-          {actions.map((a) => (
-            <button
-              key={a.tab}
-              type="button"
-              onClick={() => setTab(a.tab)}
-              data-tour={`quick-action-${a.tab}`}
-              className="pm-ui-card pm-ui-card-interactive pm-home-action-card"
-            >
-              <div className="pm-home-action-card-icon" style={{ background: `${a.color}1A` }}>
-                <a.Icon size={20} color={a.color} />
-              </div>
-              <div className="pm-home-action-card-title">{a.title}</div>
-              <div className="pm-home-action-card-desc">{a.desc}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Invitationer (rigtige data: anmodninger til dine kampe, holdinvitationer, dine ventende anmodninger) */}
+      {/* Invitationer (rigtige data) — bruger samme kort-stil som aktivitetsfeedet for konsistens */}
       {inviteItems.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Invitationer
-            </div>
+            <PageSectionTitle>Invitationer</PageSectionTitle>
             <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: "#EF4444", borderRadius: 999, minWidth: 18, height: 18, padding: "0 6px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
               {inviteItems.length}
             </span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {inviteItems.map((it) => (
-              <button
-                key={it.key}
-                type="button"
-                onClick={() => setTab(it.target.tab, { search: it.target.search })}
-                className="pm-ui-card pm-ui-card-interactive"
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", textAlign: "left", border: 0, cursor: "pointer", width: "100%", fontFamily: "inherit" }}
-              >
-                <div style={{ width: 40, minWidth: 40, height: 40, borderRadius: "50%", background: `${it.tone}1A`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }} aria-hidden="true">
+            {inviteItems.map((it) => renderActivityRowCard({
+              key: it.key,
+              tone: it.tone,
+              leading: (
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: `${it.tone}1A`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }} aria-hidden="true">
                   {it.icon}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {it.title}
-                  </div>
-                  <div style={{ fontSize: 12.5, color: theme.textMid, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {it.subtitle}
-                  </div>
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 700, color: it.tone, background: `${it.tone}1A`, borderRadius: 999, padding: "6px 12px", flexShrink: 0 }}>
+              ),
+              tag: it.tag,
+              title: it.title,
+              subtitle: it.subtitle,
+              action: (
+                <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })} style={activityActionBtnStyle(it.tone)}>
                   Se
-                </span>
-              </button>
-            ))}
+                </button>
+              ),
+            }))}
           </div>
         </div>
       )}
 
-      {/* Kommende kampe (rigtige data: 2v2, Americano/Mexicano og liga) */}
+      {/* Kommende kampe (rigtige data: 2v2, Americano/Mexicano og liga) — samme kort-stil som feedet */}
       {upcomingItems.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-            Kommende kampe
+          <div style={{ marginBottom: 10 }}>
+            <PageSectionTitle>Kommende kampe</PageSectionTitle>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {upcomingItems.map((it) => (
-              <button
-                key={it.key}
-                type="button"
-                onClick={() => setTab(it.target.tab, { search: it.target.search })}
-                className="pm-ui-card pm-ui-card-interactive"
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", textAlign: "left", border: 0, cursor: "pointer", width: "100%", fontFamily: "inherit" }}
-              >
-                <div style={{ width: 46, minWidth: 46, height: 46, borderRadius: 12, background: `${it.tone}1A`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
-                  <span style={{ fontSize: it.kind === "liga" ? 15 : 17, fontWeight: 800, color: it.tone }}>{it.badge.top}</span>
-                  {it.badge.bottom ? <span style={{ fontSize: 10, fontWeight: 700, color: it.tone, textTransform: "uppercase", marginTop: 1 }}>{it.badge.bottom}</span> : null}
+            {upcomingItems.map((it) => renderActivityRowCard({
+              key: it.key,
+              tone: it.tone,
+              leading: (
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: `${it.tone}1A`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
+                  <span style={{ fontSize: it.kind === "liga" ? 14 : 16, fontWeight: 800, color: it.tone }}>{it.badge.top}</span>
+                  {it.badge.bottom ? <span style={{ fontSize: 9, fontWeight: 700, color: it.tone, textTransform: "uppercase", marginTop: 1 }}>{it.badge.bottom}</span> : null}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {it.title}
-                    </span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: it.tone, background: `${it.tone}1A`, borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: "0.04em", flexShrink: 0 }}>
-                      {it.pill}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 12.5, color: theme.textMid, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {it.subtitle}
-                  </div>
-                </div>
-                <ChevronRight size={18} color={theme.textLight} aria-hidden="true" />
-              </button>
-            ))}
+              ),
+              tag: it.tag,
+              title: it.title,
+              subtitle: it.subtitle,
+              action: (
+                <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })} style={activityActionBtnStyle(it.tone)}>
+                  Se
+                </button>
+              ),
+            }))}
           </div>
         </div>
       )}
@@ -1810,6 +1767,30 @@ export function HomeTab({ user, setTab }) {
           )}
         </div>
       )}
+
+      {/* Genveje (nederst) */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 10 }}>
+          <PageSectionTitle>Genveje</PageSectionTitle>
+        </div>
+        <div className="pm-home-grid">
+          {actions.map((a) => (
+            <button
+              key={a.tab}
+              type="button"
+              onClick={() => setTab(a.tab)}
+              data-tour={`quick-action-${a.tab}`}
+              className="pm-ui-card pm-ui-card-interactive pm-home-action-card"
+            >
+              <div className="pm-home-action-card-icon" style={{ background: `${a.color}1A` }}>
+                <a.Icon size={20} color={a.color} />
+              </div>
+              <div className="pm-home-action-card-title">{a.title}</div>
+              <div className="pm-home-action-card-desc">{a.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Modals */}
       <AppModal
