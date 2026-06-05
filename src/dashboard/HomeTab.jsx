@@ -902,11 +902,10 @@ export function HomeTab({ user, setTab }) {
     fontWeight: 700,
     height: "auto",
     borderRadius: "10px",
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: "1px solid rgba(0,0,0,0.05)",
     color: "#fff",
-    background: "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 48%, rgba(0,0,0,0.07)), " + tone,
-    boxShadow: "0 1px 2px rgba(16,24,40,0.14), 0 2px 5px rgba(16,24,40,0.10), inset 0 1px 0 rgba(255,255,255,0.28)",
-    textShadow: "0 1px 1px rgba(0,0,0,0.14)",
+    background: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 55%), " + tone,
+    boxShadow: "0 1px 2px rgba(16,24,40,0.12)",
     flexShrink: 0,
   });
   // Sekundær (afvis) knap til invitationer — outline, jf. mockup. Let løft via blød skygge + hvid inderkant.
@@ -923,7 +922,7 @@ export function HomeTab({ user, setTab }) {
     border: "1px solid " + theme.border,
     color: theme.textMid,
     background: theme.surface,
-    boxShadow: "0 1px 2px rgba(16,24,40,0.06), 0 1px 3px rgba(16,24,40,0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
+    boxShadow: "0 1px 2px rgba(16,24,40,0.06)",
     flexShrink: 0,
   };
   // Primær (accepter) knap til invitationer — fyldt grøn med dybde, auto-bredde så parret passer.
@@ -937,11 +936,10 @@ export function HomeTab({ user, setTab }) {
     fontWeight: 700,
     height: "auto",
     borderRadius: "10px",
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: "1px solid rgba(0,0,0,0.05)",
     color: "#fff",
-    background: "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 48%, rgba(0,0,0,0.07)), " + theme.green,
-    boxShadow: "0 1px 2px rgba(16,24,40,0.14), 0 2px 5px rgba(16,24,40,0.10), inset 0 1px 0 rgba(255,255,255,0.28)",
-    textShadow: "0 1px 1px rgba(0,0,0,0.14)",
+    background: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 55%), " + theme.green,
+    boxShadow: "0 1px 2px rgba(16,24,40,0.12)",
     flexShrink: 0,
   };
 
