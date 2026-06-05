@@ -21,6 +21,7 @@ import { getTournamentFormatLabel, resolveAmericanoCourtName } from '../features
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { createNotification } from '../lib/notifications';
+import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
 import {
   normalizeMatchSearchPrefs,
@@ -355,6 +356,8 @@ export function HomeTab({ user, setTab }) {
   const [feedLoading, setFeedLoading] = useState(true);
   const [feedLoadError, setFeedLoadError] = useState(null);
   const [showNiveauEloHint, setShowNiveauEloHint] = useState(false);
+  // iOS: Web Push kræver en installeret PWA → vis et synligt banner på hjem-skærmen.
+  const [showIosInstallHint, setShowIosInstallHint] = useState(false);
 
   useEffect(() => {
     try {
@@ -363,6 +366,12 @@ export function HomeTab({ user, setTab }) {
     } catch {
       /* private mode */
     }
+  }, []);
+
+  useEffect(() => {
+    // Sættes i en effect (ikke ved initial render) så server/klient matcher og
+    // navigator/matchMedia kun læses i browseren.
+    setShowIosInstallHint(shouldShowIosInstallHint());
   }, []);
   const [viewLeague, setViewLeague] = useState(null);
   const [viewMatch, setViewMatch] = useState(null);
@@ -1174,6 +1183,50 @@ export function HomeTab({ user, setTab }) {
 
   return (
     <div>
+      {showIosInstallHint && (
+        <div
+          style={{
+            background: theme.warmBg,
+            border: `1px solid ${theme.warm}33`,
+            borderRadius: '12px',
+            padding: '12px 14px',
+            marginBottom: '14px',
+            fontSize: '13px',
+            color: theme.textMid,
+            lineHeight: 1.5,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '10px',
+          }}
+        >
+          <span style={{ fontSize: '18px', lineHeight: 1.2 }} aria-hidden="true">📲</span>
+          <div style={{ flex: 1 }}>
+            <strong style={{ color: theme.text }}>Få notifikationer på din iPhone.</strong>{' '}
+            Tryk på <strong>Del</strong>-ikonet nederst i Safari og vælg <strong>“Føj til hjemmeskærm”</strong>. Åbn derefter PadelMakker fra hjemmeskærmen, så kan du slå push-beskeder til.
+            <button
+              type="button"
+              onClick={() => {
+                dismissIosInstallHint();
+                setShowIosInstallHint(false);
+              }}
+              style={{
+                display: 'block',
+                marginTop: '8px',
+                background: 'transparent',
+                border: 'none',
+                color: theme.textLight,
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0,
+                fontFamily: font,
+              }}
+            >
+              Skjul
+            </button>
+          </div>
+        </div>
+      )}
       {showNiveauEloHint && (
         <div
           style={{

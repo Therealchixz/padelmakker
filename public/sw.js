@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v52-realtime-feed-ios-prompt';
+const VERSION = 'padelmakker-sw-v53-ios-hint-home-banner';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
