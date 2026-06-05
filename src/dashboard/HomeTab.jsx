@@ -6,7 +6,7 @@ import { resolveDisplayName } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
 import { Court } from '../api/base44Client';
-import { Users, MapPin, Swords, Trophy, ChevronRight, X } from 'lucide-react';
+import { Users, MapPin, Swords, Trophy, ChevronRight, X, CalendarPlus } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
 import { PageSectionTitle } from '../components/PageSectionTitle';
@@ -21,6 +21,7 @@ import { getTournamentFormatLabel, resolveAmericanoCourtName } from '../features
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { createNotification } from '../lib/notifications';
+import { addMatchToCalendar } from '../lib/calendarExport';
 import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
 import {
@@ -2183,6 +2184,23 @@ export function HomeTab({ user, setTab }) {
                   style={{ ...btn(true), width: "100%", justifyContent: "center" }}
                 >
                   Gå til kamp
+                </button>
+              ) : null}
+              {viewMatch.kind === "open" && viewMatch.date ? (
+                <button
+                  type="button"
+                  onClick={() => addMatchToCalendar({
+                    id: viewMatch.matchId,
+                    title: viewMatch.title || `Padelkamp${viewMatch.court ? ` · ${viewMatch.court}` : ''}`,
+                    date: viewMatch.date,
+                    time: viewMatch.time,
+                    timeEnd: viewMatch.timeEnd,
+                    court: viewMatch.court,
+                    description: viewMatch.description,
+                  })}
+                  style={{ ...btn(false), width: "100%", justifyContent: "center", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  <CalendarPlus size={16} /> Tilføj til kalender
                 </button>
               ) : null}
               <button type="button" onClick={closeViewMatch} style={{ ...btn(viewMatch.kind !== "open"), width: "100%", justifyContent: "center" }}>Luk</button>
