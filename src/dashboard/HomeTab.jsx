@@ -890,6 +890,7 @@ export function HomeTab({ user, setTab }) {
   };
 
   // Fyldt handlingsknap (farve + hvid tekst), farvematchet til korttypen — ens bredde på tværs af feedet.
+  // Dybde: glans-gradient på toppen + lagdelt skygge + indre lys-kant = "løftet", ikke fladt.
   const activityActionBtnStyle = (tone) => ({
     ...btn(false),
     width: "84px",
@@ -901,12 +902,14 @@ export function HomeTab({ user, setTab }) {
     fontWeight: 700,
     height: "auto",
     borderRadius: "10px",
-    border: "1px solid " + tone,
+    border: "1px solid rgba(0,0,0,0.06)",
     color: "#fff",
-    background: tone,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 48%, rgba(0,0,0,0.07)), " + tone,
+    boxShadow: "0 1px 2px rgba(16,24,40,0.14), 0 2px 5px rgba(16,24,40,0.10), inset 0 1px 0 rgba(255,255,255,0.28)",
+    textShadow: "0 1px 1px rgba(0,0,0,0.14)",
     flexShrink: 0,
   });
-  // Sekundær (afvis) knap til invitationer — outline, jf. mockup.
+  // Sekundær (afvis) knap til invitationer — outline, jf. mockup. Let løft via blød skygge + hvid inderkant.
   const inviteSecondaryBtnStyle = {
     ...btn(false),
     boxSizing: "border-box",
@@ -920,9 +923,10 @@ export function HomeTab({ user, setTab }) {
     border: "1px solid " + theme.border,
     color: theme.textMid,
     background: theme.surface,
+    boxShadow: "0 1px 2px rgba(16,24,40,0.06), 0 1px 3px rgba(16,24,40,0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
     flexShrink: 0,
   };
-  // Primær (accepter) knap til invitationer — fyldt grøn, auto-bredde så parret passer.
+  // Primær (accepter) knap til invitationer — fyldt grøn med dybde, auto-bredde så parret passer.
   const invitePrimaryBtnStyle = {
     ...btn(false),
     boxSizing: "border-box",
@@ -933,9 +937,11 @@ export function HomeTab({ user, setTab }) {
     fontWeight: 700,
     height: "auto",
     borderRadius: "10px",
-    border: "1px solid " + theme.green,
+    border: "1px solid rgba(0,0,0,0.06)",
     color: "#fff",
-    background: theme.green,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 48%, rgba(0,0,0,0.07)), " + theme.green,
+    boxShadow: "0 1px 2px rgba(16,24,40,0.14), 0 2px 5px rgba(16,24,40,0.10), inset 0 1px 0 rgba(255,255,255,0.28)",
+    textShadow: "0 1px 1px rgba(0,0,0,0.14)",
     flexShrink: 0,
   };
 
