@@ -1101,9 +1101,9 @@ export function HomeTab({ user, setTab }) {
 
   const feedRenderItems = useMemo(
     () => feedRows.flatMap((row, index) => {
-      const label = index === 0 ? "Nyeste" : activityGroupLabel(row.created_at);
+      const label = activityGroupLabel(row.created_at);
       const prevLabel = index > 0 ? activityGroupLabel(feedRows[index - 1].created_at) : null;
-      const showLabel = index === 0 || label !== prevLabel;
+      const showLabel = index > 0 && label !== prevLabel;
       const items = [];
       if (showLabel) {
         items.push({ kind: "label", key: `label-${index}-${label}`, label });
