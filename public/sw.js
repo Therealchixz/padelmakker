@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v58-invite-title-bold';
+const VERSION = 'padelmakker-sw-v59-home-action-theme-tokens';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
