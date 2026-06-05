@@ -21,6 +21,7 @@ import { getTournamentFormatLabel, resolveAmericanoCourtName } from '../features
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { createNotification } from '../lib/notifications';
+import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
 import {
   normalizeMatchSearchPrefs,
@@ -30,21 +31,6 @@ import {
 
 const HOME_FEED_CACHE_BY_USER = new Map();
 
-// Beskytter feed-fetchen mod at hænge på et enkelt kald der aldrig svarer
-// (fx en blokeret/utilgængelig ikke-Supabase entity-API som base44 Court).
-// Uden dette kan en hængende promise i Promise.allSettled blokere hele
-// fetchen, så "Seneste aktivitet" bliver ved med at vise loading-skelettet.
-function withTimeout(factory, ms, fallback) {
-  return new Promise((resolve) => {
-    let settled = false;
-    const done = (v) => { if (!settled) { settled = true; resolve(v); } };
-    const timer = setTimeout(() => done(fallback), ms);
-    Promise.resolve().then(factory).then(
-      (v) => { clearTimeout(timer); done(v); },
-      () => { clearTimeout(timer); done(fallback); },
-    );
-  });
-}
 const HOME_ELO_MODE_STORAGE_PREFIX = "pm-home-elo-mode:";
 const HOME_FEED_FILTERS = [
   { id: 'kampe', label: 'Kampe', icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
@@ -370,6 +356,8 @@ export function HomeTab({ user, setTab }) {
   const [feedLoading, setFeedLoading] = useState(true);
   const [feedLoadError, setFeedLoadError] = useState(null);
   const [showNiveauEloHint, setShowNiveauEloHint] = useState(false);
+  // iOS: Web Push kræver en installeret PWA → vis et synligt banner på hjem-skærmen.
+  const [showIosInstallHint, setShowIosInstallHint] = useState(false);
 
   useEffect(() => {
     try {
@@ -378,6 +366,12 @@ export function HomeTab({ user, setTab }) {
     } catch {
       /* private mode */
     }
+  }, []);
+
+  useEffect(() => {
+    // Sættes i en effect (ikke ved initial render) så server/klient matcher og
+    // navigator/matchMedia kun læses i browseren.
+    setShowIosInstallHint(shouldShowIosInstallHint());
   }, []);
   const [viewLeague, setViewLeague] = useState(null);
   const [viewMatch, setViewMatch] = useState(null);
@@ -548,7 +542,7 @@ export function HomeTab({ user, setTab }) {
         regAmIds.length       ? supabase.from('americano_participants').select('tournament_id').in('tournament_id', regAmIds)                                                                                                                     : Promise.resolve({ data: [] }),
         newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
         openMatchIds.length   ? supabase.from('match_players').select('match_id, user_id, user_name, user_emoji, team').in('match_id', openMatchIds)                                                                                            : Promise.resolve({ data: [] }),
-        withTimeout(() => Court.filter(), 4000, []),
+        Court.filter(),
       ]);
       const round2Results = {
         mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, amEloRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes, openMatchPlayersRes, courtsRes,
@@ -822,6 +816,45 @@ export function HomeTab({ user, setTab }) {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [fetchFeed]);
 
+  /* Realtime: opdatér feed live når en kamp/turnering/liga ændrer sig.
+     Debounced + silent, så der ikke blinkes skelet. Falder pænt tilbage til
+     synligheds-/cache-refresh hvis kanalen fejler (samme mønster som NotificationBell). */
+  const [feedRealtimeVersion, setFeedRealtimeVersion] = useState(0);
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let cancelled = false;
+    let debounceTimer = null;
+    let retryTimer = null;
+    const scheduleRefetch = () => {
+      if (cancelled) return;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (!cancelled) fetchFeed({ silent: true });
+      }, 1500);
+    };
+    const channel = supabase
+      .channel(`home-feed-${user.id}-${feedRealtimeVersion}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_results' }, scheduleRefetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, scheduleRefetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'americano_tournaments' }, scheduleRefetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leagues' }, scheduleRefetch)
+      .subscribe((status) => {
+        if (cancelled) return;
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          if (retryTimer) clearTimeout(retryTimer);
+          retryTimer = setTimeout(() => {
+            if (!cancelled) setFeedRealtimeVersion((v) => v + 1);
+          }, 1500);
+        }
+      });
+    return () => {
+      cancelled = true;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (retryTimer) clearTimeout(retryTimer);
+      try { supabase.removeChannel(channel); } catch { /* ignore */ }
+    };
+  }, [user?.id, fetchFeed, feedRealtimeVersion]);
+
   const formatTimeAgo = (iso) => {
     if (!iso) return "";
     const dt = DateTime.fromISO(iso).setLocale("da");
@@ -857,6 +890,7 @@ export function HomeTab({ user, setTab }) {
   };
 
   // Fyldt handlingsknap (farve + hvid tekst), farvematchet til korttypen — ens bredde på tværs af feedet.
+  // Dybde: glans-gradient på toppen + lagdelt skygge + indre lys-kant = "løftet", ikke fladt.
   const activityActionBtnStyle = (tone) => ({
     ...btn(false),
     width: "84px",
@@ -868,12 +902,14 @@ export function HomeTab({ user, setTab }) {
     fontWeight: 700,
     height: "auto",
     borderRadius: "10px",
-    border: "1px solid " + tone,
+    border: "1px solid rgba(0,0,0,0.06)",
     color: "#fff",
-    background: tone,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 48%, rgba(0,0,0,0.07)), " + tone,
+    boxShadow: "0 1px 2px rgba(16,24,40,0.14), 0 2px 5px rgba(16,24,40,0.10), inset 0 1px 0 rgba(255,255,255,0.28)",
+    textShadow: "0 1px 1px rgba(0,0,0,0.14)",
     flexShrink: 0,
   });
-  // Sekundær (afvis) knap til invitationer — outline, jf. mockup.
+  // Sekundær (afvis) knap til invitationer — outline, jf. mockup. Let løft via blød skygge + hvid inderkant.
   const inviteSecondaryBtnStyle = {
     ...btn(false),
     boxSizing: "border-box",
@@ -887,9 +923,10 @@ export function HomeTab({ user, setTab }) {
     border: "1px solid " + theme.border,
     color: theme.textMid,
     background: theme.surface,
+    boxShadow: "0 1px 2px rgba(16,24,40,0.06), 0 1px 3px rgba(16,24,40,0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
     flexShrink: 0,
   };
-  // Primær (accepter) knap til invitationer — fyldt grøn, auto-bredde så parret passer.
+  // Primær (accepter) knap til invitationer — fyldt grøn med dybde, auto-bredde så parret passer.
   const invitePrimaryBtnStyle = {
     ...btn(false),
     boxSizing: "border-box",
@@ -900,9 +937,11 @@ export function HomeTab({ user, setTab }) {
     fontWeight: 700,
     height: "auto",
     borderRadius: "10px",
-    border: "1px solid " + theme.green,
+    border: "1px solid rgba(0,0,0,0.06)",
     color: "#fff",
-    background: theme.green,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 48%, rgba(0,0,0,0.07)), " + theme.green,
+    boxShadow: "0 1px 2px rgba(16,24,40,0.14), 0 2px 5px rgba(16,24,40,0.10), inset 0 1px 0 rgba(255,255,255,0.28)",
+    textShadow: "0 1px 1px rgba(0,0,0,0.14)",
     flexShrink: 0,
   };
 
@@ -1150,6 +1189,50 @@ export function HomeTab({ user, setTab }) {
 
   return (
     <div>
+      {showIosInstallHint && (
+        <div
+          style={{
+            background: theme.warmBg,
+            border: `1px solid ${theme.warm}33`,
+            borderRadius: '12px',
+            padding: '12px 14px',
+            marginBottom: '14px',
+            fontSize: '13px',
+            color: theme.textMid,
+            lineHeight: 1.5,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '10px',
+          }}
+        >
+          <span style={{ fontSize: '18px', lineHeight: 1.2 }} aria-hidden="true">📲</span>
+          <div style={{ flex: 1 }}>
+            <strong style={{ color: theme.text }}>Få notifikationer på din iPhone.</strong>{' '}
+            Tryk på <strong>Del</strong>-ikonet nederst i Safari og vælg <strong>“Føj til hjemmeskærm”</strong>. Åbn derefter PadelMakker fra hjemmeskærmen, så kan du slå push-beskeder til.
+            <button
+              type="button"
+              onClick={() => {
+                dismissIosInstallHint();
+                setShowIosInstallHint(false);
+              }}
+              style={{
+                display: 'block',
+                marginTop: '8px',
+                background: 'transparent',
+                border: 'none',
+                color: theme.textLight,
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0,
+                fontFamily: font,
+              }}
+            >
+              Skjul
+            </button>
+          </div>
+        </div>
+      )}
       {showNiveauEloHint && (
         <div
           style={{
