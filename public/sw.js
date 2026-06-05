@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v59-home-action-theme-tokens';
+const VERSION = 'padelmakker-sw-v60-feed-add-to-calendar';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
