@@ -5,6 +5,8 @@
 **Scope:** Two feature areas chosen for V1 — (1) Partner Matchmaking, (2) Activity Feed + Notifications.
 **Guiding principle:** *Extend the existing React + Supabase app. Do not rebuild. Get a quick win, then layer complexity.*
 
+> **⚠️ Audit correction (2026-06-05):** A subsequent code + live-schema audit found the app **already has** Playtomic 0–7 levels, dual ELO engines (2v2 + Americano), a Glicko-2 shadow system, level-band + geo (haversine) matchmaking, and a full notification stack (`notifications` + `push_subscriptions`, Web Push/VAPID, Realtime inbox). The original Phase 1 below is therefore **mostly already built.** The real, recalibrated Phase 1 (feed robustness + realtime, and the iOS install prompt) is in **`docs/PHASE-1-implementation-plan.md`** — use that for execution. The phases below remain a useful longer-horizon reference.
+
 ---
 
 ## 1. Why "extend, not rebuild"
