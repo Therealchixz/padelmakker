@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v57-remove-nyeste-label';
+const VERSION = 'padelmakker-sw-v58-invite-title-bold';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
