@@ -871,10 +871,10 @@ export function HomeTab({ user, setTab }) {
   };
 
   const actions = [
-    { Icon: Users,  color: "#2563EB", title: "Find en makker", desc: "Se ledige spillere",  tab: "makkere" },
-    { Icon: MapPin, color: "#10B981", title: "Book en bane",   desc: "Ledige tider",       tab: "baner"   },
-    { Icon: Swords, color: "#F59E0B", title: "Åbne kampe",     desc: "Tilmeld dig nu",     tab: "kampe"   },
-    { Icon: Trophy, color: "#8B5CF6", title: "Se ranking",     desc: "Din placering",      tab: "ranking" },
+    { Icon: Users,  color: theme.accent, bg: theme.accentBg, title: "Find en makker", desc: "Se ledige spillere",  tab: "makkere" },
+    { Icon: MapPin, color: theme.green,  bg: theme.greenBg,  title: "Book en bane",   desc: "Ledige tider",       tab: "baner"   },
+    { Icon: Swords, color: theme.warm,   bg: theme.warmBg,   title: "Åbne kampe",     desc: "Tilmeld dig nu",     tab: "kampe"   },
+    { Icon: Trophy, color: theme.purple, bg: theme.purpleBg, title: "Se ranking",     desc: "Din placering",      tab: "ranking" },
   ];
 
   const activityRowBaseStyle = {
@@ -1932,7 +1932,7 @@ export function HomeTab({ user, setTab }) {
               data-tour={`quick-action-${a.tab}`}
               className="pm-ui-card pm-ui-card-interactive pm-home-action-card"
             >
-              <div className="pm-home-action-card-icon" style={{ background: `${a.color}1A` }}>
+              <div className="pm-home-action-card-icon" style={{ background: a.bg }}>
                 <a.Icon size={20} color={a.color} />
               </div>
               <div className="pm-home-action-card-title">{a.title}</div>
