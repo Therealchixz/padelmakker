@@ -200,7 +200,7 @@ export function HomeTab({ user, setTab }) {
           const players = (m.current_players != null && m.max_players != null) ? ` · ${m.current_players}/${m.max_players} spillere` : '';
           items.push({
             key: `m-${m.id}`, kind: 'match', tone: theme.green, bg: theme.greenBg, badge: dayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
-            title: m.court_name || 'Padelkamp', tag: '2v2',
+            title: <strong style={{ fontWeight: 700 }}>{m.court_name || 'Padelkamp'}</strong>, tag: '2v2',
             subtitle: `${statusLabel} · ${m.time || 'Tidspunkt ikke sat'}${players}`,
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
           });
@@ -212,7 +212,7 @@ export function HomeTab({ user, setTab }) {
           const fmt = String(t.format || '').toLowerCase() === 'mexicano' ? 'Mexicano' : 'Americano';
           items.push({
             key: `am-${t.id}`, kind: 'americano', tone: theme.warm, bg: theme.warmBg, badge: dayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
-            title: t.name || fmt, tag: fmt,
+            title: <strong style={{ fontWeight: 700 }}>{t.name || fmt}</strong>, tag: fmt,
             subtitle: `${t.time_slot ? `${t.time_slot} · ` : ''}${t.status === 'registration' ? 'Tilmelding åben' : 'Planlagt'}`,
             target: { tab: 'kampe', search: `format=americano&focus=${encodeURIComponent(String(t.id))}` },
           });
@@ -235,7 +235,7 @@ export function HomeTab({ user, setTab }) {
             const oppId = myTeamIds.has(lm.team1_id) ? lm.team2_id : lm.team1_id;
             items.push({
               key: `lm-${lm.id}`, kind: 'liga', tone: theme.accent, bg: theme.accentBg, badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
-              title: leagueName.get(lm.league_id) || 'Ligakamp', tag: 'Liga',
+              title: <strong style={{ fontWeight: 700 }}>{leagueName.get(lm.league_id) || 'Ligakamp'}</strong>, tag: 'Liga',
               subtitle: `Runde ${lm.round_number ?? '?'}${oppId && teamName.get(oppId) ? ` mod ${teamName.get(oppId)}` : ''}`,
               target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(lm.league_id))}` },
             });
