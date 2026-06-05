@@ -279,7 +279,7 @@ export function HomeTab({ user, setTab }) {
           const sd = shortDate(m.date);
           items.push({
             key: `inb-${r.id}`, kind: 'inbound', icon: r.user_emoji || '🎾', tone: theme.green, bg: theme.greenBg, tag: 'Anmodning',
-            title: `${r.user_name || 'En spiller'} vil være med`,
+            title: <><strong style={{ fontWeight: 700 }}>{r.user_name || 'En spiller'}</strong> vil være med</>,
             subtitle: `${m.court_name || 'din kamp'}${sd ? ` · ${sd}` : ''}${m.time ? ` · ${m.time}` : ''}`,
             reqId: r.id, matchId: m.id, reqUserId: r.user_id, reqUserName: r.user_name || 'En spiller', reqUserEmoji: r.user_emoji,
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
@@ -289,7 +289,7 @@ export function HomeTab({ user, setTab }) {
         for (const t of (teamInvRes.data || [])) {
           items.push({
             key: `team-${t.id}`, icon: '🏆', tone: theme.accent, bg: theme.accentBg, tag: 'Holdinvitation',
-            title: t.name || 'Ligahold',
+            title: <strong style={{ fontWeight: 700 }}>{t.name || 'Ligahold'}</strong>,
             subtitle: `${t.player1_name ? `${t.player1_name} · ` : ''}${t.leagues?.name || 'Liga'}`,
             target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(t.league_id))}` },
           });
