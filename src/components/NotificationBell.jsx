@@ -14,6 +14,7 @@ import {
   isPushSubscribed,
 } from '../lib/pushNotifications';
 import { createNotification, invalidateNotificationPrefsCache } from '../lib/notifications';
+import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
 import {
   mergeNotificationPrefToggle,
   normalizeNotificationPrefs,
@@ -84,6 +85,8 @@ export function NotificationBell({ tourForceOpen = false }) {
   const [notifPrefs, setNotifPrefs] = useState(() => normalizeNotificationPrefs(profile?.notification_prefs));
   const [prefsSaving, setPrefsSaving] = useState(false);
   const [showPrefToggles, setShowPrefToggles] = useState(false);
+  // iOS: Web Push kræver en installeret PWA → vis "Føj til hjemmeskærm"-besked når relevant.
+  const [showIosInstallHint, setShowIosInstallHint] = useState(() => shouldShowIosInstallHint());
 
   useEffect(() => {
     setNotifPrefs(normalizeNotificationPrefs(profile?.notification_prefs));
@@ -707,6 +710,24 @@ export function NotificationBell({ tourForceOpen = false }) {
               </div>
             )}
           </div>
+
+          {/* iOS: push virker kun i en installeret PWA — guide brugeren til hjemmeskærmen */}
+          {showIosInstallHint && (
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: theme.warmBg + "40", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <span style={{ fontSize: "16px" }}>📲</span>
+              <span style={{ flex: 1, fontSize: "12px", color: theme.textMid, lineHeight: 1.4 }}>
+                Vil du have notifikationer på iPhone? Tryk på <strong>Del</strong>-ikonet nederst og vælg <strong>“Føj til hjemmeskærm”</strong>. Åbn derefter PadelMakker fra hjemmeskærmen.
+              </span>
+              <button
+                type="button"
+                onClick={() => { dismissIosInstallHint(); setShowIosInstallHint(false); }}
+                style={{ background: "transparent", border: "none", color: theme.textLight, fontSize: "16px", lineHeight: 1, cursor: "pointer", padding: 0, fontFamily: font }}
+                aria-label="Luk"
+              >
+                ×
+              </button>
+            </div>
+          )}
 
           {/* Push opt-in / opt-out banner */}
           {pushSupported && !pushBlocked && getPushPermission() !== 'denied' && (

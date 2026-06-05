@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v51-fix-fetchidref';
+const VERSION = 'padelmakker-sw-v52-realtime-feed-ios-prompt';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
