@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v55-feed-button-depth-subtle';
+const VERSION = 'padelmakker-sw-v56-upcoming-title-bold';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
