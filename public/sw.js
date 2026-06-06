@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v60-feed-add-to-calendar';
+const VERSION = 'padelmakker-sw-v61-scheduled-reminders';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
