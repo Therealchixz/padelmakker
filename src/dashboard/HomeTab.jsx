@@ -24,6 +24,7 @@ import { createNotification } from '../lib/notifications';
 import { addMatchToCalendar } from '../lib/calendarExport';
 import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
+import { DiscoveryVisibilityBanner } from '../components/DiscoveryVisibilityBanner';
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterActive,
@@ -75,7 +76,7 @@ function openMatchLocationChipLabel(court, creatorArea) {
   return regionDisplayLabel(area) || area;
 }
 
-export function HomeTab({ user, setTab }) {
+export function HomeTab({ user, setTab, showToast }) {
   const { user: authUser } = useAuth();
   const [viewTournament, setViewTournament] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
@@ -1188,6 +1189,7 @@ export function HomeTab({ user, setTab }) {
 
   return (
     <div>
+      {showToast ? <DiscoveryVisibilityBanner user={user} showToast={showToast} /> : null}
       {showIosInstallHint && (
         <div
           style={{

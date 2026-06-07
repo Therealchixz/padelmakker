@@ -7,7 +7,7 @@ import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { fetchEloStatsBatchByUserIds } from '../lib/eloHistoryUtils';
 import { Search, MapPin, Zap, SlidersHorizontal } from 'lucide-react';
-import { calcAge } from '../lib/profileUtils';
+import { calcAge, canonicalRegionForForm } from '../lib/profileUtils';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { InviteToMatchModal } from './InviteToMatchModal';
@@ -570,6 +570,7 @@ export function MakkereTab({ user, showToast }) {
         user={user}
         showToast={showToast}
         returnTo={FILTER_RETURN_MAKKERE}
+        onBrowse={() => seekingResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
       />
 
       {loadError ? (
@@ -655,6 +656,45 @@ export function MakkereTab({ user, showToast }) {
       {/* Browse / søg alle */}
       <div ref={seekingResultsRef} style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', scrollMarginTop: '86px' }}>
         Alle spillere
+      </div>
+
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }} aria-label="Hurtige filtre">
+        {user?.area ? (
+          <button
+            type="button"
+            onClick={() => handleFilterChange(() => {
+              const myRegion = canonicalRegionForForm(user.area) || user.area;
+              setFilterArea(myRegion);
+              setFilterElo('close');
+            })}
+            className="pm-ui-btn-chip pm-ui-btn-chip-active"
+            style={{ padding: '7px 12px', fontSize: '12px' }}
+          >
+            I min region · mit niveau
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => handleFilterChange(() => setFilterSeeking(true))}
+          className={`pm-ui-btn-chip ${filterSeeking ? 'pm-ui-btn-chip-active' : ''}`}
+          style={{ padding: '7px 12px', fontSize: '12px' }}
+        >
+          ⚡ Søger nu
+        </button>
+        {(filterArea !== 'all' || filterElo !== 'all' || filterSeeking) && (
+          <button
+            type="button"
+            onClick={() => {
+              setFilterArea('all');
+              setFilterElo('all');
+              setFilterSeeking(false);
+              setPage(0);
+            }}
+            style={{ fontSize: '12px', color: theme.textMid, background: 'none', border: 'none', cursor: 'pointer', padding: '7px 4px', fontWeight: 600 }}
+          >
+            Vis alle
+          </button>
+        )}
       </div>
 
       <div style={{ position: 'relative', marginBottom: '10px' }}>
