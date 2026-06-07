@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v61-scheduled-reminders';
+const VERSION = 'padelmakker-sw-v62-push-entity-routing';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -53,7 +53,7 @@ self.addEventListener('push', (event) => {
         tag: notificationTag,
         renotify: shouldRenotify,
         silent: shouldBeSilent,
-        data: { matchId: data.matchId, channel: data.channel, level: data.level },
+        data: { matchId: data.matchId, entityType: data.entityType, entityId: data.entityId, channel: data.channel, level: data.level },
       }),
 
       (async () => {
