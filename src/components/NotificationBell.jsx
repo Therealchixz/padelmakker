@@ -17,8 +17,10 @@ import { createNotification, invalidateNotificationPrefsCache } from '../lib/not
 import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
 import {
   mergeNotificationPrefToggle,
+  mergeNotificationPushLevel,
   normalizeNotificationPrefs,
   NOTIFICATION_PUSH_CHANNELS,
+  NOTIFICATION_PUSH_LEVELS,
 } from '../lib/notificationPreferences';
 import {
   buildKampeFocusPath,
@@ -670,6 +672,46 @@ export function NotificationBell({ tourForceOpen = false }) {
                   Ryd alle
                 </button>
               )}
+            </div>
+          </div>
+
+          <div style={{ padding: "10px 14px", borderBottom: "1px solid " + theme.border, background: theme.surface }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
+              Notifikationer på telefon {prefsSaving ? "…" : ""}
+            </div>
+            <div style={{ display: "flex", gap: "6px" }}>
+              {NOTIFICATION_PUSH_LEVELS.map((lvl) => {
+                const active = (notifPrefs.pushLevel || "all") === lvl.id;
+                return (
+                  <button
+                    key={lvl.id}
+                    type="button"
+                    onClick={() => { if (!active) void persistPrefs(mergeNotificationPushLevel(notifPrefs, lvl.id)); }}
+                    style={{
+                      flex: 1,
+                      padding: "7px 6px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      borderRadius: "8px",
+                      border: "1px solid " + (active ? theme.accent : theme.border),
+                      background: active ? theme.accent : theme.surface,
+                      color: active ? theme.onAccent : theme.textMid,
+                      cursor: active ? "default" : "pointer",
+                      fontFamily: font,
+                      transition: "background 0.15s, border-color 0.15s, color 0.15s",
+                    }}
+                  >
+                    {lvl.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.4 }}>
+              {notifPrefs.pushLevel === "off"
+                ? "Ingen push til telefonen. Du ser stadig alt her i klokken."
+                : notifPrefs.pushLevel === "important"
+                  ? "Kun invitationer, aflysninger, resultater og påmindelser sendes til telefonen."
+                  : "Alt sendes til telefonen (styret af kanalerne nedenfor)."}
             </div>
           </div>
 

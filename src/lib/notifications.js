@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
-import { resolveNotificationPushPolicy } from './notificationPolicy';
-import { isPushChannelEnabled } from './notificationPreferences';
+import { resolveNotificationPushPolicy, isImportantPushType } from './notificationPolicy';
+import { isPushChannelEnabled, pushLevelAllows } from './notificationPreferences';
 import { normalizeNotificationRecipientIds } from './notificationRecipients';
 
 export { normalizeNotificationRecipientIds } from './notificationRecipients';
@@ -38,8 +38,10 @@ async function loadNotificationPrefsForUser(userId) {
 async function sendPushNotification(userId, type, title, body, matchId, options = {}) {
   const pushPolicy = resolveNotificationPushPolicy(type, options?.pushPolicy);
   if (!pushPolicy.sendPush) return;
-  if (options.notificationPrefs != null && !isPushChannelEnabled(options.notificationPrefs, pushPolicy.channel)) {
-    return;
+  if (options.notificationPrefs != null) {
+    // Master-niveau (Alle / Kun det vigtige / Fra) gælder før kanal-til/fra.
+    if (!pushLevelAllows(options.notificationPrefs, isImportantPushType(type))) return;
+    if (!isPushChannelEnabled(options.notificationPrefs, pushPolicy.channel)) return;
   }
 
   try {
