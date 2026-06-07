@@ -266,6 +266,22 @@ function sanitizeCooldownSeconds(value, fallback) {
   return Math.max(0, Math.min(3600, Math.round(n)));
 }
 
+// Typer der tæller som "vigtige" under push-niveauet "Kun det vigtige":
+// invitationer, aflysninger, resultater og påmindelser (+ kritiske drift-/admin-typer).
+const ALWAYS_IMPORTANT_TYPES = new Set([
+  "match_reminder",
+  "tournament_reminder",
+  "result_nudge",
+  "result_confirmed",
+]);
+
+/** Er denne notifikationstype "vigtig" (skal pushe selv ved "Kun det vigtige")? */
+export function isImportantPushType(type) {
+  const t = normalizeType(type);
+  if (TYPE_POLICIES[t]?.level === "critical") return true;
+  return ALWAYS_IMPORTANT_TYPES.has(t);
+}
+
 export function resolveNotificationPushPolicy(type, override = null) {
   const normalizedType = normalizeType(type);
   const base = TYPE_POLICIES[normalizedType] || {};

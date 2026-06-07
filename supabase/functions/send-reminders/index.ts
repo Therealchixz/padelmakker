@@ -180,6 +180,12 @@ Deno.serve(async (req: Request) => {
       .eq("id", row.user_id)
       .maybeSingle();
     const prefs = (prof?.notification_prefs ?? null) as Record<string, unknown> | null;
+    // Master push level: 'off' suppresses push (in-app only). Reminders count as
+    // "important", so 'important' still pushes them.
+    const pushLevel = typeof prefs?.pushLevel === "string" ? prefs.pushLevel : "all";
+    if (pushLevel === "off") {
+      continue; // in-app only
+    }
     const pushBucket =
       prefs && typeof prefs === "object" && prefs.push && typeof prefs.push === "object"
         ? (prefs.push as Record<string, boolean>)

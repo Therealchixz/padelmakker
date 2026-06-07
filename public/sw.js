@@ -1,7 +1,7 @@
 /**
  * Service worker: ryd gamle caches + håndter browser push-notifikationer.
  */
-const VERSION = 'padelmakker-sw-v62-push-entity-routing';
+const VERSION = 'padelmakker-sw-v63-push-level-pref';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
