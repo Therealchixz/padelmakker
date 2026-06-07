@@ -68,8 +68,6 @@ import { VenueRegionPicker } from '../components/VenueRegionPicker';
 import { KampeMatchListCard } from '../components/kampe/KampeMatchListCard';
 import { KampeMatchDetailSheet } from '../components/kampe/KampeMatchDetailSheet';
 import { isProfileMatchFeedVisible } from '../lib/seekingFeedTtl';
-import { SeekingFilterShortcutCard } from '../components/SeekingFilterShortcutCard';
-import { FILTER_RETURN_KAMPE } from '../lib/filterReturnNavigation';
 import {
   getMatchVenueOptions,
   courtIdFromVenueSelection,
@@ -3446,16 +3444,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       />
 
       <KampeActiveFilterChips chips={activeFilterChips} />
-
-      {kampeFormat === 'padel' && (
-        <SeekingFilterShortcutCard
-          channel="kamp"
-          user={user}
-          showToast={showToast}
-          returnTo={FILTER_RETURN_KAMPE}
-          onBrowse={() => setFilterSheetOpen(true)}
-        />
-      )}
 
       <KampeFilterSheet
         open={filterSheetOpen}

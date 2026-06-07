@@ -6,6 +6,8 @@ import {
   REGIONS,
   DAYS_OF_WEEK,
   INTENTS,
+  seekingVisibleDurationLabel,
+  DISCOVERY_NOTIFY_DAILY_PER_CHANNEL,
 } from '../lib/platformConstants';
 import { normalizeStringArrayField } from '../lib/profileUtils';
 import {
@@ -32,9 +34,8 @@ import {
 import { formatPlaytomicLevel, profilePlaytomicLevel } from '../lib/padelLevelUtils';
 import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
 import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Bell, Zap } from 'lucide-react';
 import { filterReturnFromState, filterReturnBackLabel } from '../lib/filterReturnNavigation';
-import { FilterDiscoveryPanel } from '../components/FilterDiscoveryPanel';
 
 const labelStyle = {
   fontSize: '12px',
@@ -188,11 +189,10 @@ export function MakkerSearchFilterPage({ user, showToast }) {
       <h1 style={{ fontSize: 22, fontWeight: 800, color: theme.text, margin: '0 0 6px' }}>
         Mit makker-filter
       </h1>
-      <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 16 }}>
-        Først: gør dig synlig. Derefter vælg region og præferencer — så matcher vi dig med spillere der søger makker.
+      <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 20 }}>
+        Beskriv hvilken makker du leder efter — baneside, spillestil, intention og tid — og få besked
+        når spillere slår &ldquo;søger makker&rdquo; til i Find makker.
       </p>
-
-      <FilterDiscoveryPanel channel="makker" prefs={prefs} onChange={set} />
 
       <div
         style={{
@@ -211,7 +211,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         {description.detail}
       </div>
 
-      <div style={labelStyle}>Trin 2 · Region (minimum)</div>
+      <div style={labelStyle}>Region</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
         {REGIONS.map((r) => (
           <button
@@ -530,6 +530,114 @@ export function MakkerSearchFilterPage({ user, showToast }) {
             </button>
           );
         })}
+      </div>
+
+      <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: 16, marginBottom: 20 }}>
+        <div style={{ ...labelStyle, marginBottom: 12 }}>Kanaler</div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: theme.surfaceAlt,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 10,
+            padding: '10px 14px',
+            marginBottom: 10,
+          }}
+        >
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <Bell size={18} color={theme.accent} style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Notifikationer</div>
+              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
+                Push og in-app når en spiller søger makker og passer (max{' '}
+                {DISCOVERY_NOTIFY_DAILY_PER_CHANNEL} makker-beskeder om dagen — uafhængigt af kamp-filter).
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => set({ notify: !prefs.notify })}
+            aria-pressed={prefs.notify}
+            style={{
+              width: 44,
+              height: 24,
+              borderRadius: 12,
+              border: 'none',
+              cursor: 'pointer',
+              background: prefs.notify ? theme.accent : theme.border,
+              position: 'relative',
+              flexShrink: 0,
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: 3,
+                left: prefs.notify ? 23 : 3,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: theme.surface,
+                transition: 'left 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }}
+            />
+          </button>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: theme.surfaceAlt,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 10,
+            padding: '10px 14px',
+          }}
+        >
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <Zap size={18} color={theme.warm} style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Vis at jeg søger makker</div>
+              <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2 }}>
+                Du vises i Find makker i {seekingVisibleDurationLabel('makker')}. Slå selv fra når du har fundet makker.
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => set({ feedVisible: !prefs.feedVisible })}
+            aria-pressed={prefs.feedVisible}
+            style={{
+              width: 44,
+              height: 24,
+              borderRadius: 12,
+              border: 'none',
+              cursor: 'pointer',
+              background: prefs.feedVisible ? theme.accent : theme.border,
+              position: 'relative',
+              flexShrink: 0,
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: 3,
+                left: prefs.feedVisible ? 23 : 3,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: theme.surface,
+                transition: 'left 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }}
+            />
+          </button>
+        </div>
       </div>
 
       <button
