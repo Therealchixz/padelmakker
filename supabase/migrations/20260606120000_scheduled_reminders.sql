@@ -106,7 +106,10 @@ $$;
 
 revoke all on function public.get_due_reminders() from public, anon, authenticated;
 
--- Schedule: invoke send-reminders every 15 minutes (secret read from app_config at call time).
+-- Schedule: invoke send-reminders every 15 minutes.
+-- The Authorization header carries the PUBLISHABLE anon key (safe to commit; it is
+-- shipped in the web client) so Supabase's API gateway accepts the request; the real
+-- auth is the x-cron-secret read from app_config at call time.
 do $$
 begin
   if exists (select 1 from cron.job where jobname = 'send-reminders') then
@@ -117,6 +120,7 @@ begin
       url := 'https://hzmrsqrerkoftcppfklu.supabase.co/functions/v1/send-reminders',
       headers := jsonb_build_object(
         'Content-Type','application/json',
+        'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bXJzcXJlcmtvZnRjcHBma2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzEwNTIsImV4cCI6MjA5MDc0NzA1Mn0.ApMY3hPJ5SdlXWgUeZ5odDWt5Z0PYnQqihSJbQ6gqgM',
         'x-cron-secret', (select value from public.app_config where key='reminder_cron_secret')
       ),
       body := '{}'::jsonb
