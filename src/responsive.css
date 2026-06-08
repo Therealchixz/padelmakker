@@ -6988,6 +6988,29 @@ button,
   grid-row: 1;
 }
 
+.pm-kampe-venue-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: inherit;
+}
+
+.pm-kampe-venue-location--link {
+  color: var(--pm-accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pm-kampe-venue-location--link:hover {
+    text-decoration: underline;
+  }
+}
+
 .pm-kampe-v2-list-venue {
   display: flex;
   align-items: center;
@@ -7853,11 +7876,23 @@ button,
 
 .pm-americano-v2-detail-location {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 0;
   font-size: 13px;
   color: var(--pm-text-mid);
   margin-top: 4px;
+}
+
+.pm-americano-v2-detail-location-venue {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pm-text-mid);
+}
+
+.pm-americano-v2-detail-location-date {
+  font-size: 13px;
+  color: var(--pm-text-mid);
 }
 
 .pm-americano-v2-detail-stats {

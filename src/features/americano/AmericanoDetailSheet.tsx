@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
-import { MapPin, Plus, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
+import { KampeVenueLocationLine } from '../../components/kampe/KampeVenueLocationLine'
+import { resolveCourtNameDirectionsQuery } from '../../lib/kampeListFilterCore'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
 import {
@@ -187,6 +189,7 @@ export function AmericanoDetailSheet({
   if (!open || !tournament) return null
 
   const courtName = resolveAmericanoCourtName(tournament.court_id, courts)
+  const directionsQuery = resolveCourtNameDirectionsQuery(courtName)
   const { maxPlayers, totalRounds: metaTotalRounds, estMinutes, courts: courtsPerRound, bench } =
     getAmericanoTournamentMeta(tournament)
   const totalRounds = roundProgress?.totalRounds ?? metaTotalRounds
@@ -241,8 +244,12 @@ export function AmericanoDetailSheet({
               <div className="pm-americano-v2-detail-type">{getTournamentFormatLabel(tournament.format)}</div>
               <h2 className="pm-americano-v2-detail-title">{tournament.name}</h2>
               <div className="pm-americano-v2-detail-location">
-                <MapPin size={12} aria-hidden />
-                {courtName} · {dateLabel}
+                <KampeVenueLocationLine
+                  label={courtName}
+                  directionsQuery={directionsQuery}
+                  className="pm-americano-v2-detail-location-venue"
+                />
+                <span className="pm-americano-v2-detail-location-date"> · {dateLabel}</span>
               </div>
             </div>
             <div className="pm-americano-v2-detail-head-right">

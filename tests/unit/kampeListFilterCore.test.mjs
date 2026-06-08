@@ -8,6 +8,9 @@ import {
   matchPassesKampeRegionFilter,
   normalizeKampeListFilter,
   profileAreaMatchesKampeRegionFilter,
+  resolveCourtNameDirectionsQuery,
+  resolveEntityDirectionsQuery,
+  resolveMatchDirectionsQuery,
   resolveMatchEffectiveRegion,
   resolveVenueProfileRegion,
   tournamentPassesKampeRegionFilter,
@@ -126,4 +129,41 @@ test('turnering uden bane filtreres på opretterens region', () => {
     ),
     true,
   );
+});
+
+test('rutevejledning bruger banens adresse når centret findes', () => {
+  const query = resolveEntityDirectionsQuery({ courtName: 'Skansen Padel', booked: true });
+  assert.ok(query);
+  assert.match(query, /Nørresundby|Lerumbakken/i);
+  assert.match(query, /Denmark/i);
+});
+
+test('kamp uden booket bane giver ingen rutevejledning', () => {
+  const match = {
+    court_name: '',
+    level_range: 'elo:1200-1300|booked:no',
+    creator_id: 'u1',
+  };
+  assert.equal(resolveMatchDirectionsQuery(match, { u1: { area: 'Hovedstaden' } }), null);
+});
+
+test('kamp med booket bane giver rutevejledning', () => {
+  const match = {
+    court_name: 'Skansen Padel',
+    level_range: 'elo:1200-1300|booked:yes',
+    creator_id: 'u1',
+  };
+  const query = resolveMatchDirectionsQuery(match, { u1: { area: 'Hovedstaden' } });
+  assert.ok(query);
+  assert.match(query, /Denmark/i);
+});
+
+test('Americano-bane giver rutevejledning', () => {
+  const query = resolveCourtNameDirectionsQuery('Skansen Padel');
+  assert.ok(query);
+  assert.match(query, /Denmark/i);
+});
+
+test('Bane ikke valgt giver ingen rutevejledning', () => {
+  assert.equal(resolveCourtNameDirectionsQuery('Bane ikke valgt'), null);
 });

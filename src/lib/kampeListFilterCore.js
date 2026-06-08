@@ -70,6 +70,40 @@ export function resolveMatchEffectiveRegion(match, profilesById = {}) {
   });
 }
 
+/**
+ * Søgestreng til ekstern rutevejledning (Google/Apple Maps).
+ * Bruger banens adresse fra Baner-kataloget når vi kender centret.
+ */
+export function resolveEntityDirectionsQuery({ courtName = '', booked = null } = {}) {
+  if (!entityHasSelectedVenue({ courtName, booked })) return null;
+
+  const venue = findBanerVenueByCourtName(courtName);
+  const address = String(venue?.address || '').trim();
+  if (address && !/se booking/i.test(address) && /\d/.test(address)) {
+    return /denmark/i.test(address) ? address : `${address}, Denmark`;
+  }
+
+  const name = String(courtName || '').trim();
+  if (!name || normVenueText(name) === normVenueText('Bane ikke valgt')) return null;
+  return `${name}, Denmark`;
+}
+
+/** @param {object} match @param {Record<string, object>} [profilesById] */
+export function resolveMatchDirectionsQuery(match, profilesById = {}) {
+  const { booked } = parseMatchLevelRange(match?.level_range);
+  return resolveEntityDirectionsQuery({
+    courtName: match?.court_name,
+    booked,
+  });
+}
+
+/** Turnering med valgt bane (Americano/Mexicano). */
+export function resolveCourtNameDirectionsQuery(courtName) {
+  const name = String(courtName || '').trim();
+  if (!name || normVenueText(name) === normVenueText('Bane ikke valgt')) return null;
+  return resolveEntityDirectionsQuery({ courtName: name, booked: true });
+}
+
 function effectiveRegionMatchesFilter(effectiveRegion, regionId) {
   if (!regionId) return true;
   const target = resolveListRegionId(regionId);

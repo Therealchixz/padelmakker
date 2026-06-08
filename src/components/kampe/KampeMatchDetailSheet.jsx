@@ -1,6 +1,8 @@
-import { MapPin, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
+import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
+import { KampeVenueLocationLine } from './KampeVenueLocationLine';
 import { btn } from '../../lib/platformTheme';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { MatchResultStrip } from '../MatchResultStrip';
@@ -59,6 +61,7 @@ export function KampeMatchDetailSheet({
     matchPrefs?.booked === false && !String(match.court_name || '').trim()
       ? 'Bane ikke booket endnu'
       : (match.court_name || 'Padelbane');
+  const directionsQuery = resolveMatchDirectionsQuery(match, profilesById);
   const statusBadge = getKampeDetailStatusBadge({
     status,
     isClosed,
@@ -95,10 +98,11 @@ export function KampeMatchDetailSheet({
               <div className="pm-kampe-v2-detail-datetime pm-kampe-v2-detail-datetime--primary">
                 {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
               </div>
-              <div className="pm-kampe-v2-detail-location">
-                <MapPin size={12} aria-hidden />
-                {venue}
-              </div>
+              <KampeVenueLocationLine
+                label={venue}
+                directionsQuery={directionsQuery}
+                className="pm-kampe-v2-detail-location"
+              />
             </div>
             <div className="pm-kampe-v2-detail-head-right">
               <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
