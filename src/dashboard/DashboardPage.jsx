@@ -763,6 +763,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [accountPos, setAccountPos] = useState(null);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
   const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
+  const wasMobileChatRef = useRef(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackCategory, setFeedbackCategory] = useState(FEEDBACK_DEFAULT_CATEGORY);
   const [feedbackPriority, setFeedbackPriority] = useState(FEEDBACK_DEFAULT_PRIORITY);
@@ -1343,20 +1344,27 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
-  // Mobil besked-tråd: forhindr dokument-scroll; nulstil viewport når tråden lukkes.
+  // Mobil besked-tråd: forhindr dokument-scroll; nulstil viewport kun når tråden lukkes.
   useLayoutEffect(() => {
     if (typeof document === 'undefined') return undefined;
     const body = document.body;
     if (hideMobileBottomNav) {
+      wasMobileChatRef.current = true;
       body.classList.add('pm-body--mobile-chat');
       return () => body.classList.remove('pm-body--mobile-chat');
     }
     body.classList.remove('pm-body--mobile-chat');
-    if (!isMobileView || tab !== 'beskeder') return undefined;
+    const leavingChat = wasMobileChatRef.current;
+    wasMobileChatRef.current = false;
+    if (!isMobileView || !leavingChat) return undefined;
     settleMobileViewportAfterChat();
     const timer = window.setTimeout(() => settleMobileViewportAfterChat(), 320);
-    return () => window.clearTimeout(timer);
-  }, [hideMobileBottomNav, isMobileView, tab]);
+    const lateTimer = window.setTimeout(() => settleMobileViewportAfterChat(), 700);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(lateTimer);
+    };
+  }, [hideMobileBottomNav, isMobileView]);
 
   return (
     <div

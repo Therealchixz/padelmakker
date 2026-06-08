@@ -1723,17 +1723,23 @@ button,
     padding-top: 0;
   }
 
-  /* Kun under aktiv besked-tråd: fyld skærmen, skjul logo-header, scroll kun i beskedlisten */
+  /* Kun under aktiv besked-tråd: overlay hele skærmen uden at ændre body-højde (undgår hul under menu bagefter) */
   body.pm-body--mobile-chat {
     overflow: hidden;
-    height: 100dvh;
   }
 
   #pm-app-shell.pm-app-shell--mobile-chat {
-    height: 100dvh;
-    min-height: 100dvh;
-    max-height: 100dvh;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    height: auto;
+    min-height: 0;
+    max-height: none;
     overflow: hidden;
+    background: var(--pm-surface);
   }
 
   #pm-app-shell.pm-app-shell--mobile-chat .pm-dash-header {
@@ -1756,6 +1762,10 @@ button,
 
   #pm-app-shell.pm-app-shell--mobile-chat .pm-chat-v2-thread-header {
     padding-top: max(8px, env(safe-area-inset-top));
+  }
+
+  #pm-app-shell.pm-app-shell--mobile-chat .pm-chat-v2-input-bar {
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
   }
 
   .pm-mobile-bottom-nav {

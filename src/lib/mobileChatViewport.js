@@ -82,7 +82,13 @@ export function clearStaleMobileChatViewportLock(
 export function settleMobileViewportAfterChat() {
   if (typeof window === 'undefined') return;
   clearStaleMobileChatViewportLock();
-  const reset = () => window.scrollTo(0, 0);
+  document.body.classList.remove('pm-body--mobile-chat');
+  const reset = () => {
+    window.scrollTo(0, 0);
+    if (window.visualViewport && window.visualViewport.offsetTop > 0) {
+      window.scrollTo(0, window.scrollY + window.visualViewport.offsetTop);
+    }
+  };
   reset();
   requestAnimationFrame(() => {
     reset();
