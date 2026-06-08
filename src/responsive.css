@@ -4638,6 +4638,53 @@ button,
   margin: 10px 0 4px;
 }
 
+.pm-active-seeking-onboarding {
+  text-align: left;
+}
+
+.pm-active-seeking-onboarding__icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: var(--pm-accent-bg);
+  color: var(--pm-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pm-active-seeking-onboarding__title {
+  font-size: clamp(17px, 4.2vw, 20px);
+  font-weight: 800;
+  margin: 0 0 10px;
+  color: var(--pm-text);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+}
+
+.pm-active-seeking-onboarding__lead {
+  font-size: 14px;
+  color: var(--pm-text-mid);
+  margin: 0 0 22px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.pm-active-seeking-onboarding__region {
+  display: inline;
+  font-weight: 700;
+  color: var(--pm-text);
+}
+
+.pm-active-seeking-onboarding__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .pm-seeking-callout {
   text-align: left;
   padding: 14px;

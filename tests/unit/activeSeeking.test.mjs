@@ -44,6 +44,11 @@ test('onboarding-prompt tilbyder begge kanaler med profil-defaults', () => {
   assert.match(onboarding, /makker og kamp/);
 });
 
+test('onboarding-prompt bruger modal-body med ordentlig padding', () => {
+  assert.match(onboarding, /pm-modal-body pm-modal-body--compact pm-active-seeking-onboarding/);
+  assert.doesNotMatch(onboarding, /padding: '4px 2px 8px'/);
+});
+
 test('ActiveSeekingPanel integreret på Hjem, Makkere og Kampe', () => {
   const home = readFileSync(join(root, 'src/dashboard/HomeTab.jsx'), 'utf8');
   const makkere = readFileSync(join(root, 'src/dashboard/MakkereTab.jsx'), 'utf8');

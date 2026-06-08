@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/AuthContext';
-import { theme, btn } from '../lib/platformTheme';
+import { btn } from '../lib/platformTheme';
 import { regionDisplayLabel } from '../lib/appRegions';
 import { notifyMakkerWatchersForProfile } from '../lib/makkerWatchUtils';
 import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
@@ -9,6 +9,7 @@ import {
   buildSeekingProfilePatch,
   hasSeekingRegion,
 } from '../lib/activeSeeking';
+import { Bell } from 'lucide-react';
 import { AppModal } from './AppModal';
 
 const STORAGE_KEY = 'pm-active-seeking-onboarding-v1';
@@ -83,22 +84,25 @@ export function ActiveSeekingOnboardingPrompt({ user, showToast }) {
   };
 
   return (
-    <AppModal open={open} onClose={handleNo} ariaLabel="Aktiv søgning" maxWidthPreset="sm">
-      <div style={{ padding: '4px 2px 8px' }}>
-        <h2 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 10px', color: theme.text }}>
+    <AppModal open={open} onClose={handleNo} ariaLabel="Aktiv søgning" maxWidthPreset="md">
+      <div className="pm-modal-body pm-modal-body--compact pm-active-seeking-onboarding">
+        <div className="pm-active-seeking-onboarding__icon" aria-hidden>
+          <Bell size={22} strokeWidth={2} />
+        </div>
+        <h2 className="pm-active-seeking-onboarding__title">
           Vil du have besked om makker og kampe?
         </h2>
-        <p style={{ fontSize: 14, color: theme.textMid, margin: '0 0 18px', lineHeight: 1.55 }}>
-          Vi kan give dig besked når en padelmakker eller åben kamp passer dit niveau i{' '}
-          <strong style={{ color: theme.text }}>{regionLabel}</strong>. Du bliver også synlig for andre
-          spillere, der søger.
+        <p className="pm-active-seeking-onboarding__lead">
+          Få besked, når en padelmakker eller åben kamp matcher dit niveau i{' '}
+          <span className="pm-active-seeking-onboarding__region">{regionLabel}</span>. Du bliver også
+          synlig for andre spillere, der søger.
         </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="pm-active-seeking-onboarding__actions">
           <button
             type="button"
             disabled={busy}
             onClick={() => void handleYes()}
-            style={{ ...btn(true), width: '100%', padding: '12px', opacity: busy ? 0.7 : 1 }}
+            style={{ ...btn(true), width: '100%', justifyContent: 'center', opacity: busy ? 0.7 : 1 }}
           >
             {busy ? 'Aktiverer…' : 'Ja, giv mig besked'}
           </button>
@@ -106,7 +110,7 @@ export function ActiveSeekingOnboardingPrompt({ user, showToast }) {
             type="button"
             disabled={busy}
             onClick={handleNo}
-            style={{ ...btn(false), width: '100%', padding: '12px' }}
+            style={{ ...btn(false), width: '100%', justifyContent: 'center' }}
           >
             Nej tak — senere
           </button>
