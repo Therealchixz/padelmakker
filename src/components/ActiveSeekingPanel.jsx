@@ -380,7 +380,8 @@ export function ActiveSeekingPanel({
         {homeExpanded ? (
           <div className="pm-active-seeking-home-body">
             <p className="pm-active-seeking-home-intro">
-              Én switch slår synlighed og notifikationer til. Juster kriterier under Find makker og Kampe.
+              Makker og kamp har hver sin switch — synlighed og notifikationer slås til sammen. Juster
+              kriterier under Find makker og Kampe.
             </p>
             {channels.map(renderRow)}
           </div>
