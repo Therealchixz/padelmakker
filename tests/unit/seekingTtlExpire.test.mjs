@@ -32,15 +32,21 @@ test('makker-TTL (7 dage) udløber efter 7 dage', () => {
 test('activeSeeking slår fra ved udløbet TTL og fornyer feedVisibleSince', () => {
   const src = readFileSync(join(root, 'src/lib/activeSeeking.js'), 'utf8');
   const panel = readFileSync(join(root, 'src/components/ActiveSeekingPanel.jsx'), 'utf8');
+  const css = readFileSync(join(root, 'src/responsive.css'), 'utf8');
   assert.match(src, /isSeekingUiActive/);
   assert.match(src, /isSeekingTtlExpired/);
   assert.match(src, /buildExpiredSeekingSyncPatch/);
+  assert.match(src, /formatSeekingTtlCountdown/);
+  assert.match(src, /filterSummary/);
   assert.match(src, /feedVisibleSince: new Date\(\)\.toISOString\(\)/);
   assert.match(panel, /buildExpiredSeekingSyncPatch/);
   assert.match(panel, /checked=\{active\}/);
+  assert.match(panel, /pm-active-seeking-filter/);
+  assert.match(panel, /SeekingTtlCountdown/);
   assert.doesNotMatch(panel, /Juster makker-kriterier/);
   assert.match(panel, /homeExpanded/);
   assert.match(panel, /Online/);
+  assert.match(css, /\.pm-active-seeking-countdown/);
 });
 
 test('compact panel uden hvid wrapper-section', () => {

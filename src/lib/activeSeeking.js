@@ -131,8 +131,48 @@ export function formatSeekingTtlRemaining(ms) {
 }
 
 /**
+ * Nedtælling til visuelt UI — adskilt fra filter-tekst.
+ * @param {number | null} ms
+ * @returns {{ value: string | null, unit: string | null, ariaLabel: string }}
+ */
+export function formatSeekingTtlCountdown(ms) {
+  if (ms == null || ms <= 0) {
+    return { value: null, unit: null, ariaLabel: 'Udløbet' };
+  }
+  const hours = Math.ceil(ms / (60 * 60 * 1000));
+  if (hours < 24) {
+    const unit = hours === 1 ? 'time' : 'timer';
+    return { value: String(hours), unit, ariaLabel: `${hours} ${unit} tilbage` };
+  }
+  const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+  const unit = days === 1 ? 'dag' : 'dage';
+  return { value: String(days), unit, ariaLabel: `${days} ${unit} tilbage` };
+}
+
+/**
+ * Andel af TTL tilbage (0–1) til progress-indikator.
  * @param {object} user
  * @param {SeekingChannel} channel
+ */
+export function seekingTtlProgress(user, channel) {
+  const prefs = normalizeChannelPrefs(user, channel);
+  if (!prefs.feedVisible) return 0;
+  const since = channelFeedSince(prefs, user?.seeking_match_at);
+  if (since == null) return 0;
+  const remaining = seekingTtlRemainingMs(user, channel);
+  if (remaining == null || remaining <= 0) return 0;
+  return Math.min(1, Math.max(0, remaining / channelTtlMs(channel)));
+}
+
+/**
+ * @param {object} user
+ * @param {SeekingChannel} channel
+ * @returns {{
+ *   filterSummary: string,
+ *   summary: string,
+ *   status: 'unconfigured' | 'inactive' | 'active' | 'expired',
+ *   ttlRemainingMs: number | null,
+ * }}
  */
 export function describeActiveSeeking(user, channel) {
   const info = channel === 'kamp'
@@ -140,21 +180,29 @@ export function describeActiveSeeking(user, channel) {
     : describeMakkerFilter(normalizeChannelPrefs(user, channel), user);
 
   if (!info.configured) {
-    return { summary: 'Vælg region', detail: 'Kræves for aktiv søgning' };
+    return {
+      filterSummary: 'Vælg region',
+      summary: 'Vælg region',
+      status: 'unconfigured',
+      ttlRemainingMs: null,
+    };
   }
 
-  const parts = [info.summary];
+  let status = 'inactive';
+  let ttlRemainingMs = null;
+
   if (isSeekingUiActive(user, channel)) {
-    const rem = seekingTtlRemainingMs(user, channel);
-    parts.push(formatSeekingTtlRemaining(rem));
-    parts.push('får besked ved match');
+    status = 'active';
+    ttlRemainingMs = seekingTtlRemainingMs(user, channel);
   } else if (isSeekingTtlExpired(user, channel)) {
-    parts.push('udløbet — slå til for at forny');
+    status = 'expired';
   }
 
   return {
+    filterSummary: info.summary,
     summary: info.summary,
-    detail: parts.filter(Boolean).join(' · '),
+    status,
+    ttlRemainingMs,
   };
 }
 

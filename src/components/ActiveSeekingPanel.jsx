@@ -8,7 +8,6 @@ import { isSeekingActiveProfile } from '../lib/makkerSearchFilterCore';
 import {
   isSeekingUiActive,
   isSeekingTtlExpired,
-  isChannelFeedLive,
   describeActiveSeeking,
   buildSeekingProfilePatch,
   buildExpiredSeekingSyncPatch,
@@ -17,6 +16,9 @@ import {
   seekingFilterPath,
   seekingVisibleDurationLabel,
   seekingHomeStatusLabel,
+  formatSeekingTtlCountdown,
+  seekingTtlProgress,
+  seekingTtlRemainingMs,
 } from '../lib/activeSeeking';
 import {
   FILTER_RETURN_HJEM,
@@ -24,7 +26,7 @@ import {
   FILTER_RETURN_KAMPE,
 } from '../lib/filterReturnNavigation';
 import { AppModal } from './AppModal';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Clock } from 'lucide-react';
 
 function ToggleSwitch({ checked, onChange, disabled, ariaLabel }) {
   return (
@@ -78,6 +80,27 @@ function StatusDot({ active, expired }) {
         boxShadow: active ? `0 0 0 3px ${theme.accentBg}` : 'none',
       }}
     />
+  );
+}
+
+function SeekingTtlCountdown({ user, channel }) {
+  const rem = seekingTtlRemainingMs(user, channel);
+  const countdown = formatSeekingTtlCountdown(rem);
+  const progress = seekingTtlProgress(user, channel);
+
+  if (!countdown.value) return null;
+
+  return (
+    <div className="pm-active-seeking-countdown-wrap">
+      <div className="pm-active-seeking-countdown" aria-label={countdown.ariaLabel}>
+        <Clock size={12} className="pm-active-seeking-countdown__icon" aria-hidden />
+        <span className="pm-active-seeking-countdown__value">{countdown.value}</span>
+        <span className="pm-active-seeking-countdown__unit">{countdown.unit}</span>
+      </div>
+      <div className="pm-active-seeking-countdown-track" aria-hidden>
+        <span style={{ width: `${Math.round(progress * 100)}%` }} />
+      </div>
+    </div>
   );
 }
 
@@ -220,39 +243,34 @@ export function ActiveSeekingPanel({
   const renderRow = (ch) => {
     const active = isSeekingUiActive(displayUser, ch);
     const expired = isSeekingTtlExpired(displayUser, ch);
-    const live = isChannelFeedLive(displayUser, ch);
     const desc = describeActiveSeeking(displayUser, ch);
     const busy = busyChannel === ch;
 
     if (variant === 'compact') {
-      const panelBg = active ? theme.accentBg : theme.surfaceAlt;
-      const panelBorder = active ? `${theme.accent}44` : theme.border;
-
       return (
         <div
           key={ch}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            flexWrap: 'wrap',
-            marginBottom: 16,
-            padding: '10px 12px',
-            background: panelBg,
-            border: `1px solid ${panelBorder}`,
-            borderRadius: 10,
-            fontSize: 12,
-          }}
+          className={`pm-active-seeking-row pm-active-seeking-row--compact${active ? ' pm-active-seeking-row--on' : ' pm-active-seeking-row--off'}`}
         >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ fontWeight: 700, color: theme.text }}>{seekingChannelLabel(ch)}: </span>
-            <span style={{ color: active ? theme.textMid : theme.textLight }}>
-              {active
-                ? `${live ? 'Aktiv' : 'Tændt'} · ${desc.summary} · får besked`
-                : expired
-                  ? `Udløbet · ${desc.summary} · slå til for at forny`
-                  : 'Slå til for besked når der er match'}
-            </span>
+          <div className="pm-active-seeking-row__main">
+            <div className="pm-active-seeking-row__head">
+              <span className="pm-active-seeking-row__title pm-active-seeking-row__title--inline">
+                {seekingChannelLabel(ch)}
+              </span>
+              {active ? (
+                <span className="pm-active-seeking-badge pm-active-seeking-badge--active">Aktiv</span>
+              ) : expired ? (
+                <span className="pm-active-seeking-badge pm-active-seeking-badge--expired">Udløbet</span>
+              ) : null}
+            </div>
+            {active || expired ? (
+              <>
+                <p className="pm-active-seeking-filter">{desc.filterSummary}</p>
+                {active ? <SeekingTtlCountdown user={displayUser} channel={ch} /> : null}
+              </>
+            ) : (
+              <p className="pm-active-seeking-hint">Slå til for besked når der er match</p>
+            )}
           </div>
           <ToggleSwitch
             checked={active}
@@ -266,7 +284,7 @@ export function ActiveSeekingPanel({
             style={{
               ...btn(false),
               padding: '6px 10px',
-              fontSize: 11,
+              fontSize: 12,
               flexShrink: 0,
               background: theme.surface,
             }}
@@ -278,50 +296,26 @@ export function ActiveSeekingPanel({
     }
 
     return (
-      <div
-        key={ch}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '10px 0',
-          borderBottom: ch === 'makker' ? `1px solid ${theme.border}` : 'none',
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{seekingChannelLabel(ch)}</span>
+      <div key={ch} className="pm-active-seeking-row">
+        <div className="pm-active-seeking-row__main">
+          <div className="pm-active-seeking-row__head">
+            <span className="pm-active-seeking-row__title">{seekingChannelLabel(ch)}</span>
             {active ? (
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: 100,
-                  background: theme.accentBg,
-                  color: theme.accent,
-                }}
-              >
-                Aktiv
-              </span>
+              <span className="pm-active-seeking-badge pm-active-seeking-badge--active">Aktiv</span>
             ) : expired ? (
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: 100,
-                  background: theme.warmBg,
-                  color: theme.warm,
-                }}
-              >
-                Udløbet
-              </span>
+              <span className="pm-active-seeking-badge pm-active-seeking-badge--expired">Udløbet</span>
             ) : null}
           </div>
-          <p style={{ fontSize: 11, color: theme.textMid, margin: '4px 0 0', lineHeight: 1.45 }}>
-            {active || expired ? desc.detail : 'Få besked og bliv synlig når der er match på dit niveau'}
-          </p>
+          {active || expired ? (
+            <>
+              <p className="pm-active-seeking-filter">{desc.filterSummary}</p>
+              {active ? <SeekingTtlCountdown user={displayUser} channel={ch} expired={false} /> : null}
+            </>
+          ) : (
+            <p className="pm-active-seeking-hint">
+              Få besked og bliv synlig når der er match på dit niveau
+            </p>
+          )}
         </div>
         <ToggleSwitch
           checked={active}
@@ -335,7 +329,7 @@ export function ActiveSeekingPanel({
 
   if (variant === 'compact') {
     return (
-      <>
+      <div className="pm-active-seeking-panel">
         {channels.map(renderRow)}
         <AppModal
           open={regionModal != null}
@@ -345,12 +339,12 @@ export function ActiveSeekingPanel({
         >
           {regionModalContent(regionModal, busyChannel, persistSeeking)}
         </AppModal>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="pm-active-seeking-panel">
       <section
         style={{
           background: theme.surface,
@@ -366,42 +360,15 @@ export function ActiveSeekingPanel({
           type="button"
           onClick={() => setHomeExpanded((v) => !v)}
           aria-expanded={homeExpanded}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '12px 14px',
-            border: 'none',
-            background: homeOnline ? theme.accentBg : theme.surface,
-            cursor: 'pointer',
-            textAlign: 'left',
-          }}
+          className={`pm-active-seeking-home-toggle${homeOnline ? ' pm-active-seeking-home-toggle--on' : ' pm-active-seeking-home-toggle--off'}`}
         >
           <StatusDot active={homeOnline} expired={!homeOnline && homeExpired} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: theme.textLight,
-                textTransform: 'uppercase',
-                letterSpacing: '0.07em',
-              }}
-            >
-              Aktiv søgning
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: theme.text, marginTop: 2 }}>
-              {homeStatus}
-            </div>
+            <div className="pm-active-seeking-home-kicker">Aktiv søgning</div>
+            <div className="pm-active-seeking-home-status">{homeStatus}</div>
           </div>
           <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: homeOnline ? theme.accent : theme.textLight,
-              flexShrink: 0,
-            }}
+            className={`pm-active-seeking-home-online${homeOnline ? ' pm-active-seeking-home-online--on' : ' pm-active-seeking-home-online--off'}`}
           >
             {homeOnline ? 'Online' : 'Offline'}
           </span>
@@ -418,8 +385,8 @@ export function ActiveSeekingPanel({
         </button>
 
         {homeExpanded ? (
-          <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${theme.border}` }}>
-            <p style={{ fontSize: 12, color: theme.textMid, margin: '10px 0 4px', lineHeight: 1.45 }}>
+          <div className="pm-active-seeking-home-body">
+            <p className="pm-active-seeking-home-intro">
               Én switch slår synlighed og notifikationer til. Juster kriterier under Find makker og Kampe.
             </p>
             {channels.map(renderRow)}
@@ -435,7 +402,7 @@ export function ActiveSeekingPanel({
       >
         {regionModalContent(regionModal, busyChannel, persistSeeking)}
       </AppModal>
-    </>
+    </div>
   );
 }
 

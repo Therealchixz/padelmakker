@@ -13,6 +13,8 @@ test('activeSeeking kombinerer feedVisible og notify i én switch', () => {
   assert.match(activeSeeking, /isCombinedSeekingEnabled/);
   assert.match(activeSeeking, /isSeekingUiActive/);
   assert.match(activeSeeking, /buildExpiredSeekingSyncPatch/);
+  assert.match(activeSeeking, /formatSeekingTtlCountdown/);
+  assert.match(activeSeeking, /filterSummary/);
   assert.match(activeSeeking, /prefs\.feedVisible && prefs\.notify/);
   assert.match(activeSeeking, /feedVisible: true,\s*\n\s*notify: true/s);
   assert.match(activeSeeking, /feedVisible: false,\s*\n\s*notify: false/s);
@@ -29,6 +31,8 @@ test('ActiveSeekingPanel har home dropdown og compact med optimistisk state', ()
   assert.match(panel, /updateProfile/);
   assert.match(panel, /describeActiveSeeking/);
   assert.match(panel, /notifyMakkerWatchersForProfile/);
+  assert.match(panel, /pm-active-seeking-filter/);
+  assert.match(panel, /SeekingTtlCountdown/);
   assert.doesNotMatch(panel, /Juster makker-kriterier/);
 });
 
