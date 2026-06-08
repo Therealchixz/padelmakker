@@ -2765,11 +2765,13 @@ button,
 }
 
 .pm-feed-filters-header {
-  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .pm-feed-filters-scroll {
-  margin-top: 8px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -2780,35 +2782,30 @@ button,
   display: none;
 }
 
-.pm-feed-filters-row {
-  display: inline-flex;
-  gap: 6px;
+.pm-feed-filters-tabs {
+  width: max-content;
+  max-width: 100%;
+  min-width: min(100%, max-content);
+}
+
+.pm-feed-filters-tabs .pm-pill-tab--sm {
+  flex: 0 1 auto;
   min-width: max-content;
-  padding-bottom: 1px;
+  padding: 0 10px;
+  min-height: 30px;
+  font-size: 11px;
+}
+
+@media (min-width: 640px) {
+  .pm-feed-filters-tabs {
+    width: 100%;
+  }
 }
 
 .pm-feed-filter-chip {
   white-space: nowrap;
   font-size: 12px;
   padding: 6px 13px;
-}
-
-@media (min-width: 900px) {
-  .pm-feed-filters-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .pm-feed-filters-scroll {
-    margin-top: 0;
-    overflow: visible;
-  }
-
-  .pm-feed-filters-row {
-    min-width: 0;
-  }
 }
 
 /* Form-submit — normal flow (ikke sticky på mobil; følger formularen i bunden). */

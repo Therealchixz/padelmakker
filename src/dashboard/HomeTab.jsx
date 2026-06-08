@@ -36,10 +36,10 @@ const HOME_FEED_CACHE_BY_USER = new Map();
 
 const HOME_ELO_MODE_STORAGE_PREFIX = "pm-home-elo-mode:";
 const HOME_FEED_FILTERS = [
-  { id: 'kampe', label: 'Kampe', icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
-  { id: 'americano', label: TOURNAMENT_MODE_LABEL, icon: '🎾', types: ['americano_winner', 'americano_registration'] },
-  { id: 'liga', label: 'Liga', icon: '🏆', types: ['liga_completed', 'league_new'] },
-  { id: 'spillere', label: 'Spillere', icon: '⚡', types: ['elo_milestone', 'seeking_player'] },
+  { id: 'kampe', label: 'Kampe', shortLabel: 'Kampe', icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
+  { id: 'americano', label: TOURNAMENT_MODE_LABEL, shortLabel: 'Am/Mex', icon: '🎾', types: ['americano_winner', 'americano_registration'] },
+  { id: 'liga', label: 'Liga', shortLabel: 'Liga', icon: '🏆', types: ['liga_completed', 'league_new'] },
+  { id: 'spillere', label: 'Spillere', shortLabel: 'Spillere', icon: '⚡', types: ['elo_milestone', 'seeking_player'] },
 ];
 
 function readHomeEloMode(userId) {
@@ -1557,23 +1557,30 @@ export function HomeTab({ user, setTab, showToast }) {
           ) : null}
           <div className="pm-feed-filters-header">
             <PageSectionTitle>Seneste aktivitet</PageSectionTitle>
-            <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
-              <div className="pm-feed-filters-row">
+            <div className="pm-feed-filters-scroll" role="group" aria-label="Filtrer aktivitetstyper">
+              <div className="pm-pill-tabs pm-pill-tabs--wrap pm-feed-filters-tabs">
                 <button
+                  type="button"
                   onClick={enableAllFilters}
-                  className={allActive ? "pm-ui-btn-chip pm-feed-filter-chip pm-ui-btn-chip-active" : "pm-ui-btn-chip pm-feed-filter-chip"}
+                  className={`pm-pill-tab pm-pill-tab--sm${allActive ? ' pm-pill-tab-active' : ''}`}
+                  aria-pressed={allActive}
                 >
                   Alle
                 </button>
-                {HOME_FEED_FILTERS.map(f => {
+                {HOME_FEED_FILTERS.map((f) => {
                   const on = activeFilters.has(f.id);
+                  const short = f.shortLabel || f.label;
                   return (
                     <button
                       key={f.id}
+                      type="button"
                       onClick={() => toggleFilter(f.id)}
-                      className={on ? "pm-ui-btn-chip pm-feed-filter-chip pm-ui-btn-chip-active" : "pm-ui-btn-chip pm-feed-filter-chip"}
+                      className={`pm-pill-tab pm-pill-tab--sm${on ? ' pm-pill-tab-active' : ''}`}
+                      aria-pressed={on}
+                      title={short !== f.label ? f.label : undefined}
+                      aria-label={short !== f.label ? `${f.label}, filter` : undefined}
                     >
-                      {f.label}
+                      {short}
                     </button>
                   );
                 })}
