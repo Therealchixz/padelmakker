@@ -1723,6 +1723,41 @@ button,
     padding-top: 0;
   }
 
+  /* Kun under aktiv besked-tråd: fyld skærmen, skjul logo-header, scroll kun i beskedlisten */
+  body.pm-body--mobile-chat {
+    overflow: hidden;
+    height: 100dvh;
+  }
+
+  #pm-app-shell.pm-app-shell--mobile-chat {
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  #pm-app-shell.pm-app-shell--mobile-chat .pm-dash-header {
+    display: none;
+  }
+
+  #pm-app-shell.pm-app-shell--mobile-chat .pm-dash-main--chat {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #pm-app-shell.pm-app-shell--mobile-chat .pm-chat-v2-thread--mobile {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #pm-app-shell.pm-app-shell--mobile-chat .pm-chat-v2-thread-header {
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+
   .pm-mobile-bottom-nav {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -9367,6 +9402,7 @@ button,
   min-height: 0;
   height: auto;
   max-height: none;
+  overflow: hidden;
   /* Hvid bund på mobil: beskedlisten har sin egen grå baggrund, så
      området under input-baren (home-indicator-zonen) bliver hvidt. */
   background: var(--pm-surface);

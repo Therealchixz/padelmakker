@@ -1343,18 +1343,25 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
-  // Efter besked-tråd: nulstil iOS-scroll uden at låse hele app-shell (det gav hul under menuen).
+  // Mobil besked-tråd: forhindr dokument-scroll; nulstil viewport når tråden lukkes.
   useLayoutEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    if (!isMobileView || tab !== 'beskeder' || mobileConversationOpen) return undefined;
+    if (typeof document === 'undefined') return undefined;
+    const body = document.body;
+    if (hideMobileBottomNav) {
+      body.classList.add('pm-body--mobile-chat');
+      return () => body.classList.remove('pm-body--mobile-chat');
+    }
+    body.classList.remove('pm-body--mobile-chat');
+    if (!isMobileView || tab !== 'beskeder') return undefined;
     settleMobileViewportAfterChat();
     const timer = window.setTimeout(() => settleMobileViewportAfterChat(), 320);
     return () => window.clearTimeout(timer);
-  }, [isMobileView, tab, mobileConversationOpen]);
+  }, [hideMobileBottomNav, isMobileView, tab]);
 
   return (
     <div
       id="pm-app-shell"
+      className={hideMobileBottomNav ? 'pm-app-shell--mobile-chat' : undefined}
       style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}
     >
       {/* Header */}
