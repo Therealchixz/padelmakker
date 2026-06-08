@@ -256,7 +256,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
             </div>
           </div>
         </div>
-        <div className="pm-player-profile-sheet-body">
+        <div className="pm-kampe-v2-detail-scroll">
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
           <AvatarCircle avatar={pRef.avatar} size={64} emojiSize="32px" style={{ background: theme.accentBg, border: '2px solid ' + theme.accent + '40' }} />
           <div style={{ minWidth: 0 }}>

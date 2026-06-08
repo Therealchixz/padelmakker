@@ -8877,10 +8877,6 @@ button,
   z-index: 1050;
 }
 
-.pm-player-profile-sheet-body {
-  padding-bottom: 4px;
-}
-
 .pm-kampe-v2-sheet.pm-liga-v2-team-sheet {
   display: flex;
   flex-direction: column;
