@@ -16,7 +16,9 @@ export const TOURNAMENT_EMPTY = {
   nonePlaying: 'Ingen Americano/Mexicano i gang',
   noneCompleted: 'Ingen afsluttede Americano/Mexicano endnu',
   createPrompt: 'Opret en Americano eller Mexicano for at komme i gang.',
+  createPromptEmbedded: 'Tryk på + øverst til højre for at oprette en Americano/Mexicano.',
   tryOtherTab: 'Prøv en anden statusfane, eller opret en ny Americano/Mexicano.',
+  tryOtherTabEmbedded: 'Prøv en anden statusfane, eller opret en ny via + øverst til højre.',
 };
 
 export const TOURNAMENT_LOADING = 'Indlæser Americano/Mexicano…';

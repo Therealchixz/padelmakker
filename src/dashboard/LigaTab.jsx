@@ -16,6 +16,7 @@ import { LigaTeamProfileSheet } from './LigaTeamProfileSheet';
 import { LigaSelectedDetail, SwissRulesBox } from './LigaSelectedDetail';
 import { computeStandings, generatePairings } from '../lib/ligaStandings';
 import { getLigaBadge } from '../lib/ligaDisplayUtils';
+import { kampeCreateHint } from '../lib/kampeCreateHint';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
@@ -772,7 +773,7 @@ export function LigaTab({
             {view === 'registration' ? 'Ingen åbne ligaer' : view === 'active' ? 'Ingen aktive ligaer' : 'Ingen afsluttede ligaer'}
           </div>
           {isAdmin && view === 'registration' ? (
-            <div className="pm-state-copy">Opret en ny liga via knappen Opret liga øverst.</div>
+            <div className="pm-state-copy">{kampeCreateHint('liga', { embedInKampe })}</div>
           ) : !isAdmin && view === 'registration' ? (
             <div style={{ marginTop: '14px' }}>
               <div className="pm-state-copy" style={{ marginBottom: '14px' }}>

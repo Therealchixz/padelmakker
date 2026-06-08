@@ -981,7 +981,9 @@ export function AmericanoTab({
         <div className="pm-state-card pm-state-card--empty">
           <EmptyStateIcon icon={CalendarDays} />
           <div className="pm-state-title">{TOURNAMENT_EMPTY.none}</div>
-          <div className="pm-state-copy">{TOURNAMENT_EMPTY.createPrompt}</div>
+          <div className="pm-state-copy">
+            {embedInKampe ? TOURNAMENT_EMPTY.createPromptEmbedded : TOURNAMENT_EMPTY.createPrompt}
+          </div>
         </div>
       ) : visibleRows.length === 0 ? (
         <div className="pm-state-card pm-state-card--empty">
@@ -991,7 +993,9 @@ export function AmericanoTab({
             {americanoView === 'playing' && TOURNAMENT_EMPTY.nonePlaying}
             {americanoView === 'completed' && TOURNAMENT_EMPTY.noneCompleted}
           </div>
-          <div className="pm-state-copy">{TOURNAMENT_EMPTY.tryOtherTab}</div>
+          <div className="pm-state-copy">
+            {embedInKampe ? TOURNAMENT_EMPTY.tryOtherTabEmbedded : TOURNAMENT_EMPTY.tryOtherTab}
+          </div>
         </div>
       ) : (
         <div className="pm-kampe-v2-list">

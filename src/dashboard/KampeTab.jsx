@@ -49,6 +49,7 @@ import {
 import { DateTime } from 'luxon';
 import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarDays, CalendarPlus, Share2, Swords, Users, BarChart3 } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
+import { KAMPE_CREATE_PLUS_HINT } from '../lib/kampeCreateHint';
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
@@ -3780,7 +3781,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <div className="pm-state-card pm-state-card--empty">
                 <EmptyStateIcon icon={Swords} />
                 <div className="pm-state-title">Ingen åbne kampe</div>
-                <div className="pm-state-copy" style={{ marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med.</div>
+                <div className="pm-state-copy" style={{ marginBottom: "16px" }}>{KAMPE_CREATE_PLUS_HINT.padel}</div>
                 <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}>
                   <Plus size={14} /> Opret kamp
                 </button>
