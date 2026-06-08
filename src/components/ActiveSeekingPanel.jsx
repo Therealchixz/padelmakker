@@ -309,7 +309,7 @@ export function ActiveSeekingPanel({
           {active || expired ? (
             <>
               <p className="pm-active-seeking-filter">{desc.filterSummary}</p>
-              {active ? <SeekingTtlCountdown user={displayUser} channel={ch} expired={false} /> : null}
+              {active ? <SeekingTtlCountdown user={displayUser} channel={ch} /> : null}
             </>
           ) : (
             <p className="pm-active-seeking-hint">
