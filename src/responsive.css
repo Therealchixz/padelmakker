@@ -2767,8 +2767,8 @@ button,
 .pm-feed-filters-header {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
 .pm-feed-filters-scroll {
@@ -2776,6 +2776,7 @@ button,
   overflow-y: hidden;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
 }
 
 .pm-feed-filters-scroll::-webkit-scrollbar {
@@ -2784,21 +2785,39 @@ button,
 
 .pm-feed-filters-tabs {
   width: max-content;
-  max-width: 100%;
-  min-width: min(100%, max-content);
+  max-width: none;
+  display: flex;
+  gap: 6px;
 }
 
 .pm-feed-filters-tabs .pm-pill-tab--sm {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-width: max-content;
   padding: 0 10px;
-  min-height: 30px;
+  min-height: 28px;
   font-size: 11px;
+  font-weight: 600;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  color: var(--pm-text-mid);
+  border-radius: 100px;
+}
+
+.pm-feed-filters-tabs .pm-pill-tab--sm.pm-pill-tab-active {
+  background: var(--pm-accent);
+  border-color: var(--pm-accent);
+  color: var(--pm-on-accent);
 }
 
 @media (min-width: 640px) {
+  .pm-feed-filters-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
   .pm-feed-filters-tabs {
-    width: 100%;
+    width: auto;
   }
 }
 
@@ -4440,11 +4459,11 @@ button,
 }
 
 .pm-page-section-title {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   color: var(--pm-text-light);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
 }
 
 /* Aktiv søgning — filterlinje + nedtælling (Hjem / Find makker / Kampe) */

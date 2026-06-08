@@ -1558,7 +1558,7 @@ export function HomeTab({ user, setTab, showToast }) {
           <div className="pm-feed-filters-header">
             <PageSectionTitle>Seneste aktivitet</PageSectionTitle>
             <div className="pm-feed-filters-scroll" role="group" aria-label="Filtrer aktivitetstyper">
-              <div className="pm-pill-tabs pm-pill-tabs--wrap pm-feed-filters-tabs">
+              <div className="pm-pill-tabs pm-feed-filters-tabs">
                 <button
                   type="button"
                   onClick={enableAllFilters}
@@ -1580,6 +1580,7 @@ export function HomeTab({ user, setTab, showToast }) {
                       title={short !== f.label ? f.label : undefined}
                       aria-label={short !== f.label ? `${f.label}, filter` : undefined}
                     >
+                      <span style={{ marginRight: '4px' }} aria-hidden="true">{f.icon}</span>
                       {short}
                     </button>
                   );
