@@ -7300,14 +7300,21 @@ button,
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 4px);
   padding-bottom: 0;
 }
 
 .pm-kampe-v2-detail-sheet:not(.pm-americano-v2-detail-sheet) .pm-kampe-v2-sheet-drag-header {
   z-index: 2;
   background: var(--pm-surface);
+  margin-top: 0;
+  padding-top: 0;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--pm-border);
+}
+
+.pm-kampe-v2-detail-sheet:not(.pm-americano-v2-detail-sheet) .pm-kampe-v2-sheet-drag-header .pm-kampe-v2-sheet-handle {
+  margin: 0 auto 4px;
 }
 
 .pm-kampe-v2-detail-scroll {
@@ -7378,18 +7385,17 @@ button,
 }
 
 .pm-kampe-v2-detail-datetime--primary {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--pm-text-mid);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-text);
 }
 
-.pm-kampe-v2-detail-meta {
+.pm-kampe-v2-detail-badges-inline {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   width: 100%;
-  margin-top: 2px;
 }
 
 .pm-kampe-v2-detail-meta-badge {
