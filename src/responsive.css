@@ -1715,6 +1715,31 @@ button,
     max-width: calc(100% - 152px);
   }
 
+  /* Lås dashboard til viewport — forhindrer iOS-dokumentscroll der løfter fixed bundmenu */
+  body.pm-body--mobile-dash {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body.pm-body--mobile-dash #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body.pm-body--mobile-dash #pm-app-shell {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  body.pm-body--mobile-dash .pm-dash-main {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .pm-dash-main {
     padding-bottom: min(calc(79px + env(safe-area-inset-bottom)), 119px);
   }
@@ -1723,23 +1748,17 @@ button,
     padding-top: 0;
   }
 
-  /* Kun under aktiv besked-tråd: overlay hele skærmen uden at ændre body-højde (undgår hul under menu bagefter) */
+  /* Kun under aktiv besked-tråd: fyld skærmen, skjul logo-header, scroll kun i beskedlisten */
   body.pm-body--mobile-chat {
     overflow: hidden;
+    height: 100dvh;
   }
 
   #pm-app-shell.pm-app-shell--mobile-chat {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 40;
-    height: auto;
-    min-height: 0;
-    max-height: none;
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
     overflow: hidden;
-    background: var(--pm-surface);
   }
 
   #pm-app-shell.pm-app-shell--mobile-chat .pm-dash-header {
@@ -1762,10 +1781,6 @@ button,
 
   #pm-app-shell.pm-app-shell--mobile-chat .pm-chat-v2-thread-header {
     padding-top: max(8px, env(safe-area-inset-top));
-  }
-
-  #pm-app-shell.pm-app-shell--mobile-chat .pm-chat-v2-input-bar {
-    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
   }
 
   .pm-mobile-bottom-nav {

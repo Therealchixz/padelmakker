@@ -1344,6 +1344,12 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
+  useEffect(() => {
+    if (typeof document === 'undefined' || !isMobileView) return undefined;
+    document.body.classList.add('pm-body--mobile-dash');
+    return () => document.body.classList.remove('pm-body--mobile-dash');
+  }, [isMobileView]);
+
   // Mobil besked-tråd: forhindr dokument-scroll; nulstil viewport kun når tråden lukkes.
   useLayoutEffect(() => {
     if (typeof document === 'undefined') return undefined;
