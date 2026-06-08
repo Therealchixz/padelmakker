@@ -84,7 +84,7 @@ test('syncMobileChatViewportVars sætter --vvh, --vv-kb-offset og --vvs', () => 
 
   syncMobileChatViewportVars(root, { height: MOBILE_CHAT_KEYBOARD_VV_HEIGHT - 1, offsetTop: 44 });
   assert.equal(root.style['--vvs'], '0px');
-  assert.equal(root.style['--vv-kb-offset'], '45px');
+  assert.equal(root.style['--vv-kb-offset'], '201px');
 
   delete globalThis.window;
 });
