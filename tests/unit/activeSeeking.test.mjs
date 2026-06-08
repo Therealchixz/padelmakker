@@ -14,6 +14,8 @@ test('activeSeeking kombinerer feedVisible og notify i én switch', () => {
   assert.match(activeSeeking, /isSeekingUiActive/);
   assert.match(activeSeeking, /buildExpiredSeekingSyncPatch/);
   assert.match(activeSeeking, /formatSeekingTtlCountdown/);
+  assert.match(activeSeeking, /buildActiveSeekingFilterSummary/);
+  assert.match(activeSeeking, /seekingAvailabilitySummary/);
   assert.match(activeSeeking, /filterSummary/);
   assert.match(activeSeeking, /prefs\.feedVisible && prefs\.notify/);
   assert.match(activeSeeking, /feedVisible: true,\s*\n\s*notify: true/s);

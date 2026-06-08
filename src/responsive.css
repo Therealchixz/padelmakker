@@ -4541,68 +4541,34 @@ button,
   color: var(--pm-warm);
 }
 
-.pm-active-seeking-countdown-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  margin-top: 6px;
-}
-
 .pm-active-seeking-countdown {
   display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 4px 10px;
+  align-items: center;
+  gap: 3px;
+  margin-top: 5px;
+  padding: 2px 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--pm-accent) 10%, var(--pm-surface));
-  border: 1px solid color-mix(in srgb, var(--pm-accent) 22%, var(--pm-border));
+  background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface));
+  border: 1px solid color-mix(in srgb, var(--pm-accent) 18%, var(--pm-border));
   color: var(--pm-accent);
-  line-height: 1;
-}
-
-.pm-active-seeking-countdown--expired {
-  background: var(--pm-warm-bg);
-  border-color: color-mix(in srgb, var(--pm-warm) 30%, var(--pm-border));
-  color: var(--pm-warm);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
+  line-height: 1.2;
 }
 
 .pm-active-seeking-countdown__icon {
   flex-shrink: 0;
-  align-self: center;
-  opacity: 0.85;
+  opacity: 0.8;
 }
 
 .pm-active-seeking-countdown__value {
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 
 .pm-active-seeking-countdown__unit {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: lowercase;
-}
-
-.pm-active-seeking-countdown-track {
-  width: 100%;
-  max-width: 120px;
-  height: 3px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--pm-accent) 12%, var(--pm-border));
-  overflow: hidden;
-}
-
-.pm-active-seeking-countdown-track > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--pm-accent);
-  transition: width 0.4s ease;
 }
 
 .pm-active-seeking-home-toggle {

@@ -3,30 +3,41 @@
  * Bygger på eksisterende makker/match_search_prefs uden ny backend.
  */
 
-import { canonicalRegionForForm } from './profileUtils.js';
+import { canonicalRegionForForm, normalizeStringArrayField } from './profileUtils.js';
 import {
   normalizeMakkerSearchPrefs,
   buildProfilePatchFromMakkerSearchPrefs,
   resolveMakkerFilterRegion,
-  describeMakkerFilter,
+  resolveMakkerFilterLevel,
+  isMakkerFilterConfigured,
 } from './makkerSearchFilterCore.js';
 import {
   normalizeMatchSearchPrefs,
   buildProfilePatchFromMatchSearchPrefs,
   resolveFilterRegion,
-  describeMatchFilter,
+  resolveFilterLevel,
+  isMatchFilterConfigured,
+  DEFAULT_LEVEL_WINDOW,
 } from './matchSearchFilterCore.js';
 import {
   isProfileMakkerFeedVisible,
   isProfileMatchFeedVisible,
   channelFeedSince,
   isChannelFeedWithinTtl,
+  seekingAvailabilitySummary,
 } from './seekingFeedTtl.js';
 import {
   SEEK_KAMP_TTL_MS,
   SEEK_MAKKER_TTL_MS,
   seekingVisibleDurationLabel,
+  DAYS_OF_WEEK,
+  intentDisplayLabel,
 } from './platformConstants.js';
+import { formatPlaytomicLevel, levelRangeForWindow } from './padelLevelUtils.js';
+import {
+  levelRangeForMakkerPartnerPref,
+  partnerCourtSideLabel,
+} from './makkerFilterMatch.js';
 
 /** @typedef {'makker' | 'kamp'} SeekingChannel */
 
@@ -149,19 +160,58 @@ export function formatSeekingTtlCountdown(ms) {
   return { value: String(days), unit, ariaLabel: `${days} ${unit} tilbage` };
 }
 
+function formatSeekingDaysLine(prefs) {
+  const keys = normalizeStringArrayField(prefs.days);
+  if (!keys.length) return null;
+  return keys
+    .map((k) => DAYS_OF_WEEK.find((d) => d.key === k)?.label || k)
+    .join(', ');
+}
+
 /**
- * Andel af TTL tilbage (0–1) til progress-indikator.
+ * Filterlinje til aktiv søgning — kun søgekriterier (ikke eget niveau eller TTL).
  * @param {object} user
  * @param {SeekingChannel} channel
  */
-export function seekingTtlProgress(user, channel) {
+export function buildActiveSeekingFilterSummary(user, channel) {
   const prefs = normalizeChannelPrefs(user, channel);
-  if (!prefs.feedVisible) return 0;
-  const since = channelFeedSince(prefs, user?.seeking_match_at);
-  if (since == null) return 0;
-  const remaining = seekingTtlRemainingMs(user, channel);
-  if (remaining == null || remaining <= 0) return 0;
-  return Math.min(1, Math.max(0, remaining / channelTtlMs(channel)));
+
+  if (channel === 'kamp') {
+    if (!isMatchFilterConfigured(prefs, user)) return 'Vælg region';
+    const parts = [];
+    const region = resolveFilterRegion(prefs, user);
+    if (region) parts.push(region.replace(/^Region /, ''));
+    const lvl = resolveFilterLevel(prefs, user);
+    const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
+    const { min, max } = levelRangeForWindow(lvl, win);
+    parts.push(`Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`);
+    const days = formatSeekingDaysLine(prefs);
+    if (days) parts.push(days);
+    parts.push(seekingAvailabilitySummary(prefs));
+    return parts.join(' · ');
+  }
+
+  if (!isMakkerFilterConfigured(prefs, user)) return 'Vælg region';
+  const parts = [];
+  const region = resolveMakkerFilterRegion(prefs, user);
+  if (region) parts.push(region.replace(/^Region /, ''));
+  const lvl = resolveMakkerFilterLevel(prefs, user);
+  const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
+  const { min, max } = levelRangeForMakkerPartnerPref(lvl, win, prefs.partnerLevel, user);
+  parts.push(`Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`);
+  if (prefs.playStyle && prefs.playStyle !== 'all') parts.push(prefs.playStyle);
+  const intents = normalizeStringArrayField(prefs.intents)
+    .map((k) => intentDisplayLabel(k))
+    .filter(Boolean);
+  if (intents.length) {
+    parts.push(intents.slice(0, 2).join(', ') + (intents.length > 2 ? '…' : ''));
+  }
+  const court = partnerCourtSideLabel(prefs.partnerCourtSide);
+  if (court) parts.push(court);
+  const days = formatSeekingDaysLine(prefs);
+  if (days) parts.push(days);
+  parts.push(seekingAvailabilitySummary(prefs));
+  return parts.join(' · ');
 }
 
 /**
@@ -175,11 +225,12 @@ export function seekingTtlProgress(user, channel) {
  * }}
  */
 export function describeActiveSeeking(user, channel) {
-  const info = channel === 'kamp'
-    ? describeMatchFilter(normalizeChannelPrefs(user, channel), user)
-    : describeMakkerFilter(normalizeChannelPrefs(user, channel), user);
+  const prefs = normalizeChannelPrefs(user, channel);
+  const configured = channel === 'kamp'
+    ? isMatchFilterConfigured(prefs, user)
+    : isMakkerFilterConfigured(prefs, user);
 
-  if (!info.configured) {
+  if (!configured) {
     return {
       filterSummary: 'Vælg region',
       summary: 'Vælg region',
@@ -188,6 +239,7 @@ export function describeActiveSeeking(user, channel) {
     };
   }
 
+  const filterSummary = buildActiveSeekingFilterSummary(user, channel);
   let status = 'inactive';
   let ttlRemainingMs = null;
 
@@ -199,8 +251,8 @@ export function describeActiveSeeking(user, channel) {
   }
 
   return {
-    filterSummary: info.summary,
-    summary: info.summary,
+    filterSummary,
+    summary: filterSummary,
     status,
     ttlRemainingMs,
   };

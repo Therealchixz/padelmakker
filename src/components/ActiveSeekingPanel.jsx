@@ -17,7 +17,6 @@ import {
   seekingVisibleDurationLabel,
   seekingHomeStatusLabel,
   formatSeekingTtlCountdown,
-  seekingTtlProgress,
   seekingTtlRemainingMs,
 } from '../lib/activeSeeking';
 import {
@@ -86,20 +85,14 @@ function StatusDot({ active, expired }) {
 function SeekingTtlCountdown({ user, channel }) {
   const rem = seekingTtlRemainingMs(user, channel);
   const countdown = formatSeekingTtlCountdown(rem);
-  const progress = seekingTtlProgress(user, channel);
 
   if (!countdown.value) return null;
 
   return (
-    <div className="pm-active-seeking-countdown-wrap">
-      <div className="pm-active-seeking-countdown" aria-label={countdown.ariaLabel}>
-        <Clock size={12} className="pm-active-seeking-countdown__icon" aria-hidden />
-        <span className="pm-active-seeking-countdown__value">{countdown.value}</span>
-        <span className="pm-active-seeking-countdown__unit">{countdown.unit}</span>
-      </div>
-      <div className="pm-active-seeking-countdown-track" aria-hidden>
-        <span style={{ width: `${Math.round(progress * 100)}%` }} />
-      </div>
+    <div className="pm-active-seeking-countdown" aria-label={countdown.ariaLabel}>
+      <Clock size={11} className="pm-active-seeking-countdown__icon" aria-hidden />
+      <span className="pm-active-seeking-countdown__value">{countdown.value}</span>
+      <span className="pm-active-seeking-countdown__unit">{countdown.unit}</span>
     </div>
   );
 }
