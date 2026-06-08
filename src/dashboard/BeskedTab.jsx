@@ -32,6 +32,7 @@ import { ChatInbox } from '../components/chat/ChatInbox';
 import { ChatThreadHeader } from '../components/chat/ChatThreadHeader';
 import { ChatMessageList } from '../components/chat/ChatMessageList';
 import { ChatInputBar } from '../components/chat/ChatInputBar';
+import { settleMobileViewportAfterChat } from '../lib/mobileChatViewport';
 
 const CHAT_WINDOW_SIZE = 80;
 const CONVO_CACHE_TTL_MS = 30_000;
@@ -756,6 +757,8 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   const closeThread = () => {
     if (isMobileView) {
       onMobileConversationStateChange?.(false);
+      settleMobileViewportAfterChat();
+      window.setTimeout(() => settleMobileViewportAfterChat(), 320);
     }
     setSelectedId(null);
     setSelectedTeamId(null);

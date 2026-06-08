@@ -59,9 +59,14 @@ export function captureMobileChatViewportSnapshot(
  */
 export function settleMobileViewportAfterChat() {
   if (typeof window === 'undefined') return;
-  window.scrollTo(0, 0);
-  requestAnimationFrame(() => {
+  const main = document.querySelector('#pm-app-shell .pm-dash-main');
+  const reset = () => {
     window.scrollTo(0, 0);
-    requestAnimationFrame(() => window.scrollTo(0, 0));
+    if (main) main.scrollTop = 0;
+  };
+  reset();
+  requestAnimationFrame(() => {
+    reset();
+    requestAnimationFrame(reset);
   });
 }

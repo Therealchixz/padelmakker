@@ -1604,12 +1604,8 @@ button,
   box-sizing: border-box;
 }
 
-/* Mobil besked-tråd: gør hovedområdet til en flex-kolonne uden polstring
-   eller maks-bredde, så chatten fylder hele området under app-headeren.
-   Bruger sammensat selector (.pm-dash-main.pm-dash-main--chat) så den slår
-   den senere mobil-media-query, der ellers lægger ~119px padding-bottom på
-   (reserveret til den skjulte bundnavigation) — det gav et tomt felt under
-   inputbaren. */
+/* Mobil besked-tråd: gør hovedområdet til en flex-kolonne uden polstring,
+   så chatten fylder pladsen mellem header og bund (nav skjult under samtale). */
 .pm-dash-main.pm-dash-main--chat {
   display: flex;
   flex-direction: column;
@@ -1715,8 +1711,20 @@ button,
     max-width: calc(100% - 152px);
   }
 
+  #pm-app-shell {
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
   .pm-dash-main {
-    padding-bottom: min(calc(79px + env(safe-area-inset-bottom)), 119px);
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: clamp(16px, 4vw, 24px);
   }
 
   .pm-dash-main--home {
@@ -1727,10 +1735,9 @@ button,
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 2px;
-    position: fixed;
-    left: max(0px, env(safe-area-inset-left));
-    right: max(0px, env(safe-area-inset-right));
-    bottom: 0;
+    position: relative;
+    flex-shrink: 0;
+    width: 100%;
     z-index: 46;
     background: color-mix(in srgb, var(--pm-surface) 92%, transparent);
     backdrop-filter: blur(14px) saturate(1.05);

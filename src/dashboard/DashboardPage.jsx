@@ -39,11 +39,6 @@ import {
   scrollDashboardToTop,
   shouldScrollDashboardToTopOnTabReselect,
 } from '../lib/dashboardScroll';
-import {
-  captureMobileChatViewportSnapshot,
-  restoreMobileChatViewportSnapshot,
-  settleMobileViewportAfterChat,
-} from '../lib/mobileChatViewport';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -1347,108 +1342,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
-  // Tastatur + viewport på mobil-chat — kanonisk iOS-løsning.
-  //
-  // Nøgle-indsigt: iOS resizer IKKE layout-viewporten når tastaturet vises
-  // (kun den visuelle viewport krymper). Derfor:
-  //  1) Vi LÅSER body med position:fixed, så iOS ikke kan scrolle dokumentet
-  //     (uden låsen scroller iOS hele siden for at vise input → header ryger
-  //     ud foroven og input havner øverst med tomt rum nedenunder).
-  //  2) App-skallen er position:fixed og limes til den VISUELLE viewport via
-  //     top = visualViewport.offsetTop og height = visualViewport.height,
-  //     opdateret på resize+scroll. Så fylder skallen altid præcis det
-  //     synlige område: header øverst, input lige over tastaturet.
-  //  3) --vvs nulstiller input-barens safe-area-bund mens tastaturet er åbent.
-  useLayoutEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    const vv = window.visualViewport;
-    const body = document.body;
-    const root = document.documentElement;
-
-    const releaseLock = (snapshot) => {
-      restoreMobileChatViewportSnapshot(snapshot, root, body);
-      settleMobileViewportAfterChat();
-    };
-
-    if (!hideMobileBottomNav || !vv) {
-      return undefined;
-    }
-
-    const prev = captureMobileChatViewportSnapshot(root, body);
-    body.style.position = "fixed";
-    body.style.top = "0";
-    body.style.left = "0";
-    body.style.right = "0";
-    body.style.width = "100%";
-    body.style.overflow = "hidden";
-    // Hvidt "lærred": hele sidens baggrund (html+body) gøres hvid mens
-    // chatten er åben, så der ikke ses noget gråt felt under skallen i
-    // home-indicator-zonen. Besked-listen har sin egen grå baggrund.
-    body.style.background = "var(--pm-surface)";
-    root.style.background = "var(--pm-surface)";
-
-    // Fast basishøjde (fuld skærm) sat ved åbning, mens tastaturet er lukket.
-    // Robust mod at iOS i standalone også ændrer window.innerHeight når
-    // tastaturet vises — vi sammenligner altid mod denne basis.
-    const baseHeight = Math.max(vv.height, window.innerHeight);
-
-    const apply = () => {
-      const keyboardOpen = vv.height < baseHeight - 100;
-      root.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
-      root.style.setProperty("--vv-top", `${Math.round(vv.offsetTop)}px`);
-      root.style.setProperty(
-        "--vvs",
-        keyboardOpen ? "0px" : "env(safe-area-inset-bottom)"
-      );
-    };
-    apply();
-    vv.addEventListener("resize", apply);
-    vv.addEventListener("scroll", apply);
-
-    const onKeyboardClosed = () => {
-      if (vv.height >= baseHeight - 100) {
-        settleMobileViewportAfterChat();
-      }
-    };
-    vv.addEventListener("resize", onKeyboardClosed);
-
-    return () => {
-      vv.removeEventListener("resize", apply);
-      vv.removeEventListener("scroll", apply);
-      vv.removeEventListener("resize", onKeyboardClosed);
-      releaseLock(prev);
-      // iOS kan først stabilisere layout-viewport efter tastatur-animation.
-      window.setTimeout(() => settleMobileViewportAfterChat(), 320);
-    };
-  }, [hideMobileBottomNav]);
-
   return (
     <div
       id="pm-app-shell"
-      style={
-        hideMobileBottomNav
-          ? {
-              // Limet til den visuelle viewport (top=offsetTop, height=vvh).
-              // Højden lægger safe-area-bunden (--vvs) oveni, fordi iOS
-              // rapporterer vvH UDEN home-indicator-zonen i standalone — uden
-              // dette efterlades en grå stribe forneden. --vvs er 0 når
-              // tastaturet er åbent, så vi ikke overdækker tastaturet.
-              // Bruger top (ikke transform) for ikke at lave en containing
-              // block der ville flytte fixed-positionerede modaler.
-              position: "fixed",
-              top: "var(--vv-top, 0px)",
-              left: 0,
-              right: 0,
-              height: "calc(var(--vvh, 100dvh) + var(--vvs, 0px))",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              // Hvid bund: området under input-baren (home-indicator-zonen)
-              // skal være hvidt i ét med input-baren, ikke gråt.
-              background: "var(--pm-surface)",
-            }
-          : { minHeight: "100dvh", display: "flex", flexDirection: "column" }
-      }
+      style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}
     >
       {/* Header */}
       <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
