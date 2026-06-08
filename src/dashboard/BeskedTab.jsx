@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { theme, btn } from '../lib/platformTheme';
@@ -754,6 +754,9 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   };
 
   const closeThread = () => {
+    if (isMobileView) {
+      onMobileConversationStateChange?.(false);
+    }
     setSelectedId(null);
     setSelectedTeamId(null);
     setTeamMeta(null);
@@ -762,7 +765,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
 
   const mobileChatActive = Boolean((selectedId || selectedTeamId) && isMobileView);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!onMobileConversationStateChange) return undefined;
     onMobileConversationStateChange(mobileChatActive);
     return () => onMobileConversationStateChange(false);

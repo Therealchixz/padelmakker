@@ -39,6 +39,11 @@ import {
   scrollDashboardToTop,
   shouldScrollDashboardToTopOnTabReselect,
 } from '../lib/dashboardScroll';
+import {
+  captureMobileChatViewportSnapshot,
+  restoreMobileChatViewportSnapshot,
+  settleMobileViewportAfterChat,
+} from '../lib/mobileChatViewport';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -1354,27 +1359,22 @@ export function DashboardPage({ user, onLogout, showToast }) {
   //     opdateret på resize+scroll. Så fylder skallen altid præcis det
   //     synlige område: header øverst, input lige over tastaturet.
   //  3) --vvs nulstiller input-barens safe-area-bund mens tastaturet er åbent.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === "undefined") return undefined;
     const vv = window.visualViewport;
     const body = document.body;
     const root = document.documentElement;
+
+    const releaseLock = (snapshot) => {
+      restoreMobileChatViewportSnapshot(snapshot, root, body);
+      settleMobileViewportAfterChat();
+    };
+
     if (!hideMobileBottomNav || !vv) {
-      root.style.removeProperty("--vvh");
-      root.style.removeProperty("--vv-top");
-      root.style.removeProperty("--vvs");
       return undefined;
     }
-    const prev = {
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width,
-      overflow: body.style.overflow,
-      bodyBg: body.style.background,
-      htmlBg: root.style.background,
-    };
+
+    const prev = captureMobileChatViewportSnapshot(root, body);
     body.style.position = "fixed";
     body.style.top = "0";
     body.style.left = "0";
@@ -1404,20 +1404,21 @@ export function DashboardPage({ user, onLogout, showToast }) {
     apply();
     vv.addEventListener("resize", apply);
     vv.addEventListener("scroll", apply);
+
+    const onKeyboardClosed = () => {
+      if (vv.height >= baseHeight - 100) {
+        settleMobileViewportAfterChat();
+      }
+    };
+    vv.addEventListener("resize", onKeyboardClosed);
+
     return () => {
       vv.removeEventListener("resize", apply);
       vv.removeEventListener("scroll", apply);
-      body.style.position = prev.position;
-      body.style.top = prev.top;
-      body.style.left = prev.left;
-      body.style.right = prev.right;
-      body.style.width = prev.width;
-      body.style.overflow = prev.overflow;
-      body.style.background = prev.bodyBg;
-      root.style.background = prev.htmlBg;
-      root.style.removeProperty("--vvh");
-      root.style.removeProperty("--vv-top");
-      root.style.removeProperty("--vvs");
+      vv.removeEventListener("resize", onKeyboardClosed);
+      releaseLock(prev);
+      // iOS kan først stabilisere layout-viewport efter tastatur-animation.
+      window.setTimeout(() => settleMobileViewportAfterChat(), 320);
     };
   }, [hideMobileBottomNav]);
 
