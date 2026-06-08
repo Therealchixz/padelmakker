@@ -15,6 +15,7 @@ import {
   copenhagenAddDaysYmd,
 } from '../lib/banerVenues';
 import { filterPastSlotsIfToday } from '../lib/banerPastSlots';
+import { BanerVenueLocation } from '../components/BanerVenueLocation';
 import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown, Search, X } from 'lucide-react';
 
 /**
@@ -502,6 +503,12 @@ export function BanerTab() {
               </summary>
 
               <div className="pm-baner-venue-body">
+                <BanerVenueLocation
+                  title={v.title}
+                  address={v.address}
+                  latitude={v.latitude}
+                  longitude={v.longitude}
+                />
                 {v.kind === 'link' ? (
                   <>
                     <p className="pm-baner-section-title">

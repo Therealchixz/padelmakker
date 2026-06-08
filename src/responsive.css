@@ -3797,6 +3797,36 @@ button,
   border-top: 1px solid var(--pm-border);
 }
 
+.pm-baner-venue-location {
+  padding-top: 14px;
+  margin-bottom: 4px;
+}
+
+.pm-baner-venue-map {
+  width: 100%;
+  height: 168px;
+  border-radius: var(--pm-radius-md);
+  border: 1px solid var(--pm-border);
+  overflow: hidden;
+  margin-bottom: 10px;
+  background: var(--pm-surface-alt);
+  z-index: 0;
+}
+
+.pm-baner-venue-location__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pm-baner-venue-location__link {
+  flex: 1 1 auto;
+  min-width: min(100%, 140px);
+  justify-content: center;
+  text-decoration: none;
+}
+
 .pm-baner-section-title {
   font-size: 14px;
   font-weight: 700;

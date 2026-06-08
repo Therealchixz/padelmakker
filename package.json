@@ -25,11 +25,13 @@
     "baner:discover-matchi-dk": "node scripts/discover-matchi-denmark.mjs",
     "baner:links": "node scripts/build-baner-link-catalog.mjs",
     "audit:venue-indoor": "node scripts/audit-venue-indoor.mjs",
-    "baner:audit-booking": "node scripts/audit-all-baner-booking.mjs"
+    "baner:audit-booking": "node scripts/audit-all-baner-booking.mjs",
+    "baner:geocode": "node scripts/geocode-baner-venues.mjs"
   },
   "dependencies": {
     "@sentry/react": "^10.49.0",
     "@supabase/supabase-js": "^2.49.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.474.0",
     "luxon": "^3.7.2",
     "react": "^18.3.1",
