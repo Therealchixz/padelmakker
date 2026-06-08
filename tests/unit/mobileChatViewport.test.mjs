@@ -1,9 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  bindMobileChatViewportSync,
   captureMobileChatViewportSnapshot,
   clearMobileChatViewportCssVars,
+  MOBILE_CHAT_KEYBOARD_VV_HEIGHT,
   restoreMobileChatViewportSnapshot,
+  syncMobileChatViewportVars,
 } from '../../src/lib/mobileChatViewport.js';
 
 test('captureMobileChatViewportSnapshot and restore round-trip inline styles', () => {
@@ -57,4 +60,64 @@ test('clearMobileChatViewportCssVars removes chat viewport variables', () => {
   assert.equal(root.style['--vvh'], undefined);
   assert.equal(root.style['--vv-top'], undefined);
   assert.equal(root.style['--vvs'], undefined);
+});
+
+test('syncMobileChatViewportVars sætter --vvh og --vvs efter ios-chat-mønster', () => {
+  const root = {
+    style: {
+      setProperty(name, value) {
+        this[name] = value;
+      },
+    },
+  };
+  const vv = { height: 800, offsetTop: 12 };
+
+  syncMobileChatViewportVars(root, vv);
+
+  assert.equal(root.style['--vvh'], '800px');
+  assert.equal(root.style['--vv-top'], '12px');
+  assert.equal(root.style['--vvs'], 'env(safe-area-inset-bottom)');
+
+  syncMobileChatViewportVars(root, { height: MOBILE_CHAT_KEYBOARD_VV_HEIGHT - 1, offsetTop: 44 });
+  assert.equal(root.style['--vvs'], '0px');
+});
+
+test('bindMobileChatViewportSync opdaterer variabler og kan frigives', () => {
+  const listeners = new Map();
+  const root = {
+    style: {
+      setProperty(name, value) {
+        this[name] = value;
+      },
+      removeProperty(name) {
+        delete this[name];
+      },
+    },
+  };
+  const vv = {
+    height: 700,
+    offsetTop: 0,
+    addEventListener(type, fn) {
+      listeners.set(type, fn);
+    },
+    removeEventListener(type) {
+      listeners.delete(type);
+    },
+  };
+
+  globalThis.window = {
+    visualViewport: vv,
+  };
+
+  const unbind = bindMobileChatViewportSync(root);
+  assert.equal(root.style['--vvh'], '700px');
+
+  vv.height = 500;
+  listeners.get('resize')?.();
+  assert.equal(root.style['--vvs'], '0px');
+
+  unbind();
+  assert.equal(root.style['--vvh'], undefined);
+
+  delete globalThis.window;
 });

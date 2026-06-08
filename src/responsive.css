@@ -1723,16 +1723,15 @@ button,
     padding-top: 0;
   }
 
-  /* Kun under aktiv besked-tråd: fyld skærmen, skjul logo-header, scroll kun i beskedlisten */
+  /* Kun under aktiv besked-tråd: ios-chat-mønster — --vvh fra visualViewport (main.js) */
   body.pm-body--mobile-chat {
     overflow: hidden;
-    height: 100dvh;
   }
 
   #pm-app-shell.pm-app-shell--mobile-chat {
-    height: 100dvh;
-    min-height: 100dvh;
-    max-height: 100dvh;
+    height: var(--vvh, 100dvh);
+    min-height: var(--vvh, 100dvh);
+    max-height: var(--vvh, 100dvh);
     overflow: hidden;
   }
 
