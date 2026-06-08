@@ -24,6 +24,8 @@ import { createNotification } from '../lib/notifications';
 import { addMatchToCalendar } from '../lib/calendarExport';
 import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
+import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
+import { ActiveSeekingOnboardingPrompt } from '../components/ActiveSeekingOnboardingPrompt';
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterActive,
@@ -75,7 +77,7 @@ function openMatchLocationChipLabel(court, creatorArea) {
   return regionDisplayLabel(area) || area;
 }
 
-export function HomeTab({ user, setTab }) {
+export function HomeTab({ user, setTab, showToast }) {
   const { user: authUser } = useAuth();
   const [viewTournament, setViewTournament] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
@@ -1400,6 +1402,13 @@ export function HomeTab({ user, setTab }) {
               </div>
             </div>
           </section>
+
+          {showToast ? (
+            <>
+              <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} />
+              <ActiveSeekingPanel variant="home" user={user} showToast={showToast} />
+            </>
+          ) : null}
         </>
       )}
 

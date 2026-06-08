@@ -1697,7 +1697,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             </div>
           }
         >
-          {tab === "hjem" && <HomeTabLazy user={user} setTab={setTab} />}
+          {tab === "hjem" && <HomeTabLazy user={user} setTab={setTab} showToast={showToast} />}
             {tab === "makkere"  && <MakkereTabLazy user={user} showToast={showToast} />}
             {tab === "baner"    && <BanerTabLazy />}
             {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive />}

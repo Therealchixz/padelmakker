@@ -31,10 +31,10 @@ test('region påkrævet og by valgfri i onboarding og profil', () => {
   assert.match(profilTab, /isValidProfileRegion\(region\)/);
 });
 
-test('søge-filter genveje i Find makker og Kampe', () => {
-  assert.match(makkereTab, /SeekingFilterShortcutCard/);
+test('aktiv søgning på Find makker og Kampe', () => {
+  assert.match(makkereTab, /ActiveSeekingPanel/);
   assert.match(makkereTab, /channel="makker"/);
-  assert.match(kampeTab, /SeekingFilterShortcutCard/);
+  assert.match(kampeTab, /ActiveSeekingPanel/);
   assert.match(kampeTab, /channel="kamp"/);
   assert.match(dash, /PRIMARY_TAB_IDS = \["hjem", "makkere", "baner", "kampe", "ranking", "beskeder"\]/);
   assert.doesNotMatch(dash, /id: "liga",\s*label: "Liga"/);

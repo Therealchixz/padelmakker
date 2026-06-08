@@ -20,7 +20,7 @@ test('match filter UI uses niveau not ELO window', () => {
   assert.match(page, /tolLabel/);
   assert.match(page, /Dit niveau/);
   assert.doesNotMatch(page, /ELO-vindue/);
-  assert.match(page, /ELO i appen er kun til rangliste/);
+  assert.match(page, /Dette styrer hvornår du får besked/);
 });
 
 test('match filter core stores myLevel and levelWindow', () => {

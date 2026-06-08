@@ -1,44 +1,14 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../lib/AuthContext';
-import { seekingVisibleDurationLabel } from '../../lib/platformConstants';
-import {
-  normalizeMatchSearchPrefs,
-  buildProfilePatchFromMatchSearchPrefs,
-} from '../../lib/matchSearchFilterUtils';
-import { notifyMakkerWatchersForProfile } from '../../lib/makkerWatchUtils';
-import { isSeekingActiveProfile } from '../../lib/makkerSearchFilterCore';
-import { isProfileMatchFeedVisible } from '../../lib/seekingFeedTtl';
-import { resolveFilterRegion } from '../../lib/matchSearchFilterCore';
+import { useMemo } from 'react';
 import {
   KAMPE_LIST_REGION_OPTIONS,
   KAMPE_LIST_ELO_BANDS,
   normalizeKampeListFilter,
 } from '../../lib/kampeListFilterCore';
-import { FILTER_RETURN_KAMPE } from '../../lib/filterReturnNavigation';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
-
-function ToggleSwitch({ checked, onChange, disabled, ariaLabel }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={ariaLabel}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={`pm-kampe-v2-toggle${checked ? ' pm-kampe-v2-toggle--on' : ''}`}
-    >
-      <span className="pm-kampe-v2-toggle-knob" />
-    </button>
-  );
-}
 
 export function KampeFilterSheet({
   open,
   onClose,
-  user,
-  showToast,
   scope,
   onScopeChange,
   listFilter,
@@ -46,26 +16,15 @@ export function KampeFilterSheet({
   myElo = null,
   resultCount,
   format = 'padel',
-  showSeekingToggle = true,
   showRegionFilter = true,
   showEloFilter = true,
 }) {
-  const navigate = useNavigate();
-  const { updateProfile } = useAuth();
-  const [toggling, setToggling] = useState(false);
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
     enabled: open,
   });
 
-  const prefs = useMemo(
-    () => normalizeMatchSearchPrefs(user?.match_search_prefs, user),
-    [user],
-  );
   const filter = useMemo(() => normalizeKampeListFilter(listFilter), [listFilter]);
-  const feedVisibleNow = isProfileMatchFeedVisible(user);
-  const regionOk = Boolean(resolveFilterRegion(prefs, user) || prefs.region);
-  const durationLabel = seekingVisibleDurationLabel('kamp');
 
   const resultLabel =
     format === 'padel'
@@ -73,36 +32,6 @@ export function KampeFilterSheet({
       : format === 'americano'
         ? `${resultCount ?? 0} turneringer matcher`
         : `${resultCount ?? 0} ligaer matcher`;
-
-  const openAdvancedFilterPage = () => {
-    navigate('/dashboard/kamp-filter', { state: { filterReturnTo: FILTER_RETURN_KAMPE } });
-    onClose?.();
-  };
-
-  const handleToggleFeed = async (nextVisible) => {
-    if (toggling) return;
-    if (nextVisible && !regionOk) {
-      showToast('Vælg region på din profil under avanceret filter først.');
-      openAdvancedFilterPage();
-      return;
-    }
-    setToggling(true);
-    try {
-      const wasSeeking = isSeekingActiveProfile(user) || user?.seeking_match === true;
-      const nextPrefs = { ...prefs, feedVisible: nextVisible };
-      const patch = buildProfilePatchFromMatchSearchPrefs(nextPrefs, user);
-      await updateProfile(patch);
-      if (patch.seeking_match && !wasSeeking && user?.id) {
-        void notifyMakkerWatchersForProfile(user.id);
-      }
-      showToast(nextVisible ? 'Du vises nu som søger kamp' : 'Synlighed slået fra');
-    } catch (err) {
-      console.warn('toggle seeking feed:', err?.message || err);
-      showToast('Kunne ikke opdatere. Prøv igen.');
-    } finally {
-      setToggling(false);
-    }
-  };
 
   const setRegion = (regionId) => {
     onListFilterChange?.({ ...filter, regionId });
@@ -227,37 +156,6 @@ export function KampeFilterSheet({
             <p className="pm-kampe-v2-sheet-copy">
               Viser kampe hvor kampens ELO-interval overlapper dit valgte spænd.
             </p>
-          </div>
-        ) : null}
-
-        {showSeekingToggle ? (
-          <div className="pm-kampe-v2-sheet-toggle-row">
-            <div>
-              <div className="pm-kampe-v2-sheet-toggle-title">Søger kamp</div>
-              <div className="pm-kampe-v2-sheet-toggle-copy">
-                {feedVisibleNow
-                  ? `Synlig i ${durationLabel}.`
-                  : `Vis andre at du er klar til at spille (${durationLabel}).`}
-              </div>
-            </div>
-            <ToggleSwitch
-              checked={prefs.feedVisible}
-              onChange={handleToggleFeed}
-              disabled={toggling}
-              ariaLabel={prefs.feedVisible ? 'Skjul søger-synlighed' : 'Vis at jeg søger kamp'}
-            />
-          </div>
-        ) : null}
-
-        {showSeekingToggle ? (
-          <div className="pm-kampe-v2-sheet-section" style={{ marginTop: 4 }}>
-            <button
-              type="button"
-              className="pm-kampe-v2-sheet-advanced-link"
-              onClick={openAdvancedFilterPage}
-            >
-              Notifikationer og avanceret filter ›
-            </button>
           </div>
         ) : null}
       </div>

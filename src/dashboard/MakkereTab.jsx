@@ -27,7 +27,7 @@ import {
   isMakkerFilterActive,
   countSeekersMatchingMakkerFilter,
 } from '../lib/makkerSearchFilterUtils';
-import { SeekingFilterShortcutCard } from '../components/SeekingFilterShortcutCard';
+import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
 import { PillTabs } from '../components/PillTabs';
 import { FILTER_RETURN_MAKKERE } from '../lib/filterReturnNavigation';
 
@@ -565,11 +565,12 @@ export function MakkereTab({ user, showToast }) {
     <div>
       <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Find makker</h2>
 
-      <SeekingFilterShortcutCard
+      <ActiveSeekingPanel
+        variant="compact"
         channel="makker"
         user={user}
         showToast={showToast}
-        returnTo={FILTER_RETURN_MAKKERE}
+        filterReturnTo={FILTER_RETURN_MAKKERE}
       />
 
       {loadError ? (
