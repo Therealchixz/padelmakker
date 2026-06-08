@@ -1271,13 +1271,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     setBusyId(matchId);
     try {
       const mpBefore = matchPlayers[matchId] || [];
-      await supabase.from("match_players").delete().eq("match_id", matchId);
-      // Admin kan slette ALLE kampe, ellers kun egne
-      let q = supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId);
-      if (!isAdmin) q = q.eq("creator_id", user.id);
-      
-      const { error } = await q;
-      if (error) throw error;
+      if (isAdmin) {
+        const { error } = await supabase.from("matches").delete().eq("id", matchId);
+        if (error) throw error;
+      } else {
+        await supabase.from("match_players").delete().eq("match_id", matchId);
+        const { error } = await supabase
+          .from("matches")
+          .update({ status: "cancelled", current_players: 0 })
+          .eq("id", matchId)
+          .eq("creator_id", user.id);
+        if (error) throw error;
+      }
 
       const cancelNotifyIds = mpBefore.filter((p) => p.user_id !== user.id).map((p) => p.user_id);
       void createNotificationsForUsers(
@@ -1287,6 +1292,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         isAdmin ? "En admin har aflyst kampen." : `${myDisplayName} har aflyst kampen.`,
         matchId,
       );
+      setDetailMatchId((current) => (String(current) === String(matchId) ? null : current));
       showToast("Kamp slettet.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
@@ -3418,9 +3424,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         : "Opret liga";
   const detailMatch = detailMatchId
     ? ([...openMatches, ...activeMatches, ...completedMatches].find((m) => String(m.id) === String(detailMatchId))
-        // Fald tilbage til hele matches-listen, så detaljer kan åbnes via deeplink (?focus=)
-        // selv når et aktivt filter skjuler kampen fra den synlige liste.
-        || matches.find((m) => String(m.id) === String(detailMatchId)))
+        // Fald tilbage til matches-listen for deeplink (?focus=), men aldrig aflyste kampe.
+        || matches.find((m) => {
+          if (String(m.id) !== String(detailMatchId)) return false;
+          return getStatus(m) !== "cancelled";
+        }))
     : null;
   const detailBundle = detailMatch ? getMatchCardBundle(detailMatch) : null;
 
