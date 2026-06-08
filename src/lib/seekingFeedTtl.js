@@ -50,9 +50,9 @@ export function channelFeedSince(prefs, profileFallbackAt) {
   return parseSinceMs(profileFallbackAt);
 }
 
-export function isChannelFeedWithinTtl(sinceMs, ttlMs) {
+export function isChannelFeedWithinTtl(sinceMs, ttlMs, nowMs = Date.now()) {
   if (sinceMs == null) return false;
-  return Date.now() - sinceMs < ttlMs;
+  return nowMs - sinceMs < ttlMs;
 }
 
 function isMatchFeedActiveFromPrefs(prefs, profile = {}) {

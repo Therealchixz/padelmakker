@@ -11,6 +11,8 @@ const onboarding = readFileSync(join(root, 'src/components/ActiveSeekingOnboardi
 
 test('activeSeeking kombinerer feedVisible og notify i én switch', () => {
   assert.match(activeSeeking, /isCombinedSeekingEnabled/);
+  assert.match(activeSeeking, /isSeekingUiActive/);
+  assert.match(activeSeeking, /buildExpiredSeekingSyncPatch/);
   assert.match(activeSeeking, /prefs\.feedVisible && prefs\.notify/);
   assert.match(activeSeeking, /feedVisible: true,\s*\n\s*notify: true/s);
   assert.match(activeSeeking, /feedVisible: false,\s*\n\s*notify: false/s);
@@ -18,13 +20,16 @@ test('activeSeeking kombinerer feedVisible og notify i én switch', () => {
   assert.match(activeSeeking, /canonicalRegionForForm\(user\?\.area\)/);
 });
 
-test('ActiveSeekingPanel har home og compact varianter med optimistisk state', () => {
-  assert.match(panel, /variant === 'home'/);
+test('ActiveSeekingPanel har home dropdown og compact med optimistisk state', () => {
   assert.match(panel, /variant === 'compact'/);
+  assert.match(panel, /homeExpanded/);
+  assert.match(panel, /homeExpanded/);
+  assert.match(panel, /isSeekingUiActive/);
   assert.match(panel, /localUser/);
   assert.match(panel, /updateProfile/);
   assert.match(panel, /describeActiveSeeking/);
   assert.match(panel, /notifyMakkerWatchersForProfile/);
+  assert.doesNotMatch(panel, /Juster makker-kriterier/);
 });
 
 test('onboarding-prompt tilbyder begge kanaler med profil-defaults', () => {

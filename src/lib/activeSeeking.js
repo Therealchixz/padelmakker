@@ -54,13 +54,34 @@ export function hasSeekingRegion(user, channel) {
 }
 
 /**
- * Kombineret switch ON = bruger vil søge aktivt (begge kanaler i prefs).
+ * Prefs siger ON (feedVisible + notify) — uafhængigt af TTL.
  * @param {object} user
  * @param {SeekingChannel} channel
  */
 export function isCombinedSeekingEnabled(user, channel) {
   const prefs = normalizeChannelPrefs(user, channel);
   return Boolean(prefs.feedVisible && prefs.notify);
+}
+
+/**
+ * Faktisk aktiv i UI: prefs ON og feed inden for TTL.
+ * @param {object} user
+ * @param {SeekingChannel} channel
+ */
+export function isSeekingUiActive(user, channel) {
+  if (!isCombinedSeekingEnabled(user, channel)) return false;
+  return isChannelFeedLive(user, channel);
+}
+
+/**
+ * Prefs siger synlig, men TTL er udløbet.
+ * @param {object} user
+ * @param {SeekingChannel} channel
+ */
+export function isSeekingTtlExpired(user, channel) {
+  const prefs = normalizeChannelPrefs(user, channel);
+  if (!prefs.feedVisible) return false;
+  return !isChannelFeedLive(user, channel);
 }
 
 /**
@@ -123,14 +144,12 @@ export function describeActiveSeeking(user, channel) {
   }
 
   const parts = [info.summary];
-  if (isCombinedSeekingEnabled(user, channel)) {
-    if (isChannelFeedLive(user, channel)) {
-      const rem = seekingTtlRemainingMs(user, channel);
-      parts.push(formatSeekingTtlRemaining(rem));
-    } else if (normalizeChannelPrefs(user, channel).feedVisible) {
-      parts.push('genaktiver for at forny synlighed');
-    }
+  if (isSeekingUiActive(user, channel)) {
+    const rem = seekingTtlRemainingMs(user, channel);
+    parts.push(formatSeekingTtlRemaining(rem));
     parts.push('får besked ved match');
+  } else if (isSeekingTtlExpired(user, channel)) {
+    parts.push('udløbet — slå til for at forny');
   }
 
   return {
@@ -155,11 +174,13 @@ export function buildEnableSeekingPrefs(user, channel, regionOverride) {
     ? resolveFilterRegion(prefs, user)
     : resolveMakkerFilterRegion(prefs, user);
 
+  const renewing = !isChannelFeedLive(user, channel);
   return {
     ...prefs,
     feedVisible: true,
     notify: true,
     region: resolved || fallbackRegion || prefs.region || '',
+    ...(renewing ? { feedVisibleSince: new Date().toISOString() } : {}),
   };
 }
 
@@ -203,6 +224,47 @@ export function seekingChannelLabel(channel) {
  */
 export function seekingFilterPath(channel) {
   return channel === 'kamp' ? '/dashboard/kamp-filter' : '/dashboard/makker-filter';
+}
+
+/**
+ * Slår kanaler fra i DB når TTL er udløbet men prefs stadig siger ON.
+ * @param {object} user
+ * @returns {object | null} profil-patch eller null
+ */
+export function buildExpiredSeekingSyncPatch(user) {
+  if (!user) return null;
+  /** @type {object | null} */
+  let patch = null;
+  let merged = user;
+
+  for (const ch of /** @type {const} */ (['makker', 'kamp'])) {
+    if (!isSeekingTtlExpired(merged, ch)) continue;
+    const chPatch = buildSeekingProfilePatch(merged, ch, false);
+    merged = {
+      ...merged,
+      ...chPatch,
+      makker_search_prefs: chPatch.makker_search_prefs ?? merged.makker_search_prefs,
+      match_search_prefs: chPatch.match_search_prefs ?? merged.match_search_prefs,
+    };
+    patch = { ...patch, ...chPatch };
+  }
+
+  return patch;
+}
+
+/**
+ * @param {object} user
+ */
+export function seekingHomeStatusLabel(user) {
+  const makker = isSeekingUiActive(user, 'makker');
+  const kamp = isSeekingUiActive(user, 'kamp');
+  if (makker && kamp) return 'Makker og kamp aktive';
+  if (makker) return 'Søger makker';
+  if (kamp) return 'Søger kamp';
+  if (isSeekingTtlExpired(user, 'makker') || isSeekingTtlExpired(user, 'kamp')) {
+    return 'Udløbet — slå til for at forny';
+  }
+  return 'Inaktiv';
 }
 
 export { seekingVisibleDurationLabel };
