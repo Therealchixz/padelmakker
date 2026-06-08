@@ -35,6 +35,10 @@ import {
 } from '../lib/userModeration';
 import { subscribeToPush, isPushSupported } from '../lib/pushNotifications';
 import { BADGE_POLL_VISIBLE_MS, usePageVisible } from '../lib/pageVisibility';
+import {
+  scrollDashboardToTop,
+  shouldScrollDashboardToTopOnTabReselect,
+} from '../lib/dashboardScroll';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -1320,6 +1324,22 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const userInitial = (displayName || "?").trim().charAt(0).toUpperCase();
 
+  const handleTabPress = useCallback((tabId, opts = {}) => {
+    const { fromMoreSheet = false, ...navOpts } = opts;
+    const isCurrentTab = tab === tabId;
+    const primaryReselect = isMobileView && isCurrentTab && !fromMoreSheet && !mobileMoreOpen;
+    const moreSheetReselect = isMobileView && isCurrentTab && fromMoreSheet;
+
+    if ((primaryReselect || moreSheetReselect) && shouldScrollDashboardToTopOnTabReselect()) {
+      scrollDashboardToTop('smooth');
+      if (fromMoreSheet) setMobileMoreOpen(false);
+      return;
+    }
+
+    setTab(tabId, navOpts);
+    if (fromMoreSheet) setMobileMoreOpen(false);
+  }, [tab, isMobileView, mobileMoreOpen, setTab]);
+
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
   // Tastatur + viewport på mobil-chat — kanonisk iOS-løsning.
@@ -1969,10 +1989,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               key={t.id}
               type="button"
               className="pm-mobile-more-row"
-              onClick={() => {
-                setTab(t.id);
-                setMobileMoreOpen(false);
-              }}
+              onClick={() => handleTabPress(t.id, { fromMoreSheet: true })}
             >
               <span style={{ display: "flex", alignItems: "center", gap: "10px", position: "relative" }}>
                 {t.icon}
@@ -2064,7 +2081,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               type="button"
               data-tour={`mobile-tab-${t.id}`}
               data-active={active ? "true" : "false"}
-              onClick={() => setTab(t.id)}
+              onClick={() => handleTabPress(t.id)}
               className="pm-mobile-bottom-btn"
               aria-label={t.label}
               aria-current={active ? "page" : undefined}
