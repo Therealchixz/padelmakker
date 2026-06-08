@@ -1271,17 +1271,27 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     setBusyId(matchId);
     try {
       const mpBefore = matchPlayers[matchId] || [];
-      if (isAdmin) {
-        const { error } = await supabase.from("matches").delete().eq("id", matchId);
+      const isCreator = String(match.creator_id) === String(user.id);
+      if (isAdmin && !isCreator) {
+        const { data, error } = await supabase.rpc("admin_delete_match", { p_match_id: matchId });
         if (error) throw error;
+        if (!data?.ok) {
+          throw new Error(data?.error || "Kunne ikke slette kampen som admin");
+        }
+      } else if (isAdmin && isCreator) {
+        const { data, error } = await supabase.from("matches").delete().eq("id", matchId).select("id");
+        if (error) throw error;
+        if (!data?.length) throw new Error("Kampen blev ikke slettet");
       } else {
         await supabase.from("match_players").delete().eq("match_id", matchId);
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("matches")
           .update({ status: "cancelled", current_players: 0 })
           .eq("id", matchId)
-          .eq("creator_id", user.id);
+          .eq("creator_id", user.id)
+          .select("id");
         if (error) throw error;
+        if (!data?.length) throw new Error("Kampen blev ikke slettet");
       }
 
       const cancelNotifyIds = mpBefore.filter((p) => p.user_id !== user.id).map((p) => p.user_id);
