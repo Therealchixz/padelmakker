@@ -23,6 +23,7 @@ import { seekingActivityLabelForRow } from '../lib/seekingActivityLabel';
 import { createNotification } from '../lib/notifications';
 import { addMatchToCalendar } from '../lib/calendarExport';
 import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
+import { toggleHomeFeedFilter } from '../lib/homeFeedFilters';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
 import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
 import { ActiveSeekingOnboardingPrompt } from '../components/ActiveSeekingOnboardingPrompt';
@@ -404,18 +405,11 @@ export function HomeTab({ user, setTab, showToast }) {
   });
   const toggleFilter = (id) => {
     setActiveFilters((prev) => {
-      const allSelected = prev.size === HOME_FEED_FILTERS.length;
-      let next;
-      if (prev.has(id)) {
-        next = new Set(prev);
-        next.delete(id);
-      } else if (allSelected) {
-        // Fra «Alle»: første valg viser kun den type
-        next = new Set([id]);
-      } else {
-        next = new Set(prev);
-        next.add(id);
-      }
+      const next = toggleHomeFeedFilter(
+        prev,
+        id,
+        HOME_FEED_FILTERS.map((f) => f.id),
+      );
       try {
         localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...next]));
       } catch (e) {
