@@ -63,7 +63,7 @@ test('clearMobileChatViewportCssVars removes chat viewport variables', () => {
   assert.equal(root.style['--vvs'], undefined);
 });
 
-test('syncMobileChatViewportVars sætter --vvh og --vvs efter ios-chat-mønster', () => {
+test('syncMobileChatViewportVars sætter --vvh, --vv-kb-offset og --vvs', () => {
   const root = {
     style: {
       setProperty(name, value) {
@@ -73,14 +73,20 @@ test('syncMobileChatViewportVars sætter --vvh og --vvs efter ios-chat-mønster'
   };
   const vv = { height: 800, offsetTop: 12 };
 
+  globalThis.window = { innerHeight: 844 };
+
   syncMobileChatViewportVars(root, vv);
 
   assert.equal(root.style['--vvh'], '800px');
   assert.equal(root.style['--vv-top'], '12px');
+  assert.equal(root.style['--vv-kb-offset'], '32px');
   assert.equal(root.style['--vvs'], 'env(safe-area-inset-bottom)');
 
   syncMobileChatViewportVars(root, { height: MOBILE_CHAT_KEYBOARD_VV_HEIGHT - 1, offsetTop: 44 });
   assert.equal(root.style['--vvs'], '0px');
+  assert.equal(root.style['--vv-kb-offset'], '45px');
+
+  delete globalThis.window;
 });
 
 test('bindMobileChatViewportSync opdaterer variabler og kan frigives', () => {

@@ -4,6 +4,7 @@ import {
   bindMobileChatViewportSync,
   blurActiveMobileChatFocus,
   nudgeMobileChatViewportAfterKeyboard,
+  setMobileChatBackgroundInert,
   settleMobileViewportAfterChat,
 } from '../../lib/mobileChatViewport';
 
@@ -16,11 +17,13 @@ export function MobileChatOverlay({ header, footer, children }) {
     if (typeof document === 'undefined') return undefined;
     const body = document.body;
     body.classList.add('pm-mobile-chat-overlay-open');
+    setMobileChatBackgroundInert(true);
     const unbindViewport = bindMobileChatViewportSync();
     nudgeMobileChatViewportAfterKeyboard();
     return () => {
       blurActiveMobileChatFocus();
       unbindViewport();
+      setMobileChatBackgroundInert(false);
       body.classList.remove('pm-mobile-chat-overlay-open');
       settleMobileViewportAfterChat();
     };

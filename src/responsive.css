@@ -1783,12 +1783,11 @@ button,
     position: fixed;
     left: 0;
     right: 0;
-    top: var(--vvh, 100dvh);
+    bottom: var(--vv-kb-offset, 0px);
     width: 100%;
-    transform: translateY(-100%);
     z-index: 4;
     touch-action: none;
-    will-change: transform;
+    will-change: bottom;
   }
 
   .pm-mobile-chat-footer .pm-chat-v2-input-field:focus {

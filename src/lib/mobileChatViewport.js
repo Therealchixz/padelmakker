@@ -13,6 +13,7 @@ const NUDGE_DELAYS_MS = [0, 80, 220, 480, 800];
 export function clearMobileChatViewportCssVars(root = document.documentElement) {
   root.style.removeProperty('--vvh');
   root.style.removeProperty('--vv-top');
+  root.style.removeProperty('--vv-kb-offset');
   root.style.removeProperty('--vvs');
 }
 
@@ -68,13 +69,29 @@ export function syncMobileChatViewportVars(
   root = document.documentElement,
   vv = typeof window !== 'undefined' ? window.visualViewport : null,
 ) {
-  if (!vv) return;
+  if (!vv || typeof window === 'undefined') return;
+  const layoutHeight = window.innerHeight;
+  const kbOffset = Math.max(0, layoutHeight - vv.height - vv.offsetTop);
   root.style.setProperty('--vvh', `${vv.height}px`);
   root.style.setProperty('--vv-top', `${vv.offsetTop}px`);
+  root.style.setProperty('--vv-kb-offset', `${kbOffset}px`);
   root.style.setProperty(
     '--vvs',
     vv.height < MOBILE_CHAT_KEYBOARD_VV_HEIGHT ? '0px' : 'env(safe-area-inset-bottom)',
   );
+}
+
+/**
+ * iOS viser form-navigationsbjælken (pile + flueben) når flere felter kan fokuseres.
+ * Gør dashboard inert så kun chat-overlay tæller.
+ * @param {boolean} active
+ */
+export function setMobileChatBackgroundInert(active) {
+  if (typeof document === 'undefined') return;
+  const shell = document.getElementById('pm-app-shell');
+  if (!shell) return;
+  if (active) shell.setAttribute('inert', '');
+  else shell.removeAttribute('inert');
 }
 
 let viewportBindCount = 0;

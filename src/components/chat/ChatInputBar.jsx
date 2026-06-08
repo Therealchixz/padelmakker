@@ -106,6 +106,8 @@ export function ChatInputBar({
             maxLength={1000}
             disabled={disabled || sending}
             aria-label={placeholder}
+            enterKeyHint="send"
+            inputMode="text"
           />
           <button
             type="button"
