@@ -35,18 +35,20 @@ export function ChatInputBar({
   const fieldRef = useRef(null);
   const hasText = value.trim().length > 0;
 
-  const setFieldRef = useCallback(
-    (node) => {
-      fieldRef.current = node;
-      if (typeof inputRef === 'function') inputRef(node);
-      else if (inputRef) inputRef.current = node;
-    },
-    [inputRef],
-  );
+  const setFieldRef = useCallback((node) => {
+    fieldRef.current = node;
+  }, []);
 
   useLayoutEffect(() => {
-    resizeChatInput(fieldRef.current);
-  }, [value, placeholder, disabled, sending]);
+    const node = fieldRef.current;
+    if (typeof inputRef === 'function') inputRef(node);
+    else if (inputRef != null) {
+      // Forward ref til parent (fx focus/blur i BeskedTab).
+      // eslint-disable-next-line react-hooks/immutability -- standard ref-forwarding
+      inputRef.current = node;
+    }
+    resizeChatInput(node);
+  }, [value, placeholder, disabled, sending, inputRef]);
 
   const handleChange = (next) => {
     onChange(next);
