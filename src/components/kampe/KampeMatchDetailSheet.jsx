@@ -94,16 +94,38 @@ export function KampeMatchDetailSheet({
           <div className="pm-kampe-v2-detail-head">
             <div className="pm-kampe-v2-detail-head-main">
               <div className="pm-kampe-v2-detail-type">2v2-kamp</div>
-              <h2 className="pm-kampe-v2-detail-venue">{venue}</h2>
-              <div className="pm-kampe-v2-detail-datetime pm-kampe-v2-detail-datetime--primary">
-                {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
+              {directionsQuery ? (
+                <KampeVenueLocationLine
+                  label={venue}
+                  directionsQuery={directionsQuery}
+                  className="pm-kampe-v2-detail-venue"
+                  variant="title"
+                />
+              ) : (
+                <h2 className="pm-kampe-v2-detail-venue">{venue}</h2>
+              )}
+              <div className="pm-kampe-v2-detail-meta">
+                <span className="pm-kampe-v2-detail-datetime pm-kampe-v2-detail-datetime--primary">
+                  {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
+                </span>
+                {matchPrefs?.min != null && matchPrefs?.max != null ? (
+                  <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue pm-kampe-v2-detail-meta-badge">
+                    ELO {matchPrefs.min}–{matchPrefs.max}
+                  </span>
+                ) : null}
+                {matchPrefs?.booked != null ? (
+                  <span
+                    className={`pm-kampe-v2-badge pm-kampe-v2-detail-meta-badge ${matchPrefs.booked ? 'pm-kampe-v2-badge--green' : 'pm-kampe-v2-badge--warm'}`}
+                  >
+                    {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
+                  </span>
+                ) : null}
+                {unreadCount > 0 ? (
+                  <span className="pm-kampe-v2-badge pm-kampe-v2-badge--warm pm-kampe-v2-detail-meta-badge">
+                    {unreadCount} ulæst
+                  </span>
+                ) : null}
               </div>
-              <KampeVenueLocationLine
-                label={venue}
-                directionsQuery={directionsQuery}
-                className="pm-kampe-v2-detail-location"
-                prominent
-              />
             </div>
             <div className="pm-kampe-v2-detail-head-right">
               <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
@@ -122,26 +144,6 @@ export function KampeMatchDetailSheet({
             </div>
           </div>
         </div>
-
-        {(matchPrefs?.min != null && matchPrefs?.max != null) ||
-        matchPrefs?.booked != null ||
-        unreadCount > 0 ? (
-          <div className="pm-kampe-v2-detail-badges">
-            {matchPrefs?.min != null && matchPrefs?.max != null ? (
-              <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue">
-                ELO {matchPrefs.min}–{matchPrefs.max}
-              </span>
-            ) : null}
-            {matchPrefs?.booked != null ? (
-              <span className={`pm-kampe-v2-badge ${matchPrefs.booked ? 'pm-kampe-v2-badge--green' : 'pm-kampe-v2-badge--warm'}`}>
-                {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
-              </span>
-            ) : null}
-            {unreadCount > 0 ? (
-              <span className="pm-kampe-v2-badge pm-kampe-v2-badge--warm">{unreadCount} ulæst</span>
-            ) : null}
-          </div>
-        ) : null}
 
         <div className="pm-kampe-v2-detail-scroll">
 

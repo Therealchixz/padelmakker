@@ -6773,7 +6773,7 @@ button,
 
 .pm-kampe-v2-sheet-drag-header .pm-kampe-v2-sheet-handle {
   flex-shrink: 0;
-  margin: 4px auto 10px;
+  margin: 4px auto 6px;
 }
 
 .pm-kampe-v2-sheet-drag-header .pm-kampe-v2-detail-head,
@@ -7292,7 +7292,7 @@ button,
 
 .pm-kampe-v2-detail-sheet .pm-court-wrap {
   margin-top: 0;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .pm-kampe-v2-detail-sheet:not(.pm-americano-v2-detail-sheet) {
@@ -7306,6 +7306,8 @@ button,
 .pm-kampe-v2-detail-sheet:not(.pm-americano-v2-detail-sheet) .pm-kampe-v2-sheet-drag-header {
   z-index: 2;
   background: var(--pm-surface);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--pm-border);
 }
 
 .pm-kampe-v2-detail-scroll {
@@ -7314,7 +7316,7 @@ button,
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding-top: 2px;
+  padding-top: 12px;
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
@@ -7333,7 +7335,7 @@ button,
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
   flex: 1;
 }
@@ -7355,7 +7357,8 @@ button,
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--pm-text-light);
-  margin-bottom: 2px;
+  margin-bottom: 0;
+  line-height: 1.2;
 }
 
 .pm-kampe-v2-detail-venue {
@@ -7375,20 +7378,45 @@ button,
 }
 
 .pm-kampe-v2-detail-datetime--primary {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--pm-text);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pm-text-mid);
 }
 
-.pm-kampe-v2-detail-location {
+.pm-kampe-v2-detail-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   width: 100%;
-  font-size: 13px;
-  color: var(--pm-text-mid);
-  line-height: 1.35;
   margin-top: 2px;
+}
+
+.pm-kampe-v2-detail-meta-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+}
+
+.pm-kampe-venue-location--title {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--pm-text);
+  gap: 6px;
+  max-width: 100%;
+}
+
+.pm-kampe-venue-location--title.pm-kampe-venue-location--prominent {
+  color: var(--pm-accent);
+}
+
+.pm-kampe-venue-location--title .pm-kampe-venue-location__label {
+  min-width: 0;
+}
+
+.pm-kampe-v2-detail-venue.pm-kampe-venue-location--title {
+  margin: 0;
 }
 
 .pm-kampe-v2-detail-manage {
@@ -7425,8 +7453,8 @@ button,
 }
 
 .pm-kampe-v2-detail-sheet:not(.pm-americano-v2-detail-sheet) > .pm-kampe-v2-detail-badges {
-  margin-top: 10px;
-  margin-bottom: 18px;
+  margin-top: 8px;
+  margin-bottom: 12px;
 }
 
 .pm-kampe-v2-detail-scroll > .pm-kampe-v2-detail-desc:first-child,

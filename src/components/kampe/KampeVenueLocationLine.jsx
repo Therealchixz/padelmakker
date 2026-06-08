@@ -12,24 +12,29 @@ export function KampeVenueLocationLine({
   stopPropagation = false,
   iconSize = 12,
   prominent = false,
+  variant = 'default',
 }) {
   const text = String(label || '').trim();
   const canNavigate = Boolean(String(directionsQuery || '').trim());
+  const isTitle = variant === 'title';
+  const showProminent = canNavigate && (prominent || isTitle);
+  const resolvedIconSize = isTitle ? 14 : iconSize;
   const classNames = [
     'pm-kampe-venue-location',
     className,
     canNavigate ? 'pm-kampe-venue-location--link' : '',
-    canNavigate && prominent ? 'pm-kampe-venue-location--prominent' : '',
+    showProminent ? 'pm-kampe-venue-location--prominent' : '',
+    isTitle ? 'pm-kampe-venue-location--title' : '',
   ]
     .filter(Boolean)
     .join(' ');
 
   const content = (
     <>
-      <MapPin size={iconSize} aria-hidden />
+      {!isTitle ? <MapPin size={resolvedIconSize} aria-hidden /> : null}
       <span className="pm-kampe-venue-location__label">{text}</span>
-      {canNavigate && prominent ? (
-        <Navigation size={iconSize} className="pm-kampe-venue-location__nav-icon" aria-hidden />
+      {showProminent ? (
+        <Navigation size={resolvedIconSize} className="pm-kampe-venue-location__nav-icon" aria-hidden />
       ) : null}
     </>
   );
