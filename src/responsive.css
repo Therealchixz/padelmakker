@@ -1715,33 +1715,24 @@ button,
     max-width: calc(100% - 152px);
   }
 
-  /* Lås dashboard til viewport — forhindrer iOS-dokumentscroll der løfter fixed bundmenu */
-  body.pm-body--mobile-dash {
-    height: 100dvh;
-    overflow: hidden;
-  }
-
-  body.pm-body--mobile-dash #root {
-    height: 100%;
-    overflow: hidden;
-  }
-
-  body.pm-body--mobile-dash #pm-app-shell {
+  /* Flex-shell: header + scrollbart main + bundmenu i flow (undgår iOS-hul under fixed nav) */
+  #pm-app-shell {
     height: 100dvh;
     max-height: 100dvh;
     overflow: hidden;
   }
 
-  body.pm-body--mobile-dash .pm-dash-main {
+  .pm-dash-header {
+    flex-shrink: 0;
+  }
+
+  .pm-dash-main {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-  }
-
-  .pm-dash-main {
-    padding-bottom: min(calc(79px + env(safe-area-inset-bottom)), 119px);
+    padding-bottom: clamp(16px, 4vw, 24px);
   }
 
   .pm-dash-main--home {
@@ -1787,10 +1778,9 @@ button,
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 2px;
-    position: fixed;
-    left: max(0px, env(safe-area-inset-left));
-    right: max(0px, env(safe-area-inset-right));
-    bottom: 0;
+    position: relative;
+    flex-shrink: 0;
+    width: 100%;
     z-index: 46;
     background: color-mix(in srgb, var(--pm-surface) 92%, transparent);
     backdrop-filter: blur(14px) saturate(1.05);
