@@ -57,13 +57,32 @@ export function captureMobileChatViewportSnapshot(
  * iOS kan efter tastatur + position:fixed efterlade et hul under bundnavigationen.
  * Nulstil scroll og layout-viewport efter chat lukkes.
  */
+/**
+ * Fjern eventuelle rester fra ældre chat-viewport-lås (body position:fixed).
+ * @param {HTMLElement} [root]
+ * @param {HTMLElement} [body]
+ */
+export function clearStaleMobileChatViewportLock(
+  root = document.documentElement,
+  body = document.body,
+) {
+  clearMobileChatViewportCssVars(root);
+  if (body.style.position === 'fixed') {
+    body.style.position = '';
+    body.style.top = '';
+    body.style.left = '';
+    body.style.right = '';
+    body.style.width = '';
+    body.style.overflow = '';
+    body.style.background = '';
+    root.style.background = '';
+  }
+}
+
 export function settleMobileViewportAfterChat() {
   if (typeof window === 'undefined') return;
-  const main = document.querySelector('#pm-app-shell .pm-dash-main');
-  const reset = () => {
-    window.scrollTo(0, 0);
-    if (main) main.scrollTop = 0;
-  };
+  clearStaleMobileChatViewportLock();
+  const reset = () => window.scrollTo(0, 0);
   reset();
   requestAnimationFrame(() => {
     reset();

@@ -39,6 +39,7 @@ import {
   scrollDashboardToTop,
   shouldScrollDashboardToTopOnTabReselect,
 } from '../lib/dashboardScroll';
+import { settleMobileViewportAfterChat } from '../lib/mobileChatViewport';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -1341,6 +1342,15 @@ export function DashboardPage({ user, onLogout, showToast }) {
   }, [tab, isMobileView, mobileMoreOpen, setTab]);
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
+
+  // Efter besked-tråd: nulstil iOS-scroll uden at låse hele app-shell (det gav hul under menuen).
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    if (!isMobileView || tab !== 'beskeder' || mobileConversationOpen) return undefined;
+    settleMobileViewportAfterChat();
+    const timer = window.setTimeout(() => settleMobileViewportAfterChat(), 320);
+    return () => window.clearTimeout(timer);
+  }, [isMobileView, tab, mobileConversationOpen]);
 
   return (
     <div
