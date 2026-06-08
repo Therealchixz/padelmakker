@@ -1,8 +1,7 @@
+import { MapPin } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
-import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
-import { KampeVenueLocationLine } from './KampeVenueLocationLine';
 
 function badgeToneClass(tone) {
   if (tone === 'live') return 'pm-kampe-v2-badge--live';
@@ -67,8 +66,6 @@ export function KampeMatchListCard({
     !isCompleted && matchPrefs?.min != null && matchPrefs?.max != null;
   const t1Slots = teamDisplaySlots(t1);
   const t2Slots = teamDisplaySlots(t2);
-  const directionsQuery = resolveMatchDirectionsQuery(match, profilesById);
-
   const renderTeamSlot = (player, teamNum, slotIndex) => {
     if (!player) {
       return (
@@ -102,12 +99,10 @@ export function KampeMatchListCard({
           <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary">
             {dateHeadline} · {timeLabel}
           </div>
-          <KampeVenueLocationLine
-            label={venue}
-            directionsQuery={directionsQuery}
-            className="pm-kampe-v2-list-venue"
-            stopPropagation
-          />
+          <div className="pm-kampe-v2-list-venue">
+            <MapPin size={12} aria-hidden />
+            {venue}
+          </div>
         </div>
         <div className="pm-kampe-v2-list-badges">
           <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>

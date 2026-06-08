@@ -102,6 +102,7 @@ export function KampeMatchDetailSheet({
                 label={venue}
                 directionsQuery={directionsQuery}
                 className="pm-kampe-v2-detail-location"
+                prominent
               />
             </div>
             <div className="pm-kampe-v2-detail-head-right">

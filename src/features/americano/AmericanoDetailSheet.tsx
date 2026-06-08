@@ -248,6 +248,7 @@ export function AmericanoDetailSheet({
                   label={courtName}
                   directionsQuery={directionsQuery}
                   className="pm-americano-v2-detail-location-venue"
+                  prominent
                 />
                 <span className="pm-americano-v2-detail-location-date"> · {dateLabel}</span>
               </div>

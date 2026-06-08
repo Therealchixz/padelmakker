@@ -7005,9 +7005,24 @@ button,
   cursor: pointer;
 }
 
+.pm-kampe-venue-location--prominent {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pm-kampe-venue-location--prominent .pm-kampe-venue-location__nav-icon {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .pm-kampe-venue-location--link:hover {
     text-decoration: underline;
+  }
+
+  .pm-kampe-venue-location--prominent:hover {
+    opacity: 0.88;
   }
 }
 
@@ -7373,6 +7388,7 @@ button,
   font-size: 13px;
   color: var(--pm-text-mid);
   line-height: 1.35;
+  margin-top: 2px;
 }
 
 .pm-kampe-v2-detail-manage {
@@ -7888,6 +7904,10 @@ button,
   font-size: 13px;
   font-weight: 500;
   color: var(--pm-text-mid);
+}
+
+.pm-americano-v2-detail-location-venue.pm-kampe-venue-location--prominent {
+  color: var(--pm-accent);
 }
 
 .pm-americano-v2-detail-location-date {

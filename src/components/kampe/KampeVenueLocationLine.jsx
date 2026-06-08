@@ -1,8 +1,9 @@
-import { MapPin } from 'lucide-react';
+import { MapPin, Navigation } from 'lucide-react';
 import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
 
 /**
- * Lokationslinje under Kampe — åbner rutevejledning i kort-app når query findes.
+ * Lokationslinje i kampdetaljer — åbner rutevejledning i kort-app når query findes.
+ * Bruges kun i detail sheets (ikke på listekort).
  */
 export function KampeVenueLocationLine({
   label,
@@ -10,17 +11,26 @@ export function KampeVenueLocationLine({
   className = '',
   stopPropagation = false,
   iconSize = 12,
+  prominent = false,
 }) {
   const text = String(label || '').trim();
   const canNavigate = Boolean(String(directionsQuery || '').trim());
-  const classNames = ['pm-kampe-venue-location', className, canNavigate ? 'pm-kampe-venue-location--link' : '']
+  const classNames = [
+    'pm-kampe-venue-location',
+    className,
+    canNavigate ? 'pm-kampe-venue-location--link' : '',
+    canNavigate && prominent ? 'pm-kampe-venue-location--prominent' : '',
+  ]
     .filter(Boolean)
     .join(' ');
 
   const content = (
     <>
       <MapPin size={iconSize} aria-hidden />
-      {text}
+      <span className="pm-kampe-venue-location__label">{text}</span>
+      {canNavigate && prominent ? (
+        <Navigation size={iconSize} className="pm-kampe-venue-location__nav-icon" aria-hidden />
+      ) : null}
     </>
   );
 

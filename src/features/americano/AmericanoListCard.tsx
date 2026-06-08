@@ -1,7 +1,5 @@
-import { CalendarDays, Clock, LayoutGrid } from 'lucide-react'
+import { CalendarDays, Clock, LayoutGrid, MapPin } from 'lucide-react'
 import { AvatarCircle } from '../../components/AvatarCircle'
-import { KampeVenueLocationLine } from '../../components/kampe/KampeVenueLocationLine'
-import { resolveCourtNameDirectionsQuery } from '../../lib/kampeListFilterCore'
 import { formatMatchDateHeadlineDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import {
   formatAmericanoLiveRoundLabel,
@@ -104,7 +102,6 @@ export function AmericanoListCard({
 
   const visibleParticipants = participants.slice(0, MAX_AVATARS)
   const overflow = Math.max(0, filled - MAX_AVATARS)
-  const directionsQuery = resolveCourtNameDirectionsQuery(courtName)
 
   return (
     <button
@@ -131,12 +128,10 @@ export function AmericanoListCard({
       </div>
 
       <div className="pm-americano-v2-list-body">
-        <KampeVenueLocationLine
-          label={courtName}
-          directionsQuery={directionsQuery}
-          className="pm-americano-v2-list-venue"
-          stopPropagation
-        />
+        <div className="pm-americano-v2-list-venue">
+          <MapPin size={12} aria-hidden />
+          {courtName}
+        </div>
 
         <div className="pm-americano-v2-list-progress-row">
           <div
