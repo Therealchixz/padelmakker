@@ -403,12 +403,17 @@ export function HomeTab({ user, setTab, showToast }) {
     return new Set(HOME_FEED_FILTERS.map(f => f.id));
   });
   const toggleFilter = (id) => {
-    setActiveFilters(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        if (next.size === 1) return prev; // altid mindst ét aktiv
+    setActiveFilters((prev) => {
+      const allSelected = prev.size === HOME_FEED_FILTERS.length;
+      let next;
+      if (prev.has(id)) {
+        next = new Set(prev);
         next.delete(id);
+      } else if (allSelected) {
+        // Fra «Alle»: første valg viser kun den type
+        next = new Set([id]);
       } else {
+        next = new Set(prev);
         next.add(id);
       }
       try {
