@@ -29,6 +29,7 @@ export function ChatInputBar({
   onInviteMatch,
   onShareVenue,
   onSuggestTime,
+  onBlur,
 }) {
   const [showActions, setShowActions] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
@@ -99,6 +100,7 @@ export function ChatInputBar({
             value={value}
             onChange={(e) => handleChange(e.target.value.slice(0, 1000))}
             onKeyDown={onKeyDown}
+            onBlur={onBlur}
             placeholder={placeholder}
             className="pm-chat-v2-input-field"
             maxLength={1000}

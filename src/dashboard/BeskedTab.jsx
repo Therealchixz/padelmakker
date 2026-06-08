@@ -32,7 +32,10 @@ import { ChatInbox } from '../components/chat/ChatInbox';
 import { ChatThreadHeader } from '../components/chat/ChatThreadHeader';
 import { ChatMessageList } from '../components/chat/ChatMessageList';
 import { ChatInputBar } from '../components/chat/ChatInputBar';
-import { settleMobileViewportAfterChat } from '../lib/mobileChatViewport';
+import {
+  nudgeMobileChatViewportAfterKeyboard,
+  settleMobileViewportAfterChat,
+} from '../lib/mobileChatViewport';
 
 const CHAT_WINDOW_SIZE = 80;
 const CONVO_CACHE_TTL_MS = 30_000;
@@ -971,6 +974,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           onChange={handleInputChange}
           onSend={handleSend}
           onKeyDown={handleKeyDown}
+          onBlur={mobileChatActive ? nudgeMobileChatViewportAfterKeyboard : undefined}
           enableQuickActions={!chatIsBlocked}
           onInviteMatch={() => void openMatchPicker()}
           onShareVenue={() => void openVenuePicker()}

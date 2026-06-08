@@ -77,12 +77,47 @@ export function syncMobileChatViewportVars(
 let mobileChatViewportBound = false;
 /** @type {(() => void) | null} */
 let mobileChatViewportSyncHandler = null;
+let lastVisualViewportHeight = 0;
 
 /**
  * Lyt på visualViewport under aktiv mobil-chat.
  * @param {HTMLElement} [root]
  * @returns {() => void}
  */
+/**
+ * Efter iOS-tastatur lukkes: gensynk --vvh/--vvs og nulstil dokument-scroll.
+ * @param {HTMLElement} [root]
+ */
+export function nudgeMobileChatViewportAfterKeyboard(root = document.documentElement) {
+  if (typeof window === 'undefined') return;
+  const vv = window.visualViewport;
+  if (!vv) return;
+
+  const sync = () => syncMobileChatViewportVars(root, vv);
+  const resetScroll = () => {
+    window.scrollTo(0, 0);
+    if (vv.offsetTop > 0) {
+      window.scrollTo(0, window.scrollY + vv.offsetTop);
+    }
+  };
+
+  sync();
+  resetScroll();
+  requestAnimationFrame(() => {
+    sync();
+    resetScroll();
+  });
+  window.setTimeout(sync, 80);
+  window.setTimeout(() => {
+    sync();
+    resetScroll();
+  }, 220);
+  window.setTimeout(() => {
+    sync();
+    resetScroll();
+  }, 480);
+}
+
 export function bindMobileChatViewportSync(root = document.documentElement) {
   if (typeof window === 'undefined' || mobileChatViewportBound) {
     return () => {};
@@ -90,7 +125,15 @@ export function bindMobileChatViewportSync(root = document.documentElement) {
   const vv = window.visualViewport;
   if (!vv) return () => {};
 
-  mobileChatViewportSyncHandler = () => syncMobileChatViewportVars(root, vv);
+  lastVisualViewportHeight = vv.height;
+  mobileChatViewportSyncHandler = () => {
+    const prev = lastVisualViewportHeight;
+    lastVisualViewportHeight = vv.height;
+    syncMobileChatViewportVars(root, vv);
+    if (prev < MOBILE_CHAT_KEYBOARD_VV_HEIGHT && vv.height >= MOBILE_CHAT_KEYBOARD_VV_HEIGHT) {
+      nudgeMobileChatViewportAfterKeyboard(root);
+    }
+  };
   vv.addEventListener('resize', mobileChatViewportSyncHandler);
   vv.addEventListener('scroll', mobileChatViewportSyncHandler);
   mobileChatViewportSyncHandler();
@@ -102,6 +145,7 @@ export function bindMobileChatViewportSync(root = document.documentElement) {
     vv.removeEventListener('scroll', mobileChatViewportSyncHandler);
     mobileChatViewportSyncHandler = null;
     mobileChatViewportBound = false;
+    lastVisualViewportHeight = 0;
     clearMobileChatViewportCssVars(root);
   };
 }
@@ -136,18 +180,7 @@ export function settleMobileViewportAfterChat() {
   if (typeof window === 'undefined') return;
   clearStaleMobileChatViewportLock();
   document.body.classList.remove('pm-body--mobile-chat');
-
-  const reset = () => {
-    window.scrollTo(0, 0);
-    const vv = window.visualViewport;
-    if (vv && vv.offsetTop > 0) {
-      window.scrollTo(0, window.scrollY + vv.offsetTop);
-    }
-  };
-
-  reset();
-  requestAnimationFrame(() => {
-    reset();
-    requestAnimationFrame(reset);
-  });
+  nudgeMobileChatViewportAfterKeyboard();
+  window.setTimeout(() => nudgeMobileChatViewportAfterKeyboard(), 320);
+  window.setTimeout(() => nudgeMobileChatViewportAfterKeyboard(), 700);
 }

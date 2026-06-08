@@ -5,6 +5,7 @@ import {
   captureMobileChatViewportSnapshot,
   clearMobileChatViewportCssVars,
   MOBILE_CHAT_KEYBOARD_VV_HEIGHT,
+  nudgeMobileChatViewportAfterKeyboard,
   restoreMobileChatViewportSnapshot,
   syncMobileChatViewportVars,
 } from '../../src/lib/mobileChatViewport.js';
@@ -118,6 +119,29 @@ test('bindMobileChatViewportSync opdaterer variabler og kan frigives', () => {
 
   unbind();
   assert.equal(root.style['--vvh'], undefined);
+
+  delete globalThis.window;
+});
+
+test('nudgeMobileChatViewportAfterKeyboard gensynkroniserer efter tastatur lukkes', () => {
+  const root = {
+    style: {
+      setProperty(name, value) {
+        this[name] = value;
+      },
+    },
+  };
+  const scrollCalls = [];
+  globalThis.requestAnimationFrame = (fn) => fn();
+  globalThis.window = {
+    scrollTo: (...args) => scrollCalls.push(args),
+    visualViewport: { height: 820, offsetTop: 0 },
+    setTimeout: (fn) => fn(),
+  };
+
+  nudgeMobileChatViewportAfterKeyboard(root);
+  assert.equal(root.style['--vvh'], '820px');
+  assert.ok(scrollCalls.length >= 1);
 
   delete globalThis.window;
 });
