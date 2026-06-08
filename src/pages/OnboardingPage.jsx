@@ -719,7 +719,7 @@ export function OnboardingPage() {
           Søger kamp eller makker?
         </div>
         <p style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.45, margin: 0 }}>
-          Det sætter du op bagefter under <strong>Find makker</strong>, <strong>Kampe</strong> eller <strong>Min profil</strong> — via <strong>Mit makker-filter</strong> og <strong>Mit kamp-filter</strong> (synlighed, intention og niveau).
+          Det sætter du op bagefter under <strong>Find makker</strong> og <strong>Kampe</strong> (synlighed, intention og niveau).
         </p>
       </div>
     </div>,

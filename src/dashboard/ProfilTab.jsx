@@ -10,11 +10,6 @@ import { REGIONS, PLAY_STYLES, COURT_SIDES } from '../lib/platformConstants';
 import { profileLevelDisplayText } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { canonicalRegionForForm, calcAge } from '../lib/profileUtils';
-import { normalizeMatchSearchPrefs, describeMatchFilter } from '../lib/matchSearchFilterUtils';
-import { normalizeMakkerSearchPrefs, describeMakkerFilter } from '../lib/makkerSearchFilterUtils';
-import { isProfileMatchFeedVisible, isProfileMakkerFeedVisible } from '../lib/seekingFeedTtl';
-import { useNavigate } from 'react-router-dom';
-import { Filter, Users, ChevronRight } from 'lucide-react';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
 import { useAmericanoPartnerOpponentStats } from '../lib/americanoRelationStats';
 import { americanoOutcomeColors } from '../features/americano/americanoOutcomeColors';
@@ -22,7 +17,6 @@ import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
 import { isValidProfileRegion } from '../lib/profileUtils';
-import { FILTER_RETURN_PROFIL } from '../lib/filterReturnNavigation';
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
@@ -55,145 +49,6 @@ const profilePromptCardStyle = {
   borderRadius: '10px',
   border: `1px solid ${theme.border}`,
 };
-
-const filterStatusPillStyle = {
-  fontSize: 10,
-  fontWeight: 700,
-  padding: '2px 8px',
-  borderRadius: 100,
-  background: theme.accentBg,
-  color: theme.accent,
-};
-
-function FilterChannelBadges({ feedVisible, notify }) {
-  if (!feedVisible && !notify) return null;
-  return (
-    <>
-      {feedVisible ? <span style={filterStatusPillStyle}>Synlig</span> : null}
-      {notify ? <span style={filterStatusPillStyle}>Notifikationer</span> : null}
-    </>
-  );
-}
-
-function MatchFilterProfileCard({ user }) {
-  const navigate = useNavigate();
-  const prefs = normalizeMatchSearchPrefs(user?.match_search_prefs, user);
-  const info = describeMatchFilter(prefs, user);
-  const feedVisible = isProfileMatchFeedVisible(user);
-
-  return (
-    <button
-      type="button"
-      onClick={() => navigate('/dashboard/kamp-filter', { state: { filterReturnTo: FILTER_RETURN_PROFIL } })}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        width: '100%',
-        textAlign: 'left',
-        background: theme.surfaceAlt,
-        border: `1px solid ${theme.border}`,
-        borderRadius: 10,
-        padding: '12px 14px',
-        marginBottom: 16,
-        cursor: 'pointer',
-      }}
-    >
-      <span
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          background: feedVisible ? theme.accentBg : theme.blueBg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <Filter size={18} color={theme.accent} aria-hidden />
-      </span>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Mit kamp-filter</span>
-          <FilterChannelBadges feedVisible={feedVisible} notify={prefs.notify} />
-        </div>
-        <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2, lineHeight: 1.4 }}>
-          {info.configured ? (
-            <>
-              {info.summary}
-              <br />
-              <span style={{ color: theme.textMid }}>{info.detail}</span>
-            </>
-          ) : (
-            'Indstil region, niveau og hvornår du vil have besked om åbne kampe.'
-          )}
-        </div>
-      </span>
-      <ChevronRight size={18} color={theme.textLight} aria-hidden style={{ flexShrink: 0 }} />
-    </button>
-  );
-}
-
-function MakkerFilterProfileCard({ user }) {
-  const navigate = useNavigate();
-  const prefs = normalizeMakkerSearchPrefs(user?.makker_search_prefs, user);
-  const info = describeMakkerFilter(prefs, user);
-  const feedVisible = isProfileMakkerFeedVisible(user);
-
-  return (
-    <button
-      type="button"
-      onClick={() => navigate('/dashboard/makker-filter', { state: { filterReturnTo: FILTER_RETURN_PROFIL } })}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        width: '100%',
-        textAlign: 'left',
-        background: theme.surfaceAlt,
-        border: `1px solid ${theme.border}`,
-        borderRadius: 10,
-        padding: '12px 14px',
-        marginBottom: 16,
-        cursor: 'pointer',
-      }}
-    >
-      <span
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          background: feedVisible ? theme.accentBg : theme.blueBg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <Users size={18} color={theme.accent} aria-hidden />
-      </span>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Mit makker-filter</span>
-          <FilterChannelBadges feedVisible={feedVisible} notify={prefs.notify} />
-        </div>
-        <div style={{ fontSize: 11, color: theme.textLight, marginTop: 2, lineHeight: 1.4 }}>
-          {info.configured ? (
-            <>
-              {info.summary}
-              <br />
-              <span style={{ color: theme.textMid }}>{info.detail}</span>
-            </>
-          ) : (
-            'Få besked når spillere på dit niveau søger makker i dit område.'
-          )}
-        </div>
-      </span>
-      <ChevronRight size={18} color={theme.textLight} aria-hidden style={{ flexShrink: 0 }} />
-    </button>
-  );
-}
 
 const PROFILE_OVERVIEW_MODE_PREFIX = "pm-profile-overview-mode:";
 const PROFILE_OVERVIEW_MODES = new Set(["2v2", "americano", "liga"]);
@@ -793,9 +648,6 @@ export function ProfilTab({ user, showToast, setTab }) {
             </div>
           ) : null}
 
-          <MatchFilterProfileCard user={user} />
-          <MakkerFilterProfileCard user={user} />
-
           <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Overblik
           </div>
@@ -1326,15 +1178,6 @@ export function ProfilTab({ user, showToast, setTab }) {
         {/* Bio */}
         <label htmlFor="profil-bio" style={labelStyle}>Bio</label>
         <textarea id="profil-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl lidt om dig som spiller..." style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "20px" }} />
-
-        <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
-          Søger kamp eller makker
-        </div>
-        <p style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.45, margin: "0 0 12px" }}>
-          Synlighed, intention, niveau og tidsrum styres i dine to filtre — ikke her under basisprofil.
-        </p>
-        <MatchFilterProfileCard user={user} />
-        <MakkerFilterProfileCard user={user} />
 
         <div
           style={{
