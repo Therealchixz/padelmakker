@@ -92,8 +92,25 @@ export function KampeMatchDetailSheet({
         <div {...dragZoneProps} aria-label="Træk her for at lukke">
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />
           <div className="pm-kampe-v2-detail-head">
-            <div className="pm-kampe-v2-detail-head-main">
+            <div className="pm-kampe-v2-detail-head-toolbar">
               <div className="pm-kampe-v2-detail-type">2v2-kamp</div>
+              <div className="pm-kampe-v2-detail-head-right">
+                <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
+                  {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
+                  {statusBadge.label}
+                </span>
+                <button
+                  type="button"
+                  className="pm-kampe-v2-detail-close"
+                  onClick={onClose}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  aria-label="Luk"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <div className="pm-kampe-v2-detail-head-main">
               {directionsQuery ? (
                 <KampeVenueLocationLine
                   label={venue}
@@ -130,21 +147,6 @@ export function KampeMatchDetailSheet({
                   ) : null}
                 </div>
               ) : null}
-            </div>
-            <div className="pm-kampe-v2-detail-head-right">
-              <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
-                {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
-                {statusBadge.label}
-              </span>
-              <button
-                type="button"
-                className="pm-kampe-v2-detail-close"
-                onClick={onClose}
-                onPointerDown={(event) => event.stopPropagation()}
-                aria-label="Luk"
-              >
-                <X size={18} />
-              </button>
             </div>
           </div>
         </div>
