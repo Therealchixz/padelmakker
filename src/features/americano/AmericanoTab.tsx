@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { CalendarDays, ChevronDown, ChevronUp, Inbox, Trash2 } from 'lucide-react'
+import { EmptyStateIcon } from '../../components/EmptyStateIcon'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
 import { useConfirm } from '../../lib/ConfirmDialogProvider'
@@ -978,13 +979,13 @@ export function AmericanoTab({
 
       {rows.length === 0 ? (
         <div className="pm-state-card pm-state-card--empty">
-          <div className="pm-state-icon">🏟️</div>
+          <EmptyStateIcon icon={CalendarDays} />
           <div className="pm-state-title">{TOURNAMENT_EMPTY.none}</div>
           <div className="pm-state-copy">{TOURNAMENT_EMPTY.createPrompt}</div>
         </div>
       ) : visibleRows.length === 0 ? (
         <div className="pm-state-card pm-state-card--empty">
-          <div className="pm-state-icon">📭</div>
+          <EmptyStateIcon icon={Inbox} />
           <div className="pm-state-title">
             {americanoView === 'open' && TOURNAMENT_EMPTY.noneOpen}
             {americanoView === 'playing' && TOURNAMENT_EMPTY.nonePlaying}

@@ -3321,6 +3321,12 @@ button,
   margin-bottom: 10px;
 }
 
+.pm-empty-state-icon {
+  display: block;
+  margin: 0 auto 14px;
+  flex-shrink: 0;
+}
+
 .pm-state-title {
   font-size: 15px;
   font-weight: 700;

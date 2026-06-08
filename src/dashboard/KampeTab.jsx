@@ -47,7 +47,8 @@ import {
   KAMPE_FORMAT_LIGA,
 } from '../lib/kampeFocusNavigation';
 import { DateTime } from 'luxon';
-import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarDays, CalendarPlus, Share2 } from 'lucide-react';
+import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarDays, CalendarPlus, Share2, Swords, Users, BarChart3 } from 'lucide-react';
+import { EmptyStateIcon } from '../components/EmptyStateIcon';
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
@@ -3777,7 +3778,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
             {viewTab === "open" && openMatches.length === 0 && (
               <div className="pm-state-card pm-state-card--empty">
-                <div className="pm-state-icon">⚔️</div>
+                <EmptyStateIcon icon={Swords} />
                 <div className="pm-state-title">Ingen åbne kampe</div>
                 <div className="pm-state-copy" style={{ marginBottom: "16px" }}>Opret den første kamp og find nogen at spille med.</div>
                 <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}>
@@ -3787,14 +3788,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             )}
             {viewTab === "active" && activeMatches.length === 0 && (
               <div className="pm-state-card pm-state-card--empty">
-                <div className="pm-state-icon">🎾</div>
+                <EmptyStateIcon icon={Users} />
                 <div className="pm-state-title">Ingen aktive kampe</div>
                 <div className="pm-state-copy">Tilmeld dig en åben kamp for at komme i gang.</div>
               </div>
             )}
             {viewTab === "completed" && completedMatches.length === 0 && (
               <div className="pm-state-card pm-state-card--empty">
-                <div className="pm-state-icon">📊</div>
+                <EmptyStateIcon icon={BarChart3} />
                 <div className="pm-state-title">Ingen afsluttede kampe endnu</div>
                 <div className="pm-state-copy">Spil din første kamp og se dit resultat her.</div>
               </div>

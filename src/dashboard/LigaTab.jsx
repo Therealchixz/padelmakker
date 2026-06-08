@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
 import { Trophy, Plus } from 'lucide-react';
+import { EmptyStateIcon } from '../components/EmptyStateIcon';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
@@ -762,7 +763,7 @@ export function LigaTab({
         </div>
       ) : visibleLeagues.length === 0 ? (
         <div className="pm-state-card pm-state-card--empty" style={{ padding: '52px 20px' }}>
-          <Trophy size={44} color={theme.border} style={{ display: 'block', margin: '0 auto 14px' }} />
+          <EmptyStateIcon icon={Trophy} />
           <div className="pm-state-title">
             {view === 'registration' ? 'Ingen åbne ligaer' : view === 'active' ? 'Ingen aktive ligaer' : 'Ingen afsluttede ligaer'}
           </div>
