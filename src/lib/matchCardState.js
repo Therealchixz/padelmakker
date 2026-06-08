@@ -22,6 +22,7 @@ export function buildMatchCardState({
   status,
   joinRequests,
   isAdmin,
+  adminCanAct = false,
   adminActionsOpen = false,
   chatOpen = false,
   chatMessages = [],
@@ -48,12 +49,31 @@ export function buildMatchCardState({
   const pendingRequests = requestRows.filter((request) => request.status === 'pending');
   const pendingJoinAttention = isCreator && pendingRequests.length > 0 ? pendingRequests.length : 0;
   const unreadMatchCountNum = Number(unreadMatchCount) || 0;
-  const hasAdminActions = Boolean(isAdmin && (
-    ((isCreator || isAdmin) && (status === 'open' || status === 'full')) ||
-    (status === 'in_progress' && (isPlayerInMatch || isAdmin) && !matchResult) ||
-    (matchResult && !matchResult.confirmed && (isPlayerInMatch || isAdmin)) ||
-    ((isCreator || isAdmin) && status !== 'completed' && status !== 'in_progress')
-  ));
+  const hasCreatorTools = Boolean(
+    isCreator && (
+      (status === 'open' || status === 'full') ||
+      (status === 'in_progress' && isPlayerInMatch && !matchResult) ||
+      (matchResult && !matchResult.confirmed && isPlayerInMatch) ||
+      (status !== 'completed' && status !== 'in_progress')
+    ),
+  );
+  const hasAdminTools = Boolean(
+    adminCanAct && isAdmin && !isCreator && (
+      (status === 'open' || status === 'full') ||
+      (status === 'in_progress' && !isPlayerInMatch && !matchResult) ||
+      (matchResult && !matchResult.confirmed && !isPlayerInMatch) ||
+      (status !== 'completed' && status !== 'in_progress')
+    ),
+  );
+  const needsAdminPinUnlock = Boolean(
+    isAdmin && !adminCanAct && !isCreator && (
+      (status === 'open' || status === 'full') ||
+      (status === 'in_progress' && !matchResult) ||
+      (matchResult && !matchResult.confirmed) ||
+      (status !== 'completed' && status !== 'in_progress')
+    ),
+  );
+  const hasAdminActions = hasCreatorTools || hasAdminTools || needsAdminPinUnlock;
 
   return {
     left,

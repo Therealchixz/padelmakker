@@ -24,7 +24,7 @@ test('matchStatusLabel describes open matches by available spots', () => {
 
 test('buildMatchCardState derives membership, teams, requests and unread state', () => {
   const state = buildMatchCardState({
-    match: { id: 'match-1', creator_id: 'creator', max_players: 4, match_type: 'closed' },
+    match: { id: 'match-1', creator_id: 'me', max_players: 4, match_type: 'closed' },
     players: [...teamStats.t1, ...teamStats.t2],
     teamStats,
     matchResult: { id: 'result-1', confirmed: false },
@@ -37,6 +37,7 @@ test('buildMatchCardState derives membership, teams, requests and unread state',
       { user_id: 'other', status: 'pending' },
     ],
     isAdmin: true,
+    adminCanAct: true,
     adminActionsOpen: false,
     chatOpen: true,
     chatMessages: [{ id: 'msg-1' }],

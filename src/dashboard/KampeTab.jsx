@@ -30,7 +30,9 @@ import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { canConfirmPadelMatchResult, confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
 import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
 import { groupUnreadNotificationsByMatchId, groupRelevantUnreadNotificationsByMatchId, removeUnreadForMatch, shouldRefreshKampeUnreadForNotificationType } from '../lib/kampeNotificationBadges';
+import { AdminPinGate } from '../components/AdminPinGate';
 import { buildMatchCardState } from '../lib/matchCardState';
+import { useAdminPinSession } from '../lib/useAdminPinSession';
 import { buildKampeMatchLists } from '../lib/matchListFilters';
 import {
   normalizeKampeListFilter,
@@ -227,6 +229,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const { user: authUser, refreshProfile } = useAuth();
   const ask = useConfirm();
   const isAdmin = user?.role === 'admin';
+  const { adminPinVerified, refreshAdminPinSession } = useAdminPinSession(isAdmin && tabActive);
+  const adminCanAct = isAdmin && adminPinVerified;
+  const [adminPinGateOpen, setAdminPinGateOpen] = useState(false);
   const myDisplayName                 = resolveDisplayName(user, authUser);
   const eloSyncKeyKampe = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { profileFresh: kampeProfileFresh, ratedRows: kampeRatedRows, reloadProfileEloBundle: reloadKampeEloBundle } =
@@ -1911,6 +1916,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       status,
       joinRequests: joinRequests[String(m.id)] || [],
       isAdmin,
+      adminCanAct,
       adminActionsOpen: !!expandedAdminActions[m.id],
       chatOpen: !!matchChatOpenById[m.id],
       chatMessages: matchChatById[m.id] || [],
@@ -2381,13 +2387,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const showPrimaryReport = status === "in_progress" && isPlayerInMatch && !mr;
           const showPrimaryConfirm = mr && !mr.confirmed && isPlayerInMatch;
           /* Admin-override-versioner — bor inde i accordion */
-          const adminCanForceStart = isAdmin && (status === "open" || status === "full");
-          const adminCanForceReport = isAdmin && !isPlayerInMatch && status === "in_progress" && !mr;
-          const adminCanForceConfirm = isAdmin && !isPlayerInMatch && mr && !mr.confirmed;
+          const adminCanForceStart = adminCanAct && !isCreator && (status === "open" || status === "full");
+          const adminCanForceReport = adminCanAct && !isCreator && !isPlayerInMatch && status === "in_progress" && !mr;
+          const adminCanForceConfirm = adminCanAct && !isCreator && !isPlayerInMatch && mr && !mr.confirmed;
           const canDeleteMatch =
-            (isCreator || isAdmin) && status !== "completed" && status !== "in_progress";
+            (isCreator || adminCanAct) && status !== "completed" && status !== "in_progress";
+          const needsAdminPinUnlock =
+            isAdmin && !adminCanAct && !isCreator && status !== "completed" && status !== "in_progress";
           const showToolsAccordion =
-            adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch;
+            adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch || needsAdminPinUnlock;
           return (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {/* ---- Open match: direct join ---- */}
@@ -2621,11 +2629,26 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   fontFamily: "inherit",
                 }}
               >
-                <span>🛠 {isAdmin ? "Admin-værktøjer" : "Creator-værktøjer"}</span>
+                <span>🛠 {isAdmin && !isCreator ? "Admin-værktøjer" : isAdmin ? "Admin / creator-værktøjer" : "Creator-værktøjer"}</span>
                 {adminActionsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
               {adminActionsOpen && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px 12px 12px", borderTop: "1px solid " + theme.warm + "33" }}>
+                  {needsAdminPinUnlock ? (
+                    <div className="pm-feedback-panel pm-feedback-panel--warning" style={{ fontSize: "12px", lineHeight: 1.45, padding: "10px 12px" }}>
+                      <div style={{ fontWeight: 700, marginBottom: "6px" }}>Admin-PIN påkrævet</div>
+                      <div style={{ marginBottom: "10px", color: theme.textMid }}>
+                        For at slette eller styre andres kampe skal du bekræfte din admin-kode.
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAdminPinGateOpen(true)}
+                        style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "12px" }}
+                      >
+                        Indtast admin-PIN
+                      </button>
+                    </div>
+                  ) : null}
                   {/* Admin override: Gennemtving start */}
                   {adminCanForceStart && (
                     <button
@@ -2670,7 +2693,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   {/* Slet kamp */}
                   {canDeleteMatch && (
                     <button onClick={() => deleteMatch(m.id)} disabled={busy} style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}>
-                      <Trash2 size={14} /> {isAdmin ? "Slet kamp (Admin)" : "Slet kamp"}
+                      <Trash2 size={14} /> {isAdmin && adminCanAct && !isCreator ? "Slet kamp (Admin)" : "Slet kamp"}
                     </button>
                   )}
                 </div>
@@ -2807,6 +2830,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       status,
       joinRequests: joinRequests[String(m.id)] || [],
       isAdmin,
+      adminCanAct,
       adminActionsOpen: !!expandedAdminActions[m.id],
       chatOpen: !!matchChatOpenById[m.id],
       chatMessages: matchChatById[m.id] || [],
@@ -2828,6 +2852,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     busyId,
     joinRequests,
     isAdmin,
+    adminCanAct,
     expandedAdminActions,
     matchChatOpenById,
     matchChatById,
@@ -3004,18 +3029,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       showShareLink ||
       (joined && status !== "completed") ||
       (isCreator && status === "open" && mp.length === 3);
-    const adminCanForceStart = isAdmin && (status === "open" || status === "full");
-    const adminCanForceReport = isAdmin && !isPlayerInMatch && status === "in_progress" && !mr;
-    const adminCanForceConfirm = isAdmin && !isPlayerInMatch && mr && !mr.confirmed;
+    const adminCanForceStart = adminCanAct && !isCreator && (status === "open" || status === "full");
+    const adminCanForceReport = adminCanAct && !isCreator && !isPlayerInMatch && status === "in_progress" && !mr;
+    const adminCanForceConfirm = adminCanAct && !isCreator && !isPlayerInMatch && mr && !mr.confirmed;
     const canDeleteMatch =
-      (isCreator || isAdmin) && status !== "completed" && status !== "in_progress";
+      (isCreator || adminCanAct) && status !== "completed" && status !== "in_progress";
     const kickablePlayers =
-      (isCreator || isAdmin) && (status === "open" || status === "full")
+      (isCreator || adminCanAct) && (status === "open" || status === "full")
         ? mp.filter((p) => String(p.user_id) !== String(user.id))
         : [];
     const canKickPlayers = kickablePlayers.length > 0;
+    const needsAdminPinUnlock =
+      isAdmin && !adminCanAct && !isCreator && status !== "completed" && status !== "in_progress";
     const showToolsAccordion =
-      adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch || canKickPlayers;
+      adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch || canKickPlayers || needsAdminPinUnlock;
     const hasManage =
       canUseMatchChat || hasSecondaryLinks || showToolsAccordion;
 
@@ -3224,6 +3251,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             </button>
             {adminActionsOpen ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px 12px 12px", borderTop: "1px solid " + theme.warm + "33" }}>
+                {needsAdminPinUnlock ? (
+                  <div className="pm-feedback-panel pm-feedback-panel--warning" style={{ fontSize: "12px", lineHeight: 1.45, padding: "10px 12px" }}>
+                    <div style={{ fontWeight: 700, marginBottom: "6px" }}>Admin-PIN påkrævet</div>
+                    <div style={{ marginBottom: "10px", color: theme.textMid }}>
+                      For at slette eller styre andres kampe skal du bekræfte din admin-kode.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAdminPinGateOpen(true)}
+                      style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "12px" }}
+                    >
+                      Indtast admin-PIN
+                    </button>
+                  </div>
+                ) : null}
                 {canKickPlayers ? (
                   <div className="pm-kampe-v2-kick-players">
                     <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
@@ -3305,7 +3347,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     disabled={busy}
                     style={{ ...btn(false), width: "100%", justifyContent: "center", fontSize: "13px", color: theme.red, borderColor: theme.red + "55" }}
                   >
-                    <Trash2 size={14} /> {isAdmin ? "Slet kamp (Admin)" : "Slet kamp"}
+                    <Trash2 size={14} /> {isAdmin && adminCanAct && !isCreator ? "Slet kamp (Admin)" : "Slet kamp"}
                   </button>
                 ) : null}
               </div>
@@ -3888,6 +3930,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           onKickPlayer={kickPlayer}
           onProfileClick={(prof) => setViewPlayer(prof)}
           managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
+        />
+      ) : null}
+
+      {adminPinGateOpen ? (
+        <AdminPinGate
+          userId={user?.id}
+          showToast={showToast}
+          onUnlocked={() => {
+            setAdminPinGateOpen(false);
+            void refreshAdminPinSession();
+          }}
+          onCancel={() => setAdminPinGateOpen(false)}
         />
       ) : null}
       </>
