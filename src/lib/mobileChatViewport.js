@@ -3,6 +3,9 @@
 /** Under denne højde antages tastaturet at være åbent (ios-chat-mønster). */
 export const MOBILE_CHAT_KEYBOARD_VV_HEIGHT = 600;
 
+const SETTLE_DELAYS_MS = [0, 50, 120, 280, 500, 800, 1200];
+const NUDGE_DELAYS_MS = [0, 80, 220, 480, 800];
+
 /**
  * Fjern CSS-variabler fra mobil-chat viewport-tilpasning.
  * @param {HTMLElement} [root]
@@ -74,16 +77,27 @@ export function syncMobileChatViewportVars(
   );
 }
 
-let mobileChatViewportBound = false;
+let viewportBindCount = 0;
 /** @type {(() => void) | null} */
 let mobileChatViewportSyncHandler = null;
 let lastVisualViewportHeight = 0;
 
+let settleSeq = 0;
+/** @type {ReturnType<typeof setTimeout>[]} */
+let settleTimers = [];
+
 /**
- * Lyt på visualViewport under aktiv mobil-chat.
- * @param {HTMLElement} [root]
- * @returns {() => void}
+ * Nulstil dokument-scroll — iOS kan efter tastatur efterlade offsetTop.
  */
+export function resetMobileDocumentScroll() {
+  if (typeof window === 'undefined') return;
+  window.scrollTo(0, 0);
+  const vv = window.visualViewport;
+  if (vv && vv.offsetTop > 0) {
+    window.scrollTo(0, window.scrollY + vv.offsetTop);
+  }
+}
+
 /**
  * Efter iOS-tastatur lukkes: gensynk --vvh/--vvs og nulstil dokument-scroll.
  * @param {HTMLElement} [root]
@@ -93,58 +107,55 @@ export function nudgeMobileChatViewportAfterKeyboard(root = document.documentEle
   const vv = window.visualViewport;
   if (!vv) return;
 
-  const sync = () => syncMobileChatViewportVars(root, vv);
-  const resetScroll = () => {
-    window.scrollTo(0, 0);
-    if (vv.offsetTop > 0) {
-      window.scrollTo(0, window.scrollY + vv.offsetTop);
-    }
+  const tick = () => {
+    syncMobileChatViewportVars(root, vv);
+    resetMobileDocumentScroll();
   };
 
-  sync();
-  resetScroll();
-  requestAnimationFrame(() => {
-    sync();
-    resetScroll();
+  tick();
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(tick);
+  }
+  NUDGE_DELAYS_MS.slice(1).forEach((ms) => {
+    window.setTimeout(tick, ms);
   });
-  window.setTimeout(sync, 80);
-  window.setTimeout(() => {
-    sync();
-    resetScroll();
-  }, 220);
-  window.setTimeout(() => {
-    sync();
-    resetScroll();
-  }, 480);
 }
 
+/**
+ * Lyt på visualViewport under aktiv mobil-chat (reference-tælling ved hurtig åbn/luk).
+ * @param {HTMLElement} [root]
+ * @returns {() => void}
+ */
 export function bindMobileChatViewportSync(root = document.documentElement) {
-  if (typeof window === 'undefined' || mobileChatViewportBound) {
-    return () => {};
-  }
+  if (typeof window === 'undefined') return () => {};
   const vv = window.visualViewport;
   if (!vv) return () => {};
 
-  lastVisualViewportHeight = vv.height;
-  mobileChatViewportSyncHandler = () => {
-    const prev = lastVisualViewportHeight;
+  viewportBindCount += 1;
+  if (viewportBindCount === 1) {
     lastVisualViewportHeight = vv.height;
+    mobileChatViewportSyncHandler = () => {
+      const prev = lastVisualViewportHeight;
+      lastVisualViewportHeight = vv.height;
+      syncMobileChatViewportVars(root, vv);
+      if (prev < MOBILE_CHAT_KEYBOARD_VV_HEIGHT && vv.height >= MOBILE_CHAT_KEYBOARD_VV_HEIGHT) {
+        nudgeMobileChatViewportAfterKeyboard(root);
+      }
+    };
+    vv.addEventListener('resize', mobileChatViewportSyncHandler);
+    vv.addEventListener('scroll', mobileChatViewportSyncHandler);
     syncMobileChatViewportVars(root, vv);
-    if (prev < MOBILE_CHAT_KEYBOARD_VV_HEIGHT && vv.height >= MOBILE_CHAT_KEYBOARD_VV_HEIGHT) {
-      nudgeMobileChatViewportAfterKeyboard(root);
-    }
-  };
-  vv.addEventListener('resize', mobileChatViewportSyncHandler);
-  vv.addEventListener('scroll', mobileChatViewportSyncHandler);
-  mobileChatViewportSyncHandler();
-  mobileChatViewportBound = true;
+    resetMobileDocumentScroll();
+  }
 
   return () => {
+    if (typeof window === 'undefined') return;
+    viewportBindCount = Math.max(0, viewportBindCount - 1);
+    if (viewportBindCount > 0) return;
     if (!mobileChatViewportSyncHandler) return;
     vv.removeEventListener('resize', mobileChatViewportSyncHandler);
     vv.removeEventListener('scroll', mobileChatViewportSyncHandler);
     mobileChatViewportSyncHandler = null;
-    mobileChatViewportBound = false;
     lastVisualViewportHeight = 0;
     clearMobileChatViewportCssVars(root);
   };
@@ -173,14 +184,39 @@ export function clearStaleMobileChatViewportLock(
 }
 
 /**
- * iOS kan efter tastatur efterlade scroll-offset → hul under fixed bundmenu.
- * Nulstil scroll og layout-viewport efter chat lukkes.
+ * iOS kan efter tastatur efterlade scroll-offset → hul under input/menu.
+ * Samler flere settle-kald til én sekvens (undgår race ved hurtig ind/ud af chat).
  */
 export function settleMobileViewportAfterChat() {
   if (typeof window === 'undefined') return;
-  clearStaleMobileChatViewportLock();
-  document.body.classList.remove('pm-mobile-chat-overlay-open');
-  nudgeMobileChatViewportAfterKeyboard();
-  window.setTimeout(() => nudgeMobileChatViewportAfterKeyboard(), 320);
-  window.setTimeout(() => nudgeMobileChatViewportAfterKeyboard(), 700);
+  settleSeq += 1;
+  const seq = settleSeq;
+  settleTimers.forEach((id) => window.clearTimeout(id));
+  settleTimers = [];
+
+  const tick = () => {
+    if (seq !== settleSeq) return;
+    clearStaleMobileChatViewportLock();
+    document.body.classList.remove('pm-mobile-chat-overlay-open');
+    nudgeMobileChatViewportAfterKeyboard();
+  };
+
+  SETTLE_DELAYS_MS.forEach((ms) => {
+    if (ms === 0) {
+      tick();
+      return;
+    }
+    settleTimers.push(window.setTimeout(tick, ms));
+  });
+}
+
+/**
+ * Luk aktivt fokus (typisk tastatur) før overlay fjernes.
+ */
+export function blurActiveMobileChatFocus() {
+  if (typeof document === 'undefined') return;
+  const active = document.activeElement;
+  if (active instanceof HTMLElement) {
+    active.blur();
+  }
 }

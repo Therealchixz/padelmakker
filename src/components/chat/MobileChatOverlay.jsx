@@ -2,6 +2,8 @@ import { useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   bindMobileChatViewportSync,
+  blurActiveMobileChatFocus,
+  nudgeMobileChatViewportAfterKeyboard,
   settleMobileViewportAfterChat,
 } from '../../lib/mobileChatViewport';
 
@@ -15,11 +17,12 @@ export function MobileChatOverlay({ header, footer, children }) {
     const body = document.body;
     body.classList.add('pm-mobile-chat-overlay-open');
     const unbindViewport = bindMobileChatViewportSync();
+    nudgeMobileChatViewportAfterKeyboard();
     return () => {
+      blurActiveMobileChatFocus();
       unbindViewport();
       body.classList.remove('pm-mobile-chat-overlay-open');
       settleMobileViewportAfterChat();
-      window.setTimeout(() => settleMobileViewportAfterChat(), 320);
     };
   }, []);
 

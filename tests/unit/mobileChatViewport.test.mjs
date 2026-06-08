@@ -108,6 +108,7 @@ test('bindMobileChatViewportSync opdaterer variabler og kan frigives', () => {
 
   globalThis.window = {
     visualViewport: vv,
+    scrollTo: () => {},
   };
 
   const unbind = bindMobileChatViewportSync(root);
@@ -118,6 +119,47 @@ test('bindMobileChatViewportSync opdaterer variabler og kan frigives', () => {
   assert.equal(root.style['--vvs'], '0px');
 
   unbind();
+  assert.equal(root.style['--vvh'], undefined);
+
+  delete globalThis.window;
+});
+
+test('bindMobileChatViewportSync bruger reference-tælling ved hurtig genåbning', () => {
+  const listeners = new Map();
+  const root = {
+    style: {
+      setProperty(name, value) {
+        this[name] = value;
+      },
+      removeProperty(name) {
+        delete this[name];
+      },
+    },
+  };
+  const vv = {
+    height: 700,
+    offsetTop: 0,
+    addEventListener(type, fn) {
+      listeners.set(type, fn);
+    },
+    removeEventListener(type) {
+      listeners.delete(type);
+    },
+  };
+
+  globalThis.window = {
+    visualViewport: vv,
+    scrollTo: () => {},
+  };
+
+  const unbindA = bindMobileChatViewportSync(root);
+  const unbindB = bindMobileChatViewportSync(root);
+  assert.equal(listeners.has('resize'), true);
+
+  unbindA();
+  assert.equal(root.style['--vvh'], '700px');
+
+  unbindB();
   assert.equal(root.style['--vvh'], undefined);
 
   delete globalThis.window;

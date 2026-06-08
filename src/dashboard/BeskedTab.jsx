@@ -33,7 +33,10 @@ import { ChatThreadHeader } from '../components/chat/ChatThreadHeader';
 import { ChatMessageList } from '../components/chat/ChatMessageList';
 import { ChatInputBar } from '../components/chat/ChatInputBar';
 import { MobileChatOverlay } from '../components/chat/MobileChatOverlay';
-import { settleMobileViewportAfterChat } from '../lib/mobileChatViewport';
+import {
+  blurActiveMobileChatFocus,
+  nudgeMobileChatViewportAfterKeyboard,
+} from '../lib/mobileChatViewport';
 
 const CHAT_WINDOW_SIZE = 80;
 const CONVO_CACHE_TTL_MS = 30_000;
@@ -756,15 +759,20 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   };
 
   const closeThread = () => {
+    const finishClose = () => {
+      setSelectedId(null);
+      setSelectedTeamId(null);
+      setTeamMeta(null);
+      navigate('/dashboard/beskeder', { replace: true });
+    };
     if (isMobileView) {
+      blurActiveMobileChatFocus();
       onMobileConversationStateChange?.(false);
-      settleMobileViewportAfterChat();
-      window.setTimeout(() => settleMobileViewportAfterChat(), 320);
+      // Giv iOS tid til at lukke tastaturet før overlay fjernes (undgår race).
+      window.setTimeout(finishClose, 140);
+      return;
     }
-    setSelectedId(null);
-    setSelectedTeamId(null);
-    setTeamMeta(null);
-    navigate('/dashboard/beskeder', { replace: true });
+    finishClose();
   };
 
   const mobileChatActive = Boolean((selectedId || selectedTeamId) && isMobileView);
@@ -973,6 +981,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         onChange={handleInputChange}
         onSend={handleSend}
         onKeyDown={handleKeyDown}
+        onBlur={mobileChatActive ? nudgeMobileChatViewportAfterKeyboard : undefined}
         enableQuickActions={!chatIsBlocked}
         onInviteMatch={() => void openMatchPicker()}
         onShareVenue={() => void openVenuePicker()}
