@@ -8872,8 +8872,13 @@ button,
 }
 
 .pm-liga-v2-schedule-sheet,
-.pm-liga-v2-team-sheet {
+.pm-liga-v2-team-sheet,
+.pm-player-profile-sheet {
   z-index: 1050;
+}
+
+.pm-player-profile-sheet-body {
+  padding-bottom: 4px;
 }
 
 .pm-kampe-v2-sheet.pm-liga-v2-team-sheet {

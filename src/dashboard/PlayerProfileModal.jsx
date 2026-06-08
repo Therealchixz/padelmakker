@@ -1,21 +1,28 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { theme, btn, tag } from '../lib/platformTheme';
 import { availabilityTags } from '../lib/platformUtils';
 import { filterRatedEloHistoryRows, statsFromEloHistoryRows, winStreaksFromEloHistory } from '../lib/eloHistoryUtils';
 import { eloOf } from '../lib/matchDisplayUtils';
-import { MapPin, MessageCircle } from 'lucide-react';
+import { MapPin, MessageCircle, X } from 'lucide-react';
+import { useBottomSheetDragToClose } from '../lib/useBottomSheetDragToClose';
 import { calcAge, normalizeStringArrayField } from '../lib/profileUtils';
 import { DAYS_OF_WEEK } from '../lib/platformConstants';
 import { profileLevelDisplayText, formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { getPlayerSeekingDetails } from '../lib/seekingActivityLabel';
 import { AvatarCircle } from '../components/AvatarCircle';
-import { AppModal } from '../components/AppModal';
 import { SeekingCallout, SeekingCalloutDetail } from '../components/SeekingCallout';
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { resolveAmericanoEloDisplay } from '../features/americano/americanoDisplayUtils';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
+  const open = !!player;
+  const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
+    onClose,
+    enabled: open,
+  });
+
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [statsMode, setStatsMode] = useState('2v2');
@@ -130,6 +137,23 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
     void loadProfileData();
   }, [loadProfileData]);
 
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose?.();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose, open]);
+
   const pRef = profileRow || player || {};
   const histStatsModal = statsFromEloHistoryRows(ratedHistoryRows);
   const elo = dataLoading ? null : (histStatsModal?.elo ?? eloOf(pRef));
@@ -197,15 +221,42 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
 
   const playerName = pRef.full_name || pRef.name || 'Spiller';
 
-  return (
-    <AppModal
-      open={!!player}
-      onClose={onClose}
-      ariaLabel={`Profil for ${playerName}`}
-      maxWidthPreset="sm"
-      contentStyle={{ overflowY: 'auto', maxHeight: '90dvh', WebkitOverflowScrolling: 'touch' }}
-    >
-      <div className="pm-modal-body">
+  if (!open || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <>
+      <button
+        type="button"
+        className="pm-kampe-v2-sheet-backdrop pm-kampe-v2-sheet-backdrop--stacked"
+        aria-label={`Luk profil for ${playerName}`}
+        onClick={onClose}
+      />
+      <div
+        ref={sheetRef}
+        className={`pm-kampe-v2-sheet pm-kampe-v2-detail-sheet pm-player-profile-sheet${sheetClassName ? ` ${sheetClassName}` : ''}`}
+        style={sheetStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Profil for ${playerName}`}
+      >
+        <div {...dragZoneProps} aria-label="Træk her for at lukke">
+          <div className="pm-kampe-v2-sheet-handle" aria-hidden />
+          <div className="pm-kampe-v2-detail-head">
+            <div className="pm-kampe-v2-detail-head-toolbar">
+              <div className="pm-kampe-v2-detail-type">Spillerprofil</div>
+              <button
+                type="button"
+                className="pm-kampe-v2-detail-close"
+                onClick={onClose}
+                onPointerDown={(event) => event.stopPropagation()}
+                aria-label="Luk"
+              >
+                <X size={18} aria-hidden />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="pm-player-profile-sheet-body">
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
           <AvatarCircle avatar={pRef.avatar} size={64} emojiSize="32px" style={{ background: theme.accentBg, border: '2px solid ' + theme.accent + '40' }} />
           <div style={{ minWidth: 0 }}>
@@ -425,12 +476,13 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
         )}
 
         {onMessage && (
-          <button type="button" onClick={onMessage} style={{ ...btn(true), width: '100%', justifyContent: 'center', marginBottom: '8px' }}>
+          <button type="button" onClick={onMessage} style={{ ...btn(true), width: '100%', justifyContent: 'center' }}>
             <MessageCircle size={15} /> Send besked
           </button>
         )}
-        <button type="button" onClick={onClose} style={{ ...btn(false), width: '100%', justifyContent: 'center' }}>Luk</button>
+        </div>
       </div>
-    </AppModal>
+    </>,
+    document.body,
   );
 }
