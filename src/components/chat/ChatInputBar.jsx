@@ -1,19 +1,7 @@
-import { useState, useCallback, useLayoutEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Plus, Send } from 'lucide-react';
 import { ChatQuickActions } from './ChatQuickActions';
 import { QUICK_EMOJIS } from '../../lib/chatMessageUtils';
-
-/** Ca. 5–6 linjer — derefter scroll inde i feltet. */
-const CHAT_INPUT_MAX_HEIGHT_PX = 132;
-const CHAT_INPUT_MIN_HEIGHT_PX = 22;
-
-function resizeChatInput(el) {
-  if (!el) return;
-  el.style.height = '0px';
-  const next = Math.min(Math.max(el.scrollHeight, CHAT_INPUT_MIN_HEIGHT_PX), CHAT_INPUT_MAX_HEIGHT_PX);
-  el.style.height = `${next}px`;
-  el.style.overflowY = el.scrollHeight > CHAT_INPUT_MAX_HEIGHT_PX ? 'auto' : 'hidden';
-}
 
 export function ChatInputBar({
   value,
@@ -32,23 +20,7 @@ export function ChatInputBar({
 }) {
   const [showActions, setShowActions] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
-  const fieldRef = useRef(null);
   const hasText = value.trim().length > 0;
-
-  const setFieldRef = useCallback((node) => {
-    fieldRef.current = node;
-  }, []);
-
-  useLayoutEffect(() => {
-    const node = fieldRef.current;
-    if (typeof inputRef === 'function') inputRef(node);
-    else if (inputRef != null) {
-      // Forward ref til parent (fx focus/blur i BeskedTab).
-      // eslint-disable-next-line react-hooks/immutability -- standard ref-forwarding
-      inputRef.current = node;
-    }
-    resizeChatInput(node);
-  }, [value, placeholder, disabled, sending, inputRef]);
 
   const handleChange = (next) => {
     onChange(next);
@@ -93,9 +65,8 @@ export function ChatInputBar({
           </button>
         ) : null}
         <div className="pm-chat-v2-input-field-wrap">
-          <textarea
-            ref={setFieldRef}
-            rows={1}
+          <input
+            ref={inputRef}
             value={value}
             onChange={(e) => handleChange(e.target.value.slice(0, 1000))}
             onKeyDown={onKeyDown}
@@ -103,7 +74,6 @@ export function ChatInputBar({
             className="pm-chat-v2-input-field"
             maxLength={1000}
             disabled={disabled || sending}
-            aria-label={placeholder}
           />
           <button
             type="button"

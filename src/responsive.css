@@ -1715,24 +1715,8 @@ button,
     max-width: calc(100% - 152px);
   }
 
-  /* Flex-shell: header + scrollbart main + bundmenu i flow (undgår iOS-hul under fixed nav) */
-  #pm-app-shell {
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow: hidden;
-  }
-
-  .pm-dash-header {
-    flex-shrink: 0;
-  }
-
   .pm-dash-main {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: clamp(16px, 4vw, 24px);
+    padding-bottom: min(calc(79px + env(safe-area-inset-bottom)), 119px);
   }
 
   .pm-dash-main--home {
@@ -1778,9 +1762,10 @@ button,
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 2px;
-    position: relative;
-    flex-shrink: 0;
-    width: 100%;
+    position: fixed;
+    left: max(0px, env(safe-area-inset-left));
+    right: max(0px, env(safe-area-inset-right));
+    bottom: 0;
     z-index: 46;
     background: color-mix(in srgb, var(--pm-surface) 92%, transparent);
     backdrop-filter: blur(14px) saturate(1.05);
@@ -9680,10 +9665,10 @@ button,
 .pm-chat-v2-input-field-wrap {
   flex: 1;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
   min-height: 38px;
-  padding: 6px 6px 6px 14px;
+  padding: 0 6px 0 14px;
   border-radius: 22px;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface-alt);
@@ -9700,23 +9685,16 @@ button,
 
 .pm-chat-v2-input-field {
   flex: 1;
-  width: 100%;
-  min-width: 0;
   border: none;
   outline: none;
-  resize: none;
-  overflow-y: hidden;
   -webkit-appearance: none;
   appearance: none;
   -webkit-tap-highlight-color: transparent;
   background: transparent;
   font-family: inherit;
   font-size: 15px;
-  line-height: 1.35;
   color: var(--pm-text);
-  padding: 2px 0;
-  margin: 0;
-  vertical-align: top;
+  padding: 8px 0;
 }
 
 .pm-chat-v2-input-field:focus,
