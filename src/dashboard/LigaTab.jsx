@@ -546,8 +546,7 @@ export function LigaTab({
     onFocusLeagueHandled?.();
   }, [focusLeagueId, tabActive, embedInKampe, loading, leagues, onFocusLeagueHandled]);
 
-  const visibleLeagues = leagues.filter(l => {
-    if (l.status !== view) return false;
+  const leaguesMatchingListFilters = useMemo(() => leagues.filter((l) => {
     if (scope === 'mine' && !myTeamByLeague[l.id] && l.created_by !== user.id) return false;
     if (listRegionFilter && !profileAreaMatchesKampeRegionFilter(creatorAreasByUserId[String(l.created_by)], listRegionFilter)) return false;
     if (search) {
@@ -555,7 +554,12 @@ export function LigaTab({
       if (!l.name?.toLowerCase().includes(q) && !l.description?.toLowerCase().includes(q)) return false;
     }
     return true;
-  });
+  }), [leagues, scope, myTeamByLeague, user?.id, listRegionFilter, creatorAreasByUserId, search]);
+
+  const visibleLeagues = useMemo(
+    () => leaguesMatchingListFilters.filter((l) => l.status === view),
+    [leaguesMatchingListFilters, view],
+  );
 
   useEffect(() => {
     onFilteredCountChange?.(visibleLeagues.length);
@@ -565,11 +569,11 @@ export function LigaTab({
     { id: 'mine', label: 'Mine ligaer' },
   ];
   const leagueTopTabs = [{ id: 'liga', label: 'Liga' }];
-  const leagueStatusCount = {
-    registration: leagues.filter(l => l.status === 'registration').length,
-    active: leagues.filter(l => l.status === 'active').length,
-    completed: leagues.filter(l => l.status === 'completed').length,
-  };
+  const leagueStatusCount = useMemo(() => ({
+    registration: leaguesMatchingListFilters.filter((l) => l.status === 'registration').length,
+    active: leaguesMatchingListFilters.filter((l) => l.status === 'active').length,
+    completed: leaguesMatchingListFilters.filter((l) => l.status === 'completed').length,
+  }), [leaguesMatchingListFilters]);
   const leagueStatusTabs = [
     { id: 'registration', label: `Tilmelding${leagueStatusCount.registration > 0 ? ` ${leagueStatusCount.registration}` : ''}` },
     { id: 'active', label: `Aktiv${leagueStatusCount.active > 0 ? ` ${leagueStatusCount.active}` : ''}` },
