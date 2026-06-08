@@ -179,7 +179,7 @@ export function clearStaleMobileChatViewportLock(
 export function settleMobileViewportAfterChat() {
   if (typeof window === 'undefined') return;
   clearStaleMobileChatViewportLock();
-  document.body.classList.remove('pm-body--mobile-chat');
+  document.body.classList.remove('pm-mobile-chat-overlay-open');
   nudgeMobileChatViewportAfterKeyboard();
   window.setTimeout(() => nudgeMobileChatViewportAfterKeyboard(), 320);
   window.setTimeout(() => nudgeMobileChatViewportAfterKeyboard(), 700);

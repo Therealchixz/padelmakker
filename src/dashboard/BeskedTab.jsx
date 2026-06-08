@@ -32,10 +32,8 @@ import { ChatInbox } from '../components/chat/ChatInbox';
 import { ChatThreadHeader } from '../components/chat/ChatThreadHeader';
 import { ChatMessageList } from '../components/chat/ChatMessageList';
 import { ChatInputBar } from '../components/chat/ChatInputBar';
-import {
-  nudgeMobileChatViewportAfterKeyboard,
-  settleMobileViewportAfterChat,
-} from '../lib/mobileChatViewport';
+import { MobileChatOverlay } from '../components/chat/MobileChatOverlay';
+import { settleMobileViewportAfterChat } from '../lib/mobileChatViewport';
 
 const CHAT_WINDOW_SIZE = 80;
 const CONVO_CACHE_TTL_MS = 30_000;
@@ -872,10 +870,6 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     );
   }, [conversations, teamConversations, profiles, user.id, onlineIds]);
 
-  const threadShellClass = mobileChatActive
-    ? 'pm-chat-v2-thread pm-chat-v2-thread--mobile'
-    : 'pm-chat-v2-thread';
-
   // ── Beskedtråd (DM eller liga-hold) ───────────────────────────────────────
   if (selectedId || selectedTeamId) {
     const isTeamThread = Boolean(selectedTeamId);
@@ -899,34 +893,36 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           level: otherProfile?.level,
         });
 
-    return (
-      <div className={threadShellClass}>
-        <ChatThreadHeader
-          title={threadTitle}
-          subtitle={threadSubtitle}
-          avatarId={isTeamThread ? selectedTeamId : selectedId}
-          avatarName={threadTitle}
-          avatarUrl={otherProfile?.avatar || null}
-          online={partnerOnline}
-          onBack={closeThread}
-          actionsSlot={!isTeamThread ? (
-            <BeskedChatActions
-              otherUserId={selectedId}
-              otherName={getName(selectedId)}
-              iBlockedThem={iBlockedThem}
-              onBlocked={async () => {
-                await refreshBlockState();
-                closeThread();
-                void loadConversations();
-              }}
-              onUnblocked={async () => {
-                await refreshBlockState();
-                void loadConversations();
-              }}
-            />
-          ) : null}
-        />
+    const threadHeader = (
+      <ChatThreadHeader
+        title={threadTitle}
+        subtitle={threadSubtitle}
+        avatarId={isTeamThread ? selectedTeamId : selectedId}
+        avatarName={threadTitle}
+        avatarUrl={otherProfile?.avatar || null}
+        online={partnerOnline}
+        onBack={closeThread}
+        actionsSlot={!isTeamThread ? (
+          <BeskedChatActions
+            otherUserId={selectedId}
+            otherName={getName(selectedId)}
+            iBlockedThem={iBlockedThem}
+            onBlocked={async () => {
+              await refreshBlockState();
+              closeThread();
+              void loadConversations();
+            }}
+            onUnblocked={async () => {
+              await refreshBlockState();
+              void loadConversations();
+            }}
+          />
+        ) : null}
+      />
+    );
 
+    const threadMessages = (
+      <>
         {!isTeamThread && chatIsBlocked && (
           <div className="pm-chat-v2-blocked">
             {iBlockedThem
@@ -967,27 +963,32 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         />
 
         <div ref={bottomRef} aria-hidden style={{ height: 1, flexShrink: 0 }} />
+      </>
+    );
 
-        <ChatInputBar
-          inputRef={inputRef}
-          value={inputText}
-          onChange={handleInputChange}
-          onSend={handleSend}
-          onKeyDown={handleKeyDown}
-          onBlur={mobileChatActive ? nudgeMobileChatViewportAfterKeyboard : undefined}
-          enableQuickActions={!chatIsBlocked}
-          onInviteMatch={() => void openMatchPicker()}
-          onShareVenue={() => void openVenuePicker()}
-          onSuggestTime={openTimePicker}
-          placeholder={
-            isTeamThread
-              ? 'Skriv til holdet…'
-              : (chatIsBlocked ? 'Beskeder er blokeret' : 'Besked…')
-          }
-          disabled={!isTeamThread && chatIsBlocked}
-          sending={isTeamThread ? teamSending : sending}
-        />
+    const threadFooter = (
+      <ChatInputBar
+        inputRef={inputRef}
+        value={inputText}
+        onChange={handleInputChange}
+        onSend={handleSend}
+        onKeyDown={handleKeyDown}
+        enableQuickActions={!chatIsBlocked}
+        onInviteMatch={() => void openMatchPicker()}
+        onShareVenue={() => void openVenuePicker()}
+        onSuggestTime={openTimePicker}
+        placeholder={
+          isTeamThread
+            ? 'Skriv til holdet…'
+            : (chatIsBlocked ? 'Beskeder er blokeret' : 'Besked…')
+        }
+        disabled={!isTeamThread && chatIsBlocked}
+        sending={isTeamThread ? teamSending : sending}
+      />
+    );
 
+    const threadSheets = (
+      <>
         <ChatActionSheet
           open={actionSheet === 'match'}
           title="Invitér til kamp"
@@ -1065,6 +1066,28 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
             </button>
           </div>
         </ChatActionSheet>
+      </>
+    );
+
+    if (mobileChatActive) {
+      return (
+        <>
+          <MobileChatOverlay header={threadHeader} footer={threadFooter}>
+            <div className="pm-chat-v2-thread pm-chat-v2-thread--mobile">
+              {threadMessages}
+            </div>
+          </MobileChatOverlay>
+          {threadSheets}
+        </>
+      );
+    }
+
+    return (
+      <div className="pm-chat-v2-thread">
+        {threadHeader}
+        {threadMessages}
+        {threadFooter}
+        {threadSheets}
       </div>
     );
   }

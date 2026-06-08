@@ -39,10 +39,6 @@ import {
   scrollDashboardToTop,
   shouldScrollDashboardToTopOnTabReselect,
 } from '../lib/dashboardScroll';
-import {
-  bindMobileChatViewportSync,
-  settleMobileViewportAfterChat,
-} from '../lib/mobileChatViewport';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -766,8 +762,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [accountPos, setAccountPos] = useState(null);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
   const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
-  const wasMobileChatRef = useRef(false);
-  const prevTabRef = useRef(tab);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackCategory, setFeedbackCategory] = useState(FEEDBACK_DEFAULT_CATEGORY);
   const [feedbackPriority, setFeedbackPriority] = useState(FEEDBACK_DEFAULT_PRIORITY);
@@ -1348,46 +1342,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
 
-  // Mobil besked-tråd: ios-chat-mønster (visualViewport) + nulstil kun ved exit fra tråd.
-  useLayoutEffect(() => {
-    if (typeof document === 'undefined') return undefined;
-    const body = document.body;
-    if (hideMobileBottomNav) {
-      wasMobileChatRef.current = true;
-      body.classList.add('pm-body--mobile-chat');
-      const unbindViewport = bindMobileChatViewportSync();
-      return () => {
-        unbindViewport();
-        body.classList.remove('pm-body--mobile-chat');
-      };
-    }
-    body.classList.remove('pm-body--mobile-chat');
-    const leavingChat = wasMobileChatRef.current;
-    wasMobileChatRef.current = false;
-    if (!isMobileView || !leavingChat) return undefined;
-    settleMobileViewportAfterChat();
-    const timer = window.setTimeout(() => settleMobileViewportAfterChat(), 320);
-    const lateTimer = window.setTimeout(() => settleMobileViewportAfterChat(), 700);
-    return () => {
-      window.clearTimeout(timer);
-      window.clearTimeout(lateTimer);
-    };
-  }, [hideMobileBottomNav, isMobileView]);
-
-  useEffect(() => {
-    if (!isMobileView) return undefined;
-    const prev = prevTabRef.current;
-    prevTabRef.current = tab;
-    if (prev === 'beskeder' && tab !== 'beskeder') {
-      settleMobileViewportAfterChat();
-    }
-    return undefined;
-  }, [tab, isMobileView]);
-
   return (
     <div
       id="pm-app-shell"
-      className={hideMobileBottomNav ? 'pm-app-shell--mobile-chat' : undefined}
       style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}
     >
       {/* Header */}
