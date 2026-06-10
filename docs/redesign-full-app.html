@@ -407,6 +407,42 @@
   .big-score { font-size: 23px; font-weight: 700; color: var(--navy); letter-spacing: 2px; line-height: 1.25; }
   .success-circle-navy { width: 74px; height: 74px; border-radius: 50%; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; margin: 28px auto 18px; box-shadow: var(--shadow-lg); }
 
+  /* ---------- RELATIONER ---------- */
+  .rel-row { display: flex; align-items: center; gap: 11px; padding: 10px 0; }
+  .rel-row + .rel-row { border-top: 1px solid var(--line); }
+  .rel-row .avatar { width: 38px; height: 38px; font-size: 12px; }
+  .rel-row .avatar.win-ring { border: 2px solid var(--green); }
+  .rel-row .avatar.loss-ring { border: 2px solid var(--red); }
+  .rel-name { flex: 1; font-size: 13px; font-weight: 600; }
+  .rel-name span { display: block; font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 1px; }
+  .rel-pct { text-align: right; }
+  .rel-pct b { font-size: 16px; font-weight: 700; display: block; }
+  .rel-pct span { font-size: 10px; color: var(--muted); }
+  .rel-pct.up b { color: var(--green); } .rel-pct.down b { color: var(--red); }
+
+  /* ---------- ONBOARDING KODE ---------- */
+  .code-boxes { display: flex; gap: 9px; justify-content: center; padding: 6px 0 4px; }
+  .code-box { width: 42px; height: 52px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: var(--navy); }
+  .code-box.filled { border-color: var(--navy); }
+  .code-box.cursor { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(22,55,126,0.12); }
+  .ob-icon { width: 70px; height: 70px; border-radius: 50%; background: var(--inset); border: 1px solid var(--line); color: var(--navy); display: flex; align-items: center; justify-content: center; margin: 18px auto 16px; }
+
+  /* ---------- LANDING SEKTIONER ---------- */
+  .kicker { font-size: 10.5px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--amber); }
+  .land-h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.28; margin-top: 6px; }
+  .step-row { display: flex; gap: 12px; padding: 10px 0; align-items: flex-start; }
+  .step-no { font-size: 12px; font-weight: 700; color: var(--amber); width: 24px; flex: none; padding-top: 1px; }
+  .step-row b { font-size: 13.5px; font-weight: 600; display: block; }
+  .step-row span { font-size: 12px; color: var(--muted); line-height: 1.55; display: block; margin-top: 2px; }
+  .road-col { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 13px 15px; margin: 0 18px 11px; }
+  .road-col ul { margin: 9px 0 0; padding-left: 17px; font-size: 12px; color: var(--muted); line-height: 1.85; }
+  .feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding: 10px 18px 0; }
+  .feat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 11px 12px; font-size: 11.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .feat .icon-sm { width: 14px; height: 14px; color: var(--navy); flex: none; }
+  .footer { background: var(--navy-deep); color: #9DB6DE; padding: 20px 18px 24px; font-size: 11px; line-height: 1.7; margin-top: 18px; }
+  .footer b { color: #fff; }
+  .footer .flinks { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 9px; }
+
   /* ---------- DARK MODE ---------- */
   .phone.dark {
     --bg:    #0E1A30;
@@ -1216,6 +1252,80 @@
       </nav>
     </div>
   </div>
+  <!-- ============ PROFIL: RELATIONER ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Profil · Relationer</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <h2>Profil</h2>
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></button>
+        </div>
+        <div class="chips" style="justify-content:center;padding-top:2px;">
+          <button class="chip">Overblik</button><button class="chip">Ydelse</button><button class="chip active">Relationer</button><button class="chip">Indstillinger</button>
+        </div>
+        <div style="padding:4px 18px 0;"><div class="seg"><span class="active">2v2</span><span>Americano</span><span>Liga</span></div></div>
+
+        <div class="section-h"><h3>Vinder mest med</h3></div>
+        <div class="card" style="margin:0 18px;padding:6px 16px;">
+          <div class="rel-row">
+            <div class="avatar av-b win-ring">MJ</div>
+            <div class="rel-name">Mads Jensen<span>24 kampe sammen</span></div>
+            <div class="rel-pct up"><b>87%</b><span>sejr</span></div>
+          </div>
+          <div class="rel-row">
+            <div class="avatar av-d win-ring">EW</div>
+            <div class="rel-name">Emma Winther<span>12 kampe sammen</span></div>
+            <div class="rel-pct up"><b>75%</b><span>sejr</span></div>
+          </div>
+        </div>
+
+        <div class="section-h"><h3>Taber mest med</h3></div>
+        <div class="card" style="margin:0 18px;padding:6px 16px;">
+          <div class="rel-row">
+            <div class="avatar av-c loss-ring">KB</div>
+            <div class="rel-name">Kasper Bruun<span>8 kampe sammen</span></div>
+            <div class="rel-pct down"><b>63%</b><span>nederlag som makker</span></div>
+          </div>
+        </div>
+
+        <div class="section-h"><h3>Vinder mest mod</h3></div>
+        <div class="card" style="margin:0 18px;padding:6px 16px;">
+          <div class="rel-row">
+            <div class="avatar av-a win-ring">JT</div>
+            <div class="rel-name">Jonas Thomsen<span>11 kampe imod</span></div>
+            <div class="rel-pct up"><b>82%</b><span>din sejr</span></div>
+          </div>
+          <div class="rel-row">
+            <div class="avatar av-d win-ring">MK</div>
+            <div class="rel-name">Mette Kjær<span>6 kampe imod</span></div>
+            <div class="rel-pct up"><b>67%</b><span>din sejr</span></div>
+          </div>
+        </div>
+
+        <div class="section-h"><h3>Taber mest mod</h3></div>
+        <div class="card" style="margin:0 18px 18px;padding:6px 16px;">
+          <div class="rel-row">
+            <div class="avatar av-c loss-ring">LH</div>
+            <div class="rel-name">Lars Hansen<span>9 kampe imod</span></div>
+            <div class="rel-pct down"><b>78%</b><span>de vinder</span></div>
+          </div>
+          <div class="rel-row">
+            <div class="avatar av-b loss-ring">SN</div>
+            <div class="rel-name">Sofie Nielsen<span>7 kampe imod</span></div>
+            <div class="rel-pct down"><b>57%</b><span>de vinder</span></div>
+          </div>
+        </div>
+      </div>
+      <nav class="bottomnav">
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1Z"/></svg>Hjem<div class="navdot"></div></a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Makkere<div class="navdot"></div></a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Baner<div class="navdot"></div></a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Kampe<span class="nbadge">2</span><div class="navdot"></div></a>
+        <a class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Mere<div class="navdot"></div></a>
+      </nav>
+    </div>
+  </div>
 </div>
 
 <div class="section-title">Opret kamp · Indberet resultat · Godkendelse</div>
@@ -1341,6 +1451,142 @@
         </div>
         <div style="text-align:center;font-size:11.5px;color:var(--muted);line-height:1.6;padding:4px 34px 8px;">
           Resultatet sendes til modstanderne til godkendelse. Sørg for at begge hold er enige før indsendelse.
+        </div>
+      </div>
+      <div class="cta-bar">
+        <button class="btn-navy">Bekræft resultat
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8.5 12.5 2.5 2.5 5-5"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ INDBERET: AMERICANO ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Indberet · Americano-runde</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
+          <h2>Indberet runde</h2>
+        </div>
+        <div class="card" style="margin:2px 18px 16px;">
+          <div class="row" style="justify-content:space-between;">
+            <div class="row" style="gap:6px;font-size:12px;font-weight:600;">
+              <svg class="icon-sm" style="color:var(--navy);width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+              Sunset Americano Elite
+            </div>
+            <span class="tag tag-navy">Runde 3 af 7</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:7px;">PadelPadel Aarhus · 8 spillere · 2 baner</div>
+        </div>
+
+        <div class="section-h" style="margin-top:0;"><h3>Bane 4 · Din bane</h3><span class="set-req">OBLIGATORISK</span></div>
+        <div class="card set-card">
+          <div class="score-cols">
+            <div class="score-col">
+              <div class="who">Dig &amp; Frederik</div>
+              <div class="score-ctrl"><button class="cnt-btn">−</button><span class="cnt-val">16</span><button class="cnt-btn plus">+</button></div>
+            </div>
+            <div class="score-col">
+              <div class="who">Sofie &amp; Lars</div>
+              <div class="score-ctrl"><button class="cnt-btn">−</button><span class="cnt-val">9</span><button class="cnt-btn plus">+</button></div>
+            </div>
+          </div>
+          <div style="text-align:center;font-size:11px;color:var(--green);font-weight:600;margin-top:12px;">
+            16 + 9 = 25 point ✓
+          </div>
+        </div>
+
+        <div class="section-h"><h3>Bane 5</h3><span class="set-req">VALGFRI</span></div>
+        <div class="card set-card optional">
+          <div class="score-cols">
+            <div class="score-col">
+              <div class="who">Emma &amp; Jonas</div>
+              <div class="score-ctrl"><button class="cnt-btn">−</button><span class="cnt-val">0</span><button class="cnt-btn plus">+</button></div>
+            </div>
+            <div class="score-col">
+              <div class="who">Mette &amp; Kasper</div>
+              <div class="score-ctrl"><button class="cnt-btn">−</button><span class="cnt-val">0</span><button class="cnt-btn plus">+</button></div>
+            </div>
+          </div>
+          <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:12px;">Indberettes normalt af spillerne på banen</div>
+        </div>
+
+        <div style="text-align:center;font-size:11.5px;color:var(--muted);line-height:1.6;padding:4px 34px 8px;">
+          Pointene pr. bane skal tilsammen give 25. Stillingen og Americano-Elo opdateres, når runden er bekræftet.
+        </div>
+      </div>
+      <div class="cta-bar">
+        <button class="btn-navy">Bekræft runde 3
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8.5 12.5 2.5 2.5 5-5"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ INDBERET: LIGA ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Indberet · Liga-kamp</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
+          <h2>Indberet resultat</h2>
+        </div>
+        <div class="card" style="margin:2px 18px 16px;">
+          <div class="row" style="justify-content:space-between;">
+            <div class="row" style="gap:6px;font-size:12px;font-weight:600;">
+              <svg class="icon-sm" style="color:var(--navy);width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21v-7M9 21V9M15 21v-5M21 21V3"/></svg>
+              Aarhus Premier League · Runde 7
+            </div>
+            <span class="tag tag-amber">3 p på spil</span>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:14px;padding-top:13px;border-top:1px solid var(--line);">
+            <div style="text-align:center;flex:1;">
+              <div class="avstack" style="justify-content:center;"><div class="avatar av-a">D</div><div class="avatar av-b">M</div></div>
+              <div style="font-size:12px;font-weight:600;color:var(--navy);margin-top:6px;">Dig &amp; Mads</div>
+              <div style="font-size:10px;color:var(--muted);">#2 i puljen</div>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;">VS</div>
+            <div style="text-align:center;flex:1;">
+              <div class="avstack" style="justify-content:center;"><div class="avatar av-d">J</div><div class="avatar av-c">K</div></div>
+              <div style="font-size:12px;font-weight:600;color:var(--navy);margin-top:6px;">Jonas &amp; Kasper</div>
+              <div style="font-size:10px;color:var(--muted);">#5 i puljen</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-h" style="margin-top:0;"><h3>Indtast score</h3></div>
+        <div class="card set-card">
+          <div class="set-head"><b>Sæt 1</b><span class="set-req">OBLIGATORISK</span></div>
+          <div class="score-cols">
+            <div class="score-col">
+              <div class="who">Dig &amp; Mads</div>
+              <div class="score-ctrl"><button class="cnt-btn">−</button><span class="cnt-val">6</span><button class="cnt-btn plus">+</button></div>
+            </div>
+            <div class="score-col">
+              <div class="who">Jonas &amp; Kasper</div>
+              <div class="score-ctrl"><button class="cnt-btn">−</button><span class="cnt-val">3</span><button class="cnt-btn plus">+</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="card set-card">
+          <div class="set-head"><b>Sæt 2</b><span class="set-req">OBLIGATORISK</span></div>
+          <div class="score-cols">
+            <div class="score-col"><div class="score-ctrl"><button class="cnt-btn">−</button><span class="cnt-val">4</span><button class="cnt-btn plus">+</button></div></div>
+            <div class="score-col"><div class="score-ctrl"><button class="cnt-btn">−</button><span class="cnt-val">6</span><button class="cnt-btn plus">+</button></div></div>
+          </div>
+        </div>
+        <div class="card set-card">
+          <div class="set-head"><b>Sæt 3 (Tiebreak)</b><span class="set-req">VED 1–1 I SÆT</span></div>
+          <div class="score-cols">
+            <div class="score-col"><div class="score-ctrl"><button class="cnt-btn">−</button><span class="cnt-val">7</span><button class="cnt-btn plus">+</button></div></div>
+            <div class="score-col"><div class="score-ctrl"><button class="cnt-btn">−</button><span class="cnt-val">5</span><button class="cnt-btn plus">+</button></div></div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:11.5px;color:var(--muted);line-height:1.6;padding:4px 34px 8px;">
+          Resultatet godkendes af modstanderholdet og opdaterer pulje-stillingen og jeres liga-Elo.
         </div>
       </div>
       <div class="cta-bar">
@@ -2134,9 +2380,9 @@
 <div class="section-title">Landing · Login · Onboarding</div>
 <div class="frames">
 
-  <!-- ============ LANDING ============ -->
+  <!-- ============ LANDING 1: HERO ============ -->
   <div class="frame-wrap">
-    <div class="frame-label">Landing (offentlig)</div>
+    <div class="frame-label">Landing · Hero &amp; stats</div>
     <div class="phone">
       <div class="screen">
         <div class="topbar" style="padding-bottom:8px;">
@@ -2144,30 +2390,117 @@
             <div class="mark"><svg style="width:15px;height:15px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a14 14 0 0 0 0 18M3.5 9h17M3.5 15h17"/></svg></div>
             PadelMakker
           </div>
+          <span style="font-size:12px;font-weight:600;color:var(--muted);">Events</span>
+          <span style="font-size:12px;font-weight:600;color:var(--muted);">Hjælp</span>
           <button class="btn-sm ghost">Log ind</button>
         </div>
-        <div style="padding:18px 22px 0;">
-          <div class="land-h1">Find din næste<br><span>padelmakker</span> –<br>og følg din Elo</div>
-          <p style="font-size:13.5px;color:var(--muted);line-height:1.6;margin-top:11px;">Match med spillere på dit niveau, book baner, spil Americano og liga – og se din rating udvikle sig kamp for kamp.</p>
-          <button class="btn-navy" style="margin-top:16px;">Kom i gang – det er gratis</button>
-          <button class="btn-ghost" style="margin-top:9px;">Se hvordan Elo virker</button>
+        <div style="padding:16px 22px 0;">
+          <div class="land-h1">Find makker på dit niveau. <span>Spil mere padel.</span></div>
+          <p style="font-size:13.5px;color:var(--muted);line-height:1.6;margin-top:11px;">Find padelspillere på dit niveau, opret kampe og se ledige baner i Danmark. PadelMakker gør det nemmere at komme fra lyst til kamp.</p>
+          <button class="btn-navy" style="margin-top:16px;">Opret gratis profil</button>
+          <button class="btn-ghost" style="margin-top:9px;">Log ind</button>
         </div>
-        <div class="event-hero" style="margin:18px 22px 0;border-radius:var(--radius-lg);height:110px;">
-          <div class="badges"><span class="chip-photo chip-niv">2.400+ spillere i Danmark</span></div>
+        <div class="stat-grid" style="padding-top:18px;">
+          <div class="stat-card"><div class="stat-val">2.400+</div><div class="eyebrow" style="margin-top:4px;">Spillere på platformen</div></div>
+          <div class="stat-card"><div class="stat-val">38</div><div class="eyebrow" style="margin-top:4px;">Åbne kampe lige nu</div></div>
+          <div class="stat-card"><div class="stat-val">1.250</div><div class="eyebrow" style="margin-top:4px;">Kampe spillet (30 dage)</div></div>
+          <div class="stat-card"><div class="stat-val">Gratis</div><div class="eyebrow" style="margin-top:4px;">Opret profil uden betaling</div></div>
+        </div>
+        <div class="event-hero" style="margin:16px 18px 0;border-radius:var(--radius-lg);height:120px;">
+          <div class="badges"><span class="chip-photo chip-niv">Rundvisning i PadelMakker</span></div>
           <div class="court"></div>
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;color:var(--navy-deep);">
+            <svg style="width:18px;height:18px;margin-left:3px;" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4.5v15l13-7.5Z"/></svg>
+          </div>
         </div>
-        <div style="padding:14px 22px 20px;">
-          <div class="feature">
-            <div class="f-ic"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-            <div><b>Makkere på dit niveau</b><span>Smart matching på Elo, område og spillestil.</span></div>
+        <div style="text-align:center;font-size:11.5px;color:var(--muted);padding:9px 22px 20px;">Kort gennemgang af appen — find makker, kampe, baner og mere.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LANDING 2: SEKTIONER ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Landing · Sektioner &amp; footer</div>
+    <div class="phone">
+      <div class="screen">
+        <div style="padding:20px 22px 4px;">
+          <div class="kicker">Sådan virker det</div>
+          <div class="land-h2">Fra profil til bane — første gang ca. 5 min</div>
+          <div class="step-row" style="margin-top:8px;">
+            <div class="step-no">01</div>
+            <div><b>Opret profil</b><span>Vælg niveau, region, spillestil og dine foretrukne spilledage.</span></div>
           </div>
-          <div class="feature">
-            <div class="f-ic"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></div>
-            <div><b>Elo-rating der betyder noget</b><span>Hver kamp tæller. Følg din udvikling over tid.</span></div>
+          <div class="step-row">
+            <div class="step-no">02</div>
+            <div><b>Find makker</b><span>Se spillere nær dig på samme niveau, og invitér dem til en kamp.</span></div>
           </div>
-          <div class="feature">
-            <div class="f-ic"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></div>
-            <div><b>Americano, Mexicano &amp; liga</b><span>Turneringer og sæsoner for alle niveauer.</span></div>
+          <div class="step-row">
+            <div class="step-no">03</div>
+            <div><b>Book bane</b><span>Få overblik over ledige tider hos udvalgte centre.</span></div>
+          </div>
+          <div class="step-row">
+            <div class="step-no">04</div>
+            <div><b>Følg din rating</b><span>Registrér resultater og følg både 2v2- og Americano/Mexicano-Elo.</span></div>
+          </div>
+        </div>
+        <div style="padding:10px 22px 10px;">
+          <div class="land-h2" style="font-size:17px;">PadelMakker bliver hele tiden bedre</div>
+        </div>
+        <div class="road-col">
+          <span class="tag tag-green">Live nu</span>
+          <ul><li>Find makker</li><li>Dynamisk 2v2-Elo</li><li>Separat Americano/Mexicano-Elo</li><li>Baneoversigt</li></ul>
+        </div>
+        <div class="road-col">
+          <span class="tag tag-amber">Næste skridt</span>
+          <ul><li>Bedre makker-forslag</li><li>Skarpere notifikationer</li><li>Mere statistik i profiler</li></ul>
+        </div>
+        <div class="road-col" style="margin-bottom:4px;">
+          <span class="tag tag-navy">På sigt</span>
+          <ul><li>Flere Americano/Mexicano-formater</li><li>Klubfunktioner</li></ul>
+        </div>
+        <div style="padding:16px 22px 0;">
+          <div class="kicker">2v2 Elo</div>
+          <div class="land-h2" style="font-size:17px;">Hver kamp gør din næste kamp mere fair</div>
+        </div>
+        <div class="card" style="margin:12px 18px 0;">
+          <div class="row" style="gap:11px;">
+            <div class="avatar av-c" style="width:40px;height:40px;font-size:13px;">K</div>
+            <div class="grow">
+              <div style="font-weight:600;font-size:13.5px;">Karl · Vundet 6-4, 5-7, 6-3</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Bekræftet af modstanderholdet</div>
+            </div>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+            <div><div class="eyebrow" style="font-size:9.5px;">Før kampen</div><div style="font-weight:700;font-size:16px;margin-top:2px;">1040</div></div>
+            <svg class="icon-sm" style="color:var(--muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <div style="text-align:right;"><div class="eyebrow" style="font-size:9.5px;">Ny rating</div><div style="font-weight:700;font-size:16px;margin-top:2px;color:var(--green);">1065 <small style="font-size:11px;">+25</small></div></div>
+          </div>
+        </div>
+        <div style="padding:18px 22px 0;">
+          <div class="land-h2" style="font-size:17px;">Alt hvad du behøver</div>
+        </div>
+        <div class="feat-grid">
+          <div class="feat"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>2v2 Elo-ranking</div>
+          <div class="feat"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>Holdkampe</div>
+          <div class="feat"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>Americano/Mexicano med Elo</div>
+          <div class="feat"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>Ledige baner</div>
+          <div class="feat"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>Direkte beskeder</div>
+          <div class="feat"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>Profil &amp; udvikling</div>
+        </div>
+        <div class="card" style="margin:16px 18px 0;text-align:center;padding:20px 16px;">
+          <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;">Klar til at spille?</div>
+          <button class="btn-navy" style="margin-top:13px;">Kom i gang — det er gratis</button>
+        </div>
+        <div class="inset-card" style="margin:12px 18px 0;text-align:center;">
+          <div style="font-weight:700;font-size:13.5px;">Kender du nogen der mangler makker?</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5;">Send en invitation — det tager under et minut at komme i gang.</div>
+          <button class="btn-ghost" style="margin-top:11px;padding:10px;">Inviter en ven</button>
+        </div>
+        <div class="footer">
+          <b>© 2026 PadelMakker</b> · CVR-nr. 12 34 56 78<br>
+          kontakt@padelmakker.dk
+          <div class="flinks">
+            <span>Privatlivspolitik</span><span>Handelsbetingelser</span><span>Cookies</span><span>FAQ</span><span>Events</span><span>Elo</span><span>Installér app</span>
           </div>
         </div>
       </div>
@@ -2228,7 +2561,7 @@
           <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
           <h2>Opret profil</h2>
         </div>
-        <div class="steps"><div class="step-dot on"></div><div class="step-dot"></div><div class="step-dot"></div></div>
+        <div class="steps"><div class="step-dot on"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div></div>
         <div style="text-align:center;padding:0 26px 18px;">
           <div style="font-size:18px;font-weight:600;letter-spacing:-0.3px;">Lad os lære dig at kende</div>
           <div style="font-size:12.5px;color:var(--muted);margin-top:5px;">Det tager under 2 minutter</div>
@@ -2272,7 +2605,7 @@
           <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
           <h2>Dit niveau</h2>
         </div>
-        <div class="steps"><div class="step-dot on"></div><div class="step-dot on"></div><div class="step-dot"></div></div>
+        <div class="steps"><div class="step-dot on"></div><div class="step-dot on"></div><div class="step-dot"></div><div class="step-dot"></div></div>
         <div style="text-align:center;padding:0 26px 16px;">
           <div style="font-size:18px;font-weight:600;letter-spacing:-0.3px;">Hvor godt spiller du?</div>
           <div style="font-size:12.5px;color:var(--muted);margin-top:5px;">Vælg det, der passer bedst – din Elo justerer sig automatisk efter dine kampe</div>
@@ -2305,6 +2638,115 @@
         <div style="padding:6px 18px 18px;">
           <button class="btn-navy">Fortsæt <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
         </div>
+      </div>
+    </div>
+  </div>
+  <!-- ============ BEKRÆFT E-MAIL ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Onboarding · Bekræft e-mail</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
+          <h2>Bekræft e-mail</h2>
+        </div>
+        <div class="steps"><div class="step-dot on"></div><div class="step-dot on"></div><div class="step-dot on"></div><div class="step-dot"></div></div>
+        <div class="ob-icon">
+          <svg style="width:28px;height:28px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+        </div>
+        <div style="text-align:center;padding:0 30px;">
+          <div style="font-size:18px;font-weight:600;letter-spacing:-0.3px;">Tjek din indbakke</div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:7px;">Vi har sendt en 6-cifret kode til<br><b style="color:var(--text);">din@email.dk</b></p>
+        </div>
+        <div class="code-boxes" style="margin-top:16px;">
+          <div class="code-box filled">8</div>
+          <div class="code-box filled">2</div>
+          <div class="code-box filled">4</div>
+          <div class="code-box filled">6</div>
+          <div class="code-box cursor"></div>
+          <div class="code-box"></div>
+        </div>
+        <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:14px;">Modtog du ikke koden? <span style="color:var(--navy);font-weight:600;">Send igen</span> (00:42)</div>
+        <div style="padding:20px 18px 18px;">
+          <button class="btn-navy">Bekræft e-mail</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BEKRÆFT TELEFON ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Onboarding · Bekræft telefon</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
+          <h2>Bekræft telefon</h2>
+        </div>
+        <div class="steps"><div class="step-dot on"></div><div class="step-dot on"></div><div class="step-dot on"></div><div class="step-dot on"></div></div>
+        <div class="ob-icon">
+          <svg style="width:28px;height:28px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+        </div>
+        <div style="text-align:center;padding:0 30px;">
+          <div style="font-size:18px;font-weight:600;letter-spacing:-0.3px;">Bekræft dit nummer</div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:7px;">Vi har sendt en SMS-kode til<br><b style="color:var(--text);">+45 12 34 56 78</b></p>
+        </div>
+        <div class="code-boxes" style="margin-top:16px;">
+          <div class="code-box filled">5</div>
+          <div class="code-box filled">1</div>
+          <div class="code-box cursor"></div>
+          <div class="code-box"></div>
+          <div class="code-box"></div>
+          <div class="code-box"></div>
+        </div>
+        <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:14px;">Modtog du ikke koden? <span style="color:var(--navy);font-weight:600;">Send igen</span> (00:58)</div>
+        <div style="padding:20px 18px 18px;">
+          <button class="btn-navy">Bekræft telefon</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ONBOARDING FÆRDIG ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Onboarding · Du er klar</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="success-circle-navy" style="margin-top:54px;">
+          <svg style="width:32px;height:32px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+        </div>
+        <div style="text-align:center;padding:0 32px;">
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.3px;">Velkommen, Mike!</div>
+          <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px;">Din profil er klar, og du starter på <b style="color:var(--text);">niveau 3.0</b>. Din Elo justerer sig automatisk efter dine første kampe.</p>
+        </div>
+        <div class="section-h" style="margin-top:24px;"><h3>Kom godt i gang</h3></div>
+        <div class="card row" style="margin:0 18px 11px;gap:12px;">
+          <div class="info-ic"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="grow">
+            <div style="font-weight:600;font-size:13.5px;">Find din første makker</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">12 spillere på dit niveau i Aarhus</div>
+          </div>
+          <svg class="icon-sm" style="color:var(--muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+        <div class="card row" style="margin:0 18px 11px;gap:12px;">
+          <div class="info-ic"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <div class="grow">
+            <div style="font-weight:600;font-size:13.5px;">Meld dig på en åben kamp</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">8 åbne kampe i nærheden i dag</div>
+          </div>
+          <svg class="icon-sm" style="color:var(--muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+        <div class="card row" style="margin:0 18px;gap:12px;">
+          <div class="info-ic"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg></div>
+          <div class="grow">
+            <div style="font-weight:600;font-size:13.5px;">Tag den guidede rundtur</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">2 minutter — lær appen at kende</div>
+          </div>
+          <svg class="icon-sm" style="color:var(--muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+      </div>
+      <div class="cta-bar">
+        <button class="btn-navy">Gå til appen <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
       </div>
     </div>
   </div>
