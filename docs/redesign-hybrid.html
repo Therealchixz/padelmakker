@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PadelMakker — Hybrid mockup (Stitch-struktur · appens designsprog)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Tokens 1:1 fra appens variables.css (light mode) */
+  :root {
+    --bg:         #F0F4F8;
+    --surface:    #FFFFFF;
+    --surface-alt:#F8FAFC;
+    --text:       #0B1120;
+    --text-mid:   #3E4C63;
+    --text-light: #6B7A8F;
+    --accent:     #1D4ED8;
+    --accent-hover:#1E40AF;
+    --accent-bg:  #DBEAFE;
+    --warm:       #D97706;
+    --warm-bg:    #FEF3C7;
+    --green:      #059669;
+    --green-bg:   #ECFDF5;
+    --red:        #DC2626;
+    --red-bg:     #FEF2F2;
+    --purple:     #7C3AED;
+    --purple-bg:  #F5F3FF;
+    --border:     #D5DDE8;
+    --form-win:   #22C55E;
+    --form-loss:  #EF4444;
+    --form-draw:  #9CA3AF;
+    --brand-gradient: linear-gradient(135deg, #1E3A5F, #1D4ED8);
+    --shadow:     0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+    --shadow-accent: 0 6px 18px rgba(37, 99, 235, 0.08);
+    --radius-md:  10px;
+    --radius-lg:  12px;
+    --radius-xl:  14px;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: 'Inter', 'Helvetica Neue', -apple-system, 'Segoe UI', sans-serif;
+    background: #0A1730; color: var(--text);
+    padding: 36px 24px 72px;
+  }
+  .intro { max-width: 1100px; margin: 0 auto 10px; color: #fff; text-align: center; }
+  .intro h1 { font-weight: 800; font-size: 26px; letter-spacing: -0.4px; }
+  .intro h1 span { color: #93C5FD; }
+  .intro p { color: #93A7C8; margin-top: 8px; font-size: 14px; font-weight: 400; }
+  .section-title {
+    max-width: 1700px; margin: 48px auto 22px; color: #93C5FD;
+    font-size: 13px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.14); }
+  .frames { display: flex; flex-wrap: wrap; gap: 36px; justify-content: center; align-items: flex-start; max-width: 1700px; margin: 0 auto; }
+  .frame-wrap { text-align: center; }
+  .frame-label { color: #93A7C8; font-weight: 600; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+  .phone {
+    width: 375px; height: 790px; background: var(--bg);
+    border-radius: 42px; border: 9px solid #18253E;
+    box-shadow: 0 28px 70px rgba(0,0,0,0.5);
+    overflow: hidden; display: flex; flex-direction: column;
+    text-align: left; position: relative;
+  }
+  .screen { flex: 1; overflow-y: auto; scrollbar-width: none; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* ---------- shared ---------- */
+  .icon { width: 21px; height: 21px; flex: none; }
+  .icon-sm { width: 16px; height: 16px; flex: none; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 16px; }
+  .row { display: flex; align-items: center; }
+  .grow { flex: 1; }
+  .eyebrow { font-size: 10.5px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-light); }
+  .tag { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .tag-accent { background: var(--accent-bg); color: var(--accent); }
+  .tag-warm { background: var(--warm-bg); color: var(--warm); }
+  .tag-green { background: var(--green-bg); color: var(--green); }
+  .tag-red { background: var(--red-bg); color: var(--red); }
+  .tag-purple { background: var(--purple-bg); color: var(--purple); }
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--accent); color: #fff; border: none; cursor: pointer;
+    font-family: inherit; font-weight: 600; font-size: 14px;
+    border-radius: var(--radius-md); padding: 13px; width: 100%;
+    box-shadow: 0 1px 2px rgba(29, 78, 216, 0.24);
+  }
+  .btn-ghost {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--surface); color: var(--accent); border: 1px solid var(--border); cursor: pointer;
+    font-family: inherit; font-weight: 600; font-size: 14px;
+    border-radius: var(--radius-md); padding: 12px; width: 100%;
+  }
+  .btn-sm { background: var(--accent); color: #fff; font-family: inherit; font-weight: 600; font-size: 12.5px; border: none; border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+  .btn-sm.ghost { background: var(--surface); color: var(--accent); border: 1px solid var(--border); }
+  .avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; flex: none; }
+  .av-a { background: linear-gradient(135deg, #3D6CB3, #1E3A5F); }
+  .av-b { background: linear-gradient(135deg, #E58F4E, #B85C2C); }
+  .av-c { background: linear-gradient(135deg, #4FA877, #2C7050); }
+  .av-d { background: linear-gradient(135deg, #8A6FC8, #5B4397); }
+  .toggle { width: 44px; height: 26px; border-radius: 999px; background: var(--accent); position: relative; flex: none; }
+  .toggle::after { content: ''; position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+  .toggle.off { background: #C7D2E0; }
+  .toggle.off::after { right: auto; left: 3px; }
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 16px 18px 12px; }
+  .topbar h2 { flex: 1; font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+  .circle-btn {
+    width: 39px; height: 39px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; color: var(--text); cursor: pointer; flex: none; position: relative;
+  }
+  .circle-btn .dot { position: absolute; top: 8px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--red); border: 2px solid var(--surface); }
+  .section-h { display: flex; align-items: center; justify-content: space-between; margin: 20px 18px 10px; }
+  .section-h h3 { font-size: 15.5px; font-weight: 700; letter-spacing: -0.2px; }
+  .section-h .link { color: var(--accent); font-weight: 600; font-size: 12.5px; }
+
+  /* ---------- bottom nav (appens 5 faner) ---------- */
+  .bottomnav { flex: none; background: var(--surface); border-top: 1px solid var(--border); display: flex; padding: 9px 4px 15px; }
+  .bottomnav a {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    text-decoration: none; color: var(--text-light); font-size: 10px; font-weight: 500; position: relative;
+  }
+  .bottomnav a.active { color: var(--accent); font-weight: 800; }
+  .bottomnav .nbadge { position: absolute; top: -3px; right: 50%; margin-right: -16px; background: var(--red); color: #fff; font-size: 8.5px; font-weight: 700; min-width: 15px; height: 15px; border-radius: 999px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+
+  /* ---------- chips ---------- */
+  .chips { display: flex; gap: 8px; padding: 11px 18px 4px; overflow-x: auto; scrollbar-width: none; }
+  .chip { border: 1px solid var(--border); background: var(--surface); color: var(--text-mid); font-family: inherit; font-weight: 600; font-size: 12.5px; padding: 8px 15px; border-radius: 999px; white-space: nowrap; cursor: pointer; }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ---------- HJEM ---------- */
+  .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin: 4px 18px 0; }
+  .quick {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow);
+    padding: 13px 12px; display: flex; flex-direction: column; align-items: center; gap: 7px;
+    font-weight: 600; font-size: 12.5px; color: var(--text);
+  }
+  .quick .qicon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .qi-accent { background: var(--accent-bg); color: var(--accent); }
+  .qi-green { background: var(--green-bg); color: var(--green); }
+  .qi-warm { background: var(--warm-bg); color: var(--warm); }
+  .qi-purple { background: var(--purple-bg); color: var(--purple); }
+  .elo-num { font-size: 34px; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -0.5px; }
+  .elo-up { color: var(--green); font-weight: 700; font-size: 13px; }
+  .form-dots { display: flex; gap: 5px; }
+  .fdot { width: 21px; height: 21px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .fdot.w { background: var(--form-win); } .fdot.l { background: var(--form-loss); }
+  .progress { height: 7px; border-radius: 99px; background: #E6EBF3; overflow: hidden; }
+  .progress > div { height: 100%; width: 62%; border-radius: 99px; background: var(--accent); }
+  .next-match { background: var(--brand-gradient); border-radius: var(--radius-xl); color: #fff; padding: 17px; box-shadow: var(--shadow-accent); position: relative; overflow: hidden; }
+  .next-match::after { content: ''; position: absolute; right: -34px; top: -34px; width: 120px; height: 120px; border: 13px solid rgba(255,255,255,0.07); border-radius: 50%; }
+  .next-time { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .vs-name { font-size: 10.5px; font-weight: 500; color: #AFC5E6; margin-top: 5px; text-align: center; }
+  .avstack { display: flex; }
+  .avstack .avatar { width: 27px; height: 27px; font-size: 10px; border: 2px solid var(--surface); }
+  .avstack .avatar + .avatar { margin-left: -9px; }
+  .avstack .more { width: 27px; height: 27px; border-radius: 50%; background: var(--surface-alt); color: var(--text-light); font-size: 9.5px; font-weight: 700; border: 2px solid var(--surface); display: flex; align-items: center; justify-content: center; margin-left: -9px; }
+  .feed-item { display: flex; align-items: center; gap: 11px; padding: 12px 14px; }
+  .feed-ic { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .feed-item b { font-size: 13px; font-weight: 600; display: block; }
+  .feed-item span { font-size: 11.5px; color: var(--text-light); }
+
+  /* ---------- MAKKERE ---------- */
+  .search-row { display: flex; gap: 10px; padding: 0 18px 4px; }
+  .search { flex: 1; display: flex; align-items: center; gap: 9px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 11px 14px; color: var(--text-light); font-size: 13.5px; }
+  .filter-btn { width: 44px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); color: var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+  .filter-btn .cnt { position: absolute; top: -5px; right: -5px; background: var(--accent); color: #fff; font-size: 9px; font-weight: 700; width: 16px; height: 16px; border-radius: 999px; display: flex; align-items: center; justify-content: center; }
+  .seek-card { margin: 12px 18px; background: var(--accent-bg); border: 1px solid #BFDBFE; border-radius: var(--radius-lg); padding: 13px 15px; display: flex; align-items: center; gap: 12px; }
+  .eye-wrap { width: 38px; height: 38px; border-radius: 50%; background: var(--surface); color: var(--accent); display: flex; align-items: center; justify-content: center; flex: none; }
+  .player-card { margin: 0 18px 13px; }
+  .pname { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+  .pmeta { font-size: 12px; color: var(--text-light); display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+
+  /* ---------- KAMPE ---------- */
+  .pill-tabs { display: flex; gap: 8px; padding: 4px 18px 12px; }
+  .ptab { flex: 1; text-align: center; font-weight: 600; font-size: 13px; padding: 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--text-mid); }
+  .ptab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .date-badge { width: 46px; flex: none; text-align: center; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 6px 0; }
+  .date-badge b { display: block; font-size: 16px; font-weight: 800; line-height: 1.1; }
+  .date-badge span { font-size: 9.5px; font-weight: 600; text-transform: uppercase; color: var(--text-light); letter-spacing: 0.5px; }
+
+  /* ---------- KAMP DETALJER / COURT ---------- */
+  .info-row { display: flex; gap: 12px; align-items: flex-start; margin-top: 14px; }
+  .info-ic { width: 38px; height: 38px; border-radius: 10px; background: var(--surface-alt); border: 1px solid var(--border); color: var(--accent); display: flex; align-items: center; justify-content: center; flex: none; }
+  .info-row b { font-size: 13.5px; font-weight: 600; }
+  .info-row span { display: block; font-size: 12.5px; color: var(--text-light); margin-top: 1px; }
+  .maplink { color: var(--accent); font-weight: 600; font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
+  .court-wrap { margin: 0 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 14px; }
+  .court-labels { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text-mid); padding: 0 4px 8px; }
+  .court { display: flex; border: 2px solid var(--accent); border-radius: 10px; overflow: hidden; background: #EFF6FF; }
+  .court-half { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 10px; }
+  .court-half + .court-half { border-left: 2px dashed #93C5FD; }
+  .court-slot { display: flex; flex-direction: column; align-items: center; gap: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 6px; }
+  .court-slot .avatar { width: 38px; height: 38px; font-size: 12px; }
+  .court-slot b { font-size: 11.5px; font-weight: 600; }
+  .court-slot span { font-size: 9.5px; color: var(--text-light); }
+  .court-slot.empty { border-style: dashed; background: transparent; color: var(--text-light); }
+  .court-slot.empty .ghost { width: 38px; height: 38px; border-radius: 50%; background: var(--surface-alt); color: #9AA9BD; display: flex; align-items: center; justify-content: center; }
+  .about-p { margin: 0 18px; color: var(--text-mid); font-size: 13px; line-height: 1.6; }
+  .fac-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px 10px; margin-top: 12px; }
+  .fac { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 500; color: var(--text-mid); }
+  .fac .icon-sm { color: var(--accent); }
+  .cta-bar { flex: none; padding: 12px 18px 18px; background: linear-gradient(transparent, var(--bg) 35%); }
+
+  /* ---------- PROFIL ---------- */
+  .pf-head { text-align: center; padding: 18px 18px 4px; }
+  .pf-avatar { width: 96px; height: 96px; font-size: 29px; border: 3px solid var(--surface); box-shadow: var(--shadow); margin: 0 auto; }
+  .pf-head h2 { font-size: 19px; font-weight: 800; margin-top: 12px; letter-spacing: -0.3px; }
+  .pf-head p { color: var(--text-light); font-size: 12.5px; margin-top: 3px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; padding: 14px 18px 2px; }
+  .stat-card { background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 13px 15px; text-align: center; }
+  .stat-card .eyebrow { font-size: 9.5px; }
+  .stat-val { font-size: 23px; font-weight: 800; color: var(--text); margin-top: 4px; letter-spacing: -0.4px; }
+  .stat-val small { font-size: 14px; }
+  .elo-hero { margin: 13px 18px; border-radius: var(--radius-xl); padding: 17px; background: var(--brand-gradient); color: #fff; box-shadow: var(--shadow-accent); }
+  .elo-hero .eyebrow { color: #9DB6DE; }
+  .elo-big { font-size: 32px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px; }
+  .elo-delta { color: #4FD78F; font-weight: 600; font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>PadelMakker <span>Hybrid</span> — best of both worlds</h1>
+  <p>Skærmstruktur &amp; UX-greb fra mockups'ene · designsprog, farver og komponenter fra den nuværende app</p>
+</div>
+
+<div class="section-title">Hjem · Makkere · Kampe</div>
+<div class="frames">
+
+  <!-- ============ HJEM ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Hjem</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <div class="avatar av-a" style="width:42px;height:42px;font-size:14px;">MJ</div>
+          <div class="grow">
+            <div class="eyebrow">Velkommen</div>
+            <div style="font-size:17px;font-weight:800;letter-spacing:-0.3px;">Mike Jensen</div>
+          </div>
+          <button class="circle-btn">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <div class="dot"></div>
+          </button>
+        </div>
+
+        <div class="quick-grid">
+          <div class="quick"><div class="qicon qi-accent"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>Find Makker</div>
+          <div class="quick"><div class="qicon qi-green"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>Book Bane</div>
+          <div class="quick"><div class="qicon qi-warm"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>Åbne Kampe</div>
+          <div class="quick"><div class="qicon qi-purple"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21v-7M9 21V9M15 21v-5M21 21V3"/></svg></div>Rangliste</div>
+        </div>
+
+        <div class="card" style="margin:13px 18px 0;">
+          <div class="row">
+            <div class="grow">
+              <div class="eyebrow">Din Elo Rating</div>
+              <div class="row" style="gap:8px;margin-top:6px;"><span class="elo-num">1075</span><span class="elo-up">↑ +12</span></div>
+            </div>
+            <div style="text-align:right;">
+              <div class="eyebrow">Seneste form</div>
+              <div class="form-dots" style="margin-top:9px;"><div class="fdot w">V</div><div class="fdot w">V</div><div class="fdot l">T</div><div class="fdot w">V</div></div>
+            </div>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:15px;font-size:10px;font-weight:600;color:var(--text-light);letter-spacing:0.5px;"><span>NIVEAU 4</span><span>NIVEAU 5</span></div>
+          <div class="progress" style="margin-top:6px;"><div></div></div>
+          <div style="text-align:center;font-size:11.5px;color:var(--text-light);margin-top:8px;">125 point til næste niveau (1200)</div>
+        </div>
+
+        <div class="next-match" style="margin:13px 18px 0;">
+          <div class="eyebrow" style="color:#9DB6DE;">Næste kamp · I dag</div>
+          <div class="row" style="justify-content:space-between;margin-top:11px;">
+            <div><div class="avatar av-a" style="width:44px;height:44px;font-size:13px;margin:0 auto;">Dig</div><div class="vs-name">Dig</div></div>
+            <div style="text-align:center;"><div class="next-time">17:30</div><div style="font-size:11.5px;color:#AFC5E6;">PadelPadel · Bane 4</div></div>
+            <div><div class="avatar av-b" style="width:44px;height:44px;font-size:13px;margin:0 auto;">PS</div><div class="vs-name">Peter S.</div></div>
+          </div>
+        </div>
+
+        <div class="card row" style="margin:13px 18px 0;gap:12px;">
+          <span style="font-weight:600;font-size:13.5px;" class="grow">Søger Makker: <span style="color:var(--green);">Aktiv</span></span>
+          <div class="toggle"></div>
+        </div>
+
+        <div class="section-h"><h3>Ledige pladser i nærheden</h3><span class="link">Se alle</span></div>
+        <div class="card" style="margin:0 18px;">
+          <div class="row" style="gap:10px;">
+            <div class="date-badge"><b>16</b><span>OKT</span></div>
+            <div class="grow">
+              <div style="font-weight:700;font-size:13.5px;">PadelPadel Aarhus</div>
+              <div style="font-size:12px;color:var(--text-light);margin-top:2px;">Kl. 17:00 · Niveau 2.0–3.5</div>
+            </div>
+            <span class="tag tag-green">Åben</span>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <div class="avstack"><div class="avatar av-c">A</div><div class="avatar av-d">K</div><div class="more">2/4</div></div>
+            <button class="btn-sm">Tilmeld</button>
+          </div>
+        </div>
+
+        <div class="section-h"><h3>Seneste aktivitet</h3><span class="link">Se alt</span></div>
+        <div class="card feed-item" style="margin:0 18px 10px;padding:12px 14px;">
+          <div class="feed-ic" style="background:var(--green-bg);color:var(--green);"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></div>
+          <div class="grow"><b>Du vandt mod Lars &amp; Sofie</b><span>6-4 · 2-6 · 7-5 — i går</span></div>
+          <span class="tag tag-green">+12</span>
+        </div>
+        <div class="card feed-item" style="margin:0 18px 18px;padding:12px 14px;">
+          <div class="feed-ic" style="background:var(--accent-bg);color:var(--accent);"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div>
+          <div class="grow"><b>Ny åben kamp i Aarhus N</b><span>Tors. 19:00 · 1 ledig plads</span></div>
+          <span class="tag tag-accent">2v2</span>
+        </div>
+      </div>
+      <nav class="bottomnav">
+        <a class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1Z"/></svg>Hjem</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Makkere</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Baner</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Kampe<span class="nbadge">2</span></a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Mere</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ============ MAKKERE ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Makkere</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <h2>Find makker</h2>
+          <button class="circle-btn">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </button>
+        </div>
+        <div class="search-row">
+          <div class="search"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Søg efter spillere...</div>
+          <button class="filter-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="cnt">2</span></button>
+        </div>
+        <div class="chips">
+          <button class="chip active">Alle</button><button class="chip">2.0</button><button class="chip">3.0</button><button class="chip">3.5</button><button class="chip">4.0+</button><button class="chip">Elite</button>
+        </div>
+        <div class="seek-card">
+          <div class="eye-wrap"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div class="grow">
+            <div style="font-weight:700;font-size:13.5px;color:var(--accent-hover);">Bliv selv synlig</div>
+            <div style="font-size:11.5px;color:var(--text-mid);">Lad andre makkere finde dig</div>
+          </div>
+          <div class="toggle off"></div>
+        </div>
+
+        <div class="section-h" style="margin-top:14px;"><h3>Foreslåede makkere</h3><span class="link">Se alle 8</span></div>
+
+        <div class="card player-card">
+          <div class="row" style="gap:12px;">
+            <div class="avatar av-a" style="width:50px;height:50px;font-size:16px;">MJ</div>
+            <div class="grow">
+              <div class="row" style="gap:7px;flex-wrap:wrap;"><span class="pname">Mads Jensen</span><span class="tag tag-accent">Niveau 3.5</span></div>
+              <div class="pmeta"><svg class="icon-sm" style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>2,5 km væk · Aarhus N · 124 kampe</div>
+            </div>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:11px;padding-top:11px;border-top:1px solid var(--border);">
+            <span class="tag tag-green">Stærkt match</span>
+            <div class="row" style="gap:8px;">
+              <button class="btn-sm ghost">Profil</button>
+              <button class="btn-sm">Invitér</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card player-card">
+          <div class="row" style="gap:12px;">
+            <div class="avatar av-b" style="width:50px;height:50px;font-size:16px;">SN</div>
+            <div class="grow">
+              <div class="row" style="gap:7px;flex-wrap:wrap;"><span class="pname">Sofie Nielsen</span><span class="tag tag-accent">Niveau 3.0</span></div>
+              <div class="pmeta"><svg class="icon-sm" style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>1,2 km væk · Aarhus C · 86 kampe</div>
+            </div>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:11px;padding-top:11px;border-top:1px solid var(--border);">
+            <span class="tag tag-green">Godt match</span>
+            <div class="row" style="gap:8px;">
+              <button class="btn-sm ghost">Profil</button>
+              <button class="btn-sm">Invitér</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-h"><h3>Alle spillere</h3></div>
+
+        <div class="card player-card">
+          <div class="row" style="gap:12px;">
+            <div class="avatar av-c" style="width:50px;height:50px;font-size:16px;">LH</div>
+            <div class="grow">
+              <div class="row" style="gap:7px;flex-wrap:wrap;"><span class="pname">Lars Hansen</span><span class="tag tag-accent">Niveau 4.0</span></div>
+              <div class="pmeta"><svg class="icon-sm" style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>4,8 km væk · Højbjerg · 211 kampe</div>
+            </div>
+          </div>
+          <div class="row" style="justify-content:flex-end;margin-top:11px;padding-top:11px;border-top:1px solid var(--border);gap:8px;">
+            <button class="btn-sm ghost">Besked</button>
+            <button class="btn-sm">Invitér</button>
+          </div>
+        </div>
+
+        <div class="card player-card" style="margin-bottom:18px;">
+          <div class="row" style="gap:12px;">
+            <div class="avatar av-d" style="width:50px;height:50px;font-size:16px;">EW</div>
+            <div class="grow">
+              <div class="row" style="gap:7px;flex-wrap:wrap;"><span class="pname">Emma Winther</span><span class="tag tag-accent">Niveau 3.5</span></div>
+              <div class="pmeta"><svg class="icon-sm" style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>3,1 km væk · Viby J · 97 kampe</div>
+            </div>
+          </div>
+          <div class="row" style="justify-content:flex-end;margin-top:11px;padding-top:11px;border-top:1px solid var(--border);gap:8px;">
+            <button class="btn-sm ghost">Besked</button>
+            <button class="btn-sm">Invitér</button>
+          </div>
+        </div>
+      </div>
+      <nav class="bottomnav">
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1Z"/></svg>Hjem</a>
+        <a class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Makkere</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Baner</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Kampe<span class="nbadge">2</span></a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Mere</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ============ KAMPE ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Kampe</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <h2>Kampe</h2>
+          <button class="btn-sm" style="display:flex;align-items:center;gap:6px;"><svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Opret kamp</button>
+        </div>
+        <div class="pill-tabs">
+          <div class="ptab active">Åbne</div><div class="ptab">I gang</div><div class="ptab">Afsluttede</div>
+        </div>
+
+        <div class="card" style="margin:4px 18px 13px;">
+          <div class="row" style="gap:10px;">
+            <div class="date-badge"><b>16</b><span>OKT</span></div>
+            <div class="grow">
+              <div style="font-weight:700;font-size:14px;">PadelPadel Aarhus</div>
+              <div style="font-size:12px;color:var(--text-light);margin-top:2px;">Kl. 17:00 · 90 min · Niveau 2.0–3.5</div>
+            </div>
+            <span class="tag tag-green">Åben</span>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <div class="row" style="gap:8px;">
+              <div class="avstack"><div class="avatar av-a">M</div><div class="avatar av-b">S</div></div>
+              <span style="font-size:12px;color:var(--text-light);font-weight:600;">2/4 spillere</span>
+            </div>
+            <button class="btn-sm">Tilmeld</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin:0 18px 13px;">
+          <div class="row" style="gap:10px;">
+            <div class="date-badge"><b>17</b><span>OKT</span></div>
+            <div class="grow">
+              <div style="font-weight:700;font-size:14px;">Aarhus Padel Club</div>
+              <div style="font-size:12px;color:var(--text-light);margin-top:2px;">Kl. 19:00 · 60 min · Niveau 3.0–4.0</div>
+            </div>
+            <span class="tag tag-warm">1 plads</span>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <div class="row" style="gap:8px;">
+              <div class="avstack"><div class="avatar av-c">L</div><div class="avatar av-d">E</div><div class="avatar av-a">K</div></div>
+              <span style="font-size:12px;color:var(--text-light);font-weight:600;">3/4 spillere</span>
+            </div>
+            <button class="btn-sm">Tilmeld</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin:0 18px 13px;">
+          <div class="row" style="gap:10px;">
+            <div class="date-badge"><b>18</b><span>OKT</span></div>
+            <div class="grow">
+              <div style="font-weight:700;font-size:14px;">Americano · PadelPadel</div>
+              <div style="font-size:12px;color:var(--text-light);margin-top:2px;">Kl. 17:00 · 90 min · Niveau 2.0–3.5 · 60 kr.</div>
+            </div>
+            <span class="tag tag-purple">Americano</span>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <div class="row" style="gap:8px;">
+              <div class="avstack"><div class="avatar av-b">S</div><div class="avatar av-c">A</div><div class="more">+3</div></div>
+              <span style="font-size:12px;color:var(--text-light);font-weight:600;">5/8 spillere</span>
+            </div>
+            <button class="btn-sm ghost">Se detaljer</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin:0 18px 13px;">
+          <div class="row" style="gap:10px;">
+            <div class="date-badge"><b>20</b><span>OKT</span></div>
+            <div class="grow">
+              <div style="font-weight:700;font-size:14px;">Padel Club Vest</div>
+              <div style="font-size:12px;color:var(--text-light);margin-top:2px;">Kl. 18:00 · 90 min · Niveau 2.5–3.5</div>
+            </div>
+            <span class="tag tag-red">Fuld</span>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <div class="row" style="gap:8px;">
+              <div class="avstack"><div class="avatar av-a">J</div><div class="avatar av-b">M</div><div class="more">+2</div></div>
+              <span style="font-size:12px;color:var(--text-light);font-weight:600;">4/4 spillere</span>
+            </div>
+            <button class="btn-sm ghost">Venteliste</button>
+          </div>
+        </div>
+      </div>
+      <nav class="bottomnav">
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1Z"/></svg>Hjem</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Makkere</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Baner</a>
+        <a class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Kampe</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Mere</a>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">Kamp detaljer · Profil</div>
+<div class="frames">
+
+  <!-- ============ KAMP DETALJER ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Kamp detaljer (2v2 m. banekort)</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
+          <h2>Kamp detaljer</h2>
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></button>
+        </div>
+
+        <div class="row" style="gap:8px;padding:0 18px 12px;">
+          <span class="tag tag-green">Åben</span>
+          <span class="tag tag-accent">2v2-kamp</span>
+          <span class="tag tag-warm">1 plads tilbage</span>
+        </div>
+
+        <div class="card" style="margin:0 18px;">
+          <div class="row" style="gap:12px;align-items:flex-start;">
+            <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;line-height:1.3;" class="grow">Social 2v2 ·<br>Niveau 2.5–3.5</div>
+            <div style="text-align:right;">
+              <div style="font-size:19px;font-weight:800;color:var(--accent);line-height:1;">60 kr.</div>
+              <div style="font-size:10.5px;color:var(--text-light);margin-top:3px;">pr. person</div>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-ic"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+            <div><b>Mandag d. 16. Okt</b><span>Kl. 17:00 – 18:30 (90 min)</span></div>
+          </div>
+          <div class="info-row">
+            <div class="info-ic"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            <div><b>PadelPadel Aarhus · Bane 4</b><a class="maplink">Vis på kort <svg style="width:11px;height:11px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div>
+          </div>
+        </div>
+
+        <div class="section-h"><h3>Holdene (3/4)</h3></div>
+        <div class="court-wrap">
+          <div class="court-labels"><span>HOLD 1</span><span>HOLD 2</span></div>
+          <div class="court">
+            <div class="court-half">
+              <div class="court-slot"><div class="avatar av-a">MJ</div><b>Mads J.</b><span>Niveau 3.2</span></div>
+              <div class="court-slot"><div class="avatar av-b">SN</div><b>Sofie N.</b><span>Niveau 2.8</span></div>
+            </div>
+            <div class="court-half">
+              <div class="court-slot"><div class="avatar av-c">LH</div><b>Lars H.</b><span>Niveau 3.5</span></div>
+              <div class="court-slot empty">
+                <div class="ghost"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <b style="color:var(--text-light);">Ledig plads</b><span>Tilmeld dig</span>
+              </div>
+            </div>
+          </div>
+          <button class="btn-ghost" style="margin-top:12px;padding:10px;font-size:13px;">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+            Inviter en ven til pladsen
+          </button>
+        </div>
+
+        <div class="section-h"><h3>Om kampen</h3></div>
+        <p class="about-p">Hyggelig social kamp – vi spiller to ud af tre sæt. Niveauet er tiltænkt 2.5–3.5, og vi sørger for bolde. Banen er booket og betalt via Matchi.</p>
+
+        <div class="card" style="margin:14px 18px 16px;background:var(--surface-alt);">
+          <div style="font-weight:700;font-size:13.5px;">Faciliteter på centret</div>
+          <div class="fac-grid">
+            <div class="fac"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>Gratis parkering</div>
+            <div class="fac"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.4 6.6 17 3.2a2 2 0 0 0-1.4-.6h-1.1a2.5 2.5 0 0 1-5 0H8.4A2 2 0 0 0 7 3.2L3.6 6.6a1 1 0 0 0 0 1.4L6 10.4l1.5-1.2V21h9V9.2l1.5 1.2 2.4-2.4a1 1 0 0 0 0-1.4Z"/></svg>Omklædning</div>
+            <div class="fac"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v2M10 2v2M14 2v2"/></svg>Café/Lounge</div>
+            <div class="fac"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Pro-shop</div>
+          </div>
+        </div>
+      </div>
+      <div class="cta-bar">
+        <button class="btn">Tilmeld Hold 2 <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PROFIL ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Profil</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <h2>Profil</h2>
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></button>
+        </div>
+        <div class="pf-head">
+          <div class="avatar pf-avatar av-a">CN</div>
+          <h2>Christian Nielsen</h2>
+          <p>Aarhus C, Danmark</p>
+          <div class="row" style="justify-content:center;gap:7px;margin-top:9px;">
+            <span class="tag tag-accent">Niveau 3.4</span>
+            <span class="tag tag-green">Søger makker</span>
+          </div>
+        </div>
+        <div class="pill-tabs" style="padding-top:14px;">
+          <div class="ptab active">2v2</div><div class="ptab">Americano</div><div class="ptab">Liga</div>
+        </div>
+        <div class="stat-grid" style="padding-top:0;">
+          <div class="stat-card"><div class="eyebrow">Kampe spillet</div><div class="stat-val">142</div></div>
+          <div class="stat-card"><div class="eyebrow">Win rate</div><div class="stat-val">68<small>%</small></div></div>
+          <div class="stat-card"><div class="eyebrow">Nuværende stime</div><div class="stat-val">5</div></div>
+          <div class="stat-card"><div class="eyebrow">Turneringer</div><div class="stat-val">4</div></div>
+        </div>
+        <div class="elo-hero">
+          <div class="row" style="justify-content:space-between;align-items:flex-start;">
+            <div><div class="eyebrow">Aktuel Elo Rating</div><div class="elo-big">1075</div><div class="elo-delta">↑ +12 i dag</div></div>
+            <div style="width:33px;height:33px;border-radius:50%;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;"><svg class="icon-sm" style="color:#93C5FD;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></div>
+          </div>
+          <svg viewBox="0 0 300 90" style="width:100%;margin-top:13px;" fill="none">
+            <polyline points="0,70 40,62 80,66 120,48 160,52 200,34 240,38 300,18" stroke="#93C5FD" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="0,70 40,62 80,66 120,48 160,52 200,34 240,38 300,18 300,90 0,90" fill="rgba(147,197,253,0.12)"/>
+            <circle cx="300" cy="18" r="5" fill="#93C5FD" stroke="#1E3A5F" stroke-width="2.5"/>
+          </svg>
+          <div class="row" style="justify-content:space-between;font-size:10px;font-weight:500;color:#9DB6DE;margin-top:6px;"><span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAJ</span><span>JUN</span></div>
+        </div>
+        <div class="section-h" style="margin-top:4px;"><h3>Badges</h3></div>
+        <div class="row" style="gap:10px;padding:0 18px 20px;">
+          <div class="card" style="flex:1;text-align:center;padding:13px 8px;"><svg class="icon" style="color:var(--accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg><div style="font-weight:600;font-size:11.5px;margin-top:6px;">Champion</div></div>
+          <div class="card" style="flex:1;text-align:center;padding:13px 8px;"><svg class="icon" style="color:var(--accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8Z"/></svg><div style="font-weight:600;font-size:11.5px;margin-top:6px;">Lokal Helt</div></div>
+          <div class="card" style="flex:1;text-align:center;padding:13px 8px;opacity:0.45;"><svg class="icon" style="color:var(--text-light);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><div style="font-weight:600;font-size:11.5px;margin-top:6px;">Veteran</div></div>
+        </div>
+      </div>
+      <nav class="bottomnav">
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1Z"/></svg>Hjem</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Makkere</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Baner</a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Kampe<span class="nbadge">2</span></a>
+        <a class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Mere</a>
+      </nav>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
