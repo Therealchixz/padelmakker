@@ -549,7 +549,9 @@ export function ProfilTab({ user, showToast, setTab }) {
       {!editing ? (
       <div>
         <div data-tour="profile-main" className="pm-tour-scroll-anchor">
-        <h2 style={{ ...heading("clamp(20px,4.5vw,24px)"), marginBottom: "20px" }}>Min profil</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 8px' }}>
+          <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Min profil</h2>
+        </div>
         <div className="pm-profile-top">
         <PillTabs
           tabs={profileSectionTabs}
@@ -560,47 +562,47 @@ export function ProfilTab({ user, showToast, setTab }) {
           className="pm-pill-tabs--wrap"
         />
 
-        {/* Profile card */}
-        <div ref={overviewRef} className="pm-profile-card" style={{ background: theme.surface, borderRadius: theme.radius, padding: "24px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
-          <div className="pm-profile-header" style={{ marginBottom: "20px" }}>
+        {/* Profile card – centered pf-head layout matching mockup */}
+        <div ref={overviewRef} className="pm-profile-card" style={{ background: theme.surface, borderRadius: theme.radius, padding: "0 0 16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px", overflow: 'hidden', position: 'relative' }}>
+          {/* Edit button floating in top-right corner */}
+          <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 1 }}>
+            <button
+              onClick={() => { setForm(profileFormState(user)); setEditing(true); }}
+              style={{ ...btn(false), padding: "5px 10px", fontSize: "12px", color: theme.textMid, background: theme.surfaceAlt, borderColor: theme.border }}
+            >
+              <Settings size={12} /> Rediger
+            </button>
+          </div>
+          {/* Centered header: avatar + name + location + tags */}
+          <div style={{ textAlign: 'center', padding: '18px 18px 14px' }}>
             <AvatarCircle
               avatar={user.avatar}
-              size={64}
-              emojiSize="32px"
-              style={{ background: theme.accentBg, border: "2px solid " + theme.accent + "40" }}
+              size={96}
+              emojiSize="29px"
+              style={{ margin: '0 auto', border: '3px solid ' + theme.surface, boxShadow: theme.shadow }}
             />
-            <div className="pm-profile-header-copy">
-              <div className="pm-profile-header-top">
-                <div className="pm-profile-name" style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>{displayName}</div>
-                <div className="pm-profile-actions">
-                  <button
-                    onClick={() => { setForm(profileFormState(user)); setEditing(true); }}
-                    style={{ ...btn(false), padding: "5px 10px", fontSize: "12px", color: theme.textMid, background: theme.surfaceAlt, borderColor: theme.border }}
-                  >
-                    <Settings size={12} /> Rediger
-                  </button>
-                </div>
-              </div>
-              <div className="pm-profile-email" style={{ fontSize: "13px", color: theme.textLight, marginTop: "2px" }}>{authUser?.email}</div>
-              <div style={{ display: "flex", gap: "5px", marginTop: "8px", flexWrap: "wrap" }}>
-                {!statsLoading && is2v2Mode && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
-                {!statsLoading && isAmericanoMode && <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}
-                {!statsLoading && isLigaMode && !ligaLoading && ligaStats.matches > 0 && (
-                  <span style={tag(theme.blueBg, theme.blue)}>{ligaStats.matches} ligakampe</span>
-                )}
-                {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
-                {profileLevelDisplayText(user.level) ? (
-                  <span style={tag(theme.blueBg, theme.blue)}>
-                    Niveau {profileLevelDisplayText(user.level)}
-                  </span>
-                ) : null}
-                <span style={tag(theme.blueBg, theme.blue)}>{user.play_style || "?"}</span>
-                {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
-                <span style={tag(theme.warmBg, theme.warm)}><MapPin size={9} /> {user.city ? `${user.city}, ` : ""}{user.area || "?"}</span>
-              </div>
+            <h2 style={{ fontSize: 19, fontWeight: 600, marginTop: 12, letterSpacing: '-0.3px', color: theme.text, margin: '12px 0 0' }}>{displayName}</h2>
+            <p style={{ color: theme.textLight, fontSize: 12.5, marginTop: 3 }}>
+              {user.city ? `${user.city}, ` : ''}{user.area || authUser?.email}
+            </p>
+            <div style={{ display: 'flex', gap: 7, marginTop: 9, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+              {!statsLoading && is2v2Mode && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
+              {!statsLoading && isAmericanoMode && <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}
+              {!statsLoading && isLigaMode && !ligaLoading && ligaStats.matches > 0 && (
+                <span style={tag(theme.blueBg, theme.blue)}>{ligaStats.matches} ligakampe</span>
+              )}
+              {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
+              {profileLevelDisplayText(user.level) ? (
+                <span style={tag(theme.amberBg, theme.amberText)}>
+                  Niveau {profileLevelDisplayText(user.level)}
+                </span>
+              ) : null}
+              {user.play_style && <span style={tag(theme.blueBg, theme.blue)}>{user.play_style}</span>}
+              {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
             </div>
           </div>
 
+          <div style={{ padding: '0 18px' }}>
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
           {!editing && !isValidProfileRegion(user.area) ? (
@@ -682,26 +684,29 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         </div>
         </div>
+        </div>
 
         {showPerformanceSection ? (
         <>
         <div ref={performanceRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           Performance · {activeModeLabel}
         </div>
-        {/* ELO over tid — samme format som valgt i Overblik */}
-        <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
-          <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-            <TrendingUp size={16} color={theme.accent} />
-            <span>ELO over tid</span>
-            <span style={{ fontSize: "11px", fontWeight: 500, color: theme.textLight }}>({activeModeLabel})</span>
+        {/* ELO hero — navy gradient card */}
+        <div style={{ margin: '0 0 16px', borderRadius: 14, padding: '17px', background: 'linear-gradient(150deg, #0D2752, #1D4A9E)', color: '#fff', boxShadow: theme.shadowLg }}>
+          <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9DB6DE', marginBottom: '6px' }}>
+            Aktuel Elo Rating · {activeModeLabel}
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: '12px' }}>
+            {(is2v2Mode ? elo : americanoElo) ?? '—'}
           </div>
           {activeEloGraphLoading ? (
-            <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px" }}>Indlæser...</div>
+            <div style={{ textAlign: "center", padding: "16px 0", color: '#9DB6DE', fontSize: "13px" }}>Indlæser...</div>
           ) : (
             <EloGraph
               data={activeEloGraphData}
               valueLabel={activeEloGraphLabel}
               emptyText={activeEloGraphEmptyText}
+              dark
             />
           )}
         </div>

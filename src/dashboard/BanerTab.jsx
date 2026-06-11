@@ -353,7 +353,9 @@ export function BanerTab() {
 
   return (
     <div className="pm-baner-page">
-      <h2 className="pm-baner-page-title" style={{ ...heading('clamp(20px,4.5vw,24px)') }}>Ledige padelbaner</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0 8px' }}>
+        <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Baner</h2>
+      </div>
 
       <div className="pm-baner-search-row">
         <div className="pm-baner-search-wrap">
@@ -483,23 +485,17 @@ export function BanerTab() {
               onToggle={(e) => onDetailsToggle(v, e)}
             >
               <summary className="pm-baner-summary">
-                <div className="pm-baner-summary-main">
-                  <div className="pm-baner-summary-title">{v.title}</div>
-                  <div className="pm-baner-summary-address">
-                    <MapPin size={11} /> {v.address}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>{v.title}</span>
+                    <span style={v.indoor ? tag(theme.accentBg, theme.accent) : tag(theme.warmBg, theme.warm)}>
+                      {v.indoor ? <><Building2 size={10} /> Indendørs</> : <><Sun size={10} /> Udendørs</>}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: theme.textLight, marginTop: 3 }}>
+                    <MapPin size={11} />{v.address}
                   </div>
                 </div>
-                <span style={v.indoor ? tag(theme.blueBg, theme.blue) : tag(theme.warmBg, theme.warm)}>
-                  {v.indoor ? (
-                    <>
-                      <Building2 size={10} /> Indoor
-                    </>
-                  ) : (
-                    <>
-                      <Sun size={10} /> Outdoor
-                    </>
-                  )}
-                </span>
               </summary>
 
               <div className="pm-baner-venue-body">

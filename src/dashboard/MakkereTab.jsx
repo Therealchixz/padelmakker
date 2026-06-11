@@ -158,54 +158,42 @@ function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
   const quality = makkerMatchBadge(score);
 
   return (
-    <div className="pm-ui-card" style={{ padding: '14px 16px' }}>
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+    <div className="pm-ui-card" style={{ padding: '14px 16px', margin: '0 18px' }}>
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
         <div onClick={() => onView(p)} style={{ cursor: 'pointer', flexShrink: 0 }}>
           <AvatarCircle
             avatar={p.avatar}
-            size={46}
-            emojiSize="22px"
+            size={50}
+            emojiSize="16px"
             style={{ background: theme.surfaceAlt, border: '1px solid ' + theme.border }}
           />
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <span
-            onClick={() => onView(p)}
-            style={{ fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '5px' }}
-          >
-            {p.full_name || p.name}
-          </span>
-
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ ...tag(theme.accent, theme.onAccent), fontWeight: 800 }}>ELO {eloShown}</span>
-            {(p.city || p.area) && (
-              <span style={{ ...tag(theme.blueBg, theme.blue), display: 'flex', alignItems: 'center', gap: '2px' }}>
-                <MapPin size={8} />{p.city || p.area.replace('Region ', '')}
-              </span>
-            )}
-            {p.intent_now && intentDisplayLabel(p.intent_now) && (
-              <span style={tag(theme.greenBg, theme.green)}>{intentDisplayLabel(p.intent_now)}</span>
-            )}
-            {isSeekingActive(p) && (
-              <span style={tag(theme.warmBg, theme.warm)}>{seekingActivityLabelDisplay(p)}</span>
+          <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span
+              onClick={() => onView(p)}
+              style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.2px', cursor: 'pointer' }}
+            >
+              {p.full_name || p.name}
+            </span>
+            {p.level != null && p.level !== '' && (
+              <span style={tag(theme.amberBg, theme.amberText)}>Niveau {eloShown}</span>
             )}
           </div>
+          <div style={{ fontSize: 12, color: theme.textLight, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <MapPin size={10} />
+            {[p.city || (p.area ? p.area.replace('Region ', '') : null), p.games_played ? `${p.games_played} kampe` : null].filter(Boolean).join(' · ')}
+          </div>
         </div>
-
-        <button
-          onClick={() => onInvite(p)}
-          style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', flexShrink: 0 }}
-        >
-          Invitér
-        </button>
       </div>
 
-      {/* Match-kvalitet — bundlinje */}
+      {/* Match-kvalitet + handlinger */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: '6px',
-        marginTop: '10px', paddingTop: '9px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginTop: '11px', paddingTop: '11px',
         borderTop: '1px solid ' + theme.border,
+        gap: 8,
       }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: '5px',
@@ -218,8 +206,14 @@ function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.color, flexShrink: 0 }} />
           {quality.label}
         </span>
-        <span style={{ fontSize: '11px', color: theme.textLight }}>·</span>
-        <span style={{ fontSize: '11px', color: theme.textLight }}>{reason}</span>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => onView(p)} style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
+            Profil
+          </button>
+          <button onClick={() => onInvite(p)} style={{ ...btn(true), padding: '7px 12px', fontSize: '12px' }}>
+            Invitér
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -563,7 +557,10 @@ export function MakkereTab({ user, showToast }) {
 
   return (
     <div>
-      <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Find makker</h2>
+      {/* Topbar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 8px' }}>
+        <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Find makker</h2>
+      </div>
 
       <ActiveSeekingPanel
         variant="compact"
@@ -619,17 +616,12 @@ export function MakkereTab({ user, showToast }) {
       {/* Foreslåede makkere */}
       {suggestions.length > 0 && (
         <div style={{ marginBottom: '28px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Zap size={14} color={theme.accent} />
-              <span style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Foreslåede makkere
-              </span>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 18px 10px' }}>
+            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Foreslåede makkere</h3>
             {suggestions.length > 3 && (
               <button
                 onClick={() => setShowAllSuggestions(v => !v)}
-                style={{ fontSize: '12px', color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+                style={{ fontSize: '12.5px', color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
               >
                 {showAllSuggestions ? 'Vis færre' : `Se alle ${suggestions.length}`}
               </button>
@@ -654,8 +646,8 @@ export function MakkereTab({ user, showToast }) {
       <div style={{ borderTop: '1px solid ' + theme.border, marginBottom: '20px' }} />
 
       {/* Browse / søg alle */}
-      <div ref={seekingResultsRef} style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', scrollMarginTop: '86px' }}>
-        Alle spillere
+      <div ref={seekingResultsRef} style={{ margin: '0 18px 12px', scrollMarginTop: '86px' }}>
+        <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Alle spillere</h3>
       </div>
 
       <div style={{ position: 'relative', marginBottom: '10px' }}>
@@ -763,52 +755,44 @@ export function MakkereTab({ user, showToast }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {paginated.map(p => {
-          const age = calcAge(p.birth_year, p.birth_month, p.birth_day);
           return (
-            <div key={p.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: 'clamp(14px,3vw,18px)', boxShadow: theme.shadow, border: '1px solid ' + theme.border }}>
-              <div onClick={() => setViewPlayer(p)} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', cursor: 'pointer' }}>
+            <div key={p.id} style={{ background: theme.surface, borderRadius: theme.radius, padding: '14px 16px', boxShadow: theme.shadow, border: '1px solid ' + theme.border }}>
+              <div onClick={() => setViewPlayer(p)} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}>
                 <AvatarCircle
                   avatar={p.avatar}
-                  size={48}
-                  emojiSize="22px"
-                  style={{ background: theme.surfaceAlt, border: '1px solid ' + theme.border }}
+                  size={50}
+                  emojiSize="16px"
+                  style={{ background: theme.surfaceAlt, border: '1px solid ' + theme.border, flexShrink: 0 }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                    <span style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em', wordBreak: 'break-word' }}>{p.full_name || p.name}</span>
-                    <span style={{ fontSize: '12px', color: theme.textLight, display: 'flex', alignItems: 'center', gap: '3px' }}><MapPin size={11} /> {p.city ? `${p.city}` : (p.area || '?')}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '5px', marginTop: '7px', flexWrap: 'wrap' }}>
-                    <span style={tag(theme.accentBg, theme.accent)}>ELO {displayElo(p)}</span>
-                    {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
-                    {p.level != null && p.level !== '' ? (
-                      <span style={tag(theme.accentBg, theme.accent)}>Niveau {formatPlaytomicLevel(p.level)}</span>
-                    ) : null}
-                    <span style={tag(theme.blueBg, theme.blue)}>{p.play_style || '?'}</span>
-                    {p.court_side && <span style={tag(theme.blueBg, theme.blue)}>{p.court_side}</span>}
-                    <span style={tag(theme.warmBg, theme.warm)}>{displayGames(p)} kampe</span>
-                    {isSeekingActive(p) && (
-                      <span style={tag(theme.warmBg, theme.warm)}>{seekingActivityLabelDisplay(p)}</span>
+                  <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.2px' }}>{p.full_name || p.name}</span>
+                    {p.level != null && p.level !== '' && (
+                      <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
                     )}
+                    {isSeekingActive(p) && (
+                      <span style={tag(theme.greenBg, theme.green)}>{seekingActivityLabelDisplay(p)}</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: theme.textLight, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <MapPin size={10} />
+                    {[p.city || p.area, `${displayGames(p)} kampe`, p.court_side].filter(Boolean).join(' · ')}
                   </div>
                   {p.bio && <PlayerBioPreview bio={p.bio} />}
                 </div>
               </div>
-              <div className="pm-makker-card-actions">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: 11, paddingTop: 11, borderTop: '1px solid ' + theme.border }}>
                 <button
                   onClick={() => toggleFavorite(p.id)}
                   title={favorites.has(String(p.id)) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'}
-                  style={{ ...btn(false), padding: '7px 10px', fontSize: '14px' }}
+                  style={{ ...btn(false), padding: '8px 11px', fontSize: '14px' }}
                 >
                   {favorites.has(String(p.id)) ? '★' : '☆'}
                 </button>
-                <button onClick={() => setViewPlayer(p)} style={{ ...btn(false), padding: '7px 14px', fontSize: '12px' }}>
-                  👤 Se profil
-                </button>
-                <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '7px 14px', fontSize: '12px' }}>
+                <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '8px 14px', fontSize: '12px' }}>
                   Besked
                 </button>
-                <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '7px 14px', fontSize: '12px' }}>
+                <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '8px 14px', fontSize: '12px' }}>
                   Invitér
                 </button>
               </div>

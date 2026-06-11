@@ -3,11 +3,16 @@ import { AvatarCircle } from '../AvatarCircle';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
 
+const DA_MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAJ','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
+
 function badgeToneClass(tone) {
   if (tone === 'live') return 'pm-kampe-v2-badge--live';
   if (tone === 'open') return 'pm-kampe-v2-badge--open';
   if (tone === 'full') return 'pm-kampe-v2-badge--full';
   if (tone === 'closed') return 'pm-kampe-v2-badge--closed';
+  if (tone === 'warm') return 'pm-kampe-v2-badge--warm';
+  if (tone === 'green') return 'pm-kampe-v2-badge--green';
+  if (tone === 'danger') return 'pm-kampe-v2-badge--danger';
   return 'pm-kampe-v2-badge--neutral';
 }
 
@@ -58,6 +63,9 @@ export function KampeMatchListCard({
   const maxPlayers = match?.max_players || 4;
   const dateHeadline = formatMatchDateHeadlineDa(match.date);
   const timeLabel = matchTimeLabel(match);
+  const badgeDate = match.date ? new Date(String(match.date).slice(0, 10) + 'T00:00:00') : null;
+  const badgeDay = badgeDate ? badgeDate.getDate() : null;
+  const badgeMon = badgeDate ? DA_MONTHS_SHORT[badgeDate.getMonth()] : null;
   const isCompleted = status === 'completed';
   const showMyEloDelta =
     isCompleted && joined && myEloChange != null && Number.isFinite(Number(myEloChange));
@@ -95,6 +103,12 @@ export function KampeMatchListCard({
       aria-label={`Åbn kamp: ${venue}`}
     >
       <div className="pm-kampe-v2-list-card-top">
+        {badgeDay != null ? (
+          <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-inset, #F1F4F9)', border: '1px solid var(--pm-border, #E2E8F0)', borderRadius: 10, padding: '6px 0' }}>
+            <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{badgeDay}</b>
+            <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-light, #8898AA)', letterSpacing: '0.5px' }}>{badgeMon}</span>
+          </div>
+        ) : null}
         <div className="pm-kampe-v2-list-card-main">
           <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary">
             {dateHeadline} · {timeLabel}
@@ -117,23 +131,28 @@ export function KampeMatchListCard({
 
       <div className={`pm-kampe-v2-list-card-bottom${isCompleted ? ' pm-kampe-v2-list-card-bottom--completed' : ''}`}>
         <div className="pm-kampe-v2-list-participants">
-          <div
-            className="pm-kampe-v2-list-teams"
-            aria-label={`${filledCount} af ${maxPlayers} spillere, hold 1 mod hold 2`}
-          >
-            <div className="pm-kampe-v2-list-team pm-kampe-v2-list-team--t1" aria-label="Hold 1">
-              {t1Slots.map((p, i) => renderTeamSlot(p, 1, i))}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} aria-label={`${filledCount} af ${maxPlayers} spillere`}>
+            <div style={{ display: 'flex' }}>
+              {[...t1Slots, ...t2Slots].map((p, i) => p ? (
+                <AvatarCircle
+                  key={p.user_id || `slot-${i}`}
+                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
+                  size={27}
+                  emojiSize="10px"
+                  style={{ marginLeft: i > 0 ? -9 : 0, border: '2px solid white', zIndex: i + 1 }}
+                />
+              ) : (
+                <span
+                  key={`empty-${i}`}
+                  style={{ width: 27, height: 27, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -9 : 0, zIndex: i + 1, display: 'inline-block', flexShrink: 0 }}
+                  aria-hidden
+                />
+              ))}
             </div>
-            <span className="pm-kampe-v2-list-teams-vs" aria-hidden>
-              vs
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-text-light, #8898AA)' }}>
+              {filledCount}/{maxPlayers} spillere
             </span>
-            <div className="pm-kampe-v2-list-team pm-kampe-v2-list-team--t2" aria-label="Hold 2">
-              {t2Slots.map((p, i) => renderTeamSlot(p, 2, i))}
-            </div>
           </div>
-          <span className="pm-kampe-v2-list-count">
-            {filledCount}/{maxPlayers}
-          </span>
         </div>
         {showEloRange ? (
           <span

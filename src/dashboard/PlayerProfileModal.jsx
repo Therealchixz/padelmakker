@@ -271,7 +271,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
                 </span>
               ) : null}
               {levelDisplay ? (
-                <span style={tag(theme.blueBg, theme.blue)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
+                <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
               ) : null}
             </div>
           </div>

@@ -3,7 +3,7 @@ export function getKampeListStatusBadge({ status, isClosed, left, isFull }) {
     return { label: 'LIVE', tone: 'live' };
   }
   if (status === 'completed') {
-    return { label: 'Afsluttet', tone: 'neutral' };
+    return { label: 'Afsluttet', tone: 'warm' };
   }
   if (status === 'full' || isFull || (status === 'open' && left === 0)) {
     return { label: 'Fuld', tone: 'full' };
@@ -41,7 +41,7 @@ export function getKampeDetailStatusBadge({
     return { label: `Hold ${winnerTeam} vandt`, tone: 'green' };
   }
   if (status === 'completed') {
-    return { label: 'Afsluttet', tone: 'neutral' };
+    return { label: 'Afsluttet', tone: 'warm' };
   }
   if (status === 'full' || isFull || (status === 'open' && left === 0)) {
     return { label: 'Fuld', tone: 'full' };
