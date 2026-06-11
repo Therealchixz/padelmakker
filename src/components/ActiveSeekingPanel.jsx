@@ -25,7 +25,7 @@ import {
   FILTER_RETURN_KAMPE,
 } from '../lib/filterReturnNavigation';
 import { AppModal } from './AppModal';
-import { ChevronDown, Clock } from 'lucide-react';
+import { ChevronDown, Clock, Eye } from 'lucide-react';
 
 function ToggleSwitch({ checked, onChange, disabled, ariaLabel }) {
   return (
@@ -324,6 +324,57 @@ export function ActiveSeekingPanel({
     return (
       <div className="pm-active-seeking-panel">
         {channels.map(renderRow)}
+        <AppModal
+          open={regionModal != null}
+          onClose={() => setRegionModal(null)}
+          ariaLabel="Vælg region"
+          maxWidthPreset="sm"
+        >
+          {regionModalContent(regionModal, busyChannel, persistSeeking)}
+        </AppModal>
+      </div>
+    );
+  }
+
+  if (variant === 'homeCard') {
+    const active = isSeekingUiActive(displayUser, 'makker') || isSeekingUiActive(displayUser, 'kamp');
+    const busy = busyChannel != null;
+    return (
+      <div>
+        <div
+          style={{
+            margin: '2px 18px 13px',
+            background: theme.surface,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 14,
+            padding: '13px 15px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            boxShadow: theme.shadow,
+          }}
+        >
+          <div style={{
+            width: 34, height: 34, borderRadius: '50%',
+            background: active ? theme.greenBg : theme.surfaceAlt,
+            color: active ? theme.green : theme.textMid,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <Eye size={14} aria-hidden />
+          </div>
+          <span style={{ flex: 1, fontWeight: 600, fontSize: 13, color: theme.text }}>
+            Søger makker:{' '}
+            <span style={{ color: active ? theme.green : theme.textLight }}>
+              {active ? 'Aktiv' : 'Inaktiv'}
+            </span>
+          </span>
+          <ToggleSwitch
+            checked={active}
+            onChange={(on) => handleToggle('makker', on)}
+            disabled={busy}
+            ariaLabel={active ? 'Slå søgning fra' : 'Slå søgning til'}
+          />
+        </div>
         <AppModal
           open={regionModal != null}
           onClose={() => setRegionModal(null)}

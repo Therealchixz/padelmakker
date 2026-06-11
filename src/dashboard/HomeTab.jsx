@@ -3,10 +3,9 @@ import { DateTime } from 'luxon';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
-import { statsFromEloHistoryRows, useProfileEloBundle } from '../lib/eloHistoryUtils';
 import { supabase } from '../lib/supabase';
 import { Court } from '../api/base44Client';
-import { Users, MapPin, Swords, Trophy, ChevronRight, X, CalendarPlus } from 'lucide-react';
+import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { AppModal } from '../components/AppModal';
 import { PageSectionTitle } from '../components/PageSectionTitle';
@@ -35,32 +34,12 @@ import {
 
 const HOME_FEED_CACHE_BY_USER = new Map();
 
-const HOME_ELO_MODE_STORAGE_PREFIX = "pm-home-elo-mode:";
 const HOME_FEED_FILTERS = [
   { id: 'kampe', label: 'Kampe', icon: '⚔️', types: ['match_group', 'elo', 'open_match'] },
   { id: 'americano', label: TOURNAMENT_MODE_LABEL, icon: '🎾', types: ['americano_winner', 'americano_registration'] },
   { id: 'liga', label: 'Liga', icon: '🏆', types: ['liga_completed', 'league_new'] },
   { id: 'spillere', label: 'Spillere', icon: '⚡', types: ['elo_milestone', 'seeking_player'] },
 ];
-
-function readHomeEloMode(userId) {
-  if (typeof localStorage === "undefined" || !userId) return "2v2";
-  try {
-    const raw = localStorage.getItem(HOME_ELO_MODE_STORAGE_PREFIX + String(userId));
-    return raw === "americano" ? "americano" : "2v2";
-  } catch {
-    return "2v2";
-  }
-}
-
-function writeHomeEloMode(userId, mode) {
-  if (typeof localStorage === "undefined" || !userId) return;
-  try {
-    localStorage.setItem(HOME_ELO_MODE_STORAGE_PREFIX + String(userId), mode === "americano" ? "americano" : "2v2");
-  } catch {
-    // Ignore localStorage limitations (private mode / quota).
-  }
-}
 
 /** Sted for turnering/kamp: bane-navn, ellers opretterens region. */
 function activityLocationLabel(courtName, creatorArea) {
@@ -83,69 +62,6 @@ export function HomeTab({ user, setTab, showToast }) {
   const [viewTournament, setViewTournament] = useState(null);
   const [viewPlayer, setViewPlayer] = useState(null);
   const displayName = resolveDisplayName(user, authUser);
-  const firstName   = displayName.split(/\s+/)[0];
-  const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
-  const { bundleLoading, profileFresh, ratedRows } = useProfileEloBundle(user.id, eloSyncKey);
-  const [eloMode, setEloMode] = useState(() => readHomeEloMode(user?.id));
-  const [americanoHistoryRows, setAmericanoHistoryRows] = useState([]);
-  const histStats = useMemo(() => statsFromEloHistoryRows(ratedRows), [ratedRows]);
-  const elo = histStats?.elo ?? Math.round(Number(profileFresh?.elo_rating) || 1000);
-  const games = histStats?.games ?? (profileFresh?.games_played || 0);
-  const wins = histStats?.wins ?? (profileFresh?.games_won || 0);
-  const winRate = games > 0 ? Math.round((wins / games) * 100) : null;
-  const americanoElo = Math.round(Number(profileFresh?.americano_elo_rating) || 1000);
-  const americanoPlayed = Number(profileFresh?.americano_played) || 0;
-  const americanoWins = Number(profileFresh?.americano_wins) || 0;
-  const americanoDraws = Number(profileFresh?.americano_draws) || 0;
-  const americanoLosses = Number(profileFresh?.americano_losses) || 0;
-  const americanoRounds = americanoWins + americanoDraws + americanoLosses;
-  const americanoWinRate = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : null;
-
-  useEffect(() => {
-    setEloMode(readHomeEloMode(user?.id));
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    writeHomeEloMode(user.id, eloMode);
-  }, [user?.id, eloMode]);
-
-  useEffect(() => {
-    if (!user?.id) {
-      setAmericanoHistoryRows([]);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data, error } = await supabase
-          .from('americano_elo_history')
-          .select('id, old_rating, new_rating, change, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: true });
-        if (error) throw error;
-        if (cancelled) return;
-        setAmericanoHistoryRows((data || []).map((row) => ({
-          id: row.id,
-          old_rating: row.old_rating,
-          new_rating: row.new_rating,
-          change: row.change,
-          date: row.created_at,
-          match_id: row.id,
-          result:
-            Number(row.change) > 0
-              ? 'win'
-              : Number(row.change) < 0
-                ? 'loss'
-                : 'draw',
-        })));
-      } catch (error) {
-        console.warn('home americano_elo_history load:', error?.message || error);
-        if (!cancelled) setAmericanoHistoryRows([]);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [user?.id, profileFresh?.americano_elo_rating]);
 
   // Dato-badge (dag + måned) til kort.
   const dayMonBadge = (ymd) => {
@@ -873,10 +789,10 @@ export function HomeTab({ user, setTab, showToast }) {
   };
 
   const actions = [
-    { Icon: Users,  color: theme.accent, bg: theme.accentBg, title: "Find en makker", desc: "Se ledige spillere",  tab: "makkere" },
-    { Icon: MapPin, color: theme.green,  bg: theme.greenBg,  title: "Book en bane",   desc: "Ledige tider",       tab: "baner"   },
-    { Icon: Swords, color: theme.warm,   bg: theme.warmBg,   title: "Åbne kampe",     desc: "Tilmeld dig nu",     tab: "kampe"   },
-    { Icon: Trophy, color: theme.purple, bg: theme.purpleBg, title: "Se ranking",     desc: "Din placering",      tab: "ranking" },
+    { Icon: Users,       color: theme.accent, bg: theme.accentBg, title: "Find Makker",  tab: "makkere" },
+    { Icon: MapPin,      color: theme.green,  bg: theme.greenBg,  title: "Book Bane",    tab: "baner"   },
+    { Icon: CalendarPlus,color: theme.warm,   bg: theme.warmBg,   title: "Åbne Kampe",   tab: "kampe"   },
+    { Icon: BarChart2,   color: theme.purple, bg: theme.purpleBg, title: "Rangliste",    tab: "ranking" },
   ];
 
   const activityRowBaseStyle = {
@@ -1116,51 +1032,6 @@ export function HomeTab({ user, setTab, showToast }) {
     [feedRows, activityGroupLabel]
   );
 
-  const activeElo = eloMode === 'americano' ? americanoElo : elo;
-  const activeStats = eloMode === 'americano'
-    ? {
-        primary: { value: americanoPlayed, label: 'Turn.' },
-        secondary: { value: americanoWins, label: 'Vundne runder' },
-        tertiary: { value: americanoWinRate == null ? "—" : `${americanoWinRate}%`, label: 'Win' },
-      }
-    : {
-        primary: { value: games, label: 'Kampe' },
-        secondary: { value: wins, label: 'Sejre' },
-        tertiary: { value: winRate == null ? "—" : `${winRate}%`, label: 'Win' },
-      };
-  const activeHistoryRows = eloMode === 'americano' ? americanoHistoryRows : ratedRows;
-
-  const nextEloMilestone = useMemo(() => {
-    const current = Math.max(0, Math.round(Number(activeElo) || 0));
-    const step = 50;
-    const max = 2000;
-    if (current >= max) {
-      return { target: max, remaining: 0 };
-    }
-    const target = Math.min(max, Math.ceil((current + 1) / step) * step);
-    return { target, remaining: Math.max(0, target - current) };
-  }, [activeElo]);
-  const recentForm = useMemo(() => {
-    return [...(activeHistoryRows || [])]
-      .filter((row) => row.result === 'win' || row.result === 'loss' || row.result === 'draw')
-      .sort((a, b) => new Date(b.date || b.created_at || 0).getTime() - new Date(a.date || a.created_at || 0).getTime())
-      .slice(0, 5)
-      .map((row, index) => ({
-        key: `${row.match_id || row.created_at || row.date || index}-${index}`,
-        label: row.result === 'win' ? 'V' : row.result === 'loss' ? 'T' : 'U',
-        result: row.result,
-      }));
-  }, [activeHistoryRows]);
-  // Ugentlig ELO-ændring = sum af 'change' for kampe inden for de sidste 7 dage.
-  const weeklyDelta = useMemo(() => {
-    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    let sum = 0;
-    for (const row of (activeHistoryRows || [])) {
-      const t = new Date(row.date || row.created_at || 0).getTime();
-      if (!Number.isNaN(t) && t >= weekAgo) sum += Number(row.change) || 0;
-    }
-    return Math.round(sum);
-  }, [activeHistoryRows]);
   const greetingText = useMemo(() => {
     const h = new Date().getHours();
     if (h < 10) return 'Godmorgen';
@@ -1278,204 +1149,126 @@ export function HomeTab({ user, setTab, showToast }) {
           </button>
         </div>
       )}
-      {/* Premium ELO hero: vent på frisk DB (undgå flash af forældede tal fra React) */}
-      {bundleLoading ? (
-        <div style={{ textAlign: "center", padding: "32px 16px", color: theme.textLight, fontSize: "14px", marginBottom: "24px" }}>Indlæser dine tal…</div>
-      ) : (
-        <>
-          {/* Hilsen */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: theme.textMid, letterSpacing: '-.01em' }}>{greetingText}</div>
-            <h2 style={{ fontSize: 26, fontWeight: 800, color: theme.text, letterSpacing: '-.03em', lineHeight: 1.05, margin: 0 }}>Hej {firstName}</h2>
-          </div>
+      {/* Compact topbar: avatar + greeting */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 18px 12px' }}>
+        <AvatarCircle avatar={user.avatar} size={42} emojiSize="20px" style={{ flexShrink: 0, background: 'linear-gradient(135deg, #3D6CB3, #1A3E78)', color: '#fff' }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: theme.textMid, letterSpacing: '.01em' }}>{greetingText}</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{displayName}</div>
+        </div>
+      </div>
 
-          {/* Blå ELO-hero (nyt design) */}
-          <section
-            aria-label="Din ELO status"
+      {/* Seeking onboarding prompt */}
+      {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} /> : null}
+
+      {/* Seek card */}
+      {showToast ? <ActiveSeekingPanel variant="homeCard" user={user} showToast={showToast} /> : null}
+
+      {/* Quick 2×2 grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, margin: '4px 18px 18px' }}>
+        {actions.map(({ Icon, color, bg, title, tab: t }) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            data-tour={`quick-action-${t}`}
             style={{
-              borderRadius: 20,
-              padding: '18px 20px 20px',
-              background: 'linear-gradient(150deg, #0D2752 0%, #16377E 55%, #1D4A9E 100%)',
-              color: '#fff',
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: '0 8px 24px rgba(22,55,126,.28)',
-              marginBottom: 24,
+              background: theme.surface,
+              borderRadius: 14,
+              boxShadow: theme.shadow,
+              border: `1px solid ${theme.border}`,
+              padding: '13px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 7,
+              fontWeight: 600,
+              fontSize: 12.5,
+              color: theme.text,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              textAlign: 'center',
             }}
           >
-            <div style={{ position: 'absolute', top: -60, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,74,158,.55), transparent 70%)' }} />
-
-            {/* Top: label + 2v2/Americano-skift */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, position: 'relative' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.8)', letterSpacing: '.02em' }}>
-                {eloMode === 'americano' ? 'Americano' : '2v2'} ELO-rating
-              </div>
-              <div style={{ display: 'flex', background: 'rgba(255,255,255,.14)', borderRadius: 9, padding: 3, gap: 2, flexShrink: 0 }}>
-                {[{ k: '2v2', l: '2v2' }, { k: 'americano', l: 'Americano' }].map(({ k, l }) => (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setEloMode(k)}
-                    style={{
-                      fontFamily: 'inherit', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 7,
-                      border: 'none', cursor: 'pointer', letterSpacing: '-.01em',
-                      background: eloMode === k ? '#fff' : 'transparent',
-                      color: eloMode === k ? '#16377E' : 'rgba(255,255,255,.85)',
-                      transition: 'background .2s, color .2s',
-                    }}
-                  >{l}</button>
-                ))}
-              </div>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
+              <Icon size={18} />
             </div>
+            {title}
+          </button>
+        ))}
+      </div>
 
-            {/* ELO-tal + ugentlig delta-pille */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginTop: 6, position: 'relative', flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: '-.04em', lineHeight: 1 }}>{activeElo}</div>
-              {(activeHistoryRows?.length > 0) && (() => {
-                const up = weeklyDelta >= 0;
-                return (
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 9,
-                    padding: '4px 11px 4px 6px', borderRadius: 99,
-                    background: up ? 'rgba(16,185,129,.2)' : 'rgba(239,68,68,.18)',
-                    border: `1px solid ${up ? 'rgba(110,231,183,.35)' : 'rgba(252,165,165,.32)'}`,
-                  }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', background: up ? '#10B981' : '#EF4444' }}>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">{up ? <polyline points="6 14 12 8 18 14" /> : <polyline points="6 10 12 16 18 10" />}</svg>
-                    </span>
-                    <span style={{ fontSize: 13.5, fontWeight: 800, color: up ? '#6EE7B7' : '#FCA5A5', letterSpacing: '-.01em' }}>{Math.abs(weeklyDelta)}</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.55)', marginLeft: 1, whiteSpace: 'nowrap' }}>denne uge</span>
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Fremgang mod næste mål */}
-            <div style={{ marginTop: 16, position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7, gap: 10 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.85)' }}>Næste mål · {nextEloMilestone.target}</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#BFDBFE', whiteSpace: 'nowrap' }}>
-                  {nextEloMilestone.remaining > 0 ? `${nextEloMilestone.remaining} ELO igen` : 'Nået! 🎉'}
-                </span>
-              </div>
-              <div style={{ height: 8, borderRadius: 99, background: 'rgba(255,255,255,.18)', overflow: 'hidden' }}>
-                <div style={{
-                  width: `${Math.max(0, Math.min(1, (nextEloMilestone.remaining > 0 ? (50 - nextEloMilestone.remaining) / 50 : 1))) * 100}%`,
-                  height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #6B93D6, #A3BAE8)', transition: 'width .6s ease',
-                }} />
-              </div>
-            </div>
-
-            {/* Form + Kampe/Sejre */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.14)', position: 'relative', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.6)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Form</span>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {recentForm.length > 0 ? (
-                    [...recentForm].reverse().map((item) => {
-                      const win = item.result === 'win';
-                      const draw = item.result === 'draw';
-                      return (
-                        <span key={item.key} style={{
-                          width: 20, height: 20, borderRadius: 6, fontSize: 11, fontWeight: 800,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          background: win ? 'rgba(110,231,183,.22)' : draw ? 'rgba(255,255,255,.18)' : 'rgba(252,165,165,.2)',
-                          color: win ? '#6EE7B7' : draw ? 'rgba(255,255,255,.85)' : '#FCA5A5',
-                        }}>{win ? 'S' : draw ? 'U' : 'T'}</span>
-                      );
-                    })
-                  ) : (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,.55)' }}>Ingen kampe endnu</span>
-                  )}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 22 }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1 }}>{activeStats.primary.value}</div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.6)', marginTop: 3 }}>{activeStats.primary.label}</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1 }}>{activeStats.tertiary.value}</div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.6)', marginTop: 3 }}>Sejre</div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {showToast ? (
-            <>
-              <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} />
-              <ActiveSeekingPanel variant="home" user={user} showToast={showToast} />
-            </>
-          ) : null}
-        </>
-      )}
-
-      {/* Invitationer (rigtige data) — bruger samme kort-stil som aktivitetsfeedet for konsistens */}
+      {/* Invitationer */}
       {inviteItems.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <PageSectionTitle>Invitationer</PageSectionTitle>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: "#EF4444", borderRadius: 999, minWidth: 18, height: 18, padding: "0 6px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 18px 10px' }}>
+            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Invitationer</h3>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: '#EF4444', borderRadius: 999, minWidth: 18, height: 18, padding: '0 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               {inviteItems.length}
             </span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {inviteItems.map((it) => renderActivityRowCard({
-              key: it.key,
-              tone: it.tone,
-              leading: (
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: it.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }} aria-hidden="true">
-                  {it.icon}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+            {inviteItems.map((it) => (
+              <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: it.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }} aria-hidden="true">
+                    {it.icon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.title}</div>
+                    {it.subtitle ? <div style={{ fontSize: 11.5, color: theme.textMid, marginTop: 2 }}>{it.subtitle}</div> : null}
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: it.bg, color: it.tone, flexShrink: 0 }}>{it.tag}</span>
                 </div>
-              ),
-              tag: it.tag,
-              title: it.title,
-              subtitle: it.subtitle,
-              action: it.kind === 'inbound' ? (
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button type="button" disabled={busyInviteId === it.key} onClick={() => rejectInvite(it)} style={{ ...inviteSecondaryBtnStyle, opacity: busyInviteId === it.key ? 0.5 : 1 }}>
-                    Afvis
-                  </button>
-                  <button type="button" disabled={busyInviteId === it.key} onClick={() => approveInvite(it)} style={{ ...invitePrimaryBtnStyle, opacity: busyInviteId === it.key ? 0.5 : 1 }}>
-                    Acceptér
-                  </button>
-                </div>
-              ) : (
-                <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })} style={activityActionBtnStyle(it.tone)}>
-                  Se
-                </button>
-              ),
-            }))}
+                {it.kind === 'inbound' ? (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 11, paddingTop: 11, borderTop: `1px solid ${theme.border}` }}>
+                    <button type="button" disabled={busyInviteId === it.key} onClick={() => approveInvite(it)}
+                      style={{ flex: 1, background: theme.navy, color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
+                      Godkend
+                    </button>
+                    <button type="button" disabled={busyInviteId === it.key} onClick={() => rejectInvite(it)}
+                      style={{ flex: 1, background: theme.surface, color: theme.navy, fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: `1.5px solid ${theme.border}`, borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
+                      Afvis
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${theme.border}` }}>
+                    <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })}
+                      style={{ width: '100%', background: theme.navy, color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer' }}>
+                      Se
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Kommende kampe (rigtige data: 2v2, Americano/Mexicano og liga) — samme kort-stil som feedet */}
+      {/* Kommende kampe */}
       {upcomingItems.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ marginBottom: 10 }}>
-            <PageSectionTitle>Kommende kampe</PageSectionTitle>
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
+            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
+            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {upcomingItems.map((it) => renderActivityRowCard({
-              key: it.key,
-              tone: it.tone,
-              leading: (
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: it.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
-                  <span style={{ fontSize: it.kind === "liga" ? 14 : 16, fontWeight: 800, color: it.tone }}>{it.badge.top}</span>
-                  {it.badge.bottom ? <span style={{ fontSize: 9, fontWeight: 700, color: it.tone, textTransform: "uppercase", marginTop: 1 }}>{it.badge.bottom}</span> : null}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+            {upcomingItems.map((it) => (
+              <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: theme.surfaceAlt, border: `1px solid ${theme.border}`, borderRadius: 10, padding: '6px 0' }}>
+                  <span style={{ display: 'block', fontSize: it.kind === 'liga' ? 13 : 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{it.badge.top}</span>
+                  {it.badge.bottom ? <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textMid, letterSpacing: 0.5 }}>{it.badge.bottom}</span> : null}
                 </div>
-              ),
-              tag: it.tag,
-              title: it.title,
-              subtitle: it.subtitle,
-              action: (
-                <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })} style={activityActionBtnStyle(it.tone)}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.tag} · {it.title}</div>
+                  <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.subtitle}</div>
+                </div>
+                <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })}
+                  style={{ background: it.tone, color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 12, border: 'none', borderRadius: 9, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
                   Se
                 </button>
-              ),
-            }))}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -1504,10 +1297,8 @@ export function HomeTab({ user, setTab, showToast }) {
 
       {/* Aktivitetsfeed */}
       {feedLoading ? (
-        <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
-            Seneste aktivitet
-          </div>
+        <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px", padding: '0 18px' }}>
+          <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '18px 0 10px' }}>Aktivitet</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {[54, 46, 54, 38, 50].map((w, i) => (
               <div key={i} style={{ height: "54px", borderRadius: "8px", background: theme.border, opacity: 0.5 + (i * 0.08), animation: "pm-pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
@@ -1515,10 +1306,8 @@ export function HomeTab({ user, setTab, showToast }) {
           </div>
         </div>
       ) : feedLoadError && allFeedRows.length === 0 ? (
-        <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
-            Seneste aktivitet
-          </div>
+        <div data-tour="home-latest-activity" className="pm-tour-scroll-anchor" style={{ marginBottom: "24px", padding: '0 18px' }}>
+          <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '18px 0 10px' }}>Aktivitet</h3>
           <div className="pm-state-card pm-state-card--error">
             <div className="pm-state-icon" aria-hidden="true">⚠️</div>
             <div className="pm-state-title">Kunne ikke hente aktivitet</div>
@@ -1555,7 +1344,7 @@ export function HomeTab({ user, setTab, showToast }) {
             </div>
           ) : null}
           <div className="pm-feed-filters-header">
-            <PageSectionTitle>Seneste aktivitet</PageSectionTitle>
+            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '18px 0 0' }}>Aktivitet</h3>
             <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
               <div className="pm-feed-filters-row">
                 <button
@@ -1926,30 +1715,6 @@ export function HomeTab({ user, setTab, showToast }) {
           )}
         </div>
       )}
-
-      {/* Genveje (nederst) */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ marginBottom: 10 }}>
-          <PageSectionTitle>Genveje</PageSectionTitle>
-        </div>
-        <div className="pm-home-grid">
-          {actions.map((a) => (
-            <button
-              key={a.tab}
-              type="button"
-              onClick={() => setTab(a.tab)}
-              data-tour={`quick-action-${a.tab}`}
-              className="pm-ui-card pm-ui-card-interactive pm-home-action-card"
-            >
-              <div className="pm-home-action-card-icon" style={{ background: a.bg }}>
-                <a.Icon size={20} color={a.color} />
-              </div>
-              <div className="pm-home-action-card-title">{a.title}</div>
-              <div className="pm-home-action-card-desc">{a.desc}</div>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Modals */}
       <AppModal
