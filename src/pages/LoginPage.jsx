@@ -100,21 +100,30 @@ export function LoginPage() {
   return (
     <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, paddingBottom: "max(96px, env(safe-area-inset-bottom))" }}>
       <div className="pm-auth-narrow">
-        <button type="button" onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "40px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
-        <h1 style={{ ...heading("28px"), marginBottom: "6px" }}>Velkommen tilbage</h1>
-        <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "20px", lineHeight: 1.5 }}>Log ind med Google eller email.</p>
-        <OAuthButtons redirectPath="/login" disabled={submitting} onError={setErr} />
-        <AuthDivider />
+        <button type="button" onClick={() => navigate("/")} style={{ ...btn(false), marginBottom: "28px", padding: "8px 14px", fontSize: "13px" }}>← Tilbage</button>
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
+          <picture>
+            <source srcSet="/logo-brand-nav.webp" type="image/webp" />
+            <img src="/logo-brand.png" alt="PadelMakker" style={{ height: "38px", display: "inline-block" }} />
+          </picture>
+          <h1 style={{ ...heading("20px"), letterSpacing: "-0.3px", marginTop: "22px", marginBottom: 0 }}>Velkommen tilbage</h1>
+          <p style={{ color: theme.textMid, fontSize: "13px", marginTop: "5px", marginBottom: 0, lineHeight: 1.5 }}>Log ind for at finde din næste kamp</p>
+        </div>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void handleLogin();
           }}
         >
-          <label htmlFor="login-email" style={labelStyle}>Email</label>
-          <input id="login-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "14px" }} />
+          <label htmlFor="login-email" style={labelStyle}>E-mail</label>
+          <input id="login-email" autoComplete="email" value={email} onChange={e => { setEmail(e.target.value); setErr(""); }} placeholder="din@email.dk" style={{ ...inputStyle, marginBottom: "13px" }} />
           <label htmlFor="login-password" style={labelStyle}>Adgangskode</label>
-          <input id="login-password" autoComplete="current-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...inputStyle, marginBottom: "14px" }} />
+          <input id="login-password" autoComplete="current-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...inputStyle, marginBottom: "8px" }} />
+          <div style={{ textAlign: "right", marginBottom: "16px" }}>
+            <button type="button" onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", padding: 0, color: theme.navy, fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: font }}>
+              Glemt adgangskode?
+            </button>
+          </div>
           {turnstileEnabled && (
             <div style={{ marginBottom: "14px" }}>
               <TurnstileWidget
@@ -129,13 +138,12 @@ export function LoginPage() {
             {submitting ? "Logger ind..." : "Log ind"}
           </button>
         </form>
-        <button type="button" onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", color: theme.accent, fontSize: "13px", marginTop: "16px", cursor: "pointer", fontFamily: font, fontWeight: 500, width: "100%", textAlign: "center" }}>
-          Glemt adgangskode?
-        </button>
-        <p style={{ textAlign: "center", marginTop: "20px", fontSize: "14px", color: theme.textMid }}>
-          Har du ikke en konto?{" "}
-          <Link to="/opret" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
-            Opret profil
+        <AuthDivider />
+        <OAuthButtons redirectPath="/login" disabled={submitting} onError={setErr} />
+        <p style={{ textAlign: "center", marginTop: "20px", fontSize: "12.5px", color: theme.textMid }}>
+          Ny her?{" "}
+          <Link to="/opret" style={{ color: theme.navy, fontWeight: 600, textDecoration: "none" }}>
+            Opret en profil
           </Link>
         </p>
         <PublicLegalFooter />
