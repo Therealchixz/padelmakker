@@ -6564,9 +6564,9 @@ button,
 
 .pm-kampe-v2-title {
   margin: 0;
-  font-size: clamp(20px, 4.5vw, 24px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
   line-height: 1.2;
   color: var(--pm-text);
 }
@@ -9268,9 +9268,9 @@ button,
 
 .pm-chat-v2-inbox-title {
   margin: 0;
-  font-size: clamp(26px, 5vw, 30px);
-  font-weight: 800;
-  letter-spacing: -0.04em;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
   color: var(--pm-text);
 }
 

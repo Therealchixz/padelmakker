@@ -353,7 +353,9 @@ export function BanerTab() {
 
   return (
     <div className="pm-baner-page">
-      <h2 className="pm-baner-page-title" style={{ ...heading('clamp(20px,4.5vw,24px)') }}>Ledige padelbaner</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0 8px' }}>
+        <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Baner</h2>
+      </div>
 
       <div className="pm-baner-search-row">
         <div className="pm-baner-search-wrap">
