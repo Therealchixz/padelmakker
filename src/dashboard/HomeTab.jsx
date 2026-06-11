@@ -1295,11 +1295,11 @@ export function HomeTab({ user, setTab, showToast }) {
             style={{
               borderRadius: 20,
               padding: '18px 20px 20px',
-              background: 'linear-gradient(150deg, #1E3A8A 0%, #1D4ED8 55%, #2563EB 100%)',
+              background: 'linear-gradient(150deg, #0D2752 0%, #16377E 55%, #1D4A9E 100%)',
               color: '#fff',
               position: 'relative',
               overflow: 'hidden',
-              boxShadow: '0 8px 24px rgba(29,78,216,.28)',
+              boxShadow: '0 8px 24px rgba(22,55,126,.28)',
               marginBottom: 24,
             }}
           >
@@ -1320,7 +1320,7 @@ export function HomeTab({ user, setTab, showToast }) {
                       fontFamily: 'inherit', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 7,
                       border: 'none', cursor: 'pointer', letterSpacing: '-.01em',
                       background: eloMode === k ? '#fff' : 'transparent',
-                      color: eloMode === k ? '#1D4ED8' : 'rgba(255,255,255,.85)',
+                      color: eloMode === k ? '#16377E' : 'rgba(255,255,255,.85)',
                       transition: 'background .2s, color .2s',
                     }}
                   >{l}</button>
@@ -1361,7 +1361,7 @@ export function HomeTab({ user, setTab, showToast }) {
               <div style={{ height: 8, borderRadius: 99, background: 'rgba(255,255,255,.18)', overflow: 'hidden' }}>
                 <div style={{
                   width: `${Math.max(0, Math.min(1, (nextEloMilestone.remaining > 0 ? (50 - nextEloMilestone.remaining) / 50 : 1))) * 100}%`,
-                  height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #60A5FA, #93C5FD)', transition: 'width .6s ease',
+                  height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #6B93D6, #A3BAE8)', transition: 'width .6s ease',
                 }} />
               </div>
             </div>

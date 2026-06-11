@@ -39,8 +39,8 @@ export function BanerVenueMap({ latitude, longitude, title }) {
 
       L.circleMarker([lat, lng], {
         radius: 9,
-        color: '#1d4ed8',
-        fillColor: '#2563eb',
+        color: '#16377E',
+        fillColor: '#1D4A9E',
         fillOpacity: 0.92,
         weight: 2,
       }).addTo(map);

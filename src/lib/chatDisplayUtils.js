@@ -1,4 +1,4 @@
-const AVATAR_COLORS = ['#2563EB', '#059669', '#7C3AED', '#D97706', '#DC2626', '#0891B2'];
+const AVATAR_COLORS = ['#16377E', '#059669', '#7C3AED', '#D97706', '#DC2626', '#0891B2'];
 
 export function hashString(str) {
   let h = 0;
