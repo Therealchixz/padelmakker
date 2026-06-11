@@ -485,23 +485,17 @@ export function BanerTab() {
               onToggle={(e) => onDetailsToggle(v, e)}
             >
               <summary className="pm-baner-summary">
-                <div className="pm-baner-summary-main">
-                  <div className="pm-baner-summary-title">{v.title}</div>
-                  <div className="pm-baner-summary-address">
-                    <MapPin size={11} /> {v.address}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>{v.title}</span>
+                    <span style={v.indoor ? tag(theme.accentBg, theme.accent) : tag(theme.warmBg, theme.warm)}>
+                      {v.indoor ? <><Building2 size={10} /> Indendørs</> : <><Sun size={10} /> Udendørs</>}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: theme.textLight, marginTop: 3 }}>
+                    <MapPin size={11} />{v.address}
                   </div>
                 </div>
-                <span style={v.indoor ? tag(theme.accentBg, theme.accent) : tag(theme.warmBg, theme.warm)}>
-                  {v.indoor ? (
-                    <>
-                      <Building2 size={10} /> Indendørs
-                    </>
-                  ) : (
-                    <>
-                      <Sun size={10} /> Udendørs
-                    </>
-                  )}
-                </span>
               </summary>
 
               <div className="pm-baner-venue-body">

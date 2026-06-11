@@ -7047,7 +7047,7 @@ button,
 
 .pm-kampe-v2-list-card-top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   column-gap: 10px;
   align-items: start;
   margin-bottom: 10px;
@@ -7060,7 +7060,7 @@ button,
   align-items: flex-start;
   gap: 4px;
   min-width: 0;
-  grid-column: 1;
+  grid-column: 2;
   grid-row: 1;
 }
 

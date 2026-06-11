@@ -691,20 +691,22 @@ export function ProfilTab({ user, showToast, setTab }) {
         <div ref={performanceRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           Performance · {activeModeLabel}
         </div>
-        {/* ELO over tid — samme format som valgt i Overblik */}
-        <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "20px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
-          <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-            <TrendingUp size={16} color={theme.accent} />
-            <span>ELO over tid</span>
-            <span style={{ fontSize: "11px", fontWeight: 500, color: theme.textLight }}>({activeModeLabel})</span>
+        {/* ELO hero — navy gradient card */}
+        <div style={{ margin: '0 0 16px', borderRadius: 14, padding: '17px', background: 'linear-gradient(150deg, #0D2752, #1D4A9E)', color: '#fff', boxShadow: theme.shadowLg }}>
+          <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9DB6DE', marginBottom: '6px' }}>
+            Aktuel Elo Rating · {activeModeLabel}
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: '12px' }}>
+            {(is2v2Mode ? elo : americanoElo) ?? '—'}
           </div>
           {activeEloGraphLoading ? (
-            <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px" }}>Indlæser...</div>
+            <div style={{ textAlign: "center", padding: "16px 0", color: '#9DB6DE', fontSize: "13px" }}>Indlæser...</div>
           ) : (
             <EloGraph
               data={activeEloGraphData}
               valueLabel={activeEloGraphLabel}
               emptyText={activeEloGraphEmptyText}
+              dark
             />
           )}
         </div>
