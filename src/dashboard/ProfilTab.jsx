@@ -590,7 +590,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 )}
                 {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
                 {profileLevelDisplayText(user.level) ? (
-                  <span style={tag(theme.blueBg, theme.blue)}>
+                  <span style={tag(theme.amberBg, theme.amberText)}>
                     Niveau {profileLevelDisplayText(user.level)}
                   </span>
                 ) : null}

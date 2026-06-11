@@ -8,6 +8,9 @@ function badgeToneClass(tone) {
   if (tone === 'open') return 'pm-kampe-v2-badge--open';
   if (tone === 'full') return 'pm-kampe-v2-badge--full';
   if (tone === 'closed') return 'pm-kampe-v2-badge--closed';
+  if (tone === 'warm') return 'pm-kampe-v2-badge--warm';
+  if (tone === 'green') return 'pm-kampe-v2-badge--green';
+  if (tone === 'danger') return 'pm-kampe-v2-badge--danger';
   return 'pm-kampe-v2-badge--neutral';
 }
 

@@ -782,7 +782,7 @@ export function MakkereTab({ user, showToast }) {
                     <span style={tag(theme.accentBg, theme.accent)}>ELO {displayElo(p)}</span>
                     {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
                     {p.level != null && p.level !== '' ? (
-                      <span style={tag(theme.accentBg, theme.accent)}>Niveau {formatPlaytomicLevel(p.level)}</span>
+                      <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
                     ) : null}
                     <span style={tag(theme.blueBg, theme.blue)}>{p.play_style || '?'}</span>
                     {p.court_side && <span style={tag(theme.blueBg, theme.blue)}>{p.court_side}</span>}
