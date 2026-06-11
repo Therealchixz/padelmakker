@@ -1303,7 +1303,7 @@ export function HomeTab({ user, setTab, showToast }) {
               marginBottom: 24,
             }}
           >
-            <div style={{ position: 'absolute', top: -60, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,.55), transparent 70%)' }} />
+            <div style={{ position: 'absolute', top: -60, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,74,158,.55), transparent 70%)' }} />
 
             {/* Top: label + 2v2/Americano-skift */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, position: 'relative' }}>
