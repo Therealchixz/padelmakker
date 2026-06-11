@@ -489,14 +489,14 @@ export function BanerTab() {
                     <MapPin size={11} /> {v.address}
                   </div>
                 </div>
-                <span style={v.indoor ? tag(theme.blueBg, theme.blue) : tag(theme.warmBg, theme.warm)}>
+                <span style={v.indoor ? tag(theme.accentBg, theme.accent) : tag(theme.warmBg, theme.warm)}>
                   {v.indoor ? (
                     <>
-                      <Building2 size={10} /> Indoor
+                      <Building2 size={10} /> Indendørs
                     </>
                   ) : (
                     <>
-                      <Sun size={10} /> Outdoor
+                      <Sun size={10} /> Udendørs
                     </>
                   )}
                 </span>
