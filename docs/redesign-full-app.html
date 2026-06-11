@@ -477,6 +477,22 @@
   .vs-score b { display: block; font-size: 12px; font-weight: 600; margin-top: 6px; }
   .vs-score .sc { font-size: 24px; font-weight: 700; color: var(--navy); margin-top: 2px; }
 
+  /* ---------- ELO-OVERFØRSEL & DIVERSE ---------- */
+  .elo-row { display: flex; align-items: center; gap: 11px; padding: 10px 0; }
+  .elo-row + .elo-row { border-top: 1px solid var(--line); }
+  .elo-row .avatar { width: 36px; height: 36px; font-size: 12px; }
+  .elo-pname { flex: 1; font-size: 13.5px; font-weight: 600; }
+  .elo-pname span { display: block; font-size: 11px; color: var(--muted); font-weight: 400; }
+  .elo-chg { font-size: 14px; font-weight: 700; }
+  .elo-chg.up { color: var(--green); } .elo-chg.down { color: var(--red); }
+  .result-strip { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 12px 0; }
+  .rs-set { text-align: center; }
+  .rs-set b { font-size: 21px; font-weight: 700; color: var(--navy); letter-spacing: 1px; }
+  .rs-set span { display: block; font-size: 9.5px; font-weight: 600; color: var(--muted); letter-spacing: 1px; margin-top: 2px; }
+  .pred-bar { display: flex; height: 8px; border-radius: 99px; overflow: hidden; margin-top: 9px; }
+  .pred-bar .a { background: var(--navy); }
+  .pred-bar .b { background: #C9D3E1; }
+
   /* ---------- DARK MODE ---------- */
   .phone.dark {
     --bg:    #0E1A30;
@@ -1229,6 +1245,160 @@
       </div>
       <div class="cta-bar">
         <button class="btn-navy">Indberet resultat <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ KAMPE: AFSLUTTEDE ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Kampe · Afsluttede</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <h2>Kampe</h2>
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+        </div>
+        <div class="tabs2"><div class="tab2">Åbne</div><div class="tab2">I gang</div><div class="tab2 active">Afsluttede</div></div>
+
+        <div class="card" style="margin:0 18px 13px;">
+          <div class="row" style="justify-content:space-between;">
+            <span class="tag tag-green">Vundet</span>
+            <span style="font-size:11.5px;color:var(--muted);font-weight:600;">I går · PadelPadel Aarhus</span>
+          </div>
+          <div class="row" style="margin-top:12px;">
+            <div class="vs-score">
+              <div class="avstack" style="justify-content:center;"><div class="avatar av-a">D</div><div class="avatar av-b">M</div></div>
+              <b>Dig &amp; Mads</b>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:16px;font-weight:700;color:var(--navy);letter-spacing:1px;">6-4 · 2-6 · 7-5</div>
+            </div>
+            <div class="vs-score">
+              <div class="avstack" style="justify-content:center;"><div class="avatar av-c">L</div><div class="avatar av-d">S</div></div>
+              <b>Lars &amp; Sofie</b>
+            </div>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px solid var(--line);">
+            <span style="font-size:12px;font-weight:700;color:var(--green);">Elo +12</span>
+            <span style="font-size:12.5px;font-weight:600;color:var(--navy);">Se detaljer →</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin:0 18px 13px;">
+          <div class="row" style="justify-content:space-between;">
+            <span class="tag tag-red">Tabt</span>
+            <span style="font-size:11.5px;color:var(--muted);font-weight:600;">Fre. 11. okt · Padel Club Vest</span>
+          </div>
+          <div class="row" style="margin-top:12px;">
+            <div class="vs-score">
+              <div class="avstack" style="justify-content:center;"><div class="avatar av-a">D</div><div class="avatar av-c">K</div></div>
+              <b>Dig &amp; Kasper</b>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:16px;font-weight:700;color:var(--muted);letter-spacing:1px;">4-6 · 5-7</div>
+            </div>
+            <div class="vs-score">
+              <div class="avstack" style="justify-content:center;"><div class="avatar av-d">J</div><div class="avatar av-b">E</div></div>
+              <b>Jonas &amp; Emma</b>
+            </div>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px solid var(--line);">
+            <span style="font-size:12px;font-weight:700;color:var(--red);">Elo −8</span>
+            <span style="font-size:12.5px;font-weight:600;color:var(--navy);">Se detaljer →</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin:0 18px 13px;">
+          <div class="row" style="justify-content:space-between;">
+            <span class="tag tag-amber">Americano · Nr. 2</span>
+            <span style="font-size:11.5px;color:var(--muted);font-weight:600;">Søn. 6. okt · PadelPadel</span>
+          </div>
+          <div class="row" style="gap:11px;margin-top:12px;">
+            <div class="avstack"><div class="avatar av-a">D</div><div class="more">+7</div></div>
+            <div class="grow">
+              <div style="font-weight:600;font-size:13.5px;">Søndags-Americano</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">52 point · 7 runder · 8 spillere</div>
+            </div>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px solid var(--line);">
+            <span style="font-size:12px;font-weight:700;color:var(--green);">Elo +9</span>
+            <span style="font-size:12.5px;font-weight:600;color:var(--navy);">Se detaljer →</span>
+          </div>
+        </div>
+      </div>
+      <nav class="bottomnav">
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1Z"/></svg>Hjem<div class="navdot"></div></a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Makkere<div class="navdot"></div></a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Baner<div class="navdot"></div></a>
+        <a class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Kampe<div class="navdot"></div></a>
+        <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Mere<div class="navdot"></div></a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ============ KAMP DETALJER: AFSLUTTET (ELO) ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Kamp detaljer · Afsluttet (Elo-overførsel)</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
+          <h2>Kamp detaljer</h2>
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></button>
+        </div>
+        <div class="row" style="gap:8px;padding:0 18px 12px;">
+          <span class="tag tag-green">Afsluttet · Godkendt</span>
+          <span class="tag tag-navy">2v2-kamp</span>
+        </div>
+        <div class="card" style="margin:0 18px;">
+          <div class="result-strip">
+            <div class="rs-set"><b>6–4</b><span>SÆT 1</span></div>
+            <div class="rs-set"><b>2–6</b><span>SÆT 2</span></div>
+            <div class="rs-set"><b>7–5</b><span>SÆT 3</span></div>
+          </div>
+          <div class="row" style="margin-top:2px;">
+            <div class="vs-score">
+              <div class="avstack" style="justify-content:center;"><div class="avatar av-a">D</div><div class="avatar av-b">M</div></div>
+              <b>Dig &amp; Mads</b>
+            </div>
+            <span class="tag tag-green">Vandt</span>
+            <div class="vs-score">
+              <div class="avstack" style="justify-content:center;"><div class="avatar av-c">L</div><div class="avatar av-d">S</div></div>
+              <b>Lars &amp; Sofie</b>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px;padding-top:11px;border-top:1px solid var(--line);">I går · Kl. 17:00 · PadelPadel Aarhus · 92 min</div>
+        </div>
+        <div class="section-h"><h3>Elo-overførsel</h3></div>
+        <div class="card" style="margin:0 18px;padding:6px 16px;">
+          <div class="elo-row">
+            <div class="avatar av-a">D</div>
+            <div class="elo-pname">Dig <span>1063 → 1075</span></div>
+            <span class="elo-chg up">+12</span>
+          </div>
+          <div class="elo-row">
+            <div class="avatar av-b">M</div>
+            <div class="elo-pname">Mads Jensen <span>1118 → 1129</span></div>
+            <span class="elo-chg up">+11</span>
+          </div>
+          <div class="elo-row">
+            <div class="avatar av-c">L</div>
+            <div class="elo-pname">Lars Hansen <span>1204 → 1196</span></div>
+            <span class="elo-chg down">−8</span>
+          </div>
+          <div class="elo-row">
+            <div class="avatar av-d">S</div>
+            <div class="elo-pname">Sofie Nielsen <span>987 → 980</span></div>
+            <span class="elo-chg down">−7</span>
+          </div>
+        </div>
+        <div class="inset-card" style="margin:13px 18px 0;font-size:11.5px;color:var(--muted);line-height:1.55;">
+          Elo-fordelingen er vægtet efter modstandernes rating og sejrsmarginen. En sejr over højere ratede spillere giver flere point.
+        </div>
+        <div style="padding:14px 18px 18px;">
+          <button class="btn-navy">Spil revanche</button>
+          <button class="btn-ghost" style="margin-top:9px;padding:11px;color:var(--red);border-color:var(--line);">Rapportér fejl i resultatet</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2566,6 +2736,121 @@
     </div>
   </div>
 
+  <!-- ============ LIGA: KAMPPROGRAM ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Liga · Kampprogram</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
+          <h2>Kampprogram</h2>
+          <span class="tag tag-navy">Pulje B</span>
+        </div>
+        <div class="team-label" style="margin-top:2px;">Runde 6 · Afsluttet</div>
+        <div class="card" style="margin:0 18px 10px;">
+          <div class="row" style="gap:10px;">
+            <div class="grow">
+              <div style="font-weight:600;font-size:13px;">Dig &amp; Mads <span style="color:var(--muted);font-weight:400;">vs</span> Mette &amp; Kasper</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">6-3 · 4-6 · 7-5 · Aarhus Padel Club</div>
+            </div>
+            <span class="tag tag-green">Vundet</span>
+          </div>
+        </div>
+        <div class="card" style="margin:0 18px 10px;">
+          <div class="row" style="gap:10px;">
+            <div class="grow">
+              <div style="font-weight:600;font-size:13px;">Emma &amp; Jonas <span style="color:var(--muted);font-weight:400;">vs</span> Jonas &amp; Peter</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">6-2 · 6-4 · PadelPadel Aarhus</div>
+            </div>
+            <span class="tag tag-navy">2–0</span>
+          </div>
+        </div>
+        <div class="team-label">Runde 7 · 21.–27. okt</div>
+        <div class="card" style="margin:0 18px 10px;border:1.5px solid var(--navy);">
+          <div class="row" style="gap:10px;">
+            <div class="date-badge"><b>24</b><span>OKT</span></div>
+            <div class="grow">
+              <div style="font-weight:600;font-size:13px;">Dig &amp; Mads <span style="color:var(--muted);font-weight:400;">vs</span> Jonas &amp; Kasper</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">Kl. 18:30 · Aarhus Padel Club · Bane 2</div>
+            </div>
+            <span class="tag tag-green">Bekræftet</span>
+          </div>
+        </div>
+        <div class="card" style="margin:0 18px 10px;">
+          <div class="row" style="gap:10px;">
+            <div class="grow">
+              <div style="font-weight:600;font-size:13px;">Emma &amp; Jonas <span style="color:var(--muted);font-weight:400;">vs</span> Mette &amp; Kasper</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">Tid ikke aftalt endnu</div>
+            </div>
+            <button class="btn-sm ghost">Foreslå tid</button>
+          </div>
+        </div>
+        <div class="team-label">Runde 8 · 28. okt – 3. nov</div>
+        <div class="card" style="margin:0 18px 10px;">
+          <div class="row" style="gap:10px;">
+            <div class="grow">
+              <div style="font-weight:600;font-size:13px;">Dig &amp; Mads <span style="color:var(--muted);font-weight:400;">vs</span> Emma &amp; Jonas</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">Topkamp · #1 mod #2 i puljen</div>
+            </div>
+            <span class="tag tag-amber">Planlagt</span>
+          </div>
+        </div>
+        <div class="inset-card" style="margin:13px 18px 18px;font-size:11.5px;color:var(--muted);line-height:1.55;">
+          I aftaler selv tidspunktet for hver runde inden for rundens uge — brug holdchatten eller "Foreslå tid".
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LIGA: HOLDTILMELDING ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Liga · Holdtilmelding</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
+          <h2>Tilmeld hold</h2>
+        </div>
+        <div class="inset-card row" style="margin:2px 18px 14px;gap:11px;">
+          <div class="lg-icon" style="width:38px;height:38px;"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></div>
+          <div class="grow">
+            <div style="font-weight:600;font-size:13px;">Morning Birdies Aarhus</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:1px;">Division 4 · Motionist · Start 18. marts</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Vælg din makker</label>
+          <div class="search" style="margin-bottom:11px;"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Søg blandt dine makkere...</div>
+        </div>
+        <div class="level-card sel" style="margin-bottom:9px;">
+          <div class="avatar av-b" style="width:44px;height:44px;font-size:14px;">MJ</div>
+          <div class="grow"><b>Mads Jensen</b><span>Niveau 3.5 · I har spillet 24 kampe sammen</span></div>
+          <div class="lvl-check"><svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></div>
+        </div>
+        <div class="level-card" style="margin-bottom:9px;">
+          <div class="avatar av-d" style="width:44px;height:44px;font-size:14px;">EW</div>
+          <div class="grow"><b>Emma Winther</b><span>Niveau 3.5 · I har spillet 12 kampe sammen</span></div>
+          <div class="lvl-check"></div>
+        </div>
+        <div class="level-card">
+          <div class="avatar av-c" style="width:44px;height:44px;font-size:14px;">KB</div>
+          <div class="grow"><b>Kasper Bruun</b><span>Niveau 3.7 · I har spillet 8 kampe sammen</span></div>
+          <div class="lvl-check"></div>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Holdnavn <span style="color:var(--muted);font-weight:400;">(valgfri)</span></label>
+          <div class="input" style="color:var(--muted);font-weight:400;">F.eks. Team Smash Bros</div>
+        </div>
+        <div class="inset-card" style="margin:0 18px 14px;font-size:11.5px;color:var(--muted);line-height:1.55;">
+          Din makker skal acceptere holdinvitationen, før holdet er endeligt tilmeldt ligaen.
+        </div>
+        <div style="padding:0 18px 18px;">
+          <button class="btn-navy">Send holdinvitation <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ TURNERINGER: AKTIV ============ -->
   <div class="frame-wrap">
     <div class="frame-label">Turneringer · Aktiv</div>
@@ -3757,6 +4042,174 @@
         <a class="active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Kampe<div class="navdot"></div></a>
         <a><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Mere<div class="navdot"></div></a>
       </nav>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">Invitationer · Anmodninger · Dialoger &amp; bannere</div>
+<div class="frames">
+
+  <!-- ============ INVITÉR TIL KAMP (MODAL) ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Invitér til kamp (modal)</div>
+    <div class="phone">
+      <div class="screen" style="filter:blur(1px);">
+        <div class="topbar"><h2>Find makker</h2></div>
+        <div class="card" style="margin:0 18px 12px;height:110px;"></div>
+        <div class="card" style="margin:0 18px 12px;height:110px;"></div>
+        <div class="card" style="margin:0 18px 12px;height:110px;"></div>
+      </div>
+      <div class="modal-dim">
+        <div class="modal-card">
+          <div class="row" style="gap:11px;">
+            <div class="avatar av-a" style="width:42px;height:42px;font-size:14px;">MJ</div>
+            <div class="grow">
+              <div style="font-size:15px;font-weight:700;letter-spacing:-0.2px;">Invitér Mads til en kamp</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:1px;">Vælg en af dine kampe med ledig plads</div>
+            </div>
+          </div>
+          <div class="level-card sel" style="margin:14px 0 9px;padding:12px 14px;">
+            <div class="date-badge" style="width:42px;"><b>16</b><span>OKT</span></div>
+            <div class="grow"><b>2v2 · PadelPadel Aarhus</b><span>Kl. 17:00 · 2/4 spillere</span></div>
+            <div class="lvl-check"><svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></div>
+          </div>
+          <div class="level-card" style="margin:0 0 9px;padding:12px 14px;">
+            <div class="date-badge" style="width:42px;"><b>17</b><span>OKT</span></div>
+            <div class="grow"><b>2v2 · Aarhus Padel Club</b><span>Kl. 19:00 · 3/4 spillere</span></div>
+            <div class="lvl-check"></div>
+          </div>
+          <button class="btn-ghost" style="padding:11px;margin-bottom:12px;">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Opret ny kamp med Mads
+          </button>
+          <button class="btn-navy" style="padding:12px;">Send invitation</button>
+          <button class="btn-ghost" style="margin-top:9px;padding:10px;border:none;color:var(--muted);">Annullér</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LUKKET KAMP: ANMODNING ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Lukket kamp · Anmodning sendt</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <button class="circle-btn"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M5 12h14"/></svg></button>
+          <h2>Kamp detaljer</h2>
+        </div>
+        <div class="row" style="gap:8px;padding:0 18px 12px;">
+          <span class="tag tag-navy">Lukket kamp</span>
+          <span class="tag tag-amber">1 plads tilbage</span>
+        </div>
+        <div class="card" style="margin:0 18px;">
+          <div class="row" style="gap:12px;align-items:flex-start;">
+            <div class="kd-title grow" style="font-size:16.5px;">Social 2v2 · Niveau 3.0–3.8</div>
+            <div class="kd-price" style="font-size:18px;">60 kr.<small>pr. person</small></div>
+          </div>
+          <div class="info-row">
+            <div class="info-ic"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+            <div><b>Torsdag d. 19. Okt</b><span>Kl. 19:00 – 20:30 · Aarhus Padel Club</span></div>
+          </div>
+        </div>
+        <div class="section-h"><h3>Vinderchance hvis du deltager</h3></div>
+        <div class="card" style="margin:0 18px;">
+          <div class="row" style="justify-content:space-between;font-size:12px;font-weight:600;">
+            <span>Hold 1 (med dig) · 58%</span>
+            <span style="color:var(--muted);">Hold 2 · 42%</span>
+          </div>
+          <div class="pred-bar"><div class="a" style="width:58%;"></div><div class="b" style="width:42%;"></div></div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:8px;">Baseret på holdenes samlede Elo-rating</div>
+        </div>
+        <div class="section-h"><h3>Spillere (3/4)</h3></div>
+        <div class="slot">
+          <div class="avatar av-b">MJ</div>
+          <div class="grow">
+            <div class="slot-name">Mads Jensen <span style="font-size:10px;color:var(--muted);font-weight:400;">· opretter</span></div>
+            <div class="slot-meta"><span class="lvl-badge">NIVEAU 3.5</span></div>
+          </div>
+        </div>
+        <div class="slot">
+          <div class="avstack"><div class="avatar av-c" style="width:43px;height:43px;font-size:14px;">L</div><div class="avatar av-d" style="width:43px;height:43px;font-size:14px;margin-left:-14px;">E</div></div>
+          <div class="grow">
+            <div class="slot-name">Lars &amp; Emma</div>
+            <div class="slot-meta"><span class="slot-kampe">Niveau 3.4 &amp; 3.6</span></div>
+          </div>
+        </div>
+        <div class="card row" style="margin:13px 18px 0;gap:11px;background:var(--amber-bg);border-color:var(--amber-border);">
+          <svg class="icon-sm" style="color:var(--amber);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <div class="grow">
+            <div style="font-weight:600;font-size:13px;color:var(--amber-text);">Anmodning sendt</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:1px;">Afventer svar fra Mads — du får besked med det samme</div>
+          </div>
+        </div>
+        <div style="padding:13px 18px 18px;">
+          <button class="btn-ghost" style="padding:11px;color:var(--red);">Annullér anmodning</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BEKRÆFTELSESDIALOG ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Dialog · Bekræftelse</div>
+    <div class="phone">
+      <div class="screen" style="filter:blur(1px);">
+        <div class="topbar"><h2>Kamp detaljer</h2></div>
+        <div class="card" style="margin:0 18px 12px;height:140px;"></div>
+        <div class="card" style="margin:0 18px 12px;height:90px;"></div>
+        <div class="card" style="margin:0 18px 12px;height:90px;"></div>
+      </div>
+      <div class="modal-dim">
+        <div class="modal-card" style="text-align:center;">
+          <div class="ob-icon" style="margin:0 auto 14px;width:58px;height:58px;background:var(--red-bg);border-color:#F2C7C9;color:var(--red);">
+            <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.86 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0Z"/></svg>
+          </div>
+          <div style="font-size:16.5px;font-weight:700;letter-spacing:-0.2px;">Forlad kampen?</div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:7px;">Din plads bliver ledig igen, og de andre spillere får besked. Kampen er om under 24 timer.</p>
+          <button class="btn-navy" style="margin-top:16px;padding:12px;background:var(--red);box-shadow:none;">Forlad kampen</button>
+          <button class="btn-ghost" style="margin-top:9px;padding:11px;">Bliv i kampen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BANNERE ============ -->
+  <div class="frame-wrap">
+    <div class="frame-label">Bannere · Installér &amp; cookies</div>
+    <div class="phone">
+      <div class="screen" style="display:flex;flex-direction:column;">
+        <div class="card row" style="margin:14px 18px 0;gap:11px;border:1.5px solid var(--navy);">
+          <div class="lg-icon" style="width:40px;height:40px;background:var(--navy);border-color:var(--navy);color:var(--amber-bright);">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+          </div>
+          <div class="grow">
+            <div style="font-weight:600;font-size:13px;">Installér PadelMakker</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:1px;">Føj appen til din hjemmeskærm — tryk på Del og "Føj til hjemmeskærm"</div>
+          </div>
+          <svg class="icon-sm" style="color:var(--muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </div>
+        <div class="topbar" style="padding-top:14px;">
+          <div class="avatar av-a" style="width:42px;height:42px;font-size:14px;">MJ</div>
+          <div class="grow">
+            <div class="eyebrow">Velkommen</div>
+            <div style="font-size:17px;font-weight:600;letter-spacing:-0.3px;">Mike Jensen</div>
+          </div>
+        </div>
+        <div class="quick-grid">
+          <div class="quick"><div class="qicon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>Find Makker</div>
+          <div class="quick"><div class="qicon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>Book Bane</div>
+        </div>
+        <div class="grow"></div>
+        <div class="card" style="margin:0 14px 14px;box-shadow:var(--shadow-lg);">
+          <div style="font-weight:600;font-size:13px;">Vi bruger cookies</div>
+          <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:4px;">Nødvendige cookies får appen til at virke. Statistik-cookies hjælper os med at forbedre den. <span style="color:var(--navy);font-weight:600;">Læs mere</span></div>
+          <div class="row" style="gap:8px;margin-top:11px;">
+            <button class="btn-sm ghost" style="flex:1;">Kun nødvendige</button>
+            <button class="btn-sm" style="flex:1;">Acceptér alle</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
