@@ -517,7 +517,6 @@ export function RankingTab({ user }) {
     }
   }, [loadingMore, hasMore, period, fetchProfilePage, periodRankList.length]);
 
-  const medals = ['🥇', '🥈', '🥉'];
   const rankModeLabel = isAmericano ? TOURNAMENT_MODE_LABEL : '2v2';
 
   const periodLabels = {
@@ -550,10 +549,56 @@ export function RankingTab({ user }) {
   ];
 
   const showInitialLoader = initialLoading && sorted.length === 0;
+  const hasPodium = period === 'all' && !showInitialLoader && sorted.length >= 3;
+
+  const renderPod = (p, place) => {
+    const isFirst = place === 1;
+    const isMe = String(p.id) === myId;
+    const avatarSize = isFirst ? 62 : 50;
+    const emojiSize = isFirst ? '19px' : '15px';
+    const firstName = (p.full_name || p.name || 'Spiller').split(' ')[0];
+    return (
+      <div
+        key={`pod-${p.id}`}
+        onClick={() => !isMe && setViewPlayer(p)}
+        onKeyDown={(e) => { if (!isMe && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setViewPlayer(p); } }}
+        role={isMe ? undefined : 'button'}
+        tabIndex={isMe ? undefined : 0}
+        style={{ flex: 1, textAlign: 'center', cursor: isMe ? 'default' : 'pointer' }}
+      >
+        <AvatarCircle
+          avatar={p.avatar}
+          size={avatarSize}
+          emojiSize={emojiSize}
+          alt={`${p.full_name || p.name || 'Spiller'} avatar`}
+          style={{ margin: '0 auto 7px', border: `2.5px solid ${isFirst ? theme.amber : 'rgba(255,255,255,0.35)'}` }}
+        />
+        <b style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#fff' }}>
+          {firstName}{isMe ? ' ✓' : ''}
+        </b>
+        <span style={{ fontSize: 10.5, color: '#9DB6DE' }}>
+          {p.level ? `Niveau ${p.level}` : (p.area || '')}
+        </span>
+        <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: '#fff' }}>{p.score}</div>
+        <div style={{
+          width: 22, height: 22, borderRadius: '50%',
+          background: isFirst ? theme.amber : 'rgba(255,255,255,0.14)',
+          color: isFirst ? '#0D2752' : '#fff',
+          fontSize: 11, fontWeight: 700,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '7px auto 0',
+        }}>
+          {place}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div>
-      <h2 style={{ ...heading('clamp(20px,4.5vw,24px)'), marginBottom: '16px' }}>Ranking</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 8px' }}>
+        <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Rangliste</h2>
+      </div>
 
       {loadError && sorted.length === 0 ? (
         <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '16px' }}>
@@ -677,6 +722,25 @@ export function RankingTab({ user }) {
         )}
       </div>
 
+      {/* Podium – top 3, only shown for 'all' period */}
+      {hasPodium && (
+        <div style={{
+          margin: '14px 18px 0',
+          borderRadius: 14,
+          padding: '18px 14px 14px',
+          background: 'linear-gradient(150deg, #0D2752, #1D4A9E)',
+          color: '#fff',
+          boxShadow: theme.shadowLg,
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 10,
+        }}>
+          {renderPod(sorted[1], 2)}
+          {renderPod(sorted[0], 1)}
+          {renderPod(sorted[2], 3)}
+        </div>
+      )}
+
       {showInitialLoader ? (
         <div className="pm-state-card" style={{ textAlign: 'center', padding: '32px 20px' }}>
           <div className="pm-state-copy" style={{ color: theme.textLight, fontSize: '14px' }}>
@@ -703,110 +767,90 @@ export function RankingTab({ user }) {
               : 'Spil en kamp for at komme på ranglisten!'}
           </div>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {sorted.map((p, i) => {
-            const me = String(p.id) === myId;
-            const score = p.score;
-            const isPositive = period !== 'all' && score > 0;
-            const isNegative = period !== 'all' && score < 0;
-            const place = p._globalRank ?? i + 1;
-            const medalIdx = place - 1;
-
-            return (
-              <div
-                key={p.id}
-                onClick={() => !me && setViewPlayer(p)}
-                onKeyDown={(e) => {
-                  if (!me && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault();
-                    setViewPlayer(p);
-                  }
-                }}
-                role={me ? undefined : 'button'}
-                tabIndex={me ? undefined : 0}
-                className="pm-rank-row"
-                style={{
-                  background: me ? theme.accentBg : theme.surface,
-                  borderRadius: '8px',
-                  padding: '12px 14px',
-                  boxShadow: me ? 'none' : theme.shadow,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  border: me ? `1.5px solid ${theme.accent}35` : `1px solid ${theme.border}`,
-                  cursor: me ? 'default' : 'pointer',
-                }}
-              >
-                <div
-                  style={{
-                    width: '28px',
-                    flexShrink: 0,
-                    textAlign: 'center',
-                    fontSize: medalIdx < 3 ? '18px' : '13px',
-                    fontWeight: 700,
-                    color: medalIdx < 3 ? 'inherit' : theme.textLight,
-                  }}
-                >
-                  {medalIdx < 3 ? medals[medalIdx] : place}
-                </div>
-
-                <AvatarCircle
-                  avatar={p.avatar}
-                  size={38}
-                  emojiSize="17px"
-                  alt={`${p.full_name || p.name || 'Spiller'} avatar`}
-                  style={{ background: theme.surfaceAlt, border: `1px solid ${theme.border}` }}
-                />
-
-                <div style={{ flex: 1, minWidth: 0 }}>
+      ) : (() => {
+        const listPlayers = hasPodium ? sorted.slice(3) : sorted;
+        if (listPlayers.length === 0) return null;
+        return (
+          <div style={{
+            background: theme.surface,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 12,
+            margin: '13px 18px 0',
+            padding: '4px 2px',
+            overflow: 'hidden',
+          }}>
+            {listPlayers.map((p, sliceIdx) => {
+              const me = String(p.id) === myId;
+              const score = p.score;
+              const isPositive = period !== 'all' && score > 0;
+              const isNegative = period !== 'all' && score < 0;
+              const place = p._globalRank ?? (hasPodium ? sliceIdx + 4 : sliceIdx + 1);
+              const isLast = sliceIdx === listPlayers.length - 1;
+              return (
+                <div key={p.id}>
                   <div
+                    onClick={() => !me && setViewPlayer(p)}
+                    onKeyDown={(e) => {
+                      if (!me && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        setViewPlayer(p);
+                      }
+                    }}
+                    role={me ? undefined : 'button'}
+                    tabIndex={me ? undefined : 0}
                     style={{
-                      fontSize: '14px',
-                      fontWeight: me ? 700 : 600,
-                      letterSpacing: '-0.01em',
-                      wordBreak: 'break-word',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 11,
+                      padding: '11px 14px',
+                      background: me ? theme.accentBg : 'transparent',
+                      cursor: me ? 'default' : 'pointer',
+                      borderLeft: me ? `3px solid ${theme.navy}` : undefined,
                     }}
                   >
-                    {p.full_name || p.name}
-                    {me ? ' (dig)' : ''}
+                    <div style={{
+                      width: 24, textAlign: 'center', fontWeight: 700,
+                      fontSize: 13, color: me ? theme.navy : theme.textMid, flexShrink: 0,
+                    }}>
+                      {place}
+                    </div>
+                    <AvatarCircle
+                      avatar={p.avatar}
+                      size={36}
+                      emojiSize="12px"
+                      alt={`${p.full_name || p.name || 'Spiller'} avatar`}
+                      style={{ background: theme.surfaceAlt, border: `1px solid ${theme.border}`, flexShrink: 0 }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: '-0.01em', wordBreak: 'break-word' }}>
+                        {p.full_name || p.name}{me ? ' (dig)' : ''}
+                      </div>
+                      <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>
+                        {isAmericano
+                          ? period === 'all'
+                            ? `${p.area || '?'} · ${p.periodGames} Americano/Mexicano`
+                            : `${p.periodGames} Americano/Mexicano · ${p.periodPoints || 0} point`
+                          : period === 'all'
+                            ? `${p.level ? `Niveau ${p.level}` : (p.area || '?')} · ${p.periodGames} kampe`
+                            : `${p.periodGames} kampe · ${p.periodWins} sejre`}
+                      </div>
+                    </div>
+                    <div style={{
+                      fontSize: 14, fontWeight: 700, flexShrink: 0,
+                      color: period === 'all'
+                        ? theme.navy
+                        : isPositive ? theme.accent : isNegative ? theme.red : theme.textLight,
+                    }}>
+                      {period === 'all' ? score : score > 0 ? `+${score}` : score}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '11px', color: theme.textLight, marginTop: '1px' }}>
-                    {isAmericano
-                      ? period === 'all'
-                        ? `${p.area || '?'} · ${p.periodGames} Americano/Mexicano · ${p.periodWins} vundne runder`
-                        : `${p.periodGames} Americano/Mexicano · ${p.periodPoints || 0} point`
-                      : period === 'all'
-                        ? `${p.area || '?'} · ${p.periodGames} kampe · ${p.periodWins} sejre`
-                        : `${p.periodGames} kampe · ${p.periodWins} sejre`}
-                  </div>
+                  {!isLast && <div style={{ height: 1, background: theme.border, margin: '0 14px' }} />}
                 </div>
-
-                <div
-                  className="pm-rank-score"
-                  style={{
-                    fontFamily: font,
-                    fontSize: '17px',
-                    fontWeight: 800,
-                    flexShrink: 0,
-                    letterSpacing: '-0.02em',
-                    color:
-                      period === 'all'
-                        ? theme.accent
-                        : isPositive
-                          ? theme.accent
-                          : isNegative
-                            ? theme.red
-                            : theme.textLight,
-                  }}
-                >
-                  {period === 'all' ? score : score > 0 ? `+${score}` : score}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {hasMore && sorted.length > 0 && (
         <button
