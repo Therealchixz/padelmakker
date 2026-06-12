@@ -1285,10 +1285,10 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const allTabs = [
     { id: "hjem",     label: "Hjem",        icon: <Home          size={15} /> },
-    { id: "makkere",  label: "Find makker",  icon: <Users         size={15} /> },
-    { id: "baner",    label: "Book Bane",    icon: <MapPin        size={15} /> },
+    { id: "makkere",  label: "Makkere",  icon: <Users         size={15} /> },
+    { id: "baner",    label: "Baner",    icon: <MapPin        size={15} /> },
     { id: "kampe",    label: "Kampe",        icon: <Swords        size={15} />, badge: kampeTabBadge, attention: hasKampeAttention },
-    { id: "ranking",  label: "Ranking",      icon: <Trophy        size={15} /> },
+    { id: "ranking",  label: "Rangliste",      icon: <Trophy        size={15} /> },
     { id: "beskeder", label: "Beskeder",     icon: <MessageCircle size={15} />, badge: unreadMessages > 0 ? unreadMessages : null },
   ];
   // Profil vises i konto-dropdown på desktop, men beholdes i mobilens "Mere"-menu.
@@ -1347,8 +1347,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
       id="pm-app-shell"
       style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}
     >
-      {/* Header */}
-      <div className="pm-dash-header" style={{ padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
+      {/* Header — skjult på mobil: hver fane har sin egen topbar som i mockup'et */}
+      <div className="pm-dash-header" style={{ display: isMobileView ? "none" : undefined, padding: "clamp(8px,1.8vw,11px) clamp(12px,2.6vw,18px)", paddingTop: "max(clamp(8px,1.8vw,11px), env(safe-area-inset-top))", borderBottom: "1px solid " + theme.border, background: theme.surface, position: "sticky", top: 0, zIndex: 20 }}>
         <button type="button" onClick={() => setTab("hjem")} className="pm-dash-brand" style={{ display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: font }} aria-label="Gå til Hjem">
           <picture>
             <source srcSet={dark ? "/logo-brand-dark-nav.webp" : "/logo-brand-nav.webp"} type="image/webp" />
@@ -1361,9 +1361,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
             />
           </picture>
         </button>
-        <div className="pm-dash-header-actions pm-dash-header-actions-mobile">
-          {isMobileView && <NotificationBell tourForceOpen={tourOnNotificationStep} />}
-        </div>
+        <div className="pm-dash-header-actions pm-dash-header-actions-mobile" />
         <div className="pm-dash-account-desktop">
           <button
             ref={accountBtnRef}

@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { Court } from '../api/base44Client';
 import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { NotificationBell } from '../components/NotificationBell';
 import { AppModal } from '../components/AppModal';
 import { PageSectionTitle } from '../components/PageSectionTitle';
 import { PlayerProfileModal } from './PlayerProfileModal';
@@ -790,9 +791,9 @@ export function HomeTab({ user, setTab, showToast }) {
 
   const actions = [
     { Icon: Users,       color: theme.accent, bg: theme.accentBg, title: "Find Makker",  tab: "makkere" },
-    { Icon: MapPin,      color: theme.green,  bg: theme.greenBg,  title: "Book Bane",    tab: "baner"   },
-    { Icon: CalendarPlus,color: theme.warm,   bg: theme.warmBg,   title: "Åbne Kampe",   tab: "kampe"   },
-    { Icon: BarChart2,   color: theme.purple, bg: theme.purpleBg, title: "Rangliste",    tab: "ranking" },
+    { Icon: MapPin,      color: theme.accent, bg: theme.accentBg, title: "Book Bane",    tab: "baner"   },
+    { Icon: CalendarPlus,color: theme.accent, bg: theme.accentBg, title: "Åbne Kampe",   tab: "kampe"   },
+    { Icon: BarChart2,   color: theme.accent, bg: theme.accentBg, title: "Rangliste",    tab: "ranking" },
   ];
 
   const activityRowBaseStyle = {
@@ -1104,6 +1105,55 @@ export function HomeTab({ user, setTab, showToast }) {
           </div>
         </div>
       )}
+      {/* Compact topbar: avatar + greeting */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px 12px' }}>
+        <AvatarCircle avatar={user.avatar} size={42} emojiSize="20px" style={{ flexShrink: 0, background: 'linear-gradient(135deg, #3D6CB3, #1A3E78)', color: '#fff' }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: theme.textLight, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{greetingText}</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{displayName}</div>
+        </div>
+        <div className="pm-home-bell"><NotificationBell /></div>
+      </div>
+
+      {/* Seeking onboarding prompt */}
+      {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} /> : null}
+
+      {/* Seek card */}
+      {showToast ? <ActiveSeekingPanel variant="homeCard" user={user} showToast={showToast} /> : null}
+
+      {/* Quick 2×2 grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, margin: '4px 18px 18px' }}>
+        {actions.map(({ Icon, color, bg, title, tab: t }) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            data-tour={`quick-action-${t}`}
+            style={{
+              background: theme.surface,
+              borderRadius: 14,
+              boxShadow: theme.shadow,
+              border: `1px solid ${theme.border}`,
+              padding: '13px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 7,
+              fontWeight: 600,
+              fontSize: 12.5,
+              color: theme.text,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
+              <Icon size={18} />
+            </div>
+            {title}
+          </button>
+        ))}
+      </div>
       {showNiveauEloHint && (
         <div
           style={{
@@ -1149,54 +1199,6 @@ export function HomeTab({ user, setTab, showToast }) {
           </button>
         </div>
       )}
-      {/* Compact topbar: avatar + greeting */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 18px 12px' }}>
-        <AvatarCircle avatar={user.avatar} size={42} emojiSize="20px" style={{ flexShrink: 0, background: 'linear-gradient(135deg, #3D6CB3, #1A3E78)', color: '#fff' }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: theme.textMid, letterSpacing: '.01em' }}>{greetingText}</div>
-          <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{displayName}</div>
-        </div>
-      </div>
-
-      {/* Seeking onboarding prompt */}
-      {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} /> : null}
-
-      {/* Seek card */}
-      {showToast ? <ActiveSeekingPanel variant="homeCard" user={user} showToast={showToast} /> : null}
-
-      {/* Quick 2×2 grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, margin: '4px 18px 18px' }}>
-        {actions.map(({ Icon, color, bg, title, tab: t }) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            data-tour={`quick-action-${t}`}
-            style={{
-              background: theme.surface,
-              borderRadius: 14,
-              boxShadow: theme.shadow,
-              border: `1px solid ${theme.border}`,
-              padding: '13px 12px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 7,
-              fontWeight: 600,
-              fontSize: 12.5,
-              color: theme.text,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
-              <Icon size={18} />
-            </div>
-            {title}
-          </button>
-        ))}
-      </div>
 
       {/* Invitationer */}
       {inviteItems.length > 0 && (
@@ -1354,7 +1356,7 @@ export function HomeTab({ user, setTab, showToast }) {
                   Alle
                 </button>
                 {HOME_FEED_FILTERS.map(f => {
-                  const on = activeFilters.has(f.id);
+                  const on = activeFilters.has(f.id) && !allActive;
                   return (
                     <button
                       key={f.id}
