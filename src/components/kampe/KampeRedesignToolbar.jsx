@@ -38,7 +38,8 @@ export function KampeRedesignToolbar({
             aria-label={createLabel}
             title={createLabel}
           >
-            <Plus size={18} strokeWidth={2.5} aria-hidden />
+            <Plus size={16} strokeWidth={2.5} aria-hidden />
+            <span className="pm-kampe-v2-create-label">{createLabel}</span>
           </button>
         ) : null}
       </div>

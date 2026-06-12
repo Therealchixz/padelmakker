@@ -673,9 +673,9 @@ export function ProfilTab({ user, showToast, setTab }) {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px", marginBottom: "20px" }}>
             {activeOverviewCards.map((s, i) => (
-              <div key={i} style={{ textAlign: "center", padding: "12px 6px", background: theme.surfaceAlt, borderRadius: "8px", border: "1px solid " + theme.border }}>
-                <div style={{ fontSize: "18px", fontWeight: 800, color: s.color }}>{s.value}</div>
-                <div style={{ fontSize: "9px", fontWeight: 700, color: theme.textLight, marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
+              <div key={i} style={{ textAlign: "center", padding: "14px 6px 12px", background: theme.surfaceAlt, borderRadius: "12px", border: "1px solid " + theme.border }}>
+                <div style={{ fontSize: "9.5px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
+                <div style={{ fontSize: "22px", fontWeight: 700, color: theme.navy, marginTop: "4px", letterSpacing: "-0.3px" }}>{s.value}</div>
               </div>
             ))}
           </div>
