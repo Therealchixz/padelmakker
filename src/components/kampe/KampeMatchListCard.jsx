@@ -1,5 +1,5 @@
 import { AvatarCircle } from '../AvatarCircle';
-import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
+import { matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
 
 const DA_MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAJ','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
@@ -60,7 +60,6 @@ export function KampeMatchListCard({
   const { t1, t2 } = balanceTeamsForListDisplay(rawT1, rawT2);
   const filledCount = rawT1.length + rawT2.length;
   const maxPlayers = match?.max_players || 4;
-  const dateHeadline = formatMatchDateHeadlineDa(match.date);
   const timeLabel = matchTimeLabel(match);
   const badgeDate = match.date ? new Date(String(match.date).slice(0, 10) + 'T00:00:00') : null;
   const badgeDay = badgeDate ? badgeDate.getDate() : null;
@@ -113,7 +112,7 @@ export function KampeMatchListCard({
             {venue}
           </div>
           <div className="pm-kampe-v2-list-venue" style={{ marginTop: 2 }}>
-            {dateHeadline} · {timeLabel}
+            Kl. {timeLabel}
             {showEloRange ? <> · ELO {matchPrefs.min}–{matchPrefs.max}</> : null}
           </div>
         </div>

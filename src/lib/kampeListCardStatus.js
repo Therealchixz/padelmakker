@@ -11,6 +11,9 @@ export function getKampeListStatusBadge({ status, isClosed, left, isFull }) {
   if (isClosed) {
     return { label: 'Lukket', tone: 'closed' };
   }
+  if (status === 'open' && left === 1) {
+    return { label: '1 plads', tone: 'warm' };
+  }
   if (status === 'open' && left > 0) {
     return { label: 'Åben', tone: 'open' };
   }
