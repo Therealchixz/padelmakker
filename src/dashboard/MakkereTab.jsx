@@ -153,7 +153,6 @@ function writeFavoritesSet(userId, set) {
 
 function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
   const { profile: p, score, breakdown } = suggestion;
-  const eloShown = displayEloFor(p);
   const reason = matchReason(breakdown, p);
   const quality = makkerMatchBadge(score);
 
@@ -178,7 +177,7 @@ function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
               {p.full_name || p.name}
             </span>
             {p.level != null && p.level !== '' && (
-              <span style={tag(theme.amberBg, theme.amberText)}>Niveau {eloShown}</span>
+              <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
             )}
           </div>
           <div style={{ fontSize: 12, color: theme.textLight, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>

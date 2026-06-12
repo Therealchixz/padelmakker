@@ -7,7 +7,7 @@ import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { mergeLigaSessionPrefs, openMineLigaerFromProfile } from '../lib/ligaSessionPrefs';
 import { useLigaPartnerOpponentStats } from '../lib/ligaRelationStats';
 import { REGIONS, PLAY_STYLES, COURT_SIDES } from '../lib/platformConstants';
-import { profileLevelDisplayText } from '../lib/padelLevelUtils';
+import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { canonicalRegionForForm, calcAge } from '../lib/profileUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, winStreaksFromEloHistory, usePartnerOpponentStats, sortEloHistoryChronological } from '../lib/eloHistoryUtils';
@@ -592,9 +592,9 @@ export function ProfilTab({ user, showToast, setTab }) {
                 <span style={tag(theme.blueBg, theme.blue)}>{ligaStats.matches} ligakampe</span>
               )}
               {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
-              {profileLevelDisplayText(user.level) ? (
+              {user.level != null && user.level !== '' ? (
                 <span style={tag(theme.amberBg, theme.amberText)}>
-                  Niveau {profileLevelDisplayText(user.level)}
+                  Niveau {formatPlaytomicLevel(user.level)}
                 </span>
               ) : null}
               {user.play_style && <span style={tag(theme.blueBg, theme.blue)}>{user.play_style}</span>}
