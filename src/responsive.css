@@ -9308,12 +9308,12 @@ button,
 }
 
 .pm-chat-v2-inbox-compose {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: none;
-  background: var(--pm-accent);
-  color: var(--pm-on-accent);
+  width: 39px;
+  height: 39px;
+  border-radius: 50%;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  color: var(--pm-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9322,7 +9322,9 @@ button,
 }
 
 .pm-chat-v2-inbox-compose--active {
-  background: color-mix(in srgb, var(--pm-accent) 85%, var(--pm-text));
+  background: var(--pm-accent);
+  border-color: var(--pm-accent);
+  color: var(--pm-on-accent);
 }
 
 .pm-chat-v2-inbox-search {
