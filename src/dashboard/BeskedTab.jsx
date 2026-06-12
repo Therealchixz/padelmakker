@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } fr
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { theme, btn } from '../lib/platformTheme';
+import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { MessageCircle, Search, X } from 'lucide-react';
 import {
@@ -901,6 +902,10 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           level: otherProfile?.level,
         });
 
+    const partnerLevelTag = !isTeamThread && otherProfile?.level
+      ? `Niveau ${formatPlaytomicLevel(otherProfile.level)}`
+      : null;
+
     const threadHeader = (
       <ChatThreadHeader
         title={threadTitle}
@@ -910,6 +915,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         avatarUrl={otherProfile?.avatar || null}
         online={partnerOnline}
         onBack={closeThread}
+        levelTag={partnerLevelTag}
         actionsSlot={!isTeamThread ? (
           <BeskedChatActions
             otherUserId={selectedId}

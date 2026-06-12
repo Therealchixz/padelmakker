@@ -625,7 +625,14 @@ export function NotificationBell({ tourForceOpen = false }) {
     <div ref={panelRef} className="pm-notification-bell-root" data-tour="notification-bell" style={{ position: "relative", flexShrink: 0 }}>
       <button
         type="button"
-        onClick={() => { setOpen(!open); if (!open) load(); }}
+        onClick={() => {
+          if (window.innerWidth < 768) {
+            navigate('/dashboard/notifikationer');
+          } else {
+            setOpen(!open);
+            if (!open) load();
+          }
+        }}
         style={{ ...iconBtn, position: "relative" }}
         aria-label="Notifikationer"
         aria-expanded={open}
