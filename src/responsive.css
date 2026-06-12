@@ -1716,11 +1716,13 @@ button,
   }
 
   .pm-dash-main {
+    /* Logo-headeren er skjult på mobil — respekter iPhone-statusbaren */
+    padding-top: max(clamp(16px, 4vw, 24px), calc(env(safe-area-inset-top) + 6px));
     padding-bottom: min(calc(79px + env(safe-area-inset-bottom)), 119px);
   }
 
   .pm-dash-main--home {
-    padding-top: 0;
+    padding-top: max(0px, env(safe-area-inset-top));
   }
 
   /* Mobil chat: portal-overlay efter https://github.com/mattpilott/ios-chat */

@@ -1,4 +1,3 @@
-import { MapPin } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
@@ -110,12 +109,12 @@ export function KampeMatchListCard({
           </div>
         ) : null}
         <div className="pm-kampe-v2-list-card-main">
-          <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary">
-            {dateHeadline} · {timeLabel}
-          </div>
-          <div className="pm-kampe-v2-list-venue">
-            <MapPin size={12} aria-hidden />
+          <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary" style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--pm-text)' }}>
             {venue}
+          </div>
+          <div className="pm-kampe-v2-list-venue" style={{ marginTop: 2 }}>
+            {dateHeadline} · {timeLabel}
+            {showEloRange ? <> · ELO {matchPrefs.min}–{matchPrefs.max}</> : null}
           </div>
         </div>
         <div className="pm-kampe-v2-list-badges">
@@ -154,12 +153,22 @@ export function KampeMatchListCard({
             </span>
           </div>
         </div>
-        {showEloRange ? (
+        {!isCompleted ? (
           <span
-            className="pm-kampe-v2-list-elo-pill"
-            title={`Arrangøren søger spillere med ELO mellem ${matchPrefs.min} og ${matchPrefs.max}`}
+            className="pm-kampe-v2-list-cta"
+            style={{
+              flexShrink: 0,
+              padding: '9px 16px',
+              borderRadius: 10,
+              fontSize: 12.5,
+              fontWeight: 700,
+              fontFamily: 'inherit',
+              ...(isFull && !joined
+                ? { background: 'var(--pm-surface, #fff)', color: 'var(--pm-navy, #16377E)', border: '1.5px solid var(--pm-border, #E2E8F0)' }
+                : { background: 'var(--pm-navy, #16377E)', color: '#fff', border: 'none' }),
+            }}
           >
-            ELO {matchPrefs.min}–{matchPrefs.max}
+            {joined ? 'Se kamp' : isFull ? 'Venteliste' : 'Tilmeld'}
           </span>
         ) : null}
         {showMyEloDelta ? (

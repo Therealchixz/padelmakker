@@ -810,20 +810,20 @@ export function HomeTab({ user, setTab, showToast }) {
 
   // Fyldt handlingsknap (farve + hvid tekst), farvematchet til korttypen — ens bredde på tværs af feedet.
   // Dybde: glans-gradient på toppen + lagdelt skygge + indre lys-kant = "løftet", ikke fladt.
-  const activityActionBtnStyle = (tone) => ({
+  // Mockup: alle feed-handlinger er små navy-knapper (btn-sm)
+  const activityActionBtnStyle = () => ({
     ...btn(false),
-    width: "84px",
     boxSizing: "border-box",
     justifyContent: "center",
     whiteSpace: "nowrap",
-    padding: "8px 8px",
-    fontSize: "13px",
+    padding: "8px 13px",
+    fontSize: "12px",
     fontWeight: 700,
     height: "auto",
-    borderRadius: "10px",
-    border: "1px solid rgba(0,0,0,0.05)",
-    color: "#fff",
-    background: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 55%), " + tone,
+    borderRadius: "9px",
+    border: "none",
+    color: "var(--pm-on-accent, #fff)",
+    background: "var(--pm-navy, #16377E)",
     boxShadow: "0 1px 2px rgba(16,24,40,0.12)",
     flexShrink: 0,
   });
@@ -890,7 +890,8 @@ export function HomeTab({ user, setTab, showToast }) {
   };
 
   const activityTitleStyle = {
-    fontSize: "14px",
+    fontSize: "13px",
+    fontWeight: 600,
     color: theme.text,
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -899,7 +900,7 @@ export function HomeTab({ user, setTab, showToast }) {
   };
 
   const activitySubtitleStyle = {
-    fontSize: "13px",
+    fontSize: "11.5px",
     color: theme.textMid,
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -932,7 +933,7 @@ export function HomeTab({ user, setTab, showToast }) {
   };
 
   const activityRightRailStyle = {
-    minWidth: "94px",
+    minWidth: "70px",
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",
@@ -955,9 +956,8 @@ export function HomeTab({ user, setTab, showToast }) {
     boxShadow: theme.shadowAccent,
   };
 
-  const activityCardStyle = (isHighlight, tone) => ({
+  const activityCardStyle = (isHighlight) => ({
     ...activityRowBaseStyle,
-    borderLeft: "3px solid " + (tone || theme.accent),
     ...(isHighlight ? activityHighlightRowStyle : null),
   });
 
@@ -973,7 +973,7 @@ export function HomeTab({ user, setTab, showToast }) {
     action,
     stat,
   }) => (
-    <div key={key} style={activityCardStyle(isHighlight, tone)}>
+    <div key={key} style={activityCardStyle(isHighlight)}>
       <div style={activityLeadingSlotStyle}>{leading}</div>
       <div style={activityBodyStyle}>
         <div style={activityMetaRowStyle}>
