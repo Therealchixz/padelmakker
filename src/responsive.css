@@ -3309,9 +3309,9 @@ button,
 
 .pm-pill-tab-active,
 .pm-pill-tab[aria-selected="true"] {
-  background: var(--pm-surface);
-  color: var(--pm-accent);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: var(--pm-navy, var(--pm-accent));
+  color: var(--pm-on-accent, #fff);
+  box-shadow: 0 2px 6px rgba(13, 39, 82, 0.22);
   font-weight: 700;
 }
 
@@ -6592,9 +6592,10 @@ button,
 }
 
 .pm-kampe-v2-create {
-  width: 36px;
   height: 36px;
-  border-radius: 12px;
+  padding: 0 14px;
+  gap: 6px;
+  border-radius: 10px;
   border: none;
   display: inline-flex;
   align-items: center;
@@ -6603,7 +6604,14 @@ button,
   color: var(--pm-on-accent);
   cursor: pointer;
   flex-shrink: 0;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
   box-shadow: 0 4px 14px color-mix(in srgb, var(--pm-accent) 35%, transparent);
+}
+
+.pm-kampe-v2-create-label {
+  white-space: nowrap;
 }
 
 .pm-kampe-v2-create:disabled {
