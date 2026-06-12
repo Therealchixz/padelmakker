@@ -391,12 +391,22 @@ export default function PadelMatchResultInput({
         <div className="mb-3 flex items-center gap-2">
           <h3 className="text-sm font-semibold text-slate-800">
             Sæt {n}
+            {n === 3 && <span className="ml-1 font-normal text-slate-500">(Tiebreak)</span>}
             {disabled && <span className="ml-2 font-normal text-slate-500">(ikke nødvendigt)</span>}
           </h3>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+              n === 3
+                ? "bg-amber-100 text-amber-800"
+                : "bg-[#E8EDF6] text-[#16377E]"
+            }`}
+          >
+            {n === 3 ? "Valgfri" : "Obligatorisk"}
+          </span>
           <button
             type="button"
             disabled={disabled}
-            className="ml-auto rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-600 disabled:pointer-events-none disabled:opacity-40"
+            className="ml-auto rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#16377E] disabled:pointer-events-none disabled:opacity-40"
             title="Gyldige sæt: 6-0 til 6-4, 7-5, eller 6-6/7-6 med tiebreak (min. 7 point, vind med 2)."
             aria-label={`Hjælp til sæt ${n}`}
           >
@@ -418,7 +428,7 @@ export default function PadelMatchResultInput({
               value={f.games1}
               onChange={(e) => updateForm(index, { games1: e.target.value })}
               disabled={disabled}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#16377E] focus:outline-none focus:ring-2 focus:ring-[#16377E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
               aria-invalid={!!err}
             />
           </div>
@@ -435,7 +445,7 @@ export default function PadelMatchResultInput({
               value={f.games2}
               onChange={(e) => updateForm(index, { games2: e.target.value })}
               disabled={disabled}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#16377E] focus:outline-none focus:ring-2 focus:ring-[#16377E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
               aria-invalid={!!err}
             />
           </div>
@@ -457,7 +467,7 @@ export default function PadelMatchResultInput({
                   value={f.tb1}
                   onChange={(e) => updateForm(index, { tb1: e.target.value })}
                   disabled={disabled}
-                  className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-slate-100"
+                  className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 focus:border-[#16377E] focus:outline-none focus:ring-2 focus:ring-[#16377E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
                 />
               </div>
               <div>
@@ -472,7 +482,7 @@ export default function PadelMatchResultInput({
                   value={f.tb2}
                   onChange={(e) => updateForm(index, { tb2: e.target.value })}
                   disabled={disabled}
-                  className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 disabled:cursor-not-allowed disabled:bg-slate-100"
+                  className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 focus:border-[#16377E] focus:outline-none focus:ring-2 focus:ring-[#16377E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
                 />
               </div>
             </div>
@@ -495,8 +505,8 @@ export default function PadelMatchResultInput({
       noValidate
     >
       <header className="space-y-2">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Kampresultat</h2>
-        <div className="flex items-start gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900 ring-1 ring-emerald-200">
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl" style={{letterSpacing:"-0.3px"}}>Indberet resultat</h2>
+        <div className="flex items-start gap-2 rounded-lg bg-[#EEF2FA] p-3 text-sm text-[#1E3A6E] ring-1 ring-[#D5DEEE]">
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <p className="leading-snug">{RULES_SUMMARY}</p>
         </div>
@@ -576,9 +586,9 @@ export default function PadelMatchResultInput({
         <button
           type="submit"
           disabled={!formValid}
-          className="rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+          className="rounded-lg bg-[#16377E] px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-[#0D2752] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#16377E] focus:ring-offset-2"
         >
-          Gem kampresultat
+          Bekræft resultat
         </button>
       </div>
     </form>

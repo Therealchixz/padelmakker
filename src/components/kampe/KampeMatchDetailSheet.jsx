@@ -1,12 +1,13 @@
-import { X } from 'lucide-react';
+import { X, CalendarDays, MapPin, ArrowUpRight } from 'lucide-react';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
-import { KampeVenueLocationLine } from './KampeVenueLocationLine';
+import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
 import { btn } from '../../lib/platformTheme';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCourtView } from './MatchCourtView';
+import '../../styles/kampdetalje.css';
 
 function badgeToneClass(tone) {
   if (tone === 'live') return 'pm-kampe-v2-badge--live';
@@ -111,19 +112,7 @@ export function KampeMatchDetailSheet({
               </div>
             </div>
             <div className="pm-kampe-v2-detail-head-main">
-              {directionsQuery ? (
-                <KampeVenueLocationLine
-                  label={venue}
-                  directionsQuery={directionsQuery}
-                  className="pm-kampe-v2-detail-venue"
-                  variant="title"
-                />
-              ) : (
-                <h2 className="pm-kampe-v2-detail-venue">{venue}</h2>
-              )}
-              <div className="pm-kampe-v2-detail-datetime pm-kampe-v2-detail-datetime--primary">
-                {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
-              </div>
+              <h2 className="pm-kampe-v2-detail-venue">{venue}</h2>
               {(matchPrefs?.min != null && matchPrefs?.max != null) ||
               matchPrefs?.booked != null ||
               unreadCount > 0 ? (
@@ -153,8 +142,38 @@ export function KampeMatchDetailSheet({
 
         <div className="pm-kampe-v2-detail-scroll">
 
+        <div className="pm-kd-card" style={{ margin: '0 0 4px' }}>
+          <div className="pm-kd-info-row" style={{ marginTop: 0 }}>
+            <div className="pm-kd-info-ic"><CalendarDays size={18} aria-hidden /></div>
+            <div>
+              <b>{formatMatchDateHeadlineDa(match.date)}</b>
+              <span className="pm-kd-info-sub">{matchTimeLabel(match)}</span>
+            </div>
+          </div>
+          <div className="pm-kd-info-row">
+            <div className="pm-kd-info-ic"><MapPin size={18} aria-hidden /></div>
+            <div>
+              <b>{venue}</b>
+              {directionsQuery ? (
+                <a
+                  className="pm-kd-maplink"
+                  href={banerMapsDirectionsUrl(directionsQuery)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  Vis på kort <ArrowUpRight size={11} aria-hidden />
+                </a>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
         {description ? (
-          <p className="pm-kampe-v2-detail-desc">{description}</p>
+          <>
+            <div className="pm-kd-section-h"><h3>Om kampen</h3></div>
+            <p className="pm-kd-about">{description}</p>
+          </>
         ) : null}
 
         <MatchCourtView

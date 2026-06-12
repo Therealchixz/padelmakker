@@ -1,0 +1,544 @@
+/* ────────────────────────────────────────────────────────────────
+   Kamp-detalje — restyling efter docs/redesign-full-app.html
+   ("Kamp detaljer · 2v2 / Americano / Liga / Afsluttet").
+   Bruges af KampeMatchDetailSheet, AmericanoDetailSheet og
+   LigaSelectedDetail. Alle klasser er præfikset pm-kd- så de ikke
+   kolliderer med responsive.css (som andre arbejder i).
+   ──────────────────────────────────────────────────────────────── */
+
+:root {
+  --pm-kd-card-border: #E2E8F0;
+  --pm-kd-card-shadow: 0 2px 8px rgba(13, 39, 82, 0.07);
+  --pm-kd-inset: #F2F5F9;
+  --pm-kd-ghost-bg: #E9EDF4;
+  --pm-kd-ghost-fg: #9AA9BD;
+  --pm-kd-dash: #C9D3E1;
+}
+
+[data-theme="dark"] {
+  --pm-kd-card-border: #334155;
+  --pm-kd-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --pm-kd-inset: #162032;
+  --pm-kd-ghost-bg: #243349;
+  --pm-kd-ghost-fg: #64748B;
+  --pm-kd-dash: #3B4D68;
+}
+
+/* ── Hero (navy gradient + bane-omrids, mockup .event-hero.detail-hero) ── */
+.pm-kd-hero {
+  position: relative;
+  height: 150px;
+  border-radius: 14px;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(13, 39, 82, 0.18), rgba(13, 39, 82, 0.42)),
+    linear-gradient(165deg, #2E64A8 0%, #1A3E78 60%, #0F2C56 100%);
+}
+
+.pm-kd-hero-court {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: 32%;
+  bottom: 14%;
+  border: 2.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  transform: perspective(300px) rotateX(40deg);
+}
+
+.pm-kd-hero-court::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2.5px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.pm-kd-hero-badges {
+  position: absolute;
+  top: 11px;
+  left: 11px;
+  right: 11px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+/* ── Foto-chips på hero (mockup .chip-photo) ── */
+.pm-kd-chip {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pm-kd-chip--navy { background: #16377E; color: #fff; }
+.pm-kd-chip--amber { background: #F2A93B; color: #0D2752; }
+.pm-kd-chip--light { background: rgba(255, 255, 255, 0.93); color: #0D2752; }
+.pm-kd-chip--live {
+  background: #E5484D;
+  color: #fff;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Hvidt kort (mockup .card) ── */
+.pm-kd-card {
+  background: var(--pm-surface);
+  border-radius: 14px;
+  border: 1px solid var(--pm-kd-card-border);
+  box-shadow: var(--pm-kd-card-shadow);
+  padding: 16px;
+}
+
+/* Pris-/infokort der overlapper hero (mockup .price-card) */
+.pm-kd-price-card {
+  margin: -34px 12px 0;
+  position: relative;
+  z-index: 2;
+}
+
+.pm-kd-title {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.3px;
+  color: var(--pm-text);
+}
+
+.pm-kd-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--pm-navy);
+  line-height: 1;
+  text-align: right;
+}
+
+.pm-kd-price small {
+  display: block;
+  font-size: 10.5px;
+  color: var(--pm-text-light);
+  font-weight: 400;
+  margin-top: 3px;
+}
+
+/* ── Info-rækker (mockup .info-row / .info-ic) ── */
+.pm-kd-info-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 14px;
+}
+
+.pm-kd-info-ic {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--pm-kd-inset);
+  border: 1px solid var(--pm-kd-card-border);
+  color: var(--pm-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.pm-kd-info-row b {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--pm-text);
+}
+
+.pm-kd-info-row .pm-kd-info-sub {
+  display: block;
+  font-size: 12.5px;
+  color: var(--pm-text-light);
+  margin-top: 1px;
+}
+
+.pm-kd-maplink {
+  color: var(--pm-navy);
+  font-weight: 600;
+  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  text-decoration: none;
+}
+
+/* ── Sektionsoverskrift (mockup .section-h) ── */
+.pm-kd-section-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 18px 2px 10px;
+}
+
+.pm-kd-section-h h3 {
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin: 0;
+  color: var(--pm-text);
+}
+
+.pm-kd-about {
+  margin: 0 2px;
+  color: var(--pm-text-light);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* ── Tags (mockup .tag) ── */
+.pm-kd-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pm-kd-tag--amber {
+  background: var(--pm-amber-bg);
+  color: var(--pm-amber-text);
+  border: 1px solid var(--pm-amber-border);
+}
+
+.pm-kd-tag--green { background: var(--pm-green-bg); color: var(--pm-green); }
+.pm-kd-tag--red { background: var(--pm-red-bg); color: var(--pm-red); }
+.pm-kd-tag--navy {
+  background: var(--pm-kd-inset);
+  color: var(--pm-navy);
+  border: 1px solid var(--pm-kd-card-border);
+}
+
+/* ── Holdlabel (mockup .team-label) ── */
+.pm-kd-team-label {
+  margin: 14px 2px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--pm-text-light);
+  text-transform: uppercase;
+}
+
+/* ── Spiller-slot (mockup .slot) ── */
+.pm-kd-slot {
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-kd-card-border);
+  border-radius: 14px;
+  box-shadow: var(--pm-kd-card-shadow);
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  font-family: inherit;
+  position: relative;
+}
+
+.pm-kd-slot-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--pm-text);
+}
+
+.pm-kd-slot-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.pm-kd-lvl-badge {
+  background: var(--pm-amber-bg);
+  color: var(--pm-amber-text);
+  border: 1px solid var(--pm-amber-border);
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pm-kd-slot-kampe {
+  font-size: 11.5px;
+  color: var(--pm-text-light);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Tom plads (mockup .slot.empty) */
+.pm-kd-slot--empty {
+  background: transparent;
+  border: 2px dashed var(--pm-kd-dash);
+  box-shadow: none;
+}
+
+.pm-kd-slot--empty.pm-kd-slot--clickable { cursor: pointer; }
+.pm-kd-slot--empty.pm-kd-slot--clickable:hover { border-color: var(--pm-navy); }
+
+.pm-kd-ghost {
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  background: var(--pm-kd-ghost-bg);
+  color: var(--pm-kd-ghost-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.pm-kd-slot--empty b {
+  color: var(--pm-text-light);
+  font-size: 13.5px;
+  font-weight: 600;
+  display: block;
+}
+
+.pm-kd-slot--empty .pm-kd-empty-sub {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--pm-kd-ghost-fg);
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+/* Slot-handlinger (kick / flyt hold) */
+.pm-kd-slot-action {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 1px solid var(--pm-kd-card-border);
+  background: var(--pm-kd-inset);
+  color: var(--pm-navy);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0;
+  line-height: 1;
+}
+
+.pm-kd-slot-action--danger {
+  color: var(--pm-red);
+  background: var(--pm-red-bg);
+  border-color: transparent;
+}
+
+/* ── Inset-kort (mockup .inset-card) ── */
+.pm-kd-inset-card {
+  background: var(--pm-kd-inset);
+  border-radius: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--pm-kd-card-border);
+}
+
+/* ── Resultatkort, afsluttet kamp (mockup vs-score / avstack) ── */
+.pm-kd-result-card { position: relative; margin-top: 14px; }
+
+.pm-kd-result-badge {
+  position: absolute;
+  top: -10px;
+  right: 14px;
+}
+
+.pm-kd-vs-row {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.pm-kd-vs-score { text-align: center; flex: 1; min-width: 0; }
+
+.pm-kd-vs-score b {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 6px;
+  color: var(--pm-text);
+  overflow-wrap: anywhere;
+}
+
+.pm-kd-avstack { display: flex; justify-content: center; }
+
+.pm-kd-set-score {
+  text-align: center;
+  flex: none;
+  padding: 0 6px;
+}
+
+.pm-kd-set-score-big {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--pm-navy);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.pm-kd-set-score-big .pm-kd-set-score-sep { color: var(--pm-kd-card-border); }
+
+.pm-kd-set-score-detail {
+  font-size: 11px;
+  color: var(--pm-text-light);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* ── Elo-ændringer (mockup .feed-ic kort) ── */
+.pm-kd-elo-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.pm-kd-feed-ic {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.pm-kd-feed-ic--up { background: var(--pm-green-bg); color: var(--pm-green); }
+.pm-kd-feed-ic--down { background: var(--pm-red-bg); color: var(--pm-red); }
+
+/* ── Deltagerliste (mockup .elo-row) ── */
+.pm-kd-elo-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 0;
+}
+
+.pm-kd-elo-row + .pm-kd-elo-row { border-top: 1px solid var(--pm-kd-card-border); }
+
+.pm-kd-elo-pname {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--pm-text);
+}
+
+.pm-kd-elo-pname span {
+  display: block;
+  font-size: 11px;
+  color: var(--pm-text-light);
+  font-weight: 400;
+}
+
+.pm-kd-eyebrow {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: var(--pm-text-light);
+}
+
+/* ── Knapper (mockup .btn-navy / .btn-ghost) ── */
+.pm-kd-btn-navy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--pm-navy);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14.5px;
+  border-radius: 10px;
+  padding: 14px;
+  width: 100%;
+  box-shadow: 0 6px 14px rgba(22, 55, 126, 0.32);
+}
+
+.pm-kd-btn-navy:disabled {
+  background: var(--pm-kd-inset);
+  color: var(--pm-text-light);
+  box-shadow: none;
+  cursor: default;
+}
+
+.pm-kd-btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--pm-surface);
+  color: var(--pm-navy);
+  border: 1.5px solid var(--pm-kd-card-border);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14.5px;
+  border-radius: 10px;
+  padding: 12px;
+  width: 100%;
+}
+
+/* ── Americano-statistik i price-card ── */
+.pm-kd-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pm-kd-stat {
+  background: var(--pm-kd-inset);
+  border: 1px solid var(--pm-kd-card-border);
+  border-radius: 10px;
+  padding: 9px 6px;
+  text-align: center;
+}
+
+.pm-kd-stat .pm-kd-eyebrow { font-size: 8px; letter-spacing: 1px; }
+
+.pm-kd-stat b {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 3px;
+  color: var(--pm-text);
+}
+
+.pm-kd-stat .pm-kd-stat-sub {
+  display: block;
+  font-size: 9.5px;
+  color: var(--pm-text-light);
+  margin-top: 1px;
+}

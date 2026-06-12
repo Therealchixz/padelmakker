@@ -5,9 +5,23 @@ import { supabase } from '../lib/supabase';
 import { splitDisplayName, oauthAvatarUrl } from '../lib/authOAuth';
 import { OAuthButtons, AuthDivider } from '../components/OAuthButtons';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
-import { font, theme, btn, inputStyle, labelStyle, heading } from '../lib/platformTheme';
+import { font, theme } from '../lib/platformTheme';
+import {
+  obInput,
+  obLabel,
+  btnNavy,
+  chipStyle,
+  insetCard,
+  whiteCard,
+  circleBtn,
+  topbarTitle,
+  stepDot,
+  screenHeading,
+  screenSub,
+  fieldHint,
+} from '../lib/onboardingStyles';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
-import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES, levelLabel } from '../lib/platformConstants';
+import { REGIONS, AVAILABILITY, DAYS_OF_WEEK, PLAY_STYLES, COURT_SIDES } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { sanitizeText } from '../lib/platformUtils';
@@ -20,7 +34,16 @@ import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { TurnstileWidget } from '../components/TurnstileWidget';
 import { LEGAL_INFO } from '../lib/legalInfo';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, ShieldCheck } from 'lucide-react';
+
+/** Niveau-kort fra mockup'et (Onboarding · 2 Niveau) — klik sætter levelNumeric. */
+const LEVEL_CARDS = [
+  { num: '1.0', value: 1, title: 'Helt ny', desc: 'Har aldrig eller næsten aldrig spillet padel.' },
+  { num: '2.0', value: 2, title: 'Begynder', desc: 'Kan holde bolden i gang i rolige dueller.' },
+  { num: '3.0', value: 3, title: 'Øvet', desc: 'Spiller jævnligt, behersker glasvægge og lob.' },
+  { num: '4.0', value: 4, title: 'Erfaren', desc: 'Taktisk spil, bandeja og kontrolleret tempo.' },
+  { num: '5.0+', value: 5, title: 'Elite', desc: 'Turneringsspiller på højt niveau.' },
+];
 
 export function OnboardingPage() {
   const { signUpWithPhone, user, profile, profileLoading, updateProfile, refreshProfileQuiet } = useAuth();
@@ -40,6 +63,7 @@ export function OnboardingPage() {
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const [err, setErr]             = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showFineTune, setShowFineTune] = useState(false);
   const [form, setForm]           = useState({ first_name: "", last_name: "", email: "", email_confirm: "", phone: "", password: "", password_confirm: "", levelNumeric: 3, style: "", court_side: "", area: "", city: "", availability: [], available_days: [], bio: "", avatar: "🎾", birth_year: "", birth_month: "", birth_day: "" });
   const [avatarFile, setAvatarFile]         = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
@@ -225,27 +249,12 @@ export function OnboardingPage() {
     form.phone,
   ]);
 
-  const stepMeta = [
-    {
-      title: "Konto",
-      hint: oauthSession
-        ? "Udfyld navn og fødselsdato — herefter niveau og profil."
-        : "Derefter SMS og email-bekræftelse (du logges kort ud mellem de to — med vilje).",
-    },
-    { title: "Niveau", hint: "Træk slideren, læs beskrivelsen og vælg ærligt — samme som under profil senere." },
-    { title: "Område", hint: "Region, by og hvornår du typisk kan spille." },
-    { title: "Profil", hint: "Gør profilen klar til andre spillere." },
-  ];
-  const totalSteps = stepMeta.length;
-  const activeStepMeta = stepMeta[step];
-  const profilePreviewName = `${form.first_name.trim()} ${form.last_name.trim()}`.trim() || "Dit navn";
-  const profilePreviewLevel = [
-    form.levelNumeric != null ? `${formatPlaytomicLevel(form.levelNumeric)}${levelLabel(form.levelNumeric) ? ` (${levelLabel(form.levelNumeric)})` : ''}` : '',
-    form.style,
-    form.court_side,
-  ].filter(Boolean).join(" - ") || "Niveau ikke valgt endnu";
-  const profilePreviewLocation = [form.city.trim(), form.area].filter(Boolean).join(", ") || "Område ikke valgt endnu";
-  const profilePreviewBio = form.bio.trim() || "Tilføj en kort bio, så andre bedre forstår hvem du er som makker.";
+  const stepTitles = ["Opret profil", "Dit niveau", "Dit område", "Din profil"];
+  const totalSteps = stepTitles.length;
+  const numericLevel = Number(form.levelNumeric);
+  const selectedLevelCard = !Number.isFinite(numericLevel)
+    ? null
+    : numericLevel < 2 ? 1 : numericLevel < 3 ? 2 : numericLevel < 4 ? 3 : numericLevel < 5 ? 4 : 5;
 
   const cancelOnboarding = async () => {
     if (submitting) return;
@@ -422,15 +431,21 @@ export function OnboardingPage() {
     }
   };
 
+  const errorText = { color: theme.red, fontSize: "12px", margin: "6px 0 0", fontWeight: 600, lineHeight: 1.45 };
+  const fieldWrap = { marginBottom: "14px" };
+  const inputBorder = (bad) => ({ border: `1.5px solid ${bad ? theme.red : theme.border}` });
+
   const steps = [
+    /* ============ Trin 1 · Konto (mockup: Onboarding · 1 Konto) ============ */
     <div key={0}>
-      <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Velkommen! 👋</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "14px", lineHeight: 1.5 }}>Lad os oprette din profil.</p>
+      <div style={{ textAlign: "center", padding: "0 8px 18px" }}>
+        <div style={screenHeading}>Lad os lære dig at kende</div>
+        <div style={screenSub}>Det tager under 2 minutter</div>
+      </div>
       {oauthSession ? (
-        <div style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "26", borderRadius: "12px", padding: "12px 14px", marginBottom: "18px" }}>
-          <p style={{ color: theme.textMid, fontSize: "13px", lineHeight: 1.5, margin: 0 }}>
-            Du er logget ind med <strong>{user?.email || "din konto"}</strong>. Udfyld resten af profilen herunder.
-          </p>
+        <div style={{ ...insetCard, marginBottom: "14px", fontSize: "12.5px", color: theme.textMid, lineHeight: 1.55 }}>
+          Du er logget ind med <strong style={{ color: theme.text }}>{user?.email || "din konto"}</strong>. Udfyld resten af
+          profilen herunder.
         </div>
       ) : (
         <>
@@ -438,299 +453,369 @@ export function OnboardingPage() {
           <AuthDivider />
         </>
       )}
-      <div style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "26", borderRadius: "12px", padding: "12px 14px", marginBottom: "22px" }}>
-        <div style={{ fontSize: "13px", fontWeight: 800, color: theme.accent, marginBottom: "4px" }}>
-          Det bruger vi profilen til
+      <div style={fieldWrap}>
+        <label htmlFor="onb-first-name" style={obLabel}>Navn</label>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <input
+            id="onb-first-name"
+            autoComplete="given-name"
+            value={form.first_name}
+            onChange={e => set("first_name", e.target.value)}
+            placeholder="Fornavn"
+            style={{ ...obInput, flex: 1, minWidth: 0 }}
+          />
+          <input
+            id="onb-last-name"
+            aria-label="Efternavn"
+            autoComplete="family-name"
+            value={form.last_name}
+            onChange={e => set("last_name", e.target.value)}
+            placeholder="Efternavn"
+            style={{ ...obInput, flex: 1, minWidth: 0 }}
+          />
         </div>
-        <p style={{ color: theme.textMid, fontSize: "13px", lineHeight: 1.5, margin: 0 }}>
-          Din profil bruges til at matche dig med spillere på samme niveau og i dit område - så andre kan finde den rigtige makker hurtigere.
-        </p>
       </div>
-      <label htmlFor="onb-first-name" style={labelStyle}>Fornavn</label>
-      <input id="onb-first-name" autoComplete="given-name" value={form.first_name} onChange={e => set("first_name", e.target.value)} placeholder="F.eks. Mikkel" style={{ ...inputStyle, marginBottom: "10px" }} />
-      <label htmlFor="onb-last-name" style={labelStyle}>Efternavn</label>
-      <input id="onb-last-name" autoComplete="family-name" value={form.last_name} onChange={e => set("last_name", e.target.value)} placeholder="F.eks. Hansen" style={{ ...inputStyle, marginBottom: "14px" }} />
-      {!oauthSession && (
-        <div
-          style={{
-            background: theme.surfaceAlt,
-            border: `1px solid ${theme.border}`,
-            borderRadius: "12px",
-            padding: "12px 14px",
-            marginBottom: "16px",
-            fontSize: "13px",
-            color: theme.textMid,
-            lineHeight: 1.5,
-          }}
-        >
-          <strong style={{ color: theme.text }}>3 trin til færdig konto:</strong> (1) Profil her · (2) SMS-kode · (3) Link i
-          email. Mellem trin 2 og 3 logges du kort ud — det er normalt.
-        </div>
-      )}
       {!oauthSession && (
         <>
-      <label htmlFor="onb-email" style={labelStyle}>Email</label>
-      <input
-        id="onb-email"
-        value={form.email}
-        onChange={e => set("email", e.target.value)}
-        placeholder="din@email.dk"
-        type="email"
-        autoComplete="email"
-        style={{
-          ...inputStyle,
-          marginBottom: emailTouchedInvalid ? "6px" : "14px",
-          border: "1px solid " + (emailTouchedInvalid ? theme.red : theme.border),
-        }}
-      />
-      {emailTouchedInvalid && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Brug en gyldig e-mail med @ og domæne (fx navn@mail.dk).
-        </p>
-      )}
-      <label htmlFor="onb-email-confirm" style={labelStyle}>Bekræft email</label>
-      <input
-        id="onb-email-confirm"
-        value={form.email_confirm}
-        onChange={e => set("email_confirm", e.target.value)}
-        placeholder="Gentag din email"
-        type="email"
-        autoComplete="email"
-        style={{
-          ...inputStyle,
-          marginBottom: emailConfirmTouchedInvalid || emailMismatch ? "6px" : "14px",
-          border: "1px solid " + (emailConfirmTouchedInvalid || emailMismatch ? theme.red : theme.border),
-        }}
-      />
-      {emailConfirmTouchedInvalid && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Gentag din email i et gyldigt format.
-        </p>
-      )}
-      {!emailConfirmTouchedInvalid && emailMismatch && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Emails matcher ikke - tjek begge felter.
-        </p>
-      )}
+          <div style={fieldWrap}>
+            <label htmlFor="onb-email" style={obLabel}>E-mail</label>
+            <input
+              id="onb-email"
+              value={form.email}
+              onChange={e => set("email", e.target.value)}
+              placeholder="din@email.dk"
+              type="email"
+              autoComplete="email"
+              style={{ ...obInput, ...inputBorder(emailTouchedInvalid) }}
+            />
+            {emailTouchedInvalid && (
+              <p style={errorText}>Brug en gyldig e-mail med @ og domæne (fx navn@mail.dk).</p>
+            )}
+          </div>
+          <div style={fieldWrap}>
+            <label htmlFor="onb-email-confirm" style={obLabel}>Bekræft e-mail</label>
+            <input
+              id="onb-email-confirm"
+              value={form.email_confirm}
+              onChange={e => set("email_confirm", e.target.value)}
+              placeholder="Gentag din e-mail"
+              type="email"
+              autoComplete="email"
+              style={{ ...obInput, ...inputBorder(emailConfirmTouchedInvalid || emailMismatch) }}
+            />
+            {emailConfirmTouchedInvalid && (
+              <p style={errorText}>Gentag din email i et gyldigt format.</p>
+            )}
+            {!emailConfirmTouchedInvalid && emailMismatch && (
+              <p style={errorText}>Emails matcher ikke - tjek begge felter.</p>
+            )}
+          </div>
+          <div style={fieldWrap}>
+            <label htmlFor="onb-password" style={obLabel}>
+              Adgangskode <span style={{ color: theme.textLight, fontWeight: 400 }}>(min. 8 tegn)</span>
+            </label>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <input
+                id="onb-password"
+                value={form.password}
+                onChange={e => set("password", e.target.value)}
+                placeholder="Adgangskode"
+                type="password"
+                autoComplete="new-password"
+                style={{ ...obInput, flex: 1, minWidth: 0 }}
+              />
+              <input
+                id="onb-password-confirm"
+                aria-label="Bekræft adgangskode"
+                value={form.password_confirm}
+                onChange={e => set("password_confirm", e.target.value)}
+                placeholder="Gentag"
+                type="password"
+                autoComplete="new-password"
+                style={{
+                  ...obInput,
+                  flex: 1,
+                  minWidth: 0,
+                  border: `1.5px solid ${passwordMismatch ? theme.red : passwordTooShort ? theme.warm : theme.border}`,
+                }}
+              />
+            </div>
+            {passwordMismatch && (
+              <p style={errorText}>Adgangskoderne matcher ikke — tjek begge felter.</p>
+            )}
+            {!passwordMismatch && passwordTooShort && (
+              <p style={{ ...errorText, color: theme.warm }}>Adgangskoden skal være mindst 8 tegn.</p>
+            )}
+          </div>
         </>
       )}
+      <div style={fieldWrap}>
+        <label htmlFor="onb-birth-day" style={obLabel}>Fødselsdag</label>
+        <div style={{ display: "grid", gridTemplateColumns: "76px 1fr 90px", gap: "10px" }}>
+          <select
+            id="onb-birth-day"
+            value={form.birth_day}
+            onChange={e => set("birth_day", e.target.value)}
+            style={{ ...obInput, padding: "12px 8px 12px 12px", color: form.birth_day ? theme.text : theme.textLight }}
+          >
+            <option value="">Dag</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}.</option>)}
+          </select>
+          <select
+            aria-label="Måned"
+            value={form.birth_month}
+            onChange={e => set("birth_month", e.target.value)}
+            style={{ ...obInput, padding: "12px 8px 12px 12px", color: form.birth_month ? theme.text : theme.textLight }}
+          >
+            <option value="">Måned</option>
+            {["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"].map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+          </select>
+          <input
+            aria-label="År"
+            value={form.birth_year}
+            onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))}
+            placeholder="År"
+            type="text"
+            inputMode="numeric"
+            style={{ ...obInput, padding: "12px 10px" }}
+          />
+        </div>
+        <div style={fieldHint}>Bruges kun til aldersbekræftelse og vises ikke offentligt.</div>
+      </div>
       {phoneExemptResolved && phoneExempt ? (
-        <div
-          style={{
-            background: theme.accentBg,
-            border: '1px solid ' + theme.accent + '26',
-            borderRadius: '12px',
-            padding: '12px 14px',
-            marginBottom: '14px',
-            fontSize: '13px',
-            color: theme.textMid,
-            lineHeight: 1.5,
-          }}
-        >
+        <div style={{ ...insetCard, marginBottom: "14px", fontSize: "12.5px", color: theme.textMid, lineHeight: 1.55 }}>
           Denne konto er undtaget fra telefon-SMS (sat af admin). Du behøver ikke tilføje telefonnummer.
         </div>
       ) : phoneExemptResolved ? (
-        <>
-      <label htmlFor="onb-phone" style={labelStyle}>Telefonnummer</label>
-      <p style={{ color: theme.textMid, fontSize: '12px', margin: '0 0 8px', lineHeight: 1.45 }}>
-        Vi sender en SMS-kode for at bekræfte nummeret og mindske falske konti.
-      </p>
-      <input
-        id="onb-phone"
-        value={form.phone}
-        onChange={e => set("phone", e.target.value)}
-        placeholder="Fx 20112233 eller +4520112233"
-        type="tel"
-        autoComplete="tel"
-        inputMode="tel"
-        style={{
-          ...inputStyle,
-          marginBottom: phoneTouchedInvalid ? "6px" : "14px",
-          border: "1px solid " + (phoneTouchedInvalid ? theme.red : theme.border),
-        }}
-      />
-      {phoneTouchedInvalid && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).
-        </p>
-      )}
-        </>
+        <div style={fieldWrap}>
+          <label htmlFor="onb-phone" style={obLabel}>Telefonnummer</label>
+          <input
+            id="onb-phone"
+            value={form.phone}
+            onChange={e => set("phone", e.target.value)}
+            placeholder="Fx 20112233 eller +4520112233"
+            type="tel"
+            autoComplete="tel"
+            inputMode="tel"
+            style={{ ...obInput, ...inputBorder(phoneTouchedInvalid) }}
+          />
+          {phoneTouchedInvalid && (
+            <p style={errorText}>Indtast et gyldigt telefonnummer (fx 20112233 eller +4520112233).</p>
+          )}
+        </div>
       ) : (
-        <p style={{ color: theme.textMid, fontSize: '13px', marginBottom: '14px', lineHeight: 1.5 }}>
+        <p style={{ color: theme.textMid, fontSize: "12.5px", marginBottom: "14px", lineHeight: 1.5 }}>
           Tjekker telefon-krav…
         </p>
       )}
-      {!oauthSession && (
-        <>
-      <label htmlFor="onb-password" style={labelStyle}>Adgangskode</label>
-      <input id="onb-password" value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mindst 8 tegn" type="password" autoComplete="new-password" style={{ ...inputStyle, marginBottom: "10px" }} />
-      <label htmlFor="onb-password-confirm" style={labelStyle}>Bekræft adgangskode</label>
-      <input
-        id="onb-password-confirm"
-        value={form.password_confirm}
-        onChange={e => set("password_confirm", e.target.value)}
-        placeholder="Gentag adgangskode"
-        type="password"
-        autoComplete="new-password"
+      {phoneExemptResolved && !phoneExempt && (
+        <div style={{ ...insetCard, fontSize: "11.5px", color: theme.textLight, lineHeight: 1.55 }}>
+          {oauthSession
+            ? "Dit telefonnummer bekræftes med en SMS-kode til sidst."
+            : "Dit telefonnummer bekræftes med en SMS-kode, og din e-mail bekræftes med et link til sidst."}
+        </div>
+      )}
+    </div>,
+
+    /* ============ Trin 2 · Niveau (mockup: Onboarding · 2 Niveau) ============ */
+    <div key={1}>
+      <div style={{ textAlign: "center", padding: "0 8px 16px" }}>
+        <div style={screenHeading}>Hvor godt spiller du?</div>
+        <div style={screenSub}>Vælg det, der passer bedst – din Elo justerer sig automatisk efter dine kampe</div>
+      </div>
+      {LEVEL_CARDS.map((c) => {
+        const sel = selectedLevelCard === c.value;
+        return (
+          <button
+            key={c.value}
+            type="button"
+            onClick={() => set("levelNumeric", c.value)}
+            aria-pressed={sel}
+            style={{
+              width: "100%",
+              textAlign: "left",
+              display: "flex",
+              alignItems: "center",
+              gap: "13px",
+              background: theme.surface,
+              border: `1.5px solid ${sel ? theme.navy : theme.border}`,
+              borderRadius: "14px",
+              padding: "14px 16px",
+              marginBottom: "11px",
+              cursor: "pointer",
+              fontFamily: font,
+              boxShadow: sel ? "0 0 0 3px rgba(22, 55, 126, 0.12)" : "none",
+              transition: "border-color 0.12s, box-shadow 0.12s",
+            }}
+          >
+            <span
+              style={{
+                width: "46px",
+                height: "46px",
+                borderRadius: "12px",
+                background: sel ? theme.navy : theme.surfaceAlt,
+                color: sel ? "#fff" : theme.navy,
+                fontWeight: 700,
+                fontSize: "15px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flex: "none",
+              }}
+            >
+              {c.num}
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: "14px", fontWeight: 600, color: theme.text }}>{c.title}</span>
+              <span style={{ display: "block", fontSize: "11.5px", color: theme.textLight, lineHeight: 1.45, marginTop: "2px" }}>
+                {c.desc}
+              </span>
+            </span>
+            <span
+              aria-hidden
+              style={{
+                width: "22px",
+                height: "22px",
+                borderRadius: "50%",
+                flex: "none",
+                border: sel ? "none" : `1.5px solid ${theme.border}`,
+                background: sel ? theme.navy : "transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+              }}
+            >
+              {sel && <Check size={12} strokeWidth={3} />}
+            </span>
+          </button>
+        );
+      })}
+      <button
+        type="button"
+        onClick={() => setShowFineTune(v => !v)}
         style={{
-          ...inputStyle,
-          marginBottom: passwordMismatch || passwordTooShort ? "6px" : "14px",
-          border:
-            "1px solid " +
-            (passwordMismatch ? theme.red : passwordTooShort ? theme.warm : theme.border),
+          border: "none",
+          background: "transparent",
+          color: theme.navy,
+          fontWeight: 600,
+          fontSize: "12.5px",
+          cursor: "pointer",
+          padding: "4px 0",
+          fontFamily: font,
         }}
-      />
-      {passwordMismatch && (
-        <p style={{ color: theme.red, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Adgangskoderne matcher ikke — tjek begge felter.
-        </p>
+      >
+        {showFineTune
+          ? "Skjul finjustering"
+          : `Finjustér niveau (valgt: ${formatPlaytomicLevel(form.levelNumeric)})`}
+      </button>
+      {showFineTune && (
+        <div style={{ marginTop: "10px" }}>
+          <PlaytomicLevelPicker
+            value={form.levelNumeric}
+            onChange={(n) => set('levelNumeric', n)}
+          />
+        </div>
       )}
-      {!passwordMismatch && passwordTooShort && (
-        <p style={{ color: theme.warm, fontSize: "12px", marginBottom: "10px", fontWeight: 600 }}>
-          Adgangskoden skal være mindst 8 tegn.
-        </p>
-      )}
-        </>
-      )}
-      <label style={{ ...labelStyle, marginBottom: "4px" }}>Fødselsdato</label>
-      <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, margin: "0 0 8px" }}>
-        Bruges kun til aldersbekræftelse og vises ikke offentligt.
-      </p>
-      <div style={{ display: "grid", gridTemplateColumns: "72px 1fr 90px", gap: "8px", marginBottom: "14px" }}>
-        <select value={form.birth_day} onChange={e => set("birth_day", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
-          <option value="">Dag</option>
-          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}.</option>)}
-        </select>
-        <select value={form.birth_month} onChange={e => set("birth_month", e.target.value)} style={{ ...inputStyle, paddingLeft: "10px", paddingRight: "4px" }}>
-          <option value="">Måned</option>
-          {["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"].map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
-        </select>
-        <input value={form.birth_year} onChange={e => set("birth_year", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="År" type="text" inputMode="numeric" style={{ ...inputStyle, paddingLeft: "10px" }} />
+      <div style={{ marginTop: "14px" }}>
+        <label htmlFor="onb-style" style={obLabel}>Spillestil</label>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <select
+            id="onb-style"
+            value={form.style}
+            onChange={e => set("style", e.target.value)}
+            style={{ ...obInput, flex: 1, minWidth: 0, color: form.style ? theme.text : theme.textLight }}
+          >
+            <option value="">Spillestil…</option>
+            {PLAY_STYLES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select
+            aria-label="Side på banen"
+            value={form.court_side}
+            onChange={e => set("court_side", e.target.value)}
+            style={{ ...obInput, flex: 1, minWidth: 0, color: form.court_side ? theme.text : theme.textLight }}
+          >
+            <option value="">Side på banen…</option>
+            {COURT_SIDES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <div style={fieldHint}>Spillestil og din foretrukne side på banen.</div>
       </div>
     </div>,
 
-    <div key={1}>
-      <h2 style={{ ...heading("24px"), marginBottom: "12px" }}>Dit padel-niveau</h2>
-      <p style={{ color: theme.textMid, fontSize: "13px", lineHeight: 1.5, margin: "0 0 14px" }}>
-        <strong style={{ color: theme.text }}>Niveau</strong> bruger vi til at matche dig med spillere.{' '}
-        <strong style={{ color: theme.text }}>ELO</strong> starter ved 1000 og ændres først, når du har spillet kampe med
-        registreret resultat.
-      </p>
-      <div style={{ marginBottom: 24 }}>
-        <PlaytomicLevelPicker
-          value={form.levelNumeric}
-          onChange={(n) => set('levelNumeric', n)}
+    /* ============ Trin 3 · Område (mockup: Onboarding · 3 Område) ============ */
+    <div key={2}>
+      <div style={fieldWrap}>
+        <label style={obLabel}>Region</label>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {REGIONS.map((r) => (
+            <button key={r} type="button" onClick={() => set("area", r)} style={chipStyle(form.area === r)}>{r}</button>
+          ))}
+        </div>
+      </div>
+      <div style={fieldWrap}>
+        <label htmlFor="onb-city" style={obLabel}>
+          By <span style={{ color: theme.textLight, fontWeight: 400 }}>(valgfri)</span>
+        </label>
+        <input
+          id="onb-city"
+          value={form.city}
+          onChange={e => set("city", e.target.value)}
+          placeholder="F.eks. Aarhus, København, Aalborg..."
+          style={obInput}
         />
       </div>
-
-      {/* Spillestil + Side på banen — 2 kolonner */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
-        <div>
-          <div style={labelStyle}>Spillestil</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            {PLAY_STYLES.map(s => (
-              <button key={s} onClick={() => set("style", s)} style={{
-                padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
-                border: "1.5px solid " + (form.style === s ? theme.accent : theme.border),
-                background: form.style === s ? theme.accentBg : theme.surface,
-                color: form.style === s ? theme.accent : theme.text,
-                cursor: "pointer", textAlign: "left", fontFamily: "inherit",
-              }}>{s}</button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div style={labelStyle}>Side på banen</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            {COURT_SIDES.map(s => (
-              <button key={s} onClick={() => set("court_side", s)} style={{
-                padding: "9px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
-                border: "1.5px solid " + (form.court_side === s ? theme.accent : theme.border),
-                background: form.court_side === s ? theme.accentBg : theme.surface,
-                color: form.court_side === s ? theme.accent : theme.text,
-                cursor: "pointer", textAlign: "left", fontFamily: "inherit",
-              }}>{s}</button>
-            ))}
-          </div>
+      <div style={fieldWrap}>
+        <label style={obLabel}>Hvornår kan du spille?</label>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {AVAILABILITY.map(a => (
+            <button key={a} type="button" onClick={() => toggleAvail(a)} style={chipStyle(form.availability.includes(a))}>{a}</button>
+          ))}
         </div>
       </div>
-    </div>,
-
-    <div key={2}>
-      <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Hvor og hvornår?</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>
-        Vælg din region (påkrævet). Tilføj gerne din by — regioner er store, og det gør det nemmere at finde dig.
-      </p>
-      <div style={labelStyle}>Region <span style={{ color: theme.red }}>*</span></div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "14px" }}>
-        {REGIONS.map((r) => (
-          <button key={r} onClick={() => set("area", r)} style={{ ...btn(form.area === r), padding: "8px 14px", fontSize: "13px" }}>{r}</button>
-        ))}
-      </div>
-      <label htmlFor="onb-city" style={labelStyle}>By <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-      <input
-        id="onb-city"
-        value={form.city}
-        onChange={e => set("city", e.target.value)}
-        placeholder="F.eks. Aarhus, København, Aalborg..."
-        style={{ ...inputStyle, marginBottom: "20px" }}
-      />
-      <div style={labelStyle}>Hvornår kan du spille?</div>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
-        {AVAILABILITY.map(a => <button key={a} onClick={() => toggleAvail(a)} style={{ ...btn(form.availability.includes(a)), padding: "8px 14px", fontSize: "13px" }}>{a}</button>)}
-      </div>
-
-      <div style={labelStyle}>Hvilke dage kan du typisk spille?</div>
-      <div style={{ display: "flex", gap: "6px", marginBottom: "20px" }}>
-        {DAYS_OF_WEEK.map(({ key, label }) => {
-          const active = form.available_days.includes(key);
-          return (
+      <div style={fieldWrap}>
+        <label style={obLabel}>Hvilke dage kan du typisk spille?</label>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {DAYS_OF_WEEK.map(({ key, label }) => (
             <button
               key={key}
+              type="button"
               onClick={() => toggleDay(key)}
-              style={{
-                flex: 1,
-                padding: "10px 2px",
-                fontSize: "13px",
-                fontWeight: 700,
-                borderRadius: "8px",
-                border: "1.5px solid " + (active ? theme.accent : theme.border),
-                background: active ? theme.accent : theme.surface,
-                color: active ? theme.onAccent : theme.textMid,
-                cursor: "pointer",
-                transition: "all 0.12s",
-                minWidth: 0,
-              }}
+              style={chipStyle(form.available_days.includes(key), { padding: "8px 11px" })}
             >
               {label}
             </button>
-          );
-        })}
-      </div>
-      <div
-        style={{
-          background: theme.surfaceAlt,
-          borderRadius: "10px",
-          padding: "14px 16px",
-          border: "1px solid " + theme.border,
-        }}
-      >
-        <div style={{ fontSize: "13px", fontWeight: 700, color: theme.text, marginBottom: "6px" }}>
-          Søger kamp eller makker?
+          ))}
         </div>
-        <p style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.45, margin: 0 }}>
-          Det sætter du op bagefter under <strong>Find makker</strong> og <strong>Kampe</strong> (synlighed, intention og niveau).
-        </p>
       </div>
     </div>,
 
+    /* ============ Trin 4 · Profil (mockup: Onboarding · 4 Profil) ============ */
     <div key={3}>
-      <h2 style={{ ...heading("24px"), marginBottom: "6px" }}>Din profil er klar til at finde makkere</h2>
-      <p style={{ color: theme.textMid, fontSize: "14px", marginBottom: "24px", lineHeight: 1.5 }}>
-        Vælg profilbillede og skriv lidt om dig - så er det nemmere for andre at invitere dig til kamp.
-      </p>
-      <div style={labelStyle}>Profilbillede</div>
-      <div style={{ marginBottom: "20px" }}>
+      <div style={{ textAlign: "center", padding: "4px 0 16px" }}>
+        <div
+          style={{
+            width: "78px",
+            height: "78px",
+            borderRadius: "50%",
+            margin: "0 auto",
+            background: theme.surfaceAlt,
+            border: `3px solid ${theme.surface}`,
+            boxShadow: "0 2px 8px rgba(13,39,82,0.18)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
+          {avatarPreviewUrl
+            ? <img src={avatarPreviewUrl} alt="Valgt profilbillede" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : <span style={{ fontSize: "30px", lineHeight: 1 }}>{form.avatar}</span>}
+        </div>
+        <div style={{ fontSize: "12px", fontWeight: 600, color: theme.navy, marginTop: "8px" }}>Vælg profilbillede</div>
+        <div style={{ fontSize: "10.5px", color: theme.textLight, marginTop: "2px" }}>Emoji eller upload et billede</div>
+      </div>
+      <div style={{ marginBottom: "10px" }}>
         <AvatarPicker
           value={form.avatar}
           previewUrl={avatarPreviewUrl}
@@ -748,78 +833,104 @@ export function OnboardingPage() {
           }}
         />
       </div>
-      <p style={{ color: theme.textLight, fontSize: "12px", lineHeight: 1.45, marginBottom: "16px" }}>
-        Billedet gemmes lokalt indtil du er logget ind (også hvis du åbner bekræftelses-link i en ny fane). Upload sker automatisk ved første login.
+      <p style={{ ...fieldHint, marginTop: 0, marginBottom: "14px" }}>
+        Billedet gemmes lokalt indtil du er logget ind (også hvis du åbner bekræftelses-link i en ny fane). Upload sker
+        automatisk ved første login.
       </p>
-      <label htmlFor="onb-bio" style={labelStyle}>Kort bio</label>
-      <textarea id="onb-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl kort om dig som spiller" style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "18px" }} />
-      <div style={{ border: "1px solid " + theme.border, borderRadius: "12px", background: theme.surfaceAlt, padding: "14px" }}>
-        <div style={{ fontSize: "11px", letterSpacing: "0.05em", textTransform: "uppercase", color: theme.textLight, fontWeight: 700, marginBottom: "10px" }}>
-          Sådan ser andre dig
-        </div>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
-          <div style={{ width: "44px", height: "44px", borderRadius: "50%", border: "1px solid " + theme.border, background: theme.surface, display: "grid", placeItems: "center", overflow: "hidden", flexShrink: 0 }}>
-            {avatarPreviewUrl
-              ? <img src={avatarPreviewUrl} alt="Valgt profilbillede" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : <span style={{ fontSize: "22px", lineHeight: 1 }}>{form.avatar}</span>}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: "16px", fontWeight: 700, color: theme.text, lineHeight: 1.2 }}>{profilePreviewName}</div>
-            <div style={{ fontSize: "12px", color: theme.textMid, marginTop: "3px", lineHeight: 1.35 }}>{profilePreviewLevel}</div>
-          </div>
-        </div>
-        <div style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.5, marginBottom: "6px" }}>
-          {profilePreviewLocation}
-        </div>
-        <div style={{ fontSize: "13px", color: theme.text, lineHeight: 1.5 }}>
-          {profilePreviewBio}
-        </div>
+      <div style={fieldWrap}>
+        <label htmlFor="onb-bio" style={obLabel}>
+          Kort bio <span style={{ color: theme.textLight, fontWeight: 400 }}>(valgfri)</span>
+        </label>
+        <textarea
+          id="onb-bio"
+          value={form.bio}
+          onChange={e => set("bio", e.target.value)}
+          placeholder="Fortæl kort om dig som spiller"
+          style={{ ...obInput, height: "74px", resize: "vertical" }}
+        />
       </div>
       <label
         style={{
+          ...whiteCard,
           display: "flex",
           alignItems: "flex-start",
-          gap: "10px",
-          marginTop: "16px",
+          gap: "11px",
+          padding: "13px 15px",
+          marginBottom: "12px",
           cursor: "pointer",
-          fontSize: "13px",
-          color: theme.textMid,
-          lineHeight: 1.5,
+          position: "relative",
         }}
       >
         <input
           type="checkbox"
           checked={acceptedTerms}
           onChange={(e) => setAcceptedTerms(e.target.checked)}
-          style={{ marginTop: "3px", flexShrink: 0 }}
+          style={{ position: "absolute", opacity: 0, width: "1px", height: "1px" }}
         />
-        <span>
+        <span
+          aria-hidden
+          style={{
+            width: "21px",
+            height: "21px",
+            borderRadius: "6px",
+            flex: "none",
+            marginTop: "1px",
+            border: acceptedTerms ? "none" : `1.5px solid ${theme.border}`,
+            background: acceptedTerms ? theme.navy : theme.surface,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+          }}
+        >
+          {acceptedTerms && <Check size={13} strokeWidth={3} />}
+        </span>
+        <span style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.5 }}>
           Jeg accepterer {LEGAL_INFO.brand}s{" "}
-          <Link to="/handelsbetingelser" target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
+          <Link to="/handelsbetingelser" target="_blank" rel="noopener noreferrer" style={{ color: theme.navy, fontWeight: 600 }}>
             handelsbetingelser
           </Link>{" "}
           og{" "}
-          <Link to="/privatlivspolitik" target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
+          <Link to="/privatlivspolitik" target="_blank" rel="noopener noreferrer" style={{ color: theme.navy, fontWeight: 600 }}>
             privatlivspolitik
           </Link>
           , og bekræfter at jeg er mindst {LEGAL_INFO.minAgeYears} år.
         </span>
       </label>
       {turnstileEnabled && (
-        <div style={{ marginTop: "16px" }}>
-          <div style={{ ...labelStyle, marginBottom: "8px" }}>Sikkerhedscheck</div>
+        <div style={{ ...insetCard, marginBottom: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+            <ShieldCheck size={16} style={{ color: captchaToken ? theme.green : theme.navy, flexShrink: 0 }} />
+            <span style={{ fontSize: "12px", color: theme.textMid, flex: 1 }}>
+              {captchaToken ? "Sikkerhedscheck gennemført" : "Sikkerhedscheck — bekræft at du ikke er en robot"}
+            </span>
+            {captchaToken && (
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "3px 10px",
+                  borderRadius: "999px",
+                  background: theme.greenBg,
+                  color: theme.green,
+                  flex: "none",
+                }}
+              >
+                ✓
+              </span>
+            )}
+          </div>
           <TurnstileWidget
             siteKey={turnstileSiteKey}
             onTokenChange={setCaptchaToken}
             resetNonce={captchaResetNonce}
           />
-          <p style={{ marginTop: "8px", fontSize: "12px", color: theme.textLight, lineHeight: 1.45 }}>
-            Bekræft at du ikke er en robot, før du opretter profilen.
-          </p>
         </div>
       )}
     </div>,
   ];
+
+  const nextDisabled = step < 3 ? !canNext() : (submitting || !acceptedTerms || (!oauthSession && turnstileEnabled && !captchaToken));
 
   return (
     <div
@@ -830,77 +941,98 @@ export function OnboardingPage() {
         background: theme.bg,
         minHeight: "100dvh",
         color: theme.text,
-        paddingTop: "max(28px, calc(env(safe-area-inset-top, 0px) + 22px))",
+        paddingTop: "max(10px, env(safe-area-inset-top, 0px))",
         paddingBottom: "max(96px, env(safe-area-inset-bottom))",
       }}
     >
-      <div className="pm-auth-wide">
-        <div style={{ marginBottom: "18px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.03em", textTransform: "uppercase", color: theme.textMid }}>
-              Trin {step + 1} af {totalSteps}
-            </span>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontSize: "12px", fontWeight: 700, color: theme.accent }}>
-                {activeStepMeta.title}
-              </span>
-              <button
-                onClick={cancelOnboarding}
-                type="button"
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: theme.textLight,
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  padding: 0,
-                }}
-              >
-                Annuller
-              </button>
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
-            {stepMeta.map((meta, i) => (
-              <div key={meta.title} style={{ flex: 1, height: "4px", borderRadius: "4px", background: i <= step ? theme.accent : theme.border, transition: "background 0.3s" }} />
-            ))}
-          </div>
-          <div style={{ fontSize: "12px", color: theme.textLight, lineHeight: 1.45 }}>
-            {activeStepMeta.hint}
-          </div>
+      <div className="pm-auth-wide" style={{ paddingTop: "10px" }}>
+        {/* Topbar (mockup .topbar) */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "6px 0 12px" }}>
+          <button
+            type="button"
+            onClick={step > 0 ? () => setStep(s => s - 1) : cancelOnboarding}
+            aria-label={step > 0 ? "Tilbage" : "Annuller oprettelse"}
+            style={circleBtn}
+          >
+            <ArrowLeft size={18} strokeWidth={2.2} />
+          </button>
+          <h2 style={topbarTitle}>{stepTitles[step]}</h2>
+          <button
+            type="button"
+            onClick={cancelOnboarding}
+            style={{
+              border: "none",
+              background: "transparent",
+              color: theme.textLight,
+              fontSize: "12px",
+              fontWeight: 600,
+              cursor: "pointer",
+              padding: 0,
+              fontFamily: font,
+            }}
+          >
+            Annuller
+          </button>
         </div>
-        <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "14px", padding: "18px", marginBottom: "12px" }}>
-          {steps[step]}
+        {/* Trin-indikator (mockup .steps / .step-dot) */}
+        <div
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={totalSteps}
+          aria-valuenow={step + 1}
+          aria-label={`Trin ${step + 1} af ${totalSteps}`}
+          style={{ display: "flex", gap: "6px", justifyContent: "center", padding: "4px 0 14px" }}
+        >
+          {stepTitles.map((t, i) => (
+            <div key={t} style={stepDot(i <= step)} />
+          ))}
         </div>
-        {err && <p style={{ color: theme.red, fontSize: "13px", marginTop: "12px" }}>{err}</p>}
+
+        {steps[step]}
+
+        {err && (
+          <p style={{ color: theme.red, fontSize: "12.5px", fontWeight: 600, lineHeight: 1.5, marginTop: "14px" }}>{err}</p>
+        )}
         {step < 3 && missingRequirements.length > 0 && (
           <div
             aria-live="polite"
             style={{
-              background: theme.surfaceAlt,
-              border: "1px solid " + theme.border,
-              borderRadius: "10px",
+              ...insetCard,
+              marginTop: "14px",
               color: theme.textMid,
               fontSize: "12px",
               fontWeight: 600,
               lineHeight: 1.45,
-              marginBottom: "12px",
-              padding: "10px 12px",
             }}
           >
             Mangler før du kan fortsætte: {missingRequirements.join(", ")}.
           </div>
         )}
-        <div className="pm-onboarding-actions">
-          <button onClick={step > 0 ? () => setStep(s => s - 1) : cancelOnboarding} style={btn(false)}>{step > 0 ? "← Tilbage" : "Annuller"}</button>
-          {step < 3
-            ? <button type="button" disabled={!canNext()} onClick={() => canNext() && setStep(s => s + 1)} style={{ ...btn(true), opacity: canNext() ? 1 : 0.45, cursor: canNext() ? "pointer" : "not-allowed" }}>Næste <ArrowRight size={15} /></button>
-            : <button onClick={finish} disabled={submitting || !acceptedTerms || (!oauthSession && turnstileEnabled && !captchaToken)} style={btn(true)}>{submitting ? "Opretter..." : "Opret profil"}</button>
-          }
+
+        <div style={{ padding: "18px 0 0" }}>
+          {step < 3 ? (
+            <button
+              type="button"
+              disabled={nextDisabled}
+              onClick={() => canNext() && setStep(s => s + 1)}
+              style={{ ...btnNavy, opacity: nextDisabled ? 0.45 : 1, cursor: nextDisabled ? "not-allowed" : "pointer" }}
+            >
+              Fortsæt <ArrowRight size={16} strokeWidth={2.4} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={finish}
+              disabled={nextDisabled}
+              style={{ ...btnNavy, opacity: nextDisabled ? 0.45 : 1, cursor: nextDisabled ? "not-allowed" : "pointer" }}
+            >
+              {submitting ? "Opretter..." : "Opret profil"} <ArrowRight size={16} strokeWidth={2.4} />
+            </button>
+          )}
         </div>
         <PublicLegalFooter />
       </div>
     </div>
   );
 }
+
