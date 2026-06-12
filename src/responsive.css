@@ -7240,6 +7240,9 @@ button,
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pm-border, #E2E8F0);
 }
 
 .pm-kampe-v2-list-card-bottom--completed {
