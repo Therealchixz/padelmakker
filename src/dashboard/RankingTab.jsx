@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, heading } from '../lib/platformTheme';
+import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import {
   statsFromEloHistoryRows,
   useProfileEloBundle,
@@ -577,7 +578,7 @@ export function RankingTab({ user }) {
           {firstName}{isMe ? ' ✓' : ''}
         </b>
         <span style={{ fontSize: 10.5, color: '#9DB6DE' }}>
-          {p.level ? `Niveau ${p.level}` : (p.area || '')}
+          {p.level ? `Niveau ${formatPlaytomicLevel(p.level)}` : (p.area || '')}
         </span>
         <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: '#fff' }}>{p.score}</div>
         <div style={{
@@ -665,6 +666,7 @@ export function RankingTab({ user }) {
           pointerEvents: refreshing ? 'none' : undefined,
         }}
       >
+      {!hasPodium && (
       <div className="pm-rank-hero">
         <div className="pm-rank-hero-kicker">
           Din placering · {rankModeLabel} · {periodLabels[period]}
@@ -721,6 +723,7 @@ export function RankingTab({ user }) {
           </div>
         )}
       </div>
+      )}
 
       {/* Podium – top 3, only shown for 'all' period */}
       {hasPodium && (
@@ -831,7 +834,7 @@ export function RankingTab({ user }) {
                             ? `${p.area || '?'} · ${p.periodGames} Americano/Mexicano`
                             : `${p.periodGames} Americano/Mexicano · ${p.periodPoints || 0} point`
                           : period === 'all'
-                            ? `${p.level ? `Niveau ${p.level}` : (p.area || '?')} · ${p.periodGames} kampe`
+                            ? `${p.level ? `Niveau ${formatPlaytomicLevel(p.level)}` : (p.area || '?')} · ${p.periodGames} kampe`
                             : `${p.periodGames} kampe · ${p.periodWins} sejre`}
                       </div>
                     </div>
