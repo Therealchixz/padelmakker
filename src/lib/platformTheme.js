@@ -135,18 +135,18 @@ export const inputStyle = {
   transition: 'border-color 0.15s',
 };
 
+// Mockup-stil tag: afrundet pill, almindelig tekst (ikke versaler).
+// Matcher docs/redesign-full-app.html .tag (11px/600/radius 999px).
 export const tag = (bg, color) => ({
-  fontSize: '10px',
-  fontWeight: 700,
-  padding: '2px 7px',
-  borderRadius: '4px',
+  fontSize: '11px',
+  fontWeight: 600,
+  padding: '3px 10px',
+  borderRadius: '999px',
   background: bg,
   color,
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '3px',
-  letterSpacing: '0.05em',
-  textTransform: 'uppercase',
+  gap: '4px',
   whiteSpace: 'nowrap',
 });
 
