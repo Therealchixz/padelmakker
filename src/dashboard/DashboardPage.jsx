@@ -3,10 +3,12 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
-import { font, theme, btn } from '../lib/platformTheme';
+import { font, theme, btn, tag } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
+import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, ChevronDown, Menu, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
+import { AvatarCircle } from '../components/AvatarCircle';
 
 const loadHomeTab = () => import('./HomeTab');
 const HomeTabLazy = lazy(() => loadHomeTab().then((m) => ({ default: m.HomeTab })));
@@ -1880,6 +1882,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
       )}
       {mobileMoreVisible && (
         <div data-tour="mobile-more-sheet" className={mobileMoreTourActive ? 'pm-mobile-more-sheet pm-mobile-more-sheet--tour' : 'pm-mobile-more-sheet'}>
+          {/* User profile header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: '1px solid ' + theme.border }}>
+            <AvatarCircle avatar={user?.avatar} size={44} emojiSize="20px" style={{ background: theme.accentBg, flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
+              <div style={{ fontSize: '11.5px', color: theme.textMid, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{authUser?.email}</div>
+            </div>
+            {user?.level && (
+              <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(user.level)}</span>
+            )}
+          </div>
           {mobileMoreTabs.map((t) => (
             <button
               key={t.id}

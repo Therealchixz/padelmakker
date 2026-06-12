@@ -159,34 +159,27 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   const selectedIntents = normalizeStringArrayField(prefs.intents);
 
   return (
-    <div style={{ fontFamily: font, maxWidth: 520, margin: '0 auto' }}>
-      <button
-        type="button"
-        onClick={() => navigate(returnTo)}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'none',
-          border: 'none',
-          color: theme.textMid,
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: 'pointer',
-          padding: '4px 0 16px',
-        }}
-      >
-        <ChevronLeft size={18} aria-hidden />
-        Tilbage til {returnLabel}
-      </button>
-
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: theme.text, margin: '0 0 6px' }}>
-        Mit makker-filter
-      </h1>
-      <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 20 }}>
-        Dette styrer hvornår du får besked og hvem der matcher. Slå aktiv søgning til/fra på Hjem eller
-        Find makker — her finjusterer du region, niveau, spillestil og tid.
-      </p>
+    <div style={{ fontFamily: font }}>
+      {/* Topbar — matches mockup */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid ' + theme.border, background: theme.surface, marginBottom: 0 }}>
+        <button
+          type="button"
+          onClick={() => navigate(returnTo)}
+          style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid ' + theme.border, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+          aria-label="Tilbage"
+        >
+          <ChevronLeft size={20} aria-hidden />
+        </button>
+        <h2 style={{ flex: 1, fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Filtre</h2>
+        <button
+          type="button"
+          onClick={() => setPrefs(normalizeMakkerSearchPrefs({}, user))}
+          style={{ fontSize: '11.5px', fontWeight: 600, color: theme.navy, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '4px 0' }}
+        >
+          Nulstil
+        </button>
+      </div>
+      <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px 0' }}>
 
       <div
         style={{
@@ -541,6 +534,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
       >
         {saving ? 'Gemmer…' : 'Gem filter'}
       </button>
+    </div>
     </div>
   );
 }
