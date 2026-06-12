@@ -36,6 +36,7 @@ const InstallAppPageLazy = lazy(() => import("./pages/InstallAppPage").then((m) 
 const NotFoundPageLazy = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
 const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage").then((m) => ({ default: m.SignupEmailSentPage })));
 const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
+const NotifikationerPageLazy = lazy(() => import("./pages/NotifikationerPage").then((m) => ({ default: m.NotifikationerPage })));
 
 export default function PadelMakker() {
   const { user, profile, loading, profileLoading, profileLoadError, refreshProfile, signOut } = useAuth();
@@ -202,6 +203,7 @@ export default function PadelMakker() {
             <Route path="/events" element={<PublicEventsPageLazy />} />
             <Route path="/hjaelp" element={<HelpContactPageLazy />} />
             <Route path="/app" element={<InstallAppPageLazy />} />
+            <Route path="/dashboard/notifikationer" element={canUseApp ? <NotifikationerPageLazy /> : <Navigate to="/" replace />} />
             <Route
               path="/dashboard"
               element={

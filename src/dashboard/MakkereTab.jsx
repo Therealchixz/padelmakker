@@ -849,6 +849,7 @@ export function MakkereTab({ user, showToast }) {
           player={viewPlayer}
           onClose={() => setViewPlayer(null)}
           onMessage={() => { setViewPlayer(null); navigate(`/dashboard/beskeder?med=${viewPlayer.id}`); }}
+          onInviteMatch={() => { const p = viewPlayer; setViewPlayer(null); setInviteTarget(p); }}
         />
       )}
       {inviteTarget && (

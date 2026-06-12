@@ -16,7 +16,7 @@ import { SeekingCallout, SeekingCalloutDetail } from '../components/SeekingCallo
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { resolveAmericanoEloDisplay } from '../features/americano/americanoDisplayUtils';
 
-export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
+export function PlayerProfileModal({ player, onClose, onMessage = undefined, onInviteMatch = undefined }) {
   const open = !!player;
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
@@ -257,23 +257,23 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
           </div>
         </div>
         <div className="pm-kampe-v2-detail-scroll">
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
-          <AvatarCircle avatar={pRef.avatar} size={64} emojiSize="32px" style={{ background: theme.accentBg, border: '2px solid ' + theme.accent + '40' }} />
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', wordBreak: 'break-word' }}>{pRef.full_name || pRef.name || 'Spiller'}</div>
-            <div style={{ display: 'flex', gap: '5px', marginTop: '6px', flexWrap: 'wrap' }}>
-              {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>2v2 ELO {elo}</span>}
-              {!dataLoading && <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}
-              {age && <span style={tag(theme.blueBg, theme.blue)}>{age} år</span>}
-              {locationDisplay ? (
-                <span style={tag(theme.warmBg, theme.warm)}>
-                  <MapPin size={9} /> {locationDisplay}
-                </span>
-              ) : null}
-              {levelDisplay ? (
-                <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
-              ) : null}
-            </div>
+        {/* Profile head — centered, matches mockup */}
+        <div style={{ textAlign: 'center', marginBottom: '20px', paddingTop: '4px' }}>
+          <div style={{ display: 'inline-block', position: 'relative', marginBottom: '10px' }}>
+            <AvatarCircle avatar={pRef.avatar} size={72} emojiSize="36px" style={{ background: theme.accentBg, border: '2px solid ' + theme.accent + '40' }} />
+          </div>
+          <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', wordBreak: 'break-word' }}>{pRef.full_name || pRef.name || 'Spiller'}</div>
+          {locationDisplay && (
+            <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '3px' }}>{locationDisplay}</div>
+          )}
+          <div style={{ display: 'flex', gap: '6px', marginTop: '9px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {levelDisplay ? (
+              <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
+            ) : null}
+            {pRef.court_side && <span style={tag(theme.navySoft, theme.navy)}>{pRef.court_side}</span>}
+            {pRef.play_style && <span style={tag(theme.navySoft, theme.navy)}>{pRef.play_style}</span>}
+            {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
+            {age && <span style={tag(theme.surfaceAlt, theme.textMid)}>{age} år</span>}
           </div>
         </div>
 
@@ -412,26 +412,12 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
         ) : null}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-          {levelDisplay ? (
+          {locationDisplay && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-              <span style={{ color: theme.textLight }}>Niveau</span>
-              <span style={{ fontWeight: 600 }}>{levelDisplay}</span>
-            </div>
-          ) : null}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-            <span style={{ color: theme.textLight }}>Spillestil</span>
-            <span style={{ fontWeight: 600 }}>{pRef.play_style || 'Ikke angivet'}</span>
-          </div>
-          {pRef.court_side && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-              <span style={{ color: theme.textLight }}>Side på banen</span>
-              <span style={{ fontWeight: 600 }}>{pRef.court_side}</span>
+              <span style={{ color: theme.textLight }}>Område</span>
+              <span style={{ fontWeight: 600 }}>{locationDisplay}</span>
             </div>
           )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-            <span style={{ color: theme.textLight }}>Område</span>
-            <span style={{ fontWeight: 600 }}>{locationDisplay || 'Ikke angivet'}</span>
-          </div>
           {age && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
               <span style={{ color: theme.textLight }}>Alder</span>
@@ -475,11 +461,18 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined }) {
           </p>
         )}
 
-        {onMessage && (
-          <button type="button" onClick={onMessage} style={{ ...btn(true), width: '100%', justifyContent: 'center' }}>
-            <MessageCircle size={15} /> Send besked
-          </button>
-        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
+          {onInviteMatch && (
+            <button type="button" onClick={onInviteMatch} style={{ ...btn(true), width: '100%', justifyContent: 'center' }}>
+              Invitér til kamp
+            </button>
+          )}
+          {onMessage && (
+            <button type="button" onClick={onMessage} style={{ ...btn(false), width: '100%', justifyContent: 'center' }}>
+              <MessageCircle size={15} /> Send besked
+            </button>
+          )}
+        </div>
         </div>
       </div>
     </>,

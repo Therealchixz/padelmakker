@@ -1,5 +1,6 @@
 import { ChevronLeft, MoreVertical } from 'lucide-react';
 import { ChatInitialsAvatar } from './ChatInitialsAvatar';
+import { tag, theme } from '../../lib/platformTheme';
 
 export function ChatThreadHeader({
   title,
@@ -10,6 +11,7 @@ export function ChatThreadHeader({
   online = false,
   onBack,
   actionsSlot = null,
+  levelTag = null,
 }) {
   return (
     <div className="pm-chat-v2-thread-header">
@@ -29,6 +31,9 @@ export function ChatThreadHeader({
           <div className={`pm-chat-v2-thread-sub${online ? ' pm-chat-v2-thread-sub--online' : ''}`}>{subtitle}</div>
         ) : null}
       </div>
+      {levelTag && (
+        <span style={tag(theme.amberBg, theme.amberText)}>{levelTag}</span>
+      )}
       {actionsSlot || (
         <button type="button" className="pm-chat-v2-thread-more" aria-label="Flere valg" disabled>
           <MoreVertical size={18} aria-hidden />
