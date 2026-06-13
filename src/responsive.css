@@ -3911,6 +3911,44 @@ button,
   z-index: 0;
 }
 
+.pm-baner-map-placeholder {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--pm-radius-md);
+  border: 1px solid var(--pm-border);
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--pm-border) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, var(--pm-border) 1px, transparent 1px) 0 0 / 32px 32px,
+    #EDF2F8;
+}
+
+.pm-baner-map-pin {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -70%) rotate(-45deg);
+  background: var(--pm-navy);
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 2px 8px rgba(13,39,82,0.35);
+}
+
+.pm-baner-map-pin::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
 .pm-baner-venue-location__actions {
   display: flex;
   flex-wrap: wrap;

@@ -21,7 +21,11 @@ export function BanerVenueLocation({ title, address, latitude, longitude }) {
     <section className="pm-baner-venue-location" aria-label="Placering">
       {hasCoords ? (
         <BanerVenueMap latitude={latitude} longitude={longitude} title={title} />
-      ) : null}
+      ) : (
+        <div className="pm-baner-map-placeholder" aria-hidden="true">
+          <div className="pm-baner-map-pin" />
+        </div>
+      )}
       <div className="pm-baner-venue-location__actions">
         <a
           href={banerMapsSearchUrl(addr)}

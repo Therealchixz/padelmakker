@@ -173,6 +173,15 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
   const americanoRounds = americanoWins + americanoDraws + americanoLosses;
   const americanoWinPct = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : 0;
 
+  const recentForm = useMemo(
+    () =>
+      [...ratedHistoryRows]
+        .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
+        .slice(0, 4)
+        .map((row) => (row.result === 'win' ? 'V' : row.result === 'loss' ? 'T' : 'U')),
+    [ratedHistoryRows],
+  );
+
   const americanoForm = useMemo(
     () =>
       [...americanoHistoryRows]
@@ -204,8 +213,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         : [
             { label: 'ELO', value: elo, color: theme.accent },
             { label: 'Kampe', value: games, color: theme.blue },
-            { label: 'Sejre', value: wins, color: theme.warm },
             { label: 'Win %', value: games != null && games > 0 ? `${winPct}%` : '—', color: theme.accent },
+            { label: 'Seneste form', value: null, form: recentForm },
           ];
 
   const age = calcAge(pRef.birth_year, pRef.birth_month, pRef.birth_day);
@@ -329,7 +338,15 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             {activeOverviewCards.map((s, i) => (
               <div key={i} style={{ textAlign: 'center', padding: '13px 15px', background: theme.surfaceAlt, borderRadius: theme.radius, border: '1px solid ' + theme.border }}>
                 <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: theme.textLight }}>{s.label}</div>
-                <div style={{ fontSize: '23px', fontWeight: 700, color: theme.navy, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
+                {s.form ? (
+                  <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 9 }}>
+                    {s.form.length > 0 ? s.form.map((r, j) => (
+                      <div key={j} style={{ width: 21, height: 21, borderRadius: '50%', background: r === 'V' ? 'var(--pm-green)' : r === 'T' ? 'var(--pm-red)' : 'var(--pm-border)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{r}</div>
+                    )) : <div style={{ fontSize: '12px', color: theme.textLight, marginTop: 4 }}>—</div>}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '23px', fontWeight: 700, color: theme.navy, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
+                )}
               </div>
             ))}
           </div>
