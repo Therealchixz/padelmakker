@@ -367,7 +367,21 @@ export function KampeMatchDetailSheet({
 
         <div className="pm-kampe-v2-detail-scroll">
 
-        <div className="pm-kd-card" style={{ margin: '0 0 4px' }}>
+        {/* Court hero visual */}
+        <div className="pm-kd-hero" aria-hidden="true">
+          <div className="pm-kd-hero-court" />
+          <div className="pm-kd-hero-badges">
+            <span className="pm-kd-chip pm-kd-chip--navy">2V2</span>
+            {matchPrefs?.min != null && matchPrefs?.max != null ? (
+              <span className="pm-kd-chip pm-kd-chip--light">ELO {matchPrefs.min}–{matchPrefs.max}</span>
+            ) : null}
+            {statusBadge.tone === 'live' ? (
+              <span className="pm-kd-chip pm-kd-chip--live">LIVE</span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="pm-kd-card pm-kd-price-card" style={{ marginBottom: 4 }}>
           <div className="pm-kd-info-row" style={{ marginTop: 0 }}>
             <div className="pm-kd-info-ic"><CalendarDays size={18} aria-hidden /></div>
             <div>

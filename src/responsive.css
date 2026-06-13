@@ -7797,6 +7797,39 @@ button,
   padding: 14px 14px 12px;
   background: var(--pm-cta-gradient);
   color: var(--pm-on-accent);
+  position: relative;
+  overflow: hidden;
+  min-height: 104px;
+}
+
+.pm-americano-v2-list-court {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 32%;
+  bottom: 10%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 5px;
+  transform: perspective(260px) rotateX(36deg);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pm-americano-v2-list-court::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.pm-americano-v2-list-top-main,
+.pm-americano-v2-list-badge {
+  position: relative;
+  z-index: 1;
 }
 
 .pm-americano-v2-list-top-main {
