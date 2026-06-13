@@ -514,6 +514,22 @@ export function RankingTab({ user }) {
           : myAllTimeElo ?? allTimeFromHistory[myId]?.elo ?? Math.round(Number(user.elo_rating) || 1000)
       : userEntry?.score || 0;
 
+  // Rank change tracking using localStorage (global/all-area only)
+  const rankStorageKey = myId ? `pm_prevrank_${myId}_${rankMode}_${period}` : null;
+  const [rankChange, setRankChange] = useState(0);
+  const rankProcessedKeyRef = useRef('');
+
+  useEffect(() => {
+    if (!rankStorageKey || userRank <= 0 || myBundleLoading || filterArea !== 'all') return;
+    if (rankProcessedKeyRef.current === rankStorageKey) return; // already processed this key
+    rankProcessedKeyRef.current = rankStorageKey;
+    try {
+      const stored = parseInt(localStorage.getItem(rankStorageKey) || '0', 10) || 0;
+      if (stored > 0 && stored !== userRank) setRankChange(stored - userRank);
+      localStorage.setItem(rankStorageKey, String(userRank));
+    } catch { /* ignore */ }
+  }, [rankStorageKey, userRank, myBundleLoading, filterArea]);
+
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -759,6 +775,11 @@ export function RankingTab({ user }) {
               : `${userEntry.periodGames} kampe · ${userEntry.periodWins} sejre`}
           </div>
         )}
+        {rankChange !== 0 && (
+          <div style={{ marginTop: '8px', fontSize: '11px', fontWeight: 600, color: rankChange > 0 ? '#6EE7B7' : '#FCA5A5' }}>
+            {rankChange > 0 ? `↑ ${rankChange} pladser` : `↓ ${Math.abs(rankChange)} pladser`}
+          </div>
+        )}
       </div>
       )}
 
@@ -915,6 +936,50 @@ export function RankingTab({ user }) {
         >
           {loadingMore ? 'Indlæser…' : `Indlæs ${RANKING_PAGE_SIZE} flere`}
         </button>
+      )}
+
+      {/* User position card — shown below list when podium is visible */}
+      {hasPodium && userRank > 0 && !myBundleLoading && userEntry && (
+        <div style={{
+          margin: '12px 18px 18px',
+          background: theme.surface,
+          borderRadius: 12,
+          border: `1.5px solid ${theme.navy}`,
+          padding: '11px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 11,
+        }}>
+          <div style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 13, color: theme.navy, flexShrink: 0 }}>
+            {userRank}
+          </div>
+          <AvatarCircle
+            avatar={userEntry.avatar}
+            size={36}
+            emojiSize="12px"
+            style={{ background: theme.surfaceAlt, border: `1px solid ${theme.border}`, flexShrink: 0 }}
+          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: '-0.01em' }}>
+              Dig
+            </div>
+            <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>
+              {isAmericano
+                ? `${userEntry.periodGames || 0} Americano/Mexicano`
+                : `${userEntry.level ? `Niveau ${formatPlaytomicLevel(userEntry.level)}` : (userEntry.area || '')} · ${userEntry.periodGames || 0} kampe`}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: theme.navy }}>
+              {period === 'all' ? displayScore : displayScore > 0 ? `+${displayScore}` : displayScore}
+            </div>
+            {rankChange !== 0 && (
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: rankChange > 0 ? theme.green : theme.red, marginTop: 1 }}>
+                {rankChange > 0 ? `↑ ${rankChange} pladser` : `↓ ${Math.abs(rankChange)} pladser`}
+              </div>
+            )}
+          </div>
+        </div>
       )}
       </div>
 
