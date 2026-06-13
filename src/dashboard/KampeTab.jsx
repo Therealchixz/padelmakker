@@ -55,6 +55,7 @@ import { KAMPE_CREATE_PLUS_HINT } from '../lib/kampeCreateHint';
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
+import { ConfirmResultModal } from './ConfirmResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { MatchWinPrediction } from '../components/MatchWinPrediction';
@@ -255,6 +256,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [eloByUserId, setEloByUserId] = useState({});
   const [teamSelectMatch, setTeamSelectMatch] = useState(null);
   const [resultMatch, setResultMatch] = useState(null);
+  const [confirmModalMatchId, setConfirmModalMatchId] = useState(null);
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [expandedAdminActions, setExpandedAdminActions] = useState({});
   const [profilesById, setProfilesById] = useState({});
@@ -1612,7 +1614,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   }, [matchPlayers, showToast]);
 
   const submitResult = async (matchId, result) => {
-    setResultMatch(null);
     setBusyId(matchId);
     try {
       const mp = matchPlayers[matchId] || [];
@@ -1628,13 +1629,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         getTeam: matchPlayerTeam,
       });
       if (!submission.ok) {
-        showToast(submission.reason || "Resultatet er ikke gyldigt.");
-        return;
+        return { ok: false, reason: submission.reason || "Resultatet er ikke gyldigt." };
       }
-      showToast("Resultat indsendt! Venter på bekræftelse ⏳");
-      await loadData();
-    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
-    finally { setBusyId(null); }
+      void loadData();
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, reason: "Fejl: " + (e.message || "Prøv igen") };
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const confirmResult = async (matchId) => {
@@ -2532,7 +2535,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             <div style={{ display: "flex", gap: "8px" }}>
               {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok && (
                 <button
-                  onClick={() => confirmResult(m.id)}
+                  onClick={() => setConfirmModalMatchId(m.id)}
                   disabled={busy}
                   style={{
                     ...btn(true),
@@ -2674,7 +2677,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     <div style={{ display: "flex", gap: "8px" }}>
                       {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok && (
                         <button
-                          onClick={() => confirmResult(m.id)}
+                          onClick={() => setConfirmModalMatchId(m.id)}
                           disabled={busy}
                           style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
                         >
@@ -2936,7 +2939,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           label: "Bekræft resultat",
           onClick: () => {
             setDetailMatchId(null);
-            void confirmResult(m.id);
+            setConfirmModalMatchId(m.id);
           },
           disabled: busy,
         };
@@ -3876,6 +3879,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {/* Result input modal */}
       {resultMatch && kampeFormat === "padel" && (() => {
+        const matchObj = matches.find((m) => m.id === resultMatch);
         const mp = matchPlayers[resultMatch] || [];
         const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
         const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
@@ -3885,8 +3889,36 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           <ResultModal
             team1Names={t1Names}
             team2Names={t2Names}
+            match={matchObj}
             onSubmit={(result) => submitResult(resultMatch, result)}
             onClose={() => setResultMatch(null)}
+          />
+        );
+      })()}
+
+      {/* Confirm result modal */}
+      {confirmModalMatchId && (() => {
+        const matchObj = matches.find((m) => m.id === confirmModalMatchId);
+        const mr = matchResults[confirmModalMatchId];
+        const mp = matchPlayers[confirmModalMatchId] || [];
+        const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
+        const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
+        const t1Names = t1.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "Hold 1";
+        const t2Names = t2.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "Hold 2";
+        const submitter = mr?.submitted_by ? profilesById[String(mr.submitted_by)] : null;
+        const submitterName = submitter?.name?.split(" ")[0] || null;
+        return (
+          <ConfirmResultModal
+            open
+            onClose={() => setConfirmModalMatchId(null)}
+            matchResult={mr}
+            match={matchObj}
+            team1Names={t1Names}
+            team2Names={t2Names}
+            submitterName={submitterName}
+            busy={busyId === confirmModalMatchId}
+            onConfirm={() => { void confirmResult(confirmModalMatchId).then(() => setConfirmModalMatchId(null)); }}
+            onReject={() => { void rejectResult(confirmModalMatchId).then(() => setConfirmModalMatchId(null)); }}
           />
         );
       })()}
