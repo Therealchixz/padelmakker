@@ -26,17 +26,29 @@ import type { AmericanoPlayerSlots, AmericanoPoints, AmericanoOpponentPasses, Am
 import {
   getMatchVenueOptions,
   courtIdFromVenueSelection,
+  courtNameFromVenueSelection,
   AMERICANO_VENUE_NONE,
 } from '../../lib/matchVenueOptions'
 import { VenueRegionPicker } from '../../components/VenueRegionPicker'
 
 type CourtOption = { id: string; name: string }
 
+export type CreatedTournamentInfo = {
+  id: string
+  name: string
+  format: AmericanoTournamentFormat
+  tournament_date: string
+  time_slot: string
+  player_slots: number
+  points_per_match: number
+  court_name: string | null
+}
+
 type Props = {
   userId: string
   displayName: string
   courts: CourtOption[]
-  onCreated?: (tournamentId: string) => void
+  onCreated?: (info: CreatedTournamentInfo) => void
   onCancel?: () => void
 }
 
@@ -146,7 +158,16 @@ export function CreateAmericanoTournamentForm({
       })
       if (partErr) throw partErr
 
-      onCreated?.(row.id)
+      onCreated?.({
+        id: row.id,
+        name: n,
+        format: tournamentFormat,
+        tournament_date: date,
+        time_slot: timeSlot,
+        player_slots: playerSlots,
+        points_per_match: pointsPerMatch,
+        court_name: courtNameFromVenueSelection(courtId, selectOptions) || null,
+      })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       setError(
