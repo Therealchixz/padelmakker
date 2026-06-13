@@ -6938,6 +6938,85 @@ button,
   padding: 4px 0;
 }
 
+/* Filter reset button */
+.pm-kampe-v2-filter-reset {
+  border: none;
+  background: transparent;
+  color: var(--pm-navy);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+
+/* Filter apply CTA button */
+.pm-kampe-v2-filter-apply-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--pm-radius-lg);
+  border: none;
+  background: var(--pm-cta-gradient);
+  color: var(--pm-on-accent);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: -0.1px;
+}
+
+/* Filter toggle row */
+.pm-kampe-v2-filter-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.pm-kampe-v2-filter-toggle-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pm-text);
+}
+
+.pm-kampe-v2-filter-toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  background: var(--pm-border);
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.pm-kampe-v2-filter-toggle--on {
+  background: var(--pm-accent);
+}
+
+.pm-kampe-v2-filter-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--pm-surface);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  transition: left 0.18s;
+}
+
+.pm-kampe-v2-filter-toggle--on .pm-kampe-v2-filter-toggle-thumb {
+  left: 23px;
+}
+
 .pm-kampe-v2-sheet-section {
   margin-bottom: 16px;
 }

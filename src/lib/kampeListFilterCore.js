@@ -153,7 +153,7 @@ export function kampeEloFilterRangeFromUser(eloBandId, userElo) {
 }
 
 export function defaultKampeListFilter() {
-  return { regionId: '', eloBandId: '' };
+  return { regionId: '', eloBandId: '', onlyOpen: false, onlyBooked: false };
 }
 
 function resolveListRegionId(raw) {
@@ -171,12 +171,14 @@ export function normalizeKampeListFilter(raw) {
   let eloBandId = String(raw.eloBandId ?? '').trim();
   if (LEGACY_ELO_BAND_IDS.has(eloBandId)) eloBandId = '';
   eloBandId = KAMPE_LIST_ELO_BANDS.some((o) => o.id === eloBandId) ? eloBandId : '';
-  return { regionId, eloBandId };
+  const onlyOpen = Boolean(raw.onlyOpen);
+  const onlyBooked = Boolean(raw.onlyBooked);
+  return { regionId, eloBandId, onlyOpen, onlyBooked };
 }
 
 export function kampeListFilterIsActive(filter) {
   const f = normalizeKampeListFilter(filter);
-  return Boolean(f.regionId || f.eloBandId);
+  return Boolean(f.regionId || f.eloBandId || f.onlyOpen || f.onlyBooked);
 }
 
 export function getKampeListRegionLabel(regionId) {
@@ -232,6 +234,11 @@ export function matchPassesKampeListFilter(match, filter, { profilesById, userEl
   const f = normalizeKampeListFilter(filter);
   if (!matchPassesKampeRegionFilter(match, f.regionId, profilesById)) return false;
   if (!matchPassesKampeEloBandFilter(match, f.eloBandId, userElo)) return false;
+  if (f.onlyOpen && match?.status === 'full') return false;
+  if (f.onlyBooked) {
+    const { booked } = parseMatchLevelRange(match?.level_range);
+    if (!booked) return false;
+  }
   return true;
 }
 
