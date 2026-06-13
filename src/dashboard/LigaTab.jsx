@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
-import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
-import { Trophy, Plus } from 'lucide-react';
+import { theme, btn, inputStyle, labelStyle, font } from '../lib/platformTheme';
+import { Trophy, Plus, Check, Copy, ArrowRight } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
@@ -110,6 +110,8 @@ export function LigaTab({
   const [scheduleLeagueId, setScheduleLeagueId] = useState(null);
   const [profileTeam, setProfileTeam] = useState(null);
   const [profileTeamLeagueId, setProfileTeamLeagueId] = useState(null);
+  const [createdLeagueReceipt, setCreatedLeagueReceipt] = useState(null);
+  const [ligaReceiptUrlCopied, setLigaReceiptUrlCopied] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -385,7 +387,7 @@ export function LigaTab({
     setBusyId('create');
     try {
       const maxT = createForm.max_teams !== '' ? parseInt(createForm.max_teams, 10) : null;
-      const { error } = await supabase.from('leagues').insert({
+      const { data: created, error } = await supabase.from('leagues').insert({
         name: createForm.name.trim(),
         description: createForm.description.trim() || null,
         season_type: createForm.season_type,
@@ -393,10 +395,10 @@ export function LigaTab({
         end_date: createForm.end_date,
         max_teams: maxT && maxT > 0 ? maxT : null,
         created_by: user.id,
-      });
+      }).select('id').single();
       if (error) throw error;
-      showToast('Liga oprettet!');
       setCreateOpen(false);
+      setCreatedLeagueReceipt({ id: created?.id, name: createForm.name.trim(), start_date: createForm.start_date, end_date: createForm.end_date, max_teams: maxT });
       setCreateForm({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
@@ -1075,6 +1077,114 @@ export function LigaTab({
           showToast={showToast}
         />
       ) : null}
+
+      {/* Liga oprettet kvittering */}
+      {createdLeagueReceipt && (() => {
+        const r = createdLeagueReceipt;
+        const ligaUrl = typeof window !== 'undefined'
+          ? `${window.location.origin}/dashboard/kampe`
+          : '';
+        const handleCopy = () => {
+          if (!ligaUrl) return;
+          navigator.clipboard?.writeText(ligaUrl).then(() => {
+            setLigaReceiptUrlCopied(true);
+            setTimeout(() => setLigaReceiptUrlCopied(false), 2000);
+          }).catch(() => showToast('Kopiering mislykkedes'));
+        };
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: theme.bg, display: 'flex', flexDirection: 'column', fontFamily: font }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
+              <h2 style={{ flex: 1, fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, textAlign: 'center' }}>PadelMakker</h2>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+              {/* Checkmark */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: theme.navy, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Check size={32} strokeWidth={2.8} />
+                </div>
+              </div>
+
+              {/* Title */}
+              <div style={{ textAlign: 'center', padding: '16px 32px 0' }}>
+                <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.3px', color: theme.text }}>Liga oprettet!</div>
+                <p style={{ fontSize: 12.5, color: theme.textMid, marginTop: 6, marginBottom: 0 }}>Ligaen er synlig i oversigten, og hold kan tilmelde sig nu.</p>
+              </div>
+
+              {/* Summary card */}
+              <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 14, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
+                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ background: theme.navy, color: '#fff', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>LIGA</span>
+                  <span style={{ background: theme.greenBg, color: theme.green, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>Tilmelding åben</span>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, marginTop: 10 }}>{r.name}</div>
+                {(r.start_date || r.end_date) && (
+                  <div style={{ fontSize: 12, color: theme.textMid, marginTop: 6 }}>
+                    {r.start_date && `Start: ${r.start_date}`}{r.start_date && r.end_date ? ' · ' : ''}{r.end_date && `Slut: ${r.end_date}`}
+                  </div>
+                )}
+                {r.max_teams && (
+                  <div style={{ fontSize: 12, color: theme.textMid, marginTop: 4 }}>
+                    Maks. {r.max_teams} hold
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 13, paddingTop: 12, borderTop: '1px solid ' + theme.border }}>
+                  <span style={{ fontSize: 12, color: theme.textMid }}>Hold tilmeldt</span>
+                  <span style={{ fontSize: 11.5, color: theme.textMid, fontWeight: 600 }}>0 hold</span>
+                </div>
+              </div>
+
+              {/* Share section */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '16px 18px 8px' }}>
+                Del liga
+              </div>
+              <div style={{ margin: '0 18px 12px', background: theme.surface, borderRadius: 10, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>
+                <span style={{ flex: 1, fontSize: 12, color: theme.textMid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {ligaUrl || 'padelmakker.dk/liga/…'}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 7, border: '1px solid ' + theme.border, background: theme.surfaceAlt, color: ligaReceiptUrlCopied ? theme.green : theme.textMid, cursor: 'pointer', flexShrink: 0, fontFamily: font }}
+                >
+                  <Copy size={12} />
+                  {ligaReceiptUrlCopied ? 'Kopieret!' : 'Kopiér'}
+                </button>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ padding: '0 18px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof navigator !== 'undefined' && navigator.share) {
+                      void navigator.share({ title: r.name, url: ligaUrl }).catch(() => {});
+                    } else {
+                      handleCopy();
+                    }
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 16px', borderRadius: 10, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font }}
+                >
+                  Invitér hold til ligaen
+                </button>
+              </div>
+            </div>
+
+            {/* CTA bar */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 18px', background: theme.surface, borderTop: '1px solid ' + theme.border }}>
+              <button
+                type="button"
+                onClick={() => setCreatedLeagueReceipt(null)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
+              >
+                Gå til liga-oversigt
+                <ArrowRight size={16} strokeWidth={2.4} />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
