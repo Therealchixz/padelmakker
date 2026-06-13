@@ -181,7 +181,7 @@ export function resolveModalMaxWidth(presetOrPx) {
 
 /** Find makker match-score badge colors (tokens) */
 export function makkerMatchBadge(score) {
-  if (score >= 80) return { label: 'Stærk match', color: 'var(--pm-green)', bg: 'var(--pm-green-bg)', border: 'var(--pm-success-border)' };
+  if (score >= 80) return { label: 'Stærkt match', color: 'var(--pm-green)', bg: 'var(--pm-green-bg)', border: 'var(--pm-success-border)' };
   if (score >= 65) return { label: 'God match', color: 'var(--pm-accent)', bg: 'var(--pm-accent-bg)', border: 'var(--pm-info-border)' };
   if (score >= 50) return { label: 'Okay match', color: 'var(--pm-warm)', bg: 'var(--pm-warm-bg)', border: 'var(--pm-warning-border)' };
   return { label: 'Mulig match', color: 'var(--pm-text-light)', bg: 'var(--pm-surface-alt)', border: 'var(--pm-border)' };

@@ -140,6 +140,13 @@ export function ProfilTab({ user, showToast, setTab }) {
   }, [ratedRows]);
   const recentForm = ratedRows.slice(-5).reverse();
 
+  const todayEloChange = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    return ratedRows
+      .filter((r) => (r.date || '').slice(0, 10) === todayStr)
+      .reduce((sum, r) => sum + (Number(r.change) || 0), 0);
+  }, [ratedRows]);
+
   const { partnerOpponentStats, partnerOpponentLoading } = usePartnerOpponentStats(user.id, ratedRows);
   const americanoStatsEnabled =
     (Number(pStats?.americano_played) || 0) > 0
@@ -747,8 +754,15 @@ export function ProfilTab({ user, showToast, setTab }) {
           <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9DB6DE', marginBottom: '6px' }}>
             Aktuel Elo Rating · {activeModeLabel}
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: '12px' }}>
-            {(is2v2Mode ? elo : americanoElo) ?? '—'}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: '12px' }}>
+            <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
+              {(is2v2Mode ? elo : americanoElo) ?? '—'}
+            </div>
+            {is2v2Mode && todayEloChange !== 0 && (
+              <div style={{ fontSize: '13px', fontWeight: 700, color: todayEloChange > 0 ? '#6EE7B7' : '#FCA5A5', letterSpacing: '-0.2px' }}>
+                {todayEloChange > 0 ? '↑' : '↓'} {todayEloChange > 0 ? '+' : ''}{todayEloChange} i dag
+              </div>
+            )}
           </div>
           {activeEloGraphLoading ? (
             <div style={{ textAlign: "center", padding: "16px 0", color: '#9DB6DE', fontSize: "13px" }}>Indlæser...</div>
@@ -823,12 +837,16 @@ export function ProfilTab({ user, showToast, setTab }) {
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>Seneste form</div>
                 {recentForm.length > 0 ? (
                   <>
-                    <div style={{ display: "flex", gap: "5px", alignItems: "center", marginBottom: "6px" }}>
+                    <div style={{ display: "flex", gap: "5px", alignItems: "center", justifyContent: "center", marginBottom: "6px" }}>
                       {recentForm.map((r, i) => (
                         <div key={i} title={r.result === 'win' ? 'Sejr' : r.result === 'loss' ? 'Nederlag' : 'Uafgjort'} style={{
-                          width: "22px", height: "22px", borderRadius: "50%", flexShrink: 0,
+                          width: "24px", height: "24px", borderRadius: "50%", flexShrink: 0,
                           background: r.result === 'win' ? 'var(--pm-form-win)' : r.result === 'loss' ? 'var(--pm-form-loss)' : 'var(--pm-form-draw)',
-                        }} />
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "10px", fontWeight: 700, color: "#fff",
+                        }}>
+                          {r.result === 'win' ? 'V' : r.result === 'loss' ? 'T' : 'U'}
+                        </div>
                       ))}
                     </div>
                     <div style={{ fontSize: "11px", color: theme.textMid }}>Seneste {recentForm.length} kampe</div>
