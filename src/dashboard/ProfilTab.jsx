@@ -576,12 +576,19 @@ export function ProfilTab({ user, showToast, setTab }) {
           </div>
           {/* Centered header: avatar + name + location + tags */}
           <div style={{ textAlign: 'center', padding: '18px 18px 14px' }}>
-            <AvatarCircle
-              avatar={user.avatar}
-              size={96}
-              emojiSize="29px"
-              style={{ margin: '0 auto', border: '3px solid ' + theme.surface, boxShadow: theme.shadow }}
-            />
+            <div style={{ position: 'relative', display: 'inline-block', margin: '0 auto' }}>
+              <AvatarCircle
+                avatar={user.avatar}
+                size={96}
+                emojiSize="29px"
+                style={{ border: '3px solid ' + theme.surface, boxShadow: theme.shadow }}
+              />
+              {user.level != null && user.level !== '' && (
+                <div style={{ position: 'absolute', bottom: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: theme.navy, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid ' + theme.surface }}>
+                  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+                </div>
+              )}
+            </div>
             <h2 style={{ fontSize: 19, fontWeight: 600, marginTop: 12, letterSpacing: '-0.3px', color: theme.text, margin: '12px 0 0' }}>{displayName}</h2>
             <p style={{ color: theme.textLight, fontSize: 12.5, marginTop: 3 }}>
               {user.city ? `${user.city}, ` : ''}{user.area || authUser?.email}
