@@ -1063,6 +1063,29 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       return;
     }
 
+    const mp = matchPlayers[matchId] || [];
+    const isCreator = String(match.creator_id) === String(user.id);
+    const soonNotice = (() => {
+      if (!match.date || !match.time) return '';
+      try {
+        const dt = new Date(`${match.date}T${match.time}`);
+        const hoursLeft = (dt - Date.now()) / 3_600_000;
+        if (hoursLeft > 0 && hoursLeft < 24) return ' Kampen er om under 24 timer.';
+      } catch { /* ignore */ }
+      return '';
+    })();
+
+    const ok = await ask({
+      title: isCreator ? 'Slet kampen?' : 'Forlad kampen?',
+      description: isCreator
+        ? `Du er opretter — kampen overdrages til den næste spiller, eller slettes hvis du er den eneste.${soonNotice}`
+        : `Din plads bliver ledig igen, og de andre spillere får besked.${soonNotice}`,
+      confirmLabel: isCreator ? 'Slet / forlad' : 'Forlad kampen',
+      cancelLabel: isCreator ? 'Fortryd' : 'Bliv i kampen',
+      danger: true,
+    });
+    if (!ok) return;
+
     setBusyId(matchId);
     try {
       // Notify creator BEFORE delete (while still in match_players so RPC check passes)
@@ -1187,8 +1210,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const label = String(targetName || "spilleren").trim();
     const actor = isAdmin ? "admin" : "kampopretter";
     const ok = await ask({
-      message: `Er du sikker på, at du vil smide ${label} ud af kampen som ${actor}?`,
-      confirmLabel: "Ja, smid ud",
+      title: `Fjern ${label}?`,
+      description: `${label} bliver fjernet fra kampen som ${actor}. De vil modtage en notifikation.`,
+      confirmLabel: "Ja, fjern",
+      cancelLabel: "Fortryd",
       danger: true,
     });
     if (!ok) return;
@@ -1263,15 +1288,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     const mp = matchPlayers[matchId] || [];
     const others = mp.filter(p => p.user_id !== user.id);
-    const msg = isAdmin 
-      ? `Slet denne kamp som admin? Dette kan ikke fortrydes.`
-      : others.length > 0
-      ? `Slet denne kamp? ${others.length} andre spillere bliver også afmeldt.`
-      : "Slet denne kamp?";
 
     const ok = await ask({
-      message: msg,
-      confirmLabel: "Ja, slet",
+      title: isAdmin ? 'Slet kamp (admin)?' : 'Slet kampen?',
+      description: isAdmin
+        ? 'Dette kan ikke fortrydes. Alle spillere fjernes.'
+        : others.length > 0
+        ? `${others.length} ${others.length === 1 ? 'anden spiller' : 'andre spillere'} bliver også afmeldt. Dette kan ikke fortrydes.`
+        : 'Kampen slettes permanent.',
+      confirmLabel: 'Ja, slet',
+      cancelLabel: 'Fortryd',
       danger: true,
     });
     if (!ok) return;
@@ -3841,13 +3867,22 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             )}
 
             {viewTab === "open" && openMatches.length === 0 && (
-              <div className="pm-state-card pm-state-card--empty">
-                <EmptyStateIcon icon={Swords} />
-                <div className="pm-state-title">Ingen åbne kampe</div>
-                <div className="pm-state-copy" style={{ marginBottom: "16px" }}>{KAMPE_CREATE_PLUS_HINT.padel}</div>
-                <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}>
-                  <Plus size={14} /> Opret kamp
-                </button>
+              <div className="pm-state-card pm-state-card--empty" style={{ padding: '40px 24px 32px' }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--pm-accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', color: 'var(--pm-accent)' }}>
+                  <svg style={{ width: 32, height: 32 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a14 14 0 0 0 0 18M3.5 9h17M3.5 15h17"/></svg>
+                </div>
+                <div className="pm-state-title" style={{ fontSize: '16px', marginBottom: '8px' }}>Ingen åbne kampe i dit område</div>
+                <div className="pm-state-copy" style={{ marginBottom: '20px', maxWidth: 280, margin: '0 auto 20px' }}>
+                  Der er ikke oprettet nogen kampe, der matcher dine filtre lige nu. Opret den første – eller udvid din søgning.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 8px' }}>
+                  <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), justifyContent: 'center', fontSize: '14px', padding: '12px' }}>
+                    Opret den første kamp
+                  </button>
+                  <button type="button" onClick={() => setFilterSheetOpen(true)} style={{ ...btn(false), justifyContent: 'center', fontSize: '14px', padding: '12px', color: 'var(--pm-accent)', borderColor: 'var(--pm-border)' }}>
+                    Justér filtre
+                  </button>
+                </div>
               </div>
             )}
             {viewTab === "active" && activeMatches.length === 0 && (
