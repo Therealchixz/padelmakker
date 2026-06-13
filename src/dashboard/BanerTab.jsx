@@ -488,9 +488,14 @@ export function BanerTab() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                     <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>{v.title}</span>
-                    <span style={v.indoor ? tag(theme.accentBg, theme.accent) : tag(theme.warmBg, theme.warm)}>
-                      {v.indoor ? <><Building2 size={10} /> Indendørs</> : <><Sun size={10} /> Udendørs</>}
-                    </span>
+                    <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexShrink: 0 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: theme.textLight, background: theme.surfaceAlt, border: '1px solid ' + theme.border, borderRadius: 5, padding: '2px 6px', letterSpacing: '0.3px' }}>
+                        {v.kind === 'halbooking' ? 'Halbooking' : v.kind === 'bookli' ? 'Bookli' : v.kind === 'matchi' ? 'MATCHi' : 'Link'}
+                      </span>
+                      <span style={v.indoor ? tag(theme.accentBg, theme.accent) : tag(theme.warmBg, theme.warm)}>
+                        {v.indoor ? <><Building2 size={10} /> Indendørs</> : <><Sun size={10} /> Udendørs</>}
+                      </span>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: theme.textLight, marginTop: 3 }}>
                     <MapPin size={11} />{v.address}
