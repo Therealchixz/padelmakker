@@ -9057,6 +9057,111 @@ button,
   max-height: min(72vh, 640px);
 }
 
+/* Round-by-round list (new schedule view) */
+.pm-liga-v2-round-section {
+  margin-bottom: 18px;
+}
+
+.pm-liga-v2-round-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px 6px;
+}
+
+.pm-liga-v2-round-label-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pm-text);
+}
+
+.pm-liga-v2-round-label-status {
+  font-size: 11px;
+  color: var(--pm-text-light);
+  font-weight: 500;
+}
+
+.pm-liga-v2-round-label-status--done {
+  color: var(--pm-green);
+}
+
+.pm-liga-v2-round-label-status--live {
+  color: var(--pm-accent);
+  font-weight: 600;
+}
+
+.pm-liga-v2-round-future {
+  font-size: 11.5px;
+  color: var(--pm-text-light);
+  padding: 12px 14px;
+  background: var(--pm-surface-alt);
+  border-radius: 10px;
+  border: 1px dashed var(--pm-border);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.pm-liga-v2-match-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: default;
+}
+
+.pm-liga-v2-match-card--mine {
+  border-color: var(--pm-navy);
+  border-width: 1.5px;
+}
+
+.pm-liga-v2-match-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pm-liga-v2-match-teams {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.pm-liga-v2-match-vs {
+  color: var(--pm-text-mid);
+  font-weight: 400;
+  margin: 0 2px;
+}
+
+.pm-liga-v2-match-detail {
+  font-size: 11.5px;
+  color: var(--pm-text-mid);
+  margin-top: 3px;
+}
+
+.pm-liga-v2-match-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pm-liga-v2-schedule-note {
+  font-size: 11.5px;
+  color: var(--pm-text-light);
+  line-height: 1.55;
+  padding: 12px 14px;
+  background: var(--pm-surface-alt);
+  border-radius: 10px;
+  margin-top: 4px;
+}
+
 .pm-liga-v2-team-body {
   display: flex;
   flex-direction: column;

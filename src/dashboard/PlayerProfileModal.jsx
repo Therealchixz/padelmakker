@@ -325,11 +325,11 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         {dataLoading ? (
           <div style={{ textAlign: 'center', padding: '16px', color: theme.textMid, fontSize: '13px', marginBottom: '16px' }}>Indlæser statistik...</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '11px', padding: '0 0 2px', marginBottom: '16px' }}>
             {activeOverviewCards.map((s, i) => (
-              <div key={i} style={{ textAlign: 'center', padding: '10px 4px', background: theme.surfaceAlt, borderRadius: '8px' }}>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: s.color }}>{s.value}</div>
-                <div style={{ fontSize: '9px', fontWeight: 700, color: theme.textLight, marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+              <div key={i} style={{ textAlign: 'center', padding: '13px 15px', background: theme.surfaceAlt, borderRadius: theme.radius, border: '1px solid ' + theme.border }}>
+                <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: theme.textLight }}>{s.label}</div>
+                <div style={{ fontSize: '23px', fontWeight: 700, color: theme.navy, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
               </div>
             ))}
           </div>
