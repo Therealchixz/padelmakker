@@ -17,6 +17,7 @@ import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
 import { isValidProfileRegion } from '../lib/profileUtils';
+import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
@@ -599,6 +600,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               ) : null}
               {user.play_style && <span style={tag(theme.blueBg, theme.blue)}>{user.play_style}</span>}
               {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
+              {isSeekingActiveProfile(user) && <span style={tag(theme.greenBg, theme.green)}>Søger makker</span>}
             </div>
           </div>
 
@@ -753,7 +755,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           )}
         </div>
 
-        {/* Ekstra statistik — kun 2v2 */}
+        {/* Ekstra statistik — kun 2v2: samlet 2×2 gitter */}
         {!statsLoading && is2v2Mode && (() => {
           const { currentStreak, bestStreak } = winStreaksFromEloHistory(eloHistory);
 
@@ -773,56 +775,64 @@ export function ProfilTab({ user, showToast, setTab }) {
           const monthNames = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
           const fmtMonth = (m) => { const [y, mo] = m.split("-"); return monthNames[parseInt(mo, 10) - 1] + " " + y; };
 
+          const statCard = (children) => (
+            <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "14px 16px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+              {children}
+            </div>
+          );
+
           return (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginBottom: "16px" }}>
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+              {statCard(<>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Sejrsstreak</div>
-                <div style={{ fontSize: "28px", fontWeight: 800, color: theme.warm, letterSpacing: "-0.03em" }}>{currentStreak > 0 ? `🔥 ${currentStreak}` : "0"}</div>
+                <div style={{ fontSize: "26px", fontWeight: 800, color: theme.warm, letterSpacing: "-0.03em" }}>{currentStreak > 0 ? `🔥 ${currentStreak}` : "0"}</div>
                 <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste: {bestStreak} i træk</div>
-              </div>
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+              </>)}
+              {statCard(<>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Bedste måned</div>
                 {bestMonth && bestMonth.month ? (
                   <>
-                    <div style={{ fontSize: "16px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.02em", textTransform: "capitalize" }}>{fmtMonth(bestMonth.month)}</div>
+                    <div style={{ fontSize: "15px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.02em", textTransform: "capitalize" }}>{fmtMonth(bestMonth.month)}</div>
                     <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>
                       {bestMonth.wins}/{bestMonth.games} sejre · {bestMonth.change > 0 ? "+" : ""}{bestMonth.change} ELO
                     </div>
                   </>
                 ) : (
-                  <div style={{ fontSize: "14px", color: theme.textMid }}>Ingen data endnu</div>
+                  <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "2px" }}>Ingen data endnu</div>
                 )}
-              </div>
+              </>)}
+              {statCard(<>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
+                {peakElo ? (
+                  <>
+                    <div style={{ fontSize: "22px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.03em" }}>🏆 {peakElo}</div>
+                    <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste nogensinde</div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: "22px", fontWeight: 800, color: theme.textLight }}>—</div>
+                )}
+              </>)}
+              {statCard(<>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>Seneste form</div>
+                {recentForm.length > 0 ? (
+                  <>
+                    <div style={{ display: "flex", gap: "5px", alignItems: "center", marginBottom: "6px" }}>
+                      {recentForm.map((r, i) => (
+                        <div key={i} title={r.result === 'win' ? 'Sejr' : r.result === 'loss' ? 'Nederlag' : 'Uafgjort'} style={{
+                          width: "22px", height: "22px", borderRadius: "50%", flexShrink: 0,
+                          background: r.result === 'win' ? 'var(--pm-form-win)' : r.result === 'loss' ? 'var(--pm-form-loss)' : 'var(--pm-form-draw)',
+                        }} />
+                      ))}
+                    </div>
+                    <div style={{ fontSize: "11px", color: theme.textMid }}>Seneste {recentForm.length} kampe</div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: "13px", color: theme.textMid }}>Ingen kampe endnu</div>
+                )}
+              </>)}
             </div>
           );
         })()}
-
-        {/* Peak ELO + Seneste form — kun 2v2 */}
-        {!statsLoading && is2v2Mode && ratedRows.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginBottom: "10px" }}>
-            {peakElo && (
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
-                <div style={{ fontSize: "24px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.03em" }}>🏆 {peakElo}</div>
-                <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste nogensinde</div>
-              </div>
-            )}
-            {recentForm.length > 0 && (
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>Seneste form</div>
-                <div style={{ display: "flex", gap: "5px", alignItems: "center", marginBottom: "6px" }}>
-                  {recentForm.map((r, i) => (
-                    <div key={i} title={r.result === 'win' ? 'Sejr' : r.result === 'loss' ? 'Nederlag' : 'Uafgjort'} style={{
-                      width: "22px", height: "22px", borderRadius: "50%", flexShrink: 0,
-                      background: r.result === 'win' ? 'var(--pm-form-win)' : r.result === 'loss' ? 'var(--pm-form-loss)' : 'var(--pm-form-draw)',
-                    }} />
-                  ))}
-                </div>
-                <div style={{ fontSize: "11px", color: theme.textMid }}>Seneste {recentForm.length} kampe</div>
-              </div>
-            )}
-          </div>
-        )}
         </>
         ) : null}
 
