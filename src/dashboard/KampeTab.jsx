@@ -3391,7 +3391,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   const renderPadelListItem = useCallback((m) => {
     const bundle = getMatchCardBundle(m);
-    const { cardState, matchPrefs, status, mr } = bundle;
+    const { cardState, matchPrefs, status, mr, winnerTeam } = bundle;
     const myEloChange =
       status === 'completed' && mr?.confirmed && cardState.joined
         ? eloChangesByMatchId[String(m.id)]?.[myUidStr] ?? null
@@ -3416,6 +3416,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           joined={cardState.joined}
           myEloChange={myEloChange}
           unreadCount={cardState.attentionCount}
+          matchResult={mr}
+          winnerTeam={winnerTeam}
+          myTeam={cardState.myTeam}
           onClick={() => {
             if (matchUnreadByIdRef.current[matchKey]) {
               void markMatchNotifsRead(m.id);

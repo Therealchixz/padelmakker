@@ -15,6 +15,20 @@ function badgeToneClass(tone) {
   return 'pm-kampe-v2-badge--neutral';
 }
 
+function computeSetScoreStr(mr) {
+  if (!mr) return null;
+  const parts = [];
+  for (let i = 1; i <= 3; i++) {
+    const g1 = mr[`set${i}_team1`];
+    const g2 = mr[`set${i}_team2`];
+    if (g1 == null || g2 == null) break;
+    const n1 = Number(g1), n2 = Number(g2);
+    if (n1 + n2 === 0) break;
+    parts.push(`${n1}-${n2}`);
+  }
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
 const SLOTS_PER_TEAM = 2;
 
 /** Always two slots per hold so listen visuelt 2 vs 2, ikke én lang række. */
@@ -47,6 +61,9 @@ export function KampeMatchListCard({
   joined,
   myEloChange = null,
   unreadCount = 0,
+  matchResult = null,
+  winnerTeam = null,
+  myTeam = null,
   onClick,
 }) {
   const venue =
@@ -70,6 +87,16 @@ export function KampeMatchListCard({
   const eloDelta = showMyEloDelta ? Number(myEloChange) : null;
   const showEloRange =
     !isCompleted && matchPrefs?.min != null && matchPrefs?.max != null;
+  const hasConfirmedResult = isCompleted && matchResult?.confirmed && winnerTeam != null;
+  const setScoreStr = hasConfirmedResult ? computeSetScoreStr(matchResult) : null;
+  const didWin = hasConfirmedResult && myTeam != null && myTeam === winnerTeam;
+  const didLose = hasConfirmedResult && myTeam != null && myTeam !== winnerTeam;
+  const completedBadge =
+    hasConfirmedResult && (didWin || didLose)
+      ? didWin
+        ? { label: 'Vundet', tone: 'green' }
+        : { label: 'Tabt', tone: 'danger' }
+      : null;
   const t1Slots = teamDisplaySlots(t1);
   const t2Slots = teamDisplaySlots(t2);
   const renderTeamSlot = (player, teamNum, slotIndex) => {
@@ -117,41 +144,88 @@ export function KampeMatchListCard({
           </div>
         </div>
         <div className="pm-kampe-v2-list-badges">
-          <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
-            {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
-            {statusBadge.label}
-          </span>
+          {completedBadge ? (
+            <span className={`pm-kampe-v2-badge ${badgeToneClass(completedBadge.tone)}`}>
+              {completedBadge.label}
+            </span>
+          ) : (
+            <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
+              {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
+              {statusBadge.label}
+            </span>
+          )}
           {unreadCount > 0 ? (
             <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
           ) : null}
         </div>
       </div>
 
-      <div className={`pm-kampe-v2-list-card-bottom${isCompleted ? ' pm-kampe-v2-list-card-bottom--completed' : ''}`}>
-        <div className="pm-kampe-v2-list-participants">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} aria-label={`${filledCount} af ${maxPlayers} spillere`}>
-            <div style={{ display: 'flex' }}>
-              {[...t1Slots, ...t2Slots].map((p, i) => p ? (
-                <AvatarCircle
-                  key={p.user_id || `slot-${i}`}
-                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
-                  size={27}
-                  emojiSize="10px"
-                  style={{ marginLeft: i > 0 ? -9 : 0, border: '2px solid white', zIndex: i + 1 }}
-                />
-              ) : (
-                <span
-                  key={`empty-${i}`}
-                  style={{ width: 27, height: 27, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -9 : 0, zIndex: i + 1, display: 'inline-block', flexShrink: 0 }}
-                  aria-hidden
-                />
-              ))}
-            </div>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-text-light, #8898AA)' }}>
-              {filledCount}/{maxPlayers} spillere
-            </span>
+      {setScoreStr ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 10, padding: '8px 14px 2px', borderTop: '1px solid var(--pm-border)',
+          marginTop: 4,
+        }}>
+          <div style={{ display: 'flex', flexShrink: 0 }}>
+            {t1Slots.map((p, i) => p ? (
+              <AvatarCircle
+                key={p.user_id || `vs-t1-${i}`}
+                avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
+                size={24}
+                emojiSize="10px"
+                style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid white', zIndex: i + 1 }}
+              />
+            ) : (
+              <span key={`vs-t1-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
+            ))}
+          </div>
+          <span style={{
+            flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 700,
+            color: 'var(--pm-navy)', letterSpacing: '0.5px',
+          }}>{setScoreStr}</span>
+          <div style={{ display: 'flex', flexShrink: 0, direction: 'rtl' }}>
+            {t2Slots.map((p, i) => p ? (
+              <AvatarCircle
+                key={p.user_id || `vs-t2-${i}`}
+                avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
+                size={24}
+                emojiSize="10px"
+                style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid white', zIndex: i + 1 }}
+              />
+            ) : (
+              <span key={`vs-t2-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
+            ))}
           </div>
         </div>
+      ) : null}
+
+      <div className={`pm-kampe-v2-list-card-bottom${isCompleted ? ' pm-kampe-v2-list-card-bottom--completed' : ''}`}>
+        {!setScoreStr ? (
+          <div className="pm-kampe-v2-list-participants">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} aria-label={`${filledCount} af ${maxPlayers} spillere`}>
+              <div style={{ display: 'flex' }}>
+                {[...t1Slots, ...t2Slots].map((p, i) => p ? (
+                  <AvatarCircle
+                    key={p.user_id || `slot-${i}`}
+                    avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
+                    size={27}
+                    emojiSize="10px"
+                    style={{ marginLeft: i > 0 ? -9 : 0, border: '2px solid white', zIndex: i + 1 }}
+                  />
+                ) : (
+                  <span
+                    key={`empty-${i}`}
+                    style={{ width: 27, height: 27, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -9 : 0, zIndex: i + 1, display: 'inline-block', flexShrink: 0 }}
+                    aria-hidden
+                  />
+                ))}
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-text-light, #8898AA)' }}>
+                {filledCount}/{maxPlayers} spillere
+              </span>
+            </div>
+          </div>
+        ) : null}
         {!isCompleted ? (
           <span
             className="pm-kampe-v2-list-cta"
@@ -176,6 +250,11 @@ export function KampeMatchListCard({
           >
             {eloDelta >= 0 ? '+' : ''}
             {eloDelta} ELO
+          </span>
+        ) : null}
+        {setScoreStr ? (
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--pm-navy)', marginLeft: 'auto' }}>
+            Se detaljer →
           </span>
         ) : null}
       </div>
