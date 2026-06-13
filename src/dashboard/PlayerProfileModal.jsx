@@ -294,8 +294,10 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             <AvatarCircle avatar={pRef.avatar} size={72} emojiSize="36px" style={{ background: theme.accentBg, border: '2px solid ' + theme.accent + '40' }} />
           </div>
           <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', wordBreak: 'break-word' }}>{pRef.full_name || pRef.name || 'Spiller'}</div>
-          {locationDisplay && (
-            <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '3px' }}>{locationDisplay}</div>
+          {(locationDisplay || pRef.created_at) && (
+            <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '3px' }}>
+              {[locationDisplay, pRef.created_at ? `Medlem siden ${new Date(pRef.created_at).getFullYear()}` : null].filter(Boolean).join(' · ')}
+            </div>
           )}
           <div style={{ display: 'flex', gap: '6px', marginTop: '9px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {levelDisplay ? (
