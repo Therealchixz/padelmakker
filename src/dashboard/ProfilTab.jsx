@@ -445,7 +445,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     { label: "ELO", value: elo, color: theme.accent },
     { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
     { label: "Kampe", value: games, color: theme.blue },
-    { label: "Sejre", value: wins, color: theme.warm },
+    { label: "Seneste form", value: null, form: recentForm.slice(0, 4) },
   ];
   const americanoOverviewCards = [
     { label: "ELO", value: americanoElo, color: theme.accent },
@@ -675,7 +675,17 @@ export function ProfilTab({ user, showToast, setTab }) {
             {activeOverviewCards.map((s, i) => (
               <div key={i} style={{ textAlign: "center", padding: "14px 6px 12px", background: theme.surfaceAlt, borderRadius: "12px", border: "1px solid " + theme.border }}>
                 <div style={{ fontSize: "9.5px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
-                <div style={{ fontSize: "22px", fontWeight: 700, color: theme.navy, marginTop: "4px", letterSpacing: "-0.3px" }}>{s.value}</div>
+                {s.form ? (
+                  <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 9 }}>
+                    {s.form.length > 0 ? s.form.map((r, j) => (
+                      <div key={j} style={{ width: 21, height: 21, borderRadius: "50%", background: r.result === "win" ? "var(--pm-green)" : r.result === "loss" ? "var(--pm-red)" : "var(--pm-border)", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {r.result === "win" ? "V" : r.result === "loss" ? "T" : "U"}
+                      </div>
+                    )) : <div style={{ fontSize: "13px", color: theme.textLight, marginTop: 4 }}>—</div>}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: "22px", fontWeight: 700, color: theme.navy, marginTop: "4px", letterSpacing: "-0.3px" }}>{s.value}</div>
+                )}
               </div>
             ))}
           </div>

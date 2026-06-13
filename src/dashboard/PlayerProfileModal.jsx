@@ -15,9 +15,11 @@ import { AvatarCircle } from '../components/AvatarCircle';
 import { SeekingCallout, SeekingCalloutDetail } from '../components/SeekingCallout';
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { resolveAmericanoEloDisplay } from '../features/americano/americanoDisplayUtils';
+import { useAuth } from '../lib/AuthContext';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined, onInviteMatch = undefined }) {
   const open = !!player;
+  const { profile: currentProfile } = useAuth();
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
     enabled: open,
@@ -32,6 +34,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
   const [americanoHistoryRows, setAmericanoHistoryRows] = useState([]);
   const [profileRow, setProfileRow] = useState(null);
   const [ligaStats, setLigaStats] = useState(null);
+  const [sharedHistory, setSharedHistory] = useState(null);
 
   const loadProfileData = useCallback(async () => {
     if (!player?.id) {
@@ -55,6 +58,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
     setAmericanoHistoryRows([]);
     setProfileRow(null);
     setLigaStats(null);
+    setSharedHistory(null);
 
     try {
       const [pr, hist, amHist, teamsRes] = await Promise.all([
@@ -93,6 +97,24 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             result: Number(row.change) > 0 ? 'win' : Number(row.change) < 0 ? 'loss' : 'draw',
           }))
         );
+      }
+
+      if (currentProfile?.id && String(currentProfile.id) !== String(player.id) && !hist.error) {
+        const { data: myMatchIds } = await supabase
+          .from('elo_history')
+          .select('match_id, result')
+          .eq('user_id', currentProfile.id)
+          .not('match_id', 'is', null);
+        const viewedMatchIds = new Set(
+          (hist.data || []).map((r) => r.match_id).filter(Boolean)
+        );
+        const shared = (myMatchIds || []).filter((r) => r.match_id && viewedMatchIds.has(r.match_id));
+        if (shared.length > 0) {
+          setSharedHistory({
+            count: shared.length,
+            wins: shared.filter((r) => r.result === 'win').length,
+          });
+        }
       }
 
       const teams = teamsRes.data || [];
@@ -476,6 +498,20 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '16px', padding: '12px', background: theme.surfaceAlt, borderRadius: '8px', fontStyle: 'italic' }}>
             &ldquo;{pRef.bio}&rdquo;
           </p>
+        )}
+
+        {sharedHistory && sharedHistory.count > 0 && (
+          <div style={{ marginBottom: 16, padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 10, border: '1px solid ' + theme.border }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Fælles historik</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 600, color: theme.text }}>
+                I har spillet {sharedHistory.count} kamp{sharedHistory.count !== 1 ? 'e' : ''} sammen
+              </div>
+              {sharedHistory.wins > 0 && (
+                <span style={tag(theme.greenBg, theme.green)}>{sharedHistory.wins} sejr{sharedHistory.wins !== 1 ? 'e' : ''}</span>
+              )}
+            </div>
+          </div>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
