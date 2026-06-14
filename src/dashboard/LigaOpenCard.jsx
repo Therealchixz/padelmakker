@@ -1,11 +1,8 @@
-import { CalendarDays } from 'lucide-react';
 import { isAvatarUrl } from '../lib/avatarUpload';
 import { theme } from '../lib/platformTheme';
 
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
-
-/** Blå gradient header — samme stil på tværs af 2v2 / Americano / Liga */
-const HEADER_GRADIENT = 'var(--pm-cta-gradient)';
+const DA_MON = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 
 /** Subtile farver til hold-initial bokse — vælges deterministisk fra hold-id */
 const TEAM_PALETTE = [
@@ -270,63 +267,41 @@ export function LigaOpenCard({
         overflow: 'hidden',
       }}
     >
-      {/* Purple header band — Liga's visuelle signatur */}
-      <div
-        style={{
-          background: HEADER_GRADIENT,
-          color: theme.onAccent,
-          padding: '16px 18px',
-          position: 'relative',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                opacity: 0.85,
-                marginBottom: 2,
-              }}
-            >
-              {seasonLabel ? `${seasonLabel} Liga` : 'Liga'}
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-              {league.name}
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                opacity: 0.9,
-                marginTop: 4,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-              }}
-            >
-              <CalendarDays size={13} strokeWidth={2} aria-hidden />
-              {formatDateRange(league.start_date, league.end_date)}
+      {/* Card header — date badge */}
+      {(() => {
+        let dateBadgeDay = '–', dateBadgeMon = '';
+        const startIso = String(league.start_date || '');
+        const ymMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(startIso);
+        if (ymMatch) {
+          dateBadgeDay = parseInt(ymMatch[3], 10);
+          dateBadgeMon = DA_MON[parseInt(ymMatch[2], 10) - 1] || '';
+        }
+        const dateRangeStr = formatDateRange(league.start_date, league.end_date);
+        const ligaLabel = seasonLabel ? `${seasonLabel} Liga` : 'Liga';
+        const metaParts = [dateRangeStr, `${filled}/${maxTeams} hold`].filter(Boolean);
+        let statusBg = theme.greenBg, statusColor = theme.green, statusBorder = undefined, statusText = 'Åben';
+        if (isFull) { statusBg = theme.redBg; statusColor = theme.red; statusText = 'Fuld'; }
+        else if (isAlmostFull) { statusBg = theme.amberBg; statusColor = theme.amberText; statusBorder = `1px solid ${theme.amberBorder}`; statusText = '1 plads'; }
+        return (
+          <div style={{ padding: '14px 16px', borderBottom: `1px solid var(--pm-americano-tie-border)` }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
+                <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
+                <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textLight, letterSpacing: '0.5px' }}>{dateBadgeMon}</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {ligaLabel} · {league.name}
+                </div>
+                <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2 }}>{metaParts.join(' · ')}</div>
+              </div>
+              <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: statusBg, color: statusColor, border: statusBorder, whiteSpace: 'nowrap' }}>
+                {statusText}
+              </span>
             </div>
           </div>
-          <span
-            style={{
-              flexShrink: 0,
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '4px 10px',
-              borderRadius: 999,
-              background: 'rgba(255,255,255,0.18)',
-              color: theme.onAccent,
-              backdropFilter: 'blur(4px)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {filled}/{maxTeams} hold
-          </span>
-        </div>
-      </div>
+        );
+      })()}
 
       <div style={{ padding: '14px 16px' }}>
         {/* Progress */}

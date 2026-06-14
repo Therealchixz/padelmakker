@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { CalendarDays, ChevronDown, Trophy } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { theme } from '../../lib/platformTheme'
@@ -687,147 +687,49 @@ export function AmericanoCompletedCard({
     >
       {showCompactSections ? (
       <>
-      {/* 1. Header — fælles blå gradient med 2v2 / Liga / Americano open */}
-      {!embedInSheet ? (
-      <div
-        style={{
-          background: 'var(--pm-cta-gradient)',
-          color: theme.onAccent,
-          padding: '16px 18px',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: 8,
-          }}
-        >
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                opacity: 0.85,
-                marginBottom: 2,
-              }}
-            >
-              Americano · Afsluttet
-            </div>
-            <div
-              style={{
-                fontSize: 18,
-                fontWeight: 800,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.2,
-              }}
-            >
-              {tournament.name}
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                opacity: 0.9,
-                marginTop: 4,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-              }}
-            >
-              <CalendarDays size={13} strokeWidth={2} aria-hidden />
-              {dateLabel}
-            </div>
-          </div>
-          <span
-            style={{
-              flexShrink: 0,
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '4px 10px',
-              borderRadius: 999,
-              background: 'rgba(255,255,255,0.22)',
-              color: theme.onAccent,
-              whiteSpace: 'nowrap',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Trophy size={12} strokeWidth={2.4} aria-hidden />
-            Slutspil
-          </span>
-        </div>
-
-        {/* Vinder-banner */}
-        {summaryReady && winner ? (
-          <div
-            style={{
-              marginTop: 14,
-              background: 'rgba(255,255,255,0.18)',
-              borderRadius: 12,
-              padding: '10px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-            }}
-          >
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.95)',
-                color: PODIUM.gold,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                fontSize: 20,
-              }}
-              aria-hidden
-            >
-              🏆
-            </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 800,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  opacity: 0.9,
-                }}
-              >
-                Vinder
+      {/* 1. Header — date badge */}
+      {!embedInSheet ? (() => {
+        const DA_MON = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+        let dateBadgeDay: string | number = '–', dateBadgeMon = '';
+        const dmParts = /^(\d{1,2})\.(\d{1,2})\./.exec(dateLabel);
+        if (dmParts) {
+          dateBadgeDay = parseInt(dmParts[1], 10);
+          dateBadgeMon = DA_MON[parseInt(dmParts[2], 10) - 1] || '';
+        }
+        const klPart = dateLabel.replace(/^\d{2}\.\d{2}\.\d{4}\s*/, '');
+        const formatLabel = tournament.format === 'mexicano' ? 'Mexicano' : 'Americano';
+        const metaParts = [klPart, `${participants.length} spillere`].filter(Boolean);
+        return (
+          <div style={{ padding: '14px 16px', borderBottom: `1px solid var(--pm-americano-tie-border)` }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
+                <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
+                <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase' as const, color: theme.textLight, letterSpacing: '0.5px' }}>{dateBadgeMon}</span>
               </div>
-              <div
-                style={{
-                  fontSize: 16,
-                  fontWeight: 800,
-                  lineHeight: 1.2,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {winner.name}
-                {winnerParticipant &&
-                String(winnerParticipant.user_id) === String(currentUserId) ? (
-                  <span style={{ fontWeight: 700, opacity: 0.85 }}> · dig</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {formatLabel} · {tournament.name}
+                </div>
+                <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2 }}>{metaParts.join(' · ')}</div>
+              </div>
+              <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: theme.border, color: theme.textLight, whiteSpace: 'nowrap' }}>
+                Afsluttet
+              </span>
+            </div>
+            {summaryReady && winner ? (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid var(--pm-americano-tie-border)`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: theme.warm }}>🏆 {winner.name}{winnerParticipant && String(winnerParticipant.user_id) === String(currentUserId) ? ' (dig)' : ''}</span>
+                <span style={{ fontSize: 11.5, color: theme.textLight }}>{winner.points} point · {reportedMatches} {reportedMatches === 1 ? 'kamp' : 'kampe'}</span>
+                {myPlacement ? (
+                  <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: theme.amberBg, color: theme.amberText }}>
+                    #{myPlacement}
+                  </span>
                 ) : null}
               </div>
-              <div style={{ fontSize: 12, opacity: 0.9, marginTop: 2 }}>
-                {winner.points} point · {reportedMatches} kamp
-                {reportedMatches === 1 ? '' : 'e'} spillet
-              </div>
-            </div>
+            ) : null}
           </div>
-        ) : null}
-      </div>
-      ) : null}
+        );
+      })() : null}
 
       {isCreator ? (
         <div style={{ padding: '0 16px' }}>
