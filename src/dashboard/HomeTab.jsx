@@ -805,10 +805,9 @@ export function HomeTab({ user, setTab, showToast }) {
   const activityRowBaseStyle = {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    borderRadius: "12px",
-    minHeight: "74px",
-    padding: "10px 12px",
+    gap: "11px",
+    borderRadius: "14px",
+    padding: "12px 14px",
     border: "1px solid " + theme.border,
     boxShadow: theme.shadowSoft,
     background: theme.surface,
@@ -1358,7 +1357,7 @@ export function HomeTab({ user, setTab, showToast }) {
             </div>
           ) : null}
           <div className="pm-feed-filters-header">
-            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '18px 0 0' }}>Aktivitet</h3>
+            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '18px 18px 0' }}>Aktivitet</h3>
             <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
               <div className="pm-feed-filters-row">
                 <button
@@ -1666,10 +1665,8 @@ export function HomeTab({ user, setTab, showToast }) {
                       <Swords size={16} />
                     </div>
                   ),
-                  tag: "Kamp",
-                  meta: formatTimeAgo(row.created_at),
                   title: <><strong>{winnerNames}</strong> slog <strong>{loserNames}</strong></>,
-                  subtitle: `${row.court} · ${row.score}`,
+                  subtitle: [row.score, row.court, formatTimeAgo(row.created_at)].filter(Boolean).join(' · '),
                   action: (
                     <button
                       onClick={() =>
@@ -1704,9 +1701,8 @@ export function HomeTab({ user, setTab, showToast }) {
                     {won ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                 ),
-                tag: "Kamp",
-                meta: formatTimeAgo(row.created_at),
                 title: <><strong>{name}</strong> {won ? "vandt" : "tabte"}</>,
+                subtitle: formatTimeAgo(row.created_at),
                 stat: <span style={activityStatPillStyle(tone)}>{change >= 0 ? "+" : ""}{change} ELO</span>,
               });
             })}

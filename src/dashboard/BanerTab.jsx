@@ -16,7 +16,7 @@ import {
 } from '../lib/banerVenues';
 import { filterPastSlotsIfToday } from '../lib/banerPastSlots';
 import { BanerVenueLocation } from '../components/BanerVenueLocation';
-import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown, Search, X } from 'lucide-react';
+import { MapPin, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown, Search, X } from 'lucide-react';
 
 /**
  * @typedef {{ time: string, status: string, ruleHint?: string }} SlotRow
@@ -474,11 +474,8 @@ export function BanerTab() {
                   <MapPin size={11} />{v.address}
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                  <span style={v.indoor ? tag(theme.accentBg, theme.accent) : tag(theme.warmBg, theme.warm)}>
-                    {v.indoor ? <><Building2 size={10} /> Indendørs</> : <><Sun size={10} /> Udendørs</>}
-                  </span>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: theme.textLight, background: theme.surfaceAlt, border: '1px solid ' + theme.border, borderRadius: 5, padding: '2px 6px', letterSpacing: '0.3px' }}>
-                    {v.kind === 'halbooking' ? 'Halbooking' : v.kind === 'bookli' ? 'Bookli' : v.kind === 'matchi' ? 'MATCHi' : 'Link'}
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: 'var(--pm-navy)', border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>
+                    {v.indoor ? 'Indendørs' : 'Udendørs'}
                   </span>
                 </div>
               </div>
