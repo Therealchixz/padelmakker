@@ -38,7 +38,7 @@ const PLAYER_OPTIONS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
 const RANGE_MIN = 1.0
 const RANGE_MAX = 5.0
-const RANGE_STEP = 0.5
+const RANGE_STEP = 0.1
 
 import { supabase } from '../../lib/supabase'
 import { theme, btn } from '../../lib/platformTheme'
@@ -139,9 +139,9 @@ function LevelRangeSlider({
         />
       </div>
       {/* Labels */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
-        {['1.0', '2.0', '3.0', '4.0', '5.0+'].map(l => (
-          <span key={l} style={{ fontSize: 10, color: 'var(--pm-text-light)' }}>{l}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, padding: '0 2px' }}>
+        {[1, 2, 3, 4, 5].map(l => (
+          <span key={l} style={{ fontSize: 10, color: 'var(--pm-text-light)' }}>{l === 5 ? '5.0+' : `${l}.0`}</span>
         ))}
       </div>
     </div>
@@ -237,10 +237,12 @@ export function CreateAmericanoTournamentForm({
 
   const syncPrice = (raw: string) => {
     setPriceInput(raw)
-    const n = parseInt(raw.replace(/\D/g, ''), 10)
-    if (!isNaN(n)) {
-      setPricePerPerson(Math.max(0, Math.min(500, n)))
-      if (n > 0 && paymentMethod === 'free') setPaymentMethod('mobilepay')
+    const normalized = raw.replace(',', '.')
+    const n = parseFloat(normalized)
+    if (!isNaN(n) && n >= 0) {
+      const clamped = Math.min(5000, Math.round(n * 100) / 100)
+      setPricePerPerson(clamped)
+      if (clamped > 0 && paymentMethod === 'free') setPaymentMethod('mobilepay')
     }
   }
 
@@ -310,6 +312,16 @@ export function CreateAmericanoTournamentForm({
       setSubmitting(false)
     }
   }
+
+  const formatDanishDate = (d: string) => {
+    const dt = new Date(d + 'T12:00:00')
+    const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
+    const months = ['januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december']
+    return `${days[dt.getDay()]} d. ${dt.getDate()}. ${months[dt.getMonth()]}`
+  }
+
+  const formatPrice = (p: number) =>
+    p === 0 ? 'Gratis' : (p % 1 === 0 ? `${p} kr.` : `${p.toFixed(2).replace('.', ',')} kr.`)
 
   const formatLabel = tournamentFormat === 'mexicano' ? 'Mexicano' : 'Americano'
   const courtLabel = courtNameFromVenueSelection(courtId, selectOptions)
@@ -387,7 +399,7 @@ export function CreateAmericanoTournamentForm({
           <div className="pm-field">
             <label>Baner booket</label>
             <div className="pm-stepper">
-              <button type="button" className="pm-stepper-btn" onClick={() => setCourtsPerRound(c => Math.max(minCourts, c - 1))}>−</button>
+              <button type="button" className="pm-stepper-btn" onClick={() => setCourtsPerRound(c => Math.max(1, c - 1))}>−</button>
               <span className="pm-stepper-val">{courtsPerRound}</span>
               <button type="button" className="pm-stepper-btn" onClick={() => setCourtsPerRound(c => Math.min(maxCourts, c + 1))}>+</button>
             </div>
@@ -475,22 +487,24 @@ export function CreateAmericanoTournamentForm({
             <label>Pris pr. person</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 18px' }}>
               <button type="button" className="pm-stepper-btn" style={{ width: 42, height: 42, flexShrink: 0 }}
-                onClick={() => { const n = Math.max(0, pricePerPerson - 10); setPricePerPerson(n); setPriceInput(String(n)) }}>−</button>
+                onClick={() => { const n = Math.max(0, Math.round((pricePerPerson - 10) * 100) / 100); setPricePerPerson(n); setPriceInput(String(n)) }}>−</button>
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
-                  type="number"
-                  min={0}
-                  max={500}
+                  type="text"
+                  inputMode="decimal"
                   value={priceInput}
                   onChange={e => syncPrice(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && e.preventDefault()}
-                  onBlur={() => setPriceInput(String(pricePerPerson))}
+                  onBlur={() => {
+                    const display = pricePerPerson === 0 ? '0' : pricePerPerson % 1 === 0 ? String(pricePerPerson) : pricePerPerson.toFixed(2).replace('.', ',')
+                    setPriceInput(display)
+                  }}
                   style={{ ...inputStyle, margin: 0, textAlign: 'center', fontWeight: 700, fontSize: 18, paddingRight: 30 }}
                 />
                 <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: theme.textLight, pointerEvents: 'none' }}>kr.</span>
               </div>
               <button type="button" className="pm-stepper-btn" style={{ width: 42, height: 42, flexShrink: 0 }}
-                onClick={() => { const n = Math.min(500, pricePerPerson + 10); setPricePerPerson(n); setPriceInput(String(n)); if (paymentMethod === 'free') setPaymentMethod('mobilepay') }}>+</button>
+                onClick={() => { const n = Math.min(5000, Math.round((pricePerPerson + 10) * 100) / 100); setPricePerPerson(n); setPriceInput(String(n)); if (paymentMethod === 'free') setPaymentMethod('mobilepay') }}>+</button>
             </div>
             <div className="pm-field-hint">Sæt til 0 kr., hvis turneringen er gratis.</div>
           </div>
@@ -545,8 +559,8 @@ export function CreateAmericanoTournamentForm({
 
           {/* Preview card */}
           <div style={{ margin: '0 18px 16px', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--pm-border)', boxShadow: 'var(--pm-shadow)' }}>
-            <div style={{ background: 'linear-gradient(135deg, #0D2752 0%, #16377E 100%)', padding: '14px 14px 18px', minHeight: 100 }}>
-              <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+            <div style={{ background: 'linear-gradient(135deg, #0D2752 0%, #16377E 100%)', padding: '14px 14px 20px' }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
                 <span style={{ background: tournamentFormat === 'mexicano' ? '#F59E0B' : '#22C55E', color: '#fff', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
                   {formatLabel}
                 </span>
@@ -554,15 +568,19 @@ export function CreateAmericanoTournamentForm({
                   Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)}
                 </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <div style={{ width: 120, height: 52, background: 'rgba(255,255,255,0.12)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)' }} />
+              {/* Padel court illustration */}
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 20px' }}>
+                <div style={{ width: '100%', maxWidth: 220, height: 70, background: 'rgba(255,255,255,0.13)', borderRadius: 8, border: '2px solid rgba(255,255,255,0.22)', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1.5, background: 'rgba(255,255,255,0.35)', transform: 'translateX(-50%)' }} />
+                  <div style={{ position: 'absolute', left: '50%', top: '25%', bottom: '25%', width: 1.5, background: 'rgba(255,255,255,0.22)', transform: 'translateX(-50%)' }} />
+                </div>
               </div>
             </div>
             <div style={{ padding: '12px 14px' }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: theme.text, marginBottom: 6 }}>{name || `Fredags ${formatLabel}`}</div>
               <div style={{ fontSize: 12, color: theme.textLight, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
                 <svg style={{ width: 12, height: 12, flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                {date} · {timeSlot}–{endTime}
+                {formatDanishDate(date)} · {timeSlot}–{endTime}
               </div>
               {courtLabel && (
                 <div style={{ fontSize: 12, color: theme.textLight, display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -573,7 +591,7 @@ export function CreateAmericanoTournamentForm({
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--pm-border)' }}>
                 <div>
                   <div style={{ fontSize: 9, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 1 }}>Pris</div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{pricePerPerson === 0 ? 'Gratis' : `${pricePerPerson} kr.`}</div>
+                  <div style={{ fontWeight: 700, fontSize: 15 }}>{formatPrice(pricePerPerson)}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 9, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 1 }}>Pladser</div>
@@ -590,7 +608,7 @@ export function CreateAmericanoTournamentForm({
               { label: 'Format', value: `${formatLabel} · ${pointsPerMatch} point pr. kamp` },
               { label: 'Spillere & baner', value: `${playerSlots} spillere · ${courtsPerRound} ${courtsPerRound === 1 ? 'bane' : 'baner'}` },
               { label: 'Tilmeldingsfrist', value: deadlineLabel },
-              { label: 'Betaling', value: pricePerPerson === 0 ? 'Gratis' : `${pricePerPerson} kr. · ${paymentLabel}` },
+              { label: 'Betaling', value: pricePerPerson === 0 ? 'Gratis' : `${formatPrice(pricePerPerson)} · ${paymentLabel}` },
             ].map((row, i, arr) => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, padding: '9px 14px', borderBottom: i < arr.length - 1 ? '1px solid var(--pm-border)' : 'none' }}>
                 <span style={{ fontSize: 12.5, color: theme.textLight, flexShrink: 0 }}>{row.label}</span>
