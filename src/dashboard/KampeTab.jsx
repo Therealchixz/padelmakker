@@ -67,6 +67,7 @@ import { PillTabs } from '../components/PillTabs';
 import {
   KampeRedesignToolbar,
   KampeActiveFilterChips,
+  KampeCreateHeader,
 } from '../components/kampe/KampeRedesignToolbar';
 import { KampeFilterSheet } from '../components/kampe/KampeFilterSheet';
 import { VenueRegionPicker } from '../components/VenueRegionPicker';
@@ -3417,6 +3418,23 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       : kampeFormat === "americano"
         ? "Opret Americano/Mexicano"
         : "Opret liga";
+  const createHeaderTitle =
+    kampeFormat === "padel"
+      ? "Opret kamp"
+      : kampeFormat === "americano"
+        ? "Opret turnering"
+        : "Opret liga";
+  const handleCreateBack = () => {
+    if (kampeFormat === "padel") setShowCreate(false);
+    else if (kampeFormat === "americano") setShowAmericanoCreate(false);
+    else if (kampeFormat === "liga") setShowLigaCreate(false);
+  };
+  const createHeaderInfo =
+    kampeFormat === "padel"
+      ? () => showToast("Opret en 2v2-kamp: vælg bane, tid og inviter spillere.")
+      : kampeFormat === "americano"
+        ? () => showToast("Americano/Mexicano: alle spiller med skiftende makkere. Vælg format, antal spillere og baner.")
+        : () => showToast("Opret en liga med divisioner, kampsystem og point. Hold kan tilmelde sig efter oprettelse.");
   const detailMatch = detailMatchId
     ? ([...openMatches, ...activeMatches, ...completedMatches].find((m) => String(m.id) === String(detailMatchId))
         // Fald tilbage til matches-listen for deeplink (?focus=), men aldrig aflyste kampe.
@@ -3429,37 +3447,47 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   return (
     <div>
-      <KampeRedesignToolbar
-        formatTabs={toolbarFormatTabs}
-        format={kampeFormat}
-        onFormatChange={(nextFormat) => {
-          setKampeFormat(nextFormat);
-          setPadelHelpOpen(false);
-          setShowCreate(false);
-          setShowAmericanoCreate(false);
-          setShowLigaCreate(false);
-          setFilterSheetOpen(false);
-          setDetailMatchId(null);
-        }}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder={searchPlaceholder}
-        onFilterOpen={() => setFilterSheetOpen(true)}
-        filterActive={filterActive}
-        onCreate={handleToolbarCreate}
-        createLabel={toolbarCreateLabel}
-      />
-
-      <KampeActiveFilterChips chips={activeFilterChips} />
-
-      {kampeFormat === 'padel' && (
-        <ActiveSeekingPanel
-          variant="compact"
-          channel="kamp"
-          user={user}
-          showToast={showToast}
-          filterReturnTo={FILTER_RETURN_KAMPE}
+      {showCreatePanel ? (
+        <KampeCreateHeader
+          title={createHeaderTitle}
+          onBack={handleCreateBack}
+          onInfo={createHeaderInfo}
         />
+      ) : (
+        <>
+          <KampeRedesignToolbar
+            formatTabs={toolbarFormatTabs}
+            format={kampeFormat}
+            onFormatChange={(nextFormat) => {
+              setKampeFormat(nextFormat);
+              setPadelHelpOpen(false);
+              setShowCreate(false);
+              setShowAmericanoCreate(false);
+              setShowLigaCreate(false);
+              setFilterSheetOpen(false);
+              setDetailMatchId(null);
+            }}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder={searchPlaceholder}
+            onFilterOpen={() => setFilterSheetOpen(true)}
+            filterActive={filterActive}
+            onCreate={handleToolbarCreate}
+            createLabel={toolbarCreateLabel}
+          />
+
+          <KampeActiveFilterChips chips={activeFilterChips} />
+
+          {kampeFormat === 'padel' && (
+            <ActiveSeekingPanel
+              variant="compact"
+              channel="kamp"
+              user={user}
+              showToast={showToast}
+              filterReturnTo={FILTER_RETURN_KAMPE}
+            />
+          )}
+        </>
       )}
 
       <KampeFilterSheet

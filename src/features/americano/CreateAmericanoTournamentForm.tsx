@@ -191,6 +191,7 @@ export function CreateAmericanoTournamentForm({
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
   const [levelMin, setLevelMin] = useState(3.0)
   const [levelMax, setLevelMax] = useState(4.0)
+  const [opponentPasses, setOpponentPasses] = useState<AmericanoOpponentPasses>(1)
   const [description, setDescription] = useState('')
   const [step1Error, setStep1Error] = useState<string | null>(null)
 
@@ -206,13 +207,12 @@ export function CreateAmericanoTournamentForm({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const opponentPasses: AmericanoOpponentPasses = 1
   const maxCourts = Math.floor(playerSlots / 4)
   const minCourts = Math.min(maxCourts, recommendedCourtsPerRound(playerSlots))
 
   const schedulePreview = useMemo(
     () => getCreateFormSchedulePreview({ format: tournamentFormat, playerSlots, courtsPerRound, opponentPasses, pointsPerMatch }),
-    [tournamentFormat, playerSlots, courtsPerRound, pointsPerMatch],
+    [tournamentFormat, playerSlots, courtsPerRound, opponentPasses, pointsPerMatch],
   )
 
   const handlePlayerSlotsChange = useCallback((n: number) => {
@@ -456,6 +456,21 @@ export function CreateAmericanoTournamentForm({
               ))}
             </div>
             <div className="pm-field-hint">Pointene fordeles mellem holdene pr. kamp — fx 10–6 ved 16 point.</div>
+          </div>
+
+          <div className="pm-field">
+            <label>Kamplængde</label>
+            <div className="pm-chips-row">
+              <button type="button" className={`pm-chip-btn${opponentPasses === 1 ? ' active' : ''}`} onClick={() => setOpponentPasses(1)}>
+                Normal ({schedulePreview.normalRounds} runder)
+              </button>
+              <button type="button" className={`pm-chip-btn${opponentPasses === 2 ? ' active' : ''}`} onClick={() => setOpponentPasses(2)}>
+                Lang ({schedulePreview.longRounds} runder)
+              </button>
+            </div>
+            <div className="pm-field-hint">
+              Estimeret: <strong>{schedulePreview.estSelectedLabel}</strong> (~{schedulePreview.minPerRound} min pr. runde)
+            </div>
           </div>
 
           <div className="pm-field">

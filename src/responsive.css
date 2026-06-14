@@ -6616,6 +6616,47 @@ button,
   margin-bottom: 14px;
 }
 
+/* ── Create-mode header (replaces toolbar during create wizards) ── */
+.pm-kampe-v2-create-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pm-kampe-v2-create-title {
+  flex: 1;
+  margin: 0;
+  text-align: center;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+  color: var(--pm-text);
+}
+
+.pm-kampe-v2-circle-btn {
+  width: 39px;
+  height: 39px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pm-text);
+  cursor: pointer;
+  box-shadow: var(--pm-shadow-soft);
+}
+
+.pm-kampe-v2-circle-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  cursor: default;
+}
+
 .pm-kampe-v2-head {
   display: flex;
   align-items: center;
