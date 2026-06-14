@@ -796,10 +796,10 @@ export function HomeTab({ user, setTab, showToast }) {
   };
 
   const actions = [
-    { Icon: Users,       color: theme.accent, bg: theme.accentBg, title: "Find Makker",  tab: "makkere" },
-    { Icon: MapPin,      color: theme.accent, bg: theme.accentBg, title: "Book Bane",    tab: "baner"   },
-    { Icon: CalendarPlus,color: theme.accent, bg: theme.accentBg, title: "Åbne Kampe",   tab: "kampe"   },
-    { Icon: BarChart2,   color: theme.accent, bg: theme.accentBg, title: "Rangliste",    tab: "ranking" },
+    { Icon: Users,       color: theme.navy, bg: 'var(--pm-surface-muted)', title: "Find Makker",  tab: "makkere" },
+    { Icon: MapPin,      color: theme.navy, bg: 'var(--pm-surface-muted)', title: "Book Bane",    tab: "baner"   },
+    { Icon: CalendarPlus,color: theme.navy, bg: 'var(--pm-surface-muted)', title: "Åbne Kampe",   tab: "kampe"   },
+    { Icon: BarChart2,   color: theme.navy, bg: 'var(--pm-surface-muted)', title: "Rangliste",    tab: "ranking" },
   ];
 
   const activityRowBaseStyle = {

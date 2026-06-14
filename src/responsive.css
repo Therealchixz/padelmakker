@@ -2887,8 +2887,9 @@ button,
 
 .pm-feed-filter-chip {
   white-space: nowrap;
-  font-size: 12px;
-  padding: 6px 13px;
+  font-size: 12.5px;
+  padding: 8px 15px;
+  border-width: 1.5px;
 }
 
 @media (min-width: 900px) {

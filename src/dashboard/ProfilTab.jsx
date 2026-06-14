@@ -620,6 +620,52 @@ export function ProfilTab({ user, showToast, setTab }) {
             </div>
           </div>
 
+          {/* Summary stat grid — always visible below profile header, mirrors mockup 2×2 layout */}
+          {!statsLoading && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, padding: '12px 18px 2px' }}>
+              {[
+                { label: 'Kampe spillet', val: games },
+                { label: 'Win rate', val: games > 0 ? winPct + '%' : '—' },
+                { label: 'Nuværende stime', val: twoV2CurrentStreak || 0 },
+                { label: 'Turneringer', val: americanoPlayed || 0 },
+              ].map((s, i) => (
+                <div key={i} style={{ background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 16, padding: '13px 15px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '10.5px', fontWeight: 600, color: theme.textLight, letterSpacing: '0.03em' }}>{s.label}</div>
+                  <div style={{ fontSize: 23, fontWeight: 700, color: theme.navy, marginTop: 4 }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ELO hero inside profile card — matches mockup position (between stat-grid and padded content) */}
+          {showPerformanceSection && (
+            <div style={{ margin: '4px 18px 0', borderRadius: 14, padding: '17px', background: 'linear-gradient(150deg, #0D2752, #1D4A9E)', color: '#fff', boxShadow: theme.shadowLg }}>
+              <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9DB6DE', marginBottom: '6px' }}>
+                Aktuel Elo Rating · {activeModeLabel}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: '12px' }}>
+                <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
+                  {(is2v2Mode ? elo : americanoElo) ?? '—'}
+                </div>
+                {is2v2Mode && todayEloChange !== 0 && (
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: todayEloChange > 0 ? '#6EE7B7' : '#FCA5A5', letterSpacing: '-0.2px' }}>
+                    {todayEloChange > 0 ? '↑' : '↓'} {todayEloChange > 0 ? '+' : ''}{todayEloChange} i dag
+                  </div>
+                )}
+              </div>
+              {activeEloGraphLoading ? (
+                <div style={{ textAlign: "center", padding: "16px 0", color: '#9DB6DE', fontSize: "13px" }}>Indlæser...</div>
+              ) : (
+                <EloGraph
+                  data={activeEloGraphData}
+                  valueLabel={activeEloGraphLabel}
+                  emptyText={activeEloGraphEmptyText}
+                  dark
+                />
+              )}
+            </div>
+          )}
+
           <div style={{ padding: '0 18px' }}>
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
 
@@ -689,10 +735,11 @@ export function ProfilTab({ user, showToast, setTab }) {
           <div style={{ fontSize: "10px", color: theme.textLight, marginBottom: "10px" }}>
             {activeOverviewSource} · Sidst opdateret: {activeOverviewUpdatedAt}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px", marginBottom: "20px" }}>
+          {!is2v2Mode && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginBottom: "20px" }}>
             {activeOverviewCards.map((s, i) => (
-              <div key={i} style={{ textAlign: "center", padding: "14px 6px 12px", background: theme.surfaceAlt, borderRadius: "12px", border: "1px solid " + theme.border }}>
-                <div style={{ fontSize: "9.5px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
+              <div key={i} style={{ textAlign: "center", padding: "13px 15px", background: "var(--pm-surface-muted)", borderRadius: 16, border: "1px solid var(--pm-americano-tie-border)" }}>
+                <div style={{ fontSize: "10.5px", fontWeight: 600, color: theme.textLight, letterSpacing: "0.03em" }}>{s.label}</div>
                 {s.form ? (
                   <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 9 }}>
                     {s.form.length > 0 ? s.form.map((r, j) => (
@@ -702,11 +749,12 @@ export function ProfilTab({ user, showToast, setTab }) {
                     )) : <div style={{ fontSize: "13px", color: theme.textLight, marginTop: 4 }}>—</div>}
                   </div>
                 ) : (
-                  <div style={{ fontSize: "22px", fontWeight: 700, color: theme.navy, marginTop: "4px", letterSpacing: "-0.3px" }}>{s.value}</div>
+                  <div style={{ fontSize: 23, fontWeight: 700, color: theme.navy, marginTop: 4 }}>{s.value}</div>
                 )}
               </div>
             ))}
           </div>
+          )}
           </>
           )}
 
@@ -751,33 +799,6 @@ export function ProfilTab({ user, showToast, setTab }) {
         <div ref={performanceRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           Performance · {activeModeLabel}
         </div>
-        {/* ELO hero — navy gradient card */}
-        <div style={{ margin: '0 0 16px', borderRadius: 14, padding: '17px', background: 'linear-gradient(150deg, #0D2752, #1D4A9E)', color: '#fff', boxShadow: theme.shadowLg }}>
-          <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9DB6DE', marginBottom: '6px' }}>
-            Aktuel Elo Rating · {activeModeLabel}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: '12px' }}>
-            <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
-              {(is2v2Mode ? elo : americanoElo) ?? '—'}
-            </div>
-            {is2v2Mode && todayEloChange !== 0 && (
-              <div style={{ fontSize: '13px', fontWeight: 700, color: todayEloChange > 0 ? '#6EE7B7' : '#FCA5A5', letterSpacing: '-0.2px' }}>
-                {todayEloChange > 0 ? '↑' : '↓'} {todayEloChange > 0 ? '+' : ''}{todayEloChange} i dag
-              </div>
-            )}
-          </div>
-          {activeEloGraphLoading ? (
-            <div style={{ textAlign: "center", padding: "16px 0", color: '#9DB6DE', fontSize: "13px" }}>Indlæser...</div>
-          ) : (
-            <EloGraph
-              data={activeEloGraphData}
-              valueLabel={activeEloGraphLabel}
-              emptyText={activeEloGraphEmptyText}
-              dark
-            />
-          )}
-        </div>
-
         {/* Ekstra statistik — kun 2v2: samlet 2×2 gitter */}
         {!statsLoading && is2v2Mode && (() => {
           const { currentStreak, bestStreak } = winStreaksFromEloHistory(eloHistory);
