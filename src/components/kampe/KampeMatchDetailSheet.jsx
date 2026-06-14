@@ -195,7 +195,12 @@ function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, prof
                   />
                   <div className="pm-kd-elo-pname">
                     {firstName(p)}
-                    {prof.level != null && <span>Niveau {formatPlaytomicLevel(prof.level)}</span>}
+                    <span>
+                      {[
+                        prof.level != null ? `Niveau ${formatPlaytomicLevel(prof.level)}` : null,
+                        prof.games_played != null && prof.games_played > 0 ? `${prof.games_played} kampe` : null,
+                      ].filter(Boolean).join(' · ')}
+                    </span>
                   </div>
                   {elo != null && (
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -444,6 +449,67 @@ export function KampeMatchDetailSheet({
               onKickPlayer={onKickPlayer}
               onProfileClick={onProfileClick}
             />
+            {/* Flat holdene list */}
+            {(() => {
+              const t1p = teamStats?.t1 || [];
+              const t2p = teamStats?.t2 || [];
+              if (t1p.length + t2p.length === 0) return null;
+              const maxP = match?.max_players || 4;
+              const maxPerTeam = Math.ceil(maxP / 2);
+              const filled = t1p.length + t2p.length;
+              return (
+                <>
+                  <div className="pm-kd-section-h">
+                    <h3>Holdene ({filled}/{maxP})</h3>
+                    {left > 0 ? (
+                      <span className="pm-kd-tag pm-kd-tag--amber">
+                        {left} plads{left > 1 ? 'er' : ''} tilbage
+                      </span>
+                    ) : null}
+                  </div>
+                  {[{ teamNum: 1, players: t1p }, { teamNum: 2, players: t2p }].map(({ teamNum, players }) => (
+                    <div key={teamNum} className="pm-kd-card" style={{ marginBottom: 8, padding: '4px 16px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.7px', color: teamNum === 1 ? theme.accent : theme.blue, padding: '6px 0 2px' }}>
+                        Hold {teamNum}
+                      </div>
+                      {players.map((p) => {
+                        const uid = String(p.user_id);
+                        const prof = profilesById?.[uid] || {};
+                        const isMe = uid === String(currentUserId);
+                        return (
+                          <div key={p.user_id} className="pm-kd-elo-row">
+                            <AvatarCircle
+                              avatar={prof.avatar || p.user_emoji || '🎾'}
+                              size={36}
+                              emojiSize="16px"
+                              style={{ background: teamNum === 1 ? theme.accentBg : theme.blueBg, flexShrink: 0 }}
+                            />
+                            <div className="pm-kd-elo-pname">
+                              {isMe ? 'Dig' : (prof.name || p.user_name || '?').split(' ')[0]}
+                              <span>
+                                {[
+                                  prof.level != null ? `Niveau ${formatPlaytomicLevel(prof.level)}` : null,
+                                  prof.games_played != null && prof.games_played > 0 ? `${prof.games_played} kampe` : null,
+                                ].filter(Boolean).join(' · ')}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {Array.from({ length: Math.max(0, maxPerTeam - players.length) }).map((_, i) => (
+                        <div key={`empty-${i}`} className="pm-kd-elo-row" style={{ opacity: 0.55 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px dashed var(--pm-border, #E2E8F0)', background: 'var(--pm-inset, #F1F4F9)', flexShrink: 0 }} />
+                          <div className="pm-kd-elo-pname">
+                            Ledig plads
+                            <span style={{ textTransform: 'uppercase', fontSize: 10, fontWeight: 600, letterSpacing: '0.3px' }}>Bliv den næste!</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
             {status === 'completed' && matchResult ? (
               <MatchResultStrip
                 matchResult={matchResult}
