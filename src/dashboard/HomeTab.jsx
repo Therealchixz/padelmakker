@@ -806,7 +806,7 @@ export function HomeTab({ user, setTab, showToast }) {
     display: "flex",
     alignItems: "center",
     gap: "11px",
-    borderRadius: "14px",
+    borderRadius: "16px",
     padding: "12px 14px",
     border: "1px solid " + theme.border,
     boxShadow: theme.shadowSoft,
@@ -1219,7 +1219,7 @@ export function HomeTab({ user, setTab, showToast }) {
                 key={it.key}
                 type="button"
                 onClick={() => setTab(it.target.tab, { search: it.target.search })}
-                style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
+                style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 16, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
               >
                 <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
                   <span style={{ display: 'block', fontSize: it.kind === 'liga' ? 13 : 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{it.badge.top}</span>
@@ -1251,7 +1251,7 @@ export function HomeTab({ user, setTab, showToast }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
             {inviteItems.map((it) => (
-              <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow }}>
+              <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 16, padding: '13px 14px', boxShadow: theme.shadow }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: it.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }} aria-hidden="true">
                     {it.icon}

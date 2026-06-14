@@ -630,7 +630,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
           {/* ELO hero inside profile card — matches mockup position (between stat-grid and padded content) */}
           {showPerformanceSection && (
-            <div style={{ margin: '4px 18px 0', borderRadius: 14, padding: '17px', background: 'linear-gradient(150deg, #0D2752, #1D4A9E)', color: '#fff', boxShadow: theme.shadowLg }}>
+            <div style={{ margin: '4px 18px 0', borderRadius: 16, padding: '17px', background: 'linear-gradient(150deg, #0D2752, #1D4A9E)', color: '#fff', boxShadow: theme.shadowLg }}>
               <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9DB6DE', marginBottom: '6px' }}>
                 Aktuel Elo Rating · {activeModeLabel}
               </div>
