@@ -880,7 +880,6 @@ export function HomeTab({ user, setTab, showToast }) {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    minHeight: "18px",
     minWidth: 0,
   };
 
@@ -981,10 +980,12 @@ export function HomeTab({ user, setTab, showToast }) {
     <div key={key} style={activityCardStyle(isHighlight)}>
       <div style={activityLeadingSlotStyle}>{leading}</div>
       <div style={activityBodyStyle}>
-        <div style={activityMetaRowStyle}>
-          {tag ? <span style={activityTypeTagStyle(tone || theme.accent)}>{tag}</span> : null}
-          {meta ? <span style={activityMetaTextStyle}>{meta}</span> : null}
-        </div>
+        {(tag || meta) ? (
+          <div style={activityMetaRowStyle}>
+            {tag ? <span style={activityTypeTagStyle(tone || theme.accent)}>{tag}</span> : null}
+            {meta ? <span style={activityMetaTextStyle}>{meta}</span> : null}
+          </div>
+        ) : null}
         <div style={activityTitleStyle}>{title}</div>
         {subtitle ? <div style={activitySubtitleStyle}>{subtitle}</div> : null}
       </div>
@@ -1205,13 +1206,47 @@ export function HomeTab({ user, setTab, showToast }) {
         </div>
       )}
 
+      {/* Kommende kampe */}
+      {upcomingItems.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
+            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
+            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+            {upcomingItems.map((it) => (
+              <button
+                key={it.key}
+                type="button"
+                onClick={() => setTab(it.target.tab, { search: it.target.search })}
+                style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
+              >
+                <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
+                  <span style={{ display: 'block', fontSize: it.kind === 'liga' ? 13 : 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{it.badge.top}</span>
+                  {it.badge.bottom ? <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textMid, letterSpacing: 0.5 }}>{it.badge.bottom}</span> : null}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.tag} · {it.title}</div>
+                  <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.subtitle}</div>
+                </div>
+                {it.statusLabel ? (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: it.bg, color: it.tone, border: `1px solid ${it.tone}40`, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    {it.statusLabel}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Invitationer */}
       {inviteItems.length > 0 && (
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 18px 10px' }}>
             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Invitationer</h3>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: '#EF4444', borderRadius: 999, minWidth: 18, height: 18, padding: '0 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-              {inviteItems.length}
+            <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: 'var(--pm-navy)', border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>
+              {inviteItems.length} nye
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
@@ -1247,40 +1282,6 @@ export function HomeTab({ user, setTab, showToast }) {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Kommende kampe */}
-      {upcomingItems.length > 0 && (
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
-            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
-            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
-            {upcomingItems.map((it) => (
-              <button
-                key={it.key}
-                type="button"
-                onClick={() => setTab(it.target.tab, { search: it.target.search })}
-                style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
-              >
-                <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: theme.surfaceAlt, border: `1px solid ${theme.border}`, borderRadius: 10, padding: '6px 0' }}>
-                  <span style={{ display: 'block', fontSize: it.kind === 'liga' ? 13 : 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{it.badge.top}</span>
-                  {it.badge.bottom ? <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textMid, letterSpacing: 0.5 }}>{it.badge.bottom}</span> : null}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.tag} · {it.title}</div>
-                  <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.subtitle}</div>
-                </div>
-                {it.statusLabel ? (
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: it.bg, color: it.tone, border: `1px solid ${it.tone}40`, flexShrink: 0, whiteSpace: 'nowrap' }}>
-                    {it.statusLabel}
-                  </span>
-                ) : null}
-              </button>
             ))}
           </div>
         </div>
