@@ -17,6 +17,7 @@ import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
 import { isValidProfileRegion } from '../lib/profileUtils';
+import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
@@ -138,6 +139,14 @@ export function ProfilTab({ user, showToast, setTab }) {
     return peak;
   }, [ratedRows]);
   const recentForm = ratedRows.slice(-5).reverse();
+  const { currentStreak: twoV2CurrentStreak } = useMemo(() => winStreaksFromEloHistory(ratedRows), [ratedRows]);
+
+  const todayEloChange = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    return ratedRows
+      .filter((r) => (r.date || '').slice(0, 10) === todayStr)
+      .reduce((sum, r) => sum + (Number(r.change) || 0), 0);
+  }, [ratedRows]);
 
   const { partnerOpponentStats, partnerOpponentLoading } = usePartnerOpponentStats(user.id, ratedRows);
   const americanoStatsEnabled =
@@ -442,10 +451,10 @@ export function ProfilTab({ user, showToast, setTab }) {
   const americanoWinPct = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : 0;
   const ligaWinPct = ligaStats.matches > 0 ? Math.round((ligaStats.wins / ligaStats.matches) * 100) : 0;
   const twoVTwoOverviewCards = [
-    { label: "ELO", value: elo, color: theme.accent },
-    { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
-    { label: "Kampe", value: games, color: theme.blue },
-    { label: "Sejre", value: wins, color: theme.warm },
+    { label: "Kampe spillet", value: games, color: theme.blue },
+    { label: "Win rate", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
+    { label: "Nuværende stime", value: twoV2CurrentStreak > 0 ? `🔥 ${twoV2CurrentStreak}` : twoV2CurrentStreak, color: twoV2CurrentStreak > 0 ? theme.warm : theme.textLight },
+    { label: "Turneringer", value: americanoPlayed || 0, color: theme.accent },
   ];
   const americanoOverviewCards = [
     { label: "ELO", value: americanoElo, color: theme.accent },
@@ -575,30 +584,39 @@ export function ProfilTab({ user, showToast, setTab }) {
           </div>
           {/* Centered header: avatar + name + location + tags */}
           <div style={{ textAlign: 'center', padding: '18px 18px 14px' }}>
-            <AvatarCircle
-              avatar={user.avatar}
-              size={96}
-              emojiSize="29px"
-              style={{ margin: '0 auto', border: '3px solid ' + theme.surface, boxShadow: theme.shadow }}
-            />
+            <div style={{ position: 'relative', display: 'inline-block', margin: '0 auto' }}>
+              <AvatarCircle
+                avatar={user.avatar}
+                size={96}
+                emojiSize="29px"
+                style={{ border: '3px solid ' + theme.surface, boxShadow: theme.shadow }}
+              />
+              {user.level != null && user.level !== '' && (
+                <div style={{ position: 'absolute', bottom: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: theme.navy, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid ' + theme.surface }}>
+                  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+                </div>
+              )}
+            </div>
             <h2 style={{ fontSize: 19, fontWeight: 600, marginTop: 12, letterSpacing: '-0.3px', color: theme.text, margin: '12px 0 0' }}>{displayName}</h2>
             <p style={{ color: theme.textLight, fontSize: 12.5, marginTop: 3 }}>
               {user.city ? `${user.city}, ` : ''}{user.area || authUser?.email}
             </p>
             <div style={{ display: 'flex', gap: 7, marginTop: 9, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
-              {!statsLoading && is2v2Mode && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
+              {user.level != null && user.level !== '' ? (
+                <span style={tag(theme.amberBg, theme.amberText)}>
+                  Niveau {formatPlaytomicLevel(user.level)}
+                </span>
+              ) : !statsLoading && is2v2Mode && elo != null ? (
+                <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>
+              ) : null}
               {!statsLoading && isAmericanoMode && <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}
               {!statsLoading && isLigaMode && !ligaLoading && ligaStats.matches > 0 && (
                 <span style={tag(theme.blueBg, theme.blue)}>{ligaStats.matches} ligakampe</span>
               )}
               {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
-              {user.level != null && user.level !== '' ? (
-                <span style={tag(theme.amberBg, theme.amberText)}>
-                  Niveau {formatPlaytomicLevel(user.level)}
-                </span>
-              ) : null}
               {user.play_style && <span style={tag(theme.blueBg, theme.blue)}>{user.play_style}</span>}
               {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
+              {isSeekingActiveProfile(user) && <span style={tag(theme.greenBg, theme.green)}>Søger makker</span>}
             </div>
           </div>
 
@@ -675,11 +693,53 @@ export function ProfilTab({ user, showToast, setTab }) {
             {activeOverviewCards.map((s, i) => (
               <div key={i} style={{ textAlign: "center", padding: "14px 6px 12px", background: theme.surfaceAlt, borderRadius: "12px", border: "1px solid " + theme.border }}>
                 <div style={{ fontSize: "9.5px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
-                <div style={{ fontSize: "22px", fontWeight: 700, color: theme.navy, marginTop: "4px", letterSpacing: "-0.3px" }}>{s.value}</div>
+                {s.form ? (
+                  <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 9 }}>
+                    {s.form.length > 0 ? s.form.map((r, j) => (
+                      <div key={j} style={{ width: 21, height: 21, borderRadius: "50%", background: r.result === "win" ? "var(--pm-green)" : r.result === "loss" ? "var(--pm-red)" : "var(--pm-border)", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {r.result === "win" ? "V" : r.result === "loss" ? "T" : "U"}
+                      </div>
+                    )) : <div style={{ fontSize: "13px", color: theme.textLight, marginTop: 4 }}>—</div>}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: "22px", fontWeight: 700, color: theme.navy, marginTop: "4px", letterSpacing: "-0.3px" }}>{s.value}</div>
+                )}
               </div>
             ))}
           </div>
           </>
+          )}
+
+          {is2v2Mode && !statsLoading && (
+            <div style={{ marginTop: 4, marginBottom: 16 }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Opnåede badges</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: theme.amberBg, color: theme.amberText, border: `1px solid ${theme.amberBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                  </div>
+                  <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 600, marginTop: 6, color: theme.textMid }}>Champion</span>
+                </div>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: theme.surfaceAlt, color: theme.textLight, border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.5 14 17 22l-5-3-5 3 1.5-8"/></svg>
+                  </div>
+                  <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 600, marginTop: 6, color: theme.textMid }}>Lokal Helt</span>
+                </div>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: theme.navy, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>
+                  </div>
+                  <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 600, marginTop: 6, color: theme.textMid }}>Sprinter</span>
+                </div>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#E4ECF9', color: theme.navy, border: '1px solid #CBDAF0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
+                  <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 600, marginTop: 6, color: theme.textMid }}>Holdspiller</span>
+                </div>
+              </div>
+            </div>
           )}
 
         </div>
@@ -696,8 +756,15 @@ export function ProfilTab({ user, showToast, setTab }) {
           <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9DB6DE', marginBottom: '6px' }}>
             Aktuel Elo Rating · {activeModeLabel}
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: '12px' }}>
-            {(is2v2Mode ? elo : americanoElo) ?? '—'}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: '12px' }}>
+            <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
+              {(is2v2Mode ? elo : americanoElo) ?? '—'}
+            </div>
+            {is2v2Mode && todayEloChange !== 0 && (
+              <div style={{ fontSize: '13px', fontWeight: 700, color: todayEloChange > 0 ? '#6EE7B7' : '#FCA5A5', letterSpacing: '-0.2px' }}>
+                {todayEloChange > 0 ? '↑' : '↓'} {todayEloChange > 0 ? '+' : ''}{todayEloChange} i dag
+              </div>
+            )}
           </div>
           {activeEloGraphLoading ? (
             <div style={{ textAlign: "center", padding: "16px 0", color: '#9DB6DE', fontSize: "13px" }}>Indlæser...</div>
@@ -711,7 +778,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           )}
         </div>
 
-        {/* Ekstra statistik — kun 2v2 */}
+        {/* Ekstra statistik — kun 2v2: samlet 2×2 gitter */}
         {!statsLoading && is2v2Mode && (() => {
           const { currentStreak, bestStreak } = winStreaksFromEloHistory(eloHistory);
 
@@ -731,56 +798,68 @@ export function ProfilTab({ user, showToast, setTab }) {
           const monthNames = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
           const fmtMonth = (m) => { const [y, mo] = m.split("-"); return monthNames[parseInt(mo, 10) - 1] + " " + y; };
 
+          const statCard = (children) => (
+            <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "14px 16px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+              {children}
+            </div>
+          );
+
           return (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginBottom: "16px" }}>
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+              {statCard(<>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Sejrsstreak</div>
-                <div style={{ fontSize: "28px", fontWeight: 800, color: theme.warm, letterSpacing: "-0.03em" }}>{currentStreak > 0 ? `🔥 ${currentStreak}` : "0"}</div>
+                <div style={{ fontSize: "26px", fontWeight: 800, color: theme.warm, letterSpacing: "-0.03em" }}>{currentStreak > 0 ? `🔥 ${currentStreak}` : "0"}</div>
                 <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste: {bestStreak} i træk</div>
-              </div>
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+              </>)}
+              {statCard(<>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Bedste måned</div>
                 {bestMonth && bestMonth.month ? (
                   <>
-                    <div style={{ fontSize: "16px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.02em", textTransform: "capitalize" }}>{fmtMonth(bestMonth.month)}</div>
+                    <div style={{ fontSize: "15px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.02em", textTransform: "capitalize" }}>{fmtMonth(bestMonth.month)}</div>
                     <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>
                       {bestMonth.wins}/{bestMonth.games} sejre · {bestMonth.change > 0 ? "+" : ""}{bestMonth.change} ELO
                     </div>
                   </>
                 ) : (
-                  <div style={{ fontSize: "14px", color: theme.textMid }}>Ingen data endnu</div>
+                  <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "2px" }}>Ingen data endnu</div>
                 )}
-              </div>
+              </>)}
+              {statCard(<>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
+                {peakElo ? (
+                  <>
+                    <div style={{ fontSize: "22px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.03em" }}>🏆 {peakElo}</div>
+                    <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste nogensinde</div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: "22px", fontWeight: 800, color: theme.textLight }}>—</div>
+                )}
+              </>)}
+              {statCard(<>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>Seneste form</div>
+                {recentForm.length > 0 ? (
+                  <>
+                    <div style={{ display: "flex", gap: "5px", alignItems: "center", justifyContent: "center", marginBottom: "6px" }}>
+                      {recentForm.map((r, i) => (
+                        <div key={i} title={r.result === 'win' ? 'Sejr' : r.result === 'loss' ? 'Nederlag' : 'Uafgjort'} style={{
+                          width: "24px", height: "24px", borderRadius: "50%", flexShrink: 0,
+                          background: r.result === 'win' ? 'var(--pm-form-win)' : r.result === 'loss' ? 'var(--pm-form-loss)' : 'var(--pm-form-draw)',
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "10px", fontWeight: 700, color: "#fff",
+                        }}>
+                          {r.result === 'win' ? 'V' : r.result === 'loss' ? 'T' : 'U'}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: "11px", color: theme.textMid }}>Seneste {recentForm.length} kampe</div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: "13px", color: theme.textMid }}>Ingen kampe endnu</div>
+                )}
+              </>)}
             </div>
           );
         })()}
-
-        {/* Peak ELO + Seneste form — kun 2v2 */}
-        {!statsLoading && is2v2Mode && ratedRows.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginBottom: "10px" }}>
-            {peakElo && (
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
-                <div style={{ fontSize: "24px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.03em" }}>🏆 {peakElo}</div>
-                <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste nogensinde</div>
-              </div>
-            )}
-            {recentForm.length > 0 && (
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>Seneste form</div>
-                <div style={{ display: "flex", gap: "5px", alignItems: "center", marginBottom: "6px" }}>
-                  {recentForm.map((r, i) => (
-                    <div key={i} title={r.result === 'win' ? 'Sejr' : r.result === 'loss' ? 'Nederlag' : 'Uafgjort'} style={{
-                      width: "22px", height: "22px", borderRadius: "50%", flexShrink: 0,
-                      background: r.result === 'win' ? 'var(--pm-form-win)' : r.result === 'loss' ? 'var(--pm-form-loss)' : 'var(--pm-form-draw)',
-                    }} />
-                  ))}
-                </div>
-                <div style={{ fontSize: "11px", color: theme.textMid }}>Seneste {recentForm.length} kampe</div>
-              </div>
-            )}
-          </div>
-        )}
         </>
         ) : null}
 
@@ -827,6 +906,42 @@ export function ProfilTab({ user, showToast, setTab }) {
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%</div>
                       <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(partnerOpponentStats.worstPartners || []).length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostWith}</div>
+                {partnerOpponentStats.worstPartners.map((p, i) => (
+                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.worstPartners.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.games} kampe sammen</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((1 - p.asPartner.wins / p.asPartner.games) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>nederlag som makker</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(partnerOpponentStats.bestOpponents || []).length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostAgainst}</div>
+                {partnerOpponentStats.bestOpponents.map((p, i) => (
+                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.bestOpponents.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.greenBg, border: "1px solid " + theme.green + "40", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.games} kampe imod</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asOpponent.wins / p.asOpponent.games) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>din sejr</div>
                     </div>
                   </div>
                 ))}

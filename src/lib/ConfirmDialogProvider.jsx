@@ -60,6 +60,8 @@ export function ConfirmDialogProvider({ children }) {
       {config && (
         <ConfirmDialog
           message={config.message}
+          title={config.title}
+          description={config.description}
           confirmLabel={config.confirmLabel}
           cancelLabel={config.cancelLabel}
           danger={!!config.danger}

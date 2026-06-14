@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { Plus, X } from 'lucide-react'
+import '../../styles/kampdetalje.css'
 import { KampeVenueLocationLine } from '../../components/kampe/KampeVenueLocationLine'
 import { resolveCourtNameDirectionsQuery } from '../../lib/kampeListFilterCore'
 import { isAvatarUrl } from '../../lib/avatarUpload'
@@ -272,6 +273,18 @@ export function AmericanoDetailSheet({
         </div>
 
         <div className="pm-americano-v2-detail-scroll">
+        {/* Court hero visual */}
+        <div className="pm-kd-hero" style={{ marginBottom: 0, borderRadius: 0 }} aria-hidden="true">
+          <div className="pm-kd-hero-court" />
+          <div className="pm-kd-hero-badges">
+            <span className={`pm-kd-chip ${badgeTone === 'live' ? 'pm-kd-chip--amber' : 'pm-kd-chip--navy'}`}>
+              {getTournamentFormatLabel(tournament.format).toUpperCase()}
+            </span>
+            {badgeTone === 'live' ? (
+              <span className="pm-kd-chip pm-kd-chip--live">LIVE · {badgeLabel}</span>
+            ) : null}
+          </div>
+        </div>
         <div className="pm-americano-v2-detail-stats">
           <div className="pm-americano-v2-detail-stat">
             <span className="pm-americano-v2-detail-stat-label">Runder</span>

@@ -1,13 +1,262 @@
-import { X, CalendarDays, MapPin, ArrowUpRight } from 'lucide-react';
+import { X, CalendarDays, MapPin, ArrowUpRight, TrendingUp, TrendingDown, Trophy, Share2, RotateCcw } from 'lucide-react';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
 import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
-import { btn } from '../../lib/platformTheme';
+import { btn, theme } from '../../lib/platformTheme';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCourtView } from './MatchCourtView';
+import { AvatarCircle } from '../AvatarCircle';
+import { formatPlaytomicLevel, eloRangeToLevelRange } from '../../lib/padelLevelUtils';
 import '../../styles/kampdetalje.css';
+
+function computeMatchSets(mr) {
+  let setsWon1 = 0, setsWon2 = 0;
+  const setScoreStrings = [];
+  for (let i = 1; i <= 3; i++) {
+    const g1 = mr[`set${i}_team1`];
+    const g2 = mr[`set${i}_team2`];
+    if (g1 == null || g2 == null) break;
+    const n1 = Number(g1), n2 = Number(g2);
+    if (n1 + n2 === 0) break;
+    setScoreStrings.push(`${n1}-${n2}`);
+    if (n1 > n2) setsWon1++;
+    else if (n2 > n1) setsWon2++;
+  }
+  return { setsWon1, setsWon2, setScoreStrings };
+}
+
+function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, profilesById, currentUserId }) {
+  if (!matchResult?.confirmed) return null;
+
+  const { setsWon1, setsWon2, setScoreStrings } = computeMatchSets(matchResult);
+  const hasSetScore = setsWon1 + setsWon2 > 0;
+
+  const t1Players = teamStats?.t1 || [];
+  const t2Players = teamStats?.t2 || [];
+  const eloChangeByUid = teamStats?.playerEloChangeByUserId || {};
+  const eloByUid = teamStats?.playerEloByUserId || {};
+  const hasEloData = Object.keys(eloChangeByUid).length > 0;
+
+  const teamAvgChange = (players) => {
+    const changes = players.map((p) => eloChangeByUid[String(p.user_id)]).filter((n) => n != null);
+    if (!changes.length) return null;
+    return Math.round(changes.reduce((a, b) => a + b, 0) / changes.length);
+  };
+
+  const t1AvgChange = teamAvgChange(t1Players);
+  const t2AvgChange = teamAvgChange(t2Players);
+  const winnerAvgChange = winnerTeam === 1 ? t1AvgChange : winnerTeam === 2 ? t2AvgChange : null;
+  const loserAvgChange = winnerTeam === 1 ? t2AvgChange : winnerTeam === 2 ? t1AvgChange : null;
+
+  const firstName = (p) => {
+    const uid = String(p.user_id);
+    if (uid === String(currentUserId)) return 'Dig';
+    return (profilesById?.[uid]?.name || p.user_name || '?').split(' ')[0];
+  };
+
+  const teamLabel = (players, teamNum) => {
+    const names = players.map((p) => firstName(p));
+    if (!names.length) return `Hold ${teamNum}`;
+    return names.join(' & ');
+  };
+
+  const isWinnerTeam = (n) => winnerTeam === n;
+  const showElo = hasEloData && winnerTeam != null;
+
+  const handleShare = () => {
+    const scoreText = hasSetScore ? `${setsWon1}–${setsWon2} (${setScoreStrings.join(', ')})` : (winnerTeam ? `Hold ${winnerTeam} vandt` : 'Afsluttet');
+    const text = `Padel-resultat: ${teamLabel(t1Players, 1)} vs ${teamLabel(t2Players, 2)} — ${scoreText}`;
+    if (navigator.share) {
+      navigator.share({ text }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(text).catch(() => {});
+    }
+  };
+
+  return (
+    <>
+      <div className="pm-kd-result-card pm-kd-card" style={{ margin: '8px 0 0' }}>
+        <div className="pm-kd-result-badge">
+          <span className="pm-kd-tag pm-kd-tag--amber">
+            <Trophy size={11} />
+            AFSLUTTET
+          </span>
+        </div>
+        <div className="pm-kd-vs-row" style={{ marginTop: 6 }}>
+          <div className="pm-kd-vs-score">
+            <div className="pm-kd-avstack">
+              {t1Players.map((p, i) => (
+                <AvatarCircle
+                  key={p.user_id}
+                  avatar={profilesById?.[String(p.user_id)]?.avatar}
+                  size={27}
+                  emojiSize="12px"
+                  style={{ border: '2px solid #fff', marginLeft: i > 0 ? -9 : 0, background: theme.accentBg }}
+                />
+              ))}
+            </div>
+            <b>{teamLabel(t1Players, 1)}</b>
+            {isWinnerTeam(1) && (
+              <span className="pm-kd-tag pm-kd-tag--amber" style={{ marginTop: 6, display: 'inline-block', fontSize: 9, letterSpacing: '0.6px' }}>
+                VINDERE
+              </span>
+            )}
+          </div>
+          <div className="pm-kd-set-score">
+            {hasSetScore ? (
+              <>
+                <div className="pm-kd-set-score-big">
+                  {setsWon1} <span className="pm-kd-set-score-sep">–</span> {setsWon2}
+                </div>
+                {setScoreStrings.length > 0 && (
+                  <div className="pm-kd-set-score-detail">{setScoreStrings.join(', ')}</div>
+                )}
+              </>
+            ) : (
+              <div className="pm-kd-set-score-big" style={{ fontSize: 22 }}>
+                {winnerTeam === 1 ? '1' : winnerTeam === 2 ? '0' : '—'}
+                {' '}<span className="pm-kd-set-score-sep">–</span>{' '}
+                {winnerTeam === 2 ? '1' : winnerTeam === 1 ? '0' : '—'}
+              </div>
+            )}
+          </div>
+          <div className="pm-kd-vs-score">
+            <div className="pm-kd-avstack" style={{ justifyContent: 'center' }}>
+              {t2Players.map((p, i) => (
+                <AvatarCircle
+                  key={p.user_id}
+                  avatar={profilesById?.[String(p.user_id)]?.avatar}
+                  size={27}
+                  emojiSize="12px"
+                  style={{ border: '2px solid #fff', marginLeft: i > 0 ? -9 : 0, background: theme.blueBg }}
+                />
+              ))}
+            </div>
+            <b>{teamLabel(t2Players, 2)}</b>
+            {isWinnerTeam(2) && (
+              <span className="pm-kd-tag pm-kd-tag--amber" style={{ marginTop: 6, display: 'inline-block', fontSize: 9, letterSpacing: '0.6px' }}>
+                VINDERE
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {showElo && (
+        <>
+          <div className="pm-kd-section-h"><h3>Elo-ændringer</h3></div>
+          {winnerAvgChange != null && (
+            <div className="pm-kd-card pm-kd-elo-card" style={{ marginBottom: 10 }}>
+              <div className="pm-kd-feed-ic pm-kd-feed-ic--up"><TrendingUp size={16} /></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: '13.5px' }}>Vindere</div>
+                <div style={{ fontSize: '11.5px', color: theme.textMid, marginTop: 1 }}>Hold-gennemsnit</div>
+              </div>
+              <span style={{ fontSize: 18, fontWeight: 700, color: theme.green }}>
+                {winnerAvgChange >= 0 ? '+' : ''}{winnerAvgChange}
+              </span>
+            </div>
+          )}
+          {loserAvgChange != null && (
+            <div className="pm-kd-card pm-kd-elo-card" style={{ marginBottom: 0 }}>
+              <div className="pm-kd-feed-ic pm-kd-feed-ic--down"><TrendingDown size={16} /></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: '13.5px' }}>Modstandere</div>
+                <div style={{ fontSize: '11.5px', color: theme.textMid, marginTop: 1 }}>Hold-gennemsnit</div>
+              </div>
+              <span style={{ fontSize: 18, fontWeight: 700, color: theme.red }}>
+                {loserAvgChange >= 0 ? '+' : ''}{loserAvgChange}
+              </span>
+            </div>
+          )}
+        </>
+      )}
+
+      {(t1Players.length + t2Players.length > 0) && (
+        <>
+          <div className="pm-kd-section-h"><h3>Deltagere</h3></div>
+          <div className="pm-kd-card" style={{ padding: '6px 16px' }}>
+            {[...t1Players.map((p) => ({ p, teamNum: 1 })), ...t2Players.map((p) => ({ p, teamNum: 2 }))].map(({ p, teamNum }) => {
+              const uid = String(p.user_id);
+              const prof = profilesById?.[uid] || {};
+              const elo = eloByUid[uid];
+              const change = eloChangeByUid[uid];
+              const won = winnerTeam === teamNum;
+              const changeColor = change != null ? (change >= 0 ? theme.green : theme.red) : theme.navy;
+              return (
+                <div key={p.user_id} className="pm-kd-elo-row">
+                  <AvatarCircle
+                    avatar={prof.avatar}
+                    size={36}
+                    emojiSize="16px"
+                    style={{ background: teamNum === 1 ? theme.accentBg : theme.blueBg, flexShrink: 0 }}
+                  />
+                  <div className="pm-kd-elo-pname">
+                    {firstName(p)}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 4 }}>
+                      {prof.level != null ? (
+                        <span style={{
+                          background: '#FAEFDC',
+                          color: '#92400E',
+                          border: '1px solid #EDD9B5',
+                          fontSize: 9.5,
+                          fontWeight: 600,
+                          padding: '2px 7px',
+                          borderRadius: 5,
+                          letterSpacing: '0.4px',
+                          textTransform: 'uppercase',
+                        }}>
+                          Niveau {formatPlaytomicLevel(prof.level)}
+                        </span>
+                      ) : null}
+                      {prof.games_played != null && prof.games_played > 0 ? (
+                        <span style={{ fontSize: 11.5, color: '#5E6B81', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                          <svg style={{ width: 11, height: 11 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                          </svg>
+                          {prof.games_played} kampe
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                  {elo != null && (
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div className="pm-kd-eyebrow">Ny Elo</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: won ? theme.navy : theme.navy }}>
+                        {elo}
+                        {change != null && (
+                          <small style={{ fontSize: '10.5px', color: changeColor, marginLeft: 3 }}>
+                            ({change >= 0 ? '+' : ''}{change})
+                          </small>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <div style={{ display: 'flex', gap: 10, padding: '16px 0 8px' }}>
+        <button className="pm-kd-btn-ghost" style={{ flex: 1, padding: 12 }} onClick={handleShare} type="button">
+          <Share2 size={16} />
+          Del resultat
+        </button>
+        <button className="pm-kd-btn-navy" style={{ flex: 1, padding: 12 }} type="button" disabled>
+          <RotateCcw size={16} />
+          Book revanche
+        </button>
+      </div>
+      <div style={{ textAlign: 'center', fontSize: '11.5px', fontWeight: 600, color: theme.red, paddingBottom: 18 }}>
+        Rapportér fejl i resultatet
+      </div>
+    </>
+  );
+}
 
 function badgeToneClass(tone) {
   if (tone === 'live') return 'pm-kampe-v2-badge--live';
@@ -62,6 +311,8 @@ export function KampeMatchDetailSheet({
     matchPrefs?.booked === false && !String(match.court_name || '').trim()
       ? 'Bane ikke booket endnu'
       : (match.court_name || 'Padelbane');
+  const eloLevelRange = matchPrefs?.min != null && matchPrefs?.max != null
+    ? eloRangeToLevelRange(matchPrefs.min, matchPrefs.max) : null;
   const directionsQuery = resolveMatchDirectionsQuery(match, profilesById);
   const statusBadge = getKampeDetailStatusBadge({
     status,
@@ -119,7 +370,7 @@ export function KampeMatchDetailSheet({
                 <div className="pm-kampe-v2-detail-badges-inline">
                   {matchPrefs?.min != null && matchPrefs?.max != null ? (
                     <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue pm-kampe-v2-detail-meta-badge">
-                      ELO {matchPrefs.min}–{matchPrefs.max}
+                      {eloLevelRange ? `Niveau ${formatPlaytomicLevel(eloLevelRange.min)}–${formatPlaytomicLevel(eloLevelRange.max)}` : `ELO ${matchPrefs.min}–${matchPrefs.max}`}
                     </span>
                   ) : null}
                   {matchPrefs?.booked != null ? (
@@ -142,7 +393,23 @@ export function KampeMatchDetailSheet({
 
         <div className="pm-kampe-v2-detail-scroll">
 
-        <div className="pm-kd-card" style={{ margin: '0 0 4px' }}>
+        {/* Court hero visual */}
+        <div className="pm-kd-hero" aria-hidden="true">
+          <div className="pm-kd-hero-court" />
+          <div className="pm-kd-hero-badges">
+            <span className="pm-kd-chip pm-kd-chip--navy">2V2</span>
+            {matchPrefs?.min != null && matchPrefs?.max != null ? (
+              <span className="pm-kd-chip pm-kd-chip--light">
+                {eloLevelRange ? `Niveau ${formatPlaytomicLevel(eloLevelRange.min)}–${formatPlaytomicLevel(eloLevelRange.max)}` : `ELO ${matchPrefs.min}–${matchPrefs.max}`}
+              </span>
+            ) : null}
+            {statusBadge.tone === 'live' ? (
+              <span className="pm-kd-chip pm-kd-chip--live">LIVE</span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="pm-kd-card pm-kd-price-card" style={{ marginBottom: 4 }}>
           <div className="pm-kd-info-row" style={{ marginTop: 0 }}>
             <div className="pm-kd-info-ic"><CalendarDays size={18} aria-hidden /></div>
             <div>
@@ -176,34 +443,130 @@ export function KampeMatchDetailSheet({
           </>
         ) : null}
 
-        <MatchCourtView
-          teamStats={teamStats}
-          status={status}
-          winnerTeam={winnerTeam}
-          profilesById={profilesById}
-          readOnly={status === 'completed'}
-          joined={joined}
-          myTeam={myTeam}
-          matchId={matchId}
-          busyId={busyId}
-          isCreator={isCreator}
-          isAdmin={isAdmin}
-          currentUserId={currentUserId}
-          onSwitchTeam={onSwitchTeam}
-          onSwitchPlayerTeam={onSwitchPlayerTeam}
-          onKickPlayer={onKickPlayer}
-          onProfileClick={onProfileClick}
-        />
-
-        {status === 'completed' && matchResult ? (
-          <MatchResultStrip
+        {status === 'completed' && matchResult?.confirmed ? (
+          <CompletedMatchDetail
             matchResult={matchResult}
-            myTeam={
-              myTeam === 1 ? 'team1' : myTeam === 2 ? 'team2' : null
-            }
-            eloChange={myEloChange}
+            teamStats={teamStats}
+            winnerTeam={winnerTeam}
+            myTeam={myTeam}
+            profilesById={profilesById}
+            currentUserId={currentUserId}
           />
-        ) : null}
+        ) : (
+          <>
+            <MatchCourtView
+              teamStats={teamStats}
+              status={status}
+              winnerTeam={winnerTeam}
+              profilesById={profilesById}
+              readOnly={status === 'completed'}
+              joined={joined}
+              myTeam={myTeam}
+              matchId={matchId}
+              busyId={busyId}
+              isCreator={isCreator}
+              isAdmin={isAdmin}
+              currentUserId={currentUserId}
+              onSwitchTeam={onSwitchTeam}
+              onSwitchPlayerTeam={onSwitchPlayerTeam}
+              onKickPlayer={onKickPlayer}
+              onProfileClick={onProfileClick}
+            />
+            {/* Flat holdene list */}
+            {(() => {
+              const t1p = teamStats?.t1 || [];
+              const t2p = teamStats?.t2 || [];
+              if (t1p.length + t2p.length === 0) return null;
+              const maxP = match?.max_players || 4;
+              const maxPerTeam = Math.ceil(maxP / 2);
+              const filled = t1p.length + t2p.length;
+              return (
+                <>
+                  <div className="pm-kd-section-h">
+                    <h3>Holdene ({filled}/{maxP})</h3>
+                    {left > 0 ? (
+                      <span className="pm-kd-tag pm-kd-tag--amber">
+                        {left} plads{left > 1 ? 'er' : ''} tilbage
+                      </span>
+                    ) : null}
+                  </div>
+                  {[{ teamNum: 1, players: t1p }, { teamNum: 2, players: t2p }].map(({ teamNum, players }) => (
+                    <div key={teamNum}>
+                      <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: theme.textLight, margin: '12px 0 6px', paddingLeft: 2 }}>
+                        Hold {teamNum}
+                      </div>
+                      {players.map((p) => {
+                        const uid = String(p.user_id);
+                        const prof = profilesById?.[uid] || {};
+                        const isMe = uid === String(currentUserId);
+                        return (
+                          <div key={p.user_id} className="pm-kd-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginBottom: 8 }}>
+                            <AvatarCircle
+                              avatar={prof.avatar || p.user_emoji || '🎾'}
+                              size={40}
+                              emojiSize="16px"
+                              style={{ background: teamNum === 1 ? theme.accentBg : theme.blueBg, flexShrink: 0 }}
+                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: 14 }}>
+                                {isMe ? 'Dig' : (prof.name || p.user_name || '?')}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 4 }}>
+                                {prof.level != null ? (
+                                  <span style={{
+                                    background: '#FAEFDC',
+                                    color: '#92400E',
+                                    border: '1px solid #EDD9B5',
+                                    fontSize: 9.5,
+                                    fontWeight: 600,
+                                    padding: '2px 7px',
+                                    borderRadius: 5,
+                                    letterSpacing: '0.4px',
+                                    textTransform: 'uppercase',
+                                  }}>
+                                    Niveau {formatPlaytomicLevel(prof.level)}
+                                  </span>
+                                ) : null}
+                                {prof.games_played != null && prof.games_played > 0 ? (
+                                  <span style={{ fontSize: 11.5, color: '#5E6B81', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                    <svg style={{ width: 11, height: 11 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                                    </svg>
+                                    {prof.games_played} kampe
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {Array.from({ length: Math.max(0, maxPerTeam - players.length) }).map((_, i) => (
+                        <div key={`empty-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginBottom: 8, border: '2px dashed var(--pm-border, #E2E8F0)', borderRadius: 14, background: 'transparent' }}>
+                          <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#E9EDF4', color: '#9AA9BD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 13.5, color: '#5E6B81' }}>Ledig plads</div>
+                            <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '1px', color: '#9AA9BD', marginTop: 2, textTransform: 'uppercase' }}>Bliv den næste!</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
+            {status === 'completed' && matchResult ? (
+              <MatchResultStrip
+                matchResult={matchResult}
+                myTeam={myTeam === 1 ? 'team1' : myTeam === 2 ? 'team2' : null}
+                eloChange={myEloChange}
+              />
+            ) : null}
+          </>
+        )}
 
         {joinRequestsPanel}
 

@@ -3,8 +3,27 @@ import {
   KAMPE_LIST_REGION_OPTIONS,
   KAMPE_LIST_ELO_BANDS,
   normalizeKampeListFilter,
+  defaultKampeListFilter,
 } from '../../lib/kampeListFilterCore';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
+import { theme } from '../../lib/platformTheme';
+
+function FilterToggle({ checked, onChange, label }) {
+  return (
+    <div className="pm-kampe-v2-filter-toggle-row">
+      <span className="pm-kampe-v2-filter-toggle-label">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`pm-kampe-v2-filter-toggle${checked ? ' pm-kampe-v2-filter-toggle--on' : ''}`}
+      >
+        <span className="pm-kampe-v2-filter-toggle-thumb" />
+      </button>
+    </div>
+  );
+}
 
 export function KampeFilterSheet({
   open,
@@ -28,10 +47,10 @@ export function KampeFilterSheet({
 
   const resultLabel =
     format === 'padel'
-      ? `${resultCount ?? 0} kampe matcher`
+      ? `${resultCount ?? 0} kampe`
       : format === 'americano'
-        ? `${resultCount ?? 0} turneringer matcher`
-        : `${resultCount ?? 0} ligaer matcher`;
+        ? `${resultCount ?? 0} turneringer`
+        : `${resultCount ?? 0} ligaer`;
 
   const setRegion = (regionId) => {
     onListFilterChange?.({ ...filter, regionId });
@@ -39,6 +58,12 @@ export function KampeFilterSheet({
 
   const setEloBand = (eloBandId) => {
     onListFilterChange?.({ ...filter, eloBandId: filter.eloBandId === eloBandId ? '' : eloBandId });
+  };
+
+  const handleReset = () => {
+    const def = defaultKampeListFilter();
+    onListFilterChange?.(def);
+    if (scope !== 'alle') onScopeChange?.('alle');
   };
 
   if (!open) return null;
@@ -72,18 +97,18 @@ export function KampeFilterSheet({
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />
           <div className="pm-kampe-v2-sheet-head">
             <div>
-              <div className="pm-kampe-v2-sheet-title">Filter</div>
+              <div className="pm-kampe-v2-sheet-title">Filtrér kampe</div>
               {resultCount != null ? (
-                <div className="pm-kampe-v2-sheet-sub">{resultLabel}</div>
+                <div className="pm-kampe-v2-sheet-sub">{resultLabel} matcher</div>
               ) : null}
             </div>
             <button
               type="button"
-              className="pm-kampe-v2-sheet-apply"
-              onClick={onClose}
+              className="pm-kampe-v2-filter-reset"
+              onClick={handleReset}
               onPointerDown={(event) => event.stopPropagation()}
             >
-              Anvend
+              Nulstil
             </button>
           </div>
         </div>
@@ -158,6 +183,32 @@ export function KampeFilterSheet({
             </p>
           </div>
         ) : null}
+
+        {format === 'padel' ? (
+          <div className="pm-kampe-v2-sheet-section">
+            <div className="pm-kampe-v2-sheet-label">Præferencer</div>
+            <FilterToggle
+              checked={filter.onlyOpen}
+              onChange={(v) => onListFilterChange?.({ ...filter, onlyOpen: v })}
+              label="Kun kampe med ledige pladser"
+            />
+            <FilterToggle
+              checked={filter.onlyBooked}
+              onChange={(v) => onListFilterChange?.({ ...filter, onlyBooked: v })}
+              label="Kun kampe med booket bane"
+            />
+          </div>
+        ) : null}
+
+        <div className="pm-kampe-v2-sheet-section" style={{ paddingBottom: 8 }}>
+          <button
+            type="button"
+            className="pm-kampe-v2-filter-apply-btn"
+            onClick={onClose}
+          >
+            {resultCount != null ? `Vis ${resultLabel}` : 'Anvend filter'}
+          </button>
+        </div>
       </div>
     </>
   );

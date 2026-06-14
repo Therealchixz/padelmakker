@@ -117,12 +117,15 @@ export function HomeTab({ user, setTab, showToast }) {
         for (const r of (mRes.data || [])) {
           const m = r.matches;
           if (!m) continue;
-          const statusLabel = m.status === 'open' ? 'Åben' : m.status === 'in_progress' ? 'I gang' : 'Fuld';
-          const players = (m.current_players != null && m.max_players != null) ? ` · ${m.current_players}/${m.max_players} spillere` : '';
+          const statusLabel = m.status === 'in_progress' ? 'I gang' : m.status === 'full' ? 'Fuld' : 'Bekræftet';
+          const statusTone = m.status === 'in_progress' ? theme.accent : m.status === 'full' ? theme.warm : theme.green;
+          const statusBg = m.status === 'in_progress' ? theme.accentBg : m.status === 'full' ? theme.warmBg : theme.greenBg;
+          const players = (m.current_players != null && m.max_players != null) ? `${m.current_players}/${m.max_players} spillere` : '';
           items.push({
-            key: `m-${m.id}`, kind: 'match', tone: theme.green, bg: theme.greenBg, badge: dayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
+            key: `m-${m.id}`, kind: 'match', tone: statusTone, bg: statusBg, badge: dayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
             title: <strong style={{ fontWeight: 700 }}>{m.court_name || 'Padelkamp'}</strong>, tag: '2v2',
-            subtitle: `${statusLabel} · ${m.time || 'Tidspunkt ikke sat'}${players}`,
+            statusLabel,
+            subtitle: [m.time ? `Kl. ${m.time}` : null, players].filter(Boolean).join(' · '),
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
           });
         }
@@ -131,10 +134,12 @@ export function HomeTab({ user, setTab, showToast }) {
           const t = r.americano_tournaments;
           if (!t) continue;
           const fmt = String(t.format || '').toLowerCase() === 'mexicano' ? 'Mexicano' : 'Americano';
+          const statusLabel = t.status === 'registration' ? 'Tilmelding' : 'Tilmeldt';
           items.push({
             key: `am-${t.id}`, kind: 'americano', tone: theme.warm, bg: theme.warmBg, badge: dayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
             title: <strong style={{ fontWeight: 700 }}>{t.name || fmt}</strong>, tag: fmt,
-            subtitle: `${t.time_slot ? `${t.time_slot} · ` : ''}${t.status === 'registration' ? 'Tilmelding åben' : 'Planlagt'}`,
+            statusLabel,
+            subtitle: t.time_slot ? `Kl. ${t.time_slot}` : 'Planlagt',
             target: { tab: 'kampe', search: `format=americano&focus=${encodeURIComponent(String(t.id))}` },
           });
         }
@@ -157,7 +162,8 @@ export function HomeTab({ user, setTab, showToast }) {
             items.push({
               key: `lm-${lm.id}`, kind: 'liga', tone: theme.accent, bg: theme.accentBg, badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
               title: <strong style={{ fontWeight: 700 }}>{leagueName.get(lm.league_id) || 'Ligakamp'}</strong>, tag: 'Liga',
-              subtitle: `Runde ${lm.round_number ?? '?'}${oppId && teamName.get(oppId) ? ` mod ${teamName.get(oppId)}` : ''}`,
+              statusLabel: `Runde ${lm.round_number ?? '?'}`,
+              subtitle: oppId && teamName.get(oppId) ? `mod ${teamName.get(oppId)}` : 'Kommende kamp',
               target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(lm.league_id))}` },
             });
           }
@@ -1256,7 +1262,12 @@ export function HomeTab({ user, setTab, showToast }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
             {upcomingItems.map((it) => (
-              <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                key={it.key}
+                type="button"
+                onClick={() => setTab(it.target.tab, { search: it.target.search })}
+                style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
+              >
                 <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: theme.surfaceAlt, border: `1px solid ${theme.border}`, borderRadius: 10, padding: '6px 0' }}>
                   <span style={{ display: 'block', fontSize: it.kind === 'liga' ? 13 : 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{it.badge.top}</span>
                   {it.badge.bottom ? <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textMid, letterSpacing: 0.5 }}>{it.badge.bottom}</span> : null}
@@ -1265,11 +1276,12 @@ export function HomeTab({ user, setTab, showToast }) {
                   <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.tag} · {it.title}</div>
                   <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.subtitle}</div>
                 </div>
-                <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })}
-                  style={{ background: it.tone, color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 12, border: 'none', borderRadius: 9, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                  Se
-                </button>
-              </div>
+                {it.statusLabel ? (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: it.bg, color: it.tone, border: `1px solid ${it.tone}40`, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    {it.statusLabel}
+                  </span>
+                ) : null}
+              </button>
             ))}
           </div>
         </div>

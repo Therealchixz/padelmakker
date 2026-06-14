@@ -1,4 +1,4 @@
-import { CalendarDays, Clock, MapPin } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Trophy } from 'lucide-react';
 import { shortLigaDate, getLigaBadge } from '../lib/ligaDisplayUtils';
 
 function badgeToneClass(tone) {
@@ -101,6 +101,9 @@ export function LigaListCard({
       style={{ scrollMarginTop: '88px' }}
     >
       <div className={headerClass}>
+        <div className="pm-liga-v2-list-icon" aria-hidden="true">
+          <Trophy size={18} strokeWidth={2} />
+        </div>
         <div className="pm-liga-v2-list-top-main">
           <div className="pm-liga-v2-list-type">Liga · Swiss</div>
           <div className="pm-liga-v2-list-title">{league.name}</div>

@@ -113,6 +113,7 @@ export function AmericanoListCard({
       style={{ scrollMarginTop: '88px' }}
     >
       <div className="pm-americano-v2-list-top">
+        <div className="pm-americano-v2-list-court" aria-hidden="true" />
         <div className="pm-americano-v2-list-top-main">
           <div className="pm-americano-v2-list-type">{getTournamentFormatLabel(tournament.format)}</div>
           <div className="pm-americano-v2-list-title">{tournament.name}</div>

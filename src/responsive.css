@@ -3911,6 +3911,44 @@ button,
   z-index: 0;
 }
 
+.pm-baner-map-placeholder {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--pm-radius-md);
+  border: 1px solid var(--pm-border);
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--pm-border) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, var(--pm-border) 1px, transparent 1px) 0 0 / 32px 32px,
+    #EDF2F8;
+}
+
+.pm-baner-map-pin {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -70%) rotate(-45deg);
+  background: var(--pm-navy);
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 2px 8px rgba(13,39,82,0.35);
+}
+
+.pm-baner-map-pin::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
 .pm-baner-venue-location__actions {
   display: flex;
   flex-wrap: wrap;
@@ -6938,6 +6976,85 @@ button,
   padding: 4px 0;
 }
 
+/* Filter reset button */
+.pm-kampe-v2-filter-reset {
+  border: none;
+  background: transparent;
+  color: var(--pm-navy);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+
+/* Filter apply CTA button */
+.pm-kampe-v2-filter-apply-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--pm-radius-lg);
+  border: none;
+  background: var(--pm-cta-gradient);
+  color: var(--pm-on-accent);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: -0.1px;
+}
+
+/* Filter toggle row */
+.pm-kampe-v2-filter-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.pm-kampe-v2-filter-toggle-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pm-text);
+}
+
+.pm-kampe-v2-filter-toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  background: var(--pm-border);
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.pm-kampe-v2-filter-toggle--on {
+  background: var(--pm-accent);
+}
+
+.pm-kampe-v2-filter-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--pm-surface);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  transition: left 0.18s;
+}
+
+.pm-kampe-v2-filter-toggle--on .pm-kampe-v2-filter-toggle-thumb {
+  left: 23px;
+}
+
 .pm-kampe-v2-sheet-section {
   margin-bottom: 16px;
 }
@@ -7220,8 +7337,8 @@ button,
 }
 
 .pm-kampe-v2-badge--full {
-  background: color-mix(in srgb, var(--pm-warm) 20%, var(--pm-surface));
-  color: color-mix(in srgb, var(--pm-warm) 85%, #7c2d12);
+  background: var(--pm-danger-bg, #FDEAEA);
+  color: var(--pm-danger, #E5484D);
 }
 
 .pm-kampe-v2-badge--closed {
@@ -7797,6 +7914,39 @@ button,
   padding: 14px 14px 12px;
   background: var(--pm-cta-gradient);
   color: var(--pm-on-accent);
+  position: relative;
+  overflow: hidden;
+  min-height: 104px;
+}
+
+.pm-americano-v2-list-court {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 32%;
+  bottom: 10%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 5px;
+  transform: perspective(260px) rotateX(36deg);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pm-americano-v2-list-court::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.pm-americano-v2-list-top-main,
+.pm-americano-v2-list-badge {
+  position: relative;
+  z-index: 1;
 }
 
 .pm-americano-v2-list-top-main {
@@ -8496,9 +8646,22 @@ button,
   transform: scale(0.97);
 }
 
+.pm-liga-v2-list-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  align-self: center;
+}
+
 .pm-liga-v2-list-top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   column-gap: 10px;
   align-items: start;
   padding: 14px 14px 12px;
@@ -9022,6 +9185,111 @@ button,
   padding: 0 12px 28px;
   overflow: auto;
   max-height: min(72vh, 640px);
+}
+
+/* Round-by-round list (new schedule view) */
+.pm-liga-v2-round-section {
+  margin-bottom: 18px;
+}
+
+.pm-liga-v2-round-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px 6px;
+}
+
+.pm-liga-v2-round-label-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pm-text);
+}
+
+.pm-liga-v2-round-label-status {
+  font-size: 11px;
+  color: var(--pm-text-light);
+  font-weight: 500;
+}
+
+.pm-liga-v2-round-label-status--done {
+  color: var(--pm-green);
+}
+
+.pm-liga-v2-round-label-status--live {
+  color: var(--pm-accent);
+  font-weight: 600;
+}
+
+.pm-liga-v2-round-future {
+  font-size: 11.5px;
+  color: var(--pm-text-light);
+  padding: 12px 14px;
+  background: var(--pm-surface-alt);
+  border-radius: 10px;
+  border: 1px dashed var(--pm-border);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.pm-liga-v2-match-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: default;
+}
+
+.pm-liga-v2-match-card--mine {
+  border-color: var(--pm-navy);
+  border-width: 1.5px;
+}
+
+.pm-liga-v2-match-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pm-liga-v2-match-teams {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.pm-liga-v2-match-vs {
+  color: var(--pm-text-mid);
+  font-weight: 400;
+  margin: 0 2px;
+}
+
+.pm-liga-v2-match-detail {
+  font-size: 11.5px;
+  color: var(--pm-text-mid);
+  margin-top: 3px;
+}
+
+.pm-liga-v2-match-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pm-liga-v2-schedule-note {
+  font-size: 11.5px;
+  color: var(--pm-text-light);
+  line-height: 1.55;
+  padding: 12px 14px;
+  background: var(--pm-surface-alt);
+  border-radius: 10px;
+  margin-top: 4px;
 }
 
 .pm-liga-v2-team-body {

@@ -200,6 +200,7 @@ export function NotifikationerPage() {
     background: unread ? theme.accentBg + '40' : theme.surface,
     borderRadius: 14,
     border: '1px solid ' + (unread ? theme.accent + '30' : theme.border),
+    borderLeft: unread ? `3px solid ${theme.navy}` : '1px solid ' + theme.border,
     margin: '0 18px 11px',
     position: 'relative',
   });

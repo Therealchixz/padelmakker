@@ -369,128 +369,100 @@ export default function PadelMatchResultInput({
     });
   };
 
+  const step = (idx: 0 | 1 | 2, field: keyof SetForm, dir: 1 | -1, maxVal: number) => {
+    const cur = numOrUndef(forms[idx][field]) ?? 0;
+    const next = Math.max(0, Math.min(maxVal, cur + dir));
+    updateForm(idx, { [field]: String(next) });
+  };
+
+  const cntBtn = (idx: 0 | 1 | 2, field: keyof SetForm, dir: 1 | -1, maxVal: number, disabled: boolean) => {
+    const isPlus = dir === 1;
+    const cur = numOrUndef(forms[idx][field]) ?? 0;
+    const atLimit = isPlus ? cur >= maxVal : cur <= 0;
+    return (
+      <button
+        type="button"
+        disabled={disabled || atLimit}
+        onClick={() => step(idx, field, dir, maxVal)}
+        aria-label={isPlus ? 'Tilføj' : 'Fjern'}
+        style={{
+          width: 35, height: 35, borderRadius: 10, border: isPlus ? 'none' : '1.5px solid #E6EAF1',
+          background: isPlus ? (disabled ? '#9AA9BD' : '#16377E') : '#fff',
+          color: isPlus ? '#fff' : (atLimit ? '#C9D3E1' : '#16377E'),
+          fontSize: 18, fontWeight: 600,
+          cursor: disabled || atLimit ? 'default' : 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'inherit', flexShrink: 0, padding: 0,
+          opacity: isPlus && disabled ? 0.6 : 1,
+        }}
+      >
+        {isPlus ? '+' : '−'}
+      </button>
+    );
+  };
+
   const setCard = (index: 0 | 1 | 2) => {
     const n = (index + 1) as 1 | 2 | 3;
     const disabled = index === 2 && matchDecidedAfterTwo;
     const f = forms[index];
     const err = setErrors[index];
-    const errId = `set-${n}-error`;
     const tb = showTiebreak(index);
+    const t1Name = team1.trim() || 'Hold 1';
+    const t2Name = team2.trim() || 'Hold 2';
+    const reqLabel = n === 3
+      ? (matchDecidedAfterTwo ? 'IKKE NØDVENDIGT' : 'VED 1–1 I SÆT')
+      : 'OBLIGATORISK';
+
+    const scoreCol = (field: keyof SetForm, teamName: string, maxVal: number) => (
+      <div style={{ flex: 1, textAlign: 'center' }}>
+        <div style={{ fontSize: 11, color: '#16377E', fontWeight: 600, marginBottom: 9 }}>{teamName}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          {cntBtn(index, field, -1, maxVal, disabled)}
+          <span style={{ fontSize: 25, fontWeight: 700, color: '#16377E', width: 32, textAlign: 'center' }}>
+            {numOrUndef(f[field]) ?? 0}
+          </span>
+          {cntBtn(index, field, 1, maxVal, disabled)}
+        </div>
+      </div>
+    );
 
     return (
       <div
         key={n}
         role="group"
         aria-label={`Sæt ${n}`}
-        aria-disabled={disabled}
-        className={`rounded-xl border p-4 shadow-sm transition-opacity ${
-          disabled ? "border-slate-200 bg-slate-50 opacity-60" : "border-slate-200 bg-white"
-        }`}
-        aria-describedby={err ? errId : undefined}
+        style={{
+          background: '#fff', borderRadius: 14, border: '1px solid #E6EAF1',
+          boxShadow: '0 2px 8px rgba(13,39,82,0.06)', padding: 16, marginBottom: 13,
+          opacity: disabled ? 0.55 : 1,
+        }}
       >
-        <div className="mb-3 flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-slate-800">
-            Sæt {n}
-            {n === 3 && <span className="ml-1 font-normal text-slate-500">(Tiebreak)</span>}
-            {disabled && <span className="ml-2 font-normal text-slate-500">(ikke nødvendigt)</span>}
-          </h3>
-          <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-              n === 3
-                ? "bg-amber-100 text-amber-800"
-                : "bg-[#E8EDF6] text-[#16377E]"
-            }`}
-          >
-            {n === 3 ? "Valgfri" : "Obligatorisk"}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <b style={{ fontSize: '13.5px', fontWeight: 700 }}>
+            Sæt {n}{n === 3 ? ' (Tiebreak)' : ''}
+          </b>
+          <span style={{ fontSize: '9.5px', fontWeight: 700, letterSpacing: '1.2px', color: '#5E6B81' }}>
+            {reqLabel}
           </span>
-          <button
-            type="button"
-            disabled={disabled}
-            className="ml-auto rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#16377E] disabled:pointer-events-none disabled:opacity-40"
-            title="Gyldige sæt: 6-0 til 6-4, 7-5, eller 6-6/7-6 med tiebreak (min. 7 point, vind med 2)."
-            aria-label={`Hjælp til sæt ${n}`}
-          >
-            <Info className="h-4 w-4" aria-hidden />
-          </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor={`g1-${n}`} className="mb-1 block text-xs font-medium text-slate-600">
-              Games hold 1
-            </label>
-            <input
-              id={`g1-${n}`}
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={7}
-              value={f.games1}
-              onChange={(e) => updateForm(index, { games1: e.target.value })}
-              disabled={disabled}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#16377E] focus:outline-none focus:ring-2 focus:ring-[#16377E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
-              aria-invalid={!!err}
-            />
-          </div>
-          <div>
-            <label htmlFor={`g2-${n}`} className="mb-1 block text-xs font-medium text-slate-600">
-              Games hold 2
-            </label>
-            <input
-              id={`g2-${n}`}
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={7}
-              value={f.games2}
-              onChange={(e) => updateForm(index, { games2: e.target.value })}
-              disabled={disabled}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#16377E] focus:outline-none focus:ring-2 focus:ring-[#16377E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
-              aria-invalid={!!err}
-            />
-          </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {scoreCol('games1', t1Name, 7)}
+          {scoreCol('games2', t2Name, 7)}
         </div>
 
         {tb && (
-          <div className="mt-4 rounded-lg bg-amber-50 p-3 ring-1 ring-amber-200">
-            <p className="mb-2 text-xs font-medium text-amber-900">Tiebreak</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor={`tb1-${n}`} className="mb-1 block text-xs text-slate-600">
-                  Point hold 1
-                </label>
-                <input
-                  id={`tb1-${n}`}
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  value={f.tb1}
-                  onChange={(e) => updateForm(index, { tb1: e.target.value })}
-                  disabled={disabled}
-                  className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 focus:border-[#16377E] focus:outline-none focus:ring-2 focus:ring-[#16377E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
-                />
-              </div>
-              <div>
-                <label htmlFor={`tb2-${n}`} className="mb-1 block text-xs text-slate-600">
-                  Point hold 2
-                </label>
-                <input
-                  id={`tb2-${n}`}
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  value={f.tb2}
-                  onChange={(e) => updateForm(index, { tb2: e.target.value })}
-                  disabled={disabled}
-                  className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 focus:border-[#16377E] focus:outline-none focus:ring-2 focus:ring-[#16377E]/20 disabled:cursor-not-allowed disabled:bg-slate-100"
-                />
-              </div>
+          <div style={{ marginTop: 14, background: '#FAEFDC', borderRadius: 10, padding: 12, border: '1px solid #EDD9B5' }}>
+            <p style={{ fontSize: '11.5px', fontWeight: 600, color: '#92400E', marginBottom: 10 }}>Tiebreak-point</p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {scoreCol('tb1', t1Name, 99)}
+              {scoreCol('tb2', t2Name, 99)}
             </div>
           </div>
         )}
 
         {err && (
-          <p id={errId} className="mt-2 text-sm text-red-600" role="alert">
+          <p style={{ marginTop: 10, fontSize: '12px', color: '#E5484D' }} role="alert">
             {err}
           </p>
         )}
@@ -499,86 +471,64 @@ export default function PadelMatchResultInput({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mx-auto w-full max-w-2xl space-y-6 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-lg sm:p-6"
-      noValidate
-    >
-      <header className="space-y-2">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl" style={{letterSpacing:"-0.3px"}}>Indberet resultat</h2>
-        <div className="flex items-start gap-2 rounded-lg bg-[#EEF2FA] p-3 text-sm text-[#1E3A6E] ring-1 ring-[#D5DEEE]">
-          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <p className="leading-snug">{RULES_SUMMARY}</p>
+    <form onSubmit={handleSubmit} style={{ padding: '4px 0 8px', fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif' }} noValidate>
+      {playersEditable && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+          <div>
+            <label htmlFor="padel-team1" style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: '#5E6B81', marginBottom: 5 }}>Hold 1</label>
+            <input
+              id="padel-team1"
+              type="text"
+              value={team1}
+              onChange={(e) => setTeam1(e.target.value)}
+              style={{ width: '100%', borderRadius: 10, border: '1px solid #E6EAF1', padding: '10px 12px', fontSize: 14, color: '#101A2E', background: '#fff', boxSizing: 'border-box' as const }}
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label htmlFor="padel-team2" style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: '#5E6B81', marginBottom: 5 }}>Hold 2</label>
+            <input
+              id="padel-team2"
+              type="text"
+              value={team2}
+              onChange={(e) => setTeam2(e.target.value)}
+              style={{ width: '100%', borderRadius: 10, border: '1px solid #E6EAF1', padding: '10px 12px', fontSize: 14, color: '#101A2E', background: '#fff', boxSizing: 'border-box' as const }}
+              autoComplete="off"
+            />
+          </div>
         </div>
-      </header>
-
-      {/* Live stilling */}
-      <div
-        className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm"
-        role="status"
-        aria-live="polite"
-      >
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Stilling (sæt)</p>
-        <p className="mt-1 text-2xl font-bold text-slate-900">
-          {setsWon.t1} – {setsWon.t2}
-        </p>
-        <p className="mt-1 text-sm text-slate-600">
-          {setsWon.t1 >= 2 || setsWon.t2 >= 2
-            ? `Vinder: ${setsWon.t1 > setsWon.t2 ? team1Trim || "Hold 1" : team2Trim || "Hold 2"}`
-            : matchCompleteWithOneSet
-              ? `Vinder (ét sæt): ${setsWon.t1 > setsWon.t2 ? team1Trim || "Hold 1" : team2Trim || "Hold 2"}`
-              : "Ét gyldigt sæt kan gemmes som hele kampen, eller først til 2 sæt"}
-        </p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="padel-team1" className="mb-1 block text-sm font-medium text-slate-700">
-            Hold 1
-          </label>
-          <input
-            id="padel-team1"
-            type="text"
-            value={team1}
-            onChange={(e) => setTeam1(e.target.value)}
-            disabled={!playersEditable}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100"
-            autoComplete="off"
-          />
-        </div>
-        <div>
-          <label htmlFor="padel-team2" className="mb-1 block text-sm font-medium text-slate-700">
-            Hold 2
-          </label>
-          <input
-            id="padel-team2"
-            type="text"
-            value={team2}
-            onChange={(e) => setTeam2(e.target.value)}
-            disabled={!playersEditable}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100"
-            autoComplete="off"
-          />
-        </div>
-      </div>
-      {!namesOk && (
-        <p className="text-sm text-red-600" role="alert">
-          Begge holdnavne skal udfyldes.
-        </p>
+      )}
+      {playersEditable && !namesOk && (
+        <p style={{ fontSize: '12px', color: '#E5484D', marginBottom: 10 }} role="alert">Begge holdnavne skal udfyldes.</p>
       )}
 
-      <div className="space-y-4">
-        {setCard(0)}
-        {setCard(1)}
-        {setCard(2)}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0 10px' }}>
+        <h3 style={{ fontSize: '15.5px', fontWeight: 600, letterSpacing: '-0.2px', margin: 0 }}>Indtast score</h3>
+        {(setsWon.t1 > 0 || setsWon.t2 > 0) && (
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#16377E' }} role="status" aria-live="polite">
+            {setsWon.t1}–{setsWon.t2} sæt
+          </span>
+        )}
       </div>
 
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      {setCard(0)}
+      {setCard(1)}
+      {setCard(2)}
+
+      <p style={{ textAlign: 'center', fontSize: '11.5px', color: '#5E6B81', lineHeight: 1.6, padding: '4px 16px 12px' }}>
+        Resultatet sendes til modstanderne til godkendelse. Sørg for at begge hold er enige før indsendelse.
+      </p>
+
+      <div style={{ display: 'flex', gap: 10 }}>
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+            style={{
+              flex: 1, padding: '13px', borderRadius: 10, border: '1.5px solid #E6EAF1',
+              background: '#fff', color: '#16377E', fontSize: '14.5px', fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
           >
             Annuller
           </button>
@@ -586,7 +536,14 @@ export default function PadelMatchResultInput({
         <button
           type="submit"
           disabled={!formValid}
-          className="rounded-lg bg-[#16377E] px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-[#0D2752] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#16377E] focus:ring-offset-2"
+          style={{
+            flex: 2, padding: '14px', borderRadius: 10, border: 'none',
+            background: formValid ? '#16377E' : '#C9D3E1',
+            color: '#fff', fontSize: '14.5px', fontWeight: 600,
+            cursor: formValid ? 'pointer' : 'default', fontFamily: 'inherit',
+            boxShadow: formValid ? '0 6px 14px rgba(22,55,126,0.32)' : 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}
         >
           Bekræft resultat
         </button>
