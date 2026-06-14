@@ -786,7 +786,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {showPerformanceSection ? (
         <>
-        <div ref={performanceRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <div ref={performanceRef} style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
           Performance · {activeModeLabel}
         </div>
         {/* Ekstra statistik — kun 2v2: samlet 2×2 gitter */}
@@ -875,7 +875,7 @@ export function ProfilTab({ user, showToast, setTab }) {
         ) : null}
 
         {showRelationsSection && (
-          <div ref={relationsRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <div ref={relationsRef} style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
             Relationer · {activeModeLabel}
           </div>
         )}
@@ -1147,7 +1147,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           </>
         )}
 
-        <div ref={actionsRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <div ref={actionsRef} style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
           Handlinger · {activeModeLabel}
         </div>
         {/* Quick links — matcher valgt format i Overblik */}
