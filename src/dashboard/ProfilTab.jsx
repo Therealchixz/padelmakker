@@ -139,6 +139,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     return peak;
   }, [ratedRows]);
   const recentForm = ratedRows.slice(-5).reverse();
+  const { currentStreak: twoV2CurrentStreak } = useMemo(() => winStreaksFromEloHistory(ratedRows), [ratedRows]);
 
   const todayEloChange = useMemo(() => {
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -450,10 +451,10 @@ export function ProfilTab({ user, showToast, setTab }) {
   const americanoWinPct = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : 0;
   const ligaWinPct = ligaStats.matches > 0 ? Math.round((ligaStats.wins / ligaStats.matches) * 100) : 0;
   const twoVTwoOverviewCards = [
-    { label: "ELO", value: elo, color: theme.accent },
-    { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
-    { label: "Kampe", value: games, color: theme.blue },
-    { label: "Seneste form", value: null, form: recentForm.slice(0, 4) },
+    { label: "Kampe spillet", value: games, color: theme.blue },
+    { label: "Win rate", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
+    { label: "Nuværende stime", value: twoV2CurrentStreak > 0 ? `🔥 ${twoV2CurrentStreak}` : twoV2CurrentStreak, color: twoV2CurrentStreak > 0 ? theme.warm : theme.textLight },
+    { label: "Turneringer", value: americanoPlayed || 0, color: theme.accent },
   ];
   const americanoOverviewCards = [
     { label: "ELO", value: americanoElo, color: theme.accent },
