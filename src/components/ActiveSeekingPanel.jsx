@@ -344,14 +344,13 @@ export function ActiveSeekingPanel({
         <div
           style={{
             margin: '2px 18px 13px',
-            background: theme.surface,
-            border: `1px solid ${theme.border}`,
+            background: 'var(--pm-surface-muted)',
+            border: '1px solid var(--pm-americano-tie-border)',
             borderRadius: 14,
             padding: '13px 15px',
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            boxShadow: theme.shadow,
           }}
         >
           <div style={{

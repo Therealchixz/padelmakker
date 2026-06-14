@@ -760,7 +760,9 @@ export function ProfilTab({ user, showToast, setTab }) {
 
           {is2v2Mode && !statsLoading && (
             <div style={{ marginTop: 4, marginBottom: 16 }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Opnåede badges</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Opnåede badges</h3>
+              </div>
               <div style={{ display: 'flex', gap: 6 }}>
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ width: 52, height: 52, borderRadius: '50%', background: theme.amberBg, color: theme.amberText, border: `1px solid ${theme.amberBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
