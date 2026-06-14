@@ -5,7 +5,7 @@ import { theme, btn, font } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { supabase } from '../lib/supabase';
 import { Court } from '../api/base44Client';
-import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X } from 'lucide-react';
+import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X, TrendingUp, TrendingDown, Trophy, Zap } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { NotificationBell } from '../components/NotificationBell';
 import { AppModal } from '../components/AppModal';
@@ -930,8 +930,8 @@ export function HomeTab({ user, setTab, showToast }) {
   });
 
   const activityLeadingSlotStyle = {
-    width: "40px",
-    minWidth: "40px",
+    width: "34px",
+    minWidth: "34px",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -1444,8 +1444,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.warm,
                   leading: (
-                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
-                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.warmBg, color: theme.warm, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Trophy size={16} />
                     </div>
                   ),
                   tag: formatLabel,
@@ -1497,8 +1497,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.green,
                   leading: (
-                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
-                      <AvatarCircle avatar={row.creatorAvatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.greenBg, color: theme.green, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CalendarPlus size={16} />
                     </div>
                   ),
                   tag: "2v2",
@@ -1550,8 +1550,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.warm,
                   leading: (
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" }}>
-                      🎾
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.warmBg, color: theme.warm, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CalendarPlus size={16} />
                     </div>
                   ),
                   tag: formatLabel,
@@ -1581,8 +1581,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.purple,
                   leading: (
-                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
-                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.purpleBg, color: theme.purple, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <TrendingUp size={16} />
                     </div>
                   ),
                   tag: "ELO",
@@ -1603,6 +1603,7 @@ export function HomeTab({ user, setTab, showToast }) {
                 const writeToPlayer = () => setTab("beskeder", { search: `med=${encodeURIComponent(String(row.userId))}` });
                 const isMakker = row.seekingChannel === 'makker';
                 const seekTone = isMakker ? theme.green : theme.blue;
+                const seekBg = isMakker ? theme.greenBg : theme.blueBg;
                 const levelStr = row.level != null && row.level !== '' ? formatPlaytomicLevel(row.level) : null;
                 const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                 return renderActivityRowCard({
@@ -1610,8 +1611,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: seekTone,
                   leading: (
-                    <div onClick={openSeekingPlayer} style={{ cursor: "pointer" }}>
-                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: seekBg, color: seekTone, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Zap size={16} />
                     </div>
                   ),
                   tag: isMakker ? "Søger makker" : "Søger kamp",
@@ -1629,8 +1630,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.accent,
                   leading: (
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" }}>
-                      🏆
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.accentBg, color: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Trophy size={16} />
                     </div>
                   ),
                   tag: "Liga",
@@ -1661,8 +1662,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.accent,
                   leading: (
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: theme.surfaceAlt, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Swords size={16} color={theme.accent} />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.accentBg, color: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Swords size={16} />
                     </div>
                   ),
                   tag: "Kamp",
@@ -1691,15 +1692,18 @@ export function HomeTab({ user, setTab, showToast }) {
                 });
               }
               const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
-              const avatar = row.profiles?.avatar || "🎾";
               const won = row.result === 'win';
               const change = Number(row.change) || 0;
               const tone = change >= 0 ? theme.green : theme.red;
               return renderActivityRowCard({
                 key: `elo-${i}`,
                 isHighlight,
-                tone: theme.accent,
-                leading: <AvatarCircle avatar={avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />,
+                tone,
+                leading: (
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: won ? theme.greenBg : theme.redBg, color: won ? theme.green : theme.red, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {won ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                  </div>
+                ),
                 tag: "Kamp",
                 meta: formatTimeAgo(row.created_at),
                 title: <><strong>{name}</strong> {won ? "vandt" : "tabte"}</>,

@@ -6678,7 +6678,7 @@ button,
   gap: 6px;
   padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid var(--pm-border);
+  border: 1.5px solid var(--pm-border);
   background: var(--pm-surface);
   color: var(--pm-text-mid);
   font-size: 13px;
