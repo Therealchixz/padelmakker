@@ -1128,7 +1128,7 @@ export function HomeTab({ user, setTab, showToast }) {
       {showToast ? <ActiveSeekingPanel variant="homeCard" user={user} showToast={showToast} /> : null}
 
       {/* Quick 2×2 grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, margin: '4px 18px 18px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, margin: '4px 18px 0' }}>
         {actions.map(({ Icon, color, bg, title, tab: t }) => (
           <button
             key={t}
@@ -1137,7 +1137,7 @@ export function HomeTab({ user, setTab, showToast }) {
             data-tour={`quick-action-${t}`}
             style={{
               background: theme.surface,
-              borderRadius: 14,
+              borderRadius: 16,
               boxShadow: theme.shadow,
               border: `1px solid ${theme.border}`,
               padding: '13px 12px',
@@ -1211,7 +1211,7 @@ export function HomeTab({ user, setTab, showToast }) {
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
-            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
+            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.navy, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
             {upcomingItems.map((it) => (
