@@ -95,6 +95,8 @@ export function LigaTab({
   const ligaCreateFormRef = useRef(null);
   useScrollIntoViewWhen(createOpen, ligaCreateFormRef, { enabled: isAdmin, block: 'start' });
   const [createForm, setCreateForm] = useState({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
+  const [createStep, setCreateStep] = useState(1);
+  const [createStepErr, setCreateStepErr] = useState('');
 
   // Create team form
   const [teamFormLeagueId, setTeamFormLeagueId] = useState(null);
@@ -655,71 +657,170 @@ export function LigaTab({
         />
       )}
 
-      {isAdmin && createOpen ? (
+      {isAdmin && createOpen ? (() => {
+        const ligaInputStyle = { ...inputStyle, marginBottom: 0 };
+        return (
         <div
           ref={ligaCreateFormRef}
           className="pm-ui-card pm-create-form-anchor pm-create-form-panel"
-          style={{ padding: '20px', marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+          style={{ paddingTop: '16px', paddingBottom: '16px', marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflow: 'hidden' }}
         >
-          <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Ny liga</div>
-          <label style={labelStyle}>Navn</label>
-          <input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder="F.eks. Forårssæson 2026" style={{ ...inputStyle, marginBottom: '10px' }} />
-          <label style={labelStyle}>Beskrivelse <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-          <input value={createForm.description} onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))} placeholder="Kort beskrivelse..." style={{ ...inputStyle, marginBottom: '10px' }} />
-          <label style={labelStyle}>Type</label>
-          <PillTabs
-            tabs={[
-              { id: 'weekly', label: SEASON_LABELS.weekly },
-              { id: 'monthly', label: SEASON_LABELS.monthly },
-            ]}
-            value={createForm.season_type}
-            onChange={(id) => setCreateForm((f) => ({ ...f, season_type: id }))}
-            ariaLabel="Liga-type"
-            size="sm"
-            style={{ marginBottom: '10px' }}
-          />
-          <DateInputField
-            label="Startdato"
-            value={createForm.start_date}
-            onChange={(e) => setCreateForm((f) => ({ ...f, start_date: e.target.value }))}
-            labelStyle={labelStyle}
-            inputStyle={{ ...inputStyle, marginBottom: '10px' }}
-          />
-          <DateInputField
-            label="Slutdato"
-            value={createForm.end_date}
-            onChange={(e) => setCreateForm((f) => ({ ...f, end_date: e.target.value }))}
-            labelStyle={labelStyle}
-            inputStyle={{ ...inputStyle, marginBottom: '10px' }}
-          />
-          <label style={labelStyle}>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-          <input
-            type="number"
-            min="2"
-            value={createForm.max_teams}
-            onChange={e => setCreateForm(f => ({ ...f, max_teams: e.target.value }))}
-            placeholder="Ubegrænset"
-            style={{ ...inputStyle, marginBottom: '14px' }}
-          />
-          <div className="pm-form-submit pm-form-submit-actions">
-            <button
-              type="button"
-              onClick={createLeague}
-              disabled={busyId === 'create'}
-              style={btn(true, { size: 'md', fontWeight: 600 })}
-            >
-              {busyId === 'create' ? 'Opretter…' : 'Opret liga'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setCreateOpen(false)}
-              style={btn(false, { size: 'md', fontWeight: 600 })}
-            >
-              Annullér
-            </button>
+          {/* Wizard indicator */}
+          <div className="pm-wiz" style={{ margin: '0 0 16px' }}>
+            {[{ n: 1, label: 'Info' }, { n: 2, label: 'Indstillinger' }, { n: 3, label: 'Bekræft' }].map((s, i, arr) => {
+              const state = s.n < createStep ? 'done' : s.n === createStep ? 'on' : '';
+              return (
+                <span key={s.n} style={{ display: 'contents' }}>
+                  <div className={`pm-wiz-step${state ? ' ' + state : ''}`}>
+                    <div className="pm-wiz-num">{state === 'done' ? '✓' : s.n}</div>
+                    <span className="pm-wiz-label">{s.label}</span>
+                  </div>
+                  {i < arr.length - 1 && <div className="pm-wiz-line" />}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Step 1: Grundlæggende info */}
+          {createStep === 1 && (
+            <>
+              <div className="pm-field">
+                <label>Ligaens navn</label>
+                <input
+                  value={createForm.name}
+                  onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="F.eks. Sommer Liga 2026"
+                  style={ligaInputStyle}
+                />
+              </div>
+              <div className="pm-field">
+                <label>Beskrivelse <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
+                <input
+                  value={createForm.description}
+                  onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="Kort beskrivelse af ligaen..."
+                  style={ligaInputStyle}
+                />
+              </div>
+              <div className="pm-field">
+                <label>Type</label>
+                <div className="pm-seg">
+                  {[{ id: 'monthly', label: 'Månedlig' }, { id: 'weekly', label: 'Ugentlig' }].map(opt => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`pm-seg-btn${createForm.season_type === opt.id ? ' active' : ''}`}
+                      onClick={() => setCreateForm(f => ({ ...f, season_type: opt.id }))}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="pm-format-card">
+                <b>Skab dit fællesskab</b>
+                <p>Ligaer samler spillere på alle niveauer — sæt dit hold og kæmp om topplaceringen.</p>
+              </div>
+            </>
+          )}
+
+          {/* Step 2: Indstillinger */}
+          {createStep === 2 && (
+            <>
+              <div style={{ display: 'flex', gap: 10, margin: '0 18px 14px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: theme.text, marginBottom: 7 }}>Startdato</label>
+                  <DateInputField
+                    value={createForm.start_date}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, start_date: e.target.value }))}
+                    inputStyle={ligaInputStyle}
+                  />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: theme.text, marginBottom: 7 }}>Slutdato</label>
+                  <DateInputField
+                    value={createForm.end_date}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, end_date: e.target.value }))}
+                    inputStyle={ligaInputStyle}
+                  />
+                </div>
+              </div>
+              <div className="pm-field">
+                <label>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
+                <input
+                  type="number"
+                  min="2"
+                  value={createForm.max_teams}
+                  onChange={e => setCreateForm(f => ({ ...f, max_teams: e.target.value }))}
+                  placeholder="Ubegrænset"
+                  style={ligaInputStyle}
+                />
+                <div className="pm-field-hint">Lad stå tomt for ubegrænset antal hold.</div>
+              </div>
+            </>
+          )}
+
+          {/* Step 3: Bekræft */}
+          {createStep === 3 && (
+            <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 14, padding: '16px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>Oversigt</div>
+              {[
+                { label: 'Navn', value: createForm.name || '—' },
+                { label: 'Type', value: SEASON_LABELS[createForm.season_type] || createForm.season_type },
+                { label: 'Startdato', value: createForm.start_date || '—' },
+                { label: 'Slutdato', value: createForm.end_date || '—' },
+                { label: 'Maks hold', value: createForm.max_teams ? createForm.max_teams + ' hold' : 'Ubegrænset' },
+              ].map(row => (
+                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 12, color: theme.textLight }}>{row.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {createStepErr && (
+            <div style={{ margin: '0 18px 10px', color: theme.red, fontSize: 12 }}>{createStepErr}</div>
+          )}
+
+          {/* Navigation */}
+          <div style={{ display: 'flex', gap: 10, padding: '0 18px' }}>
+            {createStep > 1 ? (
+              <button type="button" onClick={() => { setCreateStep(s => s - 1); setCreateStepErr(''); }} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
+                ← Tilbage
+              </button>
+            ) : (
+              <button type="button" onClick={() => { setCreateOpen(false); setCreateStep(1); setCreateStepErr(''); }} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
+                Annullér
+              </button>
+            )}
+            {createStep < 3 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (createStep === 1 && !createForm.name.trim()) { setCreateStepErr('Angiv et navn til ligaen.'); return; }
+                  if (createStep === 2 && (!createForm.start_date || !createForm.end_date)) { setCreateStepErr('Angiv start- og slutdato.'); return; }
+                  setCreateStepErr('');
+                  setCreateStep(s => s + 1);
+                }}
+                style={{ ...btn(true, { size: 'md', fontWeight: 600 }), flex: 2 }}
+              >
+                Næste →
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={createLeague}
+                disabled={busyId === 'create'}
+                style={{ ...btn(true, { size: 'md', fontWeight: 600 }), flex: 2 }}
+              >
+                {busyId === 'create' ? 'Opretter…' : 'Opret liga'}
+              </button>
+            )}
           </div>
         </div>
-      ) : (
+        );
+      })() : (
         <>
       {/* Min liga hero — vis brugerens aktive liga øverst */}
       {myActiveLeagueHero && !loading && (

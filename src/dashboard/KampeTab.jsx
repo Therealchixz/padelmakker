@@ -2058,26 +2058,61 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </div>
         )}
 
-        {/* Padel court visualisering — top-down view med FIP-korrekte linjer */}
+        {/* Player slots — Hold 1 og Hold 2 */}
         {(() => {
           const playerElo = (p) => teamStats.playerEloByUserId[String(p.user_id)] ?? 1000;
           const t1Avg = teamStats.t1Avg;
           const t2Avg = teamStats.t2Avg;
 
-          const renderPlayer = (p, teamNum) => {
+          const renderSlot = (p, teamNum) => {
+            if (!p) {
+              const otherTeam = teamNum === 1 ? 2 : 1;
+              const canSwitch = joined && myTeam === otherTeam && (status === "open" || status === "full") && busyId !== m.id + '-switch';
+              return (
+                <div key={"empty-" + teamNum + Math.random()} className="pm-slot pm-slot--empty">
+                  <div className="pm-slot-ghost"><Plus size={16} /></div>
+                  <div style={{ flex: 1 }}>
+                    <div className="pm-slot-name" style={{ color: 'var(--pm-text-light)', fontWeight: 400 }}>Ledig plads</div>
+                    {canSwitch && (
+                      <button
+                        type="button"
+                        onClick={() => switchTeam(m.id, teamNum)}
+                        disabled={busyId === m.id + '-switch'}
+                        style={{ marginTop: 4, fontSize: 11, fontWeight: 700, color: 'var(--pm-navy)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      >
+                        Skift til dette hold →
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            }
             const canKick = (isCreator || isAdmin) && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
             const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
-            const teamColor = teamNum === 1 ? theme.accent : theme.blue;
-            const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
+            const elo = playerElo(p);
             return (
-              <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                <button type="button" onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }} aria-label={"Åbn profil for " + (p.user_name || "spiller")} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", border: "none", background: "transparent", padding: 0 }}>
-                  <AvatarCircle clickable avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={36} emojiSize="16px" style={{ background: teamBg, border: "1.5px solid " + teamColor + "55" }} />
-                  <span style={{ fontSize: "9px", color: theme.text, marginTop: "3px", fontWeight: 600 }}>{(p.user_name || "?").split(" ")[0]}</span>
-                  <span style={{ fontSize: "8px", color: teamColor, fontWeight: 700 }}>{playerElo(p)}</span>
+              <div key={p.user_id} className="pm-slot">
+                <button
+                  type="button"
+                  onClick={() => { const prof = profilesById[String(p.user_id)]; if (prof) setViewPlayer(prof); }}
+                  style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', flexShrink: 0 }}
+                  aria-label={"Åbn profil for " + (p.user_name || "spiller")}
+                >
+                  <AvatarCircle clickable avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || "🎾"} size={40} emojiSize="18px" />
                 </button>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="pm-slot-name">{p.user_name || '?'}</div>
+                  <div className="pm-slot-meta">
+                    <span className="pm-slot-sub">ELO {elo}</span>
+                  </div>
+                </div>
                 {canKick && (
-                  <button onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }} disabled={kickingBusy} aria-label={"Fjern " + (p.user_name || "spiller") + " fra kampen"} style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", border: "none", background: theme.red, color: theme.onAccent, fontSize: 10, fontWeight: 700, cursor: kickingBusy ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, zIndex: 1 }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }}
+                    disabled={kickingBusy}
+                    aria-label={"Fjern " + (p.user_name || "spiller") + " fra kampen"}
+                    style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', border: 'none', background: 'var(--pm-red-bg,#FEE2E2)', color: 'var(--pm-red,#DC2626)', fontSize: 16, fontWeight: 700, cursor: kickingBusy ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                  >
                     ×
                   </button>
                 )}
@@ -2085,85 +2120,34 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             );
           };
 
-          const renderEmptySlot = (teamNum) => {
-            const otherTeam = teamNum === 1 ? 2 : 1;
-            const canSwitch = joined && myTeam === otherTeam && (status === "open" || status === "full") && busyId !== m.id + '-switch';
-            const teamColor = teamNum === 1 ? theme.accent : theme.blue;
-            const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
-            return (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "42px" }}>
-                <button
-                  type="button"
-                  onClick={canSwitch ? () => switchTeam(m.id, teamNum) : undefined}
-                  disabled={!canSwitch}
-                  aria-label={canSwitch ? "Skift til Hold " + teamNum : "Ledig plads på Hold " + teamNum}
-                  title={canSwitch ? "Skift til Hold " + teamNum : undefined}
-                  style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    border: "1.5px dashed " + teamColor,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: canSwitch ? "pointer" : "default",
-                    background: teamBg,
-                    transition: "all 0.15s",
-                    padding: 0,
-                    opacity: canSwitch ? 1 : 0.8,
-                  }}
-                >
-                  <Plus size={12} color={teamColor} />
-                </button>
-                <span style={{ fontSize: "8px", color: teamColor, fontWeight: 700, marginTop: "3px" }}>
-                  {canSwitch ? "Skift" : "Ledig"}
-                </span>
-              </div>
-            );
-          };
-
-          const t1Top = t1[0] ? renderPlayer(t1[0], 1) : renderEmptySlot(1);
-          const t1Bot = t1[1] ? renderPlayer(t1[1], 1) : renderEmptySlot(1);
-          const t2Top = t2[0] ? renderPlayer(t2[0], 2) : renderEmptySlot(2);
-          const t2Bot = t2[1] ? renderPlayer(t2[1], 2) : renderEmptySlot(2);
-
-          /* Hold-labels og snit-ELO over banen; win-chance (uden gentaget gns.) står under. */
-          const showTopTeamLabels =
-            t1Avg !== null &&
-            t2Avg !== null &&
-            (status === "open" || status === "full" || status === "in_progress" || status === "completed");
           return (
-            <div className="pm-court-wrap" style={{ marginBottom: "14px" }}>
-              {showTopTeamLabels && (
-                <div className="pm-court-header">
-                  <div className={`pm-court-header-team pm-court-header-team--t1${winnerTeam === 1 ? ' pm-court-header-team--winner' : winnerTeam === 2 ? ' pm-court-header-team--loser' : ''}`}>
-                    <span className="pm-court-header-label">{winnerTeam === 1 ? '🏆 Hold 1' : 'Hold 1'}</span>
-                    {t1Avg !== null && <span className="pm-court-header-elo">Gns. {t1Avg}</span>}
-                  </div>
-                  <div className={`pm-court-header-team pm-court-header-team--t2${winnerTeam === 2 ? ' pm-court-header-team--winner' : winnerTeam === 1 ? ' pm-court-header-team--loser' : ''}`}>
-                    <span className="pm-court-header-label">{winnerTeam === 2 ? '🏆 Hold 2' : 'Hold 2'}</span>
-                    {t2Avg !== null && <span className="pm-court-header-elo">Gns. {t2Avg}</span>}
-                  </div>
-                </div>
-              )}
-              <div className="pm-court">
-                <div className="pm-court-line pm-court-line--service-t1" />
-                <div className="pm-court-line pm-court-line--service-t2" />
-                <div className="pm-court-line pm-court-line--center-t1" />
-                <div className="pm-court-line pm-court-line--center-t2" />
-                <div className="pm-court-net" />
-                <span className="pm-court-vs">vs</span>
-                <div className="pm-court-grid">
-                  <div className={`pm-court-side pm-court-side--t1${winnerTeam === 1 ? ' pm-court-side--winner' : winnerTeam === 2 ? ' pm-court-side--loser' : ''}`}>
-                    <div className="pm-court-player-slot pm-court-player-slot--top">{t1Top}</div>
-                    <div className="pm-court-player-slot pm-court-player-slot--bottom">{t1Bot}</div>
-                  </div>
-                  <div className={`pm-court-side pm-court-side--t2${winnerTeam === 2 ? ' pm-court-side--winner' : winnerTeam === 1 ? ' pm-court-side--loser' : ''}`}>
-                    <div className="pm-court-player-slot pm-court-player-slot--top">{t2Top}</div>
-                    <div className="pm-court-player-slot pm-court-player-slot--bottom">{t2Bot}</div>
-                  </div>
-                </div>
+            <div style={{ marginBottom: 14 }}>
+              {/* Hold 1 */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
+                  {winnerTeam === 1 ? '🏆 Hold 1' : 'Hold 1'}
+                </span>
+                {t1Avg !== null && <span style={{ fontSize: 11, color: 'var(--pm-text-light)' }}>Gns. ELO {t1Avg}</span>}
               </div>
+              {renderSlot(t1[0], 1)}
+              {renderSlot(t1[1], 1)}
+
+              {/* VS divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '10px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--pm-border)' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--pm-text-light)', letterSpacing: '1px' }}>VS</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--pm-border)' }} />
+              </div>
+
+              {/* Hold 2 */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
+                  {winnerTeam === 2 ? '🏆 Hold 2' : 'Hold 2'}
+                </span>
+                {t2Avg !== null && <span style={{ fontSize: 11, color: 'var(--pm-text-light)' }}>Gns. ELO {t2Avg}</span>}
+              </div>
+              {renderSlot(t2[0], 2)}
+              {renderSlot(t2[1], 2)}
             </div>
           );
         })()}

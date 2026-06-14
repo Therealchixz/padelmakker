@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { CalendarDays } from 'lucide-react'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { theme } from '../../lib/platformTheme'
 
@@ -143,61 +142,41 @@ export function AmericanoOpenCard({
         overflow: 'hidden',
       }}
     >
-      {/* 1. Blå gradient header — fælles stil med 2v2 og Liga */}
-      <div
-        style={{
-          background: 'var(--pm-cta-gradient)',
-          color: theme.onAccent,
-          padding: '16px 18px',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                opacity: 0.85,
-                marginBottom: 2,
-              }}
-            >
-              Americano
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-              {tournamentName}
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                opacity: 0.9,
-                marginTop: 4,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-              }}
-            >
-              <CalendarDays size={13} strokeWidth={2} aria-hidden />
-              {dateLabel}
+      {/* Card header — date badge + tournament name + status tag */}
+      {(() => {
+        const DA_MON = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+        let dateBadgeDay: string | number = '–', dateBadgeMon = '';
+        const dmParts = /^(\d{1,2})\.(\d{1,2})\./.exec(dateLabel);
+        if (dmParts) {
+          dateBadgeDay = parseInt(dmParts[1], 10);
+          dateBadgeMon = DA_MON[parseInt(dmParts[2], 10) - 1] || '';
+        }
+        const klPart = dateLabel.replace(/^\d{2}\.\d{2}\.\d{4}\s*/, '');
+        const formatLabel = tournamentFormat === 'mexicano' ? 'Mexicano' : 'Americano';
+        const metaParts = [klPart, `${filled}/${maxPlayers} spillere`].filter(Boolean);
+        let statusBg = theme.greenBg, statusColor = theme.green, statusBorder = '', statusText = 'Åben';
+        if (isFull) { statusBg = theme.redBg; statusColor = theme.red; statusText = 'Fuld'; }
+        else if (isAlmostFull) { statusBg = theme.amberBg; statusColor = theme.amberText; statusBorder = `1px solid ${theme.amberBorder}`; statusText = '1 plads'; }
+        return (
+          <div style={{ padding: '14px 16px', borderBottom: `1px solid var(--pm-americano-tie-border)` }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
+                <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
+                <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textLight, letterSpacing: '0.5px' }}>{dateBadgeMon}</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {formatLabel} · {tournamentName}
+                </div>
+                <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2 }}>{metaParts.join(' · ')}</div>
+              </div>
+              <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: statusBg, color: statusColor, border: statusBorder || undefined, whiteSpace: 'nowrap' }}>
+                {statusText}
+              </span>
             </div>
           </div>
-          <span
-            style={{
-              flexShrink: 0,
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '4px 10px',
-              borderRadius: 999,
-              background: isFull ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.18)',
-              color: theme.onAccent,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {isFull ? 'Fuld' : `${filled}/${maxPlayers} spillere`}
-          </span>
-        </div>
-      </div>
+        );
+      })()}
 
       {description ? (
         <div

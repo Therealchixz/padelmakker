@@ -10515,3 +10515,323 @@ button,
   }
 }
 
+
+/* ─── 3-step wizard indicator ─── */
+.pm-wiz {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 18px 16px;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 16px;
+  box-shadow: var(--pm-shadow);
+  padding: 12px 16px;
+}
+
+.pm-wiz-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.pm-wiz-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--pm-surface-muted);
+  border: 1px solid var(--pm-border);
+  color: var(--pm-text-light);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.pm-wiz-step.on .pm-wiz-num {
+  background: var(--pm-navy);
+  border-color: var(--pm-navy);
+  color: #fff;
+}
+
+.pm-wiz-step.done .pm-wiz-num {
+  background: var(--pm-green-bg);
+  border-color: var(--pm-green);
+  color: var(--pm-green);
+}
+
+.pm-wiz-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--pm-text-light);
+  white-space: nowrap;
+}
+
+.pm-wiz-step.on .pm-wiz-label {
+  color: var(--pm-navy);
+}
+
+.pm-wiz-step.done .pm-wiz-label {
+  color: var(--pm-green);
+}
+
+.pm-wiz-line {
+  flex: 1;
+  height: 1.5px;
+  background: var(--pm-border);
+  margin-bottom: 14px;
+}
+
+/* ─── Form field / seg / chips / slot (shared create forms + detail views) ─── */
+.pm-field {
+  margin: 0 18px 14px;
+}
+
+.pm-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pm-text);
+  margin-bottom: 7px;
+}
+
+.pm-field-hint {
+  font-size: 11px;
+  color: var(--pm-text-light);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.pm-seg {
+  display: flex;
+  background: var(--pm-surface-muted);
+  border: 1px solid var(--pm-border);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.pm-seg-btn {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--pm-text-light);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pm-seg-btn.active {
+  background: var(--pm-navy);
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(22, 55, 126, 0.28);
+}
+
+.pm-chips-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pm-chip-btn {
+  border: 1.5px solid var(--pm-border);
+  background: var(--pm-surface);
+  color: var(--pm-text-mid);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+}
+
+.pm-chip-btn.active {
+  background: var(--pm-navy);
+  border-color: var(--pm-navy);
+  color: #fff;
+}
+
+.pm-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--pm-surface-muted);
+  border: 1px solid var(--pm-border);
+  border-radius: 10px;
+  padding: 5px;
+  gap: 8px;
+}
+
+.pm-stepper-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pm-text);
+  flex: 1;
+  text-align: center;
+}
+
+.pm-stepper-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  color: var(--pm-navy);
+  font-size: 18px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pm-stepper-btn:disabled {
+  opacity: 0.4;
+}
+
+/* player slot rows in match detail */
+.pm-slot {
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  border-radius: 14px;
+  box-shadow: var(--pm-shadow);
+}
+
+.pm-slot.pm-slot--empty {
+  background: transparent;
+  border: 2px dashed var(--pm-border);
+  box-shadow: none;
+}
+
+.pm-slot-ghost {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--pm-surface-muted);
+  color: var(--pm-text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.pm-slot-name {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--pm-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-slot-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.pm-lvl-badge {
+  background: var(--pm-amber-bg);
+  color: var(--pm-amber-text);
+  border: 1px solid var(--pm-amber-border);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.pm-slot-sub {
+  font-size: 11px;
+  color: var(--pm-text-light);
+}
+
+/* cta-bar: sticky footer in create forms / detail views */
+.pm-cta-bar {
+  padding: 12px 18px 16px;
+}
+
+/* format info card (gradient bg) */
+.pm-format-card {
+  margin: 4px 18px 14px;
+  border-radius: 14px;
+  padding: 16px;
+  color: #fff;
+  background: linear-gradient(120deg, #0D2752 55%, #1D4A9E 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.pm-format-card b {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pm-format-card p {
+  font-size: 12px;
+  color: rgba(185, 203, 228, 1);
+  line-height: 1.55;
+  margin-top: 5px;
+}
+
+/* simple avstack for player row in open cards */
+.pm-avstack {
+  display: flex;
+  align-items: center;
+}
+
+.pm-avstack .pm-av-item {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--pm-surface);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--pm-accent);
+  color: var(--pm-on-accent);
+  flex-shrink: 0;
+}
+
+.pm-avstack .pm-av-item + .pm-av-item {
+  margin-left: -9px;
+}
+
+.pm-avstack .pm-av-more {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--pm-surface);
+  background: var(--pm-surface-muted);
+  color: var(--pm-text-mid);
+  font-size: 9.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -9px;
+  flex-shrink: 0;
+}

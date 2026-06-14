@@ -6,7 +6,6 @@ import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
 import { btn, theme } from '../../lib/platformTheme';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { MatchResultStrip } from '../MatchResultStrip';
-import { MatchCourtView } from './MatchCourtView';
 import { AvatarCircle } from '../AvatarCircle';
 import { formatPlaytomicLevel, eloRangeToLevelRange } from '../../lib/padelLevelUtils';
 import '../../styles/kampdetalje.css';
@@ -454,24 +453,6 @@ export function KampeMatchDetailSheet({
           />
         ) : (
           <>
-            <MatchCourtView
-              teamStats={teamStats}
-              status={status}
-              winnerTeam={winnerTeam}
-              profilesById={profilesById}
-              readOnly={status === 'completed'}
-              joined={joined}
-              myTeam={myTeam}
-              matchId={matchId}
-              busyId={busyId}
-              isCreator={isCreator}
-              isAdmin={isAdmin}
-              currentUserId={currentUserId}
-              onSwitchTeam={onSwitchTeam}
-              onSwitchPlayerTeam={onSwitchPlayerTeam}
-              onKickPlayer={onKickPlayer}
-              onProfileClick={onProfileClick}
-            />
             {/* Flat holdene list */}
             {(() => {
               const t1p = teamStats?.t1 || [];
