@@ -98,6 +98,11 @@ export function LigaTab({
   const [createStep, setCreateStep] = useState(1);
   const [createStepErr, setCreateStepErr] = useState('');
 
+  // Scroll til toppen ved skift mellem trin i opret-wizarden
+  useEffect(() => {
+    if (createOpen && typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [createStep, createOpen]);
+
   // Create team form
   const [teamFormLeagueId, setTeamFormLeagueId] = useState(null);
   const [teamName, setTeamName] = useState('');

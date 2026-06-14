@@ -1717,7 +1717,7 @@ button,
 
   .pm-dash-main {
     /* Logo-headeren er skjult på mobil — respekter iPhone-statusbaren */
-    padding-top: max(clamp(16px, 4vw, 24px), calc(env(safe-area-inset-top) + 6px));
+    padding-top: max(clamp(20px, 5vw, 28px), calc(env(safe-area-inset-top) + 16px));
     padding-bottom: min(calc(79px + env(safe-area-inset-bottom)), 119px);
   }
 

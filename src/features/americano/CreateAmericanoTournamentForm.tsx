@@ -235,6 +235,11 @@ export function CreateAmericanoTournamentForm({
     if (paymentMethod === 'free') { setPricePerPerson(0); setPriceInput('0') }
   }, [paymentMethod])
 
+  // Scroll til toppen ved skift mellem trin
+  useEffect(() => {
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [step])
+
   const syncPrice = (raw: string) => {
     setPriceInput(raw)
     const normalized = raw.replace(',', '.')
