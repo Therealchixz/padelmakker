@@ -1,6 +1,7 @@
 import { AvatarCircle } from '../AvatarCircle';
 import { matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
+import { eloRangeToLevelRange, formatPlaytomicLevel } from '../../lib/padelLevelUtils';
 
 const DA_MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAJ','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
 
@@ -87,6 +88,7 @@ export function KampeMatchListCard({
   const eloDelta = showMyEloDelta ? Number(myEloChange) : null;
   const showEloRange =
     !isCompleted && matchPrefs?.min != null && matchPrefs?.max != null;
+  const levelRange = showEloRange ? eloRangeToLevelRange(matchPrefs.min, matchPrefs.max) : null;
   const hasConfirmedResult = isCompleted && matchResult?.confirmed && winnerTeam != null;
   const setScoreStr = hasConfirmedResult ? computeSetScoreStr(matchResult) : null;
   const didWin = hasConfirmedResult && myTeam != null && myTeam === winnerTeam;
@@ -141,7 +143,7 @@ export function KampeMatchListCard({
           <div className="pm-kampe-v2-list-venue" style={{ marginTop: 2 }}>
             Kl. {timeLabel}
             {match.duration ? <> · {match.duration} min</> : null}
-            {showEloRange ? <> · ELO {matchPrefs.min}–{matchPrefs.max}</> : null}
+            {showEloRange && levelRange ? <> · Niveau {formatPlaytomicLevel(levelRange.min)}–{formatPlaytomicLevel(levelRange.max)}</> : null}
           </div>
         </div>
         <div className="pm-kampe-v2-list-badges">

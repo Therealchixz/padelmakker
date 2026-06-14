@@ -8,7 +8,7 @@ import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCourtView } from './MatchCourtView';
 import { AvatarCircle } from '../AvatarCircle';
-import { formatPlaytomicLevel } from '../../lib/padelLevelUtils';
+import { formatPlaytomicLevel, eloRangeToLevelRange } from '../../lib/padelLevelUtils';
 import '../../styles/kampdetalje.css';
 
 function computeMatchSets(mr) {
@@ -292,6 +292,8 @@ export function KampeMatchDetailSheet({
     matchPrefs?.booked === false && !String(match.court_name || '').trim()
       ? 'Bane ikke booket endnu'
       : (match.court_name || 'Padelbane');
+  const eloLevelRange = matchPrefs?.min != null && matchPrefs?.max != null
+    ? eloRangeToLevelRange(matchPrefs.min, matchPrefs.max) : null;
   const directionsQuery = resolveMatchDirectionsQuery(match, profilesById);
   const statusBadge = getKampeDetailStatusBadge({
     status,
@@ -349,7 +351,7 @@ export function KampeMatchDetailSheet({
                 <div className="pm-kampe-v2-detail-badges-inline">
                   {matchPrefs?.min != null && matchPrefs?.max != null ? (
                     <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue pm-kampe-v2-detail-meta-badge">
-                      ELO {matchPrefs.min}–{matchPrefs.max}
+                      {eloLevelRange ? `Niveau ${formatPlaytomicLevel(eloLevelRange.min)}–${formatPlaytomicLevel(eloLevelRange.max)}` : `ELO ${matchPrefs.min}–${matchPrefs.max}`}
                     </span>
                   ) : null}
                   {matchPrefs?.booked != null ? (
@@ -378,7 +380,9 @@ export function KampeMatchDetailSheet({
           <div className="pm-kd-hero-badges">
             <span className="pm-kd-chip pm-kd-chip--navy">2V2</span>
             {matchPrefs?.min != null && matchPrefs?.max != null ? (
-              <span className="pm-kd-chip pm-kd-chip--light">ELO {matchPrefs.min}–{matchPrefs.max}</span>
+              <span className="pm-kd-chip pm-kd-chip--light">
+                {eloLevelRange ? `Niveau ${formatPlaytomicLevel(eloLevelRange.min)}–${formatPlaytomicLevel(eloLevelRange.max)}` : `ELO ${matchPrefs.min}–${matchPrefs.max}`}
+              </span>
             ) : null}
             {statusBadge.tone === 'live' ? (
               <span className="pm-kd-chip pm-kd-chip--live">LIVE</span>
