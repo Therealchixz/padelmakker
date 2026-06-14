@@ -1975,139 +1975,71 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         }}
         onClick={unreadMatchCount > 0 ? () => { void markMatchNotifsRead(m.id); } : undefined}
       >
-        {/* Blå gradient header — fælles stil med Americano og Liga */}
-        <div className="pm-cta-gradient" style={{ padding: "14px 16px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  opacity: 0.85,
-                  marginBottom: 2,
-                }}
-              >
-                2v2 Kamp
-              </div>
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 800,
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.2,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                {matchPrefs.booked === false && !String(m.court_name || "").trim()
-                  ? "Bane ikke booket endnu"
-                  : (m.court_name || "Padelbane")}
-                {unreadMatchCount > 0 && (
-                  <span
-                    aria-label={`${unreadMatchCount} ulæste notifikationer for denne kamp`}
-                    title="Ulæste notifikationer for denne kamp"
-                    style={{
-                      background: theme.red,
-                      color: theme.onAccent,
-                      borderRadius: "999px",
-                      minWidth: 18,
-                      height: 18,
-                      padding: "0 6px",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {unreadMatchCount > 9 ? "9+" : unreadMatchCount}
-                  </span>
-                )}
-              </div>
-              <div
-                style={{
-                  fontSize: 12,
-                  opacity: 0.9,
-                  marginTop: 4,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                }}
-              >
-                <CalendarDays size={13} strokeWidth={2} aria-hidden />
-                {formatMatchDateDa(m.date)} kl. {matchTimeLabel(m)}
+        {/* Card header — date badge + venue + meta + status tag (mockup style) */}
+        {(() => {
+          const DA_MON = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+          let dateBadgeDay = '–', dateBadgeMon = '';
+          const rawDate = String(m.date || '').trim();
+          const ymMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(rawDate);
+          if (ymMatch) {
+            dateBadgeDay = parseInt(ymMatch[3], 10);
+            dateBadgeMon = DA_MON[parseInt(ymMatch[2], 10) - 1] || '';
+          }
+          const durMin = Number(m.duration);
+          const metaParts = [
+            'Kl. ' + matchTimeLabel(m),
+            Number.isFinite(durMin) && durMin > 0 ? durMin + ' min' : null,
+            matchPrefs.min != null && matchPrefs.max != null ? 'Niveau ' + matchPrefs.min + '–' + matchPrefs.max : null,
+          ].filter(Boolean);
+          const courtName = matchPrefs.booked === false && !String(m.court_name || '').trim()
+            ? 'Bane ikke booket endnu'
+            : (m.court_name || 'Padelbane');
+          let statusTag;
+          if (isInProgress) {
+            statusTag = <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: theme.redBg, color: theme.red, whiteSpace: 'nowrap' }}><span className="pm-live-dot" style={{ background: theme.red }} />LIVE</span>;
+          } else if (status === 'completed' && winnerTeam) {
+            statusTag = <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: theme.greenBg, color: theme.green, whiteSpace: 'nowrap' }}>🏆 Hold {winnerTeam} vandt</span>;
+          } else if (status === 'completed') {
+            statusTag = <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: theme.textMid, border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>Afsluttet</span>;
+          } else if (isClosed) {
+            statusTag = <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: theme.textMid, border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>🔒 Lukket</span>;
+          } else if (isFull) {
+            statusTag = <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: theme.redBg, color: theme.red, whiteSpace: 'nowrap' }}>Fuld</span>;
+          } else if (m.seeking_player) {
+            statusTag = <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: theme.amberBg, color: theme.amberText, border: '1px solid ' + theme.amberBorder, whiteSpace: 'nowrap' }}>1 plads</span>;
+          } else {
+            statusTag = <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: theme.greenBg, color: theme.green, whiteSpace: 'nowrap' }}>Åben</span>;
+          }
+          return (
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--pm-americano-tie-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
+                  <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{dateBadgeDay}</b>
+                  <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textLight, letterSpacing: '0.5px' }}>{dateBadgeMon}</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: theme.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{courtName}</span>
+                    {unreadMatchCount > 0 && (
+                      <span aria-label={`${unreadMatchCount} ulæste notifikationer`} style={{ background: theme.red, color: theme.onAccent, borderRadius: 999, minWidth: 16, height: 16, padding: '0 5px', fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, flexShrink: 0 }}>
+                        {unreadMatchCount > 9 ? '9+' : unreadMatchCount}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2 }}>
+                    {metaParts.join(' · ')}
+                  </div>
+                </div>
+                {statusTag}
               </div>
             </div>
-            {isInProgress ? (
-              <span
-                style={{
-                  flexShrink: 0,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  fontSize: 10,
-                  fontWeight: 800,
-                  padding: "4px 9px",
-                  borderRadius: 999,
-                  background: "rgba(220,38,38,0.95)",
-                  color: theme.onAccent,
-                  letterSpacing: "0.08em",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <span className="pm-live-dot" />
-                LIVE
-              </span>
-            ) : winnerTeam ? (
-              <span
-                style={{
-                  flexShrink: 0,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  background: "rgba(255,255,255,0.95)",
-                  color: theme.green,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                🏆 Hold {winnerTeam} vandt
-              </span>
-            ) : (
-              <span
-                style={{
-                  flexShrink: 0,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  background: "rgba(255,255,255,0.18)",
-                  color: theme.onAccent,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {statusLabel.text}
-              </span>
-            )}
-          </div>
-        </div>
+          );
+        })()}
 
         <div style={{ padding: "var(--pm-space-3)" }}>
         {/* Sub-badges row */}
-        {(m.seeking_player || isClosed || matchPrefs.booked != null || (matchPrefs.min != null && matchPrefs.max != null)) && (
+        {(matchPrefs.booked != null || (matchPrefs.min != null && matchPrefs.max != null)) && (
           <div className="pm-card-meta-row" style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
-            {m.seeking_player && (
-              <span className="pm-status-badge pm-status-badge--warm">
-                <Zap size={10} /> Mangler 1 spiller
-              </span>
-            )}
-            {isClosed && (
-              <span className="pm-status-badge pm-status-badge--neutral">🔒 Lukket</span>
-            )}
             {matchPrefs.booked != null && (
               <span className={`pm-status-badge ${matchPrefs.booked ? "pm-status-badge--green" : "pm-status-badge--warm"}`}>
                 {matchPrefs.booked ? "Bane booket" : "Bane ikke booket"}

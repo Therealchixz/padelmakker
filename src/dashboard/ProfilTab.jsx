@@ -562,15 +562,6 @@ export function ProfilTab({ user, showToast, setTab }) {
           <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Min profil</h2>
         </div>
         <div className="pm-profile-top">
-        <PillTabs
-          tabs={profileSectionTabs}
-          value={profileSectionValue}
-          onChange={handleProfileSectionChange}
-          ariaLabel="Profil-sektioner"
-          size="sm"
-          className="pm-pill-tabs--wrap"
-        />
-
         {/* Profile card – centered pf-head layout matching mockup */}
         <div ref={overviewRef} className="pm-profile-card" style={{ background: theme.surface, borderRadius: theme.radius, padding: "0 0 16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px", overflow: 'hidden', position: 'relative' }}>
           {/* Edit button floating in top-right corner */}
@@ -714,9 +705,6 @@ export function ProfilTab({ user, showToast, setTab }) {
             </div>
           ) : null}
 
-          <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Overblik
-          </div>
           <PillTabs
             tabs={PROFILE_OVERVIEW_TABS}
             value={overviewMode}
