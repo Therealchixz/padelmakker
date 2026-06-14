@@ -10835,3 +10835,68 @@ button,
   margin-left: -9px;
   flex-shrink: 0;
 }
+
+/* ── Dual range slider (niveau-interval) ── */
+.pm-range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 100%;
+  margin: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.pm-range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: all;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--pm-surface);
+  border: 2.5px solid var(--pm-navy);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  cursor: grab;
+}
+
+.pm-range-input::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  box-shadow: 0 0 0 4px rgba(22, 55, 126, 0.18);
+}
+
+.pm-range-input::-moz-range-thumb {
+  pointer-events: all;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--pm-surface);
+  border: 2.5px solid var(--pm-navy);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  cursor: grab;
+}
+
+.pm-range-input::-moz-range-thumb:active {
+  cursor: grabbing;
+}
+
+.pm-range-input::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.pm-range-input::-moz-range-track {
+  background: transparent;
+}
+
+[data-theme="dark"] .pm-range-input::-webkit-slider-thumb {
+  background: var(--pm-surface);
+  border-color: var(--pm-accent);
+}
+
+[data-theme="dark"] .pm-range-input::-moz-range-thumb {
+  background: var(--pm-surface);
+  border-color: var(--pm-accent);
+}

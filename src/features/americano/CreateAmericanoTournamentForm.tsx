@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { benchCountPerRound } from '../../lib/americanoRoundRobinSchedule'
 import {
   getCreateFormSchedulePreview,
@@ -20,8 +20,6 @@ for (let h = 6; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
 }
 
-const LEVEL_OPTIONS = ['1.0', '1.5', '2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0']
-
 const DEADLINE_OPTIONS = [
   { id: 'day_before_noon', label: 'Dagen før kl. 12:00' },
   { id: 'two_days_before', label: '2 dage før kl. 12:00' },
@@ -35,8 +33,12 @@ const PAYMENT_OPTIONS = [
   { id: 'free', label: 'Gratis' },
 ]
 
-const PLAYER_OPTS = [8, 12, 16, 24] as const
-type PlayerOpt = typeof PLAYER_OPTS[number]
+// Full range 4–16, matching the original
+const PLAYER_OPTIONS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+const RANGE_MIN = 1.0
+const RANGE_MAX = 5.0
+const RANGE_STEP = 0.5
 
 import { supabase } from '../../lib/supabase'
 import { theme, btn } from '../../lib/platformTheme'
@@ -74,15 +76,11 @@ const POINT_OPTIONS: AmericanoPoints[] = [16, 24, 32]
 
 export const AMERICANO_COURT_NONE = AMERICANO_VENUE_NONE
 
+// ── Wizard indicator ──
 function WizardIndicator({ step }: { step: 1 | 2 | 3 }) {
-  const steps = [
-    { n: 1, label: 'Info' },
-    { n: 2, label: 'Pris' },
-    { n: 3, label: 'Publicér' },
-  ]
   return (
     <div className="pm-wiz">
-      {steps.map((s, i) => {
+      {([{ n: 1, label: 'Info' }, { n: 2, label: 'Pris' }, { n: 3, label: 'Publicér' }] as const).map((s, i) => {
         const state = s.n < step ? 'done' : s.n === step ? 'on' : ''
         return (
           <span key={s.n} style={{ display: 'contents' }}>
@@ -90,7 +88,7 @@ function WizardIndicator({ step }: { step: 1 | 2 | 3 }) {
               <div className="pm-wiz-num">{state === 'done' ? '✓' : s.n}</div>
               <span className="pm-wiz-label">{s.label}</span>
             </div>
-            {i < steps.length - 1 && <div key={`line-${i}`} className="pm-wiz-line" />}
+            {i < 2 && <div className="pm-wiz-line" />}
           </span>
         )
       })}
@@ -98,6 +96,59 @@ function WizardIndicator({ step }: { step: 1 | 2 | 3 }) {
   )
 }
 
+// ── Dual range slider ──
+function LevelRangeSlider({
+  minVal, maxVal,
+  onMinChange, onMaxChange,
+}: {
+  minVal: number; maxVal: number
+  onMinChange: (v: number) => void; onMaxChange: (v: number) => void
+}) {
+  const toPercent = (v: number) => ((v - RANGE_MIN) / (RANGE_MAX - RANGE_MIN)) * 100
+
+  return (
+    <div style={{ padding: '20px 8px 4px' }}>
+      <div style={{ position: 'relative', height: 32 }}>
+        {/* Track */}
+        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 4, background: 'var(--pm-border)', borderRadius: 2, transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        {/* Navy fill */}
+        <div style={{ position: 'absolute', top: '50%', left: `${toPercent(minVal)}%`, right: `${100 - toPercent(maxVal)}%`, height: 4, background: 'var(--pm-navy)', borderRadius: 2, transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+
+        {/* Min knob tooltip */}
+        <div style={{ position: 'absolute', top: -20, left: `${toPercent(minVal)}%`, transform: 'translateX(-50%)', background: 'var(--pm-navy)', color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '2px 6px', borderRadius: 5, pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 6 }}>
+          {minVal.toFixed(1)}
+        </div>
+        {/* Max knob tooltip */}
+        <div style={{ position: 'absolute', top: -20, left: `${toPercent(maxVal)}%`, transform: 'translateX(-50%)', background: 'var(--pm-navy)', color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '2px 6px', borderRadius: 5, pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 6 }}>
+          {maxVal.toFixed(1)}
+        </div>
+
+        {/* Min range input */}
+        <input
+          type="range" min={RANGE_MIN} max={RANGE_MAX} step={RANGE_STEP} value={minVal}
+          onChange={e => { const v = parseFloat(e.target.value); if (v < maxVal) onMinChange(v) }}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', appearance: 'none', WebkitAppearance: 'none', background: 'transparent', cursor: 'pointer', zIndex: minVal > maxVal - RANGE_STEP ? 5 : 4, margin: 0 }}
+          className="pm-range-input"
+        />
+        {/* Max range input */}
+        <input
+          type="range" min={RANGE_MIN} max={RANGE_MAX} step={RANGE_STEP} value={maxVal}
+          onChange={e => { const v = parseFloat(e.target.value); if (v > minVal) onMaxChange(v) }}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', appearance: 'none', WebkitAppearance: 'none', background: 'transparent', cursor: 'pointer', zIndex: 4, margin: 0 }}
+          className="pm-range-input"
+        />
+      </div>
+      {/* Labels */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
+        {['1.0', '2.0', '3.0', '4.0', '5.0+'].map(l => (
+          <span key={l} style={{ fontSize: 10, color: 'var(--pm-text-light)' }}>{l}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Toggle ──
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -135,16 +186,17 @@ export function CreateAmericanoTournamentForm({
     [venueOptions]
   )
   const [courtId, setCourtId] = useState(AMERICANO_COURT_NONE)
-  const [playerSlots, setPlayerSlots] = useState<PlayerOpt>(8)
+  const [playerSlots, setPlayerSlots] = useState(8)
   const [courtsPerRound, setCourtsPerRound] = useState(1)
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
-  const [levelMin, setLevelMin] = useState('3.0')
-  const [levelMax, setLevelMax] = useState('4.0')
+  const [levelMin, setLevelMin] = useState(3.0)
+  const [levelMax, setLevelMax] = useState(4.0)
   const [description, setDescription] = useState('')
   const [step1Error, setStep1Error] = useState<string | null>(null)
 
   // Step 2 state
   const [pricePerPerson, setPricePerPerson] = useState(0)
+  const [priceInput, setPriceInput] = useState('0')
   const [paymentMethod, setPaymentMethod] = useState<'mobilepay' | 'cash' | 'free'>('mobilepay')
   const [deadlineType, setDeadlineType] = useState('day_before_noon')
   const [isPublic, setIsPublic] = useState(true)
@@ -159,18 +211,11 @@ export function CreateAmericanoTournamentForm({
   const minCourts = Math.min(maxCourts, recommendedCourtsPerRound(playerSlots))
 
   const schedulePreview = useMemo(
-    () =>
-      getCreateFormSchedulePreview({
-        format: tournamentFormat,
-        playerSlots,
-        courtsPerRound,
-        opponentPasses,
-        pointsPerMatch,
-      }),
+    () => getCreateFormSchedulePreview({ format: tournamentFormat, playerSlots, courtsPerRound, opponentPasses, pointsPerMatch }),
     [tournamentFormat, playerSlots, courtsPerRound, pointsPerMatch],
   )
 
-  const handlePlayerSlotsChange = useCallback((n: PlayerOpt) => {
+  const handlePlayerSlotsChange = useCallback((n: number) => {
     setPlayerSlots(n)
     setCourtsPerRound((prev) => {
       const max = Math.floor(n / 4)
@@ -182,15 +227,22 @@ export function CreateAmericanoTournamentForm({
   useEffect(() => {
     setCourtId((prev: string) => {
       const ids = new Set(selectOptions.map((o) => o.id))
-      if (ids.has(prev)) return prev
-      return AMERICANO_COURT_NONE
+      return ids.has(prev) ? prev : AMERICANO_COURT_NONE
     })
   }, [selectOptions])
 
-  // When payment is "free", price resets to 0
   useEffect(() => {
-    if (paymentMethod === 'free') setPricePerPerson(0)
+    if (paymentMethod === 'free') { setPricePerPerson(0); setPriceInput('0') }
   }, [paymentMethod])
+
+  const syncPrice = (raw: string) => {
+    setPriceInput(raw)
+    const n = parseInt(raw.replace(/\D/g, ''), 10)
+    if (!isNaN(n)) {
+      setPricePerPerson(Math.max(0, Math.min(500, n)))
+      if (n > 0 && paymentMethod === 'free') setPaymentMethod('mobilepay')
+    }
+  }
 
   const goNext = () => {
     if (step === 1) {
@@ -202,8 +254,7 @@ export function CreateAmericanoTournamentForm({
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const doSubmit = async () => {
     setError(null)
     const n = name.trim()
     if (!n) { setError('Angiv et navn.'); return }
@@ -230,8 +281,8 @@ export function CreateAmericanoTournamentForm({
           is_public: isPublic,
           has_waitlist: hasWaitlist,
           enforce_level_interval: enforceLevelInterval,
-          level_min: parseFloat(levelMin),
-          level_max: parseFloat(levelMax),
+          level_min: levelMin,
+          level_max: levelMax,
           duration_minutes: durationMinutes,
         })
         .select('id')
@@ -240,21 +291,16 @@ export function CreateAmericanoTournamentForm({
       if (insErr) throw insErr
       if (!row?.id) throw new Error('Ingen id returneret')
 
-      const { error: partErr } = await supabase.from('americano_participants').insert({
+      await supabase.from('americano_participants').insert({
         tournament_id: row.id,
         user_id: userId,
         display_name: displayName.trim() || 'Spiller',
       })
-      if (partErr) throw partErr
 
       onCreated?.({
-        id: row.id,
-        name: n,
-        format: tournamentFormat,
-        tournament_date: date,
-        time_slot: timeSlot,
-        player_slots: playerSlots,
-        points_per_match: pointsPerMatch,
+        id: row.id, name: n, format: tournamentFormat,
+        tournament_date: date, time_slot: timeSlot,
+        player_slots: playerSlots, points_per_match: pointsPerMatch,
         court_name: courtNameFromVenueSelection(courtId, selectOptions) || null,
       })
     } catch (err: unknown) {
@@ -270,8 +316,14 @@ export function CreateAmericanoTournamentForm({
   const deadlineLabel = DEADLINE_OPTIONS.find(d => d.id === deadlineType)?.label ?? deadlineType
   const paymentLabel = PAYMENT_OPTIONS.find(p => p.id === paymentMethod)?.label ?? paymentMethod
 
+  const endTime = (() => {
+    const [h, m] = timeSlot.split(':').map(Number)
+    const end = h * 60 + m + durationMinutes
+    return `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`
+  })()
+
   return (
-    <form onSubmit={handleSubmit} style={{ paddingBottom: 8 }}>
+    <div style={{ paddingBottom: 8 }}>
       <WizardIndicator step={step} />
 
       {/* ── Step 1: Info ── */}
@@ -298,6 +350,7 @@ export function CreateAmericanoTournamentForm({
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
               placeholder={`F.eks. Fredags ${formatLabel}`}
               style={inputStyle}
             />
@@ -317,8 +370,8 @@ export function CreateAmericanoTournamentForm({
 
           <div className="pm-field">
             <label>Antal spillere</label>
-            <div className="pm-chips-row">
-              {PLAYER_OPTS.map((p) => (
+            <div className="pm-chips-row" style={{ flexWrap: 'wrap' }}>
+              {PLAYER_OPTIONS.map((p) => (
                 <button key={p} type="button" className={`pm-chip-btn${playerSlots === p ? ' active' : ''}`} onClick={() => handlePlayerSlotsChange(p)}>
                   {p}
                 </button>
@@ -341,23 +394,30 @@ export function CreateAmericanoTournamentForm({
           </div>
 
           <div className="pm-field">
-            <label>Dato &amp; tid</label>
-            <div style={{ display: 'flex', gap: 8, margin: '0 18px' }}>
-              <input
-                type="date"
-                value={date}
-                min={new Date().toISOString().split('T')[0]}
-                onChange={(e) => setDate(e.target.value)}
-                style={{ ...inputStyle, flex: 2, margin: 0, appearance: 'none', WebkitAppearance: 'none' }}
-              />
-              <select value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} style={{ ...inputStyle, flex: 1, margin: 0 }}>
+            <label>Dato</label>
+            <input
+              type="date"
+              value={date}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setDate(e.target.value)}
+              style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, margin: '0 18px 14px' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <label style={labelSmall}>Starttid</label>
+              <select value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)} style={{ ...inputStyle, margin: 0 }}>
                 {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
-              <select value={durationMinutes} onChange={e => setDurationMinutes(Number(e.target.value))} style={{ ...inputStyle, flex: 1, margin: 0 }}>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <label style={labelSmall}>Varighed</label>
+              <select value={durationMinutes} onChange={e => setDurationMinutes(Number(e.target.value))} style={{ ...inputStyle, margin: 0 }}>
                 <option value={60}>1 time</option>
-                <option value={90}>1½ t</option>
+                <option value={90}>1½ time</option>
                 <option value={120}>2 timer</option>
-                <option value={150}>2½ t</option>
+                <option value={150}>2½ timer</option>
                 <option value={180}>3 timer</option>
               </select>
             </div>
@@ -365,16 +425,13 @@ export function CreateAmericanoTournamentForm({
 
           <div className="pm-field">
             <label>Niveau-interval</label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '0 18px' }}>
-              <select value={levelMin} onChange={e => setLevelMin(e.target.value)} style={{ ...inputStyle, flex: 1, margin: 0 }}>
-                {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-              <span style={{ fontSize: 13, color: theme.textLight, flexShrink: 0 }}>–</span>
-              <select value={levelMax} onChange={e => setLevelMax(e.target.value)} style={{ ...inputStyle, flex: 1, margin: 0 }}>
-                {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
+            <div style={{ margin: '0 18px', background: 'var(--pm-surface)', border: '1px solid var(--pm-border)', borderRadius: 12, padding: '0 8px 8px' }}>
+              <LevelRangeSlider
+                minVal={levelMin} maxVal={levelMax}
+                onMinChange={setLevelMin} onMaxChange={setLevelMax}
+              />
             </div>
-            <div className="pm-field-hint">Spillere uden for dette interval kan ikke tilmelde sig (kan slås til/fra i næste trin).</div>
+            <div className="pm-field-hint">Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)} · Kan håndhæves ved tilmelding (slås til i næste trin)</div>
           </div>
 
           <div className="pm-field">
@@ -416,14 +473,24 @@ export function CreateAmericanoTournamentForm({
         <>
           <div className="pm-field">
             <label>Pris pr. person</label>
-            <div className="pm-stepper" style={{ width: '100%' }}>
-              <button type="button" className="pm-stepper-btn" style={{ width: 46, height: 46 }}
-                onClick={() => setPricePerPerson(p => Math.max(0, p - 10))}>−</button>
-              <span className="pm-stepper-val" style={{ fontSize: 20, fontWeight: 700 }}>
-                {pricePerPerson === 0 ? 'Gratis' : `${pricePerPerson} kr.`}
-              </span>
-              <button type="button" className="pm-stepper-btn" style={{ width: 46, height: 46 }}
-                onClick={() => { if (paymentMethod === 'free') setPaymentMethod('mobilepay'); setPricePerPerson(p => Math.min(500, p + 10)); }}>+</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 18px' }}>
+              <button type="button" className="pm-stepper-btn" style={{ width: 42, height: 42, flexShrink: 0 }}
+                onClick={() => { const n = Math.max(0, pricePerPerson - 10); setPricePerPerson(n); setPriceInput(String(n)) }}>−</button>
+              <div style={{ flex: 1, position: 'relative' }}>
+                <input
+                  type="number"
+                  min={0}
+                  max={500}
+                  value={priceInput}
+                  onChange={e => syncPrice(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && e.preventDefault()}
+                  onBlur={() => setPriceInput(String(pricePerPerson))}
+                  style={{ ...inputStyle, margin: 0, textAlign: 'center', fontWeight: 700, fontSize: 18, paddingRight: 30 }}
+                />
+                <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: theme.textLight, pointerEvents: 'none' }}>kr.</span>
+              </div>
+              <button type="button" className="pm-stepper-btn" style={{ width: 42, height: 42, flexShrink: 0 }}
+                onClick={() => { const n = Math.min(500, pricePerPerson + 10); setPricePerPerson(n); setPriceInput(String(n)); if (paymentMethod === 'free') setPaymentMethod('mobilepay') }}>+</button>
             </div>
             <div className="pm-field-hint">Sæt til 0 kr., hvis turneringen er gratis.</div>
           </div>
@@ -436,7 +503,7 @@ export function CreateAmericanoTournamentForm({
                   className={`pm-chip-btn${paymentMethod === o.id ? ' active' : ''}`}
                   onClick={() => {
                     setPaymentMethod(o.id as typeof paymentMethod)
-                    if (o.id === 'free') setPricePerPerson(0)
+                    if (o.id === 'free') { setPricePerPerson(0); setPriceInput('0') }
                   }}>
                   {o.label}
                 </button>
@@ -454,7 +521,7 @@ export function CreateAmericanoTournamentForm({
           {[
             { label: 'Offentlig turnering', desc: 'Alle kan se og tilmelde sig', value: isPublic, set: setIsPublic },
             { label: 'Venteliste ved fuld turnering', desc: 'Pladser tilbydes automatisk ved afbud', value: hasWaitlist, set: setHasWaitlist },
-            { label: 'Kun niveau-interval kan tilmelde sig', desc: `Niveau ${levelMin}–${levelMax} håndhæves ved tilmelding`, value: enforceLevelInterval, set: setEnforceLevelInterval },
+            { label: 'Kun niveau-interval kan tilmelde sig', desc: `Niveau ${levelMin.toFixed(1)}–${levelMax.toFixed(1)} håndhæves ved tilmelding`, value: enforceLevelInterval, set: setEnforceLevelInterval },
           ].map(row => (
             <div key={row.label} style={{ margin: '0 18px 12px', padding: '13px 15px', borderRadius: 14, border: '1px solid var(--pm-border)', background: 'var(--pm-surface)', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ flex: 1 }}>
@@ -478,24 +545,24 @@ export function CreateAmericanoTournamentForm({
 
           {/* Preview card */}
           <div style={{ margin: '0 18px 16px', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--pm-border)', boxShadow: 'var(--pm-shadow)' }}>
-            <div style={{ background: 'linear-gradient(135deg, #0D2752 0%, #16377E 100%)', padding: '14px 14px 18px', position: 'relative', minHeight: 100 }}>
+            <div style={{ background: 'linear-gradient(135deg, #0D2752 0%, #16377E 100%)', padding: '14px 14px 18px', minHeight: 100 }}>
               <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
                 <span style={{ background: tournamentFormat === 'mexicano' ? '#F59E0B' : '#22C55E', color: '#fff', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
                   {formatLabel}
                 </span>
                 <span style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 9.5, fontWeight: 600, padding: '3px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.25)' }}>
-                  Niveau {levelMin}–{levelMax}
+                  Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <div style={{ width: 110, height: 50, background: 'rgba(255,255,255,0.12)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)' }} />
+                <div style={{ width: 120, height: 52, background: 'rgba(255,255,255,0.12)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)' }} />
               </div>
             </div>
             <div style={{ padding: '12px 14px' }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: theme.text, marginBottom: 6 }}>{name || `Fredags ${formatLabel}`}</div>
               <div style={{ fontSize: 12, color: theme.textLight, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
                 <svg style={{ width: 12, height: 12, flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                {date} · {timeSlot}–{(() => { const [h, m] = timeSlot.split(':').map(Number); const end = h * 60 + m + durationMinutes; return `${String(Math.floor(end/60)%24).padStart(2,'0')}:${String(end%60).padStart(2,'0')}` })()}
+                {date} · {timeSlot}–{endTime}
               </div>
               {courtLabel && (
                 <div style={{ fontSize: 12, color: theme.textLight, display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -526,7 +593,7 @@ export function CreateAmericanoTournamentForm({
               { label: 'Betaling', value: pricePerPerson === 0 ? 'Gratis' : `${pricePerPerson} kr. · ${paymentLabel}` },
             ].map((row, i, arr) => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, padding: '9px 14px', borderBottom: i < arr.length - 1 ? '1px solid var(--pm-border)' : 'none' }}>
-                <span style={{ fontSize: 12.5, color: theme.textLight }}>{row.label}</span>
+                <span style={{ fontSize: 12.5, color: theme.textLight, flexShrink: 0 }}>{row.label}</span>
                 <span style={{ fontSize: 12.5, fontWeight: 600, color: theme.text, textAlign: 'right' }}>{row.value}</span>
               </div>
             ))}
@@ -540,7 +607,7 @@ export function CreateAmericanoTournamentForm({
         </>
       )}
 
-      {/* Navigation */}
+      {/* ── Navigation ── */}
       <div style={{ display: 'flex', gap: 10, padding: '4px 18px 4px' }}>
         {step > 1 ? (
           <button type="button" onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
@@ -558,16 +625,25 @@ export function CreateAmericanoTournamentForm({
           </button>
         ) : (
           <button
-            type="submit"
+            type="button"
             disabled={submitting}
+            onClick={doSubmit}
             style={{ ...btn(true, { size: 'md', fontWeight: 600 }), flex: 2, cursor: submitting ? 'wait' : 'pointer' }}
           >
             {submitting ? 'Publicerer…' : `Publicér ${formatLabel} ✓`}
           </button>
         )}
       </div>
-    </form>
+    </div>
   )
+}
+
+const labelSmall: React.CSSProperties = {
+  display: 'block',
+  fontSize: 12,
+  fontWeight: 600,
+  marginBottom: 6,
+  color: 'var(--pm-text)',
 }
 
 const inputStyle: React.CSSProperties = {
