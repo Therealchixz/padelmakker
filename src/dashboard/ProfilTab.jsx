@@ -909,6 +909,42 @@ export function ProfilTab({ user, showToast, setTab }) {
                 ))}
               </div>
             )}
+            {(partnerOpponentStats.worstPartners || []).length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostWith}</div>
+                {partnerOpponentStats.worstPartners.map((p, i) => (
+                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.worstPartners.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.games} kampe sammen</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((1 - p.asPartner.wins / p.asPartner.games) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>nederlag som makker</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(partnerOpponentStats.bestOpponents || []).length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostAgainst}</div>
+                {partnerOpponentStats.bestOpponents.map((p, i) => (
+                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.bestOpponents.length - 1 ? "10px" : 0 }}>
+                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.greenBg, border: "1px solid " + theme.green + "40", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.games} kampe imod</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asOpponent.wins / p.asOpponent.games) * 100)}%</div>
+                      <div style={{ fontSize: "10px", color: theme.textLight }}>din sejr</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {(() => {
               const hardOpponents = partnerOpponentStats.opponents;
               if (hardOpponents.length === 0) return null;
