@@ -140,6 +140,7 @@ export function KampeMatchListCard({
           </div>
           <div className="pm-kampe-v2-list-venue" style={{ marginTop: 2 }}>
             Kl. {timeLabel}
+            {match.duration ? <> · {match.duration} min</> : null}
             {showEloRange ? <> · ELO {matchPrefs.min}–{matchPrefs.max}</> : null}
           </div>
         </div>
