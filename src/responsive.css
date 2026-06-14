@@ -7337,8 +7337,8 @@ button,
 }
 
 .pm-kampe-v2-badge--full {
-  background: color-mix(in srgb, var(--pm-warm) 20%, var(--pm-surface));
-  color: color-mix(in srgb, var(--pm-warm) 85%, #7c2d12);
+  background: var(--pm-danger-bg, #FDEAEA);
+  color: var(--pm-danger, #E5484D);
 }
 
 .pm-kampe-v2-badge--closed {

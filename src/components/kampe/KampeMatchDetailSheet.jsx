@@ -195,12 +195,31 @@ function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, prof
                   />
                   <div className="pm-kd-elo-pname">
                     {firstName(p)}
-                    <span>
-                      {[
-                        prof.level != null ? `Niveau ${formatPlaytomicLevel(prof.level)}` : null,
-                        prof.games_played != null && prof.games_played > 0 ? `${prof.games_played} kampe` : null,
-                      ].filter(Boolean).join(' · ')}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 4 }}>
+                      {prof.level != null ? (
+                        <span style={{
+                          background: '#FAEFDC',
+                          color: '#92400E',
+                          border: '1px solid #EDD9B5',
+                          fontSize: 9.5,
+                          fontWeight: 600,
+                          padding: '2px 7px',
+                          borderRadius: 5,
+                          letterSpacing: '0.4px',
+                          textTransform: 'uppercase',
+                        }}>
+                          Niveau {formatPlaytomicLevel(prof.level)}
+                        </span>
+                      ) : null}
+                      {prof.games_played != null && prof.games_played > 0 ? (
+                        <span style={{ fontSize: 11.5, color: '#5E6B81', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                          <svg style={{ width: 11, height: 11 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                          </svg>
+                          {prof.games_played} kampe
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   {elo != null && (
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -472,8 +491,8 @@ export function KampeMatchDetailSheet({
                     ) : null}
                   </div>
                   {[{ teamNum: 1, players: t1p }, { teamNum: 2, players: t2p }].map(({ teamNum, players }) => (
-                    <div key={teamNum} className="pm-kd-card" style={{ marginBottom: 8, padding: '4px 16px' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.7px', color: teamNum === 1 ? theme.accent : theme.blue, padding: '6px 0 2px' }}>
+                    <div key={teamNum}>
+                      <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: theme.textLight, margin: '12px 0 6px', paddingLeft: 2 }}>
                         Hold {teamNum}
                       </div>
                       {players.map((p) => {
@@ -481,31 +500,56 @@ export function KampeMatchDetailSheet({
                         const prof = profilesById?.[uid] || {};
                         const isMe = uid === String(currentUserId);
                         return (
-                          <div key={p.user_id} className="pm-kd-elo-row">
+                          <div key={p.user_id} className="pm-kd-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginBottom: 8 }}>
                             <AvatarCircle
                               avatar={prof.avatar || p.user_emoji || '🎾'}
-                              size={36}
+                              size={40}
                               emojiSize="16px"
                               style={{ background: teamNum === 1 ? theme.accentBg : theme.blueBg, flexShrink: 0 }}
                             />
-                            <div className="pm-kd-elo-pname">
-                              {isMe ? 'Dig' : (prof.name || p.user_name || '?').split(' ')[0]}
-                              <span>
-                                {[
-                                  prof.level != null ? `Niveau ${formatPlaytomicLevel(prof.level)}` : null,
-                                  prof.games_played != null && prof.games_played > 0 ? `${prof.games_played} kampe` : null,
-                                ].filter(Boolean).join(' · ')}
-                              </span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: 14 }}>
+                                {isMe ? 'Dig' : (prof.name || p.user_name || '?')}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 4 }}>
+                                {prof.level != null ? (
+                                  <span style={{
+                                    background: '#FAEFDC',
+                                    color: '#92400E',
+                                    border: '1px solid #EDD9B5',
+                                    fontSize: 9.5,
+                                    fontWeight: 600,
+                                    padding: '2px 7px',
+                                    borderRadius: 5,
+                                    letterSpacing: '0.4px',
+                                    textTransform: 'uppercase',
+                                  }}>
+                                    Niveau {formatPlaytomicLevel(prof.level)}
+                                  </span>
+                                ) : null}
+                                {prof.games_played != null && prof.games_played > 0 ? (
+                                  <span style={{ fontSize: 11.5, color: '#5E6B81', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                    <svg style={{ width: 11, height: 11 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                                    </svg>
+                                    {prof.games_played} kampe
+                                  </span>
+                                ) : null}
+                              </div>
                             </div>
                           </div>
                         );
                       })}
                       {Array.from({ length: Math.max(0, maxPerTeam - players.length) }).map((_, i) => (
-                        <div key={`empty-${i}`} className="pm-kd-elo-row" style={{ opacity: 0.55 }}>
-                          <div style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px dashed var(--pm-border, #E2E8F0)', background: 'var(--pm-inset, #F1F4F9)', flexShrink: 0 }} />
-                          <div className="pm-kd-elo-pname">
-                            Ledig plads
-                            <span style={{ textTransform: 'uppercase', fontSize: 10, fontWeight: 600, letterSpacing: '0.3px' }}>Bliv den næste!</span>
+                        <div key={`empty-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginBottom: 8, border: '2px dashed var(--pm-border, #E2E8F0)', borderRadius: 14, background: 'transparent' }}>
+                          <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#E9EDF4', color: '#9AA9BD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 13.5, color: '#5E6B81' }}>Ledig plads</div>
+                            <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '1px', color: '#9AA9BD', marginTop: 2, textTransform: 'uppercase' }}>Bliv den næste!</div>
                           </div>
                         </div>
                       ))}

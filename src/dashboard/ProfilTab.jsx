@@ -602,17 +602,18 @@ export function ProfilTab({ user, showToast, setTab }) {
               {user.city ? `${user.city}, ` : ''}{user.area || authUser?.email}
             </p>
             <div style={{ display: 'flex', gap: 7, marginTop: 9, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
-              {!statsLoading && is2v2Mode && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
+              {user.level != null && user.level !== '' ? (
+                <span style={tag(theme.amberBg, theme.amberText)}>
+                  Niveau {formatPlaytomicLevel(user.level)}
+                </span>
+              ) : !statsLoading && is2v2Mode && elo != null ? (
+                <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>
+              ) : null}
               {!statsLoading && isAmericanoMode && <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}
               {!statsLoading && isLigaMode && !ligaLoading && ligaStats.matches > 0 && (
                 <span style={tag(theme.blueBg, theme.blue)}>{ligaStats.matches} ligakampe</span>
               )}
               {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
-              {user.level != null && user.level !== '' ? (
-                <span style={tag(theme.amberBg, theme.amberText)}>
-                  Niveau {formatPlaytomicLevel(user.level)}
-                </span>
-              ) : null}
               {user.play_style && <span style={tag(theme.blueBg, theme.blue)}>{user.play_style}</span>}
               {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
               {isSeekingActiveProfile(user) && <span style={tag(theme.greenBg, theme.green)}>Søger makker</span>}
