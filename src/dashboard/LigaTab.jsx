@@ -94,7 +94,7 @@ export function LigaTab({
   const setCreateOpen = onCreateOpenChange !== undefined ? onCreateOpenChange : setCreateOpenLocal;
   const ligaCreateFormRef = useRef(null);
   useScrollIntoViewWhen(createOpen, ligaCreateFormRef, { enabled: isAdmin, block: 'start' });
-  const [createForm, setCreateForm] = useState({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
+  const [createForm, setCreateForm] = useState({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
   const [createStep, setCreateStep] = useState(1);
   const [createStepErr, setCreateStepErr] = useState('');
 
@@ -383,8 +383,8 @@ export function LigaTab({
   };
 
   const createLeague = async () => {
-    if (!createForm.name.trim() || !createForm.start_date || !createForm.end_date) {
-      showToast('Udfyld navn og datoer.'); return;
+    if (!createForm.name.trim() || !createForm.start_date) {
+      showToast('Udfyld navn og startdato.'); return;
     }
     setBusyId('create');
     try {
@@ -394,14 +394,26 @@ export function LigaTab({
         description: createForm.description.trim() || null,
         season_type: createForm.season_type,
         start_date: createForm.start_date,
-        end_date: createForm.end_date,
+        end_date: createForm.end_date || null,
         max_teams: maxT && maxT > 0 ? maxT : null,
+        region: createForm.region || null,
+        num_divisions: createForm.num_divisions || 1,
+        registration_deadline: createForm.registration_deadline || null,
+        match_system: createForm.match_system || 'round_robin',
+        points_win: createForm.points_win ?? 3,
+        points_draw: createForm.points_draw ?? 1,
+        points_loss: createForm.points_loss ?? 0,
+        promotion_spots: createForm.promotion_spots ?? 2,
+        relegation_spots: createForm.relegation_spots ?? 2,
+        rules_notes: createForm.rules_notes.trim() || null,
         created_by: user.id,
       }).select('id').single();
       if (error) throw error;
       setCreateOpen(false);
+      setCreateStep(1);
+      setCreateStepErr('');
       setCreatedLeagueReceipt({ id: created?.id, name: createForm.name.trim(), start_date: createForm.start_date, end_date: createForm.end_date, max_teams: maxT });
-      setCreateForm({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
+      setCreateForm({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
     finally { setBusyId(null); }
@@ -659,6 +671,18 @@ export function LigaTab({
 
       {isAdmin && createOpen ? (() => {
         const ligaInputStyle = { ...inputStyle, marginBottom: 0 };
+        const REGIONS = ['Region Midtjylland', 'Region Hovedstaden', 'Region Sjælland', 'Region Syddanmark', 'Region Nordjylland'];
+        const MATCH_SYSTEMS = [
+          { id: 'round_robin', label: 'Alle-mod-alle', desc: 'Standard ligaformat hvor alle hold mødes.' },
+          { id: 'swiss', label: 'Swiss-system', desc: 'Hold parres efter stilling — færre kampe, jævnbyrdigt.' },
+          { id: 'knockout', label: 'Eliminering', desc: 'Turneringstræ med direkte knockout.' },
+        ];
+        const SummaryRow = ({ label, value }) => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--pm-americano-tie-border)' }}>
+            <span style={{ fontSize: 12, color: theme.textLight }}>{label}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: theme.text, textAlign: 'right' }}>{value}</span>
+          </div>
+        );
         return (
         <div
           ref={ligaCreateFormRef}
@@ -667,7 +691,7 @@ export function LigaTab({
         >
           {/* Wizard indicator */}
           <div className="pm-wiz" style={{ margin: '0 0 16px' }}>
-            {[{ n: 1, label: 'Info' }, { n: 2, label: 'Indstillinger' }, { n: 3, label: 'Bekræft' }].map((s, i, arr) => {
+            {[{ n: 1, label: 'Info' }, { n: 2, label: 'Regler' }, { n: 3, label: 'Bekræft' }].map((s, i, arr) => {
               const state = s.n < createStep ? 'done' : s.n === createStep ? 'on' : '';
               return (
                 <span key={s.n} style={{ display: 'contents' }}>
@@ -694,89 +718,170 @@ export function LigaTab({
                 />
               </div>
               <div className="pm-field">
-                <label>Beskrivelse <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-                <input
-                  value={createForm.description}
-                  onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Kort beskrivelse af ligaen..."
+                <label>Region</label>
+                <select
+                  value={createForm.region}
+                  onChange={e => setCreateForm(f => ({ ...f, region: e.target.value }))}
                   style={ligaInputStyle}
-                />
+                >
+                  <option value="">Vælg region</option>
+                  {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
               </div>
               <div className="pm-field">
-                <label>Type</label>
-                <div className="pm-seg">
-                  {[{ id: 'monthly', label: 'Månedlig' }, { id: 'weekly', label: 'Ugentlig' }].map(opt => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      className={`pm-seg-btn${createForm.season_type === opt.id ? ' active' : ''}`}
-                      onClick={() => setCreateForm(f => ({ ...f, season_type: opt.id }))}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                <label>Antal divisioner</label>
+                <div className="pm-stepper">
+                  <button type="button" className="pm-stepper-btn" onClick={() => setCreateForm(f => ({ ...f, num_divisions: Math.max(1, (f.num_divisions || 1) - 1) }))}>−</button>
+                  <span className="pm-stepper-val">{createForm.num_divisions || 1}</span>
+                  <button type="button" className="pm-stepper-btn" onClick={() => setCreateForm(f => ({ ...f, num_divisions: Math.min(8, (f.num_divisions || 1) + 1) }))}>+</button>
                 </div>
+                <div className="pm-field-hint">Hold inddeles i divisioner efter niveau — med op- og nedrykning mellem sæsonerne.</div>
+              </div>
+              <div className="pm-field">
+                <label>Tilmeldingsfrist &amp; sæsonstart</label>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: theme.textLight, marginBottom: 4 }}>Frist</div>
+                    <DateInputField
+                      value={createForm.registration_deadline}
+                      onChange={e => setCreateForm(f => ({ ...f, registration_deadline: e.target.value }))}
+                      inputStyle={ligaInputStyle}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: theme.textLight, marginBottom: 4 }}>Start</div>
+                    <DateInputField
+                      value={createForm.start_date}
+                      onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))}
+                      inputStyle={ligaInputStyle}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <svg style={{ width: 15, height: 15, color: 'var(--pm-navy)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                <span style={{ fontSize: 11.5, color: theme.textLight, lineHeight: 1.55 }}>Du kan konfigurere specifikke regler og kampsystem i de næste trin.</span>
               </div>
               <div className="pm-format-card">
                 <b>Skab dit fællesskab</b>
-                <p>Ligaer samler spillere på alle niveauer — sæt dit hold og kæmp om topplaceringen.</p>
+                <p>Ligaer samler spillere på alle niveauer — og giver faste kampe hele sæsonen.</p>
               </div>
             </>
           )}
 
-          {/* Step 2: Indstillinger */}
+          {/* Step 2: Divisionsindstillinger / Regler */}
           {createStep === 2 && (
             <>
-              <div style={{ display: 'flex', gap: 10, margin: '0 18px 14px' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: theme.text, marginBottom: 7 }}>Startdato</label>
-                  <DateInputField
-                    value={createForm.start_date}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, start_date: e.target.value }))}
-                    inputStyle={ligaInputStyle}
-                  />
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 8px' }}>Kampsystem</div>
+              {MATCH_SYSTEMS.map(ms => (
+                <div
+                  key={ms.id}
+                  onClick={() => setCreateForm(f => ({ ...f, match_system: ms.id }))}
+                  style={{ margin: '0 18px 9px', padding: '13px 14px', borderRadius: 14, border: `1.5px solid ${createForm.match_system === ms.id ? 'var(--pm-navy)' : 'var(--pm-border)'}`, background: createForm.match_system === ms.id ? 'var(--pm-navy-bg, #EEF2FB)' : 'var(--pm-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: theme.text }}>{ms.label}</div>
+                    <div style={{ fontSize: 11.5, color: theme.textLight, marginTop: 2 }}>{ms.desc}</div>
+                  </div>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${createForm.match_system === ms.id ? 'var(--pm-navy)' : 'var(--pm-border)'}`, background: createForm.match_system === ms.id ? 'var(--pm-navy)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {createForm.match_system === ms.id && <svg style={{ width: 10, height: 10 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
+                  </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: theme.text, marginBottom: 7 }}>Slutdato</label>
-                  <DateInputField
-                    value={createForm.end_date}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, end_date: e.target.value }))}
-                    inputStyle={ligaInputStyle}
-                  />
-                </div>
+              ))}
+
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '4px 18px 8px' }}>Pointsystem</div>
+              <div style={{ margin: '0 18px 12px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', overflow: 'hidden' }}>
+                {[
+                  { key: 'points_win', label: 'Vundet kamp (2-0 eller 2-1)', desc: 'Standard point for sejr', min: 1, max: 9 },
+                  { key: 'points_draw', label: 'Uafgjort kamp', desc: 'Hvis sæt og partier ender lige', min: 0, max: 5 },
+                  { key: 'points_loss', label: 'Tabt kamp', desc: 'Gives ofte for fremmøde', min: 0, max: 3 },
+                ].map((row, idx, arr) => (
+                  <div key={row.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: idx < arr.length - 1 ? '1px solid var(--pm-border)' : 'none' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: theme.text }}>{row.label}</div>
+                      <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>{row.desc}</div>
+                    </div>
+                    <div className="pm-stepper" style={{ width: 108 }}>
+                      <button type="button" className="pm-stepper-btn" style={{ width: 30, height: 30 }} onClick={() => setCreateForm(f => ({ ...f, [row.key]: Math.max(row.min, (f[row.key] ?? 0) - 1) }))}>−</button>
+                      <span className="pm-stepper-val" style={{ fontSize: 14 }}>{createForm[row.key] ?? 0}</span>
+                      <button type="button" className="pm-stepper-btn" style={{ width: 30, height: 30 }} onClick={() => setCreateForm(f => ({ ...f, [row.key]: Math.min(row.max, (f[row.key] ?? 0) + 1) }))}>+</button>
+                    </div>
+                  </div>
+                ))}
               </div>
+
+              {[
+                { key: 'promotion_spots', label: 'Oprykning', desc: 'Antal hold der rykker op', color: 'var(--pm-green, #16A34A)', bg: 'var(--pm-green-bg, #F0FDF4)', border: '#BFE5CF' },
+                { key: 'relegation_spots', label: 'Nedrykning', desc: 'Antal hold der rykker ned', color: 'var(--pm-red, #DC2626)', bg: 'var(--pm-red-bg, #FEF2F2)', border: '#F2C7C9' },
+              ].map(row => (
+                <div key={row.key} style={{ margin: `0 18px 9px`, padding: '10px 14px', borderRadius: 14, border: `1px solid ${row.border}`, background: row.bg, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: row.color }}>{row.label}</div>
+                    <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>{row.desc}</div>
+                  </div>
+                  <select
+                    value={createForm[row.key] ?? 2}
+                    onChange={e => setCreateForm(f => ({ ...f, [row.key]: parseInt(e.target.value, 10) }))}
+                    style={{ ...ligaInputStyle, width: 72, padding: '7px 10px' }}
+                  >
+                    {[0,1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} hold</option>)}
+                  </select>
+                </div>
+              ))}
+
               <div className="pm-field">
-                <label>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-                <input
-                  type="number"
-                  min="2"
-                  value={createForm.max_teams}
-                  onChange={e => setCreateForm(f => ({ ...f, max_teams: e.target.value }))}
-                  placeholder="Ubegrænset"
-                  style={ligaInputStyle}
+                <label>Særlige regler eller noter <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
+                <textarea
+                  value={createForm.rules_notes}
+                  onChange={e => setCreateForm(f => ({ ...f, rules_notes: e.target.value }))}
+                  placeholder="Eks: 'Golden point ved 40-40' eller 'Match-tiebreak i 3. sæt'..."
+                  rows={3}
+                  style={{ ...ligaInputStyle, resize: 'vertical' }}
                 />
-                <div className="pm-field-hint">Lad stå tomt for ubegrænset antal hold.</div>
+              </div>
+              <div className="pm-format-card">
+                <b>Officielle regler som udgangspunkt</b>
+                <p>Din liga følger de officielle Dansk Padel Forbund-regler, medmindre du tilføjer egne.</p>
               </div>
             </>
           )}
 
           {/* Step 3: Bekræft */}
           {createStep === 3 && (
-            <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 14, padding: '16px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>Oversigt</div>
-              {[
-                { label: 'Navn', value: createForm.name || '—' },
-                { label: 'Type', value: SEASON_LABELS[createForm.season_type] || createForm.season_type },
-                { label: 'Startdato', value: createForm.start_date || '—' },
-                { label: 'Slutdato', value: createForm.end_date || '—' },
-                { label: 'Maks hold', value: createForm.max_teams ? createForm.max_teams + ' hold' : 'Ubegrænset' },
-              ].map(row => (
-                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, color: theme.textLight }}>{row.label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{row.value}</span>
+            <>
+              {/* Grundlæggende info */}
+              <div style={{ margin: '0 18px 12px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', padding: '14px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, marginBottom: 8, borderBottom: '1px solid var(--pm-border)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Grundlæggende info</span>
+                  <button type="button" onClick={() => { setCreateStep(1); setCreateStepErr(''); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-navy)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Redigér</button>
                 </div>
-              ))}
-            </div>
+                <SummaryRow label="Navn" value={createForm.name || '—'} />
+                <SummaryRow label="Region" value={createForm.region || '—'} />
+                <SummaryRow label="Antal divisioner" value={createForm.num_divisions || 1} />
+                <SummaryRow label="Tilmeldingsfrist" value={createForm.registration_deadline || '—'} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, paddingTop: 6 }}>
+                  <span style={{ fontSize: 12, color: theme.textLight }}>Sæsonstart</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{createForm.start_date || '—'}</span>
+                </div>
+              </div>
+              {/* Regler & kampsystem */}
+              <div style={{ margin: '0 18px 14px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', padding: '14px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, marginBottom: 8, borderBottom: '1px solid var(--pm-border)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Regler &amp; kampsystem</span>
+                  <button type="button" onClick={() => { setCreateStep(2); setCreateStepErr(''); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-navy)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Redigér</button>
+                </div>
+                <SummaryRow label="Kampsystem" value={{ round_robin: 'Alle-mod-alle', swiss: 'Swiss-system', knockout: 'Eliminering' }[createForm.match_system] || createForm.match_system} />
+                <SummaryRow label="Point" value={`${createForm.points_win} sejr · ${createForm.points_draw} uafgjort · ${createForm.points_loss} nederlag`} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, paddingTop: 6 }}>
+                  <span style={{ fontSize: 12, color: theme.textLight }}>Op-/nedrykning</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{createForm.promotion_spots} op · {createForm.relegation_spots} ned</span>
+                </div>
+              </div>
+              <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1.5px solid var(--pm-navy)', borderLeft: '3px solid var(--pm-navy)', borderRadius: 10, padding: '11px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <svg style={{ width: 15, height: 15, color: 'var(--pm-navy)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 13v-2Z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+                <span style={{ fontSize: 11.5, color: theme.textLight, lineHeight: 1.6 }}>Når du trykker <b style={{ color: theme.text }}>"Opret liga"</b>, bliver ligaen synlig i oversigten, og hold kan tilmelde sig med det samme.</span>
+              </div>
+            </>
           )}
 
           {createStepErr && (
@@ -799,13 +904,13 @@ export function LigaTab({
                 type="button"
                 onClick={() => {
                   if (createStep === 1 && !createForm.name.trim()) { setCreateStepErr('Angiv et navn til ligaen.'); return; }
-                  if (createStep === 2 && (!createForm.start_date || !createForm.end_date)) { setCreateStepErr('Angiv start- og slutdato.'); return; }
+                  if (createStep === 1 && !createForm.start_date) { setCreateStepErr('Angiv en sæsonstart-dato.'); return; }
                   setCreateStepErr('');
                   setCreateStep(s => s + 1);
                 }}
                 style={{ ...btn(true, { size: 'md', fontWeight: 600 }), flex: 2 }}
               >
-                Næste →
+                {createStep === 1 ? 'Næste: Divisionsindstillinger →' : 'Næste: Bekræft liga →'}
               </button>
             ) : (
               <button
