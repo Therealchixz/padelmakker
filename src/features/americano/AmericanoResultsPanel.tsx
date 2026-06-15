@@ -424,16 +424,38 @@ export function AmericanoResultsPanel({
     }
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('americano_matches')
-        .update({
-          team_a_score: a,
-          team_b_score: b,
-          results_locked: true,
-          updated_at: new Date().toISOString(),
+      if (isCreator) {
+        const { error } = await supabase
+          .from('americano_matches')
+          .update({
+            team_a_score: a,
+            team_b_score: b,
+            results_locked: true,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', m.id)
+        if (error) throw error
+      } else {
+        const { data, error } = await supabase.rpc('report_americano_match_score', {
+          p_match_id: m.id,
+          p_score_a: a,
+          p_score_b: b,
         })
-        .eq('id', m.id)
-      if (error) throw error
+        if (error) throw error
+        const res = data as { success?: boolean; error?: string } | null
+        if (!res?.success) {
+          const errMap: Record<string, string> = {
+            already_locked: 'Resultatet er allerede indberettet.',
+            not_on_court: 'Du spiller ikke på denne bane.',
+            tournament_not_playing: 'Turneringen er ikke i gang.',
+            invalid_score: `Summen skal være præcis ${P} point.`,
+            not_authenticated: 'Du skal være logget ind.',
+            match_not_found: 'Kampen blev ikke fundet.',
+          }
+          showToast(errMap[res?.error || ''] || 'Kunne ikke gemme resultatet.')
+          return
+        }
+      }
       showToast('Resultat gemt.')
       await load()
       onProfileStatsRefresh?.()
@@ -632,9 +654,17 @@ export function AmericanoResultsPanel({
     ? userIsOnCourtInAmericanoMatch(myActiveMatch, userIdByPartId, currentUserId)
     : false
 
+  /** On-court-spiller (ikke opretter) må indberette egen bane i aktiv, ulåst runde. */
+  const canPlayerReport = (m: AmericanoMatchRow) =>
+    !isCreator &&
+    m.round_number === activeRoundNumber &&
+    !isMatchResultLocked(m) &&
+    userIsOnCourtInAmericanoMatch(m, userIdByPartId, currentUserId)
+
   const renderMatchCard = (m: AmericanoMatchRow, displayIdx: number) => {
           const s = scores[m.id] || { a: '', b: '' }
           const locked = isMatchResultLocked(m) && !unlockedIds.has(m.id)
+          const canEdit = (isCreator && !locked) || canPlayerReport(m)
           const draftScore = getDraftScore(m.id)
           const hasTypedScore = s.a.trim() !== '' || s.b.trim() !== ''
           const canConfirmSave = Boolean(draftScore?.valid)
@@ -764,7 +794,7 @@ export function AmericanoResultsPanel({
                     </button>
                   </div>
                 )}
-                {isCreator && !locked && (
+                {canEdit && (
                   <div style={{ fontSize: 10, color: c.muted, fontWeight: 600, fontStyle: 'italic', textAlign: 'right', flexShrink: 0 }}>
                     Skriv point og<br />tryk gem
                   </div>
@@ -785,7 +815,7 @@ export function AmericanoResultsPanel({
                   currentUserId={currentUserId}
                   teamLabel={`Hold A · ${n1.split(' ')[0]} & ${n2.split(' ')[0]}`}
                   inputElement={
-                    isCreator && !locked ? (
+                    canEdit ? (
                       <input
                         type="text"
                         inputMode="numeric"
@@ -829,7 +859,7 @@ export function AmericanoResultsPanel({
                   currentUserId={currentUserId}
                   teamLabel={`Hold B · ${n3.split(' ')[0]} & ${n4.split(' ')[0]}`}
                   inputElement={
-                    isCreator && !locked ? (
+                    canEdit ? (
                       <input
                         type="text"
                         inputMode="numeric"
@@ -859,7 +889,7 @@ export function AmericanoResultsPanel({
                     ) : undefined
                   }
                 />
-                {isCreator && !locked && (
+                {canEdit && (
                   <div
                     style={{
                       marginTop: 8,
@@ -1094,7 +1124,7 @@ export function AmericanoResultsPanel({
                 </>
               ) : (
                 <>
-                  <strong>Format {P} point:</strong> Her ser du alle kampe. Kun <strong>opretteren</strong> kan indtaste og rette resultater. {formatLabel}-ELO beregnes ved afslutning.
+                  <strong>Format {P} point:</strong> Du kan selv indberette resultatet for <strong>din egen bane</strong> i den aktive runde (se "Din bane"). Opretteren kan rette alle resultater. {formatLabel}-ELO beregnes ved afslutning.
                 </>
               )}
             </div>
