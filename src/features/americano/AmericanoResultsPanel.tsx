@@ -296,6 +296,7 @@ export function AmericanoResultsPanel({
   const [saving, setSaving] = useState(false)
   /** Midlertidigt ulåst af opretter — nulstilles ved genindlæsning */
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(() => new Set())
+  const [tab, setTab] = useState<'stilling' | 'mine' | 'alle'>('stilling')
 
   const ppm = Number(tournament.points_per_match)
   const P: 16 | 24 | 32 =
@@ -612,74 +613,26 @@ export function AmericanoResultsPanel({
     return <div style={{ fontSize: 12, color: c.muted, marginTop: 12 }}>Henter kampe…</div>
   }
 
-  return (
-    <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.line}` }}>
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: c.text, fontFamily: font }}>
-        Resultater ({formatLabel}-ELO)
-        {mexicanoProgress ? (
-          <span style={{ fontWeight: 600, color: c.muted, marginLeft: 8 }}>· {mexicanoProgress}</span>
-        ) : null}
-      </div>
-      <div className="pm-help-box" style={{ marginBottom: 14 }}>
-        <div className="pm-help-box-copy" style={{ fontFamily: font }}>
-          {isCreator ? (
-            <>
-              <strong>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter{' '}
-              <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette.{' '}
-              {isMexicano ? (
-                <>
-                  Ved <strong>Mexicano</strong> genereres næste runde automatisk når alle kampe i runden er gemt (1.+4. vs 2.+3. efter stilling).{' '}
-                </>
-              ) : null}
-              Når du afslutter Americano/Mexicano, beregnes separat {formatLabel}-ELO ud fra slutstillingen.
-            </>
-          ) : (
-            <>
-              <strong>Format {P} point:</strong> Her ser du stilling og alle kampe. Kun{' '}
-              <strong>opretteren</strong> kan indtaste og rette resultater. {formatLabel}-ELO beregnes ved afslutning.
-              {isMexicano ? ' Mexicano: nye runder kommer når forrige runde er færdig.' : ''}
-            </>
-          )}
-        </div>
-      </div>
-      <div className="pm-card-subpanel" style={{ padding: '14px 16px', marginBottom: 8, fontFamily: font }}>
-        <div style={{ fontWeight: 700, marginBottom: 10, color: c.text, fontSize: 12 }}>Stilling (sum af kampoint)</div>
-        <div className="pm-data-table" style={{ ['--pm-table-cols']: '30px 1fr 64px' } as CSSProperties}>
-          <div className="pm-data-table-head">
-            <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>#</div>
-            <div className="pm-data-table-cell-head">Spiller</div>
-            <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>Point</div>
-          </div>
-          {leaderboard.map((row, idx) => (
-            <div key={row.id} className="pm-data-table-row">
-              <div className="pm-data-table-cell" style={{ textAlign: 'center', color: idx < 3 ? c.warm : c.muted, fontWeight: 700 }}>
-                {idx + 1}
-              </div>
-              <div className="pm-data-table-cell" style={{ fontSize: 13, fontWeight: 600 }}>
-                {row.name}
-              </div>
-              <div className="pm-data-table-cell" style={{ textAlign: 'center', fontWeight: 700, color: c.text }}>
-                {row.points}
-              </div>
-            </div>
-          ))}
-        </div>
-        {leaderboard.length === 0 && (
-          <div className="pm-data-empty-note" style={{ marginTop: 10 }}>
-            Ingen spillere endnu.
-          </div>
-        )}
-      </div>
+  // ── Afledte værdier til faner og "Din bane"-kort ──
+  const myPartId = participants.find((p) => String(p.user_id) === String(currentUserId))?.id ?? null
+  const isMyMatch = (m: AmericanoMatchRow) =>
+    myPartId != null && [m.team_a_p1, m.team_a_p2, m.team_b_p1, m.team_b_p2].includes(myPartId)
+  const myMatchesDisplay = matchesDisplay
+    .map((m, i) => ({ m, i }))
+    .filter(({ m }) => isMyMatch(m))
+  const activeRoundMatches = activeRoundNumber != null
+    ? matchesDisplay.filter((m) => m.round_number === activeRoundNumber)
+    : []
+  const activeRoundSaved = activeRoundMatches.filter((m) => isMatchResultLocked(m) && !unlockedIds.has(m.id)).length
+  const myActiveMatchIdx = activeRoundNumber != null
+    ? matchesDisplay.findIndex((m) => m.round_number === activeRoundNumber && isMyMatch(m))
+    : -1
+  const myActiveMatch = myActiveMatchIdx >= 0 ? matchesDisplay[myActiveMatchIdx] : null
+  const myOnCourtNow = myActiveMatch
+    ? userIsOnCourtInAmericanoMatch(myActiveMatch, userIdByPartId, currentUserId)
+    : false
 
-      <div style={{ fontFamily: font }}>
-        {matchesDisplay.length === 0 && (
-          <div className="pm-data-empty-note" style={{ marginBottom: 8 }}>
-            {isMexicano
-              ? 'Ingen kampe endnu — start Americano/Mexicano for at oprette runde 1.'
-              : 'Kampplan er ikke genereret endnu.'}
-          </div>
-        )}
-        {matchesDisplay.map((m, displayIdx) => {
+  const renderMatchCard = (m: AmericanoMatchRow, displayIdx: number) => {
           const s = scores[m.id] || { a: '', b: '' }
           const locked = isMatchResultLocked(m) && !unlockedIds.has(m.id)
           const draftScore = getDraftScore(m.id)
@@ -949,9 +902,48 @@ export function AmericanoResultsPanel({
               </div>
             </div>
           )
-        })}
+  }
+
+  const roundStatusLabel = activeRoundNumber != null
+    ? `Runde ${activeRoundNumber} · ${activeRoundSaved}/${activeRoundMatches.length} baner indberettet`
+    : (matchesDisplay.length > 0 ? 'Alle runder spillet' : 'Ingen runder endnu')
+
+  const leaderboardTable = (
+    <div className="pm-data-table" style={{ ['--pm-table-cols']: '30px 1fr 64px' } as CSSProperties}>
+      <div className="pm-data-table-head">
+        <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>#</div>
+        <div className="pm-data-table-cell-head">Spiller</div>
+        <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>Point</div>
       </div>
-      {isCreator && pendingNextMexicanoRound ? (
+      {leaderboard.map((row, idx) => {
+        const isMe = myPartId != null && row.id === myPartId
+        return (
+          <div
+            key={row.id}
+            className="pm-data-table-row"
+            style={isMe ? { background: 'var(--pm-accent-bg)', borderRadius: 8 } : undefined}
+          >
+            <div className="pm-data-table-cell" style={{ textAlign: 'center', color: idx < 3 ? c.warm : c.muted, fontWeight: 700 }}>
+              {idx + 1}
+            </div>
+            <div className="pm-data-table-cell" style={{ fontSize: 13, fontWeight: isMe ? 800 : 600 }}>
+              {row.name}{isMe ? ' (Dig)' : ''}
+            </div>
+            <div className="pm-data-table-cell" style={{ textAlign: 'center', fontWeight: 700, color: c.text }}>
+              {row.points}
+            </div>
+          </div>
+        )
+      })}
+      {leaderboard.length === 0 && (
+        <div className="pm-data-empty-note" style={{ marginTop: 10 }}>Ingen spillere endnu.</div>
+      )}
+    </div>
+  )
+
+  const creatorActions = isCreator ? (
+    <>
+      {pendingNextMexicanoRound ? (
         <button
           type="button"
           disabled={saving}
@@ -992,27 +984,133 @@ export function AmericanoResultsPanel({
           Generér runde {Array.isArray(pendingNextMexicanoRound) ? pendingNextMexicanoRound[0]?.round_number : (pendingNextMexicanoRound as { round_number?: number } | null)?.round_number}
         </button>
       ) : null}
-      {isCreator && (
-        <button
-          type="button"
-          disabled={saving}
-          onClick={completeTournament}
-          style={{
-            marginTop: 14,
-            fontFamily: font,
-            fontSize: 12,
-            fontWeight: 600,
-            padding: '8px 14px',
-            borderRadius: 8,
-            border: '1px solid var(--pm-border)',
-            background: 'var(--pm-surface)',
-            color: 'var(--pm-text-mid)',
-            cursor: saving ? 'wait' : 'pointer',
-          }}
-        >
-          Afslut Americano/Mexicano (alle resultater indtastet)
-        </button>
-      )}
+      <button
+        type="button"
+        disabled={saving}
+        onClick={completeTournament}
+        style={{
+          marginTop: 14,
+          fontFamily: font,
+          fontSize: 12,
+          fontWeight: 600,
+          padding: '8px 14px',
+          borderRadius: 8,
+          border: '1px solid var(--pm-border)',
+          background: 'var(--pm-surface)',
+          color: 'var(--pm-text-mid)',
+          cursor: saving ? 'wait' : 'pointer',
+        }}
+      >
+        Afslut Americano/Mexicano (alle resultater indtastet)
+      </button>
+    </>
+  ) : null
+
+  return (
+    <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.line}`, fontFamily: font }}>
+      {/* Header + rundestatus (erstatter nedtællings-ur) */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: c.text }}>Resultater ({formatLabel}-ELO)</div>
+        <div style={{ fontSize: 11.5, color: c.muted, marginTop: 2 }}>
+          {roundStatusLabel}{mexicanoProgress ? ` · ${mexicanoProgress}` : ''}
+        </div>
+      </div>
+
+      {/* Faner */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, background: 'var(--pm-surface-muted)', borderRadius: 10, padding: 4 }}>
+        {([['stilling', 'Stilling'], ['mine', 'Mine Kampe'], ['alle', 'Alle Resultater']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            style={{
+              flex: 1,
+              padding: '8px 4px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: font,
+              fontSize: 12.5,
+              fontWeight: 700,
+              background: tab === id ? 'var(--pm-surface)' : 'transparent',
+              color: tab === id ? c.text : c.muted,
+              boxShadow: tab === id ? 'var(--pm-shadow-soft)' : 'none',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── STILLING ── */}
+      {tab === 'stilling' ? (
+        <>
+          {myActiveMatch ? (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: c.text, marginBottom: 8 }}>
+                {myOnCourtNow ? `Din bane: Bane ${myActiveMatch.court_index + 1}` : 'Din runde'}
+              </div>
+              {myOnCourtNow ? (
+                renderMatchCard(myActiveMatch, myActiveMatchIdx)
+              ) : (
+                <div className="pm-card-subpanel" style={{ padding: '16px', textAlign: 'center', color: c.muted, fontSize: 13 }}>
+                  ☕ Du sidder over i denne runde
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          <div className="pm-card-subpanel" style={{ padding: '14px 16px', marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ fontWeight: 700, color: c.text, fontSize: 12 }}>Live Stilling</div>
+              <div style={{ fontSize: 11, color: c.muted }}>Sum af kampoint</div>
+            </div>
+            {leaderboardTable}
+          </div>
+        </>
+      ) : null}
+
+      {/* ── MINE KAMPE ── */}
+      {tab === 'mine' ? (
+        <div>
+          {myMatchesDisplay.length === 0 ? (
+            <div className="pm-data-empty-note">Du har ingen kampe endnu.</div>
+          ) : (
+            myMatchesDisplay.map(({ m, i }) => renderMatchCard(m, i))
+          )}
+        </div>
+      ) : null}
+
+      {/* ── ALLE RESULTATER ── */}
+      {tab === 'alle' ? (
+        <>
+          <div className="pm-help-box" style={{ marginBottom: 14 }}>
+            <div className="pm-help-box-copy" style={{ fontFamily: font }}>
+              {isCreator ? (
+                <>
+                  <strong>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette.{' '}
+                  {isMexicano ? <>Ved <strong>Mexicano</strong> genereres næste runde når alle kampe i runden er gemt. </> : null}
+                  Når du afslutter, beregnes {formatLabel}-ELO ud fra slutstillingen.
+                </>
+              ) : (
+                <>
+                  <strong>Format {P} point:</strong> Her ser du alle kampe. Kun <strong>opretteren</strong> kan indtaste og rette resultater. {formatLabel}-ELO beregnes ved afslutning.
+                </>
+              )}
+            </div>
+          </div>
+          {matchesDisplay.length === 0 && (
+            <div className="pm-data-empty-note" style={{ marginBottom: 8 }}>
+              {isMexicano
+                ? 'Ingen kampe endnu — start Americano/Mexicano for at oprette runde 1.'
+                : 'Kampplan er ikke genereret endnu.'}
+            </div>
+          )}
+          {matchesDisplay.map((m, displayIdx) => renderMatchCard(m, displayIdx))}
+        </>
+      ) : null}
+
+      {creatorActions}
     </div>
   )
 }
