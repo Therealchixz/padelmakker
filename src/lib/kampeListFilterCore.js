@@ -153,7 +153,7 @@ export function kampeEloFilterRangeFromUser(eloBandId, userElo) {
 }
 
 export function defaultKampeListFilter() {
-  return { regionId: '', eloBandId: '', onlyOpen: false, onlyBooked: false };
+  return { regionId: '', eloBandId: '', onlyOpen: false, onlyBooked: false, facilities: [] };
 }
 
 function resolveListRegionId(raw) {
@@ -173,12 +173,15 @@ export function normalizeKampeListFilter(raw) {
   eloBandId = KAMPE_LIST_ELO_BANDS.some((o) => o.id === eloBandId) ? eloBandId : '';
   const onlyOpen = Boolean(raw.onlyOpen);
   const onlyBooked = Boolean(raw.onlyBooked);
-  return { regionId, eloBandId, onlyOpen, onlyBooked };
+  const facilities = Array.isArray(raw.facilities)
+    ? [...new Set(raw.facilities.map((f) => String(f)).filter(Boolean))]
+    : [];
+  return { regionId, eloBandId, onlyOpen, onlyBooked, facilities };
 }
 
 export function kampeListFilterIsActive(filter) {
   const f = normalizeKampeListFilter(filter);
-  return Boolean(f.regionId || f.eloBandId || f.onlyOpen || f.onlyBooked);
+  return Boolean(f.regionId || f.eloBandId || f.onlyOpen || f.onlyBooked || f.facilities.length);
 }
 
 export function getKampeListRegionLabel(regionId) {
@@ -230,10 +233,19 @@ export function matchPassesKampeRegionFilter(match, regionId, profilesById = {})
   return effectiveRegionMatchesFilter(effective, regionId);
 }
 
-export function matchPassesKampeListFilter(match, filter, { profilesById, userElo } = {}) {
+/** 2v2-kamp: banens faciliteter skal indeholde alle valgte faciliteter. */
+export function matchPassesKampeFacilityFilter(match, facilities, courtFacilitiesById = {}) {
+  if (!Array.isArray(facilities) || facilities.length === 0) return true;
+  const courtFacilities = courtFacilitiesById[String(match?.court_id)] || [];
+  const set = new Set(courtFacilities.map((f) => String(f)));
+  return facilities.every((f) => set.has(String(f)));
+}
+
+export function matchPassesKampeListFilter(match, filter, { profilesById, userElo, courtFacilitiesById } = {}) {
   const f = normalizeKampeListFilter(filter);
   if (!matchPassesKampeRegionFilter(match, f.regionId, profilesById)) return false;
   if (!matchPassesKampeEloBandFilter(match, f.eloBandId, userElo)) return false;
+  if (!matchPassesKampeFacilityFilter(match, f.facilities, courtFacilitiesById)) return false;
   if (f.onlyOpen && match?.status === 'full') return false;
   if (f.onlyBooked) {
     const { booked } = parseMatchLevelRange(match?.level_range);

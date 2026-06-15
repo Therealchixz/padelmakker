@@ -1,4 +1,5 @@
 import { X, CalendarDays, MapPin, ArrowUpRight, TrendingUp, TrendingDown, Trophy, Share2, RotateCcw, Wallet } from 'lucide-react';
+import { CourtFacilitiesGrid } from '../../lib/courtFacilities.jsx';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
@@ -298,6 +299,7 @@ export function KampeMatchDetailSheet({
   onSwitchPlayerTeam,
   onKickPlayer,
   onProfileClick,
+  facilities = [],
 }) {
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
@@ -567,6 +569,10 @@ export function KampeMatchDetailSheet({
             ) : null}
           </>
         )}
+
+        {status !== 'completed' ? (
+          <CourtFacilitiesGrid facilities={facilities} style={{ margin: '4px 0 14px' }} />
+        ) : null}
 
         {joinRequestsPanel}
 

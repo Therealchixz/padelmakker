@@ -7,6 +7,7 @@ import {
 } from '../../lib/kampeListFilterCore';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { theme } from '../../lib/platformTheme';
+import { COURT_FACILITY_CATALOG } from '../../lib/courtFacilities.jsx';
 
 function FilterToggle({ checked, onChange, label }) {
   return (
@@ -37,6 +38,7 @@ export function KampeFilterSheet({
   format = 'padel',
   showRegionFilter = true,
   showEloFilter = true,
+  facilityOptions = [],
 }) {
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
@@ -59,6 +61,14 @@ export function KampeFilterSheet({
   const setEloBand = (eloBandId) => {
     onListFilterChange?.({ ...filter, eloBandId: filter.eloBandId === eloBandId ? '' : eloBandId });
   };
+
+  const toggleFacility = (key) => {
+    const current = Array.isArray(filter.facilities) ? filter.facilities : [];
+    const next = current.includes(key) ? current.filter((f) => f !== key) : [...current, key];
+    onListFilterChange?.({ ...filter, facilities: next });
+  };
+
+  const facilityChips = COURT_FACILITY_CATALOG.filter((f) => facilityOptions.includes(f.key));
 
   const handleReset = () => {
     const def = defaultKampeListFilter();
@@ -181,6 +191,30 @@ export function KampeFilterSheet({
             <p className="pm-kampe-v2-sheet-copy">
               Viser kampe hvor kampens ELO-interval overlapper dit valgte spænd.
             </p>
+          </div>
+        ) : null}
+
+        {format === 'padel' && facilityChips.length > 0 ? (
+          <div className="pm-kampe-v2-sheet-section">
+            <div className="pm-kampe-v2-sheet-label">Faciliteter på banen</div>
+            <div className="pm-kampe-v2-sheet-pills">
+              {facilityChips.map(({ key, label, Icon }) => {
+                const active = (filter.facilities || []).includes(key);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`pm-kampe-v2-sheet-pill${active ? ' pm-kampe-v2-sheet-pill--active' : ''}`}
+                    onClick={() => toggleFacility(key)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Icon size={14} strokeWidth={2} aria-hidden />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="pm-kampe-v2-sheet-copy">Viser kun kampe på centre med de valgte faciliteter.</p>
           </div>
         ) : null}
 

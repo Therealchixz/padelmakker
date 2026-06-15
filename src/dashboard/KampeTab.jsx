@@ -40,6 +40,7 @@ import {
   getKampeListRegionLabel,
   getKampeListEloBandLabel,
 } from '../lib/kampeListFilterCore';
+import { facilityLabel } from '../lib/courtFacilities.jsx';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { buildMatchLevelRange, clampElo, parseMatchLevelRange } from '../lib/matchLevelRange';
 import {
@@ -1750,6 +1751,22 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return ids;
   }, [matchPlayers, myUidStr]);
 
+  const courtFacilitiesById = useMemo(() => {
+    const map = {};
+    for (const c of courts) {
+      if (c?.id) map[String(c.id)] = Array.isArray(c.facilities) ? c.facilities : [];
+    }
+    return map;
+  }, [courts]);
+
+  const availableFacilities = useMemo(() => {
+    const set = new Set();
+    for (const c of courts) {
+      if (Array.isArray(c?.facilities)) c.facilities.forEach((f) => set.add(String(f)));
+    }
+    return [...set];
+  }, [courts]);
+
   const { openMatches, activeMatches, completedMatches } = useMemo(() => buildKampeMatchLists({
     matches,
     matchPlayers,
@@ -1761,8 +1778,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     listFilter: kampeListFilter,
     profilesById,
     userElo: myElo,
+    courtFacilitiesById,
     completedSortMs: matchCompletedSortMs,
-  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById, myElo]);
+  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById, myElo, courtFacilitiesById]);
 
   /* Notifikation: ?format=americano|liga&focus=<id> eller ?focus=<matchId> (padel) */
   useEffect(() => {
@@ -3399,6 +3417,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         onClick: () => onListFilterChange({ ...kampeListFilter, eloBandId: "" }),
       });
     }
+    if (kampeFormat === "padel" && Array.isArray(kampeListFilter.facilities)) {
+      kampeListFilter.facilities.forEach((key) => {
+        chips.push({
+          id: `fac-${key}`,
+          label: `${facilityLabel(key)} ×`,
+          onClick: () => onListFilterChange({
+            ...kampeListFilter,
+            facilities: kampeListFilter.facilities.filter((f) => f !== key),
+          }),
+        });
+      });
+    }
     if (kampeFormat === "padel" && isProfileMatchFeedVisible(user)) {
       chips.push({
         id: "seeking",
@@ -3516,6 +3546,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         }
         showRegionFilter
         showEloFilter={kampeFormat === "padel"}
+        facilityOptions={availableFacilities}
       />
       {kampeFormat === "liga" && (
         <Suspense
@@ -4017,6 +4048,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           onKickPlayer={kickPlayer}
           onProfileClick={(prof) => setViewPlayer(prof)}
           managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
+          facilities={courts.find((c) => String(c.id) === String(detailMatch.court_id))?.facilities || []}
         />
       ) : null}
 
