@@ -329,6 +329,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     level_max: "",
     description: "",
     match_type: "open",
+    price_per_person: "",
+    payment_method: "mobilepay",
   });
 
   /**
@@ -910,6 +912,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         status: "open", max_players: 4, current_players: 1,
         description: sanitizeText(newMatch.description.trim()) || null,
         match_type: newMatch.match_type || "open",
+        price_per_person: (() => {
+          if (newMatch.payment_method === "free") return 0;
+          const n = parseFloat(String(newMatch.price_per_person).replace(",", "."));
+          return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+        })(),
+        payment_method: newMatch.payment_method || "mobilepay",
       };
       const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
@@ -3710,6 +3718,37 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'"
             style={{ ...inputStyle, marginBottom: "10px" }}
           />
+
+          <div className="pm-form-2col" style={{ marginBottom: "10px" }}>
+            <div style={{ minWidth: 0 }}>
+              <label style={labelStyle}>
+                Pris pr. person <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span>
+              </label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={newMatch.price_per_person}
+                  onChange={(e) => setNewMatch((m) => ({ ...m, price_per_person: e.target.value }))}
+                  placeholder="0"
+                  style={{ ...inputStyle, fontSize: "13px", paddingRight: "32px" }}
+                />
+                <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: theme.textLight, pointerEvents: "none" }}>kr.</span>
+              </div>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <label style={labelStyle}>Betaling</label>
+              <select
+                value={newMatch.payment_method}
+                onChange={(e) => setNewMatch((m) => ({ ...m, payment_method: e.target.value }))}
+                style={{ ...inputStyle, fontSize: "13px" }}
+              >
+                <option value="mobilepay">MobilePay</option>
+                <option value="cash">Ved fremmøde</option>
+                <option value="free">Gratis</option>
+              </select>
+            </div>
+          </div>
 
           <label style={labelStyle}>Kamptype</label>
           <PillTabs

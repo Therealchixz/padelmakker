@@ -1,4 +1,4 @@
-import { X, CalendarDays, MapPin, ArrowUpRight, TrendingUp, TrendingDown, Trophy, Share2, RotateCcw } from 'lucide-react';
+import { X, CalendarDays, MapPin, ArrowUpRight, TrendingUp, TrendingDown, Trophy, Share2, RotateCcw, Wallet } from 'lucide-react';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
@@ -312,6 +312,16 @@ export function KampeMatchDetailSheet({
       : (match.court_name || 'Padelbane');
   const eloLevelRange = matchPrefs?.min != null && matchPrefs?.max != null
     ? eloRangeToLevelRange(matchPrefs.min, matchPrefs.max) : null;
+  const priceNum = Number(match.price_per_person);
+  const isFreeMatch = match.payment_method === 'free' || (!Number.isFinite(priceNum) || priceNum <= 0);
+  const priceLabel = match.price_per_person != null || match.payment_method
+    ? (isFreeMatch
+        ? 'Gratis'
+        : (priceNum % 1 === 0 ? `${priceNum} kr.` : `${priceNum.toFixed(2).replace('.', ',')} kr.`) + ' / pr. person')
+    : null;
+  const paymentLabel = !isFreeMatch
+    ? (match.payment_method === 'cash' ? 'Betales ved fremmøde' : match.payment_method === 'mobilepay' ? 'MobilePay' : null)
+    : null;
   const directionsQuery = resolveMatchDirectionsQuery(match, profilesById);
   const statusBadge = getKampeDetailStatusBadge({
     status,
@@ -433,6 +443,15 @@ export function KampeMatchDetailSheet({
               ) : null}
             </div>
           </div>
+          {priceLabel ? (
+            <div className="pm-kd-info-row">
+              <div className="pm-kd-info-ic"><Wallet size={18} aria-hidden /></div>
+              <div>
+                <b>{priceLabel}</b>
+                {paymentLabel ? <span className="pm-kd-info-sub">{paymentLabel}</span> : null}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {description ? (
