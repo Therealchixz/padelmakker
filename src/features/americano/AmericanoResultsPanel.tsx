@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, useRef, useMemo } from 'react'
 import type { CSSProperties } from 'react'
-import { Check, Pencil } from 'lucide-react'
+import { Check, Pencil, ClipboardEdit } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { AvatarCircle } from '../../components/AvatarCircle'
 import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
 import {
   americanoOutcomeColors,
@@ -292,11 +293,13 @@ export function AmericanoResultsPanel({
   const [participants, setParticipants] = useState<AmericanoParticipant[]>([])
   const [matches, setMatches] = useState<AmericanoMatchRow[]>([])
   const [scores, setScores] = useState<Record<string, { a: string; b: string }>>({})
+  const [avatarByUserId, setAvatarByUserId] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   /** Midlertidigt ulåst af opretter — nulstilles ved genindlæsning */
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(() => new Set())
   const [tab, setTab] = useState<'stilling' | 'mine' | 'alle'>('stilling')
+  const [entryOpenId, setEntryOpenId] = useState<string | null>(null)
 
   const ppm = Number(tournament.points_per_match)
   const P: 16 | 24 | 32 =
@@ -346,6 +349,20 @@ export function AmericanoResultsPanel({
       const mlist = (mRes.data || []) as AmericanoMatchRow[]
       setParticipants(plist)
       setMatches(mlist)
+
+      // Hent avatarer til VS-kort og leaderboard
+      const userIds = [...new Set(plist.map((p) => p.user_id).filter(Boolean))]
+      if (userIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, avatar')
+          .in('id', userIds)
+        const amap: Record<string, string> = {}
+        ;(profs || []).forEach((pr: { id: string; avatar?: string | null }) => {
+          if (pr.avatar) amap[String(pr.id)] = pr.avatar
+        })
+        setAvatarByUserId(amap)
+      }
       const sc: Record<string, { a: string; b: string }> = {}
       mlist.forEach((m) => {
         const bothSet = m.team_a_score != null && m.team_b_score != null
@@ -654,6 +671,30 @@ export function AmericanoResultsPanel({
     ? userIsOnCourtInAmericanoMatch(myActiveMatch, userIdByPartId, currentUserId)
     : false
 
+  const avatarOfPart = (pid: string) => {
+    const uid = userIdByPartId.get(pid)
+    return (uid && avatarByUserId[String(uid)]) || '🎾'
+  }
+  const firstName = (pid: string) => {
+    const full = nameByPartId(pid)
+    if (myPartId != null && pid === myPartId) return 'Dig'
+    return String(full).trim().split(/\s+/)[0]
+  }
+
+  // Point i seneste afsluttede runde pr. spiller → "Sidste kamp: ±X"
+  const lockedRoundNums = matchesDisplay.filter((m) => isMatchResultLocked(m)).map((m) => m.round_number)
+  const lastRoundNum = lockedRoundNums.length ? Math.max(...lockedRoundNums) : null
+  const lastDeltaByPartId = new Map<string, number>()
+  if (lastRoundNum != null) {
+    for (const m of matchesDisplay.filter((m) => m.round_number === lastRoundNum)) {
+      const r = resolvedMatchScores(m, scores, P)
+      if (!r) continue
+      const add = (pid: string, pts: number) => lastDeltaByPartId.set(pid, (lastDeltaByPartId.get(pid) ?? 0) + pts)
+      add(m.team_a_p1, r.a); add(m.team_a_p2, r.a)
+      add(m.team_b_p1, r.b); add(m.team_b_p2, r.b)
+    }
+  }
+
   /** On-court-spiller (ikke opretter) må indberette egen bane i aktiv, ulåst runde. */
   const canPlayerReport = (m: AmericanoMatchRow) =>
     !isCreator &&
@@ -661,312 +702,200 @@ export function AmericanoResultsPanel({
     !isMatchResultLocked(m) &&
     userIsOnCourtInAmericanoMatch(m, userIdByPartId, currentUserId)
 
-  const renderMatchCard = (m: AmericanoMatchRow, displayIdx: number) => {
-          const s = scores[m.id] || { a: '', b: '' }
-          const locked = isMatchResultLocked(m) && !unlockedIds.has(m.id)
-          const canEdit = (isCreator && !locked) || canPlayerReport(m)
-          const draftScore = getDraftScore(m.id)
-          const hasTypedScore = s.a.trim() !== '' || s.b.trim() !== ''
-          const canConfirmSave = Boolean(draftScore?.valid)
-          const scorePreview = draftScore?.label || `${s.a.trim() || '—'}-${s.b.trim() || '—'}`
-          const n1 = nameByPartId(m.team_a_p1)
-          const n2 = nameByPartId(m.team_a_p2)
-          const n3 = nameByPartId(m.team_b_p1)
-          const n4 = nameByPartId(m.team_b_p2)
-          const resolved = resolvedMatchScores(m, scores, P)
-          const displayA = resolved?.a ?? null
-          const displayB = resolved?.b ?? null
-          const hasDisplayScores = resolved != null
-          const isTie = hasDisplayScores && displayA === displayB
-          const aWins = hasDisplayScores && resolved.a > resolved.b
-          const bWins = hasDisplayScores && resolved.b > resolved.a
-          const outcomeA: TeamOutcome = !hasDisplayScores ? 'tie' : isTie ? 'tie' : aWins ? 'win' : 'loss'
-          const outcomeB: TeamOutcome = !hasDisplayScores ? 'tie' : isTie ? 'tie' : bWins ? 'win' : 'loss'
-          const matchNum = displayIdx + 1
-          const isLastInPlan = displayIdx === matchesDisplay.length - 1
-          const effectiveM =
-            resolved != null
-              ? { ...m, team_a_score: resolved.a, team_b_score: resolved.b }
-              : m
-          const viewerOutcome = americanoOutcomeForUserInMatch(effectiveM, userIdByPartId, currentUserId, P)
-          const onCourt = userIsOnCourtInAmericanoMatch(m, userIdByPartId, currentUserId)
-          const statusLabel = americanoViewerStatusLabel(viewerOutcome, onCourt)
-          const palKey =
-            viewerOutcome === 'win' ? 'win' : viewerOutcome === 'loss' ? 'loss' : viewerOutcome === 'tie' ? 'tie' : 'neutral'
-          const matchPal = americanoOutcomeColors[palKey]
-          const isActiveRound = m.round_number === activeRoundNumber
-          const isPastRound = activeRoundNumber !== null && m.round_number < activeRoundNumber
-          const isFirstInActiveRound =
-            isActiveRound && displayIdx === matchesDisplay.findIndex((x) => x.round_number === activeRoundNumber)
+  const TeamTile = ({ p1, p2, dim = false, highlight = false }: { p1: string; p2: string; dim?: boolean; highlight?: boolean }) => (
+    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+      <div style={{ display: 'flex' }}>
+        <AvatarCircle avatar={avatarOfPart(p1)} size={34} emojiSize="14px" style={{ border: '2px solid var(--pm-surface)', background: 'var(--pm-border)' }} />
+        <AvatarCircle avatar={avatarOfPart(p2)} size={34} emojiSize="14px" style={{ border: '2px solid var(--pm-surface)', background: 'var(--pm-border)', marginLeft: -10 }} />
+      </div>
+      <div style={{ fontSize: 12, fontWeight: highlight ? 800 : 700, color: dim ? c.muted : c.text, textAlign: 'center', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+        {firstName(p1)} & {firstName(p2)}
+      </div>
+    </div>
+  )
 
-          let containerOpacity = isPastRound ? 0.9 : 1
-          if (locked && !isActiveRound) containerOpacity = Math.min(containerOpacity, 0.92)
+  // Mockup-trofast score-/VS-kort. Bruges på tværs af faner og i "Din bane".
+  const renderScoreCard = (m: AmericanoMatchRow, displayIdx: number, opts: { hideHeader?: boolean } = {}) => {
+    const locked = isMatchResultLocked(m) && !unlockedIds.has(m.id)
+    const canEdit = (isCreator && !locked) || canPlayerReport(m)
+    const editing = canEdit && entryOpenId === m.id
+    const resolved = resolvedMatchScores(m, scores, P)
+    const aWins = resolved != null && resolved.a > resolved.b
+    const bWins = resolved != null && resolved.b > resolved.a
+    const onCourt = userIsOnCourtInAmericanoMatch(m, userIdByPartId, currentUserId)
+    const isActiveRound = m.round_number === activeRoundNumber
+    const isFirstInActiveRound =
+      isActiveRound && displayIdx === matchesDisplay.findIndex((x) => x.round_number === activeRoundNumber)
+    const s = scores[m.id] || { a: '', b: '' }
+    const draftScore = getDraftScore(m.id)
+    const canConfirmSave = Boolean(draftScore?.valid)
+    const scorePreview = draftScore?.label || `${s.a.trim() || '—'}-${s.b.trim() || '—'}`
+    const statusTag = locked
+      ? { label: 'Afsluttet', bg: 'var(--pm-success-bg)', color: 'var(--pm-success)' }
+      : isActiveRound
+        ? { label: 'Aktiv nu', bg: 'var(--pm-warning-bg)', color: 'var(--pm-warning)' }
+        : { label: 'Afventer', bg: 'var(--pm-surface-muted)', color: c.muted }
 
-          return (
-            <div
-              key={m.id}
-              ref={isFirstInActiveRound ? activeRoundRef : null}
-              style={{
-                marginBottom: 14,
-                padding: isActiveRound ? '14px 14px 6px' : '12px 12px 4px',
-                borderRadius: 10,
-                background: isActiveRound ? 'var(--pm-warning-bg)' : matchPal.bg,
-                border: isActiveRound ? '2px solid var(--pm-warning-border)' : `1px solid ${matchPal.border}`,
-                boxShadow: isActiveRound ? '0 4px 14px color-mix(in srgb, var(--pm-warning) 24%, transparent)' : 'none',
-                opacity: containerOpacity,
-                transition: 'opacity 0.2s',
-              }}
-            >
-              {isActiveRound && (
-                <div
-                  style={{
-                    background: onCourt ? 'var(--pm-success)' : 'var(--pm-surface-alt)',
-                    color: onCourt ? 'var(--pm-on-accent)' : 'var(--pm-text-mid)',
-                    padding: '6px 12px',
-                    borderRadius: '6px 6px 0 0',
-                    margin: '-14px -14px 10px -14px',
-                    fontSize: 13,
-                    fontWeight: 800,
-                    textAlign: 'center',
-                    letterSpacing: '0.02em',
-                    borderBottom: '1px solid var(--pm-border)',
-                  }}
-                >
-                  {onCourt ? '🎾 DU SPILLER NU (Bane ' + (m.court_index + 1) + ')' : '☕ DU SIDDER OVER I DENNE RUNDE'}
-                </div>
-              )}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  gap: 10,
-                  paddingTop: 16,
-                  paddingBottom: 4,
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: c.text, lineHeight: 1.3 }}>
-                    #{matchNum}
-                    {isLastInPlan && !isMexicano ? ' · Sidste i plan' : ''}
-                    {isLastInPlan && isMexicano ? ' · Seneste runde' : ''}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: matchPal.text,
-                      marginTop: 6,
-                      lineHeight: 1.35,
-                    }}
-                  >
-                    Runde {m.round_number} - {statusLabel}
-                    {isCreator ? (
-                      <span style={{ fontWeight: 500, color: c.muted }}> · Registreret af dig</span>
-                    ) : null}
-                  </div>
-                </div>
-                {isCreator && locked && (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                    <button
-                      type="button"
-                      disabled={saving}
-                      title="Ret resultat"
-                      aria-label="Ret resultat"
-                      onClick={() => {
-                        setUnlockedIds((prev) => new Set(prev).add(m.id))
-                        setScores((prev) => ({ ...prev, [m.id]: { a: '', b: '' } }))
-                      }}
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: '50%',
-                        border: `2px solid ${c.accent}`,
-                        background: 'var(--pm-surface)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: saving ? 'wait' : 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Pencil size={18} color={c.accent} strokeWidth={2} />
-                    </button>
-                  </div>
-                )}
-                {canEdit && (
-                  <div style={{ fontSize: 10, color: c.muted, fontWeight: 600, fontStyle: 'italic', textAlign: 'right', flexShrink: 0 }}>
-                    Skriv point og<br />tryk gem
-                  </div>
-                )}
-              </div>
-
-              <div style={{ paddingBottom: locked ? 8 : 4 }}>
-                <TeamBlock
-                  name1={n1}
-                  name2={n2}
-                  pid1={m.team_a_p1}
-                  pid2={m.team_a_p2}
-                  score={displayA}
-                  outcome={outcomeA}
-                  baseTextColor={matchPal.text}
-                  showCheckForUser
-                  userIdByPartId={userIdByPartId}
-                  currentUserId={currentUserId}
-                  teamLabel={`Hold A · ${n1.split(' ')[0]} & ${n2.split(' ')[0]}`}
-                  inputElement={
-                    canEdit ? (
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={s.a}
-                        onChange={(e) => {
-                          const v = e.target.value.replace(/[^0-9]/g, '')
-                          setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: v, b: prev[m.id]?.b ?? '' } }))
-                        }}
-                        onBlur={() => handleScoreBlur(m, 'a')}
-                        placeholder="—"
-                        aria-label={`Point for ${n1} & ${n2}`}
-                        style={{
-                          width: 56,
-                          padding: '6px 4px',
-                          borderRadius: 8,
-                          border: `2px solid ${c.accent}`,
-                          fontSize: 18,
-                          fontWeight: 800,
-                          textAlign: 'center',
-                          fontFamily: font,
-                          color: c.accent,
-                          background: 'var(--pm-accent-bg)',
-                          outline: 'none',
-                        }}
-                      />
-                    ) : undefined
-                  }
-                />
-                <div style={{ height: 1, background: c.line, marginLeft: 56 }} />
-                <TeamBlock
-                  name1={n3}
-                  name2={n4}
-                  pid1={m.team_b_p1}
-                  pid2={m.team_b_p2}
-                  score={displayB}
-                  outcome={outcomeB}
-                  baseTextColor={matchPal.text}
-                  showCheckForUser
-                  userIdByPartId={userIdByPartId}
-                  currentUserId={currentUserId}
-                  teamLabel={`Hold B · ${n3.split(' ')[0]} & ${n4.split(' ')[0]}`}
-                  inputElement={
-                    canEdit ? (
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={s.b}
-                        onChange={(e) => {
-                          const v = e.target.value.replace(/[^0-9]/g, '')
-                          setScores((prev) => ({ ...prev, [m.id]: { ...prev[m.id], a: prev[m.id]?.a ?? '', b: v } }))
-                        }}
-                        onBlur={() => handleScoreBlur(m, 'b')}
-                        placeholder="—"
-                        aria-label={`Point for ${n3} & ${n4}`}
-                        style={{
-                          width: 56,
-                          padding: '6px 4px',
-                          borderRadius: 8,
-                          border: `2px solid ${c.accent}`,
-                          fontSize: 18,
-                          fontWeight: 800,
-                          textAlign: 'center',
-                          fontFamily: font,
-                          color: c.accent,
-                          background: 'var(--pm-accent-bg)',
-                          outline: 'none',
-                        }}
-                      />
-                    ) : undefined
-                  }
-                />
-                {canEdit && (
-                  <div
-                    style={{
-                      marginTop: 8,
-                      paddingTop: 8,
-                      borderTop: `1px dashed ${c.line}`,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                    }}
-                  >
-                    <div style={{ fontSize: 12, color: c.text, fontWeight: 600 }}>
-                      Indtastet score: <span style={{ color: c.accent, fontWeight: 800 }}>{scorePreview}</span>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={saving || !canConfirmSave}
-                      onClick={() => { void saveRow({ ...m } as AmericanoMatchRow) }}
-                      style={{
-                        fontFamily: font,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        padding: '8px 12px',
-                        borderRadius: 8,
-                        border: '1px solid var(--pm-border)',
-                        background: canConfirmSave ? 'var(--pm-accent)' : 'var(--pm-surface)',
-                        color: canConfirmSave ? c.onAccent : c.muted,
-                        cursor: saving || !canConfirmSave ? 'not-allowed' : 'pointer',
-                        alignSelf: 'flex-start',
-                      }}
-                    >
-                      Gem resultat ({scorePreview})
-                    </button>
-                    {hasTypedScore && !canConfirmSave && (
-                      <div style={{ fontSize: 11, color: c.muted }}>
-                        Summen skal være præcis {P} point før du kan gemme.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+    return (
+      <div
+        key={m.id}
+        ref={isFirstInActiveRound ? activeRoundRef : null}
+        style={{
+          background: 'var(--pm-surface)',
+          border: onCourt && isActiveRound ? '2px solid var(--pm-accent)' : `1px solid ${c.line}`,
+          borderRadius: 14,
+          padding: '12px 14px',
+          marginBottom: 12,
+          boxShadow: onCourt && isActiveRound ? 'var(--pm-shadow-soft)' : 'none',
+        }}
+      >
+        {!opts.hideHeader && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: c.muted }}>
+              Bane {m.court_index + 1} · Runde {m.round_number}
             </div>
-          )
+            <span style={{ fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: statusTag.bg, color: statusTag.color }}>
+              {statusTag.label}
+            </span>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <TeamTile p1={m.team_a_p1} p2={m.team_a_p2} dim={bWins} highlight={aWins} />
+          <div style={{ flexShrink: 0, minWidth: 64, textAlign: 'center' }}>
+            {editing ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <input
+                  type="text" inputMode="numeric" pattern="[0-9]*" value={s.a}
+                  onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setScores((prev) => ({ ...prev, [m.id]: { a: v, b: prev[m.id]?.b ?? '' } })) }}
+                  onBlur={() => handleScoreBlur(m, 'a')}
+                  aria-label="Point hold A"
+                  style={{ width: 40, padding: '6px 2px', borderRadius: 8, border: `2px solid ${c.accent}`, fontSize: 16, fontWeight: 800, textAlign: 'center', fontFamily: font, color: c.accent, background: 'var(--pm-accent-bg)', outline: 'none' }}
+                />
+                <span style={{ fontWeight: 800, color: c.muted }}>-</span>
+                <input
+                  type="text" inputMode="numeric" pattern="[0-9]*" value={s.b}
+                  onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setScores((prev) => ({ ...prev, [m.id]: { a: prev[m.id]?.a ?? '', b: v } })) }}
+                  onBlur={() => handleScoreBlur(m, 'b')}
+                  aria-label="Point hold B"
+                  style={{ width: 40, padding: '6px 2px', borderRadius: 8, border: `2px solid ${c.accent}`, fontSize: 16, fontWeight: 800, textAlign: 'center', fontFamily: font, color: c.accent, background: 'var(--pm-accent-bg)', outline: 'none' }}
+                />
+              </div>
+            ) : resolved != null ? (
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: c.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                  {resolved.a} - {resolved.b}
+                </div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: c.muted, letterSpacing: '0.08em' }}>SCORE</div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, fontWeight: 700, color: c.muted, border: `1px solid ${c.line}`, borderRadius: 999, padding: '3px 0' }}>vs</div>
+            )}
+          </div>
+          <TeamTile p1={m.team_b_p1} p2={m.team_b_p2} dim={aWins} highlight={bWins} />
+        </div>
+
+        {editing && (
+          <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              disabled={saving || !canConfirmSave}
+              onClick={() => { void saveRow({ ...m } as AmericanoMatchRow).then(() => setEntryOpenId(null)) }}
+              style={{ flex: 2, fontFamily: font, fontSize: 13, fontWeight: 700, padding: '10px', borderRadius: 10, border: 'none', background: canConfirmSave ? 'var(--pm-accent)' : 'var(--pm-surface-muted)', color: canConfirmSave ? c.onAccent : c.muted, cursor: saving || !canConfirmSave ? 'not-allowed' : 'pointer' }}
+            >
+              Gem ({scorePreview})
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => { setEntryOpenId(null); setScores((prev) => ({ ...prev, [m.id]: { a: m.team_a_score != null ? String(m.team_a_score) : '', b: m.team_b_score != null ? String(m.team_b_score) : '' } })) }}
+              style={{ flex: 1, fontFamily: font, fontSize: 13, fontWeight: 600, padding: '10px', borderRadius: 10, border: `1px solid ${c.line}`, background: 'var(--pm-surface)', color: c.muted, cursor: 'pointer' }}
+            >
+              Annullér
+            </button>
+          </div>
+        )}
+
+        {!editing && canEdit && (
+          <button
+            type="button"
+            onClick={() => setEntryOpenId(m.id)}
+            style={{ marginTop: 12, width: '100%', fontFamily: font, fontSize: 13, fontWeight: 700, padding: '11px', borderRadius: 10, border: 'none', background: 'var(--pm-accent)', color: c.onAccent, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+          >
+            <ClipboardEdit size={16} aria-hidden />
+            {resolved != null ? 'Ret resultat' : 'Indberet Resultat'}
+          </button>
+        )}
+
+        {isCreator && locked && entryOpenId !== m.id && (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => { setUnlockedIds((prev) => new Set(prev).add(m.id)); setScores((prev) => ({ ...prev, [m.id]: { a: '', b: '' } })); setEntryOpenId(m.id) }}
+            style={{ marginTop: 10, width: '100%', fontFamily: font, fontSize: 12, fontWeight: 600, padding: '8px', borderRadius: 10, border: `1px solid ${c.accent}`, background: 'var(--pm-surface)', color: c.accent, cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+          >
+            <Pencil size={14} aria-hidden /> Ret resultat
+          </button>
+        )}
+      </div>
+    )
   }
 
   const roundStatusLabel = activeRoundNumber != null
     ? `Runde ${activeRoundNumber} · ${activeRoundSaved}/${activeRoundMatches.length} baner indberettet`
     : (matchesDisplay.length > 0 ? 'Alle runder spillet' : 'Ingen runder endnu')
 
-  const leaderboardTable = (
-    <div className="pm-data-table" style={{ ['--pm-table-cols']: '30px 1fr 64px' } as CSSProperties}>
-      <div className="pm-data-table-head">
-        <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>#</div>
-        <div className="pm-data-table-cell-head">Spiller</div>
-        <div className="pm-data-table-cell-head" style={{ textAlign: 'center' }}>Point</div>
-      </div>
-      {leaderboard.map((row, idx) => {
-        const isMe = myPartId != null && row.id === myPartId
-        return (
-          <div
-            key={row.id}
-            className="pm-data-table-row"
-            style={isMe ? { background: 'var(--pm-accent-bg)', borderRadius: 8 } : undefined}
-          >
-            <div className="pm-data-table-cell" style={{ textAlign: 'center', color: idx < 3 ? c.warm : c.muted, fontWeight: 700 }}>
-              {idx + 1}
+  const rankCircleStyle = (idx: number): CSSProperties => {
+    const medal = idx === 0
+      ? { bg: 'var(--pm-podium-gold)', fg: '#fff' }
+      : idx === 1
+        ? { bg: 'var(--pm-podium-silver)', fg: '#fff' }
+        : idx === 2
+          ? { bg: 'var(--pm-podium-bronze)', fg: '#fff' }
+          : { bg: 'var(--pm-surface-muted)', fg: c.muted }
+    return {
+      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 13, fontWeight: 800, background: medal.bg, color: medal.fg,
+    }
+  }
+
+  const leaderboardList = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {leaderboard.length === 0 ? (
+        <div className="pm-data-empty-note">Ingen spillere endnu.</div>
+      ) : (
+        leaderboard.map((row, idx) => {
+          const isMe = myPartId != null && row.id === myPartId
+          const delta = lastDeltaByPartId.get(row.id)
+          return (
+            <div
+              key={row.id}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 10px', borderRadius: 12,
+                background: isMe ? 'var(--pm-accent-bg)' : 'var(--pm-surface)',
+                border: `1px solid ${isMe ? 'var(--pm-accent)' : c.line}`,
+              }}
+            >
+              <div style={rankCircleStyle(idx)}>{idx + 1}</div>
+              <AvatarCircle avatar={avatarOfPart(row.id)} size={34} emojiSize="14px" style={{ background: 'var(--pm-border)' }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: isMe ? 800 : 700, color: c.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</span>
+                  {isMe ? <span style={{ fontSize: 9, fontWeight: 800, color: c.onAccent, background: c.accent, padding: '1px 6px', borderRadius: 999, letterSpacing: '0.04em' }}>DIG</span> : null}
+                </div>
+                {delta != null ? (
+                  <div style={{ fontSize: 11, color: c.muted, marginTop: 1 }}>Sidste runde: {delta >= 0 ? '+' : ''}{delta}</div>
+                ) : null}
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: isMe ? c.accent : c.text, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{row.points}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: c.muted, letterSpacing: '0.08em' }}>PTS</div>
+              </div>
             </div>
-            <div className="pm-data-table-cell" style={{ fontSize: 13, fontWeight: isMe ? 800 : 600 }}>
-              {row.name}{isMe ? ' (Dig)' : ''}
-            </div>
-            <div className="pm-data-table-cell" style={{ textAlign: 'center', fontWeight: 700, color: c.text }}>
-              {row.points}
-            </div>
-          </div>
-        )
-      })}
-      {leaderboard.length === 0 && (
-        <div className="pm-data-empty-note" style={{ marginTop: 10 }}>Ingen spillere endnu.</div>
+          )
+        })
       )}
     </div>
   )
@@ -1076,27 +1005,25 @@ export function AmericanoResultsPanel({
       {tab === 'stilling' ? (
         <>
           {myActiveMatch ? (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: c.text, marginBottom: 8 }}>
-                {myOnCourtNow ? `Din bane: Bane ${myActiveMatch.court_index + 1}` : 'Din runde'}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: c.text, marginBottom: 8 }}>
+                {myOnCourtNow ? `🎾 Din bane: Bane ${myActiveMatch.court_index + 1}` : 'Din runde'}
               </div>
               {myOnCourtNow ? (
-                renderMatchCard(myActiveMatch, myActiveMatchIdx)
+                renderScoreCard(myActiveMatch, myActiveMatchIdx, { hideHeader: true })
               ) : (
-                <div className="pm-card-subpanel" style={{ padding: '16px', textAlign: 'center', color: c.muted, fontSize: 13 }}>
+                <div style={{ padding: '18px', textAlign: 'center', color: c.muted, fontSize: 13, background: 'var(--pm-surface)', border: `1px solid ${c.line}`, borderRadius: 14 }}>
                   ☕ Du sidder over i denne runde
                 </div>
               )}
             </div>
           ) : null}
 
-          <div className="pm-card-subpanel" style={{ padding: '14px 16px', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ fontWeight: 700, color: c.text, fontSize: 12 }}>Live Stilling</div>
-              <div style={{ fontSize: 11, color: c.muted }}>Sum af kampoint</div>
-            </div>
-            {leaderboardTable}
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ fontWeight: 700, color: c.text, fontSize: 14 }}>Live Stilling</div>
+            <div style={{ fontSize: 11, color: c.muted }}>Sum af kampoint</div>
           </div>
+          {leaderboardList}
         </>
       ) : null}
 
@@ -1106,7 +1033,7 @@ export function AmericanoResultsPanel({
           {myMatchesDisplay.length === 0 ? (
             <div className="pm-data-empty-note">Du har ingen kampe endnu.</div>
           ) : (
-            myMatchesDisplay.map(({ m, i }) => renderMatchCard(m, i))
+            myMatchesDisplay.map(({ m, i }) => renderScoreCard(m, i))
           )}
         </div>
       ) : null}
@@ -1114,29 +1041,33 @@ export function AmericanoResultsPanel({
       {/* ── ALLE RESULTATER ── */}
       {tab === 'alle' ? (
         <>
-          <div className="pm-help-box" style={{ marginBottom: 14 }}>
-            <div className="pm-help-box-copy" style={{ fontFamily: font }}>
-              {isCreator ? (
-                <>
-                  <strong>Format {P} point:</strong> De to tal skal give <strong>{P} i alt</strong> (fx 10–6 eller 8–8). Skriver du kun ét hold, udfyldes det andet. Efter <strong>Gem</strong> er kampen låst — tryk på blyanten for at rette.{' '}
-                  {isMexicano ? <>Ved <strong>Mexicano</strong> genereres næste runde når alle kampe i runden er gemt. </> : null}
-                  Når du afslutter, beregnes {formatLabel}-ELO ud fra slutstillingen.
-                </>
-              ) : (
-                <>
-                  <strong>Format {P} point:</strong> Du kan selv indberette resultatet for <strong>din egen bane</strong> i den aktive runde (se "Din bane"). Opretteren kan rette alle resultater. {formatLabel}-ELO beregnes ved afslutning.
-                </>
-              )}
-            </div>
-          </div>
-          {matchesDisplay.length === 0 && (
+          {matchesDisplay.length === 0 ? (
             <div className="pm-data-empty-note" style={{ marginBottom: 8 }}>
               {isMexicano
                 ? 'Ingen kampe endnu — start Americano/Mexicano for at oprette runde 1.'
                 : 'Kampplan er ikke genereret endnu.'}
             </div>
+          ) : (
+            [...new Set(matchesDisplay.map((m) => m.round_number))]
+              .sort((a, b) => b - a)
+              .map((roundNum) => {
+                const isLatest = roundNum === Math.max(...matchesDisplay.map((m) => m.round_number))
+                return (
+                  <div key={roundNum} style={{ marginBottom: 18 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: c.text }}>Runde {roundNum}</div>
+                      {isLatest ? (
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--pm-warning-bg)', color: 'var(--pm-warning)' }}>Seneste</span>
+                      ) : null}
+                    </div>
+                    {matchesDisplay
+                      .map((m, i) => ({ m, i }))
+                      .filter(({ m }) => m.round_number === roundNum)
+                      .map(({ m, i }) => renderScoreCard(m, i))}
+                  </div>
+                )
+              })
           )}
-          {matchesDisplay.map((m, displayIdx) => renderMatchCard(m, displayIdx))}
         </>
       ) : null}
 
