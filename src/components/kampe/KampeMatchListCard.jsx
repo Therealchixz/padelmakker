@@ -83,6 +83,13 @@ export function KampeMatchListCard({
   const badgeDay = badgeDate ? badgeDate.getDate() : null;
   const badgeMon = badgeDate ? DA_MONTHS_SHORT[badgeDate.getMonth()] : null;
   const isCompleted = status === 'completed';
+  const isInProgress = status === 'in_progress';
+  const minutesPlayed = (() => {
+    if (!isInProgress || !match.started_at) return null;
+    const ms = Date.now() - new Date(match.started_at).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return null;
+    return Math.floor(ms / 60000);
+  })();
   const showMyEloDelta =
     isCompleted && joined && myEloChange != null && Number.isFinite(Number(myEloChange));
   const eloDelta = showMyEloDelta ? Number(myEloChange) : null;
@@ -156,7 +163,13 @@ export function KampeMatchListCard({
               {venue}
             </div>
             <div className="pm-kampe-v2-list-venue" style={{ marginTop: 2 }}>
-              Kl. {timeLabel}
+              {isInProgress && minutesPlayed != null ? (
+                <span style={{ color: 'var(--pm-red)', fontWeight: 700 }}>
+                  {minutesPlayed > 0 ? `${minutesPlayed} min spillet` : 'Netop startet'}
+                </span>
+              ) : (
+                <>Kl. {timeLabel}</>
+              )}
               {match.duration ? <> · {match.duration} min</> : null}
               {showEloRange && levelRange ? <> · Niveau {formatPlaytomicLevel(levelRange.min)}–{formatPlaytomicLevel(levelRange.max)}</> : null}
             </div>
@@ -254,7 +267,7 @@ export function KampeMatchListCard({
                 : { background: 'var(--pm-navy, #16377E)', color: '#fff', border: 'none' }),
             }}
           >
-            {joined ? 'Se kamp' : isFull ? 'Venteliste' : 'Tilmeld'}
+            {isInProgress && joined ? 'Indberet resultat' : joined ? 'Se kamp' : isFull ? 'Venteliste' : 'Tilmeld'}
           </span>
         ) : null}
         {showMyEloDelta ? (
