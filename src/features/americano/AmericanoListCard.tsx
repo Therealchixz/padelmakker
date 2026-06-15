@@ -1,11 +1,8 @@
-import { CalendarDays, Clock, LayoutGrid, MapPin } from 'lucide-react'
+import { CalendarDays, MapPin } from 'lucide-react'
 import { AvatarCircle } from '../../components/AvatarCircle'
 import { formatMatchDateHeadlineDa, formatTimeSlotDa } from '../../lib/matchDisplayUtils'
 import {
-  formatAmericanoLiveRoundLabel,
-  formatCourtsBenchCompact,
   getAmericanoTournamentMeta,
-  getAmericanoDurationLabel,
   getTournamentFormatLabel,
   playerInitials,
 } from './americanoDisplayUtils'
@@ -25,7 +22,6 @@ type Props = {
   joined?: boolean
   tournamentFull?: boolean
   liveRound?: number | null
-  /** Fra faktiske kampe i DB (i gang / afsluttet). */
   roundProgress?: {
     totalRounds: number
     completedRounds: number
@@ -38,12 +34,32 @@ type Props = {
 
 const MAX_AVATARS = 4
 
-function badgeToneClass(tone: string) {
-  if (tone === 'live') return 'pm-kampe-v2-badge--live'
-  if (tone === 'open') return 'pm-kampe-v2-badge--open'
-  if (tone === 'full') return 'pm-kampe-v2-badge--full'
-  if (tone === 'closed') return 'pm-kampe-v2-badge--closed'
-  return 'pm-kampe-v2-badge--neutral'
+function fmtLevel(v: number | null | undefined): string {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return ''
+  return n.toFixed(1)
+}
+
+function levelLabel(t: AmericanoTournament): string {
+  const min = t.level_min
+  const max = t.level_max
+  if (min != null && max != null) return `Niveau ${fmtLevel(min)}–${fmtLevel(max)}`
+  return 'Alle niveauer'
+}
+
+function endTimeLabel(timeSlot: string, durationMinutes: number | null | undefined): string {
+  const [h, m] = String(timeSlot || '').split(':').map(Number)
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return ''
+  const dur = Number(durationMinutes) || 0
+  if (dur <= 0) return ''
+  const end = h * 60 + m + dur
+  return `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`
+}
+
+function priceLabel(t: AmericanoTournament): string {
+  const p = Number(t.price_per_person)
+  if (!Number.isFinite(p) || p <= 0 || t.payment_method === 'free') return 'Gratis'
+  return p % 1 === 0 ? `${p} kr.` : `${p.toFixed(2).replace('.', ',')} kr.`
 }
 
 export function AmericanoListCard({
@@ -59,145 +75,155 @@ export function AmericanoListCard({
   playedDurationMinutes = null,
   onClick,
 }: Props) {
-  const { maxPlayers, totalRounds: metaTotalRounds, estMinutes, courts, bench } =
-    getAmericanoTournamentMeta(tournament)
+  const { maxPlayers, totalRounds: metaTotalRounds } = getAmericanoTournamentMeta(tournament)
   const totalRounds = roundProgress?.totalRounds ?? metaTotalRounds
-  const completedRounds = roundProgress?.completedRounds ?? 0
-  const durationLabel = getAmericanoDurationLabel(status, playedDurationMinutes, estMinutes)
   const filled = participants.length
-  const fillPct = maxPlayers > 0 ? Math.min(100, Math.round((filled / maxPlayers) * 100)) : 0
   const isCompleted = status === 'completed'
   const isPlaying = status === 'playing'
-  const showRoundProgress = (isPlaying || isCompleted) && roundProgress != null && totalRounds > 0
-  const roundPct =
-    showRoundProgress && totalRounds > 0
-      ? Math.min(100, Math.round((completedRounds / totalRounds) * 100))
-      : 0
+  const isMexicano = (tournament.format ?? 'americano') === 'mexicano'
+  const formatLabel = getTournamentFormatLabel(tournament.format)
+  const activeRound = roundProgress?.liveRound ?? liveRound
+
   const dateHeadline = formatMatchDateHeadlineDa(tournament.tournament_date)
-  const timeLabel = formatTimeSlotDa(tournament.time_slot)
-  const isFullBar =
-    (!showRoundProgress && (isPlaying || isCompleted || tournamentFull)) ||
-    (showRoundProgress && isCompleted && completedRounds >= totalRounds)
+  const startTime = formatTimeSlotDa(tournament.time_slot)
+  const endTime = endTimeLabel(tournament.time_slot, tournament.duration_minutes)
+  const timeRange = endTime ? `${startTime}–${endTime}` : startTime
 
   const showMyEloDelta =
     isCompleted && joined && myEloChange != null && Number.isFinite(Number(myEloChange))
   const eloDelta = showMyEloDelta ? Number(myEloChange) : null
 
-  let badgeLabel = 'Åben'
-  let badgeTone = 'open'
-  if (isCompleted) {
-    badgeLabel = 'Afsluttet'
-    badgeTone = 'closed'
-  } else if (isPlaying) {
-    badgeTone = 'live'
-    const activeRound = roundProgress?.liveRound ?? liveRound
-    badgeLabel =
-      activeRound != null && totalRounds > 0
-        ? formatAmericanoLiveRoundLabel(activeRound, totalRounds)
-        : 'I gang'
-  } else if (tournamentFull) {
-    badgeLabel = 'Fuld'
-    badgeTone = 'full'
-  }
-
   const visibleParticipants = participants.slice(0, MAX_AVATARS)
   const overflow = Math.max(0, filled - MAX_AVATARS)
+  const isFull = tournamentFull || (maxPlayers > 0 && filled >= maxPlayers)
+
+  const formatChipBg = isMexicano ? '#F59E0B' : '#22C55E'
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       id={`pm-americano-${tournament.id}`}
-      className="pm-americano-v2-list-card"
       onClick={onClick}
-      aria-label={`Åbn Americano/Mexicano: ${tournament.name}`}
-      style={{ scrollMarginTop: '88px' }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.() } }}
+      aria-label={`Åbn ${formatLabel}: ${tournament.name}`}
+      style={{
+        display: 'block',
+        width: '100%',
+        textAlign: 'left',
+        border: '1px solid var(--pm-border)',
+        borderRadius: 16,
+        overflow: 'hidden',
+        background: 'var(--pm-surface)',
+        boxShadow: 'var(--pm-shadow-soft)',
+        cursor: 'pointer',
+        marginBottom: 14,
+        scrollMarginTop: '88px',
+      }}
     >
-      <div className="pm-americano-v2-list-top">
-        <div className="pm-americano-v2-list-court" aria-hidden="true" />
-        <div className="pm-americano-v2-list-top-main">
-          <div className="pm-americano-v2-list-type">{getTournamentFormatLabel(tournament.format)}</div>
-          <div className="pm-americano-v2-list-title">{tournament.name}</div>
-          <div className="pm-americano-v2-list-datetime">
-            <CalendarDays size={13} strokeWidth={2} aria-hidden />
-            {dateHeadline} kl. {timeLabel}
+      {/* Hero */}
+      <div style={{ position: 'relative', background: 'linear-gradient(135deg, #0D2752 0%, #16377E 100%)', padding: '12px 14px', minHeight: 92, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ background: formatChipBg, color: '#fff', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+            {formatLabel}
+          </span>
+          <span style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 9.5, fontWeight: 600, padding: '3px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.25)' }}>
+            {levelLabel(tournament)}
+          </span>
+          {isPlaying ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(220,38,38,0.9)', color: '#fff', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />
+              LIVE
+            </span>
+          ) : null}
+          {isCompleted ? (
+            <span style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 9.5, fontWeight: 700, padding: '3px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.25)' }}>
+              Afsluttet
+            </span>
+          ) : null}
+        </div>
+        {/* faint court illustration */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ width: 80, height: 38, background: 'rgba(255,255,255,0.10)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.18)', position: 'relative' }}>
+            <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.25)' }} />
           </div>
         </div>
-        <span className={`pm-kampe-v2-badge ${badgeToneClass(badgeTone)} pm-americano-v2-list-badge`}>
-          {badgeTone === 'live' ? <span className="pm-live-dot" /> : null}
-          {badgeLabel}
-        </span>
       </div>
 
-      <div className="pm-americano-v2-list-body">
-        <div className="pm-americano-v2-list-venue">
-          <MapPin size={12} aria-hidden />
+      {/* Body */}
+      <div style={{ padding: '12px 14px' }}>
+        <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--pm-text)', letterSpacing: '-0.2px', marginBottom: 7 }}>
+          {tournament.name}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--pm-text-light)', marginBottom: 3 }}>
+          <CalendarDays size={13} strokeWidth={2} aria-hidden />
+          {dateHeadline} · {timeRange}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--pm-text-light)' }}>
+          <MapPin size={13} strokeWidth={2} aria-hidden />
           {courtName}
         </div>
 
-        <div className="pm-americano-v2-list-progress-row">
-          <div
-            className={`pm-americano-v2-list-progress${isFullBar ? ' pm-americano-v2-list-progress--full' : ''}`}
-            role="progressbar"
-            aria-valuenow={showRoundProgress ? completedRounds : filled}
-            aria-valuemin={0}
-            aria-valuemax={showRoundProgress ? totalRounds : maxPlayers}
-            aria-label={
-              showRoundProgress
-                ? `${completedRounds} af ${totalRounds} runder gennemført`
-                : `${filled} af ${maxPlayers} spillere tilmeldt`
-            }
-          >
-            <div
-              className="pm-americano-v2-list-progress-fill"
-              style={{ width: `${showRoundProgress ? roundPct : isFullBar ? 100 : fillPct}%` }}
-            />
-          </div>
-          <span className={`pm-americano-v2-list-progress-count${isFullBar ? ' pm-americano-v2-list-progress-count--full' : ''}`}>
-            {showRoundProgress ? `${completedRounds}/${totalRounds}` : `${filled}/${maxPlayers}`}
-          </span>
-        </div>
-
-        <div className="pm-americano-v2-list-footer">
-          <div className="pm-americano-v2-list-meta">
-            <span className="pm-americano-v2-list-meta-pill">
-              <Clock size={11} aria-hidden />
-              {totalRounds} runder
-            </span>
-            <span className="pm-americano-v2-list-meta-pill pm-americano-v2-list-meta-pill--courts">
-              <LayoutGrid size={11} aria-hidden />
-              {formatCourtsBenchCompact(courts, bench)}
-            </span>
-            <span className="pm-americano-v2-list-meta-pill">
-              {durationLabel}
-            </span>
-          </div>
-
-          <div className="pm-americano-v2-list-participants">
-            <div className="pm-americano-v2-list-avatar-stack" aria-hidden>
-              {visibleParticipants.map((p, idx) => (
-                <AvatarCircle
-                  key={p.user_id}
-                  avatar={p.avatar || playerInitials(p.display_name)}
-                  size={28}
-                  emojiSize="11px"
-                  style={{ zIndex: idx + 1 }}
-                />
-              ))}
+        {/* Footer — varierer pr. tilstand */}
+        {status === 'registration' ? (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 12, paddingTop: 11, borderTop: '1px solid var(--pm-border)' }}>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 1 }}>Pris</div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--pm-text)' }}>{priceLabel(tournament)}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 1 }}>Pladser</div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: isFull ? 'var(--pm-red)' : 'var(--pm-text)' }}>
+                  {isFull ? 'FULDT' : `${filled} / ${maxPlayers}`}
+                </div>
+              </div>
             </div>
-            {overflow > 0 ? (
-              <span className="pm-americano-v2-list-overflow">+{overflow}</span>
-            ) : null}
-            {showMyEloDelta ? (
-              <span
-                className={`pm-kampe-v2-list-elo-result pm-americano-v2-list-elo${eloDelta! >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
-              >
-                {eloDelta! >= 0 ? '+' : ''}
-                {eloDelta} ELO
-              </span>
-            ) : null}
+            <div
+              style={{
+                marginTop: 12, padding: 12, borderRadius: 10, textAlign: 'center',
+                fontWeight: 700, fontSize: 13,
+                background: joined ? 'var(--pm-surface)' : isFull ? 'var(--pm-surface-muted)' : 'var(--pm-navy)',
+                color: joined ? 'var(--pm-navy)' : isFull ? 'var(--pm-text-light)' : '#fff',
+                border: joined ? '1.5px solid var(--pm-border)' : 'none',
+              }}
+            >
+              {joined ? 'Tilmeldt ✓' : isFull ? 'Fyldt op' : 'Tilmeld'}
+            </div>
+          </>
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 11, borderTop: '1px solid var(--pm-border)', gap: 8 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-text-mid)' }}>
+              {isPlaying
+                ? (activeRound != null && totalRounds > 0 ? `Runde ${activeRound} af ${totalRounds}` : 'I gang')
+                : `${totalRounds} runder · ${filled} spillere`}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex' }} aria-hidden>
+                {visibleParticipants.map((p, idx) => (
+                  <AvatarCircle
+                    key={p.user_id}
+                    avatar={p.avatar || playerInitials(p.display_name)}
+                    size={26}
+                    emojiSize="11px"
+                    style={{ marginLeft: idx > 0 ? -8 : 0, border: '2px solid var(--pm-surface)', zIndex: idx + 1 }}
+                  />
+                ))}
+                {overflow > 0 ? (
+                  <span style={{ marginLeft: -8, width: 26, height: 26, borderRadius: '50%', background: 'var(--pm-surface-muted)', border: '2px solid var(--pm-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--pm-text-mid)' }}>
+                    +{overflow}
+                  </span>
+                ) : null}
+              </div>
+              {showMyEloDelta ? (
+                <span style={{ fontSize: 12, fontWeight: 700, color: eloDelta! >= 0 ? 'var(--pm-success)' : 'var(--pm-danger)' }}>
+                  Elo {eloDelta! >= 0 ? '+' : '−'}{Math.abs(eloDelta!)}
+                </span>
+              ) : null}
+            </div>
           </div>
-        </div>
+        )}
       </div>
-    </button>
+    </div>
   )
 }
