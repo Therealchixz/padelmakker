@@ -1,5 +1,5 @@
 import { AvatarCircle } from '../AvatarCircle';
-import { matchTimeLabel } from '../../lib/matchDisplayUtils';
+import { matchTimeLabel, formatMatchDateHeadlineDa } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
 import { eloRangeToLevelRange, formatPlaytomicLevel } from '../../lib/padelLevelUtils';
 
@@ -129,39 +129,49 @@ export function KampeMatchListCard({
       onClick={onClick}
       aria-label={`Åbn kamp: ${venue}`}
     >
-      <div className="pm-kampe-v2-list-card-top">
-        {badgeDay != null ? (
-          <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-inset, #F1F4F9)', border: '1px solid var(--pm-border, #E2E8F0)', borderRadius: 10, padding: '6px 0' }}>
-            <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{badgeDay}</b>
-            <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-light, #8898AA)', letterSpacing: '0.5px' }}>{badgeMon}</span>
-          </div>
-        ) : null}
-        <div className="pm-kampe-v2-list-card-main">
-          <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary" style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--pm-text)' }}>
-            {venue}
-          </div>
-          <div className="pm-kampe-v2-list-venue" style={{ marginTop: 2 }}>
-            Kl. {timeLabel}
-            {match.duration ? <> · {match.duration} min</> : null}
-            {showEloRange && levelRange ? <> · Niveau {formatPlaytomicLevel(levelRange.min)}–{formatPlaytomicLevel(levelRange.max)}</> : null}
+      {isCompleted ? (
+        <div className="pm-kampe-v2-list-card-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span className={`pm-kampe-v2-badge ${badgeToneClass((completedBadge || statusBadge).tone)}`}>
+            {(completedBadge || statusBadge).label}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--pm-text-light, #8898AA)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
+              {formatMatchDateHeadlineDa(match.date)} · {venue}
+            </span>
+            {unreadCount > 0 ? (
+              <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
+            ) : null}
           </div>
         </div>
-        <div className="pm-kampe-v2-list-badges">
-          {completedBadge ? (
-            <span className={`pm-kampe-v2-badge ${badgeToneClass(completedBadge.tone)}`}>
-              {completedBadge.label}
-            </span>
-          ) : (
+      ) : (
+        <div className="pm-kampe-v2-list-card-top">
+          {badgeDay != null ? (
+            <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-inset, #F1F4F9)', border: '1px solid var(--pm-border, #E2E8F0)', borderRadius: 10, padding: '6px 0' }}>
+              <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{badgeDay}</b>
+              <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-light, #8898AA)', letterSpacing: '0.5px' }}>{badgeMon}</span>
+            </div>
+          ) : null}
+          <div className="pm-kampe-v2-list-card-main">
+            <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary" style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--pm-text)' }}>
+              {venue}
+            </div>
+            <div className="pm-kampe-v2-list-venue" style={{ marginTop: 2 }}>
+              Kl. {timeLabel}
+              {match.duration ? <> · {match.duration} min</> : null}
+              {showEloRange && levelRange ? <> · Niveau {formatPlaytomicLevel(levelRange.min)}–{formatPlaytomicLevel(levelRange.max)}</> : null}
+            </div>
+          </div>
+          <div className="pm-kampe-v2-list-badges">
             <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
               {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
               {statusBadge.label}
             </span>
-          )}
-          {unreadCount > 0 ? (
-            <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
-          ) : null}
+            {unreadCount > 0 ? (
+              <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
 
       {setScoreStr ? (
         <div style={{
@@ -251,8 +261,7 @@ export function KampeMatchListCard({
           <span
             className={`pm-kampe-v2-list-elo-result${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
           >
-            {eloDelta >= 0 ? '+' : ''}
-            {eloDelta} ELO
+            Elo {eloDelta >= 0 ? '+' : '−'}{Math.abs(eloDelta)}
           </span>
         ) : null}
         {setScoreStr ? (
