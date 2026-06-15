@@ -13,7 +13,7 @@ const AmericanoTab = lazy(() =>
 const LigaTabLazyEmbed = lazy(() =>
   import('./LigaTab').then((m) => ({ default: m.LigaTab }))
 );
-import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
+import { theme, btn, inputStyle, labelStyle, font } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
 import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, formatMatchDateDa } from '../lib/matchDisplayUtils';
