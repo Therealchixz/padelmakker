@@ -1,5 +1,6 @@
 import { X, CalendarDays, MapPin, ArrowUpRight, TrendingUp, TrendingDown, Trophy, Share2, RotateCcw, Wallet } from 'lucide-react';
 import { CourtFacilitiesGrid } from '../../lib/courtFacilities.jsx';
+import { MatchPhotosSection } from './MatchPhotosSection';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
@@ -27,7 +28,7 @@ function computeMatchSets(mr) {
   return { setsWon1, setsWon2, setScoreStrings };
 }
 
-function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, profilesById, currentUserId }) {
+function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, profilesById, currentUserId, matchId }) {
   if (!matchResult?.confirmed) return null;
 
   const { setsWon1, setsWon2, setScoreStrings } = computeMatchSets(matchResult);
@@ -240,6 +241,14 @@ function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, prof
           </div>
         </>
       )}
+
+      {matchId ? (
+        <MatchPhotosSection
+          matchId={matchId}
+          currentUserId={currentUserId}
+          canUpload={myTeam != null}
+        />
+      ) : null}
 
       <div style={{ display: 'flex', gap: 10, padding: '16px 0 8px' }}>
         <button className="pm-kd-btn-ghost" style={{ flex: 1, padding: 12 }} onClick={handleShare} type="button">
@@ -471,6 +480,7 @@ export function KampeMatchDetailSheet({
             myTeam={myTeam}
             profilesById={profilesById}
             currentUserId={currentUserId}
+            matchId={matchId}
           />
         ) : (
           <>
