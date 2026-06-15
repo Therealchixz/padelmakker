@@ -32,6 +32,17 @@ function computeSetScoreStr(mr) {
 
 const SLOTS_PER_TEAM = 2;
 
+/** Kort holdnavn til VS-rækken, fx "Dig & Mads". */
+function teamNameLabel(players, profilesById, currentUserId) {
+  const names = (players || []).map((p) => {
+    if (currentUserId != null && String(p.user_id) === String(currentUserId)) return 'Dig';
+    const full = profilesById[String(p.user_id)]?.name || p.user_name || 'Spiller';
+    return String(full).trim().split(/\s+/)[0];
+  });
+  if (names.length === 0) return '';
+  return names.join(' & ');
+}
+
 /** Always two slots per hold so listen visuelt 2 vs 2, ikke én lang række. */
 function teamDisplaySlots(players) {
   const filled = (players || []).slice(0, SLOTS_PER_TEAM);
@@ -65,6 +76,7 @@ export function KampeMatchListCard({
   matchResult = null,
   winnerTeam = null,
   myTeam = null,
+  currentUserId = null,
   onClick,
 }) {
   const venue =
@@ -188,39 +200,48 @@ export function KampeMatchListCard({
 
       {setScoreStr ? (
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: 10, padding: '8px 14px 2px', borderTop: '1px solid var(--pm-border)',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+          gap: 8, padding: '10px 14px 2px', borderTop: '1px solid var(--pm-border)',
           marginTop: 4,
         }}>
-          <div style={{ display: 'flex', flexShrink: 0 }}>
-            {t1Slots.map((p, i) => p ? (
-              <AvatarCircle
-                key={p.user_id || `vs-t1-${i}`}
-                avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
-                size={24}
-                emojiSize="10px"
-                style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid white', zIndex: i + 1 }}
-              />
-            ) : (
-              <span key={`vs-t1-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
-            ))}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {t1Slots.map((p, i) => p ? (
+                <AvatarCircle
+                  key={p.user_id || `vs-t1-${i}`}
+                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
+                  size={24}
+                  emojiSize="10px"
+                  style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid white', zIndex: i + 1 }}
+                />
+              ) : (
+                <span key={`vs-t1-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
+              ))}
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700, color: didWin ? 'var(--pm-text)' : 'var(--pm-text-mid)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+              {teamNameLabel(t1, profilesById, currentUserId)}
+            </span>
           </div>
-          <span style={{
-            flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 700,
-            color: 'var(--pm-navy)', letterSpacing: '0.5px',
-          }}>{setScoreStr}</span>
-          <div style={{ display: 'flex', flexShrink: 0, direction: 'rtl' }}>
-            {t2Slots.map((p, i) => p ? (
-              <AvatarCircle
-                key={p.user_id || `vs-t2-${i}`}
-                avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
-                size={24}
-                emojiSize="10px"
-                style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid white', zIndex: i + 1 }}
-              />
-            ) : (
-              <span key={`vs-t2-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
-            ))}
+          <div style={{ flexShrink: 0, alignSelf: 'center', fontSize: 15, fontWeight: 700, color: 'var(--pm-navy)', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+            {setScoreStr}
+          </div>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', direction: 'rtl' }}>
+              {t2Slots.map((p, i) => p ? (
+                <AvatarCircle
+                  key={p.user_id || `vs-t2-${i}`}
+                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
+                  size={24}
+                  emojiSize="10px"
+                  style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid white', zIndex: i + 1 }}
+                />
+              ) : (
+                <span key={`vs-t2-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
+              ))}
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700, color: didLose ? 'var(--pm-text-mid)' : 'var(--pm-text)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+              {teamNameLabel(t2, profilesById, currentUserId)}
+            </span>
           </div>
         </div>
       ) : null}

@@ -3362,6 +3362,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           matchResult={mr}
           winnerTeam={winnerTeam}
           myTeam={cardState.myTeam}
+          currentUserId={myUidStr}
           onClick={() => {
             if (matchUnreadByIdRef.current[matchKey]) {
               void markMatchNotifsRead(m.id);
