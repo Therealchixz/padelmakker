@@ -253,6 +253,18 @@ export function AmericanoDetailSheet({
                 />
                 <span className="pm-americano-v2-detail-location-date"> · {dateLabel}</span>
               </div>
+              {(() => {
+                const p = Number(tournament.price_per_person)
+                const free = tournament.payment_method === 'free' || !Number.isFinite(p) || p <= 0
+                const priceText = free ? 'Gratis' : (p % 1 === 0 ? `${p} kr.` : `${p.toFixed(2).replace('.', ',')} kr.`)
+                const payText = free ? '' : tournament.payment_method === 'cash' ? ' · ved fremmøde' : tournament.payment_method === 'mobilepay' ? ' · MobilePay' : ''
+                return (
+                  <div style={{ marginTop: 4, fontSize: 13, fontWeight: 700, color: 'var(--pm-text)' }}>
+                    {priceText}
+                    {free ? '' : <span style={{ fontWeight: 500, color: 'var(--pm-text-light)' }}> / pr. person{payText}</span>}
+                  </div>
+                )
+              })()}
             </div>
             <div className="pm-americano-v2-detail-head-right">
               <span className={`pm-kampe-v2-badge ${badgeToneClass(badgeTone)}`}>
@@ -280,6 +292,11 @@ export function AmericanoDetailSheet({
             <span className={`pm-kd-chip ${badgeTone === 'live' ? 'pm-kd-chip--amber' : 'pm-kd-chip--navy'}`}>
               {getTournamentFormatLabel(tournament.format).toUpperCase()}
             </span>
+            {tournament.level_min != null && tournament.level_max != null ? (
+              <span className="pm-kd-chip pm-kd-chip--light">
+                Niveau {Number(tournament.level_min).toFixed(1)}–{Number(tournament.level_max).toFixed(1)}
+              </span>
+            ) : null}
             {badgeTone === 'live' ? (
               <span className="pm-kd-chip pm-kd-chip--live">LIVE · {badgeLabel}</span>
             ) : null}

@@ -97,7 +97,10 @@ export function AmericanoListCard({
   const overflow = Math.max(0, filled - MAX_AVATARS)
   const isFull = tournamentFull || (maxPlayers > 0 && filled >= maxPlayers)
 
-  const formatChipBg = isMexicano ? '#F59E0B' : '#22C55E'
+  // Format-chip: Mexicano = amber/navy-tekst, Americano = navy/hvid (matcher mockup chip-mex/chip-ame)
+  const formatChip = isMexicano
+    ? { bg: '#F59E0B', color: 'var(--pm-navy-deep)', border: 'none' }
+    : { bg: 'var(--pm-navy-deep)', color: '#fff', border: '1px solid rgba(255,255,255,0.32)' }
 
   return (
     <div
@@ -124,10 +127,10 @@ export function AmericanoListCard({
       {/* Hero */}
       <div style={{ position: 'relative', background: 'linear-gradient(135deg, #0D2752 0%, #16377E 100%)', padding: '12px 14px', minHeight: 92, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ background: formatChipBg, color: '#fff', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+          <span style={{ background: formatChip.bg, color: formatChip.color, border: formatChip.border, fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
             {formatLabel}
           </span>
-          <span style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 9.5, fontWeight: 600, padding: '3px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.25)' }}>
+          <span style={{ background: 'rgba(255,255,255,0.93)', color: 'var(--pm-navy-deep)', fontSize: 9.5, fontWeight: 700, padding: '3px 8px', borderRadius: 5 }}>
             {levelLabel(tournament)}
           </span>
           {isPlaying ? (
@@ -142,11 +145,9 @@ export function AmericanoListCard({
             </span>
           ) : null}
         </div>
-        {/* faint court illustration */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <div style={{ width: 80, height: 38, background: 'rgba(255,255,255,0.10)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.18)', position: 'relative' }}>
-            <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.25)' }} />
-          </div>
+        {/* perspektiv-bane (matcher mockup .event-hero .court) */}
+        <div style={{ position: 'absolute', left: '16%', right: '16%', top: '38%', bottom: '16%', border: '2px solid rgba(255,255,255,0.45)', borderRadius: 4, transform: 'perspective(300px) rotateX(40deg)', pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: 'rgba(255,255,255,0.45)' }} />
         </div>
       </div>
 
