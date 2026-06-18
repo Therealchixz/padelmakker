@@ -1,5 +1,6 @@
 import { MapPin, X } from 'lucide-react';
 import { useBottomSheetDragToClose } from '../lib/useBottomSheetDragToClose';
+import { ligaTypeLabel } from '../lib/ligaDisplayUtils';
 
 function badgeToneClass(tone) {
   if (tone === 'live') return 'pm-kampe-v2-badge--live';
@@ -46,7 +47,7 @@ export function LigaDetailSheet({
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />
           <div className="pm-liga-v2-detail-head">
             <div className="pm-liga-v2-detail-head-main">
-              <div className="pm-liga-v2-detail-type">Liga · Swiss</div>
+              <div className="pm-liga-v2-detail-type">{ligaTypeLabel(league)}</div>
               <h2 className="pm-liga-v2-detail-title">{league.name}</h2>
               <div className="pm-liga-v2-detail-meta">
                 <MapPin size={12} aria-hidden />

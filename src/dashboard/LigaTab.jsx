@@ -417,7 +417,7 @@ export function LigaTab({
       setCreateOpen(false);
       setCreateStep(1);
       setCreateStepErr('');
-      setCreatedLeagueReceipt({ id: created?.id, name: createForm.name.trim(), start_date: createForm.start_date, end_date: createForm.end_date, max_teams: maxT });
+      setCreatedLeagueReceipt({ id: created?.id, name: createForm.name.trim(), start_date: createForm.start_date, end_date: createForm.end_date, max_teams: maxT, num_divisions: createForm.num_divisions || 1, match_system: createForm.match_system, region: createForm.region, registration_deadline: createForm.registration_deadline, points_win: createForm.points_win, points_draw: createForm.points_draw, points_loss: createForm.points_loss });
       setCreateForm({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
@@ -1327,19 +1327,27 @@ export function LigaTab({
               <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 14, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ background: theme.navy, color: '#fff', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>LIGA</span>
+                  {Number(r.num_divisions) > 1 ? (
+                    <span style={{ background: theme.navyBg || '#EEF2FB', color: theme.navy, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>{r.num_divisions} divisioner</span>
+                  ) : null}
                   <span style={{ background: theme.greenBg, color: theme.green, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>Tilmelding åben</span>
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, marginTop: 10 }}>{r.name}</div>
-                {(r.start_date || r.end_date) && (
-                  <div style={{ fontSize: 12, color: theme.textMid, marginTop: 6 }}>
-                    {r.start_date && `Start: ${r.start_date}`}{r.start_date && r.end_date ? ' · ' : ''}{r.end_date && `Slut: ${r.end_date}`}
-                  </div>
-                )}
-                {r.max_teams && (
-                  <div style={{ fontSize: 12, color: theme.textMid, marginTop: 4 }}>
-                    Maks. {r.max_teams} hold
-                  </div>
-                )}
+                {(() => {
+                  const sys = { round_robin: 'Alle mod alle', swiss: 'Swiss', knockout: 'Knockout' }[r.match_system];
+                  const rows = [];
+                  if (sys) rows.push(['Kampsystem', `${sys} · ${r.points_win ?? 3} sejr · ${r.points_draw ?? 1} uafgjort · ${r.points_loss ?? 0} nederlag`]);
+                  if (r.start_date || r.end_date) rows.push(['Sæson', `${r.start_date || '?'}${r.end_date ? ` – ${r.end_date}` : ''}`]);
+                  if (r.registration_deadline) rows.push(['Tilmeldingsfrist', r.registration_deadline]);
+                  if (r.region) rows.push(['Region', r.region]);
+                  if (r.max_teams) rows.push(['Maks. hold', String(r.max_teams)]);
+                  return rows.map(([label, value]) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12, marginTop: 6 }}>
+                      <span style={{ color: theme.textLight, flexShrink: 0 }}>{label}</span>
+                      <span style={{ color: theme.text, fontWeight: 600, textAlign: 'right' }}>{value}</span>
+                    </div>
+                  ));
+                })()}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 13, paddingTop: 12, borderTop: '1px solid ' + theme.border }}>
                   <span style={{ fontSize: 12, color: theme.textMid }}>Hold tilmeldt</span>
                   <span style={{ fontSize: 11.5, color: theme.textMid, fontWeight: 600 }}>0 hold</span>

@@ -5,7 +5,7 @@ import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
 import { completionMsForLeague } from '../lib/resultErrorReports';
-import { shortLigaDate } from '../lib/ligaDisplayUtils';
+import { shortLigaDate, ligaIsSwiss } from '../lib/ligaDisplayUtils';
 import { validatePadelScore } from '../lib/ligaStandings';
 import { LigaStandingsTable } from './LigaDetailSheet';
 
@@ -317,11 +317,11 @@ function RegistrationDetail({
 
       {totalRounds ? (
         <p style={{ fontSize: 11, color: theme.textLight, textAlign: 'center', margin: '0 0 16px' }}>
-          {totalRounds} runder · 2 pr. hold · Swiss-parring
+          {totalRounds} runder · 2 pr. hold{ligaIsSwiss(league) ? ' · Swiss-parring' : ''}
         </p>
       ) : null}
 
-      <SwissRulesBox collapsible storageKey="pm-liga-swiss-rules" />
+      {ligaIsSwiss(league) ? <SwissRulesBox collapsible storageKey="pm-liga-swiss-rules" /> : null}
 
       {myTeam ? (
         <div
