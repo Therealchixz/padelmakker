@@ -6,7 +6,7 @@ import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn, tag } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
-import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, ChevronDown, Menu, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
+import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, ChevronDown, MoreHorizontal, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
 import { AvatarCircle } from '../components/AvatarCircle';
 
@@ -1294,7 +1294,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     { id: "beskeder", label: "Beskeder",     icon: <MessageCircle size={15} />, badge: unreadMessages > 0 ? unreadMessages : null },
   ];
   // Profil vises i konto-dropdown på desktop, men beholdes i mobilens "Mere"-menu.
-  if (isMobileView) allTabs.push({ id: "profil", label: "Profil", icon: <Settings size={15} /> });
+  if (isMobileView) allTabs.push({ id: "profil", label: "Min profil", icon: <Settings size={15} /> });
   if (isAdmin && isMobileView) {
     allTabs.push({
       id: "admin",
@@ -2026,7 +2026,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           title="Mere"
         >
           <span className="pm-mobile-bottom-icon-wrap">
-            <Menu size={18} color={mobileMoreIsActive || mobileMoreOpen ? theme.accent : theme.textMid} />
+            <MoreHorizontal size={18} color={mobileMoreIsActive || mobileMoreOpen ? theme.accent : theme.textMid} />
             {mobileMoreBadge > 0 && (
               <span className="pm-mobile-bottom-badge">
                 {mobileMoreBadge > 9 ? "9+" : mobileMoreBadge}
