@@ -62,6 +62,78 @@ export function LigaScheduleSheet({
   if (!open || !league) return null;
 
   const isCompleted = league.status === 'completed';
+  const numDiv = Math.min(Number(league.num_divisions) || 1, teams.length || 1);
+
+  const renderMatch = (match) => {
+    const t1 = teamMap[match.team1_id];
+    const t2 = match.team2_id ? teamMap[match.team2_id] : null;
+    const isMyMatch =
+      myTeam &&
+      (match.team1_id === myTeam?.id || match.team2_id === myTeam?.id);
+    const tag = matchResultTag(match, myTeam?.id);
+
+    const t1Name = t1
+      ? `${t1.player1_name || t1.name}${t1.player2_name ? ` & ${t1.player2_name}` : ''}`
+      : '—';
+    const t2Name = t2
+      ? `${t2.player1_name || t2.name}${t2.player2_name ? ` & ${t2.player2_name}` : ''}`
+      : null;
+
+    const scoreDetail = match.status === 'reported' && match.score_text ? match.score_text : null;
+
+    return (
+      <div
+        key={match.id}
+        className={`pm-liga-v2-match-card${isMyMatch ? ' pm-liga-v2-match-card--mine' : ''}`}
+      >
+        <div className="pm-liga-v2-match-card-body">
+          <div className="pm-liga-v2-match-teams">
+            {t2Name ? (
+              <>
+                <span className="pm-liga-v2-match-team">{t1Name}</span>
+                <span className="pm-liga-v2-match-vs">vs</span>
+                <span className="pm-liga-v2-match-team">{t2Name}</span>
+              </>
+            ) : (
+              <span className="pm-liga-v2-match-team">{t1Name}</span>
+            )}
+          </div>
+          {scoreDetail ? (
+            <div className="pm-liga-v2-match-detail">{scoreDetail}</div>
+          ) : !match.team2_id ? null : (
+            <div className="pm-liga-v2-match-detail">Tid ikke aftalt endnu</div>
+          )}
+        </div>
+        <span
+          className="pm-liga-v2-match-tag"
+          style={{ color: tag.color, background: tag.bg, border: `1px solid ${tag.border}` }}
+        >
+          {tag.label}
+        </span>
+      </div>
+    );
+  };
+
+  const renderRoundMatches = (roundMatches) => {
+    if (numDiv <= 1) return roundMatches.map(renderMatch);
+    // Gruppér rundens kampe efter holdets division
+    const byDiv = {};
+    for (const m of roundMatches) {
+      const d = Number(teamMap[m.team1_id]?.division) || 1;
+      (byDiv[d] = byDiv[d] || []).push(m);
+    }
+    return Object.keys(byDiv)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map((d) => (
+        <div key={d} style={{ marginBottom: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--pm-navy)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '2px 0 6px' }}>
+            Division {d}
+          </div>
+          {byDiv[d].map(renderMatch)}
+        </div>
+      ));
+  };
 
   return (
     <>
@@ -127,58 +199,7 @@ export function LigaScheduleSheet({
                 ) : roundMatches.length === 0 ? (
                   <div className="pm-liga-v2-round-future">Ingen kampe</div>
                 ) : (
-                  roundMatches.map((match) => {
-                    const t1 = teamMap[match.team1_id];
-                    const t2 = match.team2_id ? teamMap[match.team2_id] : null;
-                    const isMyMatch =
-                      myTeam &&
-                      (match.team1_id === myTeam?.id || match.team2_id === myTeam?.id);
-                    const tag = matchResultTag(match, myTeam?.id);
-
-                    const t1Name = t1
-                      ? `${t1.player1_name || t1.name}${t1.player2_name ? ` & ${t1.player2_name}` : ''}`
-                      : '—';
-                    const t2Name = t2
-                      ? `${t2.player1_name || t2.name}${t2.player2_name ? ` & ${t2.player2_name}` : ''}`
-                      : null;
-
-                    let scoreDetail = null;
-                    if (match.status === 'reported' && match.score_text) {
-                      scoreDetail = match.score_text;
-                    }
-
-                    return (
-                      <div
-                        key={match.id}
-                        className={`pm-liga-v2-match-card${isMyMatch ? ' pm-liga-v2-match-card--mine' : ''}`}
-                      >
-                        <div className="pm-liga-v2-match-card-body">
-                          <div className="pm-liga-v2-match-teams">
-                            {t2Name ? (
-                              <>
-                                <span className="pm-liga-v2-match-team">{t1Name}</span>
-                                <span className="pm-liga-v2-match-vs">vs</span>
-                                <span className="pm-liga-v2-match-team">{t2Name}</span>
-                              </>
-                            ) : (
-                              <span className="pm-liga-v2-match-team">{t1Name}</span>
-                            )}
-                          </div>
-                          {scoreDetail ? (
-                            <div className="pm-liga-v2-match-detail">{scoreDetail}</div>
-                          ) : !match.team2_id ? null : (
-                            <div className="pm-liga-v2-match-detail">Tid ikke aftalt endnu</div>
-                          )}
-                        </div>
-                        <span
-                          className="pm-liga-v2-match-tag"
-                          style={{ color: tag.color, background: tag.bg, border: `1px solid ${tag.border}` }}
-                        >
-                          {tag.label}
-                        </span>
-                      </div>
-                    );
-                  })
+                  renderRoundMatches(roundMatches)
                 )}
               </div>
             );

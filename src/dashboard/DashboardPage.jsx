@@ -19,6 +19,7 @@ import { supabase } from '../lib/supabase';
 import { PROFILE_REFRESH_COOLDOWN_MS } from '../lib/platformConstants';
 import { AdminPinGate } from '../components/AdminPinGate';
 import { GuidedTourOverlay } from '../components/GuidedTourOverlay';
+import { WelcomeScreen } from '../components/WelcomeScreen';
 import { PendingResultConfirmModal } from '../components/PendingResultConfirmModal';
 import {
   KAMPE_NOTIFICATION_TYPES,
@@ -772,6 +773,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [adminPinUnlocked, setAdminPinUnlocked] = useState(false);
   const hasPrefetchedTabsRef = useRef(false);
   const lastProfileRefreshAtRef = useRef(0);
@@ -781,6 +783,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const accountBtnRef = useRef(null);
   const accountDropRef = useRef(null);
   const tourStorageKey = user?.id ? `pm_dash_tour_v${TOUR_VERSION}_done_${user.id}` : null;
+  const welcomeStorageKey = user?.id ? `pm_dash_welcome_v1_${user.id}` : null;
 
   const tabTourSelector = useCallback((tabId) => {
     return isMobileView ? `[data-tour="mobile-tab-${tabId}"]` : `[data-tour="tab-${tabId}"]`;
@@ -935,6 +938,20 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setTourOpen(true);
   }, []);
 
+  const markWelcomeSeen = useCallback(() => {
+    try { if (welcomeStorageKey) localStorage.setItem(welcomeStorageKey, '1'); } catch { /* ignore */ }
+  }, [welcomeStorageKey]);
+
+  // Luk Velkommen. Hvis brugeren ikke valgte rundturen, markeres turen også som
+  // set, så den ikke popper op bagefter (undgå dobbelt-onboarding).
+  const dismissWelcome = useCallback((markTourDone = true) => {
+    markWelcomeSeen();
+    if (markTourDone) {
+      try { if (tourStorageKey) localStorage.setItem(tourStorageKey, '1'); } catch { /* ignore */ }
+    }
+    setWelcomeOpen(false);
+  }, [markWelcomeSeen, tourStorageKey]);
+
   const closeTour = useCallback((withToastMessage) => {
     persistTourCompleted();
     setTourOpen(false);
@@ -1006,19 +1023,27 @@ export function DashboardPage({ user, onLogout, showToast }) {
     hasAutoStartedTourRef.current = true;
 
     let alreadyCompleted = false;
+    let welcomeSeen = false;
     try {
       alreadyCompleted = localStorage.getItem(tourStorageKey) === '1';
+      welcomeSeen = welcomeStorageKey ? localStorage.getItem(welcomeStorageKey) === '1' : true;
     } catch {
       alreadyCompleted = false;
     }
     if (alreadyCompleted) return undefined;
+
+    // Første login: vis Velkommen-skærmen i stedet for at auto-starte turen.
+    if (!welcomeSeen) {
+      const wTimer = window.setTimeout(() => setWelcomeOpen(true), 400);
+      return () => window.clearTimeout(wTimer);
+    }
 
     const timer = window.setTimeout(() => {
       setTourStepIndex(0);
       setTourOpen(true);
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [tourStorageKey]);
+  }, [tourStorageKey, welcomeStorageKey]);
 
   useLayoutEffect(() => {
     if (!tourOpen) return;
@@ -1673,6 +1698,17 @@ export function DashboardPage({ user, onLogout, showToast }) {
         }}
         zIndex={mobileMoreTourActive ? 10060 : undefined}
       />
+
+      {welcomeOpen && (
+        <WelcomeScreen
+          name={displayName}
+          levelText={user?.level != null ? formatPlaytomicLevel(user.level) : null}
+          onFindPartner={() => { dismissWelcome(); setTab('makkere'); }}
+          onJoinMatch={() => { dismissWelcome(); setTab('kampe'); }}
+          onStartTour={() => { markWelcomeSeen(); setWelcomeOpen(false); startTour(); }}
+          onGoToApp={() => dismissWelcome()}
+        />
+      )}
 
       <PendingResultConfirmModal user={user} />
 
