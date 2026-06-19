@@ -200,6 +200,8 @@ type Props = {
   tournament: AmericanoTournament
   /** Opretteren af turneringen — kan låse op og rette gemte resultater */
   currentUserId: string
+  /** Admin kan også afslutte/generere runder (redning hvis opretteren er væk) */
+  isAdmin?: boolean
   onSaved: () => void
   showToast: (msg: string) => void
   onProfileStatsRefresh?: () => void
@@ -286,6 +288,7 @@ type AmericanoEloRpcData = {
 export function AmericanoResultsPanel({
   tournament,
   currentUserId,
+  isAdmin = false,
   onSaved,
   showToast,
   onProfileStatsRefresh,
@@ -305,6 +308,7 @@ export function AmericanoResultsPanel({
   const P: 16 | 24 | 32 =
     ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
   const isCreator = String(tournament.creator_id) === String(currentUserId)
+  const canManage = isCreator || isAdmin
   const isMexicano = isMexicanoFormat(tournament.format ?? 'americano')
   const formatLabel = getTournamentFormatLabel(tournament.format)
 
@@ -319,7 +323,7 @@ export function AmericanoResultsPanel({
   }, [isMexicano, tournament, participantIdsOrdered, matches])
 
   const pendingNextMexicanoRound = useMemo(() => {
-    if (!isMexicano || !isCreator) return null
+    if (!isMexicano || !canManage) return null
     return buildNextMexicanoRoundIfReady(
       tournament,
       participantIdsOrdered,
@@ -374,7 +378,7 @@ export function AmericanoResultsPanel({
       setScores(sc)
       setUnlockedIds(new Set())
 
-      if (isCreator && isMexicanoFormat(tournament.format ?? 'americano')) {
+      if (canManage && isMexicanoFormat(tournament.format ?? 'americano')) {
         const advanced = await advanceMexicanoRoundIfReady({
           supabase,
           tournament,
@@ -717,7 +721,7 @@ export function AmericanoResultsPanel({
   // Mockup-trofast score-/VS-kort. Bruges på tværs af faner og i "Din bane".
   const renderScoreCard = (m: AmericanoMatchRow, displayIdx: number, opts: { hideHeader?: boolean } = {}) => {
     const locked = isMatchResultLocked(m) && !unlockedIds.has(m.id)
-    const canEdit = (isCreator && !locked) || canPlayerReport(m)
+    const canEdit = (canManage && !locked) || canPlayerReport(m)
     const editing = canEdit && entryOpenId === m.id
     const resolved = resolvedMatchScores(m, scores, P)
     const aWins = resolved != null && resolved.a > resolved.b
@@ -827,7 +831,7 @@ export function AmericanoResultsPanel({
           </button>
         )}
 
-        {isCreator && locked && entryOpenId !== m.id && (
+        {canManage && locked && entryOpenId !== m.id && (
           <button
             type="button"
             disabled={saving}
@@ -900,7 +904,7 @@ export function AmericanoResultsPanel({
     </div>
   )
 
-  const creatorActions = isCreator ? (
+  const creatorActions = canManage ? (
     <>
       {pendingNextMexicanoRound ? (
         <button

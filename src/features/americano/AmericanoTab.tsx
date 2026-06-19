@@ -1267,10 +1267,11 @@ export function AmericanoTab({
             joinedNote={joinedNote}
             extras={manageExtras}
             resultsPanel={
-              joined && t.status === 'playing' ? (
+              (joined || isAdmin) && t.status === 'playing' ? (
                 <AmericanoResultsPanel
                   tournament={t}
                   currentUserId={profileId}
+                  isAdmin={isAdmin}
                   onSaved={load}
                   showToast={showToast}
                   onProfileStatsRefresh={refreshProfileQuiet}

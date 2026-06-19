@@ -3232,14 +3232,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 {busyId === m.id + "-seek" ? "Sender..." : m.seeking_player ? "Stop råb" : "Råb op for spiller"}
               </button>
             ) : null}
-            {joined && !isCreator && (status === "open" || status === "full") ? (
+            {joined && (status === "open" || status === "full") ? (
               <button
                 type="button"
                 onClick={() => leaveMatch(m.id)}
                 disabled={busy}
                 style={{ background: "none", border: "none", padding: 0, color: theme.red, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(220,38,38,0.3)", display: "inline-flex", alignItems: "center", gap: "4px" }}
               >
-                <UserMinus size={12} /> Afmeld mig
+                <UserMinus size={12} /> {isCreator ? "Forlad / overdrag" : "Afmeld mig"}
               </button>
             ) : null}
           </div>
