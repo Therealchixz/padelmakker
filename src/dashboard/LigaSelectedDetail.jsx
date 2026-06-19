@@ -245,8 +245,8 @@ function RegistrationDetail({
           <div className="pm-liga-v2-meta-card-val">{shortLigaDate(league.start_date)}</div>
         </div>
         <div className="pm-liga-v2-meta-card">
-          <div className="pm-liga-v2-meta-card-lbl">Frist</div>
-          <div className="pm-liga-v2-meta-card-val">{shortLigaDate(league.end_date)}</div>
+          <div className="pm-liga-v2-meta-card-lbl">{league.registration_deadline ? 'Frist' : 'Slut'}</div>
+          <div className="pm-liga-v2-meta-card-val">{shortLigaDate(league.registration_deadline || league.end_date)}</div>
         </div>
         <div className="pm-liga-v2-meta-card">
           <div className="pm-liga-v2-meta-card-lbl">Pris</div>
