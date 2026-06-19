@@ -30,6 +30,9 @@ export type AmericanoTournament = {
   duration_minutes?: number | null
   price_per_person?: number | null
   payment_method?: string | null
+  enforce_level_interval?: boolean | null
+  is_public?: boolean | null
+  has_waitlist?: boolean | null
 }
 
 export type AmericanoParticipant = {

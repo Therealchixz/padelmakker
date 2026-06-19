@@ -645,7 +645,7 @@ export function LigaTab({
     const divTeams = myDivision ? teams.filter((t) => (Number(t.division) || 1) === myDivision) : teams;
     const divTeamIds = new Set(divTeams.map((t) => t.id));
     const divMatches = myDivision ? matches.filter((m) => divTeamIds.has(m.team1_id)) : matches;
-    const standings = computeStandings(divTeams, divMatches);
+    const standings = computeStandings(divTeams, divMatches, { pointsWin: activeLeague.points_win, pointsDraw: activeLeague.points_draw, pointsLoss: activeLeague.points_loss });
     const rankIdx = myTeam ? standings.findIndex((t) => t.id === myTeam.id) : -1;
     const rank = rankIdx >= 0 ? rankIdx + 1 : null;
     const totalTeams = standings.length;
@@ -1118,7 +1118,7 @@ export function LigaTab({
             const regTeams = allTeamsByLeague[league.id] || [];
             const matches = matchesByLeague[league.id] || [];
             const myTeam = myTeamByLeague[league.id];
-            const standings = computeStandings(teams, matches);
+            const standings = computeStandings(teams, matches, { pointsWin: league.points_win, pointsDraw: league.points_draw, pointsLoss: league.points_loss });
             const rankIdx = myTeam ? standings.findIndex((t) => t.id === myTeam.id) : -1;
             const myTeamRank = rankIdx >= 0 ? rankIdx + 1 : null;
             const regionLabel = creatorAreasByUserId[String(league.created_by)] || '';
@@ -1169,7 +1169,7 @@ export function LigaTab({
         const matches = matchesByLeague[selectedLeague.id] || [];
         const myTeam = myTeamByLeague[selectedLeague.id];
         const joined = !!myTeam;
-        const standings = computeStandings(teams, matches);
+        const standings = computeStandings(teams, matches, { pointsWin: selectedLeague.points_win, pointsDraw: selectedLeague.points_draw, pointsLoss: selectedLeague.points_loss });
         const maxTeams = selectedLeague.max_teams || regTeams.length || teams.length;
         const regTeamCount = regTeams.length;
         const isFull = selectedLeague.max_teams && regTeamCount >= selectedLeague.max_teams;

@@ -13,7 +13,10 @@ export function parseGameDiff(scoreText, winnerId, team1Id) {
   return winnerId === team1Id ? winnerGames - loserGames : loserGames - winnerGames;
 }
 
-export function computeStandings(teams, matches) {
+export function computeStandings(teams, matches, opts = {}) {
+  const pointsWin = Number.isFinite(opts.pointsWin) ? opts.pointsWin : 3;
+  const pointsDraw = Number.isFinite(opts.pointsDraw) ? opts.pointsDraw : 1;
+  const pointsLoss = Number.isFinite(opts.pointsLoss) ? opts.pointsLoss : 0;
   const map = {};
   for (const t of teams) map[t.id] = { ...t, points: 0, wins: 0, losses: 0, played: 0, gameDiff: 0 };
   for (const m of matches) {
@@ -25,13 +28,13 @@ export function computeStandings(teams, matches) {
     const diffT1 = parseGameDiff(m.score_text, m.winner_id, m.team1_id);
     if (winner) {
       winner.wins++;
-      winner.points += 3;
+      winner.points += pointsWin;
       winner.played++;
       winner.gameDiff += m.winner_id === m.team1_id ? diffT1 : -diffT1;
     }
     if (loser) {
       loser.losses++;
-      if (tb) loser.points += 1;
+      loser.points += tb ? pointsDraw : pointsLoss;
       loser.played++;
       loser.gameDiff += loserId === m.team1_id ? diffT1 : -diffT1;
     }

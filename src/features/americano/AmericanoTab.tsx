@@ -530,6 +530,8 @@ export function AmericanoTab({
   const filterTournamentRow = useCallback(
     (t: AmericanoTournament) => {
       if (scope === 'mine' && !joinedIds.has(t.id)) return false
+      // Private turneringer skjules for andre end opretteren/deltagere
+      if (t.is_public === false && String(t.creator_id) !== String(profileId) && !joinedIds.has(t.id)) return false
       if (listRegionFilter) {
         const creatorArea = creatorAreasByUserId[String(t.creator_id)] || ''
         const courtName = resolveAmericanoCourtName(t.court_id, courts)
@@ -543,7 +545,7 @@ export function AmericanoTab({
       }
       return true
     },
-    [scope, joinedIds, listRegionFilter, creatorAreasByUserId, courts, searchQuery, participantsByTournament],
+    [scope, joinedIds, profileId, listRegionFilter, creatorAreasByUserId, courts, searchQuery, participantsByTournament],
   )
 
   const filteredRows = useMemo(
@@ -678,6 +680,15 @@ export function AmericanoTab({
       if ((count ?? 0) >= maxSlots) {
         showToast('Americano/Mexicano er fuld.')
         return
+      }
+      // Håndhæv niveau-interval hvis opretteren har slået det til
+      if (tournament.enforce_level_interval && tournament.level_min != null && tournament.level_max != null) {
+        const { data: prof } = await supabase.from('profiles').select('level').eq('id', profileId).single()
+        const lvl = Number(prof?.level)
+        if (Number.isFinite(lvl) && (lvl < Number(tournament.level_min) || lvl > Number(tournament.level_max))) {
+          showToast(`Denne turnering er for niveau ${Number(tournament.level_min).toFixed(1)}–${Number(tournament.level_max).toFixed(1)}. Dit niveau er ${lvl.toFixed(1)}.`)
+          return
+        }
       }
       const { error } = await supabase.from('americano_participants').insert({
         tournament_id: tournamentId,
