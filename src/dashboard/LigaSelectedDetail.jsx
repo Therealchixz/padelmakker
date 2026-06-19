@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Play, Plus, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Play, Plus, Search, Check } from 'lucide-react';
+import { eloToLevel, formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { supabase } from '../lib/supabase';
 import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
 import { AvatarCircle } from '../components/AvatarCircle';
@@ -75,10 +76,17 @@ export function SwissRulesBox({ collapsible = false, storageKey = '' }) {
   );
 }
 
-function PartnerSearch({ userId, onSelect }) {
+function partnerMetaLine(p) {
+  const lvl = formatPlaytomicLevel(eloToLevel(Number(p.elo_rating) || 1000));
+  const games = Number(p.gamesTogether) || 0;
+  return games > 0 ? `Niveau ${lvl} · spillet ${games} ${games === 1 ? 'kamp' : 'kampe'} sammen` : `Niveau ${lvl}`;
+}
+
+function PartnerSearch({ userId, onSelect, selectedId = null }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
+  const [suggested, setSuggested] = useState([]);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -87,8 +95,30 @@ function PartnerSearch({ userId, onSelect }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // Foreslåede makkere: dem brugeren har spillet flest 2v2-kampe med
   useEffect(() => {
-    if (query.length < 2) { setResults([]); setOpen(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: mine } = await supabase.from('match_players').select('match_id').eq('user_id', userId);
+        const matchIds = [...new Set((mine || []).map((r) => r.match_id).filter(Boolean))];
+        if (matchIds.length === 0) return;
+        const { data: co } = await supabase.from('match_players').select('user_id').in('match_id', matchIds).neq('user_id', userId);
+        const counts = {};
+        (co || []).forEach((r) => { if (r.user_id) counts[r.user_id] = (counts[r.user_id] || 0) + 1; });
+        const topIds = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
+        if (topIds.length === 0) return;
+        const { data: profs } = await supabase.from('profiles').select('id, full_name, name, avatar, elo_rating').in('id', topIds);
+        const byId = Object.fromEntries((profs || []).map((p) => [p.id, p]));
+        const list = topIds.map((id) => ({ ...(byId[id] || { id }), gamesTogether: counts[id] })).filter((p) => p.full_name || p.name);
+        if (!cancelled) setSuggested(list);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  useEffect(() => {
+    if (query.length < 2) { setResults([]); return; }
     const t = setTimeout(async () => {
       const { data } = await supabase
         .from('profiles')
@@ -96,43 +126,61 @@ function PartnerSearch({ userId, onSelect }) {
         .or(`full_name.ilike.%${query}%,name.ilike.%${query}%`)
         .neq('id', userId)
         .limit(6);
-      setResults(data || []);
+      const gamesById = Object.fromEntries(suggested.map((s) => [s.id, s.gamesTogether]));
+      setResults((data || []).map((p) => ({ ...p, gamesTogether: gamesById[p.id] || 0 })));
       setOpen(true);
     }, 280);
     return () => clearTimeout(t);
-  }, [query, userId]);
+  }, [query, userId, suggested]);
+
+  const PartnerRow = ({ p, inDropdown }) => {
+    const name = p.full_name || p.name || 'Spiller';
+    const isSel = selectedId && p.id === selectedId;
+    return (
+      <button
+        type="button"
+        onClick={() => { onSelect(p); setQuery(''); setOpen(false); }}
+        style={{
+          width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 12px', cursor: 'pointer', background: isSel ? theme.accentBg : 'transparent',
+          border: inDropdown ? 'none' : '1.5px solid ' + (isSel ? theme.accent : theme.border),
+          borderRadius: inDropdown ? 0 : 12, marginBottom: inDropdown ? 0 : 8,
+          borderBottom: inDropdown ? '1px solid ' + theme.border + '80' : undefined,
+        }}
+      >
+        <AvatarCircle avatar={p.avatar} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border, flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+          <div style={{ fontSize: 11.5, color: theme.textLight, marginTop: 1 }}>{partnerMetaLine(p)}</div>
+        </div>
+        {isSel ? <Check size={18} color={theme.accent} strokeWidth={2.5} /> : null}
+      </button>
+    );
+  };
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div ref={ref}>
       <div style={{ position: 'relative' }}>
         <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: theme.textLight, pointerEvents: 'none' }} />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => query.length >= 2 && setOpen(true)}
           placeholder="Søg efter makker..."
           style={{ ...inputStyle, paddingLeft: '32px' }}
         />
+        {open && results.length > 0 && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: theme.surface, border: '1px solid ' + theme.border, borderRadius: '8px', boxShadow: theme.shadow, zIndex: 100, marginTop: '4px', overflow: 'hidden' }}>
+            {results.map((p) => <PartnerRow key={p.id} p={p} inDropdown />)}
+          </div>
+        )}
       </div>
-      {open && results.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: theme.surface, border: '1px solid ' + theme.border, borderRadius: '8px', boxShadow: theme.shadow, zIndex: 100, marginTop: '4px' }}>
-          {results.map((p) => {
-            const name = p.full_name || p.name || 'Spiller';
-            return (
-              <div
-                key={p.id}
-                onClick={() => { onSelect(p); setQuery(name); setOpen(false); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid ' + theme.border + '80' }}
-              >
-                <AvatarCircle avatar={p.avatar} size={30} emojiSize="14px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600 }}>{name}</div>
-                  <div style={{ fontSize: '11px', color: theme.textLight }}>ELO {Math.round(Number(p.elo_rating) || 1000)}</div>
-                </div>
-              </div>
-            );
-          })}
+      {query.length < 2 && suggested.length > 0 ? (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Foreslåede makkere</div>
+          {suggested.map((p) => <PartnerRow key={p.id} p={p} />)}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -350,7 +398,7 @@ function RegistrationDetail({
             style={{ ...inputStyle, marginBottom: 10 }}
           />
           <label style={labelStyle}>Din makker</label>
-          <PartnerSearch userId={user.id} onSelect={setSelectedPartner} />
+          <PartnerSearch userId={user.id} onSelect={setSelectedPartner} selectedId={selectedPartner?.id} />
           {selectedPartner ? (
             <div className="pm-card-row-item pm-card-row-item--accent" style={{ marginTop: 8 }}>
               <AvatarCircle avatar={selectedPartner.avatar} size={24} emojiSize="12px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
