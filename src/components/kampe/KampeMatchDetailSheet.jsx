@@ -28,7 +28,7 @@ function computeMatchSets(mr) {
   return { setsWon1, setsWon2, setScoreStrings };
 }
 
-function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, profilesById, currentUserId, matchId }) {
+function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, profilesById, currentUserId, matchId, onRematch, reportErrorNode }) {
   if (!matchResult?.confirmed) return null;
 
   const { setsWon1, setsWon2, setScoreStrings } = computeMatchSets(matchResult);
@@ -255,14 +255,14 @@ function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, prof
           <Share2 size={16} />
           Del resultat
         </button>
-        <button className="pm-kd-btn-navy" style={{ flex: 1, padding: 12 }} type="button" disabled>
-          <RotateCcw size={16} />
-          Book revanche
-        </button>
+        {onRematch ? (
+          <button className="pm-kd-btn-navy" style={{ flex: 1, padding: 12 }} type="button" onClick={onRematch}>
+            <RotateCcw size={16} />
+            Book revanche
+          </button>
+        ) : null}
       </div>
-      <div style={{ textAlign: 'center', fontSize: '11.5px', fontWeight: 600, color: theme.red, paddingBottom: 18 }}>
-        Rapportér fejl i resultatet
-      </div>
+      {reportErrorNode ? <div style={{ paddingBottom: 12 }}>{reportErrorNode}</div> : null}
     </>
   );
 }
@@ -309,6 +309,8 @@ export function KampeMatchDetailSheet({
   onKickPlayer,
   onProfileClick,
   facilities = [],
+  onRematch,
+  reportErrorNode = null,
 }) {
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
@@ -481,6 +483,8 @@ export function KampeMatchDetailSheet({
             profilesById={profilesById}
             currentUserId={currentUserId}
             matchId={matchId}
+            onRematch={onRematch}
+            reportErrorNode={reportErrorNode}
           />
         ) : (
           <>

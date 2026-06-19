@@ -288,7 +288,7 @@ export function KampeMatchListCard({
                 : { background: 'var(--pm-navy, #16377E)', color: '#fff', border: 'none' }),
             }}
           >
-            {isInProgress && joined ? 'Indberet resultat' : joined ? 'Se kamp' : isFull ? 'Venteliste' : 'Tilmeld'}
+            {isInProgress && joined ? 'Indberet resultat' : joined ? 'Se kamp' : isFull ? 'Se kamp' : 'Tilmeld'}
           </span>
         ) : null}
         {showMyEloDelta ? (

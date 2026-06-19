@@ -2978,6 +2978,51 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     );
   };
 
+  const handleRematch = (m) => {
+    if (!m) return;
+    const prefs = parseMatchLevelRange(m.level_range);
+    const booked = !!m.court_id;
+    setDetailMatchId(null);
+    setKampeFormat('padel');
+    setNewMatch((prev) => ({
+      ...prev,
+      court_id: m.court_id || MATCH_VENUE_TBD,
+      court_booked: booked,
+      level_min: prefs.min != null ? String(prefs.min) : '',
+      level_max: prefs.max != null ? String(prefs.max) : '',
+      description: m.court_name ? `Revanche · ${m.court_name}` : 'Revanche',
+      match_type: 'open',
+    }));
+    setShowCreate(true);
+  };
+
+  const renderResultErrorControl = (m, bundle) => {
+    const mr = bundle.mr;
+    const isCreator = bundle.cardState.isCreator;
+    const joined = bundle.cardState.joined;
+    if (!mr) return null;
+    const withinWindow = isWithinResultErrorReportWindow(completionMsFor2v2(m, mr));
+    if (isCreator) {
+      return (
+        <ReportResultErrorButton
+          sourceType="match_2v2"
+          entityId={m.id}
+          completedAtMs={completionMsFor2v2(m, mr)}
+          isCreator={isCreator}
+          entityLabel={`2v2 · ${formatMatchDateDa(m.date)}${m.court_name ? ` · ${m.court_name}` : ''}`}
+        />
+      );
+    }
+    if (joined && withinWindow) {
+      return (
+        <p style={{ fontSize: 11.5, color: theme.textLight, textAlign: 'center', margin: '4px 0', lineHeight: 1.45 }}>
+          Er resultatet forkert? Kontakt opretteren, som kan rette det inden for tidsfristen.
+        </p>
+      );
+    }
+    return null;
+  };
+
   const renderDetailManagePanel = (m, bundle) => {
     const { mp, mr, status } = bundle;
     const {
@@ -4050,6 +4095,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           onProfileClick={(prof) => setViewPlayer(prof)}
           managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
           facilities={courts.find((c) => String(c.id) === String(detailMatch.court_id))?.facilities || []}
+          onRematch={detailBundle.status === 'completed' ? () => handleRematch(detailMatch) : undefined}
+          reportErrorNode={detailBundle.status === 'completed' ? renderResultErrorControl(detailMatch, detailBundle) : null}
         />
       ) : null}
 
