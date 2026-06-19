@@ -14,7 +14,7 @@ import { LigaDetailSheet } from './LigaDetailSheet';
 import { LigaScheduleSheet } from './LigaScheduleSheet';
 import { LigaTeamProfileSheet } from './LigaTeamProfileSheet';
 import { LigaSelectedDetail, SwissRulesBox } from './LigaSelectedDetail';
-import { computeStandings, generatePairings } from '../lib/ligaStandings';
+import { computeStandings, generatePairings, assignDivisionsByElo, groupByDivision } from '../lib/ligaStandings';
 import { getLigaBadge } from '../lib/ligaDisplayUtils';
 import { kampeCreateHint } from '../lib/kampeCreateHint';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
@@ -434,20 +434,34 @@ export function LigaTab({
     if (!ok) return;
     setBusyId(league.id + '-start');
     try {
-      // Use the larger of log2 (Swiss minimum) and teams-1 (full round-robin for small groups)
-      const totalRounds = Math.max(
-        Math.ceil(Math.log2(Math.max(2, teams.length))),
-        teams.length <= 6 ? teams.length - 1 : 0
-      );
-      const allMatches = matchesByLeague[league.id] || [];
-      const standings = computeStandings(teams, allMatches);
-      const pairings = generatePairings(standings, allMatches);
-      const rows = pairings.map(p => ({
-        league_id: league.id, round_number: 1,
-        team1_id: p.team1_id, team2_id: p.team2_id || null,
-        status: p.team2_id ? 'pending' : 'reported',
-        winner_id: p.team2_id ? null : p.team1_id,
-      }));
+      const numDiv = Math.min(Number(league.num_divisions) || 1, teams.length);
+      // Inddel hold i divisioner efter niveau og gem det på holdene
+      let teamsWithDiv = teams.map(t => ({ ...t, division: Number(t.division) || 1 }));
+      if (numDiv > 1) {
+        const divMap = assignDivisionsByElo(teams, numDiv);
+        teamsWithDiv = teams.map(t => ({ ...t, division: divMap.get(t.id) || 1 }));
+        await Promise.all([...divMap].map(([teamId, d]) =>
+          supabase.from('league_teams').update({ division: d }).eq('id', teamId)));
+      }
+      // Generér runde 1 inden for hver division
+      const groups = numDiv > 1 ? groupByDivision(teamsWithDiv) : [[1, teamsWithDiv]];
+      const rows = [];
+      let totalRounds = 0;
+      for (const [, divTeams] of groups) {
+        const standings = computeStandings(divTeams, []);
+        const pairings = generatePairings(standings, []);
+        rows.push(...pairings.map(p => ({
+          league_id: league.id, round_number: 1,
+          team1_id: p.team1_id, team2_id: p.team2_id || null,
+          status: p.team2_id ? 'pending' : 'reported',
+          winner_id: p.team2_id ? null : p.team1_id,
+        })));
+        const r = Math.max(
+          Math.ceil(Math.log2(Math.max(2, divTeams.length))),
+          divTeams.length <= 6 ? divTeams.length - 1 : 0
+        );
+        totalRounds = Math.max(totalRounds, r);
+      }
       const { error: mErr } = await supabase.from('league_matches').insert(rows);
       if (mErr) throw mErr;
       const { error: uErr } = await supabase.from('leagues').update({ status: 'active', current_round: 1, total_rounds: totalRounds }).eq('id', league.id);
@@ -498,14 +512,22 @@ export function LigaTab({
     if (!okGen) return;
     setBusyId(league.id + '-next');
     try {
-      const standings = computeStandings(teams, allMatches);
-      const pairings = generatePairings(standings, allMatches);
-      const rows = pairings.map(p => ({
-        league_id: league.id, round_number: round,
-        team1_id: p.team1_id, team2_id: p.team2_id || null,
-        status: p.team2_id ? 'pending' : 'reported',
-        winner_id: p.team2_id ? null : p.team1_id,
-      }));
+      const numDiv = Math.min(Number(league.num_divisions) || 1, teams.length);
+      // Parr inden for hver division ud fra divisionens egen stilling
+      const groups = numDiv > 1 ? groupByDivision(teams) : [[1, teams]];
+      const rows = [];
+      for (const [, divTeams] of groups) {
+        const divTeamIds = new Set(divTeams.map(t => t.id));
+        const divMatches = allMatches.filter(m => divTeamIds.has(m.team1_id));
+        const standings = computeStandings(divTeams, divMatches);
+        const pairings = generatePairings(standings, divMatches);
+        rows.push(...pairings.map(p => ({
+          league_id: league.id, round_number: round,
+          team1_id: p.team1_id, team2_id: p.team2_id || null,
+          status: p.team2_id ? 'pending' : 'reported',
+          winner_id: p.team2_id ? null : p.team1_id,
+        })));
+      }
       const { error: mErr } = await supabase.from('league_matches').insert(rows);
       if (mErr) throw mErr;
       const { error: uErr } = await supabase.from('leagues').update({ current_round: round }).eq('id', league.id);
@@ -617,7 +639,13 @@ export function LigaTab({
     const myTeam = myTeamByLeague[activeLeague.id];
     const teams = teamsByLeague[activeLeague.id] || [];
     const matches = matchesByLeague[activeLeague.id] || [];
-    const standings = computeStandings(teams, matches);
+    const numDiv = Math.min(Number(activeLeague.num_divisions) || 1, teams.length);
+    // Rang inden for spillerens egen division (eller hele ligaen ved 1 division)
+    const myDivision = numDiv > 1 ? (Number(myTeam?.division) || 1) : null;
+    const divTeams = myDivision ? teams.filter((t) => (Number(t.division) || 1) === myDivision) : teams;
+    const divTeamIds = new Set(divTeams.map((t) => t.id));
+    const divMatches = myDivision ? matches.filter((m) => divTeamIds.has(m.team1_id)) : matches;
+    const standings = computeStandings(divTeams, divMatches);
     const rankIdx = myTeam ? standings.findIndex((t) => t.id === myTeam.id) : -1;
     const rank = rankIdx >= 0 ? rankIdx + 1 : null;
     const totalTeams = standings.length;
@@ -626,7 +654,7 @@ export function LigaTab({
       (m) => (m.team1_id === myTeam?.id || m.team2_id === myTeam?.id) && m.status !== 'reported',
     );
     const nextMatchDate = myNextMatch?.scheduled_date || null;
-    return { league: activeLeague, myTeam, rank, totalTeams, nextMatchDate };
+    return { league: activeLeague, myTeam, rank, totalTeams, nextMatchDate, division: myDivision };
   }, [leagues, myTeamByLeague, teamsByLeague, matchesByLeague]);
 
   return (
@@ -948,7 +976,7 @@ export function LigaTab({
           </div>
           {myActiveLeagueHero.league.current_round ? (
             <div style={{ fontSize: '12px', color: '#9DB6DE', marginBottom: 14 }}>
-              {myActiveLeagueHero.league.season_type === 'weekly' ? 'Ugentlig liga' : 'Månedlig liga'}
+              {myActiveLeagueHero.division ? `Division ${myActiveLeagueHero.division}` : (myActiveLeagueHero.league.season_type === 'weekly' ? 'Ugentlig liga' : 'Månedlig liga')}
               {myActiveLeagueHero.league.total_rounds ? ` · Runde ${myActiveLeagueHero.league.current_round}/${myActiveLeagueHero.league.total_rounds}` : ''}
             </div>
           ) : null}

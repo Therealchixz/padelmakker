@@ -7,7 +7,7 @@ import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
 import { completionMsForLeague } from '../lib/resultErrorReports';
 import { shortLigaDate, ligaIsSwiss } from '../lib/ligaDisplayUtils';
 import { validatePadelScore } from '../lib/ligaStandings';
-import { LigaStandingsTable } from './LigaDetailSheet';
+import { LigaStandingsTable, LigaDivisionStandings } from './LigaDetailSheet';
 
 const SWISS_RULES = [
   { icon: '🎾', text: 'Hvert hold spiller én kamp per runde — ingen eliminering, alle spiller videre.' },
@@ -449,7 +449,7 @@ function ActiveDetail({
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
             Holdrangliste
           </div>
-          <LigaStandingsTable standings={standings} myTeamId={myTeam?.id} />
+          <LigaDivisionStandings standings={standings} myTeamId={myTeam?.id} numDivisions={league.num_divisions} />
         </>
       ) : null}
 
@@ -669,7 +669,7 @@ function CompletedDetail({ league, standings, myTeam, isCreator }) {
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
             Slutstilling
           </div>
-          <LigaStandingsTable standings={standings} myTeamId={myTeam?.id} />
+          <LigaDivisionStandings standings={standings} myTeamId={myTeam?.id} numDivisions={league.num_divisions} />
         </>
       ) : null}
       {isCreator ? (
