@@ -435,6 +435,13 @@ function ActiveDetail({
   const opponentTeam = opponentTeamId ? teams.find((t) => t.id === opponentTeamId) : null;
   const pendingCount = (matchesByLeague[league.id] || []).filter((m) => m.round_number === league.current_round && m.status === 'pending').length;
 
+  // Per-sæt score-input (udleder selv vinder + score-tekst)
+  const [sets, setSets] = useState([{ a: 0, b: 0 }, { a: 0, b: 0 }, { a: 0, b: 0 }]);
+  useEffect(() => {
+    // Nulstil sæt når man åbner/lukker indberetning
+    setSets([{ a: 0, b: 0 }, { a: 0, b: 0 }, { a: 0, b: 0 }]);
+  }, [reportingMatch]);
+
   return (
     <>
       {teams.length > 0 ? (
@@ -520,51 +527,75 @@ function ActiveDetail({
                   </div>
                 ) : (
                   <div>
-                    <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Score (påkrævet)</div>
-                      <input
-                        value={scoreText}
-                        onChange={(e) => setScoreText(e.target.value)}
-                        placeholder="F.eks. 6-4"
-                        style={{ ...inputStyle, fontSize: 18, textAlign: 'center', fontWeight: 700, letterSpacing: '0.08em' }}
-                      />
-                    </div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Hvem vandt?</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-                      {[
-                        { team: myTeam, label: 'Jeres hold' },
-                        { team: opponentTeam, label: 'Modstanderne' },
-                      ].map(({ team, label }) => {
-                        const isSelected = selectedWinnerId === team.id;
-                        return (
-                          <button
-                            key={team.id}
-                            type="button"
-                            onClick={() => setSelectedWinnerId(team.id)}
-                            style={{ border: '2px solid ' + (isSelected ? theme.green : theme.border), background: isSelected ? theme.greenBg : theme.surface, borderRadius: 10, padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}
-                          >
-                            <div style={{ fontSize: 9, fontWeight: 700, color: isSelected ? theme.green : theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: isSelected ? theme.green : theme.text, marginBottom: 8 }}>{team.name}</div>
-                            {isSelected ? <div style={{ fontSize: 18, marginTop: 6 }}>🏆</div> : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const err = validatePadelScore(scoreText);
-                          if (err) { showToast(err); return; }
-                          if (!selectedWinnerId) { showToast('Vælg en vinder.'); return; }
-                          setConfirmPending({ winnerId: selectedWinnerId, score: scoreText.trim() });
-                        }}
-                        style={{ ...btn(true), padding: '9px 18px', fontSize: 13, opacity: (!scoreText || !selectedWinnerId) ? 0.5 : 1 }}
-                      >
-                        Fortsæt →
-                      </button>
-                      <button type="button" onClick={cancelReporting} style={{ ...btn(false), padding: '8px 12px', fontSize: 12 }}>Annullér</button>
-                    </div>
+                    {(() => {
+                      const played = sets.filter((s) => s.a + s.b > 0);
+                      const tiedAfterTwo = played.length === 2
+                        && ((sets[0].a > sets[0].b ? 1 : sets[0].b > sets[0].a ? 2 : 0)
+                          !== (sets[1].a > sets[1].b ? 1 : sets[1].b > sets[1].a ? 2 : 0));
+                      const visibleSets = tiedAfterTwo || (sets[2].a + sets[2].b > 0) ? 3 : 2;
+                      let wonA = 0, wonB = 0;
+                      played.forEach((s) => { if (s.a > s.b) wonA++; else if (s.b > s.a) wonB++; });
+                      const winnerId = wonA > wonB ? myTeam.id : wonB > wonA ? opponentTeam.id : null;
+                      const scoreStr = played.map((s) => `${s.a}-${s.b}`).join(', ');
+
+                      const bump = (idx, side, delta) => {
+                        setSets((prev) => prev.map((s, i) => i === idx
+                          ? { ...s, [side]: Math.max(0, Math.min(9, s[side] + delta)) }
+                          : s));
+                      };
+
+                      const Stepper = ({ idx, side, value }) => (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <button type="button" aria-label="minus" onClick={() => bump(idx, side, -1)}
+                            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>−</button>
+                          <span style={{ minWidth: 22, textAlign: 'center', fontSize: 18, fontWeight: 800, color: theme.text, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+                          <button type="button" aria-label="plus" onClick={() => bump(idx, side, 1)}
+                            style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: theme.accent, color: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>+</button>
+                        </div>
+                      );
+
+                      return (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 2px 8px' }}>
+                            <span>{myTeam.name.split(' & ')[0]} …</span>
+                            <span>Score pr. sæt</span>
+                            <span>{opponentTeam.name.split(' & ')[0]} …</span>
+                          </div>
+                          {Array.from({ length: visibleSets }, (_, idx) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', marginBottom: 8, border: '1px solid ' + theme.border, borderRadius: 10, background: theme.surface }}>
+                              <Stepper idx={idx} side="a" value={sets[idx].a} />
+                              <span style={{ fontSize: 10, fontWeight: 700, color: theme.textLight }}>SÆT {idx + 1}{idx === 2 ? ' (afgørende)' : ''}</span>
+                              <Stepper idx={idx} side="b" value={sets[idx].b} />
+                            </div>
+                          ))}
+                          <div style={{ textAlign: 'center', fontSize: 12, color: theme.textMid, margin: '4px 0 14px' }}>
+                            {winnerId ? (
+                              <>Vinder: <strong style={{ color: theme.green }}>{winnerId === myTeam.id ? myTeam.name : opponentTeam.name}</strong> · {scoreStr}</>
+                            ) : played.length === 0 ? 'Indtast sæt-scores' : 'Uafgjort — spil et afgørende sæt'}
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!scoreStr || played.length < 2) { showToast('Indtast mindst 2 sæt.'); return; }
+                                for (const s of played) {
+                                  const err = validatePadelScore(`${s.a}-${s.b}`);
+                                  if (err) { showToast(`Sæt ${s.a}-${s.b}: ${err}`); return; }
+                                }
+                                if (!winnerId) { showToast('Resultatet er uafgjort — spil et afgørende sæt.'); return; }
+                                setScoreText(scoreStr);
+                                setSelectedWinnerId(winnerId);
+                                setConfirmPending({ winnerId, score: scoreStr });
+                              }}
+                              style={{ ...btn(true), padding: '9px 18px', fontSize: 13, opacity: winnerId ? 1 : 0.5 }}
+                            >
+                              Fortsæt →
+                            </button>
+                            <button type="button" onClick={cancelReporting} style={{ ...btn(false), padding: '8px 12px', fontSize: 12 }}>Annullér</button>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 )
               ) : (
