@@ -1166,6 +1166,11 @@ export function AmericanoTab({
             >
               {busyId === t.id ? 'Starter…' : 'Start Americano/Mexicano (generér runder)'}
             </button>
+            {!tournamentFull ? (
+              <span className="pm-feedback-inline-note pm-feedback-inline-note--info">
+                Kræver {slotsConfigured} tilmeldte for at starte — der er {partCount} nu.
+              </span>
+            ) : null}
             <button
               type="button"
               onClick={() =>

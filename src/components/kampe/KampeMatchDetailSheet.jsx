@@ -590,22 +590,24 @@ export function KampeMatchDetailSheet({
 
         {joinRequestsPanel}
 
-        {primaryAction ? (
-          <button
-            type="button"
-            className="pm-kampe-v2-detail-primary"
-            style={btn(primaryAction.variant !== 'secondary', { size: 'md', fontWeight: 600 })}
-            onClick={primaryAction.onClick}
-            disabled={primaryAction.disabled}
-          >
-            {primaryAction.label}
-          </button>
-        ) : null}
-
         {managePanel ? (
           <div className="pm-kampe-v2-detail-manage">{managePanel}</div>
         ) : null}
         </div>
+
+        {primaryAction ? (
+          <div className="pm-kampe-v2-detail-footer">
+            <button
+              type="button"
+              className="pm-kampe-v2-detail-primary"
+              style={{ ...btn(primaryAction.variant !== 'secondary', { size: 'md', fontWeight: 600 }), width: '100%', justifyContent: 'center' }}
+              onClick={primaryAction.onClick}
+              disabled={primaryAction.disabled}
+            >
+              {primaryAction.label}
+            </button>
+          </div>
+        ) : null}
       </div>
     </>
   );

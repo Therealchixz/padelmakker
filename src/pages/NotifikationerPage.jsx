@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, AlertCircle, Check, MessageCircle, Calendar, TrendingUp, Bell, Trash2, Users, Trophy, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
-import { theme, font } from '../lib/platformTheme';
+import { theme, font, btn } from '../lib/platformTheme';
 import { buildKampeFocusPath, notificationKampeTarget, kampeFocusFooterLabel } from '../lib/kampeFocusNavigation';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 
@@ -88,10 +88,12 @@ export function NotifikationerPage() {
   const userId = authUser?.id;
   const [notifs, setNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [matchMetaById, setMatchMetaById] = useState({});
 
   const load = useCallback(async () => {
     if (!userId) { setNotifs([]); setLoading(false); return; }
+    setLoadError(false);
     try {
       const { data, error } = await supabase
         .from('notifications')
@@ -99,7 +101,7 @@ export function NotifikationerPage() {
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(40);
-      if (error) { setNotifs([]); return; }
+      if (error) { setLoadError(true); return; }
       const dismissed = loadDismissedIds(userId);
       const filtered = (data || []).filter((n) => !dismissed.has(n.id));
       setNotifs(filtered);
@@ -113,7 +115,7 @@ export function NotifikationerPage() {
       const nextMeta = {};
       (matchRows || []).forEach((m) => { nextMeta[String(m.id)] = m; });
       setMatchMetaById(nextMeta);
-    } catch { setNotifs([]); }
+    } catch { setLoadError(true); }
     finally { setLoading(false); }
   }, [userId]);
 
@@ -233,6 +235,19 @@ export function NotifikationerPage() {
       <div style={{ flex: 1, overflowY: 'auto', paddingTop: 12 }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '32px 16px', color: theme.textLight, fontSize: 13 }}>Indlæser…</div>
+        ) : loadError ? (
+          <div style={{ textAlign: 'center', padding: '48px 16px', color: theme.textLight, fontSize: 13 }}>
+            <div style={{ fontSize: 28, marginBottom: 10 }} aria-hidden>⚠️</div>
+            <div style={{ fontWeight: 600, color: theme.text }}>Kunne ikke hente notifikationer</div>
+            <div style={{ marginTop: 4, fontSize: 12 }}>Tjek din forbindelse og prøv igen.</div>
+            <button
+              type="button"
+              onClick={() => { setLoading(true); void load(); }}
+              style={{ ...btn(true), marginTop: 14, fontSize: 13, padding: '9px 18px' }}
+            >
+              Prøv igen
+            </button>
+          </div>
         ) : displayNotifs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 16px', color: theme.textLight, fontSize: 13 }}>
             <Bell size={28} color={theme.textLight} style={{ marginBottom: 10 }} />
