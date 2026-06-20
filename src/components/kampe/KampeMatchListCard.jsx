@@ -77,6 +77,7 @@ export function KampeMatchListCard({
   winnerTeam = null,
   myTeam = null,
   currentUserId = null,
+  primaryAction = null,
   onClick,
 }) {
   const venue =
@@ -142,10 +143,12 @@ export function KampeMatchListCard({
   };
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       className={`pm-kampe-v2-list-card${dull ? ' pm-kampe-v2-list-card--dull' : ''}${unreadCount ? ' pm-kampe-v2-list-card--unread' : ''}`}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
       aria-label={`Åbn kamp: ${venue}`}
     >
       {isCompleted ? (
@@ -273,7 +276,28 @@ export function KampeMatchListCard({
             </div>
           </div>
         ) : null}
-        {!isCompleted ? (
+        {!isCompleted && primaryAction ? (
+          <button
+            type="button"
+            className="pm-kampe-v2-list-cta"
+            onClick={(e) => { e.stopPropagation(); primaryAction.onClick?.(); }}
+            disabled={primaryAction.disabled}
+            style={{
+              flexShrink: 0,
+              padding: '9px 16px',
+              borderRadius: 10,
+              fontSize: 12.5,
+              fontWeight: 700,
+              fontFamily: 'inherit',
+              cursor: primaryAction.disabled ? 'default' : 'pointer',
+              ...(primaryAction.variant === 'secondary'
+                ? { background: 'var(--pm-surface, #fff)', color: 'var(--pm-navy, #16377E)', border: '1.5px solid var(--pm-border, #E2E8F0)' }
+                : { background: 'var(--pm-navy, #16377E)', color: '#fff', border: 'none' }),
+            }}
+          >
+            {primaryAction.label}
+          </button>
+        ) : !isCompleted ? (
           <span
             className="pm-kampe-v2-list-cta"
             style={{
@@ -283,12 +307,12 @@ export function KampeMatchListCard({
               fontSize: 12.5,
               fontWeight: 700,
               fontFamily: 'inherit',
-              ...(isFull && !joined
-                ? { background: 'var(--pm-surface, #fff)', color: 'var(--pm-navy, #16377E)', border: '1.5px solid var(--pm-border, #E2E8F0)' }
-                : { background: 'var(--pm-navy, #16377E)', color: '#fff', border: 'none' }),
+              background: 'var(--pm-surface, #fff)',
+              color: 'var(--pm-navy, #16377E)',
+              border: '1.5px solid var(--pm-border, #E2E8F0)',
             }}
           >
-            {isInProgress && joined ? 'Indberet resultat' : joined ? 'Se kamp' : isFull ? 'Se kamp' : 'Tilmeld'}
+            Se kamp
           </span>
         ) : null}
         {showMyEloDelta ? (
@@ -304,6 +328,6 @@ export function KampeMatchListCard({
           </span>
         ) : null}
       </div>
-    </button>
+    </div>
   );
 }

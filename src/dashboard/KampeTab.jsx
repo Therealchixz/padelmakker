@@ -3420,6 +3420,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           winnerTeam={winnerTeam}
           myTeam={cardState.myTeam}
           currentUserId={myUidStr}
+          primaryAction={buildMatchPrimaryAction(m, bundle)}
           onClick={() => {
             if (matchUnreadByIdRef.current[matchKey]) {
               void markMatchNotifsRead(m.id);
@@ -3432,6 +3433,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   }, [
     eloChangesByMatchId,
     getMatchCardBundle,
+    buildMatchPrimaryAction,
     markMatchNotifsRead,
     myUidStr,
     observeMatchCard,
