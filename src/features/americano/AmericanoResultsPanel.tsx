@@ -308,7 +308,9 @@ export function AmericanoResultsPanel({
   const P: 16 | 24 | 32 =
     ppm === 16 || ppm === 24 || ppm === 32 ? ppm : 16
   const isCreator = String(tournament.creator_id) === String(currentUserId)
-  const canManage = isCreator || isAdmin
+  // Skrivninger til americano_matches/-tournaments er kun-opretter på RLS-niveau.
+  // Admin-redning sker via dedikerede admin-RPC'er, ikke via dette panel.
+  const canManage = isCreator
   const isMexicano = isMexicanoFormat(tournament.format ?? 'americano')
   const formatLabel = getTournamentFormatLabel(tournament.format)
 

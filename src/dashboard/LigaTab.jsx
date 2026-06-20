@@ -518,7 +518,7 @@ export function LigaTab({
       const rows = [];
       for (const [, divTeams] of groups) {
         const divTeamIds = new Set(divTeams.map(t => t.id));
-        const divMatches = allMatches.filter(m => divTeamIds.has(m.team1_id));
+        const divMatches = allMatches.filter(m => divTeamIds.has(m.team1_id) || divTeamIds.has(m.team2_id));
         const standings = computeStandings(divTeams, divMatches);
         const pairings = generatePairings(standings, divMatches);
         rows.push(...pairings.map(p => ({
@@ -644,7 +644,7 @@ export function LigaTab({
     const myDivision = numDiv > 1 ? (Number(myTeam?.division) || 1) : null;
     const divTeams = myDivision ? teams.filter((t) => (Number(t.division) || 1) === myDivision) : teams;
     const divTeamIds = new Set(divTeams.map((t) => t.id));
-    const divMatches = myDivision ? matches.filter((m) => divTeamIds.has(m.team1_id)) : matches;
+    const divMatches = myDivision ? matches.filter((m) => divTeamIds.has(m.team1_id) || divTeamIds.has(m.team2_id)) : matches;
     const standings = computeStandings(divTeams, divMatches, { pointsWin: activeLeague.points_win, pointsDraw: activeLeague.points_draw, pointsLoss: activeLeague.points_loss });
     const rankIdx = myTeam ? standings.findIndex((t) => t.id === myTeam.id) : -1;
     const rank = rankIdx >= 0 ? rankIdx + 1 : null;

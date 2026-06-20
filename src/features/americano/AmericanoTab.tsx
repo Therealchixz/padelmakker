@@ -685,8 +685,13 @@ export function AmericanoTab({
       if (tournament.enforce_level_interval && tournament.level_min != null && tournament.level_max != null) {
         const { data: prof } = await supabase.from('profiles').select('level').eq('id', profileId).single()
         const lvl = Number(prof?.level)
-        if (Number.isFinite(lvl) && (lvl < Number(tournament.level_min) || lvl > Number(tournament.level_max))) {
-          showToast(`Denne turnering er for niveau ${Number(tournament.level_min).toFixed(1)}–${Number(tournament.level_max).toFixed(1)}. Dit niveau er ${lvl.toFixed(1)}.`)
+        const range = `${Number(tournament.level_min).toFixed(1)}–${Number(tournament.level_max).toFixed(1)}`
+        if (!Number.isFinite(lvl)) {
+          showToast(`Denne turnering kræver niveau ${range}. Sæt dit niveau på din profil for at tilmelde dig.`)
+          return
+        }
+        if (lvl < Number(tournament.level_min) || lvl > Number(tournament.level_max)) {
+          showToast(`Denne turnering er for niveau ${range}. Dit niveau er ${lvl.toFixed(1)}.`)
           return
         }
       }
@@ -1278,7 +1283,7 @@ export function AmericanoTab({
             joinedNote={joinedNote}
             extras={manageExtras}
             resultsPanel={
-              (joined || isAdmin) && t.status === 'playing' ? (
+              joined && t.status === 'playing' ? (
                 <AmericanoResultsPanel
                   tournament={t}
                   currentUserId={profileId}
