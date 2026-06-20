@@ -26,6 +26,8 @@ import {
   normalizeMakkerSearchPrefs,
   isMakkerFilterActive,
   countSeekersMatchingMakkerFilter,
+  profileMatchesMakkerFilter,
+  describeMakkerFilter,
 } from '../lib/makkerSearchFilterUtils';
 import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
 import { PillTabs } from '../components/PillTabs';
@@ -519,6 +521,8 @@ export function MakkereTab({ user, showToast }) {
     const n = p.full_name || p.name || '';
     const c = p.city || '';
     if (search && !n.toLowerCase().includes(search.toLowerCase()) && !c.toLowerCase().includes(search.toLowerCase())) return false;
+    // Dit gemte makker-filter gælder også browse-listen (én kilde til sandhed)
+    if (makkerFilterOn && !profileMatchesMakkerFilter(p, makkerFilterPrefs, user, user.id)) return false;
     if (filterArea !== 'all' && p.area !== filterArea) return false;
     if (filterElo === 'close' && Math.abs(displayElo(p) - myElo) > 150) return false;
     if (filterStyle !== 'all' && p.play_style !== filterStyle) return false;
@@ -647,6 +651,26 @@ export function MakkereTab({ user, showToast }) {
       <div ref={seekingResultsRef} style={{ margin: '0 18px 12px', scrollMarginTop: '86px' }}>
         <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Alle spillere</h3>
       </div>
+
+      {/* Aktivt makker-filter — gælder også listen herunder */}
+      {makkerFilterOn && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 18px 12px', padding: '10px 13px', borderRadius: 12, background: theme.blueBg, border: `1px solid ${theme.accent}` }}>
+          <SlidersHorizontal size={15} color={theme.accent} style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>Dit makker-filter er aktivt</div>
+            <div style={{ fontSize: 11.5, color: theme.textMid, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {describeMakkerFilter(makkerFilterPrefs, user).summary}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard/makker-filter')}
+            style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}
+          >
+            Justér
+          </button>
+        </div>
+      )}
 
       <div style={{ position: 'relative', marginBottom: '10px' }}>
         <Search size={15} color={theme.textLight} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
@@ -801,20 +825,22 @@ export function MakkereTab({ user, showToast }) {
           <div style={{ textAlign: 'center', padding: '48px 20px', color: theme.textLight }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</div>
             <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
-              {activeFilterCount > 0 ? 'Ingen spillere matcher dine filtre' : 'Ingen spillere at vise'}
+              {makkerFilterOn ? 'Ingen spillere matcher dit makker-filter' : activeFilterCount > 0 ? 'Ingen spillere matcher dine filtre' : 'Ingen spillere at vise'}
             </div>
             <div style={{ fontSize: '13px', lineHeight: 1.5 }}>
-              {activeFilterCount > 0
-                ? 'Prøv at ændre filtre eller søg med et andet navn.'
-                : 'Der er endnu få spillere i dit område — prøv at udvide region eller niveau under filter.'}
+              {makkerFilterOn
+                ? 'Prøv at udvide dit makker-filter (fx region eller niveau-spænd).'
+                : activeFilterCount > 0
+                  ? 'Prøv at ændre filtre eller søg med et andet navn.'
+                  : 'Der er endnu få spillere i dit område — prøv at udvide region eller niveau under filter.'}
             </div>
-            {activeFilterCount === 0 && (
+            {(makkerFilterOn || activeFilterCount === 0) && (
               <button
                 type="button"
                 onClick={() => navigate('/dashboard/makker-filter')}
                 style={{ ...btn(true), marginTop: '14px', fontSize: '13px' }}
               >
-                Åbn filter
+                Justér makker-filter
               </button>
             )}
           </div>

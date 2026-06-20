@@ -9,6 +9,7 @@ import {
   normalizeMakkerSearchPrefs,
   isMakkerFilterConfigured,
   seekingProfileMatchesFilter,
+  profileMatchesMakkerFilter,
   buildProfilePatchFromMakkerSearchPrefs,
   MAKKER_FILTER_PREFS_VERSION,
   DEFAULT_LEVEL_WINDOW,
@@ -48,6 +49,7 @@ export {
   isMakkerFilterActive,
   describeMakkerFilter,
   seekingProfileMatchesFilter,
+  profileMatchesMakkerFilter,
   buildProfilePatchFromMakkerSearchPrefs,
   notifyMakkerWatchersForProfile,
 };
