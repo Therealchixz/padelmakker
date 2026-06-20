@@ -20,13 +20,6 @@ for (let h = 6; h <= 23; h++) {
   TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:30`)
 }
 
-const DEADLINE_OPTIONS = [
-  { id: 'day_before_noon', label: 'Dagen før kl. 12:00' },
-  { id: 'two_days_before', label: '2 dage før kl. 12:00' },
-  { id: 'same_day_noon', label: 'Samme dag kl. 12:00' },
-  { id: 'one_week_before', label: '1 uge før kl. 12:00' },
-]
-
 const PAYMENT_OPTIONS = [
   { id: 'mobilepay', label: 'MobilePay' },
   { id: 'cash', label: 'Ved fremmøde' },
@@ -187,7 +180,6 @@ export function CreateAmericanoTournamentForm({
   )
   const [courtId, setCourtId] = useState(AMERICANO_COURT_NONE)
   const [playerSlots, setPlayerSlots] = useState(8)
-  const [courtsPerRound, setCourtsPerRound] = useState(1)
   const [pointsPerMatch, setPointsPerMatch] = useState<AmericanoPoints>(16)
   const [levelMin, setLevelMin] = useState(3.0)
   const [levelMax, setLevelMax] = useState(4.0)
@@ -199,16 +191,15 @@ export function CreateAmericanoTournamentForm({
   const [pricePerPerson, setPricePerPerson] = useState(0)
   const [priceInput, setPriceInput] = useState('0')
   const [paymentMethod, setPaymentMethod] = useState<'mobilepay' | 'cash' | 'free'>('mobilepay')
-  const [deadlineType, setDeadlineType] = useState('day_before_noon')
   const [isPublic, setIsPublic] = useState(true)
-  const [hasWaitlist, setHasWaitlist] = useState(true)
   const [enforceLevelInterval, setEnforceLevelInterval] = useState(false)
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const maxCourts = Math.floor(playerSlots / 4)
-  const minCourts = Math.min(maxCourts, recommendedCourtsPerRound(playerSlots))
+  // Antal baner er bestemt af spillerantallet (alle spiller hver runde), så det
+  // er en afledt værdi — ikke et frit valg der alligevel overskrives.
+  const courtsPerRound = recommendedCourtsPerRound(playerSlots)
 
   const schedulePreview = useMemo(
     () => getCreateFormSchedulePreview({ format: tournamentFormat, playerSlots, courtsPerRound, opponentPasses, pointsPerMatch }),
@@ -217,11 +208,6 @@ export function CreateAmericanoTournamentForm({
 
   const handlePlayerSlotsChange = useCallback((n: number) => {
     setPlayerSlots(n)
-    setCourtsPerRound((prev) => {
-      const max = Math.floor(n / 4)
-      const min = Math.min(max, recommendedCourtsPerRound(n))
-      return Math.max(min, Math.min(prev, max))
-    })
   }, [])
 
   useEffect(() => {
@@ -284,9 +270,8 @@ export function CreateAmericanoTournamentForm({
           status: 'registration',
           price_per_person: pricePerPerson,
           payment_method: paymentMethod,
-          registration_deadline_type: deadlineType,
           is_public: isPublic,
-          has_waitlist: hasWaitlist,
+          has_waitlist: false,
           enforce_level_interval: enforceLevelInterval,
           level_min: levelMin,
           level_max: levelMax,
@@ -330,7 +315,6 @@ export function CreateAmericanoTournamentForm({
 
   const formatLabel = tournamentFormat === 'mexicano' ? 'Mexicano' : 'Americano'
   const courtLabel = courtNameFromVenueSelection(courtId, selectOptions)
-  const deadlineLabel = DEADLINE_OPTIONS.find(d => d.id === deadlineType)?.label ?? deadlineType
   const paymentLabel = PAYMENT_OPTIONS.find(p => p.id === paymentMethod)?.label ?? paymentMethod
 
   const endTime = (() => {
@@ -402,12 +386,11 @@ export function CreateAmericanoTournamentForm({
           </div>
 
           <div className="pm-field">
-            <label>Baner booket</label>
-            <div className="pm-stepper">
-              <button type="button" className="pm-stepper-btn" onClick={() => setCourtsPerRound(c => Math.max(1, c - 1))}>−</button>
-              <span className="pm-stepper-val">{courtsPerRound}</span>
-              <button type="button" className="pm-stepper-btn" onClick={() => setCourtsPerRound(c => Math.min(maxCourts, c + 1))}>+</button>
+            <label>Baner</label>
+            <div style={{ margin: '0 18px', padding: '10px 14px', borderRadius: 12, border: '1px solid var(--pm-border)', background: 'var(--pm-surface-muted)', fontSize: 13, color: 'var(--pm-text-mid)', fontWeight: 600 }}>
+              {courtsPerRound} {courtsPerRound === 1 ? 'bane' : 'baner'} · alle spiller hver runde
             </div>
+            <div className="pm-field-hint">Antal baner følger spillerantallet (4 spillere pr. bane).</div>
           </div>
 
           <div className="pm-field">
@@ -545,16 +528,8 @@ export function CreateAmericanoTournamentForm({
             </div>
           </div>
 
-          <div className="pm-field">
-            <label>Tilmeldingsfrist</label>
-            <select value={deadlineType} onChange={e => setDeadlineType(e.target.value)} style={inputStyle}>
-              {DEADLINE_OPTIONS.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
-            </select>
-          </div>
-
           {[
             { label: 'Offentlig turnering', desc: 'Alle kan se og tilmelde sig', value: isPublic, set: setIsPublic },
-            { label: 'Venteliste ved fuld turnering', desc: 'Pladser tilbydes automatisk ved afbud', value: hasWaitlist, set: setHasWaitlist },
             { label: 'Kun niveau-interval kan tilmelde sig', desc: `Niveau ${levelMin.toFixed(1)}–${levelMax.toFixed(1)} håndhæves ved tilmelding`, value: enforceLevelInterval, set: setEnforceLevelInterval },
           ].map(row => (
             <div key={row.label} style={{ margin: '0 18px 12px', padding: '13px 15px', borderRadius: 14, border: '1px solid var(--pm-border)', background: 'var(--pm-surface)', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -627,7 +602,6 @@ export function CreateAmericanoTournamentForm({
             {[
               { label: 'Format', value: `${formatLabel} · ${pointsPerMatch} point pr. kamp` },
               { label: 'Spillere & baner', value: `${playerSlots} spillere · ${courtsPerRound} ${courtsPerRound === 1 ? 'bane' : 'baner'}` },
-              { label: 'Tilmeldingsfrist', value: deadlineLabel },
               { label: 'Betaling', value: pricePerPerson === 0 ? 'Gratis' : `${formatPrice(pricePerPerson)} · ${paymentLabel}` },
             ].map((row, i, arr) => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, padding: '9px 14px', borderBottom: i < arr.length - 1 ? '1px solid var(--pm-border)' : 'none' }}>

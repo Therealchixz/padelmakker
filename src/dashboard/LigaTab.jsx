@@ -708,7 +708,6 @@ export function LigaTab({
         const MATCH_SYSTEMS = [
           { id: 'round_robin', label: 'Alle-mod-alle', desc: 'Standard ligaformat hvor alle hold mødes.' },
           { id: 'swiss', label: 'Swiss-system', desc: 'Hold parres efter stilling — færre kampe, jævnbyrdigt.' },
-          { id: 'knockout', label: 'Eliminering', desc: 'Turneringstræ med direkte knockout.' },
         ];
         const SummaryRow = ({ label, value }) => (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--pm-americano-tie-border)' }}>
@@ -768,7 +767,7 @@ export function LigaTab({
                   <span className="pm-stepper-val">{createForm.num_divisions || 1}</span>
                   <button type="button" className="pm-stepper-btn" onClick={() => setCreateForm(f => ({ ...f, num_divisions: Math.min(8, (f.num_divisions || 1) + 1) }))}>+</button>
                 </div>
-                <div className="pm-field-hint">Hold inddeles i divisioner efter niveau — med op- og nedrykning mellem sæsonerne.</div>
+                <div className="pm-field-hint">Hold inddeles automatisk i divisioner efter niveau, når ligaen starter.</div>
               </div>
               <div className="pm-field">
                 <label>Tilmeldingsfrist &amp; sæsonstart</label>
@@ -843,25 +842,6 @@ export function LigaTab({
                 ))}
               </div>
 
-              {[
-                { key: 'promotion_spots', label: 'Oprykning', desc: 'Antal hold der rykker op', color: 'var(--pm-green, #16A34A)', bg: 'var(--pm-green-bg, #F0FDF4)', border: '#BFE5CF' },
-                { key: 'relegation_spots', label: 'Nedrykning', desc: 'Antal hold der rykker ned', color: 'var(--pm-red, #DC2626)', bg: 'var(--pm-red-bg, #FEF2F2)', border: '#F2C7C9' },
-              ].map(row => (
-                <div key={row.key} style={{ margin: `0 18px 9px`, padding: '10px 14px', borderRadius: 14, border: `1px solid ${row.border}`, background: row.bg, display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, color: row.color }}>{row.label}</div>
-                    <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>{row.desc}</div>
-                  </div>
-                  <select
-                    value={createForm[row.key] ?? 2}
-                    onChange={e => setCreateForm(f => ({ ...f, [row.key]: parseInt(e.target.value, 10) }))}
-                    style={{ ...ligaInputStyle, width: 72, padding: '7px 10px' }}
-                  >
-                    {[0,1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} hold</option>)}
-                  </select>
-                </div>
-              ))}
-
               <div className="pm-field">
                 <label>Særlige regler eller noter <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
                 <textarea
@@ -903,12 +883,8 @@ export function LigaTab({
                   <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Regler &amp; kampsystem</span>
                   <button type="button" onClick={() => { setCreateStep(2); setCreateStepErr(''); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-navy)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Redigér</button>
                 </div>
-                <SummaryRow label="Kampsystem" value={{ round_robin: 'Alle-mod-alle', swiss: 'Swiss-system', knockout: 'Eliminering' }[createForm.match_system] || createForm.match_system} />
+                <SummaryRow label="Kampsystem" value={{ round_robin: 'Alle-mod-alle', swiss: 'Swiss-system' }[createForm.match_system] || createForm.match_system} />
                 <SummaryRow label="Point" value={`${createForm.points_win} sejr · ${createForm.points_draw} uafgjort · ${createForm.points_loss} nederlag`} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, paddingTop: 6 }}>
-                  <span style={{ fontSize: 12, color: theme.textLight }}>Op-/nedrykning</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{createForm.promotion_spots} op · {createForm.relegation_spots} ned</span>
-                </div>
               </div>
               <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1.5px solid var(--pm-navy)', borderLeft: '3px solid var(--pm-navy)', borderRadius: 10, padding: '11px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                 <svg style={{ width: 15, height: 15, color: 'var(--pm-navy)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 13v-2Z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
