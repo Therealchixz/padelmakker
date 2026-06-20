@@ -66,7 +66,7 @@ function MatchRow({ item, selected, onSelect }) {
   );
 }
 
-export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, onInviteSent }) {
+export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, onInviteSent, onCreateMatch }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
@@ -191,10 +191,10 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
             color: '#16377E', fontSize: '14.5px', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
           }}
-          onClick={onClose}
+          onClick={() => { if (onCreateMatch) onCreateMatch(); else onClose(); }}
         >
           <Plus size={16} />
-          Opret ny kamp med {inviteeName}
+          Opret ny kamp
         </button>
 
         {/* Send invitation */}

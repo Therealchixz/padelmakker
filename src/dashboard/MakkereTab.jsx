@@ -303,8 +303,7 @@ export function MakkereTab({ user, showToast }) {
 
   useEffect(() => {
     setFavorites(readFavoritesSet(user.id));
-    setFilterFav(false);
-  }, [user.id, showToast]);
+  }, [user.id]);
 
   const toggleFavorite = (playerId) => {
     setFavorites(prev => {
@@ -858,6 +857,7 @@ export function MakkereTab({ user, showToast }) {
           currentUser={user}
           showToast={showToast}
           onInviteSent={handleInviteSent}
+          onCreateMatch={() => { setInviteTarget(null); navigate('/dashboard/kampe?create=1'); }}
           onClose={() => setInviteTarget(null)}
         />
       )}

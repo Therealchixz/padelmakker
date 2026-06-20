@@ -337,7 +337,9 @@ export function ActiveSeekingPanel({
   }
 
   if (variant === 'homeCard') {
-    const active = isSeekingUiActive(displayUser, 'makker') || isSeekingUiActive(displayUser, 'kamp');
+    // Kortet styrer kun "makker"-kanalen, så tilstanden skal afspejle netop den
+    // (ellers kan switchen se låst ud, hvis "kamp"-søgning er slået til andetsteds).
+    const active = isSeekingUiActive(displayUser, 'makker');
     const busy = busyChannel != null;
     return (
       <div>

@@ -1782,6 +1782,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     completedSortMs: matchCompletedSortMs,
   }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById, myElo, courtFacilitiesById]);
 
+  /* Deep-link: ?create=1 åbner opret-kamp-formularen direkte (fx fra "Opret ny kamp" i makker-invitation). */
+  useEffect(() => {
+    if (!tabActive) return;
+    const params = new URLSearchParams(location.search);
+    if (params.get("create") !== "1") return;
+    setKampeFormat("padel");
+    setShowCreate(true);
+    params.delete("create");
+    const q = params.toString();
+    navigate({ pathname: "/dashboard/kampe", search: q ? `?${q}` : "" }, { replace: true });
+  }, [tabActive, location.search, navigate]);
+
   /* Notifikation: ?format=americano|liga&focus=<id> eller ?focus=<matchId> (padel) */
   useEffect(() => {
     if (!tabActive) return;
