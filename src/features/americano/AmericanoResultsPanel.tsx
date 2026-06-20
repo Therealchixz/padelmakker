@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, useRef, useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import { Check, Pencil, ClipboardEdit } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { useConfirm } from '../../lib/ConfirmDialogProvider'
 import { AvatarCircle } from '../../components/AvatarCircle'
 import type { AmericanoMatchRow, AmericanoParticipant, AmericanoTournament } from './types'
 import {
@@ -303,6 +304,7 @@ export function AmericanoResultsPanel({
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(() => new Set())
   const [tab, setTab] = useState<'stilling' | 'mine' | 'alle'>('stilling')
   const [entryOpenId, setEntryOpenId] = useState<string | null>(null)
+  const ask = useConfirm()
 
   const ppm = Number(tournament.points_per_match)
   const P: 16 | 24 | 32 =
@@ -543,6 +545,12 @@ export function AmericanoResultsPanel({
   }
 
   const completeTournament = async () => {
+    const okConfirm = await ask({
+      message: `Afslut ${formatLabel}? ${formatLabel}-ELO beregnes for alle spillere, og det kan ikke fortrydes.`,
+      confirmLabel: 'Afslut og beregn',
+      danger: true,
+    })
+    if (!okConfirm) return
     if (isMexicano && participantIdsOrdered.length > 0) {
       const passes = Number(tournament.opponent_passes) === 2 ? 2 : 1
       const total = getMexicanoTotalRounds(participantIdsOrdered.length, passes)
