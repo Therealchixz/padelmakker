@@ -55,12 +55,23 @@ export function ChatVenueCard({ payload }) {
   );
 }
 
-export function ChatTimeCard({ payload }) {
+export function ChatTimeCard({ payload, mine = false, onAccept, accepting = false }) {
   if (!payload) return null;
   return (
     <div className="pm-chat-v2-rich-card pm-chat-v2-rich-card--time">
       <div className="pm-chat-v2-rich-kicker">📅 Tidforslag</div>
       <div className="pm-chat-v2-rich-title">{payload.label || `${payload.date} · ${payload.time}`}</div>
+      {!mine && onAccept ? (
+        <button
+          type="button"
+          className="pm-chat-v2-rich-accept"
+          onClick={onAccept}
+          disabled={accepting}
+        >
+          {accepting ? 'Sender…' : 'Passer mig'}
+        </button>
+      ) : null}
+      {mine ? <div className="pm-chat-v2-rich-sub">Sendt</div> : null}
     </div>
   );
 }

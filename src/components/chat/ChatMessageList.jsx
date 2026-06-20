@@ -20,6 +20,8 @@ export function ChatMessageList({
   onReact,
   onJoinInvite,
   joiningInviteId = null,
+  onAcceptTime,
+  acceptingTimeId = null,
 }) {
   const internalRef = useRef(null);
   const listRef = externalListRef || internalRef;
@@ -88,6 +90,8 @@ export function ChatMessageList({
                 onReact={onReact}
                 onJoinInvite={onJoinInvite}
                 joiningInviteId={joiningInviteId}
+                onAcceptTime={onAcceptTime}
+                acceptingTimeId={acceptingTimeId}
               />
             </div>
           );
