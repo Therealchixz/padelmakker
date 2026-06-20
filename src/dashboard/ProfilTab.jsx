@@ -6,7 +6,7 @@ import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { mergeLigaSessionPrefs, openMineLigaerFromProfile } from '../lib/ligaSessionPrefs';
 import { useLigaPartnerOpponentStats } from '../lib/ligaRelationStats';
-import { REGIONS, PLAY_STYLES, COURT_SIDES } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, COURT_SIDES, AVAILABILITY, DAYS_OF_WEEK } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { canonicalRegionForForm, calcAge } from '../lib/profileUtils';
@@ -424,6 +424,8 @@ export function ProfilTab({ user, showToast, setTab }) {
         level: form.levelNumeric,
         play_style: form.play_style,
         court_side: form.court_side || null,
+        availability: form.availability || [],
+        available_days: form.available_days || [],
         bio: sanitizeText(form.bio.trim()),
         avatar: avatarValue,
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
@@ -1305,6 +1307,36 @@ export function ProfilTab({ user, showToast, setTab }) {
           size="sm"
           style={{ marginBottom: "14px" }}
         />
+
+        {/* Tilgængelighed */}
+        {(() => {
+          const chip = (active) => ({
+            padding: '8px 13px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+            border: `1.5px solid ${active ? theme.navy : theme.border}`,
+            background: active ? theme.navy : theme.surface,
+            color: active ? '#fff' : theme.textMid, fontFamily: 'inherit',
+          });
+          const avail = form.availability || [];
+          const days = form.available_days || [];
+          const toggleAvail = (a) => set('availability', avail.includes(a) ? avail.filter(x => x !== a) : [...avail, a]);
+          const toggleDay = (d) => set('available_days', days.includes(d) ? days.filter(x => x !== d) : [...days, d]);
+          return (
+            <>
+              <div style={labelStyle}>Hvornår kan du spille?</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                {AVAILABILITY.map((a) => (
+                  <button key={a} type="button" onClick={() => toggleAvail(a)} style={chip(avail.includes(a))}>{a}</button>
+                ))}
+              </div>
+              <div style={labelStyle}>Spilledage</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                {DAYS_OF_WEEK.map(({ key, label }) => (
+                  <button key={key} type="button" onClick={() => toggleDay(key)} style={chip(days.includes(key))}>{label}</button>
+                ))}
+              </div>
+            </>
+          );
+        })()}
 
         {/* Bio */}
         <label htmlFor="profil-bio" style={labelStyle}>Bio</label>
