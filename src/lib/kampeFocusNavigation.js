@@ -37,7 +37,8 @@ export function notificationKampeTarget(notif) {
   if (entityType === KAMPE_FORMAT_AMERICANO && entityId) {
     return { format: KAMPE_FORMAT_AMERICANO, focusId: entityId };
   }
-  if (entityType === KAMPE_FORMAT_LIGA && entityId) {
+  // Liga-notifikationer gemmes med entity_type 'league' (og enkelte 'liga')
+  if ((entityType === KAMPE_FORMAT_LIGA || entityType === 'league') && entityId) {
     return { format: KAMPE_FORMAT_LIGA, focusId: entityId };
   }
   if (notif.match_id) {

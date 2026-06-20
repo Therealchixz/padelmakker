@@ -796,7 +796,11 @@ export function AdminTab({ initialSubTab = null }) {
       .update({ role: newRole })
       .eq('id', user.id);
 
-    if (!error) fetchUsers();
+    if (error) {
+      await ask({ notice: true, title: 'Kunne ikke ændre rolle', message: error.message });
+      return;
+    }
+    fetchUsers();
   };
 
   const togglePhoneExempt = async (targetUser) => {
@@ -1888,7 +1892,7 @@ export function AdminTab({ initialSubTab = null }) {
                         className="pm-admin-action-chip"
                         style={btn(false)}
                       >
-                        Gå til Kampe
+                        Åbn i Kampe-værktøjer
                       </button>
                     </div>
                   </div>
