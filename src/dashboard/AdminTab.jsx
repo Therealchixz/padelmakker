@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle, Smartphone } from 'lucide-react';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle, Smartphone, LayoutDashboard, Trophy, ChevronRight } from 'lucide-react';
 import {
   dismissAdminUserReportNotificationsIfQueueEmpty,
   fetchAdminSubTabBadges,
@@ -115,8 +115,8 @@ export function AdminTab({ initialSubTab = null }) {
       ? 'reports'
       : initialSubTab === 'result_errors'
         ? 'result_errors'
-        : 'users'
-  ); // 'users' | 'matches' | 'console' | 'reports' | 'result_errors'
+        : 'oversigt'
+  ); // 'oversigt' | 'users' | 'matches' | 'console' | 'reports' | 'result_errors'
   const [matchSubTab, setMatchSubTab] = useState('2v2'); // '2v2' | 'americano' | 'liga'
   const [matchStatusFilter, setMatchStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -710,7 +710,7 @@ export function AdminTab({ initialSubTab = null }) {
     }
     if (activeSubTab === 'reports') return fetchUserReports();
     if (activeSubTab === 'result_errors') return fetchResultErrorReports();
-    if (activeSubTab === 'console') return fetchAdminConsole();
+    if (activeSubTab === 'console' || activeSubTab === 'oversigt') return fetchAdminConsole();
     return Promise.resolve();
   }, [activeSubTab, matchSubTab, fetchUsers, fetchMatches, fetchAmericano, fetchLiga]);
 
@@ -754,7 +754,7 @@ export function AdminTab({ initialSubTab = null }) {
       void fetchUserReports();
     } else if (activeSubTab === 'result_errors') {
       void fetchResultErrorReports();
-    } else if (activeSubTab === 'console') {
+    } else if (activeSubTab === 'console' || activeSubTab === 'oversigt') {
       void fetchAdminConsole();
     }
   }, [
@@ -1124,6 +1124,7 @@ export function AdminTab({ initialSubTab = null }) {
   );
 
   const adminSubTabs = [
+    { id: 'oversigt', label: 'Oversigt', shortLabel: 'Oversigt', icon: LayoutDashboard, badgeKey: null },
     { id: 'users', label: 'Brugere', shortLabel: 'Brugere', icon: User, badgeKey: 'users' },
     { id: 'matches', label: 'Kampe', shortLabel: 'Kampe', icon: Swords, badgeKey: 'matches' },
     { id: 'reports', label: 'Anmeldelser', shortLabel: 'Anmeld.', icon: Flag, badgeKey: 'reports' },
@@ -1195,7 +1196,137 @@ export function AdminTab({ initialSubTab = null }) {
         />
       </div>
 
-      {activeSubTab === 'users' ? (
+      {activeSubTab === 'oversigt' ? (
+        <div className="pm-admin-overview">
+          <div className="pm-admin-toolbar">
+            <h3 className="pm-admin-section-title">Oversigt</h3>
+            <button
+              type="button"
+              onClick={() => { void fetchAdminConsole(); }}
+              className="pm-admin-refresh-btn"
+              style={btn(false)}
+              disabled={consoleLoading}
+            >
+              <RefreshCw size={13} style={{ marginRight: '6px', opacity: consoleLoading ? 0.6 : 1 }} />
+              Opdater
+            </button>
+          </div>
+
+          <div className="pm-admin-kpi-grid">
+            {[
+              {
+                key: 'players',
+                label: 'Spillere',
+                value: consoleStats.totalPlayers,
+                footer: `${consoleStats.bannedPlayers} bannet`,
+                accent: theme.accent,
+                target: 'users',
+              },
+              {
+                key: 'matches',
+                label: 'Kampe i gang',
+                value: consoleStats.inProgressMatches,
+                footer: `${consoleStats.openMatches} åbne · ${consoleStats.completedMatches24h} afsl. (24t)`,
+                accent: theme.text,
+                target: 'matches',
+              },
+              {
+                key: 'tournaments',
+                label: 'Aktive turneringer',
+                value: consoleStats.americanoActive,
+                footer: `${consoleStats.americanoOpen} åbne · ${consoleStats.americanoCompleted7d} afsl. (7d)`,
+                accent: theme.accent,
+                target: 'matches',
+              },
+              {
+                key: 'reports',
+                label: 'Anmeldelser',
+                value: subTabBadges.reports || 0,
+                footer: 'Brugeranmeldelser',
+                accent: (subTabBadges.reports || 0) > 0 ? theme.red : theme.textMid,
+                target: 'reports',
+              },
+              {
+                key: 'resultErrors',
+                label: 'Resultat-fejl',
+                value: subTabBadges.resultErrors || 0,
+                footer: `${consoleStats.pendingResults} afventer bekræft.`,
+                accent: (subTabBadges.resultErrors || 0) > 0 ? theme.warm : theme.textMid,
+                target: 'result_errors',
+              },
+              {
+                key: 'flags',
+                label: 'Flags',
+                value: consoleStats.openFlags,
+                footer: `${consoleStats.highFlags} høj risiko`,
+                accent: consoleStats.openFlags > 0 ? theme.red : theme.textMid,
+                target: 'console',
+              },
+            ].map((card) => {
+              const tabExists = adminSubTabPills.some((t) => t.id === card.target);
+              return (
+                <button
+                  key={card.key}
+                  type="button"
+                  className="pm-ui-card pm-admin-kpi-card"
+                  onClick={() => { if (tabExists) setActiveSubTab(card.target); }}
+                  disabled={!tabExists}
+                  style={{ borderLeft: `3px solid ${card.accent}` }}
+                >
+                  <div className="pm-admin-kpi-top">
+                    <span className="pm-admin-kpi-label">{card.label}</span>
+                    {tabExists ? <ChevronRight size={16} className="pm-admin-kpi-chevron" aria-hidden /> : null}
+                  </div>
+                  <div className="pm-admin-kpi-value" style={{ color: card.accent }}>
+                    {card.value}
+                  </div>
+                  <div className="pm-admin-kpi-footer">{card.footer}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="pm-ui-card pm-admin-console-panel">
+            <div className="pm-admin-console-panel-head">
+              <div className="pm-admin-console-panel-title">Seneste aktivitet</div>
+              <div className="pm-admin-console-panel-meta">
+                {consoleLoading ? 'Indlæser...' : `${auditLog.length} poster`}
+              </div>
+            </div>
+            {auditLogError ? <div className="pm-admin-error-msg">{auditLogError}</div> : null}
+            {!auditLogError && auditLog.length === 0 && !consoleLoading ? (
+              <div className="pm-admin-empty">Ingen aktivitet endnu.</div>
+            ) : null}
+            {auditLog.length > 0 ? (
+              <div className="pm-admin-audit-list">
+                {auditLog.slice(0, 8).map((entry) => (
+                  <div key={entry.id} className="pm-admin-audit-entry">
+                    <div className="pm-admin-audit-entry-head">
+                      <span className="pm-admin-audit-action">{adminAuditActionLabel(entry.action)}</span>
+                      <span className="pm-admin-audit-time">{formatDateTimeDa(entry.created_at)}</span>
+                    </div>
+                    {entry.target_user_id ? (
+                      <div className="pm-admin-audit-target">
+                        Bruger: {String(entry.target_user_id).slice(0, 8)}…
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+                {auditLog.length > 8 ? (
+                  <button
+                    type="button"
+                    className="pm-admin-audit-more"
+                    onClick={() => setActiveSubTab('console')}
+                    style={btn(false)}
+                  >
+                    Se hele admin-loggen
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : activeSubTab === 'users' ? (
         <>
           <div className="pm-admin-search" style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
             <div style={{ flex: 1, position: 'relative' }}>
