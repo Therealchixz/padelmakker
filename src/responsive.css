@@ -6425,6 +6425,51 @@ button,
   gap: 14px;
 }
 
+.pm-admin-attention-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--pm-red) 35%, transparent);
+  background: var(--pm-red-bg);
+  color: var(--pm-red);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease;
+}
+
+.pm-admin-attention-banner:active {
+  transform: scale(0.99);
+}
+
+.pm-admin-attention-banner-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.pm-admin-attention-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pm-admin-attention-banner-text strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.pm-admin-attention-banner-text span {
+  font-size: 12px;
+  color: var(--pm-text-mid);
+  font-weight: 600;
+}
+
 .pm-admin-kpi-grid {
   display: grid;
   gap: 10px;

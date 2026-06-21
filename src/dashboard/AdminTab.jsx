@@ -88,9 +88,17 @@ function adminMatchStatusBucket(status, kind) {
   return 'open';
 }
 
+function adminMatchHasPendingResult(row) {
+  return (row.match_results || []).some((r) => !r.confirmed);
+}
+
 function sortAndFilterAdminMatches(rows, kind, statusFilter) {
   const sorted = [...rows].sort((a, b) => adminMatchSortMs(b, kind) - adminMatchSortMs(a, kind));
   if (statusFilter === 'all') return sorted;
+  if (statusFilter === 'pending_confirm') {
+    if (kind !== '2v2') return sorted;
+    return sorted.filter(adminMatchHasPendingResult);
+  }
   return sorted.filter((row) => adminMatchStatusBucket(row.status, kind) === statusFilter);
 }
 
@@ -343,14 +351,31 @@ export function AdminTab({ initialSubTab = null }) {
     const seq = ++matchesLoadSeqRef.current;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('matches')
-        .select('*, match_results(*), match_players(*, profiles(full_name, name))')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
+      const [recentRes, pendingRes] = await Promise.all([
+        supabase
+          .from('matches')
+          .select('*, match_results(*), match_players(*, profiles(full_name, name))')
+          .order('created_at', { ascending: false })
+          .limit(100),
+        // Kampe med et ubekræftet resultat — kan være ældre end de 100 nyeste,
+        // så listen altid matcher Kampe-badget (som tæller ubekræftede resultater).
+        supabase
+          .from('matches')
+          .select('*, match_results!inner(*), match_players(*, profiles(full_name, name))')
+          .eq('match_results.confirmed', false)
+          .order('created_at', { ascending: false })
+          .limit(100),
+      ]);
+      if (recentRes.error) throw recentRes.error;
       if (seq !== matchesLoadSeqRef.current) return;
-      setMatches(data || []);
+      const byId = new Map();
+      for (const m of recentRes.data || []) byId.set(m.id, m);
+      // Tilføj ældre kampe med ubekræftet resultat (foretræk recent-versionen hvis den findes,
+      // da inner-join-filteret kun returnerer de ubekræftede result-rows)
+      for (const m of (pendingRes.error ? [] : pendingRes.data || [])) {
+        if (!byId.has(m.id)) byId.set(m.id, m);
+      }
+      setMatches(Array.from(byId.values()));
     } catch (err) {
       if (seq !== matchesLoadSeqRef.current) return;
       console.warn('AdminTab fetchMatches:', err?.message || err);
@@ -1114,6 +1139,10 @@ export function AdminTab({ initialSubTab = null }) {
     () => sortAndFilterAdminMatches(matches, '2v2', matchStatusFilter),
     [matches, matchStatusFilter],
   );
+  const pendingConfirmCount = useMemo(
+    () => matches.filter(adminMatchHasPendingResult).length,
+    [matches],
+  );
   const filteredAmericano = useMemo(
     () => sortAndFilterAdminMatches(americanoTournaments, 'americano', matchStatusFilter),
     [americanoTournaments, matchStatusFilter],
@@ -1163,10 +1192,12 @@ export function AdminTab({ initialSubTab = null }) {
     { id: 'liga', label: '🏆 Liga' },
   ];
 
-  const matchStatusPills = ADMIN_MATCH_STATUS_FILTERS.map((f) => ({
-    id: f.id,
-    label: f.label,
-  }));
+  const matchStatusPills = [
+    ...ADMIN_MATCH_STATUS_FILTERS.map((f) => ({ id: f.id, label: f.label })),
+    ...(matchSubTab === '2v2' && pendingConfirmCount > 0
+      ? [{ id: 'pending_confirm', label: `Afventer bekræftelse (${pendingConfirmCount})` }]
+      : []),
+  ];
 
   const reportStatusPills = [
     { id: 'open', label: 'Åbne' },
@@ -1459,6 +1490,29 @@ export function AdminTab({ initialSubTab = null }) {
               Opdater
             </button>
           </div>
+
+          {pendingConfirmCount > 0 ? (
+            <button
+              type="button"
+              className="pm-admin-attention-banner"
+              onClick={() => {
+                setMatchSubTab('2v2');
+                setMatchStatusFilter('pending_confirm');
+              }}
+            >
+              <span className="pm-admin-attention-banner-icon" aria-hidden>
+                <AlertCircle size={18} />
+              </span>
+              <span className="pm-admin-attention-banner-text">
+                <strong>
+                  {pendingConfirmCount} kampresultat{pendingConfirmCount > 1 ? 'er' : ''} afventer bekræftelse
+                </strong>
+                <span>Dette er hvad Kampe-badget tæller. Tryk for at se kun disse kampe.</span>
+              </span>
+              <ChevronRight size={18} aria-hidden style={{ flexShrink: 0, opacity: 0.6 }} />
+            </button>
+          ) : null}
+
           <PillTabs
             tabs={matchTypePills}
             value={matchSubTab}
@@ -1583,11 +1637,6 @@ export function AdminTab({ initialSubTab = null }) {
           {matchSubTab === '2v2' && (
             <div className="pm-admin-list">
               <h3 className="pm-admin-section-title">Admin: Detaljeret Kamp-overblik</h3>
-              {subTabBadges.matches > 0 ? (
-                <p className="pm-admin-help-copy">
-                  Badge på Kampe = {subTabBadges.matches} kampresultat{subTabBadges.matches > 1 ? 'er' : ''} afventer spillernes bekræftelse (markeret «Afventer bekræftelse» nedenfor).
-                </p>
-              ) : null}
               {matches.length === 0 && <div className="pm-admin-empty">Ingen kampe fundet.</div>}
               {matches.length > 0 && filteredMatches.length === 0 && (
                 <div className="pm-admin-empty">Ingen kampe i denne kategori.</div>
