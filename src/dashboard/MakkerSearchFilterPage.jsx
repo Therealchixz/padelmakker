@@ -161,7 +161,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   return (
     <div style={{ fontFamily: font }}>
       {/* Topbar — matches mockup */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid ' + theme.border, background: theme.surface, marginBottom: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'max(10px, calc(env(safe-area-inset-top) + 8px)) 14px 10px', borderBottom: '1px solid ' + theme.border, background: theme.surface, marginBottom: 0 }}>
         <button
           type="button"
           onClick={() => navigate(returnTo)}
