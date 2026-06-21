@@ -1352,109 +1352,38 @@ export function AdminTab({ initialSubTab = null }) {
             </button>
           </div>
 
-          {isMobile && (
-            <div className="pm-admin-sort-row">
-              <button
-                type="button"
-                onClick={() => requestSort('full_name')}
-                className="pm-admin-sort-btn"
-                style={btn(sortConfig.key === 'full_name')}
-              >
-                Navn <SortIcon columnKey="full_name" />
-              </button>
-              <button
-                type="button"
-                onClick={() => requestSort('elo_rating')}
-                className="pm-admin-sort-btn"
-                style={btn(sortConfig.key === 'elo_rating')}
-              >
-                ELO <SortIcon columnKey="elo_rating" />
-              </button>
-              <button
-                type="button"
-                onClick={() => requestSort('role')}
-                className="pm-admin-sort-btn"
-                style={btn(sortConfig.key === 'role')}
-              >
-                Rolle <SortIcon columnKey="role" />
-              </button>
-            </div>
-          )}
+          <div className="pm-admin-sort-row">
+            <span className="pm-admin-sort-label">Sortér:</span>
+            <button
+              type="button"
+              onClick={() => requestSort('full_name')}
+              className="pm-admin-sort-btn"
+              style={btn(sortConfig.key === 'full_name', { size: 'sm', radius: 'pill' })}
+            >
+              Navn <SortIcon columnKey="full_name" />
+            </button>
+            <button
+              type="button"
+              onClick={() => requestSort('elo_rating')}
+              className="pm-admin-sort-btn"
+              style={btn(sortConfig.key === 'elo_rating', { size: 'sm', radius: 'pill' })}
+            >
+              ELO <SortIcon columnKey="elo_rating" />
+            </button>
+            <button
+              type="button"
+              onClick={() => requestSort('role')}
+              className="pm-admin-sort-btn"
+              style={btn(sortConfig.key === 'role', { size: 'sm', radius: 'pill' })}
+            >
+              Rolle <SortIcon columnKey="role" />
+            </button>
+          </div>
 
-          {!isMobile ? (
-            <div className="pm-ui-card pm-admin-table-wrap">
-              <table className="pm-admin-table">
-                <thead>
-                  <tr>
-                    <th className="pm-admin-th" onClick={() => requestSort('full_name')}>
-                      <div className="pm-admin-th-inner">SPILLER <SortIcon columnKey="full_name" /></div>
-                    </th>
-                    <th className="pm-admin-th" onClick={() => requestSort('elo_rating')}>
-                      <div className="pm-admin-th-inner">ELO <SortIcon columnKey="elo_rating" /></div>
-                    </th>
-                    <th className="pm-admin-th" onClick={() => requestSort('role')}>
-                      <div className="pm-admin-th-inner">ROLLE <SortIcon columnKey="role" /></div>
-                    </th>
-                    <th className="pm-admin-th pm-admin-th--static">HANDLING</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((u) => (
-                    <tr key={u.id}>
-                      <td>
-                        <div className="pm-admin-user-cell">
-                          <AvatarCircle avatar={u.avatar || '🎾'} size={32} />
-                          <div>
-                            <div className="pm-admin-user-name">{adminDisplayName(u)}</div>
-                            <div className="pm-admin-user-email">{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="pm-admin-elo-cell">{u.elo_rating || 1000}</td>
-                      <td>
-                        <div className="pm-admin-badge-row">
-                          <span className={u.role === 'admin' ? 'pm-admin-badge pm-admin-badge--admin' : 'pm-admin-badge'}>
-                            {u.role}
-                          </span>
-                          {u.is_banned && <span className="pm-admin-badge pm-admin-badge--danger">Bannet</span>}
-                          {u.phone_verification_exempt && (
-                            <span className="pm-admin-badge pm-admin-badge--muted">Ingen SMS-krav</span>
-                          )}
-                        </div>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div className="pm-admin-actions">
-                          <button type="button" onClick={() => { void openUserEditor(u); }} className="pm-admin-icon-btn pm-admin-icon-btn--accent" title="Rediger">
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => togglePhoneExempt(u)}
-                            className={`pm-admin-icon-btn ${u.phone_verification_exempt ? 'pm-admin-icon-btn--accent' : ''}`}
-                            title={u.phone_verification_exempt ? 'Kræv telefon-SMS igen' : 'Undtag fra telefon-SMS (testkonto)'}
-                          >
-                            <Smartphone size={18} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => toggleAdmin(u)}
-                            className={`pm-admin-icon-btn ${u.role === 'admin' ? 'pm-admin-icon-btn--danger' : 'pm-admin-icon-btn--accent'}`}
-                            title={u.role === 'admin' ? 'Fjern admin' : 'Gør til admin'}
-                          >
-                            {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
-                          </button>
-                          <button type="button" onClick={() => deleteUser(u)} className="pm-admin-icon-btn pm-admin-icon-btn--danger" title="Slet spiller">
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {filteredUsers.length === 0 ? (
+            <div className="pm-ui-card pm-admin-empty">Ingen spillere matcher søgningen.</div>
           ) : (
-            <div className="pm-admin-card-list">
+            <div className="pm-admin-card-list pm-admin-card-list--grid">
               {filteredUsers.map((u) => (
                 <div key={u.id} className="pm-ui-card pm-admin-card">
                   <div className="pm-admin-card-top">

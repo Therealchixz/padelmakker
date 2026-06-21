@@ -5590,6 +5590,12 @@ button,
   overflow: visible;
 }
 
+@media (max-width: 640px) {
+  .pm-admin-subtabs .pm-pill-tab {
+    min-height: 40px;
+  }
+}
+
 .pm-admin-subtab-label {
   position: relative;
   display: inline-flex;
@@ -5680,10 +5686,24 @@ button,
 
 .pm-admin-sort-row {
   display: flex;
+  align-items: center;
   gap: var(--pm-space-2);
   margin-bottom: var(--pm-space-2);
   overflow-x: auto;
   padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pm-admin-sort-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-text-mid);
+  flex-shrink: 0;
+}
+
+.pm-admin-sort-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .pm-admin-table-wrap {
@@ -5823,6 +5843,14 @@ button,
   gap: var(--pm-space-2);
 }
 
+@media (min-width: 720px) {
+  .pm-admin-card-list--grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--pm-space-2);
+  }
+}
+
 .pm-admin-card {
   padding: 16px;
 }
@@ -5866,11 +5894,20 @@ button,
 
 .pm-admin-mobile-action {
   border: none;
-  border-radius: var(--pm-radius-sm);
+  border-radius: var(--pm-radius-md);
   padding: 8px;
-  display: flex;
+  min-width: 42px;
+  min-height: 42px;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease;
+}
+
+.pm-admin-mobile-action:active {
+  transform: scale(0.94);
 }
 
 .pm-admin-mobile-action--neutral {
@@ -5896,15 +5933,22 @@ button,
 .pm-admin-mobile-edit {
   background: var(--pm-accent);
   border: none;
-  border-radius: var(--pm-radius-sm);
+  border-radius: var(--pm-radius-md);
   padding: 8px 16px;
+  min-height: 42px;
   color: var(--pm-on-accent);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease;
+}
+
+.pm-admin-mobile-edit:active {
+  transform: scale(0.97);
 }
 
 .pm-admin-filter-tabs {
@@ -5933,6 +5977,21 @@ button,
   gap: 12px;
 }
 
+@media (max-width: 560px) {
+  .pm-admin-row-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pm-admin-row-card .pm-admin-row-actions {
+    justify-content: flex-end;
+  }
+
+  .pm-admin-row-card .pm-admin-action-btn--edit {
+    flex: 1;
+  }
+}
+
 .pm-admin-row-card-body {
   flex: 1;
   min-width: 0;
@@ -5958,10 +6017,12 @@ button,
 
 .pm-admin-status-pill {
   font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
   text-transform: uppercase;
   font-size: 10px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .pm-admin-row-actions {
@@ -5972,14 +6033,22 @@ button,
 
 .pm-admin-action-btn {
   border: none;
-  border-radius: var(--pm-radius-sm);
-  padding: 8px 10px;
+  border-radius: var(--pm-radius-md);
+  padding: 8px 12px;
+  min-height: 42px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   font-size: 12px;
   font-weight: 700;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease;
+}
+
+.pm-admin-action-btn:active {
+  transform: scale(0.96);
 }
 
 .pm-admin-action-btn--edit {
@@ -5991,6 +6060,7 @@ button,
   color: var(--pm-red);
   background: var(--pm-red-bg);
   padding: 8px;
+  min-width: 42px;
 }
 
 .pm-admin-empty {
@@ -6128,7 +6198,8 @@ button,
 }
 
 .pm-admin-refresh-btn {
-  padding: 5px 10px;
+  padding: 8px 12px;
+  min-height: 40px;
   font-size: 12px;
 }
 
@@ -6303,8 +6374,14 @@ button,
 }
 
 .pm-admin-action-chip {
-  padding: 6px 12px;
+  padding: 8px 14px;
+  min-height: 40px;
   font-size: 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pm-admin-action-chip:active {
+  transform: scale(0.97);
 }
 
 .pm-admin-console-stack {
