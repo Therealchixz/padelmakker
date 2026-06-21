@@ -1583,6 +1583,11 @@ export function AdminTab({ initialSubTab = null }) {
           {matchSubTab === '2v2' && (
             <div className="pm-admin-list">
               <h3 className="pm-admin-section-title">Admin: Detaljeret Kamp-overblik</h3>
+              {subTabBadges.matches > 0 ? (
+                <p className="pm-admin-help-copy">
+                  Badge på Kampe = {subTabBadges.matches} kampresultat{subTabBadges.matches > 1 ? 'er' : ''} afventer spillernes bekræftelse (markeret «Afventer bekræftelse» nedenfor).
+                </p>
+              ) : null}
               {matches.length === 0 && <div className="pm-admin-empty">Ingen kampe fundet.</div>}
               {matches.length > 0 && filteredMatches.length === 0 && (
                 <div className="pm-admin-empty">Ingen kampe i denne kategori.</div>
@@ -1594,6 +1599,7 @@ export function AdminTab({ initialSubTab = null }) {
                 const statusColor = status === 'completed' ? theme.accent : status === 'in_progress' ? theme.warm : theme.textMid;
                 const statusLabel = status === 'completed' ? 'Afsluttet' : status === 'in_progress' ? 'I gang' : status === 'full' ? 'Fuld' : 'Åben';
                 const confirmedResult = (m.match_results || []).find((r) => r.confirmed) || null;
+                const pendingResult = (m.match_results || []).find((r) => !r.confirmed) || null;
                 const canEditResult = status === 'completed' && confirmedResult;
 
                 return (
@@ -1616,6 +1622,11 @@ export function AdminTab({ initialSubTab = null }) {
                           <span className="pm-admin-status-pill" style={{ color: statusColor, background: `${statusColor}15` }}>
                             {statusLabel}
                           </span>
+                          {pendingResult ? (
+                            <span className="pm-admin-status-pill" style={{ color: theme.red, background: theme.redBg }}>
+                              Afventer bekræftelse
+                            </span>
+                          ) : null}
                           <div className="pm-admin-match-score">
                             {m.match_results?.[0]?.score_display || 'Ingen score'}
                           </div>

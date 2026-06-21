@@ -7556,6 +7556,28 @@ button,
   color: var(--pm-danger);
 }
 
+.pm-kampe-v2-list-attention {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 4px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pm-danger) 12%, transparent);
+  color: var(--pm-danger);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.pm-kampe-v2-list-attention-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pm-danger);
+  flex-shrink: 0;
+}
+
 .pm-kampe-v2-list-card-bottom {
   display: flex;
   align-items: center;

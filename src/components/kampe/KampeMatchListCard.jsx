@@ -78,6 +78,7 @@ export function KampeMatchListCard({
   myTeam = null,
   currentUserId = null,
   primaryAction = null,
+  attentionReason = null,
   onClick,
 }) {
   const venue =
@@ -200,6 +201,13 @@ export function KampeMatchListCard({
           </div>
         </div>
       )}
+
+      {attentionReason ? (
+        <div className="pm-kampe-v2-list-attention">
+          <span className="pm-kampe-v2-list-attention-dot" aria-hidden />
+          {attentionReason}
+        </div>
+      ) : null}
 
       {setScoreStr ? (
         <div style={{
