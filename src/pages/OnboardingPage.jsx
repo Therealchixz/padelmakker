@@ -207,7 +207,7 @@ export function OnboardingPage() {
 
     if (targetStep === 2) {
       if (!isValidProfileRegion(form.area)) missing.push("region");
-      if (form.availability.length === 0) missing.push("hvornår du kan spille");
+      // Tilgængelighed er valgfri ved onboarding — kan altid sættes/ændres på profilen
     }
 
     if (targetStep === 3 && !acceptedTerms) {
@@ -766,7 +766,7 @@ export function OnboardingPage() {
         />
       </div>
       <div style={fieldWrap}>
-        <label style={obLabel}>Hvornår kan du spille?</label>
+        <label style={obLabel}>Hvornår kan du spille? <span style={{ fontWeight: 400, opacity: 0.7 }}>(valgfri)</span></label>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           {AVAILABILITY.map(a => (
             <button key={a} type="button" onClick={() => toggleAvail(a)} style={chipStyle(form.availability.includes(a))}>{a}</button>
