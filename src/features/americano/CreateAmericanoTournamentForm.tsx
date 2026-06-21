@@ -133,6 +133,7 @@ export function CreateAmericanoTournamentForm({
   onCancel,
 }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   // Step 1 state
   const [tournamentFormat, setTournamentFormat] = useState<AmericanoTournamentFormat>('americano')
@@ -404,43 +405,56 @@ export function CreateAmericanoTournamentForm({
             <div className="pm-field-hint">Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)} · Kan håndhæves ved tilmelding (slås til i næste trin)</div>
           </div>
 
-          <div className="pm-field">
-            <label>Point pr. kamp</label>
-            <div className="pm-chips-row">
-              {POINT_OPTIONS.map((p) => (
-                <button key={p} type="button" className={`pm-chip-btn${pointsPerMatch === p ? ' active' : ''}`} onClick={() => setPointsPerMatch(p)}>
-                  {p} point
-                </button>
-              ))}
-            </div>
-            <div className="pm-field-hint">Pointene fordeles mellem holdene pr. kamp — fx 10–6 ved 16 point.</div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((v) => !v)}
+            style={{ margin: '4px 18px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: 'calc(100% - 36px)', padding: '11px 14px', borderRadius: 12, border: '1px solid var(--pm-border)', background: 'var(--pm-surface)', color: 'var(--pm-text-mid)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}
+          >
+            <span>Avanceret {showAdvanced ? '' : `· ${pointsPerMatch} point · ${opponentPasses === 2 ? 'lang' : 'normal'}`}</span>
+            <span style={{ fontSize: 12 }}>{showAdvanced ? '▲' : '▼'}</span>
+          </button>
 
-          <div className="pm-field">
-            <label>Kamplængde</label>
-            <div className="pm-chips-row">
-              <button type="button" className={`pm-chip-btn${opponentPasses === 1 ? ' active' : ''}`} onClick={() => setOpponentPasses(1)}>
-                Normal ({schedulePreview.normalRounds} runder)
-              </button>
-              <button type="button" className={`pm-chip-btn${opponentPasses === 2 ? ' active' : ''}`} onClick={() => setOpponentPasses(2)}>
-                Lang ({schedulePreview.longRounds} runder)
-              </button>
-            </div>
-            <div className="pm-field-hint">
-              Estimeret: <strong>{schedulePreview.estSelectedLabel}</strong> (~{schedulePreview.minPerRound} min pr. runde)
-            </div>
-          </div>
+          {showAdvanced ? (
+            <>
+              <div className="pm-field">
+                <label>Point pr. kamp</label>
+                <div className="pm-chips-row">
+                  {POINT_OPTIONS.map((p) => (
+                    <button key={p} type="button" className={`pm-chip-btn${pointsPerMatch === p ? ' active' : ''}`} onClick={() => setPointsPerMatch(p)}>
+                      {p} point
+                    </button>
+                  ))}
+                </div>
+                <div className="pm-field-hint">Pointene fordeles mellem holdene pr. kamp — fx 10–6 ved 16 point.</div>
+              </div>
 
-          <div className="pm-field">
-            <label>Særlige regler <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span></label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="F.eks. golden point, tidsbegrænsning på 15 min, etc."
-              style={{ ...inputStyle, height: 'auto', resize: 'vertical' }}
-            />
-          </div>
+              <div className="pm-field">
+                <label>Kamplængde</label>
+                <div className="pm-chips-row">
+                  <button type="button" className={`pm-chip-btn${opponentPasses === 1 ? ' active' : ''}`} onClick={() => setOpponentPasses(1)}>
+                    Normal ({schedulePreview.normalRounds} runder)
+                  </button>
+                  <button type="button" className={`pm-chip-btn${opponentPasses === 2 ? ' active' : ''}`} onClick={() => setOpponentPasses(2)}>
+                    Lang ({schedulePreview.longRounds} runder)
+                  </button>
+                </div>
+                <div className="pm-field-hint">
+                  Estimeret: <strong>{schedulePreview.estSelectedLabel}</strong> (~{schedulePreview.minPerRound} min pr. runde)
+                </div>
+              </div>
+
+              <div className="pm-field">
+                <label>Særlige regler <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span></label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  placeholder="F.eks. golden point, tidsbegrænsning på 15 min, etc."
+                  style={{ ...inputStyle, height: 'auto', resize: 'vertical' }}
+                />
+              </div>
+            </>
+          ) : null}
 
           <div className="pm-format-card">
             <b>{formatLabel}-format</b>
