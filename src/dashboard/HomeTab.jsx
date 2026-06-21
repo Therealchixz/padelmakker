@@ -1619,7 +1619,7 @@ export function HomeTab({ user, setTab, showToast }) {
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={openSeekingPlayer}>{row.name}</span> {seekingActivityLabelForRow(row)}</>,
                   subtitle: sub || "Klar til kamp",
-                  action: <button onClick={writeToPlayer} style={activityActionBtnStyle(theme.green)}>Skriv</button>,
+                  action: <button onClick={writeToPlayer} style={activityActionBtnStyle(theme.green)}>Besked</button>,
                 });
               }
 

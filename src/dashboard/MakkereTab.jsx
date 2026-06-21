@@ -151,15 +151,39 @@ function writeFavoritesSet(userId, set) {
   }
 }
 
+function dismissedSuggKey(userId) {
+  return userId ? `pm_makker_dismissed_v1_${userId}` : null;
+}
+function readDismissedSugg(userId) {
+  const key = dismissedSuggKey(userId);
+  if (!key) return new Set();
+  try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); } catch { return new Set(); }
+}
+function writeDismissedSugg(userId, set) {
+  const key = dismissedSuggKey(userId);
+  if (!key) return;
+  try { localStorage.setItem(key, JSON.stringify([...set])); } catch { /* quota */ }
+}
+
 // ----- Suggested player card -----
 
-function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
+function SuggestionCard({ suggestion, onView, onInvite, onMessage, onDismiss, displayEloFor }) {
   const { profile: p, score, breakdown } = suggestion;
   const reason = matchReason(breakdown, p);
   const quality = makkerMatchBadge(score);
 
   return (
-    <div className="pm-ui-card" style={{ padding: '14px 16px', margin: '0 18px' }}>
+    <div className="pm-ui-card" style={{ padding: '14px 16px', margin: '0 18px', position: 'relative' }}>
+      {onDismiss ? (
+        <button
+          type="button"
+          onClick={() => onDismiss(p.id)}
+          aria-label="Skjul forslag"
+          style={{ position: 'absolute', top: 8, right: 8, width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'transparent', color: theme.textLight, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, lineHeight: 1 }}
+        >
+          ✕
+        </button>
+      ) : null}
       <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
         <div onClick={() => onView(p)} style={{ cursor: 'pointer', flexShrink: 0 }}>
           <AvatarCircle
@@ -207,9 +231,9 @@ function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.color, flexShrink: 0 }} />
           {quality.label}
         </span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => onView(p)} style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
-            Profil
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button onClick={() => onMessage(p)} style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
+            Besked
           </button>
           <button onClick={() => onInvite(p)} style={{ ...btn(true), padding: '7px 12px', fontSize: '12px' }}>
             Invitér
@@ -246,6 +270,7 @@ export function MakkereTab({ user, showToast }) {
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [inviteTarget, setInviteTarget] = useState(null);
   const [favorites, setFavorites]     = useState(() => readFavoritesSet(user?.id));
+  const [dismissedSugg, setDismissedSugg] = useState(() => readDismissedSugg(user?.id));
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [telemetryVersion, setTelemetryVersion] = useState(0);
   /** Aggregeret kamp-historik mod hver anden spiller — fodres til matchmakingen
@@ -456,10 +481,22 @@ export function MakkereTab({ user, showToast }) {
     favoriteIds: favorites,
   }), [user, players, eloByUserId, gamesByUserId, inviteStatsByUserId, exposureCountByUserId, pastMatchesByUserId, favorites]);
 
-  const visibleSuggestions = useMemo(
-    () => (showAllSuggestions ? suggestions : suggestions.slice(0, 3)),
-    [showAllSuggestions, suggestions]
+  const activeSuggestions = useMemo(
+    () => suggestions.filter((s) => !dismissedSugg.has(String(s?.profile?.id))),
+    [suggestions, dismissedSugg]
   );
+  const visibleSuggestions = useMemo(
+    () => (showAllSuggestions ? activeSuggestions : activeSuggestions.slice(0, 3)),
+    [showAllSuggestions, activeSuggestions]
+  );
+  const dismissSuggestion = useCallback((id) => {
+    setDismissedSugg((prev) => {
+      const next = new Set(prev);
+      next.add(String(id));
+      writeDismissedSugg(user.id, next);
+      return next;
+    });
+  }, [user.id]);
 
   useEffect(() => {
     if (!user?.id || visibleSuggestions.length === 0) return;
@@ -616,16 +653,16 @@ export function MakkereTab({ user, showToast }) {
       )}
 
       {/* Foreslåede makkere */}
-      {suggestions.length > 0 && (
+      {activeSuggestions.length > 0 && (
         <div style={{ marginBottom: '28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 18px 10px' }}>
             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Foreslåede makkere</h3>
-            {suggestions.length > 3 && (
+            {activeSuggestions.length > 3 && (
               <button
                 onClick={() => setShowAllSuggestions(v => !v)}
                 style={{ fontSize: '12.5px', color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
               >
-                {showAllSuggestions ? 'Vis færre' : `Se alle ${suggestions.length}`}
+                {showAllSuggestions ? 'Vis færre' : `Se alle ${activeSuggestions.length}`}
               </button>
             )}
           </div>
@@ -638,6 +675,8 @@ export function MakkereTab({ user, showToast }) {
                 displayEloFor={displayElo}
                 onView={setViewPlayer}
                 onInvite={setInviteTarget}
+                onMessage={(p) => navigate(`/dashboard/beskeder?med=${p.id}`)}
+                onDismiss={dismissSuggestion}
               />
             ))}
           </div>
