@@ -684,6 +684,7 @@ export function MakkereTab({ user, showToast }) {
 
       {/* Filterknap + aktive filtre */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+        {!makkerFilterOn && (
         <button
           type="button"
           onClick={() => setShowFilters((v) => !v)}
@@ -708,6 +709,7 @@ export function MakkereTab({ user, showToast }) {
             </span>
           )}
         </button>
+        )}
         <PillTabs
           tabs={[
             { id: 'all', label: 'Alle spillere' },
@@ -719,7 +721,7 @@ export function MakkereTab({ user, showToast }) {
           size="sm"
           style={{ width: 'auto', flex: '1 1 200px', maxWidth: '320px' }}
         />
-        {activeFilterCount > 0 && (
+        {!makkerFilterOn && activeFilterCount > 0 && (
           <button
             onClick={() => { setFilterElo('all'); setFilterArea('all'); setFilterStyle('all'); setFilterIntent('all'); setFilterCourtSide('all'); setFilterSeeking(false); setFilterFav(false); setPage(0); }}
             style={{ fontSize: '12px', color: theme.red, background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontWeight: 600 }}
@@ -729,7 +731,7 @@ export function MakkereTab({ user, showToast }) {
         )}
       </div>
 
-      {showFilters && (
+      {!makkerFilterOn && showFilters && (
         <div className="pm-filter-panel">
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <select value={filterElo} onChange={e => handleFilterChange(() => setFilterElo(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
