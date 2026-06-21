@@ -3840,45 +3840,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         </div>
       ) : (
         <>
-          {/* Scope segment: Åbne kampe / Mine kampe */}
-          <div style={{
-            display: 'flex',
-            background: 'var(--pm-inset, #F1F4F9)',
-            border: '1px solid var(--pm-border)',
-            borderRadius: 'var(--pm-radius-md, 10px)',
-            padding: 4,
-            gap: 4,
-            margin: '0 0 14px',
-          }}>
-            {[
-              { id: 'alle', label: 'Åbne kampe' },
-              { id: 'mine', label: 'Mine kampe' },
-            ].map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => onScopeChange(id)}
-                style={{
-                  flex: 1,
-                  textAlign: 'center',
-                  fontWeight: 600,
-                  fontSize: 12.5,
-                  padding: '8px',
-                  borderRadius: 8,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  transition: 'background 0.15s, color 0.15s, box-shadow 0.15s',
-                  ...(kampeScope === id
-                    ? { background: 'var(--pm-navy, #16377E)', color: '#fff', boxShadow: '0 3px 8px rgba(22,55,126,0.3)' }
-                    : { background: 'transparent', color: 'var(--pm-text-light, #8898AA)' }),
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
           <div className="pm-help-box" style={{ marginBottom: 16 }}>
             <button
               type="button"
