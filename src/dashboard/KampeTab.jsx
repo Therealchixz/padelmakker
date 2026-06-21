@@ -65,6 +65,8 @@ import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
 import { completionMsFor2v2, isWithinResultErrorReportWindow } from '../lib/resultErrorReports';
 import { calculate2v2MatchWinPrediction } from '../lib/matchWinPrediction';
 import { PillTabs } from '../components/PillTabs';
+import { LevelRangeSlider } from '../components/LevelRangeSlider';
+import { eloToLevel, levelToElo } from '../lib/padelLevelUtils';
 import {
   KampeRedesignToolbar,
   KampeActiveFilterChips,
@@ -2734,43 +2736,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     { id: "yes", label: "Ja, booket" },
     { id: "no", label: "Nej, ikke endnu" },
   ];
-  const eloPresetTabs = [
-    { id: "tight", label: "Tæt på mig (±100)" },
-    { id: "flex", label: "Fleksibel (±200)" },
-    { id: "open", label: "Åben (±350)" },
-  ];
   const matchTypeTabs = [
     { id: "open", label: "🔓 Åben kamp" },
     { id: "closed", label: "🔒 Lukket kamp" },
   ];
-  const eloPresetValue = useMemo(() => {
-    const min = Number(newMatch.level_min);
-    const max = Number(newMatch.level_max);
-    if (!Number.isFinite(min) || !Number.isFinite(max)) return "";
-    const presets = [
-      { id: "tight", delta: 100 },
-      { id: "flex", delta: 200 },
-      { id: "open", delta: 350 },
-    ];
-    for (const preset of presets) {
-      if (
-        min === clampElo(myElo - preset.delta, myElo)
-        && max === clampElo(myElo + preset.delta, myElo)
-      ) {
-        return preset.id;
-      }
-    }
-    return "";
-  }, [newMatch.level_min, newMatch.level_max, myElo]);
-  const applyEloPreset = (presetId) => {
-    const delta = { tight: 100, flex: 200, open: 350 }[presetId];
-    if (!delta) return;
-    setNewMatch((m) => ({
-      ...m,
-      level_min: String(clampElo(myElo - delta, myElo)),
-      level_max: String(clampElo(myElo + delta, myElo)),
-    }));
-  };
   const onScopeChange = (nextScope) => {
     setKampeScope(nextScope);
     mergeKampeSessionPrefs(user.id, { scope: nextScope });
@@ -3768,36 +3737,26 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <option value="180">3 timer</option>
               </select></div>
             <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Hvilket spiller-niveau søger du? (ELO til kampen)</label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "4px" }}>
-                <input
-                  type="number"
-                  min="400"
-                  max="3000"
-                  value={newMatch.level_min}
-                  onChange={e => setNewMatch(m => ({ ...m, level_min: e.target.value }))}
-                  placeholder="Fra"
-                  style={{ ...inputStyle, fontSize: "13px" }}
-                />
-                <input
-                  type="number"
-                  min="400"
-                  max="3000"
-                  value={newMatch.level_max}
-                  onChange={e => setNewMatch(m => ({ ...m, level_max: e.target.value }))}
-                  placeholder="Til"
-                  style={{ ...inputStyle, fontSize: "13px" }}
-                />
-              </div>
-              <PillTabs
-                tabs={eloPresetTabs}
-                value={eloPresetValue}
-                onChange={applyEloPreset}
-                ariaLabel="ELO-interval"
-                size="sm"
-                className="pm-pill-tabs--wrap"
-                style={{ marginTop: "8px" }}
-              />
+              <label style={labelStyle}>Hvilket niveau søger du?</label>
+              {(() => {
+                const lvlMin = eloToLevel(Number(newMatch.level_min) || clampElo(myElo - 100, myElo));
+                const lvlMax = eloToLevel(Number(newMatch.level_max) || clampElo(myElo + 100, myElo));
+                return (
+                  <>
+                    <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "0 8px 8px", marginTop: 4 }}>
+                      <LevelRangeSlider
+                        minVal={lvlMin}
+                        maxVal={lvlMax}
+                        onMinChange={(v) => setNewMatch(m => ({ ...m, level_min: String(levelToElo(v)) }))}
+                        onMaxChange={(v) => setNewMatch(m => ({ ...m, level_max: String(levelToElo(v)) }))}
+                      />
+                    </div>
+                    <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
+                      Spillere på niveau {lvlMin.toFixed(1)}–{lvlMax.toFixed(1)} matcher kampen.
+                    </p>
+                  </>
+                );
+              })()}
             </div>
           </div>
           <label style={{ ...labelStyle, marginTop: "14px" }}>

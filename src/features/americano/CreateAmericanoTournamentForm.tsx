@@ -43,6 +43,7 @@ import {
   AMERICANO_VENUE_NONE,
 } from '../../lib/matchVenueOptions'
 import { VenueRegionPicker } from '../../components/VenueRegionPicker'
+import { LevelRangeSlider as SharedLevelRangeSlider } from '../../components/LevelRangeSlider.jsx'
 
 type CourtOption = { id: string; name: string }
 
@@ -97,47 +98,16 @@ function LevelRangeSlider({
   minVal: number; maxVal: number
   onMinChange: (v: number) => void; onMaxChange: (v: number) => void
 }) {
-  const toPercent = (v: number) => ((v - RANGE_MIN) / (RANGE_MAX - RANGE_MIN)) * 100
-
   return (
-    <div style={{ padding: '20px 8px 4px' }}>
-      <div style={{ position: 'relative', height: 32 }}>
-        {/* Track */}
-        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 4, background: 'var(--pm-border)', borderRadius: 2, transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-        {/* Navy fill */}
-        <div style={{ position: 'absolute', top: '50%', left: `${toPercent(minVal)}%`, right: `${100 - toPercent(maxVal)}%`, height: 4, background: 'var(--pm-navy)', borderRadius: 2, transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-
-        {/* Min knob tooltip */}
-        <div style={{ position: 'absolute', top: -20, left: `${toPercent(minVal)}%`, transform: 'translateX(-50%)', background: 'var(--pm-navy)', color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '2px 6px', borderRadius: 5, pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 6 }}>
-          {minVal.toFixed(1)}
-        </div>
-        {/* Max knob tooltip */}
-        <div style={{ position: 'absolute', top: -20, left: `${toPercent(maxVal)}%`, transform: 'translateX(-50%)', background: 'var(--pm-navy)', color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '2px 6px', borderRadius: 5, pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 6 }}>
-          {maxVal.toFixed(1)}
-        </div>
-
-        {/* Min range input */}
-        <input
-          type="range" min={RANGE_MIN} max={RANGE_MAX} step={RANGE_STEP} value={minVal}
-          onChange={e => { const v = parseFloat(e.target.value); if (v < maxVal) onMinChange(v) }}
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', appearance: 'none', WebkitAppearance: 'none', background: 'transparent', cursor: 'pointer', zIndex: minVal > maxVal - RANGE_STEP ? 5 : 4, margin: 0 }}
-          className="pm-range-input"
-        />
-        {/* Max range input */}
-        <input
-          type="range" min={RANGE_MIN} max={RANGE_MAX} step={RANGE_STEP} value={maxVal}
-          onChange={e => { const v = parseFloat(e.target.value); if (v > minVal) onMaxChange(v) }}
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', appearance: 'none', WebkitAppearance: 'none', background: 'transparent', cursor: 'pointer', zIndex: 4, margin: 0 }}
-          className="pm-range-input"
-        />
-      </div>
-      {/* Labels */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, padding: '0 2px' }}>
-        {[1, 2, 3, 4, 5].map(l => (
-          <span key={l} style={{ fontSize: 10, color: 'var(--pm-text-light)' }}>{l === 5 ? '5.0+' : `${l}.0`}</span>
-        ))}
-      </div>
-    </div>
+    <SharedLevelRangeSlider
+      minVal={minVal}
+      maxVal={maxVal}
+      onMinChange={onMinChange}
+      onMaxChange={onMaxChange}
+      min={RANGE_MIN}
+      max={RANGE_MAX}
+      step={RANGE_STEP}
+    />
   )
 }
 
