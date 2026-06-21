@@ -79,6 +79,7 @@ export function KampeMatchListCard({
   currentUserId = null,
   primaryAction = null,
   attentionReason = null,
+  statusNote = null,
   onClick,
 }) {
   const venue =
@@ -206,6 +207,11 @@ export function KampeMatchListCard({
         <div className="pm-kampe-v2-list-attention">
           <span className="pm-kampe-v2-list-attention-dot" aria-hidden />
           {attentionReason}
+        </div>
+      ) : statusNote ? (
+        <div className="pm-kampe-v2-list-statusnote">
+          <span className="pm-kampe-v2-list-statusnote-dot" aria-hidden />
+          {statusNote}
         </div>
       ) : null}
 

@@ -3391,6 +3391,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           currentUserId={myUidStr}
           primaryAction={buildMatchPrimaryAction(m, bundle)}
           attentionReason={cardState.attentionReason}
+          statusNote={cardState.statusNote}
           onClick={() => {
             if (matchUnreadByIdRef.current[matchKey]) {
               void markMatchNotifsRead(m.id);

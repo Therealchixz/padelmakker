@@ -64,6 +64,15 @@ export function buildMatchCardState({
       isAdmin: false,
     }).ok,
   );
+  // Du har selv indberettet et resultat og venter på modstanderens bekræftelse (ingen handling fra dig)
+  const waitingForOpponentConfirm = Boolean(
+    matchResult
+    && !matchResult.confirmed
+    && isPlayerInMatch
+    && String(matchResult.submitted_by) === currentUserKey,
+  );
+  // Neutral statuslinje (grå) — ikke en "kræver handling"-markering
+  const statusNote = waitingForOpponentConfirm ? 'Venter på modstander' : null;
   // Tydelig grund til at kortet kræver handling (vises på kortet)
   const attentionReason = needsResultConfirm
     ? 'Bekræft resultat'
@@ -114,6 +123,8 @@ export function buildMatchCardState({
     pendingRequests,
     attentionCount: Math.max(unreadMatchCountNum, pendingJoinAttention, needsResultConfirm ? 1 : 0),
     needsResultConfirm,
+    waitingForOpponentConfirm,
+    statusNote,
     attentionReason,
     hasAdminActions,
     adminActionsOpen: Boolean(adminActionsOpen),
