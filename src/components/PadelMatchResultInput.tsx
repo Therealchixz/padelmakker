@@ -415,10 +415,10 @@ export default function PadelMatchResultInput({
 
     const scoreCol = (field: keyof SetForm, teamName: string, maxVal: number) => (
       <div style={{ flex: 1, textAlign: 'center' }}>
-        <div style={{ fontSize: 11, color: '#16377E', fontWeight: 600, marginBottom: 9 }}>{teamName}</div>
+        <div style={{ fontSize: 11, color: 'var(--pm-navy)', fontWeight: 600, marginBottom: 9 }}>{teamName}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
           {cntBtn(index, field, -1, maxVal, disabled)}
-          <span style={{ fontSize: 25, fontWeight: 700, color: '#16377E', width: 32, textAlign: 'center' }}>
+          <span style={{ fontSize: 25, fontWeight: 700, color: 'var(--pm-navy)', width: 32, textAlign: 'center' }}>
             {numOrUndef(f[field]) ?? 0}
           </span>
           {cntBtn(index, field, 1, maxVal, disabled)}
@@ -432,7 +432,7 @@ export default function PadelMatchResultInput({
         role="group"
         aria-label={`Sæt ${n}`}
         style={{
-          background: '#fff', borderRadius: 14, border: '1px solid #E6EAF1',
+          background: 'var(--pm-surface)', borderRadius: 14, border: '1px solid var(--pm-border)',
           boxShadow: '0 2px 8px rgba(13,39,82,0.06)', padding: 16, marginBottom: 13,
           opacity: disabled ? 0.55 : 1,
         }}
@@ -441,7 +441,7 @@ export default function PadelMatchResultInput({
           <b style={{ fontSize: '13.5px', fontWeight: 700 }}>
             Sæt {n}{n === 3 ? ' (Tiebreak)' : ''}
           </b>
-          <span style={{ fontSize: '9.5px', fontWeight: 700, letterSpacing: '1.2px', color: '#5E6B81' }}>
+          <span style={{ fontSize: '9.5px', fontWeight: 700, letterSpacing: '1.2px', color: 'var(--pm-text-mid)' }}>
             {reqLabel}
           </span>
         </div>
@@ -452,8 +452,8 @@ export default function PadelMatchResultInput({
         </div>
 
         {tb && (
-          <div style={{ marginTop: 14, background: '#FAEFDC', borderRadius: 10, padding: 12, border: '1px solid #EDD9B5' }}>
-            <p style={{ fontSize: '11.5px', fontWeight: 600, color: '#92400E', marginBottom: 10 }}>Tiebreak-point</p>
+          <div style={{ marginTop: 14, background: 'var(--pm-amber-bg)', borderRadius: 10, padding: 12, border: '1px solid var(--pm-amber-border)' }}>
+            <p style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--pm-amber-text)', marginBottom: 10 }}>Tiebreak-point</p>
             <div style={{ display: 'flex', gap: 10 }}>
               {scoreCol('tb1', t1Name, 99)}
               {scoreCol('tb2', t2Name, 99)}
@@ -462,7 +462,7 @@ export default function PadelMatchResultInput({
         )}
 
         {err && (
-          <p style={{ marginTop: 10, fontSize: '12px', color: '#E5484D' }} role="alert">
+          <p style={{ marginTop: 10, fontSize: '12px', color: 'var(--pm-red)' }} role="alert">
             {err}
           </p>
         )}
@@ -475,37 +475,37 @@ export default function PadelMatchResultInput({
       {playersEditable && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
           <div>
-            <label htmlFor="padel-team1" style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: '#5E6B81', marginBottom: 5 }}>Hold 1</label>
+            <label htmlFor="padel-team1" style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: 'var(--pm-text-mid)', marginBottom: 5 }}>Hold 1</label>
             <input
               id="padel-team1"
               type="text"
               value={team1}
               onChange={(e) => setTeam1(e.target.value)}
-              style={{ width: '100%', borderRadius: 10, border: '1px solid #E6EAF1', padding: '10px 12px', fontSize: 14, color: '#101A2E', background: '#fff', boxSizing: 'border-box' as const }}
+              style={{ width: '100%', borderRadius: 10, border: '1px solid var(--pm-border)', padding: '10px 12px', fontSize: 14, color: 'var(--pm-text)', background: 'var(--pm-surface)', boxSizing: 'border-box' as const }}
               autoComplete="off"
             />
           </div>
           <div>
-            <label htmlFor="padel-team2" style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: '#5E6B81', marginBottom: 5 }}>Hold 2</label>
+            <label htmlFor="padel-team2" style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: 'var(--pm-text-mid)', marginBottom: 5 }}>Hold 2</label>
             <input
               id="padel-team2"
               type="text"
               value={team2}
               onChange={(e) => setTeam2(e.target.value)}
-              style={{ width: '100%', borderRadius: 10, border: '1px solid #E6EAF1', padding: '10px 12px', fontSize: 14, color: '#101A2E', background: '#fff', boxSizing: 'border-box' as const }}
+              style={{ width: '100%', borderRadius: 10, border: '1px solid var(--pm-border)', padding: '10px 12px', fontSize: 14, color: 'var(--pm-text)', background: 'var(--pm-surface)', boxSizing: 'border-box' as const }}
               autoComplete="off"
             />
           </div>
         </div>
       )}
       {playersEditable && !namesOk && (
-        <p style={{ fontSize: '12px', color: '#E5484D', marginBottom: 10 }} role="alert">Begge holdnavne skal udfyldes.</p>
+        <p style={{ fontSize: '12px', color: 'var(--pm-red)', marginBottom: 10 }} role="alert">Begge holdnavne skal udfyldes.</p>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0 10px' }}>
         <h3 style={{ fontSize: '15.5px', fontWeight: 600, letterSpacing: '-0.2px', margin: 0 }}>Indtast score</h3>
         {(setsWon.t1 > 0 || setsWon.t2 > 0) && (
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#16377E' }} role="status" aria-live="polite">
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--pm-navy)' }} role="status" aria-live="polite">
             {setsWon.t1}–{setsWon.t2} sæt
           </span>
         )}
@@ -515,7 +515,7 @@ export default function PadelMatchResultInput({
       {setCard(1)}
       {setCard(2)}
 
-      <p style={{ textAlign: 'center', fontSize: '11.5px', color: '#5E6B81', lineHeight: 1.6, padding: '4px 16px 12px' }}>
+      <p style={{ textAlign: 'center', fontSize: '11.5px', color: 'var(--pm-text-mid)', lineHeight: 1.6, padding: '4px 16px 12px' }}>
         Resultatet sendes til modstanderne til godkendelse. Sørg for at begge hold er enige før indsendelse.
       </p>
 
@@ -525,8 +525,8 @@ export default function PadelMatchResultInput({
             type="button"
             onClick={onCancel}
             style={{
-              flex: 1, padding: '13px', borderRadius: 10, border: '1.5px solid #E6EAF1',
-              background: '#fff', color: '#16377E', fontSize: '14.5px', fontWeight: 600,
+              flex: 1, padding: '13px', borderRadius: 10, border: '1.5px solid var(--pm-border)',
+              background: 'var(--pm-surface)', color: 'var(--pm-navy)', fontSize: '14.5px', fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
@@ -538,8 +538,8 @@ export default function PadelMatchResultInput({
           disabled={!formValid}
           style={{
             flex: 2, padding: '14px', borderRadius: 10, border: 'none',
-            background: formValid ? '#16377E' : '#C9D3E1',
-            color: '#fff', fontSize: '14.5px', fontWeight: 600,
+            background: formValid ? 'var(--pm-navy)' : 'var(--pm-border)',
+            color: 'var(--pm-on-accent)', fontSize: '14.5px', fontWeight: 600,
             cursor: formValid ? 'pointer' : 'default', fontFamily: 'inherit',
             boxShadow: formValid ? '0 6px 14px rgba(22,55,126,0.32)' : 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,

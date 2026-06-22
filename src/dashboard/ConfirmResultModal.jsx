@@ -7,10 +7,10 @@ function SetDisplay({ set, setNum }) {
   if (g1 == null || g2 == null || (Number(g1) + Number(g2) === 0)) return null;
   return (
     <div style={{ textAlign: 'center' }}>
-      <b style={{ fontSize: 21, fontWeight: 700, color: '#16377E', letterSpacing: 1, display: 'block' }}>
+      <b style={{ fontSize: 21, fontWeight: 700, color: 'var(--pm-navy)', letterSpacing: 1, display: 'block' }}>
         {g1}–{g2}
       </b>
-      <span style={{ display: 'block', fontSize: '9.5px', fontWeight: 600, color: '#5E6B81', letterSpacing: 1, marginTop: 2 }}>
+      <span style={{ display: 'block', fontSize: '9.5px', fontWeight: 600, color: 'var(--pm-text-mid)', letterSpacing: 1, marginTop: 2 }}>
         SÆT {setNum}
       </span>
     </div>
@@ -38,7 +38,7 @@ export function ConfirmResultModal({
     <AppModal open onClose={busy ? undefined : onClose} ariaLabel="Bekræft resultat" maxWidthPreset="sm">
       <div className="pm-modal-body" style={{ fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif' }}>
         {/* Eyebrow */}
-        <div style={{ textAlign: 'center', fontSize: '10.5px', fontWeight: 700, letterSpacing: '1.3px', textTransform: 'uppercase', color: '#5E6B81' }}>
+        <div style={{ textAlign: 'center', fontSize: '10.5px', fontWeight: 700, letterSpacing: '1.3px', textTransform: 'uppercase', color: 'var(--pm-text-mid)' }}>
           Bekræft resultat
         </div>
 
@@ -49,7 +49,7 @@ export function ConfirmResultModal({
 
         {/* Date + venue */}
         {match && (
-          <div style={{ textAlign: 'center', fontSize: 12, color: '#5E6B81', marginTop: 3 }}>
+          <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--pm-text-mid)', marginTop: 3 }}>
             {formatMatchDateHeadlineDa(match.date)} · {matchTimeLabel(match)}
             {match.court_name ? ` · ${match.court_name}` : ''}
           </div>
@@ -67,7 +67,7 @@ export function ConfirmResultModal({
           <div style={{ textAlign: 'center', marginBottom: 14 }}>
             <span style={{
               fontSize: 11, fontWeight: 600, padding: '3px 12px', borderRadius: 999,
-              background: '#E1F5EA', color: '#179E5E',
+              background: 'var(--pm-green-bg)', color: 'var(--pm-green)',
             }}>
               {winnerNames} vandt
             </span>
@@ -81,7 +81,7 @@ export function ConfirmResultModal({
           onClick={onConfirm}
           style={{
             width: '100%', padding: 12, borderRadius: 10, border: 'none',
-            background: busy ? '#C9D3E1' : '#16377E', color: '#fff',
+            background: busy ? 'var(--pm-border)' : 'var(--pm-navy)', color: 'var(--pm-on-accent)',
             fontSize: '14.5px', fontWeight: 600, cursor: busy ? 'default' : 'pointer',
             fontFamily: 'inherit', boxShadow: busy ? 'none' : '0 6px 14px rgba(22,55,126,0.32)',
           }}
@@ -96,8 +96,8 @@ export function ConfirmResultModal({
           onClick={onReject}
           style={{
             width: '100%', padding: 11, borderRadius: 10, marginTop: 9,
-            border: '1.5px solid #E6EAF1', background: '#fff',
-            color: '#E5484D', fontSize: '14.5px', fontWeight: 600,
+            border: '1.5px solid var(--pm-border)', background: 'var(--pm-surface)',
+            color: 'var(--pm-red)', fontSize: '14.5px', fontWeight: 600,
             cursor: busy ? 'default' : 'pointer', fontFamily: 'inherit',
           }}
         >
@@ -105,7 +105,7 @@ export function ConfirmResultModal({
         </button>
 
         {/* Note */}
-        <div style={{ textAlign: 'center', fontSize: '10.5px', color: '#5E6B81', marginTop: 11 }}>
+        <div style={{ textAlign: 'center', fontSize: '10.5px', color: 'var(--pm-text-mid)', marginTop: 11 }}>
           Elo-point fordeles, når alle har godkendt
         </div>
       </div>
