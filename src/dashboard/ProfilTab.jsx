@@ -560,7 +560,7 @@ export function ProfilTab({ user, showToast, setTab }) {
       {!editing ? (
       <div>
         <div data-tour="profile-main" className="pm-tour-scroll-anchor">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'max(12px, calc(env(safe-area-inset-top) + 8px)) 18px 8px' }}>
           <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Min profil</h2>
         </div>
         <div className="pm-profile-top">
@@ -766,16 +766,18 @@ export function ProfilTab({ user, showToast, setTab }) {
                   <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Badges</h3>
                   <span style={{ fontSize: 11.5, color: theme.textLight, fontWeight: 600 }}>{earnedCount}/{badges.length} opnået</span>
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
                   {badges.map(b => (
-                    <div key={b.key} style={{ textAlign: 'center', flex: 1, opacity: b.earned ? 1 : 0.45 }} title={b.earned ? `${b.label} — opnået` : `${b.label} — ${b.hint}`}>
+                    <div key={b.key} style={{ textAlign: 'center', flex: 1 }} aria-label={b.earned ? `${b.label} — opnået` : `${b.label} — ${b.hint}`}>
                       <div style={{ width: 52, height: 52, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
+                        opacity: b.earned ? 1 : 0.45,
                         background: b.earned ? theme.navy : theme.surfaceAlt,
                         color: b.earned ? '#fff' : theme.textLight,
                         border: b.earned ? 'none' : `1px solid ${theme.border}` }}>
                         {b.icon}
                       </div>
                       <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 600, marginTop: 6, color: b.earned ? theme.textMid : theme.textLight }}>{b.label}</span>
+                      <span style={{ display: 'block', fontSize: '9px', lineHeight: 1.25, marginTop: 3, color: b.earned ? theme.green : theme.textLight }}>{b.earned ? 'Opnået' : b.hint}</span>
                     </div>
                   ))}
                 </div>

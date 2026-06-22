@@ -414,6 +414,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
                     type="button"
                     onClick={() => set({ levelWindow: value })}
                     title={`${label}: ${levelRangeSummary(min, max)}`}
+                    aria-label={`${label}: niveau ${levelRangeSummary(min, max)}`}
                     style={{
                       ...btn(active),
                       padding: '8px 10px',
@@ -439,6 +440,17 @@ export function MakkerSearchFilterPage({ user, showToast }) {
                 );
               })}
             </div>
+            <p
+              style={{
+                fontSize: 11,
+                color: theme.textMid,
+                margin: '8px 0 0',
+                lineHeight: 1.4,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              Resultat: niveau <strong style={{ color: theme.text }}>{levelRangeSummary(levelSpan.min, levelSpan.max)}</strong>
+            </p>
           </div>
         ) : null}
 

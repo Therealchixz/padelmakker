@@ -224,7 +224,7 @@ export function NotifikationerPage() {
           <button
             type="button"
             onClick={markAllRead}
-            style={{ fontSize: '11.5px', fontWeight: 600, color: theme.navy, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '4px 0' }}
+            style={{ ...btn(false, { size: 'sm', radius: 'pill' }), minHeight: 40, color: theme.navy, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             Markér alle læst
           </button>
@@ -291,18 +291,6 @@ export function NotifikationerPage() {
                   </div>
                 )}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                <time style={{ fontSize: 11, color: theme.textLight, fontWeight: 500, whiteSpace: 'nowrap' }}>{timeAgo(n.created_at)}</time>
-                {!n.read && <div style={{ width: 8, height: 8, borderRadius: '50%', background: theme.accent }} />}
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); void deleteNotif(n); }}
-                  aria-label="Slet"
-                  style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: theme.textLight, display: 'flex' }}
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
               {isClickable && !isResultPending && (
                 <button
                   type="button"
@@ -311,6 +299,18 @@ export function NotifikationerPage() {
                   style={{ position: 'absolute', inset: 0, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 14 }}
                 />
               )}
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                <time style={{ fontSize: 11, color: theme.textLight, fontWeight: 500, whiteSpace: 'nowrap' }}>{timeAgo(n.created_at)}</time>
+                {!n.read && <div style={{ width: 8, height: 8, borderRadius: '50%', background: theme.accent }} />}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); void deleteNotif(n); }}
+                  aria-label="Slet"
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: theme.textLight, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, minWidth: 40, position: 'relative', zIndex: 2 }}
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           );
         })}

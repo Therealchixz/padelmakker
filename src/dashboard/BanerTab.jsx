@@ -34,9 +34,8 @@ function banerSlotClass(status) {
 
 function DateNavigator({ dateYmd, todayYmd, loading = false, onChangeDate }) {
   const navButtonStyle = (primary = false) => ({
-    ...btn(primary),
-    fontSize: '12px',
-    padding: primary ? '8px 12px' : '8px 10px',
+    ...btn(primary, { size: 'sm' }),
+    minHeight: '44px',
     opacity: loading ? 0.65 : 1,
     cursor: loading ? 'not-allowed' : 'pointer',
   });
@@ -316,13 +315,21 @@ export function BanerTab() {
       );
     }
     if (s.status === 'blocked_rule') {
+      const hint = s.ruleHint || 'Kan ikke bookes (klubbens regel)';
       return (
         <span
           key={s.time}
-          title={s.ruleHint || 'Kan ikke bookes (klubbens regel)'}
-          className={banerSlotClass('blocked_rule')}
+          className="pm-baner-slot-wrap"
+          style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}
         >
-          {s.time} · Ikke bookbar
+          <span
+            title={hint}
+            aria-label={`${s.time} · Ikke bookbar. ${hint}`}
+            className={banerSlotClass('blocked_rule')}
+          >
+            {s.time} · Ikke bookbar
+          </span>
+          <span style={{ fontSize: 11, lineHeight: 1.3, color: theme.textMid }}>{hint}</span>
         </span>
       );
     }
@@ -338,7 +345,7 @@ export function BanerTab() {
 
   return (
     <div className="pm-baner-page">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0 8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'max(12px, calc(env(safe-area-inset-top) + 8px)) 0 8px' }}>
         <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Baner</h2>
       </div>
 
@@ -474,7 +481,7 @@ export function BanerTab() {
                   <MapPin size={11} />{v.address}
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: 'var(--pm-navy)', border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>
+                  <span style={{ ...tag('var(--pm-surface-muted)', 'var(--pm-navy)'), border: '1px solid var(--pm-americano-tie-border)' }}>
                     {v.indoor ? 'Indendørs' : 'Udendørs'}
                   </span>
                 </div>
@@ -633,6 +640,9 @@ export function BanerTab() {
                         ))}
                       </div>
                     )}
+                    {loaded && loaded.courts.length === 0 && !loading && !err && (
+                      <div className="pm-baner-status">Ingen ledige tider</div>
+                    )}
                   </>
                 ) : v.kind === 'bookli' ? (
                   <>
@@ -731,6 +741,9 @@ export function BanerTab() {
                         ))}
                       </div>
                     )}
+                    {loaded && loaded.courts.length === 0 && !loading && !err && (
+                      <div className="pm-baner-status">Ingen ledige tider</div>
+                    )}
                   </>
                 ) : (
                   <>
@@ -816,6 +829,9 @@ export function BanerTab() {
                           </div>
                         ))}
                       </div>
+                    )}
+                    {loaded && loaded.courts.length === 0 && !loading && !err && (
+                      <div className="pm-baner-status">Ingen ledige tider</div>
                     )}
                   </>
                 )}

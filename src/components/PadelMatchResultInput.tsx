@@ -386,9 +386,9 @@ export default function PadelMatchResultInput({
         onClick={() => step(idx, field, dir, maxVal)}
         aria-label={isPlus ? 'Tilføj' : 'Fjern'}
         style={{
-          width: 35, height: 35, borderRadius: 10, border: isPlus ? 'none' : '1.5px solid #E6EAF1',
-          background: isPlus ? (disabled ? '#9AA9BD' : '#16377E') : '#fff',
-          color: isPlus ? '#fff' : (atLimit ? '#C9D3E1' : '#16377E'),
+          width: 40, height: 40, borderRadius: 10, border: isPlus ? 'none' : '1.5px solid var(--pm-border)',
+          background: isPlus ? (disabled ? 'var(--pm-text-light)' : 'var(--pm-accent)') : 'var(--pm-surface)',
+          color: isPlus ? 'var(--pm-on-accent)' : (atLimit ? 'var(--pm-text-light)' : 'var(--pm-accent)'),
           fontSize: 18, fontWeight: 600,
           cursor: disabled || atLimit ? 'default' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',

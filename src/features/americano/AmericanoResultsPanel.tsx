@@ -787,7 +787,7 @@ export function AmericanoResultsPanel({
                   onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setScores((prev) => ({ ...prev, [m.id]: { a: v, b: prev[m.id]?.b ?? '' } })) }}
                   onBlur={() => handleScoreBlur(m, 'a')}
                   aria-label="Point hold A"
-                  style={{ width: 40, padding: '6px 2px', borderRadius: 8, border: `2px solid ${c.accent}`, fontSize: 16, fontWeight: 800, textAlign: 'center', fontFamily: font, color: c.accent, background: 'var(--pm-accent-bg)', outline: 'none' }}
+                  style={{ width: 46, minHeight: 44, padding: '10px 4px', borderRadius: 8, border: `2px solid ${c.accent}`, fontSize: 16, fontWeight: 800, textAlign: 'center', fontFamily: font, color: c.accent, background: 'var(--pm-accent-bg)', outline: 'none', boxSizing: 'border-box' }}
                 />
                 <span style={{ fontWeight: 800, color: c.muted }}>-</span>
                 <input
@@ -795,7 +795,7 @@ export function AmericanoResultsPanel({
                   onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setScores((prev) => ({ ...prev, [m.id]: { a: prev[m.id]?.a ?? '', b: v } })) }}
                   onBlur={() => handleScoreBlur(m, 'b')}
                   aria-label="Point hold B"
-                  style={{ width: 40, padding: '6px 2px', borderRadius: 8, border: `2px solid ${c.accent}`, fontSize: 16, fontWeight: 800, textAlign: 'center', fontFamily: font, color: c.accent, background: 'var(--pm-accent-bg)', outline: 'none' }}
+                  style={{ width: 46, minHeight: 44, padding: '10px 4px', borderRadius: 8, border: `2px solid ${c.accent}`, fontSize: 16, fontWeight: 800, textAlign: 'center', fontFamily: font, color: c.accent, background: 'var(--pm-accent-bg)', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
             ) : resolved != null ? (

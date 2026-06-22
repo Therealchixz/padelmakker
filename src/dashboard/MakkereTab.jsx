@@ -179,7 +179,7 @@ function SuggestionCard({ suggestion, onView, onInvite, onMessage, onDismiss, di
           type="button"
           onClick={() => onDismiss(p.id)}
           aria-label="Skjul forslag"
-          style={{ position: 'absolute', top: 8, right: 8, width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'transparent', color: theme.textLight, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, lineHeight: 1 }}
+          style={{ position: 'absolute', top: 0, right: 0, width: 44, height: 44, borderRadius: '50%', border: 'none', background: 'transparent', color: theme.textLight, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, lineHeight: 1 }}
         >
           ✕
         </button>
@@ -194,7 +194,7 @@ function SuggestionCard({ suggestion, onView, onInvite, onMessage, onDismiss, di
           />
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, paddingRight: onDismiss ? 36 : 0 }}>
           <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span
               onClick={() => onView(p)}
@@ -232,10 +232,10 @@ function SuggestionCard({ suggestion, onView, onInvite, onMessage, onDismiss, di
           {quality.label}
         </span>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <button onClick={() => onMessage(p)} style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
+          <button onClick={() => onMessage(p)} style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', minHeight: 44 }}>
             Besked
           </button>
-          <button onClick={() => onInvite(p)} style={{ ...btn(true), padding: '7px 12px', fontSize: '12px' }}>
+          <button onClick={() => onInvite(p)} style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', minHeight: 44 }}>
             Invitér
           </button>
         </div>
@@ -773,27 +773,27 @@ export function MakkereTab({ user, showToast }) {
       {!makkerFilterOn && showFilters && (
         <div className="pm-filter-panel">
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <select value={filterElo} onChange={e => handleFilterChange(() => setFilterElo(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+            <select value={filterElo} onChange={e => handleFilterChange(() => setFilterElo(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
               <option value="all">Alle ELO-niveauer</option>
               <option value="close">±150 ELO om dig ({myElo})</option>
             </select>
-            <select value={filterArea} onChange={e => handleFilterChange(() => setFilterArea(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+            <select value={filterArea} onChange={e => handleFilterChange(() => setFilterArea(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
               <option value="all">Alle regioner</option>
               {REGIONS.map((r) => <option key={r} value={r}>{r.replace('Region ', '')}</option>)}
             </select>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <select value={filterStyle} onChange={e => handleFilterChange(() => setFilterStyle(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+            <select value={filterStyle} onChange={e => handleFilterChange(() => setFilterStyle(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
               <option value="all">Alle spillestile</option>
               {PLAY_STYLES.filter(s => s !== 'Ved ikke endnu').map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <select value={filterIntent} onChange={e => handleFilterChange(() => setFilterIntent(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+            <select value={filterIntent} onChange={e => handleFilterChange(() => setFilterIntent(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
               <option value="all">Alle intentioner</option>
               {INTENTS.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
             </select>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <select value={filterCourtSide} onChange={e => handleFilterChange(() => setFilterCourtSide(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+            <select value={filterCourtSide} onChange={e => handleFilterChange(() => setFilterCourtSide(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
               <option value="all">Alle bandesider</option>
               {COURT_SIDES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -848,14 +848,15 @@ export function MakkereTab({ user, showToast }) {
                 <button
                   onClick={() => toggleFavorite(p.id)}
                   title={favorites.has(String(p.id)) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'}
-                  style={{ ...btn(false), padding: '8px 11px', fontSize: '14px' }}
+                  aria-label={favorites.has(String(p.id)) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'}
+                  style={{ ...btn(false), padding: '8px 11px', fontSize: '14px', minHeight: 44, minWidth: 44 }}
                 >
                   {favorites.has(String(p.id)) ? '★' : '☆'}
                 </button>
-                <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '8px 14px', fontSize: '12px' }}>
+                <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
                   Besked
                 </button>
-                <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '8px 14px', fontSize: '12px' }}>
+                <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
                   Invitér
                 </button>
               </div>
