@@ -5582,17 +5582,39 @@ button,
 
 .pm-admin-subtabs {
   max-width: 100%;
-  padding-top: 6px;
-  overflow: visible;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pm-admin-subtabs::-webkit-scrollbar {
+  display: none;
 }
 
 .pm-admin-subtabs .pm-pill-tab {
+  flex: 0 0 auto;
+  min-width: max-content;
   overflow: visible;
 }
 
 @media (max-width: 640px) {
   .pm-admin-subtabs .pm-pill-tab {
     min-height: 40px;
+  }
+}
+
+/* Rigeligt plads på desktop: lad fanerne fylde bjælken i stedet for at scrolle */
+@media (min-width: 640px) {
+  .pm-admin-subtabs {
+    overflow-x: visible;
+  }
+
+  .pm-admin-subtabs .pm-pill-tab {
+    flex: 1 1 auto;
   }
 }
 
@@ -5610,9 +5632,6 @@ button,
 }
 
 .pm-admin-subtab-badge {
-  position: absolute;
-  top: -9px;
-  right: -10px;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
@@ -5626,26 +5645,9 @@ button,
   justify-content: center;
   line-height: 1;
   box-sizing: border-box;
-  border: 2px solid var(--pm-surface-alt);
-  box-shadow: 0 1px 4px rgba(185, 28, 28, 0.35);
+  box-shadow: 0 1px 3px rgba(185, 28, 28, 0.3);
   pointer-events: none;
-  z-index: 2;
-}
-
-.pm-pill-tab-active .pm-admin-subtab-badge,
-.pm-pill-tab[aria-selected="true"] .pm-admin-subtab-badge {
-  border-color: var(--pm-surface);
-}
-
-@media (max-width: 768px) {
-  .pm-admin-subtab-badge {
-    top: -10px;
-    right: -11px;
-    min-width: 20px;
-    height: 20px;
-    font-size: 11px;
-    box-shadow: 0 2px 6px rgba(185, 28, 28, 0.4);
-  }
+  flex-shrink: 0;
 }
 
 .pm-admin-search {
