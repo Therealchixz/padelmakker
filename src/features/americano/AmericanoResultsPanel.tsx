@@ -531,11 +531,14 @@ export function AmericanoResultsPanel({
     let newA = row.a.trim()
     let newB = row.b.trim()
 
+    // Stille på blur: auto-udfyld den anden side hvis værdien er gyldig, men vis
+    // ikke fejl-toast på halvfærdige tal (validering sker ved Gem).
+    const noToast = () => {}
     if (side === 'a' && newA !== '' && newB === '') {
-      const o = complementFromOneSide(newA, P, showToast)
+      const o = complementFromOneSide(newA, P, noToast)
       if (o != null) { newB = String(o) }
     } else if (side === 'b' && newB !== '' && newA === '') {
-      const o = complementFromOneSide(newB, P, showToast)
+      const o = complementFromOneSide(newB, P, noToast)
       if (o != null) { newA = String(o) }
     }
 

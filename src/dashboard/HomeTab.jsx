@@ -990,7 +990,12 @@ export function HomeTab({ user, setTab, showToast }) {
         {subtitle ? <div style={activitySubtitleStyle}>{subtitle}</div> : null}
       </div>
       <div style={activityRightRailStyle}>
-        {action || stat || null}
+        {stat && action ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+            {stat}
+            {action}
+          </div>
+        ) : (action || stat || null)}
       </div>
     </div>
   );

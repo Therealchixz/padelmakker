@@ -11,9 +11,9 @@ export function ConfirmDialog({
   danger = false,
   notice = false,
 }) {
-  const iconBg = danger ? theme.redBg || '#FEE2E2' : theme.amberBg || '#FFFBEB';
-  const iconColor = danger ? theme.red || '#E5484D' : theme.amberText || '#92400E';
-  const iconBorder = danger ? '#FCA5A5' : '#FCD34D';
+  const iconBg = danger ? theme.redBg : theme.amberBg;
+  const iconColor = danger ? theme.red : theme.amberText;
+  const iconBorder = danger ? theme.dangerBorder : theme.amberBorder;
 
   const hasStructuredContent = title || description;
 
@@ -30,14 +30,14 @@ export function ConfirmDialog({
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}
+      style={{ position: 'fixed', inset: 0, background: theme.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}
       onClick={notice ? undefined : onCancel}
     >
       <div
         style={{
-          background: theme.surface, borderRadius: 16, padding: '24px 22px 20px',
-          maxWidth: 320, width: '100%',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+          background: theme.surface, borderRadius: theme.radius, padding: '24px 22px 20px',
+          maxWidth: 380, width: '100%',
+          boxShadow: theme.modalShadow,
           border: '1px solid ' + theme.border,
           textAlign: hasStructuredContent ? 'center' : 'left',
           fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif',
@@ -78,11 +78,11 @@ export function ConfirmDialog({
             autoFocus={notice}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: '100%', padding: 12, borderRadius: 10, border: 'none',
-              background: danger ? theme.red || '#E5484D' : theme.accent || '#16377E',
-              color: '#fff', fontSize: '14.5px', fontWeight: 600,
+              width: '100%', padding: 12, minHeight: 48, borderRadius: 'var(--pm-radius-md)', border: 'none',
+              background: danger ? theme.red : theme.accent,
+              color: theme.onAccent, fontSize: '14.5px', fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
-              boxShadow: danger ? 'none' : '0 6px 14px rgba(22,55,126,0.24)',
+              boxShadow: danger ? 'none' : theme.shadowAccent,
             }}
           >
             {notice ? (confirmLabel === 'Ja, fortsæt' ? 'OK' : confirmLabel) : confirmLabel}
@@ -91,9 +91,9 @@ export function ConfirmDialog({
             <button
               onClick={onCancel}
               style={{
-                width: '100%', padding: 11, borderRadius: 10,
-                border: `1.5px solid ${theme.border}`, background: '#fff',
-                color: theme.textMid, fontSize: '14.5px', fontWeight: 600,
+                width: '100%', padding: 11, minHeight: 48, borderRadius: 'var(--pm-radius-md)',
+                border: `1.5px solid ${theme.border}`, background: theme.surface,
+                color: theme.textMid, fontSize: '14.5px', fontWeight: 700,
                 cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
