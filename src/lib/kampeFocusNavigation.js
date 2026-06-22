@@ -1,4 +1,4 @@
-import { TOURNAMENT_KAMPE_TAB_LABEL } from './tournamentCopy';
+import { TOURNAMENT_KAMPE_TAB_LABEL } from './tournamentCopy.js';
 
 /** Kampe-formatter som understøtter ?format= & ?focus= deep links fra notifikationer. */
 export const KAMPE_FORMAT_PADEL = 'padel';
