@@ -166,7 +166,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
           </p>
         ) : items.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '20px 0 8px', color: theme.textMid, fontSize: 13 }}>
-            Ingen åbne kampe. Opret en kamp under "Kampe".
+            Ingen åbne kampe. Opret en kamp under &quot;Kampe&quot;.
           </div>
         ) : (
           <div style={{ marginBottom: 4 }}>

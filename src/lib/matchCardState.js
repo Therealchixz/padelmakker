@@ -1,4 +1,4 @@
-import { canConfirmPadelMatchResult } from './resolvePadelMatchResult';
+import { canConfirmPadelMatchResult } from './resolvePadelMatchResult.js';
 
 export function matchStatusLabel(status, left) {
   const labels = {

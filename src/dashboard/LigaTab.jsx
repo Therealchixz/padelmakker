@@ -888,7 +888,7 @@ export function LigaTab({
               </div>
               <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1.5px solid var(--pm-navy)', borderLeft: '3px solid var(--pm-navy)', borderRadius: 10, padding: '11px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                 <svg style={{ width: 15, height: 15, color: 'var(--pm-navy)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 13v-2Z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
-                <span style={{ fontSize: 11.5, color: theme.textLight, lineHeight: 1.6 }}>Når du trykker <b style={{ color: theme.text }}>"Opret liga"</b>, bliver ligaen synlig i oversigten, og hold kan tilmelde sig med det samme.</span>
+                <span style={{ fontSize: 11.5, color: theme.textLight, lineHeight: 1.6 }}>Når du trykker <b style={{ color: theme.text }}>&quot;Opret liga&quot;</b>, bliver ligaen synlig i oversigten, og hold kan tilmelde sig med det samme.</span>
               </div>
             </>
           )}
