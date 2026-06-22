@@ -538,9 +538,9 @@ export function CreateAmericanoTournamentForm({
 
           {/* Preview card */}
           <div style={{ margin: '0 18px 16px', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--pm-border)', boxShadow: 'var(--pm-shadow)' }}>
-            <div style={{ background: 'linear-gradient(135deg, #0D2752 0%, #16377E 100%)', padding: '14px 14px 20px' }}>
+            <div style={{ background: 'linear-gradient(135deg, var(--pm-navy-deep) 0%, var(--pm-navy) 100%)', padding: '14px 14px 20px' }}>
               <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                <span style={{ background: tournamentFormat === 'mexicano' ? '#F59E0B' : 'var(--pm-navy-deep)', color: tournamentFormat === 'mexicano' ? 'var(--pm-navy-deep)' : '#fff', border: tournamentFormat === 'mexicano' ? 'none' : '1px solid rgba(255,255,255,0.32)', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+                <span style={{ background: tournamentFormat === 'mexicano' ? 'var(--pm-amber)' : 'var(--pm-navy-deep)', color: tournamentFormat === 'mexicano' ? 'var(--pm-navy-deep)' : 'var(--pm-on-accent)', border: tournamentFormat === 'mexicano' ? 'none' : '1px solid rgba(255,255,255,0.32)', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
                   {formatLabel}
                 </span>
                 <span style={{ background: 'rgba(255,255,255,0.93)', color: 'var(--pm-navy-deep)', fontSize: 9.5, fontWeight: 700, padding: '3px 8px', borderRadius: 5 }}>

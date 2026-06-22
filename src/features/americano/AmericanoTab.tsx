@@ -1348,7 +1348,7 @@ export function AmericanoTab({
             <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
               {/* Checkmark */}
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: theme.navy, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Check size={32} strokeWidth={2.8} />
                 </div>
               </div>
@@ -1362,7 +1362,7 @@ export function AmericanoTab({
               {/* Summary card */}
               <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 14, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' as const, alignItems: 'center' }}>
-                  <span style={{ background: theme.navy, color: '#fff', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>{formatLabel}</span>
+                  <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>{formatLabel}</span>
                 </div>
 
                 {/* Name */}
@@ -1444,7 +1444,7 @@ export function AmericanoTab({
               <button
                 type="button"
                 onClick={() => { setCreatedTournamentReceipt(null) }}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
               >
                 Gå til turneringer
                 <ArrowRight size={16} strokeWidth={2.4} />

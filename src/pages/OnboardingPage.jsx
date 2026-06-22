@@ -654,7 +654,7 @@ export function OnboardingPage() {
                 height: "46px",
                 borderRadius: "12px",
                 background: sel ? theme.navy : theme.surfaceAlt,
-                color: sel ? "#fff" : theme.navy,
+                color: sel ? "var(--pm-on-accent)" : theme.navy,
                 fontWeight: 700,
                 fontSize: "15px",
                 display: "flex",
@@ -683,7 +683,7 @@ export function OnboardingPage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#fff",
+                color: "var(--pm-on-accent)",
               }}
             >
               {sel && <Check size={12} strokeWidth={3} />}
@@ -880,7 +880,7 @@ export function OnboardingPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#fff",
+            color: "var(--pm-on-accent)",
           }}
         >
           {acceptedTerms && <Check size={13} strokeWidth={3} />}

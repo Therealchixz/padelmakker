@@ -22,6 +22,7 @@ import { LEGAL_INFO } from '../lib/legalInfo';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { PlayerProfileModal } from './PlayerProfileModal';
 import { PillTabs } from '../components/PillTabs';
 import {
   TOURNAMENT_DATA_SOURCE,
@@ -107,6 +108,42 @@ const RELATION_SECTION_LABELS = {
   winMostAgainst: "Vinder mest mod",
   loseMostAgainst: "Taber mest mod",
 };
+
+function RelationRow({ emoji, name, subtitle, statValue, statColor, statLabel, avatarStyle, onOpen }) {
+  const interactive = typeof onOpen === "function";
+  const handleKeyDown = interactive
+    ? (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }
+    : undefined;
+  return (
+    <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? onOpen : undefined}
+      onKeyDown={handleKeyDown}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        cursor: interactive ? "pointer" : undefined,
+      }}
+    >
+      <AvatarCircle avatar={emoji} size={40} emojiSize="16px" style={{ ...avatarStyle, flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+        <div style={{ fontSize: "11px", color: theme.textLight }}>{subtitle}</div>
+      </div>
+      <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <div style={{ fontSize: "15px", fontWeight: 800, color: statColor }}>{statValue}</div>
+        <div style={{ fontSize: "10px", color: theme.textLight }}>{statLabel}</div>
+      </div>
+    </div>
+  );
+}
 
 export function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, user: authUser } = useAuth();
@@ -204,6 +241,7 @@ export function ProfilTab({ user, showToast, setTab }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  const [viewPlayer, setViewPlayer] = useState(null);
   const [pendingAvatarFile, setPendingAvatarFile]   = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
   const [avatarUploading, setAvatarUploading]       = useState(false);
@@ -585,7 +623,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 style={{ border: '3px solid ' + theme.surface, boxShadow: theme.shadow }}
               />
               {user.level != null && user.level !== '' && (
-                <div style={{ position: 'absolute', bottom: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: theme.navy, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid ' + theme.surface }}>
+                <div style={{ position: 'absolute', bottom: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid ' + theme.surface }}>
                   <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>
                 </div>
               )}
@@ -632,8 +670,8 @@ export function ProfilTab({ user, showToast, setTab }) {
 
           {/* ELO hero inside profile card — matches mockup position (between stat-grid and padded content) */}
           {showPerformanceSection && (
-            <div style={{ margin: '4px 18px 0', borderRadius: 16, padding: '17px', background: 'linear-gradient(150deg, #0D2752, #1D4A9E)', color: '#fff', boxShadow: theme.shadowLg }}>
-              <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9DB6DE', marginBottom: '6px' }}>
+            <div style={{ margin: '4px 18px 0', borderRadius: 16, padding: '17px', background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))', color: 'var(--pm-on-accent)', boxShadow: theme.shadowLg }}>
+              <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pm-hero-subtitle)', marginBottom: '6px' }}>
                 Aktuel Elo Rating · {activeModeLabel}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: '12px' }}>
@@ -641,13 +679,13 @@ export function ProfilTab({ user, showToast, setTab }) {
                   {(is2v2Mode ? elo : americanoElo) ?? '—'}
                 </div>
                 {is2v2Mode && todayEloChange !== 0 && (
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: todayEloChange > 0 ? '#6EE7B7' : '#FCA5A5', letterSpacing: '-0.2px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: todayEloChange > 0 ? 'var(--pm-success-border)' : 'var(--pm-danger-border)', letterSpacing: '-0.2px' }}>
                     {todayEloChange > 0 ? '↑' : '↓'} {todayEloChange > 0 ? '+' : ''}{todayEloChange} i dag
                   </div>
                 )}
               </div>
               {activeEloGraphLoading ? (
-                <div style={{ textAlign: "center", padding: "16px 0", color: '#9DB6DE', fontSize: "13px" }}>Indlæser...</div>
+                <div style={{ textAlign: "center", padding: "16px 0", color: 'var(--pm-hero-subtitle)', fontSize: "13px" }}>Indlæser...</div>
               ) : (
                 <EloGraph
                   data={activeEloGraphData}
@@ -733,7 +771,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                 {s.form ? (
                   <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 9 }}>
                     {s.form.length > 0 ? s.form.map((r, j) => (
-                      <div key={j} style={{ width: 21, height: 21, borderRadius: "50%", background: r.result === "win" ? "var(--pm-green)" : r.result === "loss" ? "var(--pm-red)" : "var(--pm-border)", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div key={j} style={{ width: 21, height: 21, borderRadius: "50%", background: r.result === "win" ? "var(--pm-green)" : r.result === "loss" ? "var(--pm-red)" : "var(--pm-border)", color: "var(--pm-on-accent)", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
                         {r.result === "win" ? "V" : r.result === "loss" ? "T" : "U"}
                       </div>
                     )) : <div style={{ fontSize: "13px", color: theme.textLight, marginTop: 4 }}>—</div>}
@@ -772,7 +810,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                       <div style={{ width: 52, height: 52, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
                         opacity: b.earned ? 1 : 0.45,
                         background: b.earned ? theme.navy : theme.surfaceAlt,
-                        color: b.earned ? '#fff' : theme.textLight,
+                        color: b.earned ? 'var(--pm-on-accent)' : theme.textLight,
                         border: b.earned ? 'none' : `1px solid ${theme.border}` }}>
                         {b.icon}
                       </div>
@@ -861,7 +899,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                           width: "24px", height: "24px", borderRadius: "50%", flexShrink: 0,
                           background: r.result === 'win' ? 'var(--pm-form-win)' : r.result === 'loss' ? 'var(--pm-form-loss)' : 'var(--pm-form-draw)',
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: "10px", fontWeight: 700, color: "#fff",
+                          fontSize: "10px", fontWeight: 700, color: "var(--pm-on-accent)",
                         }}>
                           {r.result === 'win' ? 'V' : r.result === 'loss' ? 'T' : 'U'}
                         </div>
@@ -913,16 +951,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostWith}</div>
                 {partnerOpponentStats.partners.map((p, i) => (
-                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.partners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.games} kampe sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
-                    </div>
+                  <div key={p.userId} style={{ marginBottom: i < partnerOpponentStats.partners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.games} kampe sammen`}
+                      statValue={`${Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%`}
+                      statColor={theme.green}
+                      statLabel="sejr"
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -931,16 +970,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostWith}</div>
                 {partnerOpponentStats.worstPartners.map((p, i) => (
-                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.worstPartners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.games} kampe sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((1 - p.asPartner.wins / p.asPartner.games) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>nederlag som makker</div>
-                    </div>
+                  <div key={p.userId} style={{ marginBottom: i < partnerOpponentStats.worstPartners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.games} kampe sammen`}
+                      statValue={`${Math.round((1 - p.asPartner.wins / p.asPartner.games) * 100)}%`}
+                      statColor={theme.warm}
+                      statLabel="nederlag som makker"
+                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -949,16 +989,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostAgainst}</div>
                 {partnerOpponentStats.bestOpponents.map((p, i) => (
-                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.bestOpponents.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.greenBg, border: "1px solid " + theme.green + "40", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.games} kampe imod</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asOpponent.wins / p.asOpponent.games) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>din sejr</div>
-                    </div>
+                  <div key={p.userId} style={{ marginBottom: i < partnerOpponentStats.bestOpponents.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asOpponent.games} kampe imod`}
+                      statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.games) * 100)}%`}
+                      statColor={theme.green}
+                      statLabel="din sejr"
+                      avatarStyle={{ background: theme.greenBg, border: "1px solid " + theme.green + "40" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -972,16 +1013,17 @@ export function ProfilTab({ user, showToast, setTab }) {
                   {hardOpponents.map((p, i) => {
                     const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.games) * 100);
                     return (
-                      <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < hardOpponents.length - 1 ? "10px" : 0 }}>
-                        <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.redBg, border: `1px solid ${theme.red}`, flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                          <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.games} kampe imod</div>
-                        </div>
-                        <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontSize: "15px", fontWeight: 800, color: theme.red }}>{theirWinPct}%</div>
-                          <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
-                        </div>
+                      <div key={p.userId} style={{ marginBottom: i < hardOpponents.length - 1 ? "10px" : 0 }}>
+                        <RelationRow
+                          emoji={p.emoji}
+                          name={p.name}
+                          subtitle={`${p.asOpponent.games} kampe imod`}
+                          statValue={`${theirWinPct}%`}
+                          statColor={theme.red}
+                          statLabel="de vinder"
+                          avatarStyle={{ background: theme.redBg, border: `1px solid ${theme.red}` }}
+                          onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                        />
                       </div>
                     );
                   })}
@@ -998,16 +1040,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostWith}</div>
                 {americanoRelationStats.bestPartners.map((p, i) => (
-                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.rounds} runder sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: americanoOutcomeColors.win.text }}>{Math.round((p.asPartner.wins / p.asPartner.rounds) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr på banen</div>
-                    </div>
+                  <div key={p.userId} style={{ marginBottom: i < americanoRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.rounds} runder sammen`}
+                      statValue={`${Math.round((p.asPartner.wins / p.asPartner.rounds) * 100)}%`}
+                      statColor={americanoOutcomeColors.win.text}
+                      statLabel="sejr på banen"
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -1016,16 +1059,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostWith}</div>
                 {americanoRelationStats.toughestPartners.map((p, i) => (
-                  <div key={`tough-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.rounds} runder sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((1 - p.asPartner.wins / p.asPartner.rounds) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>nederlag som makker</div>
-                    </div>
+                  <div key={`tough-${p.userId}`} style={{ marginBottom: i < americanoRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.rounds} runder sammen`}
+                      statValue={`${Math.round((1 - p.asPartner.wins / p.asPartner.rounds) * 100)}%`}
+                      statColor={theme.warm}
+                      statLabel="nederlag som makker"
+                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -1036,16 +1080,17 @@ export function ProfilTab({ user, showToast, setTab }) {
                 {americanoRelationStats.hardestOpponents.map((p, i) => {
                   const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.rounds) * 100);
                   return (
-                    <div key={`hard-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
-                      <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.redBg, border: `1px solid ${theme.red}`, flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                        <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.rounds} runder imod</div>
-                      </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontSize: "15px", fontWeight: 800, color: americanoOutcomeColors.loss.text }}>{theirWinPct}%</div>
-                        <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
-                      </div>
+                    <div key={`hard-${p.userId}`} style={{ marginBottom: i < americanoRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
+                      <RelationRow
+                        emoji={p.emoji}
+                        name={p.name}
+                        subtitle={`${p.asOpponent.rounds} runder imod`}
+                        statValue={`${theirWinPct}%`}
+                        statColor={americanoOutcomeColors.loss.text}
+                        statLabel="de vinder"
+                        avatarStyle={{ background: theme.redBg, border: `1px solid ${theme.red}` }}
+                        onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                      />
                     </div>
                   );
                 })}
@@ -1055,16 +1100,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostAgainst}</div>
                 {americanoRelationStats.easiestOpponents.map((p, i) => (
-                  <div key={`easy-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.rounds} runder imod</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: americanoOutcomeColors.win.text }}>{Math.round((p.asOpponent.wins / p.asOpponent.rounds) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>din sejr</div>
-                    </div>
+                  <div key={`easy-${p.userId}`} style={{ marginBottom: i < americanoRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asOpponent.rounds} runder imod`}
+                      statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.rounds) * 100)}%`}
+                      statColor={americanoOutcomeColors.win.text}
+                      statLabel="din sejr"
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -1078,16 +1124,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostWith}</div>
                 {ligaRelationStats.bestPartners.map((p, i) => (
-                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.matches} kampe sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asPartner.wins / p.asPartner.matches) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
-                    </div>
+                  <div key={p.userId} style={{ marginBottom: i < ligaRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.matches} kampe sammen`}
+                      statValue={`${Math.round((p.asPartner.wins / p.asPartner.matches) * 100)}%`}
+                      statColor={theme.green}
+                      statLabel="sejr"
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -1096,16 +1143,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostWith}</div>
                 {ligaRelationStats.toughestPartners.map((p, i) => (
-                  <div key={`liga-tough-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.matches} kampe sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((1 - p.asPartner.wins / p.asPartner.matches) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>nederlag som makker</div>
-                    </div>
+                  <div key={`liga-tough-${p.userId}`} style={{ marginBottom: i < ligaRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.matches} kampe sammen`}
+                      statValue={`${Math.round((1 - p.asPartner.wins / p.asPartner.matches) * 100)}%`}
+                      statColor={theme.warm}
+                      statLabel="nederlag som makker"
+                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -1116,16 +1164,17 @@ export function ProfilTab({ user, showToast, setTab }) {
                 {ligaRelationStats.hardestOpponents.map((p, i) => {
                   const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.matches) * 100);
                   return (
-                    <div key={`liga-hard-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
-                      <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.redBg, border: `1px solid ${theme.red}`, flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                        <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.matches} kampe imod</div>
-                      </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontSize: "15px", fontWeight: 800, color: theme.red }}>{theirWinPct}%</div>
-                        <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
-                      </div>
+                    <div key={`liga-hard-${p.userId}`} style={{ marginBottom: i < ligaRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
+                      <RelationRow
+                        emoji={p.emoji}
+                        name={p.name}
+                        subtitle={`${p.asOpponent.matches} kampe imod`}
+                        statValue={`${theirWinPct}%`}
+                        statColor={theme.red}
+                        statLabel="de vinder"
+                        avatarStyle={{ background: theme.redBg, border: `1px solid ${theme.red}` }}
+                        onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                      />
                     </div>
                   );
                 })}
@@ -1135,16 +1184,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostAgainst}</div>
                 {ligaRelationStats.easiestOpponents.map((p, i) => (
-                  <div key={`liga-easy-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.matches} kampe imod</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asOpponent.wins / p.asOpponent.matches) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>din sejr</div>
-                    </div>
+                  <div key={`liga-easy-${p.userId}`} style={{ marginBottom: i < ligaRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asOpponent.matches} kampe imod`}
+                      statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.matches) * 100)}%`}
+                      statColor={theme.green}
+                      statLabel="din sejr"
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -1317,7 +1367,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             padding: '8px 13px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
             border: `1.5px solid ${active ? theme.navy : theme.border}`,
             background: active ? theme.navy : theme.surface,
-            color: active ? '#fff' : theme.textMid, fontFamily: 'inherit',
+            color: active ? 'var(--pm-on-accent)' : theme.textMid, fontFamily: 'inherit',
           });
           const avail = form.availability || [];
           const days = form.available_days || [];
@@ -1375,6 +1425,7 @@ export function ProfilTab({ user, showToast, setTab }) {
       </div>
     </div>
       )}
+      {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
     </div>
   );
 }

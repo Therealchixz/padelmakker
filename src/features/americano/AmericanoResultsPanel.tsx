@@ -864,11 +864,11 @@ export function AmericanoResultsPanel({
 
   const rankCircleStyle = (idx: number): CSSProperties => {
     const medal = idx === 0
-      ? { bg: 'var(--pm-podium-gold)', fg: '#fff' }
+      ? { bg: 'var(--pm-podium-gold)', fg: 'var(--pm-on-accent)' }
       : idx === 1
-        ? { bg: 'var(--pm-podium-silver)', fg: '#fff' }
+        ? { bg: 'var(--pm-podium-silver)', fg: 'var(--pm-on-accent)' }
         : idx === 2
-          ? { bg: 'var(--pm-podium-bronze)', fg: '#fff' }
+          ? { bg: 'var(--pm-podium-bronze)', fg: 'var(--pm-on-accent)' }
           : { bg: 'var(--pm-surface-muted)', fg: c.muted }
     return {
       width: 28, height: 28, borderRadius: '50%', flexShrink: 0,

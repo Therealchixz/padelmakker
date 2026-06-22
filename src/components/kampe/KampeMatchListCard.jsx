@@ -159,7 +159,7 @@ export function KampeMatchListCard({
             {(completedBadge || statusBadge).label}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--pm-text-light, #8898AA)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
+            <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--pm-text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
               {formatMatchDateHeadlineDa(match.date)} · {venue}
             </span>
             {unreadCount > 0 ? (
@@ -170,9 +170,9 @@ export function KampeMatchListCard({
       ) : (
         <div className="pm-kampe-v2-list-card-top">
           {badgeDay != null ? (
-            <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-inset, #F1F4F9)', border: '1px solid var(--pm-border, #E2E8F0)', borderRadius: 10, padding: '6px 0' }}>
+            <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-border)', borderRadius: 10, padding: '6px 0' }}>
               <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{badgeDay}</b>
-              <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-light, #8898AA)', letterSpacing: '0.5px' }}>{badgeMon}</span>
+              <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-light)', letterSpacing: '0.5px' }}>{badgeMon}</span>
             </div>
           ) : null}
           <div className="pm-kampe-v2-list-card-main">
@@ -229,10 +229,10 @@ export function KampeMatchListCard({
                   avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
                   size={24}
                   emojiSize="10px"
-                  style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid white', zIndex: i + 1 }}
+                  style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid var(--pm-surface)', zIndex: i + 1 }}
                 />
               ) : (
-                <span key={`vs-t1-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
+                <span key={`vs-t1-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-surface-muted)', border: '2px solid var(--pm-surface)', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
               ))}
             </div>
             <span style={{ fontSize: 12, fontWeight: 700, color: didWin ? 'var(--pm-text)' : 'var(--pm-text-mid)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
@@ -250,10 +250,10 @@ export function KampeMatchListCard({
                   avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
                   size={24}
                   emojiSize="10px"
-                  style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid white', zIndex: i + 1 }}
+                  style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid var(--pm-surface)', zIndex: i + 1 }}
                 />
               ) : (
-                <span key={`vs-t2-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
+                <span key={`vs-t2-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-surface-muted)', border: '2px solid var(--pm-surface)', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
               ))}
             </div>
             <span style={{ fontSize: 12, fontWeight: 700, color: didLose ? 'var(--pm-text-mid)' : 'var(--pm-text)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
@@ -274,17 +274,17 @@ export function KampeMatchListCard({
                     avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
                     size={27}
                     emojiSize="10px"
-                    style={{ marginLeft: i > 0 ? -9 : 0, border: '2px solid white', zIndex: i + 1 }}
+                    style={{ marginLeft: i > 0 ? -9 : 0, border: '2px solid var(--pm-surface)', zIndex: i + 1 }}
                   />
                 ) : (
                   <span
                     key={`empty-${i}`}
-                    style={{ width: 27, height: 27, borderRadius: '50%', background: 'var(--pm-inset, #F1F4F9)', border: '2px solid white', marginLeft: i > 0 ? -9 : 0, zIndex: i + 1, display: 'inline-block', flexShrink: 0 }}
+                    style={{ width: 27, height: 27, borderRadius: '50%', background: 'var(--pm-surface-muted)', border: '2px solid var(--pm-surface)', marginLeft: i > 0 ? -9 : 0, zIndex: i + 1, display: 'inline-block', flexShrink: 0 }}
                     aria-hidden
                   />
                 ))}
               </div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-text-light, #8898AA)' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-text-light)' }}>
                 {filledCount}/{maxPlayers} spillere
               </span>
             </div>
@@ -305,8 +305,8 @@ export function KampeMatchListCard({
               fontFamily: 'inherit',
               cursor: primaryAction.disabled ? 'default' : 'pointer',
               ...(primaryAction.variant === 'secondary'
-                ? { background: 'var(--pm-surface, #fff)', color: 'var(--pm-navy, #16377E)', border: '1.5px solid var(--pm-border, #E2E8F0)' }
-                : { background: 'var(--pm-navy, #16377E)', color: '#fff', border: 'none' }),
+                ? { background: 'var(--pm-surface)', color: 'var(--pm-navy)', border: '1.5px solid var(--pm-border)' }
+                : { background: 'var(--pm-navy)', color: 'var(--pm-on-accent)', border: 'none' }),
             }}
           >
             {primaryAction.label}
@@ -321,9 +321,9 @@ export function KampeMatchListCard({
               fontSize: 12.5,
               fontWeight: 700,
               fontFamily: 'inherit',
-              background: 'var(--pm-surface, #fff)',
-              color: 'var(--pm-navy, #16377E)',
-              border: '1.5px solid var(--pm-border, #E2E8F0)',
+              background: 'var(--pm-surface)',
+              color: 'var(--pm-navy)',
+              border: '1.5px solid var(--pm-border)',
             }}
           >
             Se kamp

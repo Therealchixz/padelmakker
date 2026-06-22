@@ -94,7 +94,7 @@ function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, prof
                   avatar={profilesById?.[String(p.user_id)]?.avatar}
                   size={27}
                   emojiSize="12px"
-                  style={{ border: '2px solid #fff', marginLeft: i > 0 ? -9 : 0, background: theme.accentBg }}
+                  style={{ border: '2px solid var(--pm-surface)', marginLeft: i > 0 ? -9 : 0, background: theme.accentBg }}
                 />
               ))}
             </div>
@@ -131,7 +131,7 @@ function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, prof
                   avatar={profilesById?.[String(p.user_id)]?.avatar}
                   size={27}
                   emojiSize="12px"
-                  style={{ border: '2px solid #fff', marginLeft: i > 0 ? -9 : 0, background: theme.blueBg }}
+                  style={{ border: '2px solid var(--pm-surface)', marginLeft: i > 0 ? -9 : 0, background: theme.blueBg }}
                 />
               ))}
             </div>
@@ -199,9 +199,9 @@ function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, prof
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 4 }}>
                       {prof.level != null ? (
                         <span style={{
-                          background: '#FAEFDC',
-                          color: '#92400E',
-                          border: '1px solid #EDD9B5',
+                          background: 'var(--pm-amber-bg)',
+                          color: 'var(--pm-amber-text)',
+                          border: '1px solid var(--pm-amber-border)',
                           fontSize: 9.5,
                           fontWeight: 600,
                           padding: '2px 7px',
@@ -213,7 +213,7 @@ function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, prof
                         </span>
                       ) : null}
                       {prof.games_played != null && prof.games_played > 0 ? (
-                        <span style={{ fontSize: 11.5, color: '#5E6B81', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                        <span style={{ fontSize: 11.5, color: 'var(--pm-text-mid)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                           <svg style={{ width: 11, height: 11 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                             <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                           </svg>
@@ -542,9 +542,9 @@ export function KampeMatchDetailSheet({
                               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 4 }}>
                                 {prof.level != null ? (
                                   <span style={{
-                                    background: '#FAEFDC',
-                                    color: '#92400E',
-                                    border: '1px solid #EDD9B5',
+                                    background: 'var(--pm-amber-bg)',
+                                    color: 'var(--pm-amber-text)',
+                                    border: '1px solid var(--pm-amber-border)',
                                     fontSize: 9.5,
                                     fontWeight: 600,
                                     padding: '2px 7px',
@@ -556,7 +556,7 @@ export function KampeMatchDetailSheet({
                                   </span>
                                 ) : null}
                                 {prof.games_played != null && prof.games_played > 0 ? (
-                                  <span style={{ fontSize: 11.5, color: '#5E6B81', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                  <span style={{ fontSize: 11.5, color: 'var(--pm-text-mid)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                                     <svg style={{ width: 11, height: 11 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                       <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                                     </svg>
@@ -569,15 +569,15 @@ export function KampeMatchDetailSheet({
                         );
                       })}
                       {Array.from({ length: Math.max(0, maxPerTeam - players.length) }).map((_, i) => (
-                        <div key={`empty-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginBottom: 8, border: '2px dashed var(--pm-border, #E2E8F0)', borderRadius: 14, background: 'transparent' }}>
-                          <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#E9EDF4', color: '#9AA9BD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div key={`empty-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginBottom: 8, border: '2px dashed var(--pm-border)', borderRadius: 14, background: 'transparent' }}>
+                          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--pm-surface-muted)', color: 'var(--pm-text-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                             </svg>
                           </div>
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: 13.5, color: '#5E6B81' }}>Ledig plads</div>
-                            <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '1px', color: '#9AA9BD', marginTop: 2, textTransform: 'uppercase' }}>Bliv den næste!</div>
+                            <div style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--pm-text-mid)' }}>Ledig plads</div>
+                            <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '1px', color: 'var(--pm-text-light)', marginTop: 2, textTransform: 'uppercase' }}>Bliv den næste!</div>
                           </div>
                         </div>
                       ))}

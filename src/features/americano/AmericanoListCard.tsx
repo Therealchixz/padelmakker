@@ -99,8 +99,8 @@ export function AmericanoListCard({
 
   // Format-chip: Mexicano = amber/navy-tekst, Americano = navy/hvid (matcher mockup chip-mex/chip-ame)
   const formatChip = isMexicano
-    ? { bg: '#F59E0B', color: 'var(--pm-navy-deep)', border: 'none' }
-    : { bg: 'var(--pm-navy-deep)', color: '#fff', border: '1px solid rgba(255,255,255,0.32)' }
+    ? { bg: 'var(--pm-amber)', color: 'var(--pm-navy-deep)', border: 'none' }
+    : { bg: 'var(--pm-navy-deep)', color: 'var(--pm-on-accent)', border: '1px solid rgba(255,255,255,0.32)' }
 
   return (
     <div
@@ -125,7 +125,7 @@ export function AmericanoListCard({
       }}
     >
       {/* Hero */}
-      <div style={{ position: 'relative', background: 'linear-gradient(135deg, #0D2752 0%, #16377E 100%)', padding: '12px 14px', minHeight: 92, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div style={{ position: 'relative', background: 'linear-gradient(135deg, var(--pm-navy-deep) 0%, var(--pm-navy) 100%)', padding: '12px 14px', minHeight: 92, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ background: formatChip.bg, color: formatChip.color, border: formatChip.border, fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
             {formatLabel}
@@ -134,13 +134,13 @@ export function AmericanoListCard({
             {levelLabel(tournament)}
           </span>
           {isPlaying ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(220,38,38,0.9)', color: '#fff', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px' }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(220,38,38,0.9)', color: 'var(--pm-on-accent)', fontSize: 9.5, fontWeight: 800, padding: '3px 8px', borderRadius: 5, letterSpacing: '0.6px' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--pm-on-accent)' }} />
               LIVE
             </span>
           ) : null}
           {isCompleted ? (
-            <span style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 9.5, fontWeight: 700, padding: '3px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.25)' }}>
+            <span style={{ background: 'rgba(255,255,255,0.15)', color: 'var(--pm-on-accent)', fontSize: 9.5, fontWeight: 700, padding: '3px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.25)' }}>
               Afsluttet
             </span>
           ) : null}
@@ -185,7 +185,7 @@ export function AmericanoListCard({
                 marginTop: 12, padding: 12, borderRadius: 10, textAlign: 'center',
                 fontWeight: 700, fontSize: 13,
                 background: joined ? 'var(--pm-surface)' : isFull ? 'var(--pm-surface-muted)' : 'var(--pm-navy)',
-                color: joined ? 'var(--pm-navy)' : isFull ? 'var(--pm-text-light)' : '#fff',
+                color: joined ? 'var(--pm-navy)' : isFull ? 'var(--pm-text-light)' : 'var(--pm-on-accent)',
                 border: joined ? '1.5px solid var(--pm-border)' : 'none',
               }}
             >

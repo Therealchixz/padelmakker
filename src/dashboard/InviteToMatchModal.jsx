@@ -14,10 +14,10 @@ function DateBadge({ dateStr }) {
   return (
     <div style={{
       width: 42, flexShrink: 0, textAlign: 'center',
-      background: '#F2F5F9', border: '1px solid #E6EAF1', borderRadius: 10, padding: '6px 0',
+      background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-border)', borderRadius: 10, padding: '6px 0',
     }}>
       <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{day || '—'}</b>
-      <span style={{ fontSize: '9.5px', fontWeight: 600, textTransform: 'uppercase', color: '#5E6B81', letterSpacing: '0.5px' }}>
+      <span style={{ fontSize: '9.5px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-mid)', letterSpacing: '0.5px' }}>
         {month ? DA_MONTHS_SHORT[month - 1] : '—'}
       </span>
     </div>
@@ -38,7 +38,7 @@ function MatchRow({ item, selected, onSelect }) {
       onClick={() => onSelect(isSel ? null : key)}
       style={{
         display: 'flex', alignItems: 'center', gap: 13,
-        background: '#fff', border: `1.5px solid ${isSel ? '#16377E' : '#E6EAF1'}`,
+        background: 'var(--pm-surface)', border: `1.5px solid ${isSel ? 'var(--pm-navy)' : 'var(--pm-border)'}`,
         borderRadius: 14, padding: '12px 14px', cursor: 'pointer',
         boxShadow: isSel ? '0 0 0 3px rgba(22,55,126,0.12)' : 'none',
         marginBottom: 9, width: '100%', textAlign: 'left', fontFamily: 'inherit',
@@ -46,19 +46,19 @@ function MatchRow({ item, selected, onSelect }) {
     >
       <DateBadge dateStr={date} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <b style={{ fontSize: 14, fontWeight: 600, display: 'block', color: '#101A2E' }}>
+        <b style={{ fontSize: 14, fontWeight: 600, display: 'block', color: 'var(--pm-text)' }}>
           {typeLabel} · {venue}
         </b>
-        <span style={{ fontSize: '11.5px', color: '#5E6B81', display: 'block', marginTop: 2 }}>
+        <span style={{ fontSize: '11.5px', color: 'var(--pm-text-mid)', display: 'block', marginTop: 2 }}>
           Kl. {fmtClock(time)}
         </span>
       </div>
       <div style={{
         width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-        border: `1.5px solid ${isSel ? '#16377E' : '#E6EAF1'}`,
-        background: isSel ? '#16377E' : 'transparent',
+        border: `1.5px solid ${isSel ? 'var(--pm-navy)' : 'var(--pm-border)'}`,
+        background: isSel ? 'var(--pm-navy)' : 'transparent',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff',
+        color: 'var(--pm-on-accent)',
       }}>
         {isSel && <Check size={12} strokeWidth={3} />}
       </div>
@@ -187,8 +187,8 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             width: '100%', padding: 11, borderRadius: 10, marginBottom: 12,
-            border: '1.5px solid #E6EAF1', background: '#fff',
-            color: '#16377E', fontSize: '14.5px', fontWeight: 600,
+            border: '1.5px solid var(--pm-border)', background: 'var(--pm-surface)',
+            color: 'var(--pm-navy)', fontSize: '14.5px', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
           }}
           onClick={() => { if (onCreateMatch) onCreateMatch(); else onClose(); }}
@@ -204,8 +204,8 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
           onClick={handleSend}
           style={{
             width: '100%', padding: 12, borderRadius: 10, border: 'none',
-            background: selected && !sending ? '#16377E' : '#C9D3E1',
-            color: '#fff', fontSize: '14.5px', fontWeight: 600,
+            background: selected && !sending ? 'var(--pm-navy)' : 'var(--pm-border)',
+            color: 'var(--pm-on-accent)', fontSize: '14.5px', fontWeight: 600,
             cursor: selected && !sending ? 'pointer' : 'default',
             fontFamily: 'inherit',
             boxShadow: selected && !sending ? '0 6px 14px rgba(22,55,126,0.32)' : 'none',
@@ -220,7 +220,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
           onClick={onClose}
           style={{
             width: '100%', padding: 10, borderRadius: 10, marginTop: 9,
-            border: 'none', background: 'none', color: '#5E6B81',
+            border: 'none', background: 'none', color: 'var(--pm-text-mid)',
             fontSize: '14.5px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
           }}
         >

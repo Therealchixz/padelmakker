@@ -487,7 +487,7 @@ export function BanerTab() {
                 </div>
               </div>
               {/* CTA buttons row */}
-              <div style={{ display: 'flex', gap: 8, padding: '0 16px 14px', borderTop: '1px solid var(--pm-border, #E2E8F0)', paddingTop: 12 }}>
+              <div style={{ display: 'flex', gap: 8, padding: '0 16px 14px', borderTop: '1px solid var(--pm-border)', paddingTop: 12 }}>
                 <button
                   type="button"
                   onClick={() => openVenue(v)}

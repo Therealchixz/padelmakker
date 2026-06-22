@@ -293,7 +293,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           <div style={{ display: 'inline-block', position: 'relative', marginBottom: '10px' }}>
             <AvatarCircle avatar={pRef.avatar} size={72} emojiSize="36px" style={{ background: theme.accentBg, border: '2px solid ' + theme.accent + '40' }} />
             {pRef.level != null && pRef.level !== '' && (
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: theme.navy, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid ' + theme.surface }}>
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid ' + theme.surface }}>
                 <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>
               </div>
             )}
@@ -370,7 +370,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
                 {s.form ? (
                   <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 9 }}>
                     {s.form.length > 0 ? s.form.map((r, j) => (
-                      <div key={j} style={{ width: 21, height: 21, borderRadius: '50%', background: r === 'V' ? 'var(--pm-green)' : r === 'T' ? 'var(--pm-red)' : 'var(--pm-border)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{r}</div>
+                      <div key={j} style={{ width: 21, height: 21, borderRadius: '50%', background: r === 'V' ? 'var(--pm-green)' : r === 'T' ? 'var(--pm-red)' : 'var(--pm-border)', color: 'var(--pm-on-accent)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{r}</div>
                     )) : <div style={{ fontSize: '12px', color: theme.textLight, marginTop: 4 }}>—</div>}
                   </div>
                 ) : (

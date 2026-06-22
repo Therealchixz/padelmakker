@@ -124,7 +124,7 @@ export function MatchPhotosSection({ matchId, currentUserId, canUpload = false }
             type="button"
             onClick={() => setLightbox(null)}
             aria-label="Luk"
-            style={{ position: 'absolute', top: 'max(16px, env(safe-area-inset-top))', right: 16, width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            style={{ position: 'absolute', top: 'max(16px, env(safe-area-inset-top))', right: 16, width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
             <X size={20} />
           </button>
@@ -139,7 +139,7 @@ export function MatchPhotosSection({ matchId, currentUserId, canUpload = false }
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(lightbox); }}
               disabled={busy}
-              style={{ position: 'absolute', bottom: 'max(24px, env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', padding: '10px 18px', borderRadius: 10, background: theme.red, color: '#fff', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+              style={{ position: 'absolute', bottom: 'max(24px, env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', padding: '10px 18px', borderRadius: 10, background: theme.red, color: 'var(--pm-on-accent)', border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
             >
               Slet billede
             </button>

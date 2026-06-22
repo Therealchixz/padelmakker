@@ -827,8 +827,8 @@ export function HomeTab({ user, setTab, showToast }) {
     height: "auto",
     borderRadius: "9px",
     border: "none",
-    color: "var(--pm-on-accent, #fff)",
-    background: "var(--pm-navy, #16377E)",
+    color: "var(--pm-on-accent)",
+    background: "var(--pm-navy)",
     boxShadow: "0 1px 2px rgba(16,24,40,0.12)",
     flexShrink: 0,
   });
@@ -861,7 +861,7 @@ export function HomeTab({ user, setTab, showToast }) {
     height: "auto",
     borderRadius: "10px",
     border: "1px solid rgba(0,0,0,0.05)",
-    color: "#fff",
+    color: "var(--pm-on-accent)",
     background: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 55%), " + theme.green,
     boxShadow: "0 1px 2px rgba(16,24,40,0.12)",
     flexShrink: 0,
@@ -1118,7 +1118,7 @@ export function HomeTab({ user, setTab, showToast }) {
       )}
       {/* Compact topbar: avatar + greeting */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px 12px' }}>
-        <AvatarCircle avatar={user.avatar} size={42} emojiSize="20px" style={{ flexShrink: 0, background: 'linear-gradient(135deg, #3D6CB3, #1A3E78)', color: '#fff' }} />
+        <AvatarCircle avatar={user.avatar} size={42} emojiSize="20px" style={{ flexShrink: 0, background: 'linear-gradient(135deg, var(--pm-navy-soft), var(--pm-navy))', color: 'var(--pm-on-accent)' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: theme.textLight, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{greetingText}</div>
           <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{displayName}</div>
@@ -1270,7 +1270,7 @@ export function HomeTab({ user, setTab, showToast }) {
                 {it.kind === 'inbound' ? (
                   <div style={{ display: 'flex', gap: 8, marginTop: 11, paddingTop: 11, borderTop: `1px solid ${theme.border}` }}>
                     <button type="button" disabled={busyInviteId === it.key} onClick={() => approveInvite(it)}
-                      style={{ flex: 1, background: theme.navy, color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
+                      style={{ flex: 1, background: theme.navy, color: 'var(--pm-on-accent)', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
                       Godkend
                     </button>
                     <button type="button" disabled={busyInviteId === it.key} onClick={() => rejectInvite(it)}
@@ -1281,7 +1281,7 @@ export function HomeTab({ user, setTab, showToast }) {
                 ) : (
                   <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${theme.border}` }}>
                     <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })}
-                      style={{ width: '100%', background: theme.navy, color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer' }}>
+                      style={{ width: '100%', background: theme.navy, color: 'var(--pm-on-accent)', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer' }}>
                       Se
                     </button>
                   </div>

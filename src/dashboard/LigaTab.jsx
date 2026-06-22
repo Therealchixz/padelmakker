@@ -809,14 +809,14 @@ export function LigaTab({
                 <div
                   key={ms.id}
                   onClick={() => setCreateForm(f => ({ ...f, match_system: ms.id }))}
-                  style={{ margin: '0 18px 9px', padding: '13px 14px', borderRadius: 14, border: `1.5px solid ${createForm.match_system === ms.id ? 'var(--pm-navy)' : 'var(--pm-border)'}`, background: createForm.match_system === ms.id ? 'var(--pm-navy-bg, #EEF2FB)' : 'var(--pm-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}
+                  style={{ margin: '0 18px 9px', padding: '13px 14px', borderRadius: 14, border: `1.5px solid ${createForm.match_system === ms.id ? 'var(--pm-navy)' : 'var(--pm-border)'}`, background: createForm.match_system === ms.id ? 'var(--pm-navy-bg)' : 'var(--pm-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}
                 >
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, color: theme.text }}>{ms.label}</div>
                     <div style={{ fontSize: 11.5, color: theme.textLight, marginTop: 2 }}>{ms.desc}</div>
                   </div>
                   <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${createForm.match_system === ms.id ? 'var(--pm-navy)' : 'var(--pm-border)'}`, background: createForm.match_system === ms.id ? 'var(--pm-navy)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {createForm.match_system === ms.id && <svg style={{ width: 10, height: 10 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
+                    {createForm.match_system === ms.id && <svg style={{ width: 10, height: 10 }} viewBox="0 0 24 24" fill="none" stroke="var(--pm-on-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
                   </div>
                 </div>
               ))}
@@ -939,12 +939,12 @@ export function LigaTab({
       {/* Min liga hero — vis brugerens aktive liga øverst */}
       {myActiveLeagueHero && !loading && (
         <div style={{
-          background: 'linear-gradient(135deg, #0D2752 0%, #16377E 100%)',
+          background: 'linear-gradient(135deg, var(--pm-navy-deep) 0%, var(--pm-navy) 100%)',
           borderRadius: 16, padding: '18px 18px 16px', marginBottom: 16,
-          color: '#fff', position: 'relative', overflow: 'hidden',
+          color: 'var(--pm-on-accent)', position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <svg style={{ width: 13, height: 13, color: '#F59E0B', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8Z"/></svg>
+            <svg style={{ width: 13, height: 13, color: 'var(--pm-amber)', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8Z"/></svg>
             <span style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.9px', textTransform: 'uppercase', color: '#9DB6DE' }}>Aktiv sæson</span>
           </div>
           <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2, marginBottom: 4 }}>
@@ -983,7 +983,7 @@ export function LigaTab({
               onClick={() => setScheduleLeagueId(myActiveLeagueHero.league.id)}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: '#D97706', color: '#fff', border: 'none',
+                background: 'var(--pm-amber)', color: 'var(--pm-on-accent)', border: 'none',
                 borderRadius: 10, padding: '9px 16px', fontSize: '13px', fontWeight: 700,
                 cursor: 'pointer', fontFamily: 'inherit',
               }}
@@ -1316,7 +1316,7 @@ export function LigaTab({
             <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
               {/* Checkmark */}
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: theme.navy, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Check size={32} strokeWidth={2.8} />
                 </div>
               </div>
@@ -1330,9 +1330,9 @@ export function LigaTab({
               {/* Summary card */}
               <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 14, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ background: theme.navy, color: '#fff', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>LIGA</span>
+                  <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>LIGA</span>
                   {Number(r.num_divisions) > 1 ? (
-                    <span style={{ background: theme.navyBg || '#EEF2FB', color: theme.navy, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>{r.num_divisions} divisioner</span>
+                    <span style={{ background: theme.navyBg || 'var(--pm-navy-bg)', color: theme.navy, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>{r.num_divisions} divisioner</span>
                   ) : null}
                   <span style={{ background: theme.greenBg, color: theme.green, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>Tilmelding åben</span>
                 </div>
@@ -1399,7 +1399,7 @@ export function LigaTab({
               <button
                 type="button"
                 onClick={() => setCreatedLeagueReceipt(null)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
               >
                 Gå til liga-oversigt
                 <ArrowRight size={16} strokeWidth={2.4} />

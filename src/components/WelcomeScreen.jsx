@@ -28,7 +28,7 @@ export function WelcomeScreen({ name, levelText, onFindPartner, onJoinMatch, onS
     >
       <div style={{ maxWidth: 460, width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <div style={{ textAlign: 'center', paddingTop: 12 }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: theme.navy, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: theme.shadow }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: theme.shadow }}>
             <Check size={32} strokeWidth={2.5} />
           </div>
           <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', color: theme.text, margin: 0 }}>
@@ -70,7 +70,7 @@ export function WelcomeScreen({ name, levelText, onFindPartner, onJoinMatch, onS
             onClick={onGoToApp}
             style={{
               width: '100%', padding: '13px', borderRadius: 12, border: 'none',
-              background: theme.navy, color: '#fff', fontSize: 14.5, fontWeight: 700,
+              background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14.5, fontWeight: 700,
               cursor: 'pointer', fontFamily: font,
             }}
           >

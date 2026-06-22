@@ -602,17 +602,17 @@ export function RankingTab({ user }) {
           alt={`${p.full_name || p.name || 'Spiller'} avatar`}
           style={{ margin: '0 auto 7px', border: `2.5px solid ${isFirst ? theme.amber : 'rgba(255,255,255,0.35)'}` }}
         />
-        <b style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#fff' }}>
+        <b style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--pm-on-accent)' }}>
           {firstName}{isMe ? ' ✓' : ''}
         </b>
-        <span style={{ fontSize: 10.5, color: '#9DB6DE' }}>
+        <span style={{ fontSize: 10.5, color: 'var(--pm-hero-subtitle)' }}>
           {p.level ? `Niveau ${formatPlaytomicLevel(p.level)}` : (p.area || '')}
         </span>
-        <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: '#fff' }}>{p.score}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: 'var(--pm-on-accent)' }}>{p.score}</div>
         <div style={{
           width: 22, height: 22, borderRadius: '50%',
           background: isFirst ? theme.amber : 'rgba(255,255,255,0.14)',
-          color: isFirst ? '#0D2752' : '#fff',
+          color: isFirst ? 'var(--pm-navy-deep)' : 'var(--pm-on-accent)',
           fontSize: 11, fontWeight: 700,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '7px auto 0',
@@ -776,7 +776,7 @@ export function RankingTab({ user }) {
           </div>
         )}
         {rankChange !== 0 && (
-          <div style={{ marginTop: '8px', fontSize: '11px', fontWeight: 600, color: rankChange > 0 ? '#6EE7B7' : '#FCA5A5' }}>
+          <div style={{ marginTop: '8px', fontSize: '11px', fontWeight: 600, color: rankChange > 0 ? 'var(--pm-success-border)' : 'var(--pm-danger-border)' }}>
             {rankChange > 0 ? `↑ ${rankChange} pladser` : `↓ ${Math.abs(rankChange)} pladser`}
           </div>
         )}
@@ -789,8 +789,8 @@ export function RankingTab({ user }) {
           margin: '14px 18px 0',
           borderRadius: 14,
           padding: '18px 14px 14px',
-          background: 'linear-gradient(150deg, #0D2752, #1D4A9E)',
-          color: '#fff',
+          background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))',
+          color: 'var(--pm-on-accent)',
           boxShadow: theme.shadowLg,
           display: 'flex',
           alignItems: 'flex-end',

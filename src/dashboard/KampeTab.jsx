@@ -2152,7 +2152,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     onClick={(e) => { e.stopPropagation(); kickPlayer(m.id, p.user_id, p.user_name); }}
                     disabled={kickingBusy}
                     aria-label={"Fjern " + (p.user_name || "spiller") + " fra kampen"}
-                    style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', border: 'none', background: 'var(--pm-red-bg,#FEE2E2)', color: 'var(--pm-red,#DC2626)', fontSize: 16, fontWeight: 700, cursor: kickingBusy ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                    style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', border: 'none', background: 'var(--pm-red-bg)', color: 'var(--pm-red)', fontSize: 16, fontWeight: 700, cursor: kickingBusy ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
                   >
                     ×
                   </button>
@@ -4091,7 +4091,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
                 <div style={{
                   width: 72, height: 72, borderRadius: '50%',
-                  background: theme.navy, color: '#fff',
+                  background: theme.navy, color: 'var(--pm-on-accent)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <Check size={32} strokeWidth={2.8} />
@@ -4109,7 +4109,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               {/* Summary card */}
               <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 16, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ background: theme.navy, color: '#fff', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>
+                  <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>
                     {isClosed ? 'LUKKET' : '2V2'}
                   </span>
                   {levelStr && (
@@ -4147,7 +4147,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 {/* Slots row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 13, paddingTop: 12, borderTop: '1px solid ' + theme.border }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: theme.navy, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
                       {(user?.avatar || '🎾')}
                     </div>
                   </div>
@@ -4199,7 +4199,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               <button
                 type="button"
                 onClick={() => { setCreatedMatchReceipt(null); setViewTab('open'); }}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
               >
                 Gå til kamp-oversigt
                 <ArrowRight size={16} strokeWidth={2.4} />

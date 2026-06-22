@@ -598,7 +598,7 @@ function ActiveDetail({
                             style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>−</button>
                           <span style={{ minWidth: 22, textAlign: 'center', fontSize: 18, fontWeight: 800, color: theme.text, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
                           <button type="button" aria-label="plus" onClick={() => bump(idx, side, 1)}
-                            style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: theme.accent, color: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>+</button>
+                            style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: theme.accent, color: 'var(--pm-on-accent)', fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>+</button>
                         </div>
                       );
 

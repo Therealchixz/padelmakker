@@ -19,10 +19,10 @@ export function LevelRangeSlider({
         <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 4, background: 'var(--pm-border)', borderRadius: 2, transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: '50%', left: `${toPercent(minVal)}%`, right: `${100 - toPercent(maxVal)}%`, height: 4, background: 'var(--pm-navy)', borderRadius: 2, transform: 'translateY(-50%)', pointerEvents: 'none' }} />
 
-        <div style={{ position: 'absolute', top: -20, left: `${toPercent(minVal)}%`, transform: 'translateX(-50%)', background: 'var(--pm-navy)', color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '2px 6px', borderRadius: 5, pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 6 }}>
+        <div style={{ position: 'absolute', top: -20, left: `${toPercent(minVal)}%`, transform: 'translateX(-50%)', background: 'var(--pm-navy)', color: 'var(--pm-on-accent)', fontSize: 10.5, fontWeight: 700, padding: '2px 6px', borderRadius: 5, pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 6 }}>
           {minVal.toFixed(1)}
         </div>
-        <div style={{ position: 'absolute', top: -20, left: `${toPercent(maxVal)}%`, transform: 'translateX(-50%)', background: 'var(--pm-navy)', color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '2px 6px', borderRadius: 5, pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 6 }}>
+        <div style={{ position: 'absolute', top: -20, left: `${toPercent(maxVal)}%`, transform: 'translateX(-50%)', background: 'var(--pm-navy)', color: 'var(--pm-on-accent)', fontSize: 10.5, fontWeight: 700, padding: '2px 6px', borderRadius: 5, pointerEvents: 'none', whiteSpace: 'nowrap', zIndex: 6 }}>
           {maxVal.toFixed(1)}
         </div>
 
