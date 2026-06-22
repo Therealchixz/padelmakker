@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useCallback, useState, useRef, useMemo, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
+import { AppModal } from '../components/AppModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
@@ -1187,23 +1188,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
     return true;
   }, [ask, feedbackMessage, feedbackSending, feedbackTopic]);
 
-  useEffect(() => {
-    if (!feedbackOpen) return undefined;
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeFeedbackModal();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [closeFeedbackModal, feedbackOpen]);
-
   const submitFeedbackReport = useCallback(async () => {
     const message = feedbackMessage.trim();
     if (message.length < 10) {
@@ -1712,41 +1696,24 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
       <PendingResultConfirmModal user={user} />
 
-      {feedbackOpen && createPortal(
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Rapportér fejl"
-          onClick={closeFeedbackModal}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: theme.overlay,
-            zIndex: 10020,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-          }}
+      {feedbackOpen && (
+        <AppModal
+          open
+          onClose={feedbackSending ? undefined : closeFeedbackModal}
+          ariaLabel="Rapportér fejl"
+          maxWidth="560px"
+          zIndex={10020}
+          closeOnEscape={!feedbackSending}
+          closeOnBackdrop={!feedbackSending}
         >
-          <div
-            onClick={(event) => event.stopPropagation()}
-            style={{
-              width: "min(560px, 100%)",
-              background: theme.surface,
-              border: "1px solid " + theme.border,
-              borderRadius: "14px",
-              boxShadow: theme.modalShadow,
-              overflow: "hidden",
-            }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
             <div style={{ padding: "14px 16px", borderBottom: "1px solid " + theme.border }}>
               <div style={{ fontSize: "17px", fontWeight: 800, color: theme.text }}>Rapportér fejl</div>
               <div style={{ marginTop: "4px", fontSize: "12px", color: theme.textMid }}>
                 Beskriv bug eller problem — vi sender den direkte til kontakt@padelmakker.dk.
               </div>
             </div>
-            <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", flex: 1, minHeight: 0 }}>
               <div
                 style={{
                   display: "grid",
@@ -1904,8 +1871,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               </button>
             </div>
           </div>
-        </div>,
-        document.body
+        </AppModal>
       )}
 
       {mobileMoreVisible && !mobileMoreTourActive && (
