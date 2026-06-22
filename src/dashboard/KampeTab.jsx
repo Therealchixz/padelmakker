@@ -3818,6 +3818,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </p>
 
           <div className="pm-form-submit pm-form-submit-actions">
+            {(() => {
+              const reason = venueOptions.length === 0
+                ? 'Ingen baner tilgængelige i dit område endnu.'
+                : (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id)))
+                  ? 'Vælg en booket bane for at fortsætte.'
+                  : null;
+              return reason ? (
+                <p style={{ width: '100%', margin: '0 0 4px', fontSize: 12.5, fontWeight: 600, color: 'var(--pm-text-mid)' }}>
+                  {reason}
+                </p>
+              ) : null;
+            })()}
             <button
               type="button"
               onClick={createMatch}

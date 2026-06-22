@@ -945,34 +945,34 @@ export function LigaTab({
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
             <svg style={{ width: 13, height: 13, color: 'var(--pm-amber)', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8Z"/></svg>
-            <span style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.9px', textTransform: 'uppercase', color: '#9DB6DE' }}>Aktiv sæson</span>
+            <span style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.9px', textTransform: 'uppercase', color: 'var(--pm-hero-subtitle)' }}>Aktiv sæson</span>
           </div>
           <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2, marginBottom: 4 }}>
             {myActiveLeagueHero.league.name}
           </div>
           {myActiveLeagueHero.league.current_round ? (
-            <div style={{ fontSize: '12px', color: '#9DB6DE', marginBottom: 14 }}>
+            <div style={{ fontSize: '12px', color: 'var(--pm-hero-subtitle)', marginBottom: 14 }}>
               {myActiveLeagueHero.division ? `Division ${myActiveLeagueHero.division}` : (myActiveLeagueHero.league.season_type === 'weekly' ? 'Ugentlig liga' : 'Månedlig liga')}
               {myActiveLeagueHero.league.total_rounds ? ` · Runde ${myActiveLeagueHero.league.current_round}/${myActiveLeagueHero.league.total_rounds}` : ''}
             </div>
           ) : null}
           <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
             <div>
-              <div style={{ fontSize: '10px', fontWeight: 700, color: '#9DB6DE', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Placering</div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Placering</div>
               <div style={{ fontSize: '20px', fontWeight: 700 }}>
                 {myActiveLeagueHero.rank != null ? (
-                  <>#<span>{myActiveLeagueHero.rank}</span> <small style={{ fontSize: '13px', color: '#9DB6DE', fontWeight: 600 }}>/ {myActiveLeagueHero.totalTeams}</small></>
+                  <>#<span>{myActiveLeagueHero.rank}</span> <small style={{ fontSize: '13px', color: 'var(--pm-hero-subtitle)', fontWeight: 600 }}>/ {myActiveLeagueHero.totalTeams}</small></>
                 ) : '—'}
               </div>
             </div>
             {myActiveLeagueHero.nextMatchDate ? (
               <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#9DB6DE', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Næste kamp</div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Næste kamp</div>
                 <div style={{ fontSize: '14px', fontWeight: 700 }}>{myActiveLeagueHero.nextMatchDate}</div>
               </div>
             ) : (
               <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#9DB6DE', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Hold</div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Hold</div>
                 <div style={{ fontSize: '14px', fontWeight: 700 }}>{myActiveLeagueHero.myTeam?.name || '—'}</div>
               </div>
             )}

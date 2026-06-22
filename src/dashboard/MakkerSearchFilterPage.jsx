@@ -531,34 +531,21 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         })}
       </div>
 
-      <div
+      <button
+        type="button"
+        disabled={saving}
+        onClick={handleSave}
         style={{
-          position: 'sticky',
-          bottom: 0,
-          marginTop: 8,
-          marginLeft: -16,
-          marginRight: -16,
-          padding: '12px 16px calc(12px + env(safe-area-inset-bottom))',
-          background: theme.surface,
-          borderTop: `1px solid ${theme.border}`,
+          ...btn(true),
+          width: '100%',
+          padding: '14px',
+          fontSize: 14,
+          fontWeight: 700,
+          opacity: saving ? 0.7 : 1,
         }}
       >
-        <button
-          type="button"
-          disabled={saving}
-          onClick={handleSave}
-          style={{
-            ...btn(true),
-            width: '100%',
-            padding: '14px',
-            fontSize: 14,
-            fontWeight: 700,
-            opacity: saving ? 0.7 : 1,
-          }}
-        >
-          {saving ? 'Gemmer…' : 'Gem filter'}
-        </button>
-      </div>
+        {saving ? 'Gemmer…' : 'Gem filter'}
+      </button>
     </div>
     </div>
   );
