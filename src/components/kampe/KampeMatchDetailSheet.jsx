@@ -250,19 +250,31 @@ function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, prof
         />
       ) : null}
 
-      <div style={{ display: 'flex', gap: 10, padding: '16px 0 8px' }}>
-        <button className="pm-kd-btn-ghost" style={{ flex: 1, padding: 12 }} onClick={handleShare} type="button">
+      {reportErrorNode ? <div style={{ padding: '8px 0 4px' }}>{reportErrorNode}</div> : null}
+      <div
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          display: 'flex',
+          gap: 10,
+          marginTop: 8,
+          padding: '12px 0 calc(8px + env(safe-area-inset-bottom))',
+          background: 'var(--pm-surface)',
+          borderTop: '1px solid var(--pm-border)',
+          zIndex: 2,
+        }}
+      >
+        <button className="pm-kd-btn-ghost" style={{ flex: 1, padding: 12, minHeight: 44 }} onClick={handleShare} type="button">
           <Share2 size={16} />
           Del resultat
         </button>
         {onRematch ? (
-          <button className="pm-kd-btn-navy" style={{ flex: 1, padding: 12 }} type="button" onClick={onRematch}>
+          <button className="pm-kd-btn-navy" style={{ flex: 1, padding: 12, minHeight: 44 }} type="button" onClick={onRematch}>
             <RotateCcw size={16} />
             Book revanche
           </button>
         ) : null}
       </div>
-      {reportErrorNode ? <div style={{ paddingBottom: 12 }}>{reportErrorNode}</div> : null}
     </>
   );
 }

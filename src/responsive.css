@@ -4604,6 +4604,44 @@ button,
   max-height: 90vh;
 }
 
+/* AppModal: valgfri fastlåst (sticky) bund-CTA */
+.pm-app-modal-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  padding: 12px clamp(18px, 5vw, 28px) calc(12px + env(safe-area-inset-bottom));
+}
+
+/* Når en modal har en footer, skal selve body'en kunne krympe så footeren
+   altid er synlig (i stedet for body'ens faste max-height). */
+.pm-app-modal-content:has(.pm-app-modal-footer) .pm-modal-body {
+  max-height: none;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Mobil: vis modaler som et bund-ark der bruger skærmens højde og er
+   tommelfinger-venligt, frem for et lille svævende kort midt på skærmen. */
+@media (max-width: 600px) {
+  .pm-app-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .pm-app-modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92dvh !important;
+    border-radius: var(--pm-radius-xl) var(--pm-radius-xl) 0 0 !important;
+    border-bottom: none !important;
+  }
+
+  /* Uden footer: sørg for at indholdet rydder home-indikatoren */
+  .pm-app-modal-content:not(:has(.pm-app-modal-footer)) .pm-modal-body {
+    padding-bottom: calc(clamp(18px, 5vw, 28px) + env(safe-area-inset-bottom));
+  }
+}
+
 .pm-form-stack {
   display: flex;
   flex-direction: column;

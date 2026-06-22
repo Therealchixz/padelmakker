@@ -1395,7 +1395,7 @@ export function LigaTab({
             </div>
 
             {/* CTA bar */}
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 18px', background: theme.surface, borderTop: '1px solid ' + theme.border }}>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 18px calc(12px + env(safe-area-inset-bottom))', background: theme.surface, borderTop: '1px solid ' + theme.border }}>
               <button
                 type="button"
                 onClick={() => setCreatedLeagueReceipt(null)}
