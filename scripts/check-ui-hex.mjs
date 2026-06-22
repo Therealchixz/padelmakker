@@ -35,6 +35,9 @@ for (const file of files) {
   lines.forEach((line, i) => {
     const trimmed = line.trim();
     if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
+    // Eksplicit, auditerbar undtagelse: dekorative paletter / leaflet-SVG-markører
+    // som ikke kan bruge CSS-variabler. Markér linjen med "ui-hex-allow".
+    if (line.includes('ui-hex-allow')) return;
     const matches = line.match(HEX_RE);
     if (matches) {
       for (const m of matches) {

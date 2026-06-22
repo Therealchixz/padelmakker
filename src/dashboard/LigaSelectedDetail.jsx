@@ -200,7 +200,7 @@ function hashStr(s) {
   return Math.abs(h);
 }
 
-const TEAM_COLORS = ['#16377E', '#059669', '#D97706', '#7C3AED', '#DC2626', '#0891B2'];
+const TEAM_COLORS = ['#16377E', '#059669', '#D97706', '#7C3AED', '#DC2626', '#0891B2']; // ui-hex-allow: dekorativ hold-palet (${color}22 alpha-tints, kan ikke være CSS-var)
 
 function teamColor(teamId) {
   return TEAM_COLORS[hashStr(String(teamId || 'x')) % TEAM_COLORS.length];
