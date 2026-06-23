@@ -12,7 +12,7 @@ test('baner booking help explains the booking flow in user-friendly language', a
   assert.match(banerTab, /expandedRegions/)
   assert.match(banerTab, /Grøn tid/)
   assert.match(banerTab, /Gul tid/)
-  assert.match(banerTab, /selve bookingen foregår altid hos centret/)
+  assert.match(banerTab, /Selve bookingen foregår altid hos centret/)
   assert.match(banerTab, /Rapportér fejl/)
   assert.doesNotMatch(banerTab, /konto-menuen/)
   assert.doesNotMatch(banerTab, /Åbn ét sted ad gangen/)
