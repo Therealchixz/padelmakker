@@ -27,9 +27,6 @@ import { toggleHomeFeedFilter } from '../lib/homeFeedFilters';
 import { SEEK_FEED_QUERY_TTL_MS, expandProfilesToSeekingFeedRows } from '../lib/seekingFeedTtl';
 import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
 import { ActiveSeekingOnboardingPrompt } from '../components/ActiveSeekingOnboardingPrompt';
-import { isSeekingUiActive } from '../lib/activeSeeking';
-
-const HOME_ELO_MILESTONES = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2200, 2400];
 import {
   normalizeMatchSearchPrefs,
   isMatchFilterActive,
@@ -1073,53 +1070,6 @@ export function HomeTab({ user, setTab, showToast }) {
     return () => { cancelled = true; };
   }, [user, matchFilterPrefs, matchFilterOn]);
 
-  // Player-card ELO hero: egne kampstats fra elo_history
-  const [playerStats, setPlayerStats] = useState({ elo: null, games: 0, winPct: null, streak: 0, recentForm: [] });
-  useEffect(() => {
-    if (!user?.id) return undefined;
-    let active = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from('elo_history')
-        .select('result, new_rating, created_at')
-        .eq('user_id', user.id)
-        .neq('change', 0)
-        .neq('result', 'adjustment')
-        .order('created_at', { ascending: true });
-      if (!active || error || !data) return;
-      const rated = data.filter((r) => r.result === 'win' || r.result === 'loss');
-      const games = rated.length;
-      const wins = rated.filter((r) => r.result === 'win').length;
-      const winPct = games > 0 ? Math.round((wins / games) * 100) : null;
-      let streak = 0;
-      for (let i = rated.length - 1; i >= 0; i -= 1) {
-        const isWin = rated[i].result === 'win';
-        if (streak === 0) streak = isWin ? 1 : -1;
-        else if (isWin === streak > 0) streak += streak > 0 ? 1 : -1;
-        else break;
-      }
-      const form = rated.slice(-5).map((r) => r.result).reverse();
-      const elo = data.length ? Number(data[data.length - 1].new_rating) : null;
-      setPlayerStats({ elo, games, winPct, streak, recentForm: form });
-    })();
-    return () => { active = false; };
-  }, [user?.id]);
-
-  const recentForm = playerStats.recentForm;
-  const heroElo = Math.round(playerStats.elo ?? user?.elo_rating ?? 1000);
-  const nextEloMilestone = useMemo(() => {
-    const next = HOME_ELO_MILESTONES.find((m) => m > heroElo);
-    return next ? { target: next, toGo: next - heroElo } : null;
-  }, [heroElo]);
-  const streakLabel = playerStats.streak > 0
-    ? `${playerStats.streak}S`
-    : playerStats.streak < 0 ? `${Math.abs(playerStats.streak)}N` : '–';
-  const seekingByChannel = useMemo(() => {
-    const makker = isSeekingUiActive(user, 'makker');
-    const kamp = isSeekingUiActive(user, 'kamp');
-    return { makker, kamp, total: (makker ? 1 : 0) + (kamp ? 1 : 0) };
-  }, [user]);
-
   return (
     <div>
       {showIosInstallHint && (
@@ -1166,70 +1116,18 @@ export function HomeTab({ user, setTab, showToast }) {
           </div>
         </div>
       )}
-      {/* Player-card ELO hero */}
-      <div className="pm-home-premium-hero">
-        <div className="pm-home-premium-top">
-          <AvatarCircle avatar={user.avatar} size={42} emojiSize="20px" style={{ flexShrink: 0, background: 'rgba(255,255,255,0.16)', color: 'var(--pm-on-accent)' }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="pm-home-premium-kicker">{greetingText}</div>
-            <h2>{displayName}</h2>
-          </div>
-          <div className="pm-home-bell"><NotificationBell /></div>
+      {/* Compact topbar: avatar + greeting */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px 12px' }}>
+        <AvatarCircle avatar={user.avatar} size={42} emojiSize="20px" style={{ flexShrink: 0, background: 'linear-gradient(135deg, var(--pm-navy-soft), var(--pm-navy))', color: 'var(--pm-on-accent)' }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: theme.textLight, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{greetingText}</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{displayName}</div>
         </div>
-        <div className="pm-home-player-card-head">
-          <div className="pm-home-premium-elo-block">
-            <div className="pm-home-premium-kicker">Din ELO</div>
-            <div className="pm-home-premium-elo">{heroElo}</div>
-          </div>
-          <div className="pm-home-next-goal-card">
-            <span>Næste mål</span>
-            <strong>{nextEloMilestone ? `${nextEloMilestone.toGo} ELO til ${nextEloMilestone.target}` : 'Du er i topform!'}</strong>
-          </div>
-          <div className="pm-home-premium-stats">
-            <div className="pm-home-premium-stat">
-              <strong>{playerStats.games}</strong>
-              <span>Kampe</span>
-            </div>
-            <div className="pm-home-premium-stat pm-home-premium-stat--win">
-              <strong>{playerStats.winPct != null ? `${playerStats.winPct}%` : '–'}</strong>
-              <span>Sejre</span>
-            </div>
-            <div className="pm-home-premium-stat">
-              <strong>{streakLabel}</strong>
-              <span>Stime</span>
-            </div>
-          </div>
-        </div>
-        {recentForm.length > 0 ? (
-          <div className="pm-home-form-row">
-            <span>Seneste form</span>
-            <div className="pm-home-form-chips">
-              {recentForm.map((r, i) => (
-                <span key={i} className={`pm-home-form-chip pm-home-form-chip--${r === 'win' ? 'win' : 'loss'}`}>
-                  {r === 'win' ? 'S' : 'N'}
-                </span>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        <div className="pm-home-bell"><NotificationBell /></div>
       </div>
 
       {/* Seeking onboarding prompt */}
       {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} /> : null}
-
-      {/* Seeking shortcut → browse makkere */}
-      <button
-        type="button"
-        className="pm-home-seeking-cta"
-        onClick={() => setTab("makkere", { search: seekingByChannel.total > 0 ? "seeking=1" : "" })}
-      >
-        <span className="pm-home-seeking-cta-icon"><Zap size={20} /></span>
-        <span className="pm-home-seeking-cta-copy">
-          <strong>{seekingByChannel.total > 0 ? 'Du søger aktivt – find en makker' : 'Find en makker'}</strong>
-          <small>{seekingByChannel.total > 0 ? 'Se spillere der også søger lige nu' : 'Browse spillere i dit område'}</small>
-        </span>
-        <ChevronRight size={18} style={{ marginLeft: 'auto', flexShrink: 0, opacity: 0.5 }} aria-hidden />
-      </button>
 
       {/* Seek card (toggle aktiv søgning) */}
       {showToast ? <ActiveSeekingPanel variant="homeCard" user={user} showToast={showToast} /> : null}
