@@ -181,6 +181,11 @@ export function MakkerSearchFilterPage({ user, showToast }) {
       </div>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px 0' }}>
 
+      <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 16 }}>
+        Dette styrer hvornår du får besked og hvilke makkere der matcher. Slå aktiv søgning til/fra på
+        Hjem eller Find makker — her finjusterer du region, niveau og spilletider.
+      </p>
+
       <div
         style={{
           background: theme.surfaceAlt,

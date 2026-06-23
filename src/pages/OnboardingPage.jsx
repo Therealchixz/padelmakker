@@ -621,7 +621,7 @@ export function OnboardingPage() {
     <div key={1}>
       <div style={{ textAlign: "center", padding: "0 8px 16px" }}>
         <div style={screenHeading}>Hvor godt spiller du?</div>
-        <div style={screenSub}>Vælg det, der passer bedst – din Elo justerer sig automatisk efter dine kampe</div>
+        <div style={screenSub}>Dit niveau bruges til at matche dig med spillere på samme niveau – din Elo justerer sig automatisk efter dine kampe</div>
       </div>
       {LEVEL_CARDS.map((c) => {
         const sel = selectedLevelCard === c.value;
@@ -764,6 +764,7 @@ export function OnboardingPage() {
           placeholder="F.eks. Aarhus, København, Aalborg..."
           style={obInput}
         />
+        <div style={fieldHint}>Byen er valgfri og kan tilføjes under profil senere.</div>
       </div>
       <div style={fieldWrap}>
         <label style={obLabel}>Hvornår kan du spille? <span style={{ fontWeight: 400, opacity: 0.7 }}>(valgfri)</span></label>
@@ -814,6 +815,7 @@ export function OnboardingPage() {
         </div>
         <div style={{ fontSize: "12px", fontWeight: 600, color: theme.navy, marginTop: "8px" }}>Vælg profilbillede</div>
         <div style={{ fontSize: "10.5px", color: theme.textLight, marginTop: "2px" }}>Emoji eller upload et billede</div>
+        <div style={{ fontSize: "12px", fontWeight: 600, color: theme.green, marginTop: "10px" }}>Din profil er klar til at finde makkere 🎾</div>
       </div>
       <div style={{ marginBottom: "10px" }}>
         <AvatarPicker
