@@ -253,15 +253,10 @@ function CompletedMatchDetail({ matchResult, teamStats, winnerTeam, myTeam, prof
       {reportErrorNode ? <div style={{ padding: '8px 0 4px' }}>{reportErrorNode}</div> : null}
       <div
         style={{
-          position: 'sticky',
-          bottom: 0,
           display: 'flex',
           gap: 10,
-          marginTop: 8,
-          padding: '12px 0 calc(8px + env(safe-area-inset-bottom))',
-          background: 'var(--pm-surface)',
-          borderTop: '1px solid var(--pm-border)',
-          zIndex: 2,
+          marginTop: 12,
+          padding: '4px 0 8px',
         }}
       >
         <button className="pm-kd-btn-ghost" style={{ flex: 1, padding: 12, minHeight: 44 }} onClick={handleShare} type="button">
