@@ -598,7 +598,7 @@ export function ProfilTab({ user, showToast, setTab }) {
       {!editing ? (
       <div>
         <div data-tour="profile-main" className="pm-tour-scroll-anchor">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'max(12px, calc(env(safe-area-inset-top) + 8px)) 18px 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 8px' }}>
           <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Min profil</h2>
         </div>
         <div className="pm-profile-top">

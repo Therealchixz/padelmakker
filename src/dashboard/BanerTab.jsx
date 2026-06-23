@@ -345,7 +345,7 @@ export function BanerTab() {
 
   return (
     <div className="pm-baner-page">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'max(12px, calc(env(safe-area-inset-top) + 8px)) 0 8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0 8px' }}>
         <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Baner</h2>
       </div>
 
