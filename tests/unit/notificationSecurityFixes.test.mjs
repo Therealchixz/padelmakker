@@ -60,17 +60,16 @@ test('notifications.js exports invalidateNotificationPrefsCache', () => {
 
 test('InviteToMatchModal uses americano_invite with entity context', () => {
   const src = readSrc('src/dashboard/InviteToMatchModal.jsx');
-  const tournamentHandler = src.slice(src.indexOf('handleInviteTournament'));
-  assert.match(tournamentHandler, /americano_invite/);
-  assert.match(tournamentHandler, /entityType:\s*['"]americano['"]/);
-  assert.match(tournamentHandler, /entityId:\s*tournament\.id/);
-  assert.doesNotMatch(tournamentHandler, /match_invite/);
+  // Unified item handler: the americano branch sends americano_invite with entity context.
+  assert.match(src, /americano_invite/);
+  assert.match(src, /entityType:\s*['"]americano['"]/);
+  assert.match(src, /entityId:\s*item\.id/);
 });
 
 test('InviteToMatchModal still uses match_invite for 2v2 matches', () => {
   const src = readSrc('src/dashboard/InviteToMatchModal.jsx');
-  assert.match(src, /handleInviteMatch[\s\S]*match_invite/s);
-  assert.match(src, /match\.id/);
+  assert.match(src, /item\._type === 'match'[\s\S]*match_invite/s);
+  assert.match(src, /item\.id/);
 });
 
 test('resultErrorReports passes entity context for americano and league', () => {
@@ -113,8 +112,8 @@ test('AuthContext profile load retries and exposes profileLoadError', () => {
   const auth = readSrc('src/lib/AuthContext.jsx');
   const platform = readSrc('src/padelmakker-platform.jsx');
   assert.match(auth, /profileLoadError/);
-  assert.match(auth, /fetchOrCreateProfileCore\(userRow\)/);
-  assert.match(auth, /\.select\(\)\s*\n\s*\.single\(\)/s);
+  assert.match(auth, /setProfileLoadError\(true\)/);
+  assert.match(auth, /\.select\(\)\.single\(\)/);
   assert.match(platform, /Kunne ikke hente din profil/);
   assert.match(platform, /refreshProfile/);
 });

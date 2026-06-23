@@ -14,10 +14,12 @@ test('match search filter SQL adds prefs column and updates notify_match_watcher
   assert.match(sql, /jsonb_array_elements_text/);
 });
 
-test('ProfilTab uses single Mit kamp-filter entry instead of separate toggles', () => {
+test('ProfilTab no longer embeds the kamp-filter (moved to Kampe og Find makker)', () => {
+  // Filtrene blev bevidst flyttet ud af profilen (commit 79b7fdf); de ligger nu
+  // under Kampe og Find makker. Profilen må derfor ikke længere have dem.
   const src = readFileSync(join(root, 'src/dashboard/ProfilTab.jsx'), 'utf8');
-  assert.match(src, /Mit kamp-filter/);
-  assert.match(src, /MatchFilterProfileCard/);
+  assert.doesNotMatch(src, /Mit kamp-filter/);
+  assert.doesNotMatch(src, /MatchFilterProfileCard/);
   assert.doesNotMatch(src, /🔔 Kamp-watch/);
   assert.doesNotMatch(src, /⚡ Søger kamp nu/);
 });

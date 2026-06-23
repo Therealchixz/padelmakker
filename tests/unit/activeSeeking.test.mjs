@@ -54,7 +54,7 @@ test('ActiveSeekingPanel integreret på Hjem, Makkere og Kampe', () => {
   const makkere = readFileSync(join(root, 'src/dashboard/MakkereTab.jsx'), 'utf8');
   const kampe = readFileSync(join(root, 'src/dashboard/KampeTab.jsx'), 'utf8');
   assert.match(home, /ActiveSeekingPanel/);
-  assert.match(home, /variant="home"/);
+  assert.match(home, /variant="homeCard"/);
   assert.match(home, /ActiveSeekingOnboardingPrompt/);
   assert.match(makkere, /ActiveSeekingPanel/);
   assert.match(makkere, /channel="makker"/);
