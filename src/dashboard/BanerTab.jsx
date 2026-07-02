@@ -255,6 +255,25 @@ export function BanerTab() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [halbookingDateByVenue, bookliDateByVenue, matchiDateByVenue, linkDateByVenue, loadHalbookingVenue, loadBookliVenue, loadMatchiVenue]);
 
+  /** Unikke "gul tid"-forklaringer — vises én gang under banens slots i stedet for pr. chip. */
+  const renderBlockedRuleNotes = (slots) => {
+    const hints = [...new Set(
+      (slots || [])
+        .filter((s) => s.status === 'blocked_rule')
+        .map((s) => s.ruleHint || 'Kan ikke bookes (klubbens regel)'),
+    )];
+    if (hints.length === 0) return null;
+    return (
+      <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {hints.map((hint) => (
+          <span key={hint} style={{ fontSize: 11, lineHeight: 1.3, color: theme.textMid }}>
+            Gul tid: {hint}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   /**
    * @param {SlotRow} s
    * @param {import('../lib/banerVenues').BanerVenue} v
@@ -319,17 +338,11 @@ export function BanerTab() {
       return (
         <span
           key={s.time}
-          className="pm-baner-slot-wrap"
-          style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}
+          title={hint}
+          aria-label={`${s.time} · Ikke bookbar. ${hint}`}
+          className={banerSlotClass('blocked_rule')}
         >
-          <span
-            title={hint}
-            aria-label={`${s.time} · Ikke bookbar. ${hint}`}
-            className={banerSlotClass('blocked_rule')}
-          >
-            {s.time} · Ikke bookbar
-          </span>
-          <span style={{ fontSize: 11, lineHeight: 1.3, color: theme.textMid }}>{hint}</span>
+          {s.time} · Ikke bookbar
         </span>
       );
     }
@@ -636,6 +649,7 @@ export function BanerTab() {
                             <div className="pm-baner-slots">
                               {c.slots.map((s) => renderSlot(s, v, c))}
                             </div>
+                            {renderBlockedRuleNotes(c.slots)}
                           </div>
                         ))}
                       </div>
@@ -737,6 +751,7 @@ export function BanerTab() {
                             <div className="pm-baner-slots">
                               {c.slots.map((s) => renderSlot(s, v, c))}
                             </div>
+                            {renderBlockedRuleNotes(c.slots)}
                           </div>
                         ))}
                       </div>
@@ -826,6 +841,7 @@ export function BanerTab() {
                             <div className="pm-baner-slots">
                               {c.slots.map((s) => renderSlot(s, v, c))}
                             </div>
+                            {renderBlockedRuleNotes(c.slots)}
                           </div>
                         ))}
                       </div>

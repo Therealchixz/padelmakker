@@ -60,16 +60,21 @@ test('notifications.js exports invalidateNotificationPrefsCache', () => {
 
 test('InviteToMatchModal uses americano_invite with entity context', () => {
   const src = readSrc('src/dashboard/InviteToMatchModal.jsx');
-  // Unified item handler: the americano branch sends americano_invite with entity context.
-  assert.match(src, /americano_invite/);
-  assert.match(src, /entityType:\s*['"]americano['"]/);
-  assert.match(src, /entityId:\s*item\.id/);
+  // Scoped til selve americano-notifikationskaldet, så en regression der
+  // dropper entity-konteksten fra kaldet fanges (ikke bare et hel-fils-match).
+  assert.match(
+    src,
+    /createNotification\(\s*invitee\.id,\s*'americano_invite'[\s\S]*?\{\s*entityType:\s*'americano',\s*entityId:\s*item\.id\s*\}/,
+  );
 });
 
 test('InviteToMatchModal still uses match_invite for 2v2 matches', () => {
   const src = readSrc('src/dashboard/InviteToMatchModal.jsx');
-  assert.match(src, /item\._type === 'match'[\s\S]*match_invite/s);
-  assert.match(src, /item\.id/);
+  // Scoped til selve match-notifikationskaldet: match_invite skal sendes med kampens id.
+  assert.match(
+    src,
+    /createNotification\(\s*invitee\.id,\s*'match_invite'[\s\S]*?item\.id\s*\)/,
+  );
 });
 
 test('resultErrorReports passes entity context for americano and league', () => {

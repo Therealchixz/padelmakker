@@ -538,7 +538,7 @@ export default function PadelMatchResultInput({
           disabled={!formValid}
           style={{
             flex: 2, padding: '14px', borderRadius: 10, border: 'none',
-            background: formValid ? 'var(--pm-navy)' : 'var(--pm-border)',
+            background: formValid ? 'var(--pm-navy)' : 'var(--pm-text-light)',
             color: 'var(--pm-on-accent)', fontSize: '14.5px', fontWeight: 600,
             cursor: formValid ? 'pointer' : 'default', fontFamily: 'inherit',
             boxShadow: formValid ? '0 6px 14px rgba(22,55,126,0.32)' : 'none',

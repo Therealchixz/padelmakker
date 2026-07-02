@@ -81,7 +81,7 @@ export function ConfirmResultModal({
           onClick={onConfirm}
           style={{
             width: '100%', padding: 12, borderRadius: 10, border: 'none',
-            background: busy ? 'var(--pm-border)' : 'var(--pm-navy)', color: 'var(--pm-on-accent)',
+            background: busy ? 'var(--pm-text-light)' : 'var(--pm-navy)', color: 'var(--pm-on-accent)',
             fontSize: '14.5px', fontWeight: 600, cursor: busy ? 'default' : 'pointer',
             fontFamily: 'inherit', boxShadow: busy ? 'none' : '0 6px 14px rgba(22,55,126,0.32)',
           }}

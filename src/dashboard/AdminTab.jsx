@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle, Smartphone, LayoutDashboard, Trophy, ChevronRight } from 'lucide-react';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle, Smartphone, LayoutDashboard, ChevronRight } from 'lucide-react';
 import {
   dismissAdminUserReportNotificationsIfQueueEmpty,
   fetchAdminSubTabBadges,
@@ -115,6 +115,47 @@ function formatDateTimeDa(value) {
   }).format(dt);
 }
 
+/** Fælles audit-log-panel — bruges af både Oversigt (begrænset + "Se hele") og Konsol (fuld). */
+function AdminAuditLogPanel({ title, emptyText, loading, error, entries, limit = null, onSeeAll = null }) {
+  const shown = limit ? entries.slice(0, limit) : entries;
+  return (
+    <div className="pm-ui-card pm-admin-console-panel">
+      <div className="pm-admin-console-panel-head">
+        <div className="pm-admin-console-panel-title">{title}</div>
+        <div className="pm-admin-console-panel-meta">
+          {loading ? 'Indlæser...' : `${entries.length} poster`}
+        </div>
+      </div>
+      {error ? <div className="pm-admin-error-msg">{error}</div> : null}
+      {!error && entries.length === 0 && !loading ? (
+        <div className="pm-admin-empty">{emptyText}</div>
+      ) : null}
+      {entries.length > 0 ? (
+        <div className="pm-admin-audit-list">
+          {shown.map((entry) => (
+            <div key={entry.id} className="pm-admin-audit-entry">
+              <div className="pm-admin-audit-entry-head">
+                <span className="pm-admin-audit-action">{adminAuditActionLabel(entry.action)}</span>
+                <span className="pm-admin-audit-time">{formatDateTimeDa(entry.created_at)}</span>
+              </div>
+              {entry.target_user_id ? (
+                <div className="pm-admin-audit-target">
+                  Bruger: {String(entry.target_user_id).slice(0, 8)}…
+                </div>
+              ) : null}
+            </div>
+          ))}
+          {onSeeAll && limit && entries.length > limit ? (
+            <button type="button" className="pm-admin-audit-more" onClick={onSeeAll} style={btn(false)}>
+              Se hele admin-loggen
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function AdminTab({ initialSubTab = null }) {
   const { user } = useAuth();
   const ask = useConfirm();
@@ -203,6 +244,7 @@ export function AdminTab({ initialSubTab = null }) {
 
   const prevSubTabBadgesRef = useRef(null);
   const badgesSyncedRef = useRef(false);
+  const consoleFetchedAtRef = useRef(0);
 
   const refreshSubTabBadges = useCallback(async () => {
     try {
@@ -351,29 +393,38 @@ export function AdminTab({ initialSubTab = null }) {
     const seq = ++matchesLoadSeqRef.current;
     setLoading(true);
     try {
-      const [recentRes, pendingRes] = await Promise.all([
+      const MATCH_EMBED = '*, match_results(*), match_players(*, profiles(full_name, name))';
+      const [recentRes, pendingIdsRes] = await Promise.all([
         supabase
           .from('matches')
-          .select('*, match_results(*), match_players(*, profiles(full_name, name))')
+          .select(MATCH_EMBED)
           .order('created_at', { ascending: false })
           .limit(100),
-        // Kampe med et ubekræftet resultat — kan være ældre end de 100 nyeste,
-        // så listen altid matcher Kampe-badget (som tæller ubekræftede resultater).
+        // Let id-opslag: kampe med et ubekræftet resultat kan være ældre end de
+        // 100 nyeste, og listen skal altid matche Kampe-badget.
         supabase
-          .from('matches')
-          .select('*, match_results!inner(*), match_players(*, profiles(full_name, name))')
-          .eq('match_results.confirmed', false)
-          .order('created_at', { ascending: false })
-          .limit(100),
+          .from('match_results')
+          .select('match_id')
+          .eq('confirmed', false)
+          .limit(200),
       ]);
       if (recentRes.error) throw recentRes.error;
       if (seq !== matchesLoadSeqRef.current) return;
       const byId = new Map();
       for (const m of recentRes.data || []) byId.set(m.id, m);
-      // Tilføj ældre kampe med ubekræftet resultat (foretræk recent-versionen hvis den findes,
-      // da inner-join-filteret kun returnerer de ubekræftede result-rows)
-      for (const m of (pendingRes.error ? [] : pendingRes.data || [])) {
-        if (!byId.has(m.id)) byId.set(m.id, m);
+      const missingIds = [...new Set(
+        (pendingIdsRes.error ? [] : pendingIdsRes.data || [])
+          .map((r) => r.match_id)
+          .filter((id) => id && !byId.has(id)),
+      )];
+      // Hent kun de ældre pending-kampe der mangler — samme embed, så alle rækker har ens facon.
+      if (missingIds.length > 0) {
+        const { data: olderPending, error: olderErr } = await supabase
+          .from('matches')
+          .select(MATCH_EMBED)
+          .in('id', missingIds);
+        if (seq !== matchesLoadSeqRef.current) return;
+        if (!olderErr) for (const m of olderPending || []) byId.set(m.id, m);
       }
       setMatches(Array.from(byId.values()));
     } catch (err) {
@@ -468,6 +519,7 @@ export function AdminTab({ initialSubTab = null }) {
   );
 
   const fetchAdminConsole = async () => {
+    consoleFetchedAtRef.current = Date.now();
     setConsoleLoading(true);
     setConsoleError('');
     try {
@@ -530,7 +582,6 @@ export function AdminTab({ initialSubTab = null }) {
           flags: flagRows,
         }),
       );
-      void refreshSubTabBadges();
 
       const reviewerIds = [...new Set(flagRows.map((f) => f.reviewed_by).filter(Boolean))];
       if (reviewerIds.length > 0) {
@@ -780,7 +831,10 @@ export function AdminTab({ initialSubTab = null }) {
     } else if (activeSubTab === 'result_errors') {
       void fetchResultErrorReports();
     } else if (activeSubTab === 'console' || activeSubTab === 'oversigt') {
-      void fetchAdminConsole();
+      // Oversigt og Konsol deler samme data — skift mellem dem uden at genhente
+      // hele konsol-datasættet, medmindre det er over 30 sekunder gammelt.
+      // "Opdater"-knappen og visibilitychange henter altid (via fetchAdminConsole direkte).
+      if (Date.now() - consoleFetchedAtRef.current > 30_000) void fetchAdminConsole();
     }
   }, [
     activeSubTab,
@@ -1152,6 +1206,58 @@ export function AdminTab({ initialSubTab = null }) {
     [ligaLeagues, matchStatusFilter],
   );
 
+  /** Oversigtens KPI-kort — hvert kort hopper til sin under-fane. */
+  const oversigtKpiCards = useMemo(() => [
+    {
+      key: 'players',
+      label: 'Spillere',
+      value: consoleStats.totalPlayers,
+      footer: `${consoleStats.bannedPlayers} bannet`,
+      accent: theme.accent,
+      target: 'users',
+    },
+    {
+      key: 'matches',
+      label: 'Kampe i gang',
+      value: consoleStats.inProgressMatches,
+      footer: `${consoleStats.openMatches} åbne · ${consoleStats.completedMatches24h} afsl. (24t)`,
+      accent: theme.text,
+      target: 'matches',
+    },
+    {
+      key: 'tournaments',
+      label: 'Aktive turneringer',
+      value: consoleStats.americanoActive,
+      footer: `${consoleStats.americanoOpen} åbne · ${consoleStats.americanoCompleted7d} afsl. (7d)`,
+      accent: theme.accent,
+      target: 'matches',
+    },
+    {
+      key: 'reports',
+      label: 'Anmeldelser',
+      value: subTabBadges.reports || 0,
+      footer: 'Brugeranmeldelser',
+      accent: (subTabBadges.reports || 0) > 0 ? theme.red : theme.textMid,
+      target: 'reports',
+    },
+    {
+      key: 'resultErrors',
+      label: 'Resultat-fejl',
+      value: subTabBadges.resultErrors || 0,
+      footer: `${consoleStats.pendingResults} afventer bekræft.`,
+      accent: (subTabBadges.resultErrors || 0) > 0 ? theme.warm : theme.textMid,
+      target: 'result_errors',
+    },
+    {
+      key: 'flags',
+      label: 'Flags',
+      value: consoleStats.openFlags,
+      footer: `${consoleStats.highFlags} høj risiko`,
+      accent: consoleStats.openFlags > 0 ? theme.red : theme.textMid,
+      target: 'console',
+    },
+  ], [consoleStats, subTabBadges]);
+
   const adminSubTabs = [
     { id: 'oversigt', label: 'Oversigt', shortLabel: 'Oversigt', icon: LayoutDashboard, badgeKey: null },
     { id: 'users', label: 'Brugere', shortLabel: 'Brugere', icon: User, badgeKey: 'users' },
@@ -1244,118 +1350,35 @@ export function AdminTab({ initialSubTab = null }) {
           </div>
 
           <div className="pm-admin-kpi-grid">
-            {[
-              {
-                key: 'players',
-                label: 'Spillere',
-                value: consoleStats.totalPlayers,
-                footer: `${consoleStats.bannedPlayers} bannet`,
-                accent: theme.accent,
-                target: 'users',
-              },
-              {
-                key: 'matches',
-                label: 'Kampe i gang',
-                value: consoleStats.inProgressMatches,
-                footer: `${consoleStats.openMatches} åbne · ${consoleStats.completedMatches24h} afsl. (24t)`,
-                accent: theme.text,
-                target: 'matches',
-              },
-              {
-                key: 'tournaments',
-                label: 'Aktive turneringer',
-                value: consoleStats.americanoActive,
-                footer: `${consoleStats.americanoOpen} åbne · ${consoleStats.americanoCompleted7d} afsl. (7d)`,
-                accent: theme.accent,
-                target: 'matches',
-              },
-              {
-                key: 'reports',
-                label: 'Anmeldelser',
-                value: subTabBadges.reports || 0,
-                footer: 'Brugeranmeldelser',
-                accent: (subTabBadges.reports || 0) > 0 ? theme.red : theme.textMid,
-                target: 'reports',
-              },
-              {
-                key: 'resultErrors',
-                label: 'Resultat-fejl',
-                value: subTabBadges.resultErrors || 0,
-                footer: `${consoleStats.pendingResults} afventer bekræft.`,
-                accent: (subTabBadges.resultErrors || 0) > 0 ? theme.warm : theme.textMid,
-                target: 'result_errors',
-              },
-              {
-                key: 'flags',
-                label: 'Flags',
-                value: consoleStats.openFlags,
-                footer: `${consoleStats.highFlags} høj risiko`,
-                accent: consoleStats.openFlags > 0 ? theme.red : theme.textMid,
-                target: 'console',
-              },
-            ].map((card) => {
-              const tabExists = adminSubTabPills.some((t) => t.id === card.target);
-              return (
-                <button
-                  key={card.key}
-                  type="button"
-                  className="pm-ui-card pm-admin-kpi-card"
-                  onClick={() => { if (tabExists) setActiveSubTab(card.target); }}
-                  disabled={!tabExists}
-                  style={{ borderLeft: `3px solid ${card.accent}` }}
-                >
-                  <div className="pm-admin-kpi-top">
-                    <span className="pm-admin-kpi-label">{card.label}</span>
-                    {tabExists ? <ChevronRight size={16} className="pm-admin-kpi-chevron" aria-hidden /> : null}
-                  </div>
-                  <div className="pm-admin-kpi-value" style={{ color: card.accent }}>
-                    {card.value}
-                  </div>
-                  <div className="pm-admin-kpi-footer">{card.footer}</div>
-                </button>
-              );
-            })}
+            {oversigtKpiCards.map((card) => (
+              <button
+                key={card.key}
+                type="button"
+                className="pm-ui-card pm-admin-kpi-card"
+                onClick={() => setActiveSubTab(card.target)}
+                style={{ borderLeft: `3px solid ${card.accent}` }}
+              >
+                <div className="pm-admin-kpi-top">
+                  <span className="pm-admin-kpi-label">{card.label}</span>
+                  <ChevronRight size={16} className="pm-admin-kpi-chevron" aria-hidden />
+                </div>
+                <div className="pm-admin-kpi-value" style={{ color: card.accent }}>
+                  {card.value}
+                </div>
+                <div className="pm-admin-kpi-footer">{card.footer}</div>
+              </button>
+            ))}
           </div>
 
-          <div className="pm-ui-card pm-admin-console-panel">
-            <div className="pm-admin-console-panel-head">
-              <div className="pm-admin-console-panel-title">Seneste aktivitet</div>
-              <div className="pm-admin-console-panel-meta">
-                {consoleLoading ? 'Indlæser...' : `${auditLog.length} poster`}
-              </div>
-            </div>
-            {auditLogError ? <div className="pm-admin-error-msg">{auditLogError}</div> : null}
-            {!auditLogError && auditLog.length === 0 && !consoleLoading ? (
-              <div className="pm-admin-empty">Ingen aktivitet endnu.</div>
-            ) : null}
-            {auditLog.length > 0 ? (
-              <div className="pm-admin-audit-list">
-                {auditLog.slice(0, 8).map((entry) => (
-                  <div key={entry.id} className="pm-admin-audit-entry">
-                    <div className="pm-admin-audit-entry-head">
-                      <span className="pm-admin-audit-action">{adminAuditActionLabel(entry.action)}</span>
-                      <span className="pm-admin-audit-time">{formatDateTimeDa(entry.created_at)}</span>
-                    </div>
-                    {entry.target_user_id ? (
-                      <div className="pm-admin-audit-target">
-                        Bruger: {String(entry.target_user_id).slice(0, 8)}…
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-                {auditLog.length > 8 ? (
-                  <button
-                    type="button"
-                    className="pm-admin-audit-more"
-                    onClick={() => setActiveSubTab('console')}
-                    style={btn(false)}
-                  >
-                    Se hele admin-loggen
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+          <AdminAuditLogPanel
+            title="Seneste aktivitet"
+            emptyText="Ingen aktivitet endnu."
+            loading={consoleLoading}
+            error={auditLogError}
+            entries={auditLog}
+            limit={8}
+            onSeeAll={() => setActiveSubTab('console')}
+          />
         </div>
       ) : activeSubTab === 'users' ? (
         <>
@@ -2257,35 +2280,13 @@ export function AdminTab({ initialSubTab = null }) {
               })}
           </div>
 
-          <div className="pm-ui-card pm-admin-console-panel">
-            <div className="pm-admin-console-panel-head">
-              <div className="pm-admin-console-panel-title">Admin-log (seneste handlinger)</div>
-              <div className="pm-admin-console-panel-meta">
-                {consoleLoading ? 'Indlæser...' : `${auditLog.length} poster`}
-              </div>
-            </div>
-            {auditLogError ? <div className="pm-admin-error-msg">{auditLogError}</div> : null}
-            {!auditLogError && auditLog.length === 0 && !consoleLoading ? (
-              <div className="pm-admin-empty">Ingen logposter endnu.</div>
-            ) : null}
-            {auditLog.length > 0 ? (
-              <div className="pm-admin-audit-list">
-                {auditLog.map((entry) => (
-                  <div key={entry.id} className="pm-admin-audit-entry">
-                    <div className="pm-admin-audit-entry-head">
-                      <span className="pm-admin-audit-action">{adminAuditActionLabel(entry.action)}</span>
-                      <span className="pm-admin-audit-time">{formatDateTimeDa(entry.created_at)}</span>
-                    </div>
-                    {entry.target_user_id ? (
-                      <div className="pm-admin-audit-target">
-                        Bruger: {String(entry.target_user_id).slice(0, 8)}…
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <AdminAuditLogPanel
+            title="Admin-log (seneste handlinger)"
+            emptyText="Ingen logposter endnu."
+            loading={consoleLoading}
+            error={auditLogError}
+            entries={auditLog}
+          />
         </div>
       )}
       <AdminUserEditModal

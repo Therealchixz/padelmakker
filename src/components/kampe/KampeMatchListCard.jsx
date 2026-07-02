@@ -203,15 +203,10 @@ export function KampeMatchListCard({
         </div>
       )}
 
-      {attentionReason ? (
-        <div className="pm-kampe-v2-list-attention">
-          <span className="pm-kampe-v2-list-attention-dot" aria-hidden />
-          {attentionReason}
-        </div>
-      ) : statusNote ? (
-        <div className="pm-kampe-v2-list-statusnote">
-          <span className="pm-kampe-v2-list-statusnote-dot" aria-hidden />
-          {statusNote}
+      {attentionReason || statusNote ? (
+        <div className={`pm-kampe-v2-list-note${attentionReason ? ' pm-kampe-v2-list-note--danger' : ''}`}>
+          <span className="pm-kampe-v2-list-note-dot" aria-hidden />
+          {attentionReason || statusNote}
         </div>
       ) : null}
 
