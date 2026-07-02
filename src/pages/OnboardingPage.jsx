@@ -654,7 +654,7 @@ export function OnboardingPage() {
                 height: "46px",
                 borderRadius: "12px",
                 background: sel ? theme.navy : theme.surfaceAlt,
-                color: sel ? "var(--pm-on-accent)" : theme.navy,
+                color: sel ? "var(--pm-on-accent)" : theme.accent,
                 fontWeight: 700,
                 fontSize: "15px",
                 display: "flex",
@@ -697,7 +697,7 @@ export function OnboardingPage() {
         style={{
           border: "none",
           background: "transparent",
-          color: theme.navy,
+          color: theme.accent,
           fontWeight: 600,
           fontSize: "12.5px",
           cursor: "pointer",
@@ -813,7 +813,7 @@ export function OnboardingPage() {
             ? <img src={avatarPreviewUrl} alt="Valgt profilbillede" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : <span style={{ fontSize: "30px", lineHeight: 1 }}>{form.avatar}</span>}
         </div>
-        <div style={{ fontSize: "12px", fontWeight: 600, color: theme.navy, marginTop: "8px" }}>Vælg profilbillede</div>
+        <div style={{ fontSize: "12px", fontWeight: 600, color: theme.accent, marginTop: "8px" }}>Vælg profilbillede</div>
         <div style={{ fontSize: "10.5px", color: theme.textLight, marginTop: "2px" }}>Emoji eller upload et billede</div>
         <div style={{ fontSize: "12px", fontWeight: 600, color: theme.green, marginTop: "10px" }}>Din profil er klar til at finde makkere 🎾</div>
       </div>
@@ -889,11 +889,11 @@ export function OnboardingPage() {
         </span>
         <span style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.5 }}>
           Jeg accepterer {LEGAL_INFO.brand}s{" "}
-          <Link to="/handelsbetingelser" target="_blank" rel="noopener noreferrer" style={{ color: theme.navy, fontWeight: 600 }}>
+          <Link to="/handelsbetingelser" target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
             handelsbetingelser
           </Link>{" "}
           og{" "}
-          <Link to="/privatlivspolitik" target="_blank" rel="noopener noreferrer" style={{ color: theme.navy, fontWeight: 600 }}>
+          <Link to="/privatlivspolitik" target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
             privatlivspolitik
           </Link>
           , og bekræfter at jeg er mindst {LEGAL_INFO.minAgeYears} år.
@@ -902,7 +902,7 @@ export function OnboardingPage() {
       {turnstileEnabled && (
         <div style={{ ...insetCard, marginBottom: "14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-            <ShieldCheck size={16} style={{ color: captchaToken ? theme.green : theme.navy, flexShrink: 0 }} />
+            <ShieldCheck size={16} style={{ color: captchaToken ? theme.green : theme.accent, flexShrink: 0 }} />
             <span style={{ fontSize: "12px", color: theme.textMid, flex: 1 }}>
               {captchaToken ? "Sikkerhedscheck gennemført" : "Sikkerhedscheck — bekræft at du ikke er en robot"}
             </span>
