@@ -8,12 +8,12 @@ function matchResultTag(match, myTeamId) {
   if (match.status !== 'reported') return { label: 'Planlagt', color: theme.amber, bg: theme.amberBg, border: theme.amberBorder };
 
   if (!myTeamId) {
-    return { label: match.score_text || '—', color: theme.navy, bg: theme.navySoft, border: 'transparent' };
+    return { label: match.score_text || '—', color: theme.onAccent, bg: theme.navySoft, border: 'transparent' };
   }
 
   const isMyMatch = match.team1_id === myTeamId || match.team2_id === myTeamId;
   if (!isMyMatch) {
-    return { label: match.score_text || '—', color: theme.navy, bg: theme.navySoft, border: 'transparent' };
+    return { label: match.score_text || '—', color: theme.onAccent, bg: theme.navySoft, border: 'transparent' };
   }
 
   const iWon = match.winner_id === myTeamId;
@@ -127,7 +127,7 @@ export function LigaScheduleSheet({
       .sort((a, b) => a - b)
       .map((d) => (
         <div key={d} style={{ marginBottom: 6 }}>
-          <div style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--pm-navy)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '2px 0 6px' }}>
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--pm-accent)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '2px 0 6px' }}>
             Division {d}
           </div>
           {byDiv[d].map(renderMatch)}

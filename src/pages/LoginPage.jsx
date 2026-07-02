@@ -120,7 +120,7 @@ export function LoginPage() {
           <label htmlFor="login-password" style={labelStyle}>Adgangskode</label>
           <input id="login-password" autoComplete="current-password" value={password} onChange={e => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" type="password" style={{ ...inputStyle, marginBottom: "8px" }} />
           <div style={{ textAlign: "right", marginBottom: "16px" }}>
-            <button type="button" onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", padding: 0, color: theme.navy, fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: font }}>
+            <button type="button" onClick={() => setForgotMode(true)} style={{ background: "none", border: "none", padding: 0, color: theme.accent, fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: font }}>
               Glemt adgangskode?
             </button>
           </div>
@@ -142,7 +142,7 @@ export function LoginPage() {
         <OAuthButtons redirectPath="/login" disabled={submitting} onError={setErr} />
         <p style={{ textAlign: "center", marginTop: "20px", fontSize: "12.5px", color: theme.textMid }}>
           Ny her?{" "}
-          <Link to="/opret" style={{ color: theme.navy, fontWeight: 600, textDecoration: "none" }}>
+          <Link to="/opret" style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}>
             Opret en profil
           </Link>
         </p>

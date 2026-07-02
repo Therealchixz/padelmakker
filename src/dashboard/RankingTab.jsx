@@ -950,7 +950,7 @@ export function RankingTab({ user }) {
           alignItems: 'center',
           gap: 11,
         }}>
-          <div style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 13, color: theme.navy, flexShrink: 0 }}>
+          <div style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 13, color: theme.accent, flexShrink: 0 }}>
             {userRank}
           </div>
           <AvatarCircle
@@ -970,7 +970,7 @@ export function RankingTab({ user }) {
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: theme.navy }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: theme.accent }}>
               {period === 'all' ? displayScore : displayScore > 0 ? `+${displayScore}` : displayScore}
             </div>
             {rankChange !== 0 && (

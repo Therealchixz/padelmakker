@@ -52,7 +52,7 @@ export function WelcomeScreen({ name, levelText, onFindPartner, onJoinMatch, onS
                 boxShadow: theme.shadowSoft || 'none',
               }}
             >
-              <span style={{ width: 40, height: 40, borderRadius: 10, background: theme.accentBg, color: theme.navy, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ width: 40, height: 40, borderRadius: 10, background: theme.accentBg, color: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {c.icon}
               </span>
               <span style={{ flex: 1, minWidth: 0 }}>

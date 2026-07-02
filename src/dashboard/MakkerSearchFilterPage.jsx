@@ -174,7 +174,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         <button
           type="button"
           onClick={() => setPrefs(normalizeMakkerSearchPrefs({}, user))}
-          style={{ fontSize: '11.5px', fontWeight: 600, color: theme.navy, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '4px 0' }}
+          style={{ fontSize: '11.5px', fontWeight: 600, color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '4px 0' }}
         >
           Nulstil
         </button>

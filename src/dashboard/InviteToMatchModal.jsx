@@ -188,7 +188,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             width: '100%', padding: 11, borderRadius: 10, marginBottom: 12,
             border: '1.5px solid var(--pm-border)', background: 'var(--pm-surface)',
-            color: 'var(--pm-navy)', fontSize: '14.5px', fontWeight: 600,
+            color: 'var(--pm-accent)', fontSize: '14.5px', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
           }}
           onClick={() => { if (onCreateMatch) onCreateMatch(); else onClose(); }}

@@ -662,7 +662,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               ].map((s, i) => (
                 <div key={i} style={{ background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 16, padding: '13px 15px', textAlign: 'center' }}>
                   <div style={{ fontSize: '10.5px', fontWeight: 600, color: theme.textLight, letterSpacing: '0.03em' }}>{s.label}</div>
-                  <div style={{ fontSize: 23, fontWeight: 700, color: theme.navy, marginTop: 4 }}>{s.val}</div>
+                  <div style={{ fontSize: 23, fontWeight: 700, color: theme.accent, marginTop: 4 }}>{s.val}</div>
                 </div>
               ))}
             </div>
@@ -777,7 +777,7 @@ export function ProfilTab({ user, showToast, setTab }) {
                     )) : <div style={{ fontSize: "13px", color: theme.textLight, marginTop: 4 }}>—</div>}
                   </div>
                 ) : (
-                  <div style={{ fontSize: 23, fontWeight: 700, color: theme.navy, marginTop: 4 }}>{s.value}</div>
+                  <div style={{ fontSize: 23, fontWeight: 700, color: theme.accent, marginTop: 4 }}>{s.value}</div>
                 )}
               </div>
             ))}

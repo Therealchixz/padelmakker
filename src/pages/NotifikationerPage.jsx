@@ -224,7 +224,7 @@ export function NotifikationerPage() {
           <button
             type="button"
             onClick={markAllRead}
-            style={{ ...btn(false, { size: 'sm', radius: 'pill' }), minHeight: 40, color: theme.navy, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
+            style={{ ...btn(false, { size: 'sm', radius: 'pill' }), minHeight: 40, color: theme.accent, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             Markér alle læst
           </button>

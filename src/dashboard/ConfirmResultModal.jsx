@@ -7,7 +7,7 @@ function SetDisplay({ set, setNum }) {
   if (g1 == null || g2 == null || (Number(g1) + Number(g2) === 0)) return null;
   return (
     <div style={{ textAlign: 'center' }}>
-      <b style={{ fontSize: 21, fontWeight: 700, color: 'var(--pm-navy)', letterSpacing: 1, display: 'block' }}>
+      <b style={{ fontSize: 21, fontWeight: 700, color: 'var(--pm-accent)', letterSpacing: 1, display: 'block' }}>
         {g1}–{g2}
       </b>
       <span style={{ display: 'block', fontSize: '9.5px', fontWeight: 600, color: 'var(--pm-text-mid)', letterSpacing: 1, marginTop: 2 }}>
@@ -86,7 +86,7 @@ export function ConfirmResultModal({
             fontFamily: 'inherit', boxShadow: busy ? 'none' : '0 6px 14px rgba(22,55,126,0.32)',
           }}
         >
-          Godkend resultat
+          Bekræft resultat
         </button>
 
         {/* Reject button */}
@@ -101,12 +101,12 @@ export function ConfirmResultModal({
             cursor: busy ? 'default' : 'pointer', fontFamily: 'inherit',
           }}
         >
-          Afvis — det er forkert
+          Afvis resultat
         </button>
 
         {/* Note */}
         <div style={{ textAlign: 'center', fontSize: '10.5px', color: 'var(--pm-text-mid)', marginTop: 11 }}>
-          Elo-point fordeles, når alle har godkendt
+          Elo-point fordeles, når alle har bekræftet
         </div>
       </div>
     </AppModal>

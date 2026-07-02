@@ -70,7 +70,7 @@ export function MatchPhotosSection({ matchId, currentUserId, canUpload = false }
             type="button"
             onClick={onPick}
             disabled={busy}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: theme.navy, fontWeight: 600, fontSize: 12.5, cursor: busy ? 'wait' : 'pointer', padding: 0 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: theme.accent, fontWeight: 600, fontSize: 12.5, cursor: busy ? 'wait' : 'pointer', padding: 0 }}
           >
             <ImagePlus size={14} aria-hidden />
             {busy ? 'Uploader…' : 'Tilføj'}

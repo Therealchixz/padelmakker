@@ -53,7 +53,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
         {/* Teams + score */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: theme.navy }}>{team1Names}</div>
+            <div style={{ fontSize: '12px', fontWeight: 600, color: theme.accent }}>{team1Names}</div>
           </div>
           <div style={{ textAlign: 'center' }}>
             {sets.length > 0 ? sets.map((s, i) => (
@@ -71,7 +71,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
             )}
           </div>
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: theme.navy }}>{team2Names}</div>
+            <div style={{ fontSize: '12px', fontWeight: 600, color: theme.accent }}>{team2Names}</div>
           </div>
         </div>
 
@@ -93,7 +93,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
         margin: '18px 0 0', padding: '8px 12px', borderRadius: 999,
-        background: theme.accentBg, color: theme.navy,
+        background: theme.accentBg, color: theme.accent,
         fontSize: 12, fontWeight: 700,
       }}>
         <Clock size={14} aria-hidden />
@@ -106,7 +106,7 @@ function SuccessView({ result, team1Names, team2Names, match, onClose }) {
         onClick={onClose}
         style={{
           marginTop: 20, width: '100%', padding: '13px', borderRadius: 'var(--pm-radius-md)',
-          border: `1.5px solid ${theme.border}`, background: theme.surface, color: theme.navy,
+          border: `1.5px solid ${theme.border}`, background: theme.surface, color: theme.accent,
           fontSize: '14.5px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
           minHeight: 48,
           display: 'flex', alignItems: 'center', justifyContent: 'center',

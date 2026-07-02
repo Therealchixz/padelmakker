@@ -2119,7 +2119,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                         type="button"
                         onClick={() => switchTeam(m.id, teamNum)}
                         disabled={busyId === m.id + '-switch'}
-                        style={{ marginTop: 4, fontSize: 11, fontWeight: 700, color: 'var(--pm-navy)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        style={{ marginTop: 4, fontSize: 11, fontWeight: 700, color: 'var(--pm-accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                       >
                         Skift til dette hold →
                       </button>
@@ -2427,7 +2427,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   disabled={busy}
                   style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.green, borderColor: theme.green }}
                 >
-                  ✅ Godkendt — Vælg hold og anmod
+                  Godkendt — Vælg hold og anmod
                 </button>
               );
             }
@@ -2495,7 +2495,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 opacity: isFull ? 1 : 0.6
               }}
             >
-              {isFull ? "🎾 Start kamp" : "🎾 Venter på spillere (2 mod 2)"}
+              {isFull ? "Start kamp" : "Venter på spillere (2 mod 2)"}
             </button>
           )}
 
@@ -2511,7 +2511,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 fontSize: "13px",
               }}
             >
-              📊 Indrapportér resultat
+              Indrapportér resultat
             </button>
           )}
 
@@ -2529,7 +2529,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     fontSize: "13px",
                   }}
                 >
-                  ✅ Bekræft
+                  Bekræft resultat
                 </button>
               )}
               <button
@@ -2544,7 +2544,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   borderColor: theme.red + "55"
                 }}
               >
-                ❌ Afvis
+                Afvis
               </button>
             </div>
           )}
@@ -2654,7 +2654,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                       disabled={busy}
                       style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
                     >
-                      📊 Indrapportér resultat (Admin)
+                      Indrapportér resultat (Admin)
                     </button>
                   )}
                   {/* Admin override: Bekræft / Slet resultat */}
@@ -2666,7 +2666,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                           disabled={busy}
                           style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
                         >
-                          ✅ Bekræft (Admin)
+                          Bekræft (Admin)
                         </button>
                       )}
                       <button
@@ -2674,7 +2674,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                         disabled={busy}
                         style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.warm, borderColor: theme.warm + "55" }}
                       >
-                        ❌ Slet (Admin)
+                        Slet (Admin)
                       </button>
                     </div>
                   )}
@@ -3315,7 +3315,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     disabled={busy}
                     style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
                   >
-                    📊 Indrapportér resultat (Admin)
+                    Indrapportér resultat (Admin)
                   </button>
                 ) : null}
                 {adminCanForceConfirm ? (
@@ -3327,7 +3327,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                         disabled={busy}
                         style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
                       >
-                        ✅ Bekræft (Admin)
+                        Bekræft (Admin)
                       </button>
                     ) : null}
                     <button
@@ -3336,7 +3336,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                       disabled={busy}
                       style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.warm, borderColor: theme.warm + "55" }}
                     >
-                      ❌ Slet (Admin)
+                      Slet (Admin)
                     </button>
                   </div>
                 ) : null}
@@ -3935,6 +3935,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <EmptyStateIcon icon={Users} />
                 <div className="pm-state-title">Ingen aktive kampe</div>
                 <div className="pm-state-copy">Tilmeld dig en åben kamp for at komme i gang.</div>
+                <button
+                  type="button"
+                  onClick={() => onViewTabChange("open")}
+                  style={{ ...btn(true), justifyContent: "center", fontSize: "14px", padding: "12px 20px", marginTop: 14 }}
+                >
+                  Se åbne kampe
+                </button>
               </div>
             )}
             {viewTab === "completed" && completedMatches.length === 0 && (
@@ -3942,6 +3949,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <EmptyStateIcon icon={BarChart3} />
                 <div className="pm-state-title">Ingen afsluttede kampe endnu</div>
                 <div className="pm-state-copy">Spil din første kamp og se dit resultat her.</div>
+                <button
+                  type="button"
+                  onClick={() => onViewTabChange("open")}
+                  style={{ ...btn(true), justifyContent: "center", fontSize: "14px", padding: "12px 20px", marginTop: 14 }}
+                >
+                  Se åbne kampe
+                </button>
               </div>
             )}
           </div>

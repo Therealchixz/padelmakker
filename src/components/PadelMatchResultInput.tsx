@@ -415,10 +415,10 @@ export default function PadelMatchResultInput({
 
     const scoreCol = (field: keyof SetForm, teamName: string, maxVal: number) => (
       <div style={{ flex: 1, textAlign: 'center' }}>
-        <div style={{ fontSize: 11, color: 'var(--pm-navy)', fontWeight: 600, marginBottom: 9 }}>{teamName}</div>
+        <div style={{ fontSize: 11, color: 'var(--pm-accent)', fontWeight: 600, marginBottom: 9 }}>{teamName}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
           {cntBtn(index, field, -1, maxVal, disabled)}
-          <span style={{ fontSize: 25, fontWeight: 700, color: 'var(--pm-navy)', width: 32, textAlign: 'center' }}>
+          <span style={{ fontSize: 25, fontWeight: 700, color: 'var(--pm-accent)', width: 32, textAlign: 'center' }}>
             {numOrUndef(f[field]) ?? 0}
           </span>
           {cntBtn(index, field, 1, maxVal, disabled)}
@@ -505,7 +505,7 @@ export default function PadelMatchResultInput({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0 10px' }}>
         <h3 style={{ fontSize: '15.5px', fontWeight: 600, letterSpacing: '-0.2px', margin: 0 }}>Indtast score</h3>
         {(setsWon.t1 > 0 || setsWon.t2 > 0) && (
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--pm-navy)' }} role="status" aria-live="polite">
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--pm-accent)' }} role="status" aria-live="polite">
             {setsWon.t1}–{setsWon.t2} sæt
           </span>
         )}
@@ -526,7 +526,7 @@ export default function PadelMatchResultInput({
             onClick={onCancel}
             style={{
               flex: 1, padding: '13px', borderRadius: 10, border: '1.5px solid var(--pm-border)',
-              background: 'var(--pm-surface)', color: 'var(--pm-navy)', fontSize: '14.5px', fontWeight: 600,
+              background: 'var(--pm-surface)', color: 'var(--pm-accent)', fontSize: '14.5px', fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >

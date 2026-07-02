@@ -796,10 +796,10 @@ export function HomeTab({ user, setTab, showToast }) {
   };
 
   const actions = [
-    { Icon: Users,       color: theme.navy, bg: 'var(--pm-surface-muted)', title: "Find Makker",  tab: "makkere" },
-    { Icon: MapPin,      color: theme.navy, bg: 'var(--pm-surface-muted)', title: "Book Bane",    tab: "baner"   },
-    { Icon: CalendarPlus,color: theme.navy, bg: 'var(--pm-surface-muted)', title: "Åbne Kampe",   tab: "kampe"   },
-    { Icon: BarChart2,   color: theme.navy, bg: 'var(--pm-surface-muted)', title: "Rangliste",    tab: "ranking" },
+    { Icon: Users,       color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Find Makker",  tab: "makkere" },
+    { Icon: MapPin,      color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Book Bane",    tab: "baner"   },
+    { Icon: CalendarPlus,color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Åbne Kampe",   tab: "kampe"   },
+    { Icon: BarChart2,   color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Rangliste",    tab: "ranking" },
   ];
 
   const activityRowBaseStyle = {
@@ -1216,7 +1216,7 @@ export function HomeTab({ user, setTab, showToast }) {
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
-            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.navy, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
+            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
             {upcomingItems.map((it) => (
@@ -1250,7 +1250,7 @@ export function HomeTab({ user, setTab, showToast }) {
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 18px 10px' }}>
             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Invitationer</h3>
-            <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: 'var(--pm-navy)', border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: 'var(--pm-accent)', border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>
               {inviteItems.length} nye
             </span>
           </div>
@@ -1274,7 +1274,7 @@ export function HomeTab({ user, setTab, showToast }) {
                       Godkend
                     </button>
                     <button type="button" disabled={busyInviteId === it.key} onClick={() => rejectInvite(it)}
-                      style={{ flex: 1, background: theme.surface, color: theme.navy, fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: `1.5px solid ${theme.border}`, borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
+                      style={{ flex: 1, background: theme.surface, color: theme.accent, fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: `1.5px solid ${theme.border}`, borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
                       Afvis
                     </button>
                   </div>

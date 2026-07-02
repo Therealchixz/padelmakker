@@ -73,7 +73,7 @@ export function CourtFacilitiesGrid({ facilities, title = 'Faciliteter på centr
           const Icon = meta.Icon;
           return (
             <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 600, color: 'var(--pm-text-mid)' }}>
-              <Icon size={16} strokeWidth={2} style={{ flexShrink: 0, color: 'var(--pm-navy)' }} aria-hidden />
+              <Icon size={16} strokeWidth={2} style={{ flexShrink: 0, color: 'var(--pm-accent)' }} aria-hidden />
               {meta.label}
             </div>
           );

@@ -374,7 +374,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
                     )) : <div style={{ fontSize: '12px', color: theme.textLight, marginTop: 4 }}>—</div>}
                   </div>
                 ) : (
-                  <div style={{ fontSize: '23px', fontWeight: 700, color: theme.navy, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
+                  <div style={{ fontSize: '23px', fontWeight: 700, color: theme.accent, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
                 )}
               </div>
             ))}

@@ -234,7 +234,7 @@ export function KampeMatchListCard({
               {teamNameLabel(t1, profilesById, currentUserId)}
             </span>
           </div>
-          <div style={{ flexShrink: 0, alignSelf: 'center', fontSize: 15, fontWeight: 700, color: 'var(--pm-navy)', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+          <div style={{ flexShrink: 0, alignSelf: 'center', fontSize: 15, fontWeight: 700, color: 'var(--pm-accent)', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
             {setScoreStr}
           </div>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
@@ -300,7 +300,7 @@ export function KampeMatchListCard({
               fontFamily: 'inherit',
               cursor: primaryAction.disabled ? 'default' : 'pointer',
               ...(primaryAction.variant === 'secondary'
-                ? { background: 'var(--pm-surface)', color: 'var(--pm-navy)', border: '1.5px solid var(--pm-border)' }
+                ? { background: 'var(--pm-surface)', color: 'var(--pm-accent)', border: '1.5px solid var(--pm-border)' }
                 : { background: 'var(--pm-navy)', color: 'var(--pm-on-accent)', border: 'none' }),
             }}
           >
@@ -317,7 +317,7 @@ export function KampeMatchListCard({
               fontWeight: 700,
               fontFamily: 'inherit',
               background: 'var(--pm-surface)',
-              color: 'var(--pm-navy)',
+              color: 'var(--pm-accent)',
               border: '1.5px solid var(--pm-border)',
             }}
           >
@@ -332,7 +332,7 @@ export function KampeMatchListCard({
           </span>
         ) : null}
         {setScoreStr ? (
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--pm-navy)', marginLeft: 'auto' }}>
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--pm-accent)', marginLeft: 'auto' }}>
             Se detaljer →
           </span>
         ) : null}
