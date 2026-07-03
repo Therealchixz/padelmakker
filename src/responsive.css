@@ -8753,34 +8753,29 @@ button,
 }
 
 .pm-liga-v2-list-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.15);
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.16);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--pm-on-accent);
   flex-shrink: 0;
-  align-self: center;
 }
 
-.pm-liga-v2-list-top {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  column-gap: 10px;
-  align-items: start;
-  padding: 14px 14px 12px;
+/* Smal identitetsstribe (matcher Americano-kortets format-bånd) */
+.pm-liga-v2-list-band {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
   background: var(--pm-cta-gradient);
   color: var(--pm-on-accent);
 }
 
-.pm-liga-v2-list-top--done {
+.pm-liga-v2-list-band--done {
   background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-}
-
-.pm-liga-v2-list-top-main {
-  min-width: 0;
 }
 
 .pm-liga-v2-list-type {
@@ -8788,15 +8783,15 @@ button,
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  opacity: 0.75;
-  margin-bottom: 2px;
+  opacity: 0.85;
 }
 
 .pm-liga-v2-list-title {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.2;
+  color: var(--pm-text);
 }
 
 .pm-liga-v2-list-meta {
@@ -8804,13 +8799,12 @@ button,
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  opacity: 0.88;
+  color: var(--pm-text-light);
   margin-top: 4px;
 }
 
 .pm-liga-v2-list-badge {
-  grid-column: 2;
-  justify-self: end;
+  margin-left: auto;
 }
 
 .pm-liga-v2-list-body {
