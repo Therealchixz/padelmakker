@@ -983,7 +983,7 @@ export function LigaTab({
               onClick={() => setScheduleLeagueId(myActiveLeagueHero.league.id)}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: 'var(--pm-amber)', color: 'var(--pm-on-accent)', border: 'none',
+                background: 'var(--pm-amber)', color: 'var(--pm-navy-deep)', border: 'none',
                 borderRadius: 10, padding: '9px 16px', fontSize: '13px', fontWeight: 700,
                 cursor: 'pointer', fontFamily: 'inherit',
               }}

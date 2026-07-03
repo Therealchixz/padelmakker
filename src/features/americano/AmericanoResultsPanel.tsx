@@ -750,7 +750,7 @@ export function AmericanoResultsPanel({
     const statusTag = locked
       ? { label: 'Afsluttet', bg: 'var(--pm-success-bg)', color: 'var(--pm-success)' }
       : isActiveRound
-        ? { label: 'Aktiv nu', bg: 'var(--pm-warning-bg)', color: 'var(--pm-warning)' }
+        ? { label: 'Aktiv nu', bg: 'var(--pm-warning-bg)', color: 'var(--pm-amber-text)' }
         : { label: 'Afventer', bg: 'var(--pm-surface-muted)', color: c.muted }
 
     return (
@@ -1074,7 +1074,7 @@ export function AmericanoResultsPanel({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: c.text }}>Runde {roundNum}</div>
                       {isLatest ? (
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--pm-warning-bg)', color: 'var(--pm-warning)' }}>Seneste</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--pm-warning-bg)', color: 'var(--pm-amber-text)' }}>Seneste</span>
                       ) : null}
                     </div>
                     {matchesDisplay

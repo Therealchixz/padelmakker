@@ -1449,7 +1449,7 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.warm,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.warmBg, color: theme.warm, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.warmBg, color: theme.amberText, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Trophy size={16} />
                     </div>
                   ),
@@ -1555,7 +1555,7 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.warm,
                   leading: (
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.warmBg, color: theme.warm, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.warmBg, color: theme.amberText, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <CalendarPlus size={16} />
                     </div>
                   ),

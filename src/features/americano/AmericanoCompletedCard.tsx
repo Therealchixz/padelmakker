@@ -712,7 +712,7 @@ export function AmericanoCompletedCard({
                 </div>
                 <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2 }}>{metaParts.join(' · ')}</div>
               </div>
-              <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: theme.border, color: theme.textLight, whiteSpace: 'nowrap' }}>
+              <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: theme.surfaceAlt, border: '1px solid ' + theme.border, color: theme.textMid, whiteSpace: 'nowrap' }}>
                 Afsluttet
               </span>
             </div>

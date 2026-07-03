@@ -2138,7 +2138,7 @@ button,
 
 .pm-status-badge--warm {
   background: var(--pm-warm-bg);
-  color: var(--pm-warm);
+  color: var(--pm-amber-text);
   border-color: color-mix(in srgb, var(--pm-warm) 28%, var(--pm-border));
 }
 
@@ -2169,7 +2169,7 @@ button,
 
 .pm-feedback-panel--warning {
   background: var(--pm-warning-bg);
-  color: var(--pm-warning);
+  color: var(--pm-amber-text);
   border-color: color-mix(in srgb, var(--pm-warning-border) 72%, var(--pm-border));
 }
 
@@ -3842,7 +3842,7 @@ button,
 
 .pm-baner-slot--blocked {
   background: var(--pm-warm-bg);
-  color: var(--pm-warm);
+  color: var(--pm-amber-text);
   border: 1px solid var(--pm-warm);
   cursor: help;
 }
@@ -4487,7 +4487,7 @@ button,
 
 .pm-active-seeking-badge--expired {
   background: var(--pm-warm-bg);
-  color: var(--pm-warm);
+  color: var(--pm-amber-text);
 }
 
 .pm-active-seeking-countdown {
@@ -10784,7 +10784,7 @@ button,
   border-radius: 8px;
   border: 1px solid var(--pm-border);
   background: var(--pm-surface);
-  color: var(--pm-navy);
+  color: var(--pm-accent);
   font-size: 18px;
   font-weight: 600;
   font-family: inherit;

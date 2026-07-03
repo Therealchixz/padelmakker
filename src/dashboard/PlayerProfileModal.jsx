@@ -308,8 +308,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             {levelDisplay ? (
               <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
             ) : null}
-            {pRef.court_side && <span style={tag(theme.navySoft, theme.navy)}>{pRef.court_side}</span>}
-            {pRef.play_style && <span style={tag(theme.navySoft, theme.navy)}>{pRef.play_style}</span>}
+            {pRef.court_side && <span style={tag(theme.navySoft, theme.onAccent)}>{pRef.court_side}</span>}
+            {pRef.play_style && <span style={tag(theme.navySoft, theme.onAccent)}>{pRef.play_style}</span>}
             {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
             {age && <span style={tag(theme.surfaceAlt, theme.textMid)}>{age} år</span>}
           </div>
