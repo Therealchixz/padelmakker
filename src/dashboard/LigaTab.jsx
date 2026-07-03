@@ -619,9 +619,9 @@ export function LigaTab({
     completed: leaguesMatchingListFilters.filter((l) => l.status === 'completed').length,
   }), [leaguesMatchingListFilters]);
   const leagueStatusTabs = [
-    { id: 'registration', label: `Tilmelding${leagueStatusCount.registration > 0 ? ` ${leagueStatusCount.registration}` : ''}` },
-    { id: 'active', label: `Aktiv${leagueStatusCount.active > 0 ? ` ${leagueStatusCount.active}` : ''}` },
-    { id: 'completed', label: `Afsluttede${leagueStatusCount.completed > 0 ? ` ${leagueStatusCount.completed}` : ''}` },
+    { id: 'registration', label: <>Tilmelding{leagueStatusCount.registration > 0 ? <span className="pm-tab-count">{leagueStatusCount.registration}</span> : null}</> },
+    { id: 'active', label: <>Aktiv{leagueStatusCount.active > 0 ? <span className="pm-tab-count">{leagueStatusCount.active}</span> : null}</> },
+    { id: 'completed', label: <>Afsluttede{leagueStatusCount.completed > 0 ? <span className="pm-tab-count">{leagueStatusCount.completed}</span> : null}</> },
   ];
 
   const selectedLeague = useMemo(
@@ -1039,7 +1039,6 @@ export function LigaTab({
           if (user?.id) mergeLigaSessionPrefs(user.id, { ligaView: nextView });
         }}
         ariaLabel="Liga status"
-        size="sm"
         style={{ marginBottom: '16px' }}
       />
 

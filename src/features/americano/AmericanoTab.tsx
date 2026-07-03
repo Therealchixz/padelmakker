@@ -836,9 +836,9 @@ export function AmericanoTab({
   }
 
   const americanoSubTabs = [
-    { id: 'open' as const, label: `Åbne (${openAmericanos.length})` },
-    { id: 'playing' as const, label: `I gang (${playingAmericanosFiltered.length})` },
-    { id: 'completed' as const, label: `Afsluttede (${completedAmericanosFiltered.length})` },
+    { id: 'open' as const, label: <>Åbne<span className="pm-tab-count">{openAmericanos.length}</span></> },
+    { id: 'playing' as const, label: <>I gang<span className="pm-tab-count">{playingAmericanosFiltered.length}</span></> },
+    { id: 'completed' as const, label: <>Spillede<span className="pm-tab-count">{completedAmericanosFiltered.length}</span></> },
   ]
 
   const detailTournament = detailTournamentId
@@ -990,7 +990,6 @@ export function AmericanoTab({
           onAmericanoSubTabChange?.(nextTab)
         }}
         ariaLabel="Americano/Mexicano-status"
-        size="sm"
         className=""
         style={{ marginBottom: 16 }}
       />

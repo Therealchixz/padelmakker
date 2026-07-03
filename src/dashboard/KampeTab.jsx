@@ -591,6 +591,31 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     setMatchChatOpenById({});
   }, [viewTab, kampeScope]);
 
+  /* Kamp-detaljen opfører sig som en side: åbning skubber et history-trin,
+     så telefonens tilbage-gestus/knap lukker arket i stedet for at forlade Kampe.
+     mounted-ref'en (defineret FØR effekten, så dens cleanup kører først ved unmount)
+     sikrer at vi ikke kalder history.back() når hele fanen forlades. */
+  const kampeMountedRef = useRef(true);
+  useEffect(() => () => { kampeMountedRef.current = false; }, []);
+  const detailHistoryArmedRef = useRef(false);
+  useEffect(() => {
+    if (!detailMatchId || typeof window === "undefined") return undefined;
+    window.history.pushState({ pmKampeDetail: String(detailMatchId) }, "");
+    detailHistoryArmedRef.current = true;
+    const onPop = () => {
+      detailHistoryArmedRef.current = false;
+      setDetailMatchId(null);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      if (detailHistoryArmedRef.current) {
+        detailHistoryArmedRef.current = false;
+        if (kampeMountedRef.current) window.history.back();
+      }
+    };
+  }, [detailMatchId]);
+
   useEffect(() => {
     const closeChatPanels = () => setMatchChatOpenById({});
     const onVisibilityChange = () => {
@@ -3422,9 +3447,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     { id: "liga", label: "Liga" },
   ];
   const padelSubTabs = [
-    { id: "open", label: `Åbne (${openMatches.length})` },
-    { id: "active", label: `I gang (${activeMatches.length})` },
-    { id: "completed", label: `Afsluttede (${completedMatches.length})` },
+    { id: "open", label: <>Åbne<span className="pm-tab-count">{openMatches.length}</span></> },
+    { id: "active", label: <>I gang<span className="pm-tab-count">{activeMatches.length}</span></> },
+    { id: "completed", label: <>Spillede<span className="pm-tab-count">{completedMatches.length}</span></> },
   ];
   const currentPadelMatches =
     viewTab === "open" ? openMatches : viewTab === "active" ? activeMatches : completedMatches;
@@ -3894,7 +3919,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             value={viewTab}
             onChange={onViewTabChange}
             ariaLabel="2v2 kampstatus"
-            size="sm"
             style={{ marginBottom: 16 }}
           />
 
