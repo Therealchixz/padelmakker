@@ -2520,7 +2520,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 opacity: isFull ? 1 : 0.6
               }}
             >
-              {isFull ? "Start kamp" : "Venter på spillere (2 mod 2)"}
+              {isFull ? "Start kamp" : "Venter på spillere"}
             </button>
           )}
 
@@ -2891,7 +2891,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
     if (isCreator && (status === "open" || status === "full")) {
       return {
-        label: isFull ? "Start kamp" : "Venter på spillere (2 mod 2)",
+        label: isFull ? "Start kamp" : "Venter på spillere",
         onClick: () => {
           setDetailMatchId(null);
           void startMatch(m.id);

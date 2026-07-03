@@ -7207,7 +7207,7 @@ button,
 .pm-kampe-v2-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .pm-kampe-v2-list-card {
@@ -7219,7 +7219,7 @@ button,
   border: 1px solid var(--pm-border);
   border-radius: 14px;
   background: var(--pm-surface);
-  padding: 12px 14px;
+  padding: 14px;
   cursor: pointer;
   font-family: inherit;
   box-shadow: 0 2px 8px rgba(2, 6, 23, 0.04);
@@ -7296,9 +7296,9 @@ button,
   align-items: center;
   gap: 5px;
   width: 100%;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
-  color: var(--pm-text-mid);
+  color: var(--pm-text-light);
   line-height: 1.3;
 }
 
@@ -7389,15 +7389,26 @@ button,
 }
 
 .pm-kampe-v2-list-unread {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--pm-danger);
+  color: var(--pm-on-accent);
   font-size: 10px;
-  font-weight: 700;
-  color: var(--pm-danger);
+  font-weight: 800;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 /* Kort-note: neutral status som standard, --danger for "kræver handling" */
 .pm-kampe-v2-list-note {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
   gap: 6px;
   margin: 2px 0 4px;
   padding: 5px 10px;
@@ -7429,6 +7440,7 @@ button,
 
 .pm-kampe-v2-list-card-bottom {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;

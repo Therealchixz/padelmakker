@@ -293,6 +293,7 @@ export function KampeMatchListCard({
             disabled={primaryAction.disabled}
             style={{
               flexShrink: 0,
+              marginLeft: 'auto',
               padding: '9px 16px',
               borderRadius: 10,
               fontSize: 12.5,
@@ -311,6 +312,7 @@ export function KampeMatchListCard({
             className="pm-kampe-v2-list-cta"
             style={{
               flexShrink: 0,
+              marginLeft: 'auto',
               padding: '9px 16px',
               borderRadius: 10,
               fontSize: 12.5,
