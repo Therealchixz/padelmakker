@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, MapPin, Plus, Wallet, X } from 'lucide-react'
 import '../../styles/kampdetalje.css'
-import { KampeVenueLocationLine } from '../../components/kampe/KampeVenueLocationLine'
 import { resolveCourtNameDirectionsQuery } from '../../lib/kampeListFilterCore'
+import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
 import {
@@ -222,6 +222,14 @@ export function AmericanoDetailSheet({
 
   const gridCols = maxPlayers <= 4 ? 2 : 2
 
+  // Pris — vises i samme ikon-info-kort som på 2v2-detaljen
+  const priceNum = Number(tournament.price_per_person)
+  const isFree = tournament.payment_method === 'free' || !Number.isFinite(priceNum) || priceNum <= 0
+  const priceText = isFree ? 'Gratis' : (priceNum % 1 === 0 ? `${priceNum} kr.` : `${priceNum.toFixed(2).replace('.', ',')} kr.`)
+  const paymentSub = isFree
+    ? null
+    : `pr. person${tournament.payment_method === 'cash' ? ' · betales ved fremmøde' : tournament.payment_method === 'mobilepay' ? ' · MobilePay' : ''}`
+
   return (
     <>
       <button
@@ -244,27 +252,6 @@ export function AmericanoDetailSheet({
             <div className="pm-americano-v2-detail-head-main">
               <div className="pm-americano-v2-detail-type">{getTournamentFormatLabel(tournament.format)}</div>
               <h2 className="pm-americano-v2-detail-title">{tournament.name}</h2>
-              <div className="pm-americano-v2-detail-location">
-                <KampeVenueLocationLine
-                  label={courtName}
-                  directionsQuery={directionsQuery}
-                  className="pm-americano-v2-detail-location-venue"
-                  prominent
-                />
-                <span className="pm-americano-v2-detail-location-date"> · {dateLabel}</span>
-              </div>
-              {(() => {
-                const p = Number(tournament.price_per_person)
-                const free = tournament.payment_method === 'free' || !Number.isFinite(p) || p <= 0
-                const priceText = free ? 'Gratis' : (p % 1 === 0 ? `${p} kr.` : `${p.toFixed(2).replace('.', ',')} kr.`)
-                const payText = free ? '' : tournament.payment_method === 'cash' ? ' · ved fremmøde' : tournament.payment_method === 'mobilepay' ? ' · MobilePay' : ''
-                return (
-                  <div style={{ marginTop: 4, fontSize: 13, fontWeight: 700, color: 'var(--pm-text)' }}>
-                    {priceText}
-                    {free ? '' : <span style={{ fontWeight: 500, color: 'var(--pm-text-light)' }}> / pr. person{payText}</span>}
-                  </div>
-                )
-              })()}
             </div>
             <div className="pm-americano-v2-detail-head-right">
               <span className={`pm-kampe-v2-badge ${badgeToneClass(badgeTone)}`}>
@@ -302,6 +289,42 @@ export function AmericanoDetailSheet({
             ) : null}
           </div>
         </div>
+
+        {/* Samme ikon-info-kort som 2v2-detaljen: dato/tid, sted (med kort-link) og pris */}
+        <div className="pm-kd-card pm-kd-price-card" style={{ marginBottom: 4 }}>
+          <div className="pm-kd-info-row" style={{ marginTop: 0 }}>
+            <div className="pm-kd-info-ic"><CalendarDays size={18} aria-hidden /></div>
+            <div>
+              <b>{dateLabel}</b>
+              {tournament.time_slot ? <span className="pm-kd-info-sub">Kl. {String(tournament.time_slot).slice(0, 5)}</span> : null}
+            </div>
+          </div>
+          <div className="pm-kd-info-row">
+            <div className="pm-kd-info-ic"><MapPin size={18} aria-hidden /></div>
+            <div>
+              <b>{courtName}</b>
+              {directionsQuery ? (
+                <a
+                  className="pm-kd-maplink"
+                  href={banerMapsDirectionsUrl(directionsQuery)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  Vis på kort <ArrowUpRight size={11} aria-hidden />
+                </a>
+              ) : null}
+            </div>
+          </div>
+          <div className="pm-kd-info-row">
+            <div className="pm-kd-info-ic"><Wallet size={18} aria-hidden /></div>
+            <div>
+              <b>{priceText}</b>
+              {paymentSub ? <span className="pm-kd-info-sub">{paymentSub}</span> : null}
+            </div>
+          </div>
+        </div>
+
         <div className="pm-americano-v2-detail-stats">
           <div className="pm-americano-v2-detail-stat">
             <span className="pm-americano-v2-detail-stat-label">Runder</span>
@@ -323,14 +346,19 @@ export function AmericanoDetailSheet({
           </div>
         </div>
 
+        {description ? (
+          <>
+            <div className="pm-kd-section-h"><h3>Om turneringen</h3></div>
+            <p className="pm-kd-about">{description}</p>
+          </>
+        ) : null}
+
         <div className="pm-americano-v2-detail-fill">
-          <div className="pm-americano-v2-detail-fill-row">
-            <span className="pm-americano-v2-detail-fill-label">
-              {filled} af {maxPlayers} tilmeldt
-            </span>
-            {!isCompleted && !isPlaying && !tournamentFull ? (
-              <span className="pm-americano-v2-detail-fill-left">
-                {emptySlots} {emptySlots === 1 ? 'plads' : 'pladser'} tilbage
+          <div className="pm-kd-section-h">
+            <h3>Spillere ({filled}/{maxPlayers})</h3>
+            {!isCompleted && !isPlaying && !tournamentFull && emptySlots > 0 ? (
+              <span className="pm-kd-tag pm-kd-tag--amber">
+                {emptySlots} plads{emptySlots === 1 ? '' : 'er'} tilbage
               </span>
             ) : null}
           </div>
@@ -349,13 +377,8 @@ export function AmericanoDetailSheet({
           </div>
         </div>
 
-        {description ? (
-          <p className="pm-kampe-v2-detail-desc">{description}</p>
-        ) : null}
-
         {!isCompleted ? (
           <div className="pm-americano-v2-detail-players-section">
-            <div className="pm-americano-v2-detail-players-label">Spillere</div>
             <div
               className="pm-americano-v2-detail-players-grid"
               style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}

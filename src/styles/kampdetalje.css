@@ -117,7 +117,7 @@
 .pm-kd-price {
   font-size: 20px;
   font-weight: 700;
-  color: var(--pm-navy);
+  color: var(--pm-accent);
   line-height: 1;
   text-align: right;
 }
@@ -144,7 +144,7 @@
   border-radius: 10px;
   background: var(--pm-kd-inset);
   border: 1px solid var(--pm-kd-card-border);
-  color: var(--pm-navy);
+  color: var(--pm-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,6 +152,7 @@
 }
 
 .pm-kd-info-row b {
+  display: block;
   font-size: 13.5px;
   font-weight: 600;
   color: var(--pm-text);
@@ -165,14 +166,17 @@
 }
 
 .pm-kd-maplink {
-  color: var(--pm-navy);
+  color: var(--pm-accent);
   font-weight: 600;
   font-size: 12.5px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-top: 2px;
   text-decoration: none;
+  /* Touch-venligt mål (~40px) uden at skubbe layoutet — padding opvejes af negative margener */
+  padding: 10px;
+  margin: -6px -10px -10px;
+  min-height: 40px;
 }
 
 /* ── Sektionsoverskrift (mockup .section-h) ── */
@@ -222,7 +226,7 @@
 .pm-kd-tag--red { background: var(--pm-red-bg); color: var(--pm-red); }
 .pm-kd-tag--navy {
   background: var(--pm-kd-inset);
-  color: var(--pm-navy);
+  color: var(--pm-accent);
   border: 1px solid var(--pm-kd-card-border);
 }
 
@@ -336,7 +340,7 @@
   border-radius: 9px;
   border: 1px solid var(--pm-kd-card-border);
   background: var(--pm-kd-inset);
-  color: var(--pm-navy);
+  color: var(--pm-accent);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -399,7 +403,7 @@
 .pm-kd-set-score-big {
   font-size: 30px;
   font-weight: 700;
-  color: var(--pm-navy);
+  color: var(--pm-accent);
   letter-spacing: 1px;
   white-space: nowrap;
 }
@@ -499,7 +503,7 @@
   justify-content: center;
   gap: 8px;
   background: var(--pm-surface);
-  color: var(--pm-navy);
+  color: var(--pm-accent);
   border: 1.5px solid var(--pm-kd-card-border);
   cursor: pointer;
   font-family: inherit;

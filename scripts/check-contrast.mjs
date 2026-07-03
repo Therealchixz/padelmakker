@@ -107,17 +107,26 @@ for (const file of walk(join(ROOT, 'src'))) {
   });
 }
 
-// d) responsive.css-regler med både color og background
-const css = readFileSync(join(ROOT, 'src/responsive.css'), 'utf8');
-const ruleRe = /([^{}]+)\{([^{}]+)\}/g;
-let rm;
-while ((rm = ruleRe.exec(css))) {
-  const [_, selector, body] = rm;
-  const fgM = body.match(/(?<![a-z-])color:\s*(var\(--pm-[a-z0-9-]+\))/);
-  const bgM = body.match(/background(?:-color)?:\s*(var\(--pm-[a-z0-9-]+\))/);
-  if (fgM && bgM) {
-    const lineNo = css.slice(0, rm.index).split('\n').length;
-    check(join(ROOT, 'src/responsive.css'), lineNo, fgM[1], bgM[1], selector.trim().split('\n').pop());
+// d) alle CSS-filer: regler med både color og background
+function* walkCss(dir) {
+  for (const name of readdirSync(dir)) {
+    const p2 = join(dir, name);
+    if (statSync(p2).isDirectory()) yield* walkCss(p2);
+    else if (name.endsWith('.css')) yield p2;
+  }
+}
+for (const cssFile of walkCss(join(ROOT, 'src'))) {
+  const css = readFileSync(cssFile, 'utf8');
+  const ruleRe = /([^{}]+)\{([^{}]+)\}/g;
+  let rm;
+  while ((rm = ruleRe.exec(css))) {
+    const [_, selector, body] = rm;
+    const fgM = body.match(/(?<![a-z-])color:\s*(var\(--pm-[a-z0-9-]+\))/);
+    const bgM = body.match(/background(?:-color)?:\s*(var\(--pm-[a-z0-9-]+\))/);
+    if (fgM && bgM) {
+      const lineNo = css.slice(0, rm.index).split('\n').length;
+      check(cssFile, lineNo, fgM[1], bgM[1], selector.trim().split('\n').pop());
+    }
   }
 }
 

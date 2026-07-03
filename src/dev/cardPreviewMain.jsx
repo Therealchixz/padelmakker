@@ -5,8 +5,11 @@ import '../index.css';
 import '../styles/variables.css';
 import '../responsive.css';
 import { KampeMatchListCard } from '../components/kampe/KampeMatchListCard';
+import { AmericanoDetailSheet } from '../features/americano/AmericanoDetailSheet';
 
-const theme = new URLSearchParams(window.location.search).get('theme') === 'dark' ? 'dark' : 'light';
+const params = new URLSearchParams(window.location.search);
+const theme = params.get('theme') === 'dark' ? 'dark' : 'light';
+const view = params.get('view') || 'cards';
 document.documentElement.setAttribute('data-theme', theme);
 
 const profilesById = {
@@ -130,4 +133,36 @@ function Preview() {
   );
 }
 
-createRoot(document.getElementById('root')).render(<Preview />);
+/* Americano-detalje i tilmeldings-tilstand — til visuel sammenligning med 2v2-detaljen */
+function AmericanoDetailPreview() {
+  const tournament = {
+    id: 't1', name: 'Sommer Americano', format: 'americano',
+    court_id: 'c1', time_slot: '18:00', tournament_date: '2026-07-05',
+    price_per_person: 50, payment_method: 'mobilepay',
+    level_min: 2.0, level_max: 4.0,
+    player_slots: 8, points_per_match: 16,
+  };
+  const parts = [1, 2, 3, 4, 3].slice(0, 5).map((n, i) => ({
+    id: `p${i}`, user_id: String((i % 4) + 1),
+    name: profilesById[(i % 4) + 1].name,
+    avatar: profilesById[(i % 4) + 1].avatar,
+    elo: 1000 + i * 40,
+  }));
+  return (
+    <AmericanoDetailSheet
+      open
+      onClose={noop}
+      tournament={tournament}
+      courts={[{ id: 'c1', name: 'Padel Club Aalborg' }]}
+      dateLabel="Søndag 5. juli"
+      status="registration"
+      participants={parts}
+      description="Hyggelig americano for alle niveauer — vi spiller 7 runder og slutter med en øl i baren."
+      actions={<button type="button" style={{ width: '100%', padding: 13, borderRadius: 10, border: 'none', background: 'var(--pm-navy)', color: 'var(--pm-on-accent)', fontWeight: 700, fontSize: 14.5 }}>Tilmeld mig</button>}
+    />
+  );
+}
+
+createRoot(document.getElementById('root')).render(
+  view === 'americano-detail' ? <AmericanoDetailPreview /> : <Preview />,
+);
