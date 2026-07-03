@@ -6,6 +6,8 @@ import '../styles/variables.css';
 import '../responsive.css';
 import { KampeMatchListCard } from '../components/kampe/KampeMatchListCard';
 import { AmericanoDetailSheet } from '../features/americano/AmericanoDetailSheet';
+import { AmericanoListCard } from '../features/americano/AmericanoListCard';
+import { LigaListCard } from '../dashboard/LigaListCard';
 
 const params = new URLSearchParams(window.location.search);
 const theme = params.get('theme') === 'dark' ? 'dark' : 'light';
@@ -163,6 +165,61 @@ function AmericanoDetailPreview() {
   );
 }
 
+/* Liste-kort på tværs af de tre formater — til visuel konsistens-sammenligning */
+function ListsPreview() {
+  const amTournament = {
+    id: 't1', name: 'Sommer Americano', format: 'americano',
+    tournament_date: '2026-07-05', time_slot: '18:00',
+    price_per_person: 50, payment_method: 'mobilepay',
+    level_min: 2.0, level_max: 4.0, player_slots: 8, points_per_match: 16,
+  };
+  const amParts = [1, 2, 3, 4, 1].map((n, i) => ({
+    user_id: String(n), display_name: profilesById[n].name, avatar: profilesById[n].avatar,
+  }));
+  const league = (status) => ({
+    id: 'l1', status, name: 'Aalborg Sommerliga', season_type: 'summer',
+    start_date: '2026-06-01', end_date: '2026-08-31',
+    current_round: 3, total_rounds: 7, num_divisions: 2,
+  });
+  const ligaTeams = [
+    { id: 'h1', name: 'Smash Bros', player1_name: 'Mads', player2_name: 'Sofie' },
+    { id: 'h2', name: 'Net Ninjas', player1_name: 'Jonas', player2_name: 'Emma' },
+  ];
+  const sections = [
+    {
+      h: '2v2 — åben',
+      node: (
+        <KampeMatchListCard
+          match={{ ...baseMatch, id: 'x1' }}
+          teamStats={{ t1: [p(1)], t2: [p(3)] }}
+          profilesById={profilesById}
+          matchPrefs={prefs}
+          status="open" left={2} isFull={false} joined={false}
+          primaryAction={{ label: 'Tilmeld mig', onClick: noop }}
+          onClick={noop}
+        />
+      ),
+    },
+    { h: 'Americano — åben', node: <AmericanoListCard tournament={amTournament} courtName="Padel Club Aalborg" participants={amParts} status="registration" onClick={noop} /> },
+    { h: 'Americano — i gang', node: <AmericanoListCard tournament={amTournament} courtName="Padel Club Aalborg" participants={amParts} status="playing" roundProgress={{ totalRounds: 7, completedRounds: 2, liveRound: 3 }} onClick={noop} /> },
+    { h: 'Americano — spillet', node: <AmericanoListCard tournament={amTournament} courtName="Padel Club Aalborg" participants={amParts} status="completed" myEloChange={14} onClick={noop} /> },
+    { h: 'Liga — tilmelding', node: <LigaListCard league={league('registration')} regionLabel="Nordjylland" regTeams={ligaTeams} onClick={noop} /> },
+    { h: 'Liga — aktiv', node: <LigaListCard league={league('active')} regionLabel="Nordjylland" teams={ligaTeams} standings={[{ team_id: 'h1', points: 9 }, { team_id: 'h2', points: 6 }]} myTeam={ligaTeams[0]} myTeamRank={1} nextMatchLabel="Runde 3 · mod Net Ninjas" onClick={noop} /> },
+    { h: 'Liga — afsluttet', node: <LigaListCard league={league('completed')} regionLabel="Nordjylland" teams={ligaTeams} standings={[{ team_id: 'h1', points: 21 }]} myTeam={ligaTeams[0]} myTeamRank={1} onClick={noop} /> },
+  ];
+  return (
+    <div style={{ maxWidth: 390, margin: '0 auto', padding: '16px 14px 60px', boxSizing: 'border-box' }}>
+      <h1 style={{ fontSize: 15, fontWeight: 800 }}>Liste-kort på tværs — {theme}</h1>
+      {sections.map((s) => (
+        <div key={s.h} style={{ margin: '18px 0' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pm-text-light)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{s.h}</div>
+          <div className="pm-kampe-v2-list">{s.node}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
-  view === 'americano-detail' ? <AmericanoDetailPreview /> : <Preview />,
+  view === 'americano-detail' ? <AmericanoDetailPreview /> : view === 'lists' ? <ListsPreview /> : <Preview />,
 );
