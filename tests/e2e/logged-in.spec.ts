@@ -56,6 +56,9 @@ test.describe('Logged-in dashboard flows', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/dashboard')
     await page.locator('[data-tour="account-menu-btn"]').click()
+    // Dropdown'en er portal-renderet og monteres først når position er målt —
+    // vent på den før vi klikker, så testen ikke rammer et endnu-ikke-mountet element.
+    await expect(page.locator('[data-tour="account-menu-dropdown"]')).toBeVisible({ timeout: 10_000 })
     await page.locator('[data-tour="account-menu-profile-btn"]').click()
     await expect(page.getByText('Overblik').first()).toBeVisible({ timeout: 20_000 })
   })

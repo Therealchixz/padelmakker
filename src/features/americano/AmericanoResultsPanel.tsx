@@ -476,6 +476,7 @@ export function AmericanoResultsPanel({
             invalid_score: `Summen skal være præcis ${P} point.`,
             not_authenticated: 'Du skal være logget ind.',
             match_not_found: 'Kampen blev ikke fundet.',
+            earlier_round_open: 'Færdiggør de tidligere runder først.',
           }
           showToast(errMap[res?.error || ''] || 'Kunne ikke gemme resultatet.')
           return
