@@ -30,11 +30,16 @@ test.describe('Auth flows', () => {
   test('onboarding shows inline validation for invalid email and password mismatch', async ({ page }) => {
     await page.goto('/opret')
 
-    await page.getByLabel(/^Email$/i).fill('invalid-email')
+    // Felterne deler label "Navn"/"E-mail" — mål dem via placeholder.
+    const email = page.getByPlaceholder('din@email.dk')
+    await email.fill('invalid-email')
+    await email.blur()
     await expect(page.getByText(/Brug en gyldig e-mail/i)).toBeVisible()
 
-    await page.getByLabel(/^Adgangskode$/i).fill('12345678')
-    await page.getByLabel(/Bekr.*adgangskode/i).fill('12345679')
+    await page.getByPlaceholder('Adgangskode', { exact: true }).fill('12345678')
+    const passwordConfirm = page.getByPlaceholder('Gentag', { exact: true })
+    await passwordConfirm.fill('12345679')
+    await passwordConfirm.blur()
     await expect(page.getByText(/Adgangskoderne matcher ikke/i)).toBeVisible()
   })
 })

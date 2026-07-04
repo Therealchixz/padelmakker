@@ -12,19 +12,34 @@ test.describe('Logged-in dashboard flows', () => {
   test.beforeEach(async ({ page }) => {
     if (!authEnv) return
     await dismissCookieNotice(page)
+    // Undertryk førstegangs-onboarding-modaler (Velkommen + Aktiv søgning), så de
+    // ikke lægger et backdrop hen over knapperne og opsnapper klik i testene.
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('pm-active-seeking-onboarding-v1', '1')
+        const realGet = localStorage.getItem.bind(localStorage)
+        localStorage.getItem = (key: string) =>
+          typeof key === 'string' &&
+          (key.startsWith('pm_dash_welcome_v1_') || key.startsWith('pm_dash_tour'))
+            ? '1'
+            : realGet(key)
+      } catch {
+        /* ignore */
+      }
+    })
     await seedPlaywrightAuth(page, authEnv)
   })
 
-  test('dashboard viser hjem med ELO-overblik', async ({ page }) => {
+  test('dashboard viser hjem med hurtig-handlinger', async ({ page }) => {
     await page.goto('/dashboard')
     await expect(page.getByRole('button', { name: 'Hjem' }).first()).toBeVisible()
-    await expect(page.getByLabel('Din ELO status')).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText('Book Bane').first()).toBeVisible({ timeout: 20_000 })
   })
 
   test('kan skifte til Kampe og se 2v2-overblik', async ({ page }) => {
     await page.goto('/dashboard')
     await page.getByRole('button', { name: 'Kampe' }).first().click()
-    await expect(page.getByText('Mine kampe').first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByPlaceholder(/Søg spiller, bane/i).first()).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('button', { name: /Opret kamp/i }).first()).toBeVisible()
   })
 
@@ -42,6 +57,6 @@ test.describe('Logged-in dashboard flows', () => {
     await page.goto('/dashboard')
     await page.locator('[data-tour="account-menu-btn"]').click()
     await page.locator('[data-tour="account-menu-profile-btn"]').click()
-    await expect(page.getByLabel('Din ELO status')).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText('Overblik').first()).toBeVisible({ timeout: 20_000 })
   })
 })
