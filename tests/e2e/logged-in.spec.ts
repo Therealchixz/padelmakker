@@ -55,10 +55,13 @@ test.describe('Logged-in dashboard flows', () => {
   test('kan åbne profil via konto-menu (desktop)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/dashboard')
-    await page.locator('[data-tour="account-menu-btn"]').click()
-    // Dropdown'en er portal-renderet og monteres først når position er målt —
-    // vent på den før vi klikker, så testen ikke rammer et endnu-ikke-mountet element.
-    await expect(page.locator('[data-tour="account-menu-dropdown"]')).toBeVisible({ timeout: 10_000 })
+    // Konto-menuen er en toggle med en outside-click-lukker; i headless CI kan
+    // det første klik race med at portal-dropdown'en monteres. Gør åbningen
+    // robust: klik indtil dropdown'en faktisk står åben.
+    await expect(async () => {
+      await page.locator('[data-tour="account-menu-btn"]').click()
+      await expect(page.locator('[data-tour="account-menu-dropdown"]')).toBeVisible({ timeout: 2_000 })
+    }).toPass({ timeout: 20_000 })
     await page.locator('[data-tour="account-menu-profile-btn"]').click()
     await expect(page.getByText('Overblik').first()).toBeVisible({ timeout: 20_000 })
   })
