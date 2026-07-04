@@ -120,7 +120,7 @@ for (const cssFile of walkCss(join(ROOT, 'src'))) {
   const ruleRe = /([^{}]+)\{([^{}]+)\}/g;
   let rm;
   while ((rm = ruleRe.exec(css))) {
-    const [_, selector, body] = rm;
+    const [, selector, body] = rm;
     const fgM = body.match(/(?<![a-z-])color:\s*(var\(--pm-[a-z0-9-]+\))/);
     const bgM = body.match(/background(?:-color)?:\s*(var\(--pm-[a-z0-9-]+\))/);
     if (fgM && bgM) {
