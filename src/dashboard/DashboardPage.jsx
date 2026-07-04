@@ -975,17 +975,26 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   useEffect(() => {
     if (!accountOpen) return;
+    // Sæt altid en position, så dropdown'en monteres selv hvis måling af knappen
+    // fejler (fx endnu-ikke-layoutet ref) — ellers kan menuen aldrig åbne.
     const rect = accountBtnRef.current?.getBoundingClientRect();
-    if (rect) {
-      const left = Math.min(Math.max(8, rect.right - 230), window.innerWidth - 238);
-      setAccountPos({ top: rect.bottom + 6, left });
-    }
+    const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
+    const left = rect
+      ? Math.min(Math.max(8, rect.right - 230), vw - 238)
+      : Math.max(8, vw - 238);
+    const top = rect ? rect.bottom + 6 : 56;
+    setAccountPos({ top, left });
     const handler = (e) => {
       if (accountBtnRef.current?.contains(e.target) || accountDropRef.current?.contains(e.target)) return;
       setAccountOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    // Tilknyt outside-click-lukkeren efter den aktuelle klik-cyklus, så det klik
+    // der åbnede menuen ikke selv når at lukke den igen.
+    const attach = setTimeout(() => document.addEventListener("mousedown", handler), 0);
+    return () => {
+      clearTimeout(attach);
+      document.removeEventListener("mousedown", handler);
+    };
   }, [accountOpen]);
 
   useEffect(() => {
