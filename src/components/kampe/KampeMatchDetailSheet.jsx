@@ -1,6 +1,7 @@
 import { X, CalendarDays, MapPin, ArrowUpRight, TrendingUp, TrendingDown, Trophy, Share2, RotateCcw, Wallet } from 'lucide-react';
 import { CourtFacilitiesGrid } from '../../lib/courtFacilities.jsx';
 import { MatchPhotosSection } from './MatchPhotosSection';
+import { PadelCourtArt } from './PadelCourtArt';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
@@ -424,7 +425,7 @@ export function KampeMatchDetailSheet({
 
         {/* Court hero visual */}
         <div className="pm-kd-hero" aria-hidden="true">
-          <div className="pm-kd-hero-court" />
+          <PadelCourtArt className="pm-kd-hero-court" />
           <div className="pm-kd-hero-badges">
             <span className="pm-kd-chip pm-kd-chip--navy">2V2</span>
             {matchPrefs?.min != null && matchPrefs?.max != null ? (

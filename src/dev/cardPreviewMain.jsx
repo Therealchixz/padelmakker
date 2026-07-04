@@ -8,6 +8,8 @@ import { KampeMatchListCard } from '../components/kampe/KampeMatchListCard';
 import { AmericanoDetailSheet } from '../features/americano/AmericanoDetailSheet';
 import { AmericanoListCard } from '../features/americano/AmericanoListCard';
 import { LigaListCard } from '../dashboard/LigaListCard';
+import { PadelCourtArt } from '../components/kampe/PadelCourtArt';
+import '../styles/kampdetalje.css';
 
 const params = new URLSearchParams(window.location.search);
 const theme = params.get('theme') === 'dark' ? 'dark' : 'light';
@@ -220,6 +222,23 @@ function ListsPreview() {
   );
 }
 
+function CourtPreview() {
+  return (
+    <div style={{ maxWidth: 390, margin: '0 auto', padding: 16 }}>
+      <h1 style={{ fontSize: 15, fontWeight: 800 }}>Bane-hero — {theme}</h1>
+      <div className="pm-kd-hero" aria-hidden="true">
+        <PadelCourtArt className="pm-kd-hero-court" />
+        <div className="pm-kd-hero-badges">
+          <span className="pm-kd-chip pm-kd-chip--navy">2V2</span>
+          <span className="pm-kd-chip pm-kd-chip--light">Niveau 3.0–4.0</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
-  view === 'americano-detail' ? <AmericanoDetailPreview /> : view === 'lists' ? <ListsPreview /> : <Preview />,
+  view === 'court' ? <CourtPreview />
+    : view === 'americano-detail' ? <AmericanoDetailPreview />
+      : view === 'lists' ? <ListsPreview /> : <Preview />,
 );

@@ -6,6 +6,7 @@ import { resolveCourtNameDirectionsQuery } from '../../lib/kampeListFilterCore'
 import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
+import { PadelCourtArt } from '../../components/kampe/PadelCourtArt'
 import {
   formatAmericanoLiveRoundLabel,
   formatCourtsBenchDetail,
@@ -274,7 +275,7 @@ export function AmericanoDetailSheet({
         <div className="pm-americano-v2-detail-scroll">
         {/* Court hero visual */}
         <div className="pm-kd-hero" style={{ marginBottom: 0, borderRadius: 0 }} aria-hidden="true">
-          <div className="pm-kd-hero-court" />
+          <PadelCourtArt className="pm-kd-hero-court" />
           <div className="pm-kd-hero-badges">
             <span className={`pm-kd-chip ${badgeTone === 'live' ? 'pm-kd-chip--amber' : 'pm-kd-chip--navy'}`}>
               {getTournamentFormatLabel(tournament.format).toUpperCase()}
