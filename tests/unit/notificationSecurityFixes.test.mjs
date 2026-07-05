@@ -113,8 +113,8 @@ test('AuthContext profile load retries and exposes profileLoadError', () => {
   const auth = readSrc('src/lib/AuthContext.jsx');
   const platform = readSrc('src/padelmakker-platform.jsx');
   assert.match(auth, /profileLoadError/);
-  assert.match(auth, /fetchOrCreateProfileCore\(userRow\)/);
-  assert.match(auth, /\.select\(\)\s*\n\s*\.single\(\)/s);
+  assert.match(auth, /fetchProfileFast\(userRow\)/);
+  assert.match(auth, /\.maybeSingle\(\)/);
   assert.match(platform, /Kunne ikke hente din profil/);
   assert.match(platform, /refreshProfile/);
 });

@@ -1,5 +1,5 @@
 import { createNotification } from './notifications';
-import { tournamentDefaultName } from './tournamentCopy';
+import { tournamentDefaultName } from './tournamentCopy.js';
 
 /**
  * Opretter: plads åbnet igen — kun ved tilmelding og når turneringen var/næsten fuld.

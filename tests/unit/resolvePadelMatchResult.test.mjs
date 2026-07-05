@@ -29,11 +29,22 @@ const players = [
   { user_id: 'opponent', team: 2 },
 ];
 
-function createSupabaseDecisionMock({ admins = [] } = {}) {
+function createSupabaseDecisionMock({ admins = [], rpcResult = null, rpcError = null } = {}) {
   const calls = [];
   return {
     calls,
     client: {
+      rpc(fnName, params) {
+        calls.push({ action: 'rpc', fnName, params });
+        if (rpcError) return { data: null, error: rpcError };
+        return {
+          data: rpcResult ?? {
+            success: true,
+            elo: { success: true, players_updated: 4 },
+          },
+          error: null,
+        };
+      },
       from(table) {
         return {
           update(payload) {
@@ -161,14 +172,9 @@ test('confirmPadelMatchResult rejects same-team confirmation before touching the
 test('confirmPadelMatchResult confirms result, applies ELO and notifies all players with tiebreak score', async () => {
   const supabase = createSupabaseDecisionMock();
   const notifications = [];
-  const eloCalls = [];
 
   const outcome = await confirmPadelMatchResult({
     supabaseClient: supabase.client,
-    calculateAndApplyEloFn: async (...args) => {
-      eloCalls.push(args);
-      return { success: true, data: { players_updated: 4 } };
-    },
     createNotificationFn: async (...args) => {
       notifications.push(args);
       return null;
@@ -186,25 +192,47 @@ test('confirmPadelMatchResult confirms result, applies ELO and notifies all play
     scoreDisplay: '6-2, 2-6, 6-7 (TB 5-7)',
     playersUpdated: 4,
   });
-  assert.deepEqual(supabase.calls.slice(0, 2), [
-    { table: 'match_results', action: 'update', payload: { confirmed: true, confirmed_by: 'confirmer' } },
-    { table: 'match_results', action: 'update_eq', column: 'id', value: 'result-1' },
-  ]);
-  assert.equal(eloCalls[0][0], 'match-1');
-  assert.equal(typeof eloCalls[0][1], 'function');
-  assert.deepEqual(eloCalls[0][2], { matchResultId: 'result-1' });
+  assert.deepEqual(supabase.calls[0], {
+    action: 'rpc',
+    fnName: 'confirm_match_result_and_apply_elo',
+    params: { p_match_result_id: 'result-1' },
+  });
   assert.deepEqual(notifications.map((n) => n[0]), ['submitter', 'partner', 'confirmer', 'opponent']);
   assert.equal(notifications.every((n) => n[1] === 'result_confirmed'), true);
   assert.equal(notifications.every((n) => String(n[3]).includes('6-7 (TB 5-7)')), true);
 });
 
-test('confirmPadelMatchResult does not notify when ELO application fails', async () => {
-  const supabase = createSupabaseDecisionMock();
+test('confirmPadelMatchResult throws when atomic RPC fails so confirmation rolls back', async () => {
+  const supabase = createSupabaseDecisionMock({
+    rpcError: { message: 'ELO application failed: RPC failed' },
+  });
+  const notifications = [];
+
+  await assert.rejects(
+    async () => {
+      await confirmPadelMatchResult({
+        supabaseClient: supabase.client,
+        createNotificationFn: async (...args) => notifications.push(args),
+        matchId: 'match-1',
+        result: resultRow,
+        players,
+        confirmedBy: 'confirmer',
+        showToast: () => {},
+      });
+    },
+    (err) => String(err?.message || err).includes('ELO application failed'),
+  );
+  assert.equal(notifications.length, 0);
+});
+
+test('confirmPadelMatchResult returns RPC validation error without notifying', async () => {
+  const supabase = createSupabaseDecisionMock({
+    rpcResult: { error: 'Resultatet er allerede bekræftet' },
+  });
   const notifications = [];
 
   const outcome = await confirmPadelMatchResult({
     supabaseClient: supabase.client,
-    calculateAndApplyEloFn: async () => ({ success: false, error: 'RPC failed' }),
     createNotificationFn: async (...args) => notifications.push(args),
     matchId: 'match-1',
     result: resultRow,
@@ -213,8 +241,11 @@ test('confirmPadelMatchResult does not notify when ELO application fails', async
     showToast: () => {},
   });
 
-  assert.equal(outcome.ok, true);
-  assert.equal(outcome.eloApplied, false);
+  assert.deepEqual(outcome, {
+    ok: false,
+    reason: 'Resultatet er allerede bekræftet',
+    eloApplied: false,
+  });
   assert.equal(notifications.length, 0);
 });
 

@@ -1205,7 +1205,11 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const { error } = await supabase.from("match_players").delete()
         .eq("match_id", matchId).eq("user_id", targetUserId);
       if (error) throw error;
-      const mp = (matchPlayers[matchId] || []).filter(p => p.user_id !== targetUserId);
+      const { data: remainingRows } = await supabase
+        .from("match_players")
+        .select("user_id, team")
+        .eq("match_id", matchId);
+      const mp = remainingRows || [];
       await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
       showToast("Spiller fjernet.");
       await loadData();

@@ -66,7 +66,7 @@ export function filterConfirmablePendingResults({
 
 export async function confirmPadelMatchResult({
   supabaseClient,
-  calculateAndApplyEloFn,
+  calculateAndApplyEloFn: _calculateAndApplyEloFn,
   createNotificationFn,
   createNotificationsForUsersFn,
   matchId,
@@ -74,7 +74,7 @@ export async function confirmPadelMatchResult({
   players,
   confirmedBy,
   isAdmin = false,
-  showToast,
+  showToast: _showToast,
 }) {
   if (!result?.id) {
     return { ok: false, reason: 'Resultat ikke fundet.' };
@@ -88,18 +88,17 @@ export async function confirmPadelMatchResult({
   });
   if (!confirmationAccess.ok) return confirmationAccess;
 
-  const { error } = await supabaseClient
-    .from('match_results')
-    .update({ confirmed: true, confirmed_by: confirmedBy })
-    .eq('id', result.id);
-  if (error) throw error;
-
-  const eloResult = await calculateAndApplyEloFn(matchId, showToast, { matchResultId: result.id });
-  if (!eloResult?.success) {
-    return { ok: true, eloApplied: false, eloResult };
+  const { data: confirmData, error: confirmError } = await supabaseClient.rpc(
+    'confirm_match_result_and_apply_elo',
+    { p_match_result_id: result.id },
+  );
+  if (confirmError) throw confirmError;
+  if (confirmData?.error) {
+    return { ok: false, reason: confirmData.error, eloApplied: false };
   }
 
-  const playersUpdated = Number(eloResult.data?.players_updated) || 0;
+  const eloPayload = confirmData?.elo || confirmData;
+  const playersUpdated = Number(eloPayload?.players_updated) || 0;
   const scoreDisplay = formatMatchResultScore(result);
   const body =
     playersUpdated > 0
