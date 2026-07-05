@@ -378,11 +378,20 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
     };
 
-    const updateChannel = supabase
-      .channel(`chat-up-${user.id}-${selectedId}`)
+    const updateChannelIncoming = supabase
+      .channel(`chat-up-in-${user.id}-${selectedId}`)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'messages' },
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` },
+        handleMessageUpdate
+      )
+      .subscribe();
+
+    const updateChannelOutgoing = supabase
+      .channel(`chat-up-out-${user.id}-${selectedId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `sender_id=eq.${user.id}` },
         handleMessageUpdate
       )
       .subscribe();
@@ -399,7 +408,8 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     return () => {
       supabase.removeChannel(incomingChannel);
       supabase.removeChannel(outgoingChannel);
-      supabase.removeChannel(updateChannel);
+      supabase.removeChannel(updateChannelIncoming);
+      supabase.removeChannel(updateChannelOutgoing);
       typingUnsub();
       setOtherTyping(false);
       setPartnerProfile(null);

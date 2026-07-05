@@ -1,5 +1,5 @@
 import { createNotification } from './notifications';
-import { TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy';
+import { TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy.js';
 
 function isMissingEntityRpc(error) {
   const msg = String(error?.message || error || '').toLowerCase();

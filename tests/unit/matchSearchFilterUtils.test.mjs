@@ -14,12 +14,13 @@ test('match search filter SQL adds prefs column and updates notify_match_watcher
   assert.match(sql, /jsonb_array_elements_text/);
 });
 
-test('ProfilTab uses single Mit kamp-filter entry instead of separate toggles', () => {
-  const src = readFileSync(join(root, 'src/dashboard/ProfilTab.jsx'), 'utf8');
-  assert.match(src, /Mit kamp-filter/);
-  assert.match(src, /MatchFilterProfileCard/);
-  assert.doesNotMatch(src, /🔔 Kamp-watch/);
-  assert.doesNotMatch(src, /⚡ Søger kamp nu/);
+test('kamp-filter lives on dedicated page instead of ProfilTab toggles', () => {
+  const filterPage = readFileSync(join(root, 'src/dashboard/MatchSearchFilterPage.jsx'), 'utf8');
+  const shortcut = readFileSync(join(root, 'src/components/SeekingFilterShortcutCard.jsx'), 'utf8');
+  assert.match(filterPage, /Mit kamp-filter/);
+  assert.match(shortcut, /Mit kamp-filter/);
+  assert.doesNotMatch(filterPage, /🔔 Kamp-watch/);
+  assert.doesNotMatch(filterPage, /⚡ Søger kamp nu/);
 });
 
 test('Dashboard exposes kamp-filter route', () => {

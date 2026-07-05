@@ -53,7 +53,7 @@ test('Admin user editor fetches fresh profile instead of list snapshot', async (
   assert.match(adminTab, /openUserEditor/);
   assert.match(adminTab, /fetchEloStatsBatchByUserIds/);
   assert.match(adminTab, /normalizeProfileRow/);
-  assert.match(adminTab, /AdminUserProfileOverview/);
+  assert.match(adminTab, /AdminUserEditModal/);
   assert.doesNotMatch(adminTab, /onClick=\{\(\) => setEditingUser\(\{ \.\.\.u \}\)\}/);
 });
 

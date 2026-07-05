@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { createNotificationsForUsers } from './notifications';
-import { TOURNAMENT_ELO_LABEL, TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy';
+import { TOURNAMENT_ELO_LABEL, TOURNAMENT_KAMPE_PATH, tournamentDefaultName } from './tournamentCopy.js';
 
 function isMissingEntityRpc(error) {
   const msg = String(error?.message || error || '').toLowerCase();
