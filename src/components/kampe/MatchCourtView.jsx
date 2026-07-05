@@ -63,6 +63,9 @@ export function MatchCourtView({
       otherTeamPlayerCount < SLOTS_PER_TEAM &&
       !String(busyId || '').startsWith(String(matchId) + '-switch-player-' + player.user_id);
 
+    const delta = playerEloChange(player);
+    const newElo = delta != null ? playerElo(player) + delta : null;
+
     return (
       <div key={player.user_id || `t${teamNum}-${player.user_name}`} className="pm-kd-slot">
         <button
@@ -89,13 +92,12 @@ export function MatchCourtView({
           <div className="pm-kd-slot-copy">
             <div className="pm-kd-slot-name">{player.user_name || 'Spiller'}</div>
             <div className="pm-kd-slot-meta">
-              {showEloChanges && playerEloChange(player) != null ? (
-                <span
-                  className={`pm-kd-tag ${playerEloChange(player) >= 0 ? 'pm-kd-tag--green' : 'pm-kd-tag--red'}`}
-                >
-                  {playerEloChange(player) >= 0 ? '+' : ''}
-                  {playerEloChange(player)} ELO
-                </span>
+              {showEloChanges && delta != null ? (
+                levelLabel ? (
+                  <span className="pm-kd-lvl-badge">Niveau {levelLabel}</span>
+                ) : (
+                  <span className="pm-kd-lvl-badge">ELO {playerElo(player)}</span>
+                )
               ) : levelLabel ? (
                 <span className="pm-kd-lvl-badge">Niveau {levelLabel}</span>
               ) : (
@@ -107,6 +109,18 @@ export function MatchCourtView({
             </div>
           </div>
         </button>
+        {showEloChanges && newElo != null && delta != null ? (
+          <div className="pm-kd-slot-elo-end">
+            <span className="pm-kd-eyebrow">Ny ELO</span>
+            <span className="pm-kd-slot-new-elo">
+              {newElo}
+              <small className={delta >= 0 ? 'pm-kd-delta--up' : 'pm-kd-delta--down'}>
+                ({delta >= 0 ? '+' : ''}
+                {delta})
+              </small>
+            </span>
+          </div>
+        ) : null}
         {canSwitchPlayer ? (
           <button
             type="button"
@@ -163,11 +177,15 @@ export function MatchCourtView({
 
   const renderTeam = (teamNum, players) => {
     const headerLabel = getMatchCourtHeaderLabel(teamNum, outcomeCtx);
+    const teamAvg = teamNum === 1 ? teamStats?.t1Avg : teamStats?.t2Avg;
     const slots = teamSlots(players);
 
     return (
       <div key={`team-${teamNum}`}>
-        <div className="pm-kd-team-label">{headerLabel}</div>
+        <div className="pm-kd-team-label">
+          {headerLabel}
+          {teamAvg != null ? ` · Gns. ${teamAvg}` : ''}
+        </div>
         {slots.map((player, idx) =>
           player ? renderPlayerSlot(player, teamNum) : renderEmptySlot(teamNum, idx)
         )}
@@ -178,7 +196,7 @@ export function MatchCourtView({
   return (
     <div className="pm-kampe-v2-court-wrap">
       <div className="pm-kd-section-h">
-        <h3>Holdene ({filledCount}/4)</h3>
+        <h3>{showEloChanges ? 'Deltagere' : `Holdene (${filledCount}/4)`}</h3>
         {left > 0 && status !== 'completed' && status !== 'in_progress' ? (
           <span className="pm-kd-tag pm-kd-tag--amber">
             {left} {left === 1 ? 'plads' : 'pladser'} tilbage

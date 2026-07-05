@@ -1,4 +1,4 @@
-import { X, CalendarDays, MapPin, ArrowUpRight } from 'lucide-react';
+import { X, CalendarDays, ArrowUpRight } from 'lucide-react';
 import { formatMatchDateHeadlineDa, matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeDetailStatusBadge } from '../../lib/kampeListCardStatus';
 import { resolveMatchDirectionsQuery } from '../../lib/kampeListFilterCore';
@@ -6,6 +6,7 @@ import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks';
 import { btn } from '../../lib/platformTheme';
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { MatchResultStrip } from '../MatchResultStrip';
+import { MatchCompletedDetail } from './MatchCompletedDetail';
 import { MatchCourtView } from './MatchCourtView';
 import '../../styles/kampdetalje.css';
 
@@ -121,7 +122,20 @@ export function KampeMatchDetailSheet({
         </div>
 
         <div className="pm-kd-card pm-kd-price-card">
-          <h2 className="pm-kd-title">{venue}</h2>
+          <div className="pm-kd-title-block">
+            <h2 className="pm-kd-title">{venue}</h2>
+            {directionsQuery ? (
+              <a
+                className="pm-kd-maplink pm-kd-maplink--under-title"
+                href={banerMapsDirectionsUrl(directionsQuery)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
+              >
+                Vis på kort <ArrowUpRight size={11} aria-hidden />
+              </a>
+            ) : null}
+          </div>
           {matchPrefs?.booked != null || unreadCount > 0 ? (
             <div className="pm-kd-price-meta">
               {matchPrefs?.booked != null ? (
@@ -141,23 +155,6 @@ export function KampeMatchDetailSheet({
               <span className="pm-kd-info-sub">{matchTimeLabel(match)}</span>
             </div>
           </div>
-          <div className="pm-kd-info-row">
-            <div className="pm-kd-info-ic"><MapPin size={18} aria-hidden /></div>
-            <div>
-              <b>{venue}</b>
-              {directionsQuery ? (
-                <a
-                  className="pm-kd-maplink"
-                  href={banerMapsDirectionsUrl(directionsQuery)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  Vis på kort <ArrowUpRight size={11} aria-hidden />
-                </a>
-              ) : null}
-            </div>
-          </div>
         </div>
 
         {description ? (
@@ -165,6 +162,16 @@ export function KampeMatchDetailSheet({
             <div className="pm-kd-section-h"><h3>Om kampen</h3></div>
             <p className="pm-kd-about">{description}</p>
           </>
+        ) : null}
+
+        {status === 'completed' && matchResult?.confirmed ? (
+          <MatchCompletedDetail
+            matchResult={matchResult}
+            teamStats={teamStats}
+            winnerTeam={winnerTeam}
+            currentUserId={currentUserId}
+            profilesById={profilesById}
+          />
         ) : null}
 
         <MatchCourtView
@@ -186,7 +193,7 @@ export function KampeMatchDetailSheet({
           onProfileClick={onProfileClick}
         />
 
-        {status === 'completed' && matchResult ? (
+        {status === 'completed' && matchResult && !matchResult.confirmed ? (
           <MatchResultStrip
             matchResult={matchResult}
             myTeam={

@@ -197,6 +197,14 @@
   text-decoration: none;
 }
 
+.pm-kd-maplink--under-title {
+  margin-top: 6px;
+}
+
+.pm-kd-title-block {
+  margin-bottom: 2px;
+}
+
 /* ── Sektionsoverskrift (mockup .section-h) ── */
 .pm-kd-section-h {
   display: flex;
@@ -404,13 +412,84 @@
 }
 
 /* ── Resultatkort, afsluttet kamp (mockup vs-score / avstack) ── */
-.pm-kd-result-card { position: relative; margin-top: 14px; }
+.pm-kd-result-card { position: relative; margin: 14px 16px 0; }
 
 .pm-kd-result-badge {
   position: absolute;
   top: -10px;
   right: 14px;
 }
+
+.pm-kd-winner-tag {
+  margin-top: 6px;
+  font-size: 9px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.pm-kd-avstack {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.pm-kd-elo-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 16px 10px;
+  padding: 14px 16px;
+}
+
+.pm-kd-elo-card-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.pm-kd-elo-card-title {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--pm-text);
+}
+
+.pm-kd-elo-card-sub {
+  font-size: 11.5px;
+  color: var(--pm-text-light);
+  margin-top: 1px;
+}
+
+.pm-kd-elo-card-delta {
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pm-kd-elo-card-delta--up { color: var(--pm-green); }
+.pm-kd-elo-card-delta--down { color: var(--pm-red); }
+
+.pm-kd-slot-elo-end {
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 72px;
+}
+
+.pm-kd-slot-new-elo {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-navy);
+  margin-top: 2px;
+}
+
+.pm-kd-slot-new-elo small {
+  font-size: 10.5px;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.pm-kd-delta--up { color: var(--pm-green); }
+.pm-kd-delta--down { color: var(--pm-red); }
 
 .pm-kd-vs-row {
   display: flex;
