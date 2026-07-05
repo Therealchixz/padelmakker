@@ -1708,7 +1708,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   /* Notifikation: ?format=americano|liga&focus=<id> eller ?focus=<matchId> (padel) */
   useEffect(() => {
     if (!tabActive) return;
-    const { format, focusId } = parseKampeFocusFromSearch(location.search);
+    const { format, focusId, openChat } = parseKampeFocusFromSearch(location.search);
     if (!focusId) return;
 
     const clearFocusInUrl = (keepFormat) => {
@@ -1749,8 +1749,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     // Åbn detaljer direkte, så deeplinket altid viser kampen — også hvis et
     // aktivt filter ellers ville skjule den fra den synlige liste.
     setDetailMatchId(String(focusId));
+    if (openChat) {
+      const matchKey = String(focusId);
+      setMatchChatOpenById((prev) => ({ ...prev, [matchKey]: true }));
+      void loadMatchChat(matchKey, { showLoading: true });
+      void markMatchChatNotifsRead(matchKey);
+    }
     clearFocusInUrl(KAMPE_FORMAT_PADEL);
-  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate]);
+  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate, loadMatchChat, markMatchChatNotifsRead]);
 
   useEffect(() => {
     const mid = focusScrollMatchId;

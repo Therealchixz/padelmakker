@@ -17,16 +17,23 @@ export function parseKampeFocusFromSearch(search) {
   return {
     format: normalizeKampeFormat(params.get('format')),
     focusId: params.get('focus') ? String(params.get('focus')) : null,
+    openChat: params.get('chat') === '1',
   };
 }
 
-export function buildKampeFocusPath(format, focusId) {
+export function buildKampeFocusPath(format, focusId, { openChat = false } = {}) {
   const params = new URLSearchParams();
   const f = normalizeKampeFormat(format);
   if (f !== KAMPE_FORMAT_PADEL) params.set('format', f);
   if (focusId) params.set('focus', String(focusId));
+  if (openChat) params.set('chat', '1');
   const q = params.toString();
   return `/dashboard/kampe${q ? `?${q}` : ''}`;
+}
+
+export function kampeFocusOpensChat(notifType) {
+  const type = String(notifType || '').toLowerCase();
+  return type === 'match_chat' || type === 'match_chat_group';
 }
 
 /** Hvor en notifikation skal åbne i Kampe (eller null hvis ikke klikbar). */
@@ -58,5 +65,6 @@ export function kampeFocusFooterLabel(format, notifType) {
     if (type === 'league_started') return 'Tryk for at åbne Liga → I gang →';
     return 'Tryk for at åbne Liga → Åbne →';
   }
+  if (kampeFocusOpensChat(type)) return 'Tryk for at åbne chatten →';
   return 'Tryk for at gå til kampen →';
 }

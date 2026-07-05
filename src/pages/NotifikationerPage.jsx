@@ -1,10 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, AlertCircle, Check, MessageCircle, Calendar, TrendingUp, Bell, Trash2, Users, Trophy, X } from 'lucide-react';
+import { ChevronLeft, AlertCircle, Check, MessageCircle, TrendingUp, Bell, Trash2, Users, Trophy, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
-import { theme, font } from '../lib/platformTheme';
-import { buildKampeFocusPath, notificationKampeTarget, kampeFocusFooterLabel } from '../lib/kampeFocusNavigation';
+import { theme, font, btn } from '../lib/platformTheme';
+import {
+  buildKampeFocusPath,
+  notificationKampeTarget,
+  kampeFocusFooterLabel,
+  kampeFocusOpensChat,
+} from '../lib/kampeFocusNavigation';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 
 const DISMISSED_MAX = 400;
@@ -82,16 +87,19 @@ function timeAgo(dateStr) {
   return `${Math.floor(days / 7)}u`;
 }
 
-export function NotifikationerPage() {
+export function NotifikationerPage({ onBack }) {
   const { user: authUser, profile } = useAuth();
   const navigate = useNavigate();
   const userId = authUser?.id;
   const [notifs, setNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [matchMetaById, setMatchMetaById] = useState({});
 
   const load = useCallback(async () => {
-    if (!userId) { setNotifs([]); setLoading(false); return; }
+    if (!userId) { setNotifs([]); setLoading(false); setLoadError(''); return; }
+    setLoading(true);
+    setLoadError('');
     try {
       const { data, error } = await supabase
         .from('notifications')
@@ -99,7 +107,7 @@ export function NotifikationerPage() {
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(40);
-      if (error) { setNotifs([]); return; }
+      if (error) throw error;
       const dismissed = loadDismissedIds(userId);
       const filtered = (data || []).filter((n) => !dismissed.has(n.id));
       setNotifs(filtered);
@@ -108,13 +116,17 @@ export function NotifikationerPage() {
         filtered.filter((n) => n?.type === 'match_chat' && n?.match_id != null).map((n) => String(n.match_id))
       )];
       if (!matchIds.length) { setMatchMetaById({}); return; }
-      const { data: matchRows } = await supabase
+      const { data: matchRows, error: matchError } = await supabase
         .from('matches').select('id, date, time, time_end, court_name').in('id', matchIds);
+      if (matchError) throw matchError;
       const nextMeta = {};
       (matchRows || []).forEach((m) => { nextMeta[String(m.id)] = m; });
       setMatchMetaById(nextMeta);
-    } catch { setNotifs([]); }
-    finally { setLoading(false); }
+    } catch (err) {
+      setNotifs([]);
+      setMatchMetaById({});
+      setLoadError(err?.message || 'Kunne ikke hente notifikationer.');
+    } finally { setLoading(false); }
   }, [userId]);
 
   useEffect(() => { void load(); }, [load]);
@@ -143,6 +155,14 @@ export function NotifikationerPage() {
 
   const unreadCount = notifs.filter(n => !n.read).length;
 
+  const goBack = useCallback(() => {
+    if (typeof onBack === 'function') {
+      onBack();
+      return;
+    }
+    navigate('/dashboard/hjem', { replace: true });
+  }, [navigate, onBack]);
+
   const markAllRead = async () => {
     const unread = notifs.filter(n => !n.read).map(n => n.id);
     if (!unread.length || !userId) return;
@@ -161,11 +181,17 @@ export function NotifikationerPage() {
     if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
   };
 
+  const markNotifRead = async (n) => {
+    const ids = Array.isArray(n?.notifIds) ? n.notifIds : [n?.id].filter(Boolean);
+    if (!ids.length || !userId || n.read) return;
+    await supabase.from('notifications').update({ read: true }).in('id', ids).eq('user_id', userId);
+    setNotifs(prev => prev.map(x => (x.id === n.id ? { ...x, read: true } : x)));
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
+  };
+
   const openNotif = async (n) => {
     if (!userId) return;
-    await supabase.from('notifications').update({ read: true }).in('id', Array.isArray(n?.notifIds) ? n.notifIds : [n.id]).eq('user_id', userId);
-    setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
+    await markNotifRead(n);
 
     if (n?.type === 'result_error_report' && profile?.role === 'admin') {
       navigate('/dashboard/admin?adminSub=result_errors'); return;
@@ -177,7 +203,12 @@ export function NotifikationerPage() {
       navigate(`/dashboard/makkere?profile=${encodeURIComponent(String(n.entity_id))}`); return;
     }
     const kampeTarget = notificationKampeTarget(n);
-    if (kampeTarget) { navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId)); return; }
+    if (kampeTarget) {
+      navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId, {
+        openChat: kampeFocusOpensChat(n.type),
+      }));
+      return;
+    }
     if (n?.type === 'elo_change') { navigate('/dashboard/profil'); return; }
     if (n?.type === 'result_submitted') { navigate('/dashboard/kampe'); return; }
   };
@@ -206,13 +237,12 @@ export function NotifikationerPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, background: theme.bg, fontFamily: font }}>
-      {/* Topbar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', paddingTop: 'max(10px, env(safe-area-inset-top))', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid ' + theme.border, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-          aria-label="Tilbage"
+          aria-label="Tilbage til Hjem"
         >
           <ChevronLeft size={20} />
         </button>
@@ -221,17 +251,29 @@ export function NotifikationerPage() {
           <button
             type="button"
             onClick={markAllRead}
-            style={{ fontSize: '11.5px', fontWeight: 600, color: theme.navy, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '4px 0' }}
+            style={{ fontSize: '11.5px', fontWeight: 600, color: theme.navy, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '8px 0', minHeight: 44 }}
           >
             Markér alle læst
           </button>
         )}
       </div>
 
-      {/* List */}
       <div style={{ flex: 1, overflowY: 'auto', paddingTop: 12 }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '32px 16px', color: theme.textLight, fontSize: 13 }}>Indlæser…</div>
+        ) : loadError ? (
+          <div style={{ padding: '0 18px' }}>
+            <div className="pm-state-card pm-state-card--error">
+              <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+              <div className="pm-state-title">Kunne ikke hente notifikationer</div>
+              <div className="pm-state-copy">{loadError}</div>
+              <div className="pm-state-actions">
+                <button type="button" onClick={() => void load()} style={{ ...btn(true), fontSize: '13px' }}>
+                  Prøv igen
+                </button>
+              </div>
+            </div>
+          </div>
         ) : displayNotifs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 16px', color: theme.textLight, fontSize: 13 }}>
             <Bell size={28} color={theme.textLight} style={{ marginBottom: 10 }} />
@@ -252,6 +294,7 @@ export function NotifikationerPage() {
             || n.type === 'elo_change'
             || n.type === 'result_submitted';
           const isResultPending = n.type === 'result_submitted';
+          const canMarkReadOnly = !n.read && !isClickable && !isResultPending;
           return (
             <div key={n.id} style={cardStyle(!n.read)}>
               <NotifIcon type={n.type} />
@@ -274,6 +317,11 @@ export function NotifikationerPage() {
                     {kampeTarget ? kampeFocusFooterLabel(kampeTarget.format, n.type) : 'Tryk for at åbne →'}
                   </div>
                 )}
+                {canMarkReadOnly && (
+                  <div style={{ fontSize: 10.5, color: theme.textMid, marginTop: 6, fontWeight: 600 }}>
+                    Tryk for at markere som læst
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
                 <time style={{ fontSize: 11, color: theme.textLight, fontWeight: 500, whiteSpace: 'nowrap' }}>{timeAgo(n.created_at)}</time>
@@ -282,7 +330,7 @@ export function NotifikationerPage() {
                   type="button"
                   onClick={(e) => { e.stopPropagation(); void deleteNotif(n); }}
                   aria-label="Slet"
-                  style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: theme.textLight, display: 'flex' }}
+                  style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', color: theme.textLight, display: 'flex', minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Trash2 size={15} />
                 </button>
@@ -292,6 +340,14 @@ export function NotifikationerPage() {
                   type="button"
                   onClick={() => void openNotif(n)}
                   aria-label="Åbn"
+                  style={{ position: 'absolute', inset: 0, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 14 }}
+                />
+              )}
+              {canMarkReadOnly && (
+                <button
+                  type="button"
+                  onClick={() => void markNotifRead(n)}
+                  aria-label="Markér som læst"
                   style={{ position: 'absolute', inset: 0, background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: 14 }}
                 />
               )}

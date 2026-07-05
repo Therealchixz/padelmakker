@@ -26,6 +26,7 @@ import {
   buildKampeFocusPath,
   notificationKampeTarget,
   kampeFocusFooterLabel,
+  kampeFocusOpensChat,
 } from '../lib/kampeFocusNavigation';
 
 const DISMISSED_MAX = 400;
@@ -447,7 +448,9 @@ export function NotificationBell({ tourForceOpen = false }) {
     }
     await markNotifRead(n);
     setOpen(false);
-    navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId));
+    navigate(buildKampeFocusPath(kampeTarget.format, kampeTarget.focusId, {
+      openChat: kampeFocusOpensChat(n.type),
+    }));
   };
 
   const timeAgo = useCallback((dateStr) => {

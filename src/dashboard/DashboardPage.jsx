@@ -52,6 +52,7 @@ const loadMatchSearchFilterPage = () => import('./MatchSearchFilterPage');
 const loadMakkerSearchFilterPage = () => import('./MakkerSearchFilterPage');
 const loadAdminTab = () => import('./AdminTab');
 const loadBeskedTab = () => import('./BeskedTab');
+const loadNotifikationerPage = () => import('../pages/NotifikationerPage');
 const MakkereTabLazy = lazy(() => loadMakkereTab().then((m) => ({ default: m.MakkereTab })));
 const BanerTabLazy = lazy(() => loadBanerTab().then((m) => ({ default: m.BanerTab })));
 const KampeTabLazy = lazy(() => loadKampeTab().then((m) => ({ default: m.KampeTab })));
@@ -61,6 +62,7 @@ const MatchSearchFilterPageLazy = lazy(() => loadMatchSearchFilterPage().then((m
 const MakkerSearchFilterPageLazy = lazy(() => loadMakkerSearchFilterPage().then((m) => ({ default: m.MakkerSearchFilterPage })));
 const AdminTabLazy = lazy(() => loadAdminTab().then((m) => ({ default: m.AdminTab })));
 const BeskedTabLazy = lazy(() => loadBeskedTab().then((m) => ({ default: m.BeskedTab })));
+const NotifikationerPageLazy = lazy(() => loadNotifikationerPage().then((m) => ({ default: m.NotifikationerPage })));
 
 const FEEDBACK_DEFAULT_CATEGORY = "bug";
 const FEEDBACK_DEFAULT_PRIORITY = "normal";
@@ -743,7 +745,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const kampeTabBadge =
     pendingKampe + pendingLigaInvites > 0 ? pendingKampe + pendingLigaInvites : null;
   const pathTab = location.pathname.split("/")[2] || "hjem";
-  const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "makker-filter", "admin"];
+  const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "makker-filter", "admin", "notifikationer"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
   const setTab = useCallback((tabId, opts = {}) => {
     const raw = opts.search != null ? String(opts.search) : "";
@@ -1601,7 +1603,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
       </div>
 
-      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${hideMobileBottomNav ? " pm-dash-main--chat" : ""}`}>
+      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${hideMobileBottomNav ? " pm-dash-main--chat" : ""}`}>
         <Suspense
           fallback={
             <div
@@ -1650,6 +1652,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
               >
                 Admin-adgang er låst. Indtast din 6-cifrede kode for at fortsætte.
               </div>
+            )}
+            {tab === "notifikationer" && (
+              <NotifikationerPageLazy onBack={() => setTab("hjem")} />
             )}
           </Suspense>
       </div>

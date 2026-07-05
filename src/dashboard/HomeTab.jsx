@@ -84,14 +84,17 @@ export function HomeTab({ user, setTab, showToast }) {
 
   // Kommende kampe: 2v2-kampe, Americano/Mexicano og liga-kampe brugeren er en del af, fra i dag og frem.
   const [upcomingItems, setUpcomingItems] = useState([]);
+  const [upcomingLoadError, setUpcomingLoadError] = useState('');
   useEffect(() => {
     if (!user?.id) {
       setUpcomingItems([]);
+      setUpcomingLoadError('');
       return;
     }
     let cancelled = false;
     (async () => {
       try {
+        setUpcomingLoadError('');
         const now = new Date();
         const todayYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const [mRes, amRes, ltRes] = await Promise.all([
@@ -111,6 +114,9 @@ export function HomeTab({ user, setTab, showToast }) {
             .eq('status', 'ready'),
         ]);
         if (cancelled) return;
+        if (mRes.error) throw mRes.error;
+        if (amRes.error) throw amRes.error;
+        if (ltRes.error) throw ltRes.error;
 
         const items = [];
 
@@ -167,7 +173,10 @@ export function HomeTab({ user, setTab, showToast }) {
         setUpcomingItems(items.slice(0, 5));
       } catch (err) {
         console.warn('home upcoming items load:', err?.message || err);
-        if (!cancelled) setUpcomingItems([]);
+        if (!cancelled) {
+          setUpcomingItems([]);
+          setUpcomingLoadError(err?.message || 'Kunne ikke hente kommende kampe.');
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -175,14 +184,17 @@ export function HomeTab({ user, setTab, showToast }) {
 
   // Invitationer: (1) anmodninger om at komme med i DINE kampe, (2) holdinvitationer i ligaen, (3) dine egne ventende anmodninger.
   const [inviteItems, setInviteItems] = useState([]);
+  const [invitesLoadError, setInvitesLoadError] = useState('');
   useEffect(() => {
     if (!user?.id) {
       setInviteItems([]);
+      setInvitesLoadError('');
       return;
     }
     let cancelled = false;
     (async () => {
       try {
+        setInvitesLoadError('');
         const [inboundRes, teamInvRes] = await Promise.all([
           supabase.from('match_join_requests')
             .select('id, user_id, user_name, user_emoji, created_at, matches!inner(id, court_name, date, time, creator_id, status)')
@@ -192,6 +204,8 @@ export function HomeTab({ user, setTab, showToast }) {
             .eq('player2_id', user.id).eq('status', 'pending'),
         ]);
         if (cancelled) return;
+        if (inboundRes.error) throw inboundRes.error;
+        if (teamInvRes.error) throw teamInvRes.error;
 
         const items = [];
 
@@ -219,7 +233,10 @@ export function HomeTab({ user, setTab, showToast }) {
         setInviteItems(items.slice(0, 6));
       } catch (err) {
         console.warn('home invites load:', err?.message || err);
-        if (!cancelled) setInviteItems([]);
+        if (!cancelled) {
+          setInviteItems([]);
+          setInvitesLoadError(err?.message || 'Kunne ikke hente invitationer.');
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -1201,14 +1218,25 @@ export function HomeTab({ user, setTab, showToast }) {
       )}
 
       {/* Invitationer */}
-      {inviteItems.length > 0 && (
+      {(inviteItems.length > 0 || invitesLoadError) && (
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 18px 10px' }}>
             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Invitationer</h3>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: '#EF4444', borderRadius: 999, minWidth: 18, height: 18, padding: '0 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-              {inviteItems.length}
-            </span>
+            {inviteItems.length > 0 && (
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: '#EF4444', borderRadius: 999, minWidth: 18, height: 18, padding: '0 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                {inviteItems.length}
+              </span>
+            )}
           </div>
+          {invitesLoadError ? (
+            <div style={{ padding: '0 18px' }}>
+              <div className="pm-state-card pm-state-card--error">
+                <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+                <div className="pm-state-title">Kunne ikke hente invitationer</div>
+                <div className="pm-state-copy">{invitesLoadError}</div>
+              </div>
+            </div>
+          ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
             {inviteItems.map((it) => (
               <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow }}>
@@ -1244,16 +1272,28 @@ export function HomeTab({ user, setTab, showToast }) {
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
       {/* Kommende kampe */}
-      {upcomingItems.length > 0 && (
+      {(upcomingItems.length > 0 || upcomingLoadError) && (
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
-            <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
+            {upcomingItems.length > 0 && (
+              <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
+            )}
           </div>
+          {upcomingLoadError ? (
+            <div style={{ padding: '0 18px' }}>
+              <div className="pm-state-card pm-state-card--error">
+                <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+                <div className="pm-state-title">Kunne ikke hente kommende kampe</div>
+                <div className="pm-state-copy">{upcomingLoadError}</div>
+              </div>
+            </div>
+          ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
             {upcomingItems.map((it) => (
               <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1272,6 +1312,7 @@ export function HomeTab({ user, setTab, showToast }) {
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
