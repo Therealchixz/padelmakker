@@ -7433,8 +7433,12 @@ button,
   z-index: 2;
   background: var(--pm-surface);
   margin: 0;
-  padding: 0 0 8px;
-  border-bottom: 1px solid var(--pm-border);
+  padding: 0 0 4px;
+  border-bottom: none;
+}
+
+.pm-kampe-v2-detail-head--hero {
+  padding: 0 16px 2px;
 }
 
 .pm-kampe-v2-detail-sheet:not(.pm-americano-v2-detail-sheet) .pm-kampe-v2-sheet-drag-header .pm-kampe-v2-sheet-handle {
@@ -7448,7 +7452,7 @@ button,
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding-top: 8px;
+  padding-top: 0;
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 

@@ -9,14 +9,9 @@ import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCourtView } from './MatchCourtView';
 import '../../styles/kampdetalje.css';
 
-function badgeToneClass(tone) {
-  if (tone === 'live') return 'pm-kampe-v2-badge--live';
-  if (tone === 'open') return 'pm-kampe-v2-badge--open';
-  if (tone === 'full') return 'pm-kampe-v2-badge--full';
-  if (tone === 'closed') return 'pm-kampe-v2-badge--closed';
-  if (tone === 'green') return 'pm-kampe-v2-badge--green';
-  if (tone === 'danger') return 'pm-kampe-v2-badge--danger';
-  return 'pm-kampe-v2-badge--neutral';
+function heroStatusChipClass(tone) {
+  if (tone === 'live') return 'pm-kd-chip--live';
+  return 'pm-kd-chip--light pm-kd-hero-status';
 }
 
 export function KampeMatchDetailSheet({
@@ -92,58 +87,54 @@ export function KampeMatchDetailSheet({
       >
         <div {...dragZoneProps} aria-label="Træk her for at lukke">
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />
-          <div className="pm-kampe-v2-detail-head">
+          <div className="pm-kampe-v2-detail-head pm-kampe-v2-detail-head--hero">
             <div className="pm-kampe-v2-detail-head-toolbar">
               <div className="pm-kampe-v2-detail-type">2v2-kamp</div>
-              <div className="pm-kampe-v2-detail-head-right">
-                <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
-                  {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
-                  {statusBadge.label}
-                </span>
-                <button
-                  type="button"
-                  className="pm-kampe-v2-detail-close"
-                  onClick={onClose}
-                  onPointerDown={(event) => event.stopPropagation()}
-                  aria-label="Luk"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-            <div className="pm-kampe-v2-detail-head-main">
-              <h2 className="pm-kampe-v2-detail-venue">{venue}</h2>
-              {(matchPrefs?.min != null && matchPrefs?.max != null) ||
-              matchPrefs?.booked != null ||
-              unreadCount > 0 ? (
-                <div className="pm-kampe-v2-detail-badges-inline">
-                  {matchPrefs?.min != null && matchPrefs?.max != null ? (
-                    <span className="pm-kampe-v2-badge pm-kampe-v2-badge--blue pm-kampe-v2-detail-meta-badge">
-                      ELO {matchPrefs.min}–{matchPrefs.max}
-                    </span>
-                  ) : null}
-                  {matchPrefs?.booked != null ? (
-                    <span
-                      className={`pm-kampe-v2-badge pm-kampe-v2-detail-meta-badge ${matchPrefs.booked ? 'pm-kampe-v2-badge--green' : 'pm-kampe-v2-badge--warm'}`}
-                    >
-                      {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
-                    </span>
-                  ) : null}
-                  {unreadCount > 0 ? (
-                    <span className="pm-kampe-v2-badge pm-kampe-v2-badge--warm pm-kampe-v2-detail-meta-badge">
-                      {unreadCount} ulæst
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
+              <button
+                type="button"
+                className="pm-kampe-v2-detail-close"
+                onClick={onClose}
+                onPointerDown={(event) => event.stopPropagation()}
+                aria-label="Luk"
+              >
+                <X size={18} />
+              </button>
             </div>
           </div>
         </div>
 
         <div className="pm-kampe-v2-detail-scroll">
+        <div className="pm-kd-hero">
+          <div className="pm-kd-hero-badges">
+            <span className="pm-kd-chip pm-kd-chip--light">2V2</span>
+            {matchPrefs?.min != null && matchPrefs?.max != null ? (
+              <span className="pm-kd-chip pm-kd-chip--amber">
+                ELO {matchPrefs.min}–{matchPrefs.max}
+              </span>
+            ) : null}
+            <span className={`pm-kd-chip ${heroStatusChipClass(statusBadge.tone)}`}>
+              {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
+              {statusBadge.label}
+            </span>
+          </div>
+          <div className="pm-kd-hero-court" aria-hidden />
+        </div>
 
-        <div className="pm-kd-card" style={{ margin: '0 0 4px' }}>
-          <div className="pm-kd-info-row" style={{ marginTop: 0 }}>
+        <div className="pm-kd-card pm-kd-price-card">
+          <h2 className="pm-kd-title">{venue}</h2>
+          {matchPrefs?.booked != null || unreadCount > 0 ? (
+            <div className="pm-kd-price-meta">
+              {matchPrefs?.booked != null ? (
+                <span className={`pm-kd-tag ${matchPrefs.booked ? 'pm-kd-tag--green' : 'pm-kd-tag--amber'}`}>
+                  {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
+                </span>
+              ) : null}
+              {unreadCount > 0 ? (
+                <span className="pm-kd-tag pm-kd-tag--amber">{unreadCount} ulæst i chat</span>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="pm-kd-info-row">
             <div className="pm-kd-info-ic"><CalendarDays size={18} aria-hidden /></div>
             <div>
               <b>{formatMatchDateHeadlineDa(match.date)}</b>

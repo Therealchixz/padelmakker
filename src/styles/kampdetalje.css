@@ -106,6 +106,28 @@
   z-index: 2;
 }
 
+.pm-kampe-v2-detail-scroll .pm-kd-hero {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.pm-kampe-v2-detail-scroll .pm-kd-price-card {
+  margin-left: 16px;
+  margin-right: 16px;
+  margin-bottom: 4px;
+}
+
+.pm-kd-hero-status {
+  margin-left: auto;
+}
+
+.pm-kd-price-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
 .pm-kd-title {
   font-size: 18px;
   font-weight: 700;
