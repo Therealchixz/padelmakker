@@ -1,10 +1,16 @@
-import { Plus } from 'lucide-react';
+import { Plus, UserPlus } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
-import { theme } from '../../lib/platformTheme';
+import { formatPlaytomicLevel } from '../../lib/padelLevelUtils';
 import {
   getMatchCourtHeaderLabel,
-  getMatchCourtOutcomeClasses,
 } from '../../lib/matchCourtOutcomeClasses';
+
+const SLOTS_PER_TEAM = 2;
+
+function teamSlots(players) {
+  const filled = (players || []).slice(0, SLOTS_PER_TEAM);
+  return Array.from({ length: SLOTS_PER_TEAM }, (_, i) => filled[i] ?? null);
+}
 
 export function MatchCourtView({
   teamStats,
@@ -26,147 +32,98 @@ export function MatchCourtView({
 }) {
   const t1 = teamStats?.t1 || [];
   const t2 = teamStats?.t2 || [];
-  const t1Avg = teamStats?.t1Avg;
-  const t2Avg = teamStats?.t2Avg;
+  const filledCount = t1.length + t2.length;
+  const left = Math.max(0, 4 - filledCount);
+  const showEloChanges = status === 'completed';
+  const outcomeCtx = { status, winnerTeam, joined, myTeam };
+
   const playerElo = (p) => teamStats?.playerEloByUserId?.[String(p.user_id)] ?? 1000;
   const playerEloChange = (p) => teamStats?.playerEloChangeByUserId?.[String(p.user_id)];
-  const showEloChanges = status === 'completed';
 
-  const renderPlayer = (p, teamNum) => {
+  const renderPlayerSlot = (player, teamNum) => {
+    const prof = profilesById[String(player.user_id)];
+    const levelLabel =
+      prof?.level != null && prof.level !== ''
+        ? formatPlaytomicLevel(prof.level)
+        : null;
+    const games = Number(prof?.games_played) || 0;
     const otherTeam = teamNum === 1 ? 2 : 1;
     const canKick =
       !readOnly &&
       (isCreator || isAdmin) &&
-      String(p.user_id) !== String(currentUserId) &&
+      String(player.user_id) !== String(currentUserId) &&
       (status === 'open' || status === 'full');
-    const kickingBusy = busyId === matchId + '-kick-' + p.user_id;
-
+    const kickingBusy = busyId === matchId + '-kick-' + player.user_id;
     const otherTeamPlayerCount = otherTeam === 1 ? t1.length : t2.length;
     const canSwitchPlayer =
       !readOnly &&
       Boolean(onSwitchPlayerTeam) &&
       (isCreator || isAdmin) &&
       (status === 'open' || status === 'full') &&
-      otherTeamPlayerCount < 2 &&
-      !String(busyId || '').startsWith(String(matchId) + '-switch-player-' + p.user_id);
-
-    const teamColor = teamNum === 1 ? theme.accent : theme.blue;
-    const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
+      otherTeamPlayerCount < SLOTS_PER_TEAM &&
+      !String(busyId || '').startsWith(String(matchId) + '-switch-player-' + player.user_id);
 
     return (
-      <div
-        style={{
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          minWidth: '42px',
-        }}
-      >
+      <div key={player.user_id || `t${teamNum}-${player.user_name}`} className="pm-kd-slot">
         <button
           type="button"
+          className="pm-kd-slot-main"
           onClick={() => {
             if (canSwitchPlayer) {
-              onSwitchPlayerTeam(matchId, p.user_id, otherTeam);
+              onSwitchPlayerTeam(matchId, player.user_id, otherTeam);
               return;
             }
-            const prof = profilesById[String(p.user_id)];
             if (prof && onProfileClick) onProfileClick(prof);
           }}
           aria-label={
             canSwitchPlayer
-              ? `Flyt ${p.user_name || 'spiller'} til Hold ${otherTeam}`
-              : `Åbn profil for ${p.user_name || 'spiller'}`
+              ? `Flyt ${player.user_name || 'spiller'} til Hold ${otherTeam}`
+              : `Åbn profil for ${player.user_name || 'spiller'}`
           }
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            cursor: canSwitchPlayer ? 'pointer' : onProfileClick ? 'pointer' : 'default',
-            border: 'none',
-            background: 'transparent',
-            padding: 0,
-          }}
         >
           <AvatarCircle
-            clickable={canSwitchPlayer || Boolean(onProfileClick)}
-            avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '🎾'}
-            size={36}
-            emojiSize="16px"
-            style={{ background: teamBg, border: `1.5px solid ${teamColor}55` }}
+            avatar={prof?.avatar || player.user_emoji || '🎾'}
+            size={43}
+            emojiSize="18px"
           />
-          <span style={{ fontSize: '9px', color: theme.text, marginTop: '3px', fontWeight: 600 }}>
-            {(p.user_name || '?').split(' ')[0]}
-          </span>
-          {showEloChanges && playerEloChange(p) != null ? (
-            <span
-              style={{
-                fontSize: '8px',
-                fontWeight: 700,
-                color: playerEloChange(p) >= 0 ? theme.green : theme.red,
-              }}
-            >
-              {playerEloChange(p) >= 0 ? '+' : ''}
-              {playerEloChange(p)}
-            </span>
-          ) : (
-            <span style={{ fontSize: '8px', color: teamColor, fontWeight: 700 }}>{playerElo(p)}</span>
-          )}
+          <div className="pm-kd-slot-copy">
+            <div className="pm-kd-slot-name">{player.user_name || 'Spiller'}</div>
+            <div className="pm-kd-slot-meta">
+              {showEloChanges && playerEloChange(player) != null ? (
+                <span
+                  className={`pm-kd-tag ${playerEloChange(player) >= 0 ? 'pm-kd-tag--green' : 'pm-kd-tag--red'}`}
+                >
+                  {playerEloChange(player) >= 0 ? '+' : ''}
+                  {playerEloChange(player)} ELO
+                </span>
+              ) : levelLabel ? (
+                <span className="pm-kd-lvl-badge">Niveau {levelLabel}</span>
+              ) : (
+                <span className="pm-kd-lvl-badge">ELO {playerElo(player)}</span>
+              )}
+              {!showEloChanges && games > 0 ? (
+                <span className="pm-kd-slot-kampe">{games} kampe</span>
+              ) : null}
+            </div>
+          </div>
         </button>
         {canSwitchPlayer ? (
-          <div
-            aria-hidden
-            style={{
-              position: 'absolute',
-              top: -6,
-              left: -4,
-              width: 18,
-              height: 18,
-              borderRadius: 9,
-              background: theme.accentBg,
-              border: `1px solid ${theme.accent}55`,
-              color: theme.accent,
-              fontSize: 11,
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1,
-              pointerEvents: 'none',
-            }}
+          <button
+            type="button"
+            className="pm-kd-slot-action"
+            onClick={() => onSwitchPlayerTeam(matchId, player.user_id, otherTeam)}
+            aria-label={`Flyt ${player.user_name || 'spiller'} til Hold ${otherTeam}`}
           >
             ⇄
-          </div>
+          </button>
         ) : null}
         {canKick && onKickPlayer ? (
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onKickPlayer(matchId, p.user_id, p.user_name);
-            }}
+            className="pm-kd-slot-action pm-kd-slot-action--danger"
+            onClick={() => onKickPlayer(matchId, player.user_id, player.user_name)}
             disabled={kickingBusy}
-            aria-label={`Fjern ${p.user_name || 'spiller'} fra kampen`}
-            style={{
-              position: 'absolute',
-              top: -4,
-              right: -4,
-              width: 16,
-              height: 16,
-              borderRadius: '50%',
-              border: 'none',
-              background: theme.red,
-              color: theme.onAccent,
-              fontSize: 10,
-              fontWeight: 700,
-              cursor: kickingBusy ? 'wait' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 0,
-              lineHeight: 1,
-              zIndex: 1,
-            }}
+            aria-label={`Fjern ${player.user_name || 'spiller'} fra kampen`}
           >
             ×
           </button>
@@ -175,7 +132,7 @@ export function MatchCourtView({
     );
   };
 
-  const renderEmptySlot = (teamNum) => {
+  const renderEmptySlot = (teamNum, slotIndex) => {
     const otherTeam = teamNum === 1 ? 2 : 1;
     const canSwitch =
       !readOnly &&
@@ -183,98 +140,53 @@ export function MatchCourtView({
       myTeam === otherTeam &&
       (status === 'open' || status === 'full') &&
       busyId !== matchId + '-switch';
-    const teamColor = teamNum === 1 ? theme.accent : theme.blue;
-    const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '42px' }}>
-        <button
-          type="button"
-          onClick={canSwitch && onSwitchTeam ? () => onSwitchTeam(matchId, teamNum) : undefined}
-          disabled={!canSwitch}
-          aria-label={canSwitch ? `Skift til Hold ${teamNum}` : `Ledig plads på Hold ${teamNum}`}
-          title={canSwitch ? `Skift til Hold ${teamNum}` : undefined}
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            border: `1.5px dashed ${teamColor}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: canSwitch ? 'pointer' : 'default',
-            background: teamBg,
-            transition: 'all 0.15s',
-            padding: 0,
-            opacity: canSwitch ? 1 : 0.8,
-          }}
-        >
-          <Plus size={12} color={teamColor} />
-        </button>
-        <span style={{ fontSize: '8px', color: teamColor, fontWeight: 700, marginTop: '3px' }}>
-          {canSwitch ? 'Skift' : 'Ledig'}
-        </span>
+      <button
+        key={`empty-t${teamNum}-${slotIndex}`}
+        type="button"
+        className={`pm-kd-slot pm-kd-slot--empty${canSwitch ? ' pm-kd-slot--clickable' : ''}`}
+        onClick={canSwitch && onSwitchTeam ? () => onSwitchTeam(matchId, teamNum) : undefined}
+        disabled={!canSwitch}
+        aria-label={canSwitch ? `Skift til Hold ${teamNum}` : `Ledig plads på Hold ${teamNum}`}
+      >
+        <div className="pm-kd-ghost">
+          {canSwitch ? <Plus size={16} aria-hidden /> : <UserPlus size={16} aria-hidden />}
+        </div>
+        <div>
+          <b>Ledig plads</b>
+          <span className="pm-kd-empty-sub">{canSwitch ? 'SKIFT HIT' : 'BLIV DEN NÆSTE!'}</span>
+        </div>
+      </button>
+    );
+  };
+
+  const renderTeam = (teamNum, players) => {
+    const headerLabel = getMatchCourtHeaderLabel(teamNum, outcomeCtx);
+    const slots = teamSlots(players);
+
+    return (
+      <div key={`team-${teamNum}`}>
+        <div className="pm-kd-team-label">{headerLabel}</div>
+        {slots.map((player, idx) =>
+          player ? renderPlayerSlot(player, teamNum) : renderEmptySlot(teamNum, idx)
+        )}
       </div>
     );
   };
 
-  const showTopTeamLabels =
-    t1Avg !== null &&
-    t2Avg !== null &&
-    (status === 'open' || status === 'full' || status === 'in_progress' || status === 'completed');
-
-  const outcomeCtx = { status, winnerTeam, joined, myTeam };
-  const t1Outcome = getMatchCourtOutcomeClasses(1, outcomeCtx);
-  const t2Outcome = getMatchCourtOutcomeClasses(2, outcomeCtx);
-
   return (
-    <div className="pm-court-wrap pm-kampe-v2-court-wrap">
-      {showTopTeamLabels ? (
-        <div className="pm-court-header">
-          <div
-            className={`pm-court-header-team pm-court-header-team--t1${t1Outcome.header}`}
-          >
-            <span className="pm-court-header-label">
-              {getMatchCourtHeaderLabel(1, outcomeCtx)}
-            </span>
-            {t1Avg !== null ? <span className="pm-court-header-elo">Gns. {t1Avg}</span> : null}
-          </div>
-          <div
-            className={`pm-court-header-team pm-court-header-team--t2${t2Outcome.header}`}
-          >
-            <span className="pm-court-header-label">
-              {getMatchCourtHeaderLabel(2, outcomeCtx)}
-            </span>
-            {t2Avg !== null ? <span className="pm-court-header-elo">Gns. {t2Avg}</span> : null}
-          </div>
-        </div>
-      ) : null}
-      <div className="pm-court">
-        <div className="pm-court-line pm-court-line--service-t1" />
-        <div className="pm-court-line pm-court-line--service-t2" />
-        <div className="pm-court-line pm-court-line--center-t1" />
-        <div className="pm-court-line pm-court-line--center-t2" />
-        <div className="pm-court-net" />
-        <span className="pm-court-vs">vs</span>
-        <div className="pm-court-grid">
-          <div className={`pm-court-side pm-court-side--t1${t1Outcome.side}`}>
-            <div className="pm-court-player-slot pm-court-player-slot--top">
-              {t1[0] ? renderPlayer(t1[0], 1) : renderEmptySlot(1)}
-            </div>
-            <div className="pm-court-player-slot pm-court-player-slot--bottom">
-              {t1[1] ? renderPlayer(t1[1], 1) : renderEmptySlot(1)}
-            </div>
-          </div>
-          <div className={`pm-court-side pm-court-side--t2${t2Outcome.side}`}>
-            <div className="pm-court-player-slot pm-court-player-slot--top">
-              {t2[0] ? renderPlayer(t2[0], 2) : renderEmptySlot(2)}
-            </div>
-            <div className="pm-court-player-slot pm-court-player-slot--bottom">
-              {t2[1] ? renderPlayer(t2[1], 2) : renderEmptySlot(2)}
-            </div>
-          </div>
-        </div>
+    <div className="pm-kampe-v2-court-wrap">
+      <div className="pm-kd-section-h">
+        <h3>Holdene ({filledCount}/4)</h3>
+        {left > 0 && status !== 'completed' && status !== 'in_progress' ? (
+          <span className="pm-kd-tag pm-kd-tag--amber">
+            {left} {left === 1 ? 'plads' : 'pladser'} tilbage
+          </span>
+        ) : null}
       </div>
+      {renderTeam(1, t1)}
+      {renderTeam(2, t2)}
     </div>
   );
 }
