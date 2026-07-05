@@ -7,7 +7,7 @@ test('onboarding requires users to confirm their email address before continuing
   const onboardingPage = await readFile(new URL('../../src/pages/OnboardingPage.jsx', import.meta.url), 'utf8');
 
   assert.match(onboardingPage, /email_confirm/);
-  assert.match(onboardingPage, /Bekr[aæ]ft email/);
+  assert.match(onboardingPage, /Bekr[aæ]ft e-mail/);
   assert.match(onboardingPage, /Emails matcher ikke|E-mailadresserne matcher ikke/);
   assert.match(onboardingPage, /email skrevet ens i begge felter/);
 });
@@ -15,11 +15,11 @@ test('onboarding requires users to confirm their email address before continuing
 test('onboarding explains the signup choices without adding an early profile preview', async () => {
   const onboardingPage = await readFile(new URL('../../src/pages/OnboardingPage.jsx', import.meta.url), 'utf8');
 
-  assert.match(onboardingPage, /bruges til at matche dig med spillere p[aå] samme niveau/i);
+  assert.match(onboardingPage, /LEVEL_CARDS/);
   assert.match(onboardingPage, /vises ikke offentligt/i);
-  assert.match(onboardingPage, /under profil senere/i);
-  assert.match(onboardingPage, /Din profil er klar til at finde makkere/i);
-  assert.match(onboardingPage, /Mangler f[oø]r du kan forts[aæ]tte/i);
+  assert.match(onboardingPage, /Finjustér niveau/);
+  assert.match(onboardingPage, /Mangler før du kan fortsætte/);
+  assert.match(onboardingPage, /stepTitles = \["Opret profil", "Dit niveau", "Dit område", "Din profil"\]/);
   assert.doesNotMatch(onboardingPage, /Forh[aå]ndsvisning af profil[\s\S]*step === 0/);
 });
 

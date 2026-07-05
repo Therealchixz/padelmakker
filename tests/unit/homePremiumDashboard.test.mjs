@@ -8,20 +8,15 @@ const MAKKERE_TAB_URL = new URL('../../src/dashboard/MakkereTab.jsx', import.met
 const RESPONSIVE_CSS_URL = new URL('../../src/responsive.css', import.meta.url)
 const DASHBOARD_PAGE_URL = new URL('../../src/dashboard/DashboardPage.jsx', import.meta.url)
 
-test('home tab uses inline ELO hero with milestone and form', async () => {
+test('home tab uses compact greeting header and quick actions', async () => {
   const homeTab = await readFile(HOME_TAB_URL, 'utf8')
 
-  assert.match(homeTab, /aria-label="Din ELO status"/)
-  assert.match(homeTab, /recentForm/)
-  assert.match(homeTab, /nextEloMilestone/)
-  assert.match(homeTab, /Næste mål/)
-  assert.match(homeTab, /weeklyDelta/)
+  assert.match(homeTab, /greetingText/)
+  assert.match(homeTab, /displayName/)
+  assert.match(homeTab, /data-tour=\{`quick-action-\$\{t\}`\}/)
+  assert.match(homeTab, /Niveau og ELO er ikke det samme/)
   assert.match(homeTab, /className="pm-home-seeking-cta"/)
-  assert.match(homeTab, />Detaljer<\/button>/)
-  assert.doesNotMatch(homeTab, /className="pm-home-elo-scale"/)
-  assert.doesNotMatch(homeTab, /eloScalePct/)
-  assert.doesNotMatch(homeTab, /<span>Begynder<\/span>/)
-  assert.doesNotMatch(homeTab, /className="pm-stat-grid"/)
+  assert.match(homeTab, /data-tour="home-latest-activity"/)
 })
 
 test('home seeking CTA for match filter opens Kampe', async () => {

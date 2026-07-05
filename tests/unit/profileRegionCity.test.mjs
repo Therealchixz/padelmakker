@@ -19,8 +19,8 @@ test('region påkrævet og by valgfri i onboarding og profil', () => {
   assert.doesNotMatch(profileUtils, /meta\.area \|\| meta\.region \|\| meta\.city/);
   assert.match(onboarding, /isValidProfileRegion\(form\.area\)/);
   assert.match(onboarding, /Region.*\*.*valgfri/s);
-  assert.match(onboarding, /Find makker/);
-  assert.match(onboarding, /Kampe/);
+  assert.match(onboarding, /Bekræft e-mail/);
+  assert.match(onboarding, /Dit område/);
   assert.match(makkereTab, /loadError/);
   assert.match(makkereTab, /pm-state-card--error/);
   assert.doesNotMatch(onboarding, /seeking_match/);

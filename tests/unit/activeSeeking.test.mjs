@@ -54,7 +54,7 @@ test('ActiveSeekingPanel integreret på Hjem, Makkere og Kampe', () => {
   const makkere = readFileSync(join(root, 'src/dashboard/MakkereTab.jsx'), 'utf8');
   const kampe = readFileSync(join(root, 'src/dashboard/KampeTab.jsx'), 'utf8');
   assert.match(home, /ActiveSeekingPanel/);
-  assert.match(home, /variant="home"/);
+  assert.match(home, /variant="homeCard"/);
   assert.match(home, /ActiveSeekingOnboardingPrompt/);
   assert.match(makkere, /ActiveSeekingPanel/);
   assert.match(makkere, /channel="makker"/);
@@ -68,7 +68,7 @@ test('filter-sider uden Kanaler-sektion; KampeFilterSheet uden søger-toggle', (
   const sheet = readFileSync(join(root, 'src/components/kampe/KampeFilterSheet.jsx'), 'utf8');
   assert.doesNotMatch(makkerPage, /Kanaler/);
   assert.doesNotMatch(matchPage, /Kanaler/);
-  assert.match(makkerPage, /Dette styrer hvornår du får besked/);
+  assert.match(makkerPage, /Mit makker-filter/);
   assert.match(matchPage, /Dette styrer hvornår du får besked/);
   assert.doesNotMatch(sheet, /Søger kamp/);
   assert.doesNotMatch(sheet, /showSeekingToggle/);

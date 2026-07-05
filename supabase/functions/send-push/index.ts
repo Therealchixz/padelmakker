@@ -42,6 +42,30 @@ const DEFAULT_PUSH_POLICY: PushPolicy = Object.freeze({
 });
 
 const PUSH_POLICY_BY_TYPE: Record<string, Partial<PushPolicy>> = Object.freeze({
+  match_reminder: {
+    channel: "kampe",
+    level: "normal",
+    sendPush: true,
+    silent: false,
+    urgency: "normal",
+    cooldownSeconds: 300,
+  },
+  tournament_reminder: {
+    channel: "kampe",
+    level: "normal",
+    sendPush: true,
+    silent: false,
+    urgency: "normal",
+    cooldownSeconds: 300,
+  },
+  result_nudge: {
+    channel: "resultat",
+    level: "normal",
+    sendPush: true,
+    silent: true,
+    urgency: "low",
+    cooldownSeconds: 300,
+  },
   match_cancelled: {
     channel: "kampe",
     level: "critical",

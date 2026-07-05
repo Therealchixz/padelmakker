@@ -1028,7 +1028,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const switchPlayerTeam = async (matchId, targetUserId, newTeam) => {
     const match = matches.find((m) => String(m.id) === String(matchId));
     const isCreator = match && String(match.creator_id) === String(user.id);
-    if (!isCreator && !isAdmin) return;
+    if (!isCreator && !adminCanAct) return;
 
     const mp = matchPlayers[String(matchId)] || [];
     const target = mp.find((p) => String(p.user_id) === String(targetUserId));
@@ -1223,18 +1223,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
     const isFull = t1 >= 2 && t2 >= 2;
 
-    if (!isFull && !isAdmin) {
+    if (!isFull && !adminCanAct) {
       showToast("Kampen kan kun startes når der er 2 spillere på hvert hold (2 mod 2).");
       return;
     }
 
-    if (!isFull && isAdmin) {
+    if (!isFull && adminCanAct) {
       const ok = await ask({
         message: "Kampen er ikke fuld endnu. Vil du gennemtvinge start som admin?",
         confirmLabel: "Ja, start nu",
       });
       if (!ok) return;
-    } else if (isAdmin && !matchPlayers[matchId]?.some(p => p.user_id === user.id)) {
+    } else if (adminCanAct && !matchPlayers[matchId]?.some(p => p.user_id === user.id)) {
       const ok = await ask({
         message: "Vil du starte denne kamp som admin?",
         confirmLabel: "Ja, start",
@@ -1258,7 +1258,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
     const status = getStatus(match);
-    if (status === "completed" && !isAdmin) {
+    if (status === "completed" && !adminCanAct) {
       showToast("Du kan ikke slette en afsluttet kamp.");
       return;
     }
@@ -1281,13 +1281,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     try {
       const mpBefore = matchPlayers[matchId] || [];
       const isCreator = String(match.creator_id) === String(user.id);
-      if (isAdmin && !isCreator) {
+      if (adminCanAct && !isCreator) {
         const { data, error } = await supabase.rpc("admin_delete_match", { p_match_id: matchId });
         if (error) throw error;
         if (!data?.ok) {
           throw new Error(data?.error || "Kunne ikke slette kampen som admin");
         }
-      } else if (isAdmin && isCreator) {
+      } else if (adminCanAct && isCreator) {
         const { data, error } = await supabase.from("matches").delete().eq("id", matchId).select("id");
         if (error) throw error;
         if (!data?.length) throw new Error("Kampen blev ikke slettet");
@@ -1656,7 +1656,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         result: mr,
         players: mp,
         confirmedBy: user.id,
-        isAdmin,
+        isAdmin: adminCanAct,
         showToast,
       });
       if (!confirmation.ok) {
@@ -2106,7 +2106,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           const t2Avg = teamStats.t2Avg;
 
           const renderPlayer = (p, teamNum) => {
-            const canKick = (isCreator || isAdmin) && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
+            const canKick = (isCreator || adminCanAct) && String(p.user_id) !== String(user.id) && (status === "open" || status === "full");
             const kickingBusy = busyId === m.id + '-kick-' + p.user_id;
             const teamColor = teamNum === 1 ? theme.accent : theme.blue;
             const teamBg = teamNum === 1 ? theme.accentBg : theme.blueBg;
@@ -2534,7 +2534,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           {/* ---- PRIMARY: Bekræft / Afvis (kun spiller i kampen) ---- */}
           {showPrimaryConfirm && (
             <div style={{ display: "flex", gap: "8px" }}>
-              {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok && (
+              {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin: adminCanAct }).ok && (
                 <button
                   onClick={() => confirmResult(m.id)}
                   disabled={busy}
@@ -2676,7 +2676,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                   {/* Admin override: Bekræft / Slet resultat */}
                   {adminCanForceConfirm && (
                     <div style={{ display: "flex", gap: "8px" }}>
-                      {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok && (
+                      {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin: adminCanAct }).ok && (
                         <button
                           onClick={() => confirmResult(m.id)}
                           disabled={busy}
@@ -2935,7 +2935,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       };
     }
     if (mr && !mr.confirmed && isPlayerInMatch) {
-      if (canConfirmPadelMatchResult({ result: mr, players: bundle.mp, confirmedBy: user.id, isAdmin }).ok) {
+      if (canConfirmPadelMatchResult({ result: mr, players: bundle.mp, confirmedBy: user.id, isAdmin: adminCanAct }).ok) {
         return {
           label: "Bekræft resultat",
           onClick: () => {
@@ -3324,7 +3324,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 ) : null}
                 {adminCanForceConfirm ? (
                   <div style={{ display: "flex", gap: "8px" }}>
-                    {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin }).ok ? (
+                    {canConfirmPadelMatchResult({ result: mr, players: mp, confirmedBy: user.id, isAdmin: adminCanAct }).ok ? (
                       <button
                         type="button"
                         onClick={() => confirmResult(m.id)}

@@ -36,6 +36,7 @@ import {
   fetchAdminSubTabBadges,
 } from '../lib/userModeration';
 import { subscribeToPush, isPushSupported } from '../lib/pushNotifications';
+import { useAdminPinSession } from '../lib/useAdminPinSession';
 import { BADGE_POLL_VISIBLE_MS, usePageVisible } from '../lib/pageVisibility';
 import {
   scrollDashboardToTop,
@@ -729,9 +730,11 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isAdmin = user?.role === 'admin';
+  const { adminPinVerified } = useAdminPinSession(isAdmin);
+  const adminCanConfirmResults = isAdmin && adminPinVerified;
   const unreadMessages = useUnreadMessageCount(user?.id);
   const pendingLigaInvites = usePendingLigaInvites(user?.id);
-  const pendingKampe = usePendingKampeBadge(user?.id, isAdmin);
+  const pendingKampe = usePendingKampeBadge(user?.id, adminCanConfirmResults);
   const adminAttentionCount = useAdminAttentionBadge(user?.id, isAdmin);
   const [adminInitialSubTab, setAdminInitialSubTab] = useState(null);
   const unreadNotifs = useUnreadNotificationsCount(user?.id);
