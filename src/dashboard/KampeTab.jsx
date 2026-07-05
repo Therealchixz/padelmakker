@@ -1058,11 +1058,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
       if (error) throw error;
       /* Genindlæs match_players fra DB — stale React state kan ramme forkert tal hvis flere forlader samtidigt. */
-      const { data: remainingRows } = await supabase
+      const { data: remainingRows, error: remainingError } = await supabase
         .from("match_players")
         .select("user_id, team")
         .eq("match_id", matchId);
-      const mp = (remainingRows || []).filter(p => p.user_id !== user.id);
+      if (remainingError) throw remainingError;
+      const mp = (remainingRows ?? []).filter(p => p.user_id !== user.id);
 
       if (mp.length === 0) {
         await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId);
@@ -1180,11 +1181,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       const { error } = await supabase.from("match_players").delete()
         .eq("match_id", matchId).eq("user_id", targetUserId);
       if (error) throw error;
-      const { data: remainingRows } = await supabase
+      const { data: remainingRows, error: remainingError } = await supabase
         .from("match_players")
         .select("user_id, team")
         .eq("match_id", matchId);
-      const mp = remainingRows || [];
+      if (remainingError) throw remainingError;
+      const mp = remainingRows ?? [];
       await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
       showToast("Spiller fjernet.");
       await loadData();
