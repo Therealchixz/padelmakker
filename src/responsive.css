@@ -7132,9 +7132,10 @@ button,
   font-weight: 700;
   font-family: inherit;
   border: none;
-  background: var(--pm-navy, #16377E);
+  background: var(--pm-navy);
   color: #fff;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(22, 55, 126, 0.22);
 }
 
 .pm-kampe-v2-list-cta--on-waitlist {
@@ -7153,7 +7154,8 @@ button,
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--pm-danger) 35%, transparent);
 }
 
-.pm-kampe-v2-list-card--dull {
+.pm-kampe-v2-list-card--dull .pm-kampe-v2-list-card-hit,
+.pm-kampe-v2-list-card--dull .pm-kampe-v2-list-card-bottom-open {
   opacity: 0.72;
 }
 
