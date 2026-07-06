@@ -162,7 +162,7 @@ export function KampeMatchListCard({
         {!isCompleted ? (
           <button
             type="button"
-            className={`pm-kampe-v2-list-cta${showWaitlist ? ' pm-kampe-v2-list-cta--ghost' : ''}`}
+            className={`pm-kampe-v2-list-cta${showWaitlist && onWaitlist ? ' pm-kampe-v2-list-cta--on-waitlist' : ''}`}
             onClick={() => onCtaClick?.()}
             disabled={ctaBusy}
             aria-label={ctaLabel}

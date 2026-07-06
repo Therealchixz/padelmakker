@@ -7137,10 +7137,11 @@ button,
   cursor: pointer;
 }
 
-.pm-kampe-v2-list-cta--ghost {
+.pm-kampe-v2-list-cta--on-waitlist {
   background: var(--pm-surface, #fff);
   color: var(--pm-navy, #16377E);
-  border: 1.5px solid var(--pm-border, #E2E8F0);
+  border: 1.5px solid var(--pm-green, #059669);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-green, #059669) 12%, transparent);
 }
 
 .pm-kampe-v2-list-cta:disabled {
