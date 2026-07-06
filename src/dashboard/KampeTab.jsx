@@ -1084,6 +1084,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   const requestJoin = async (matchId) => {
     setBusyId(matchId + '-req');
+    const match = matches.find((m) => String(m.id) === String(matchId));
+    const isClosed = (match?.match_type || 'open') === 'closed';
     try {
       const { error } = await supabase.from("match_join_requests").insert({
         match_id: matchId,
@@ -1093,23 +1095,41 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         status: "pending",
       });
       if (error) throw error;
-      // Notify creator via dedikeret RPC (kræver IKKE at ansøger er i match_players)
       const { error: nErr } = await supabase.rpc("notify_creator_join_request", {
         p_match_id: matchId,
-        p_title: "Ny tilmeldingsanmodning 🔒",
-        p_body: `${myDisplayName} anmoder om at deltage i din lukkede kamp.`,
+        p_title: isClosed ? "Ny tilmeldingsanmodning 🔒" : "Ny på ventelisten",
+        p_body: isClosed
+          ? `${myDisplayName} anmoder om at deltage i din lukkede kamp.`
+          : `${myDisplayName} vil på ventelisten til din fulde kamp.`,
       });
       if (nErr) console.warn("notify_creator_join_request:", nErr.message || nErr);
-      showToast("Anmodning sendt! Venter på godkendelse 🔒");
+      showToast(isClosed ? "Anmodning sendt! Venter på godkendelse 🔒" : "Du er skrevet på ventelisten!");
       await loadData();
     } catch (e) {
       if (e.code === "23505") {
-        showToast("Du har allerede anmodet om at deltage i denne kamp.");
+        showToast(isClosed
+          ? "Du har allerede anmodet om at deltage i denne kamp."
+          : "Du står allerede på ventelisten.");
       } else {
         showToast("Fejl: " + (e.message || "Prøv igen"));
       }
     }
     finally { setBusyId(null); }
+  };
+
+  const cancelJoinRequest = async (matchId, requestId) => {
+    setBusyId(matchId + '-cancel-req');
+    try {
+      const { error } = await supabase.from("match_join_requests")
+        .delete()
+        .eq("id", requestId)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      showToast("Du er fjernet fra ventelisten.");
+      await loadData();
+    } catch (e) {
+      showToast("Fejl: " + (e.message || "Prøv igen"));
+    } finally { setBusyId(null); }
   };
 
   const approveJoinRequest = async (matchId, requestId, reqUserId, reqUserName, reqUserEmoji) => {
@@ -2018,7 +2038,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       busy,
     } = cardState;
 
-    if (!isClosed && status === "open" && left > 0 && !joined) {
+    if (!isClosed && left > 0 && !joined) {
       return {
         label: "Tilmeld mig",
         onClick: () => {
@@ -2042,6 +2062,33 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       if (myRequest.status === "approved") {
         return {
           label: "Vælg hold og anmod",
+          onClick: () => {
+            setDetailMatchId(null);
+            setTeamSelectMatch(m.id);
+          },
+          disabled: busy,
+        };
+      }
+    }
+    if (!isClosed && (status === "open" || status === "full") && isFull && !joined && !isCreator) {
+      if (!myRequest) {
+        return {
+          label: busyId === m.id + "-req" ? "Sender..." : "Skriv på venteliste",
+          onClick: () => void requestJoin(m.id),
+          disabled: busyId === m.id + "-req",
+        };
+      }
+      if (myRequest.status === "pending") {
+        return {
+          label: busyId === m.id + "-cancel-req" ? "Fjerner..." : "Forlad venteliste",
+          onClick: () => void cancelJoinRequest(m.id, myRequest.id),
+          disabled: busyId === m.id + "-cancel-req",
+          variant: "secondary",
+        };
+      }
+      if (myRequest.status === "approved") {
+        return {
+          label: "Vælg hold og tilmeld",
           onClick: () => {
             setDetailMatchId(null);
             setTeamSelectMatch(m.id);
@@ -2084,10 +2131,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       }
     }
     return null;
-  }, [busyId, confirmResult, isAdmin, requestJoin, startMatch, user.id]);
+  }, [busyId, cancelJoinRequest, confirmResult, isAdmin, requestJoin, startMatch, user.id]);
 
   const renderJoinRequestsPanel = (m, bundle) => {
-    const { isCreator, pendingRequests } = bundle.cardState;
+    const { isCreator, pendingRequests, isClosed, left } = bundle.cardState;
     const key = String(m.id);
     const loading = joinRequestsLoadingMatchId === key;
 
@@ -2103,11 +2150,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     if (pendingRequests.length === 0) return null;
 
+    const canApproveNow = isClosed || left > 0;
+
     return (
       <div className="pm-kampe-v2-join-requests">
         <div className="pm-kampe-v2-join-requests-title">
-          🔒 Tilmeldingsanmodninger ({pendingRequests.length})
+          {isClosed ? `🔒 Tilmeldingsanmodninger (${pendingRequests.length})` : `Venteliste (${pendingRequests.length})`}
         </div>
+        {!canApproveNow ? (
+          <p className="pm-kampe-v2-join-requests-hint">
+            Kampen er fuld — godkend spillere når en plads bliver ledig.
+          </p>
+        ) : null}
         <div className="pm-kampe-v2-join-requests-list">
           {pendingRequests.map((req) => (
             <div key={req.id} className="pm-kampe-v2-join-request-row">
@@ -2124,8 +2178,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <button
                   type="button"
                   onClick={() => approveJoinRequest(m.id, req.id, req.user_id, req.user_name, req.user_emoji)}
-                  disabled={busyId === m.id + "-approve-" + req.id}
+                  disabled={!canApproveNow || busyId === m.id + "-approve-" + req.id}
                   className="pm-kampe-v2-join-request-btn pm-kampe-v2-join-request-btn--approve"
+                  title={!canApproveNow ? "Vent til en plads bliver ledig" : undefined}
                 >
                   {busyId === m.id + "-approve-" + req.id ? "..." : "✓ Godkend"}
                 </button>
@@ -2523,13 +2578,30 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           isFull={cardState.isFull}
           isClosed={cardState.isClosed}
           joined={cardState.joined}
+          myRequest={cardState.myRequest}
           myEloChange={myEloChange}
           unreadCount={cardState.attentionCount}
+          ctaBusy={busyId === m.id + '-req'}
           onClick={() => {
             if (matchUnreadByIdRef.current[matchKey]) {
               void markMatchNotifsRead(m.id);
             }
             setDetailMatchId(m.id);
+          }}
+          onCtaClick={() => {
+            if (cardState.joined) {
+              setDetailMatchId(m.id);
+              return;
+            }
+            if (cardState.isFull && !cardState.isClosed) {
+              if (cardState.myRequest?.status === 'pending') {
+                setDetailMatchId(m.id);
+                return;
+              }
+              void requestJoin(m.id);
+              return;
+            }
+            setTeamSelectMatch(m.id);
           }}
         />
       </div>
@@ -2541,6 +2613,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     myUidStr,
     observeMatchCard,
     profilesById,
+    requestJoin,
   ]);
 
   const toolbarFormatTabs = [

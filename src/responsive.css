@@ -7075,11 +7075,77 @@ button,
   border: 1px solid var(--pm-border);
   border-radius: 14px;
   background: var(--pm-surface);
-  padding: 12px 14px;
-  cursor: pointer;
+  padding: 0;
+  cursor: default;
   font-family: inherit;
   box-shadow: 0 2px 8px rgba(2, 6, 23, 0.04);
   transition: border-color 140ms ease, box-shadow 140ms ease;
+  overflow: hidden;
+}
+
+.pm-kampe-v2-list-card-hit {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 12px 14px 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.pm-kampe-v2-list-card-hit:focus-visible,
+.pm-kampe-v2-list-card-bottom-open:focus-visible,
+.pm-kampe-v2-list-cta:focus-visible {
+  outline: 2px solid var(--pm-navy);
+  outline-offset: -2px;
+}
+
+.pm-kampe-v2-list-card-bottom-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.pm-kampe-v2-list-card-cta-row {
+  padding: 0 14px 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pm-kampe-v2-list-cta {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  background: var(--pm-navy, #16377E);
+  color: #fff;
+  cursor: pointer;
+}
+
+.pm-kampe-v2-list-cta--ghost {
+  background: var(--pm-surface, #fff);
+  color: var(--pm-navy, #16377E);
+  border: 1.5px solid var(--pm-border, #E2E8F0);
+}
+
+.pm-kampe-v2-list-cta:disabled {
+  opacity: 0.65;
+  cursor: default;
 }
 
 .pm-kampe-v2-list-card--unread {
@@ -7255,8 +7321,8 @@ button,
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 0;
+  padding: 12px 14px;
   border-top: 1px solid var(--pm-border, #E2E8F0);
 }
 
@@ -7697,6 +7763,13 @@ button,
   font-weight: 700;
   color: var(--pm-text-mid);
   margin-bottom: 8px;
+}
+
+.pm-kampe-v2-join-requests-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--pm-text-light);
+  line-height: 1.45;
 }
 
 .pm-kampe-v2-join-requests-list {
