@@ -9,7 +9,7 @@ export function LevelRangeSlider({
   onMaxChange,
   min = 1.0,
   max = 5.0,
-  step = 0.5,
+  step = 0.1,
 }) {
   const toPercent = (v) => ((v - min) / (max - min)) * 100;
 
