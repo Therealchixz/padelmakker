@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Play, Plus, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Play, Plus, Search, Check } from 'lucide-react';
+import { eloToLevel, formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { supabase } from '../lib/supabase';
 import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
 import { completionMsForLeague } from '../lib/resultErrorReports';
-import { shortLigaDate } from '../lib/ligaDisplayUtils';
+import { shortLigaDate, ligaIsSwiss } from '../lib/ligaDisplayUtils';
 import { validatePadelScore } from '../lib/ligaStandings';
-import { LigaStandingsTable } from './LigaDetailSheet';
+import { LigaStandingsTable, LigaDivisionStandings } from './LigaDetailSheet';
 
 const SWISS_RULES = [
   { icon: '🎾', text: 'Hvert hold spiller én kamp per runde — ingen eliminering, alle spiller videre.' },
@@ -75,10 +76,17 @@ export function SwissRulesBox({ collapsible = false, storageKey = '' }) {
   );
 }
 
-function PartnerSearch({ userId, onSelect }) {
+function partnerMetaLine(p) {
+  const lvl = formatPlaytomicLevel(eloToLevel(Number(p.elo_rating) || 1000));
+  const games = Number(p.gamesTogether) || 0;
+  return games > 0 ? `Niveau ${lvl} · spillet ${games} ${games === 1 ? 'kamp' : 'kampe'} sammen` : `Niveau ${lvl}`;
+}
+
+function PartnerSearch({ userId, onSelect, selectedId = null }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
+  const [suggested, setSuggested] = useState([]);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -87,8 +95,30 @@ function PartnerSearch({ userId, onSelect }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // Foreslåede makkere: dem brugeren har spillet flest 2v2-kampe med
   useEffect(() => {
-    if (query.length < 2) { setResults([]); setOpen(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: mine } = await supabase.from('match_players').select('match_id').eq('user_id', userId);
+        const matchIds = [...new Set((mine || []).map((r) => r.match_id).filter(Boolean))];
+        if (matchIds.length === 0) return;
+        const { data: co } = await supabase.from('match_players').select('user_id').in('match_id', matchIds).neq('user_id', userId);
+        const counts = {};
+        (co || []).forEach((r) => { if (r.user_id) counts[r.user_id] = (counts[r.user_id] || 0) + 1; });
+        const topIds = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
+        if (topIds.length === 0) return;
+        const { data: profs } = await supabase.from('profiles').select('id, full_name, name, avatar, elo_rating').in('id', topIds);
+        const byId = Object.fromEntries((profs || []).map((p) => [p.id, p]));
+        const list = topIds.map((id) => ({ ...(byId[id] || { id }), gamesTogether: counts[id] })).filter((p) => p.full_name || p.name);
+        if (!cancelled) setSuggested(list);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  useEffect(() => {
+    if (query.length < 2) { setResults([]); return; }
     const t = setTimeout(async () => {
       const { data } = await supabase
         .from('profiles')
@@ -96,43 +126,61 @@ function PartnerSearch({ userId, onSelect }) {
         .or(`full_name.ilike.%${query}%,name.ilike.%${query}%`)
         .neq('id', userId)
         .limit(6);
-      setResults(data || []);
+      const gamesById = Object.fromEntries(suggested.map((s) => [s.id, s.gamesTogether]));
+      setResults((data || []).map((p) => ({ ...p, gamesTogether: gamesById[p.id] || 0 })));
       setOpen(true);
     }, 280);
     return () => clearTimeout(t);
-  }, [query, userId]);
+  }, [query, userId, suggested]);
+
+  const PartnerRow = ({ p, inDropdown }) => {
+    const name = p.full_name || p.name || 'Spiller';
+    const isSel = selectedId && p.id === selectedId;
+    return (
+      <button
+        type="button"
+        onClick={() => { onSelect(p); setQuery(''); setOpen(false); }}
+        style={{
+          width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 12px', cursor: 'pointer', background: isSel ? theme.accentBg : 'transparent',
+          border: inDropdown ? 'none' : '1.5px solid ' + (isSel ? theme.accent : theme.border),
+          borderRadius: inDropdown ? 0 : 12, marginBottom: inDropdown ? 0 : 8,
+          borderBottom: inDropdown ? '1px solid ' + theme.border + '80' : undefined,
+        }}
+      >
+        <AvatarCircle avatar={p.avatar} size={34} emojiSize="15px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border, flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+          <div style={{ fontSize: 11.5, color: theme.textLight, marginTop: 1 }}>{partnerMetaLine(p)}</div>
+        </div>
+        {isSel ? <Check size={18} color={theme.accent} strokeWidth={2.5} /> : null}
+      </button>
+    );
+  };
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div ref={ref}>
       <div style={{ position: 'relative' }}>
         <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: theme.textLight, pointerEvents: 'none' }} />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => query.length >= 2 && setOpen(true)}
           placeholder="Søg efter makker..."
           style={{ ...inputStyle, paddingLeft: '32px' }}
         />
+        {open && results.length > 0 && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: theme.surface, border: '1px solid ' + theme.border, borderRadius: '8px', boxShadow: theme.shadow, zIndex: 100, marginTop: '4px', overflow: 'hidden' }}>
+            {results.map((p) => <PartnerRow key={p.id} p={p} inDropdown />)}
+          </div>
+        )}
       </div>
-      {open && results.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: theme.surface, border: '1px solid ' + theme.border, borderRadius: '8px', boxShadow: theme.shadow, zIndex: 100, marginTop: '4px' }}>
-          {results.map((p) => {
-            const name = p.full_name || p.name || 'Spiller';
-            return (
-              <div
-                key={p.id}
-                onClick={() => { onSelect(p); setQuery(name); setOpen(false); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid ' + theme.border + '80' }}
-              >
-                <AvatarCircle avatar={p.avatar} size={30} emojiSize="14px" style={{ background: theme.accentBg, border: '1px solid ' + theme.border, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600 }}>{name}</div>
-                  <div style={{ fontSize: '11px', color: theme.textLight }}>ELO {Math.round(Number(p.elo_rating) || 1000)}</div>
-                </div>
-              </div>
-            );
-          })}
+      {query.length < 2 && suggested.length > 0 ? (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Foreslåede makkere</div>
+          {suggested.map((p) => <PartnerRow key={p.id} p={p} />)}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -152,7 +200,7 @@ function hashStr(s) {
   return Math.abs(h);
 }
 
-const TEAM_COLORS = ['#16377E', '#059669', '#D97706', '#7C3AED', '#DC2626', '#0891B2'];
+const TEAM_COLORS = ['#16377E', '#059669', '#D97706', '#7C3AED', '#DC2626', '#0891B2']; // ui-hex-allow: dekorativ hold-palet (${color}22 alpha-tints, kan ikke være CSS-var)
 
 function teamColor(teamId) {
   return TEAM_COLORS[hashStr(String(teamId || 'x')) % TEAM_COLORS.length];
@@ -197,8 +245,8 @@ function RegistrationDetail({
           <div className="pm-liga-v2-meta-card-val">{shortLigaDate(league.start_date)}</div>
         </div>
         <div className="pm-liga-v2-meta-card">
-          <div className="pm-liga-v2-meta-card-lbl">Frist</div>
-          <div className="pm-liga-v2-meta-card-val">{shortLigaDate(league.end_date)}</div>
+          <div className="pm-liga-v2-meta-card-lbl">{league.registration_deadline ? 'Frist' : 'Slut'}</div>
+          <div className="pm-liga-v2-meta-card-val">{shortLigaDate(league.registration_deadline || league.end_date)}</div>
         </div>
         <div className="pm-liga-v2-meta-card">
           <div className="pm-liga-v2-meta-card-lbl">Pris</div>
@@ -317,11 +365,11 @@ function RegistrationDetail({
 
       {totalRounds ? (
         <p style={{ fontSize: 11, color: theme.textLight, textAlign: 'center', margin: '0 0 16px' }}>
-          {totalRounds} runder · 2 pr. hold · Swiss-parring
+          {totalRounds} runder · 2 pr. hold{ligaIsSwiss(league) ? ' · Swiss-parring' : ''}
         </p>
       ) : null}
 
-      <SwissRulesBox collapsible storageKey="pm-liga-swiss-rules" />
+      {ligaIsSwiss(league) ? <SwissRulesBox collapsible storageKey="pm-liga-swiss-rules" /> : null}
 
       {myTeam ? (
         <div
@@ -350,7 +398,7 @@ function RegistrationDetail({
             style={{ ...inputStyle, marginBottom: 10 }}
           />
           <label style={labelStyle}>Din makker</label>
-          <PartnerSearch userId={user.id} onSelect={setSelectedPartner} />
+          <PartnerSearch userId={user.id} onSelect={setSelectedPartner} selectedId={selectedPartner?.id} />
           {selectedPartner ? (
             <div className="pm-card-row-item pm-card-row-item--accent" style={{ marginTop: 8 }}>
               <AvatarCircle avatar={selectedPartner.avatar} size={24} emojiSize="12px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
@@ -435,6 +483,13 @@ function ActiveDetail({
   const opponentTeam = opponentTeamId ? teams.find((t) => t.id === opponentTeamId) : null;
   const pendingCount = (matchesByLeague[league.id] || []).filter((m) => m.round_number === league.current_round && m.status === 'pending').length;
 
+  // Per-sæt score-input (udleder selv vinder + score-tekst)
+  const [sets, setSets] = useState([{ a: 0, b: 0 }, { a: 0, b: 0 }, { a: 0, b: 0 }]);
+  useEffect(() => {
+    // Nulstil sæt når man åbner/lukker indberetning
+    setSets([{ a: 0, b: 0 }, { a: 0, b: 0 }, { a: 0, b: 0 }]);
+  }, [reportingMatch]);
+
   return (
     <>
       {teams.length > 0 ? (
@@ -442,7 +497,7 @@ function ActiveDetail({
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
             Holdrangliste
           </div>
-          <LigaStandingsTable standings={standings} myTeamId={myTeam?.id} />
+          <LigaDivisionStandings standings={standings} myTeamId={myTeam?.id} numDivisions={league.num_divisions} />
         </>
       ) : null}
 
@@ -520,51 +575,75 @@ function ActiveDetail({
                   </div>
                 ) : (
                   <div>
-                    <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Score (påkrævet)</div>
-                      <input
-                        value={scoreText}
-                        onChange={(e) => setScoreText(e.target.value)}
-                        placeholder="F.eks. 6-4"
-                        style={{ ...inputStyle, fontSize: 18, textAlign: 'center', fontWeight: 700, letterSpacing: '0.08em' }}
-                      />
-                    </div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Hvem vandt?</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-                      {[
-                        { team: myTeam, label: 'Jeres hold' },
-                        { team: opponentTeam, label: 'Modstanderne' },
-                      ].map(({ team, label }) => {
-                        const isSelected = selectedWinnerId === team.id;
-                        return (
-                          <button
-                            key={team.id}
-                            type="button"
-                            onClick={() => setSelectedWinnerId(team.id)}
-                            style={{ border: '2px solid ' + (isSelected ? theme.green : theme.border), background: isSelected ? theme.greenBg : theme.surface, borderRadius: 10, padding: '12px 8px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }}
-                          >
-                            <div style={{ fontSize: 9, fontWeight: 700, color: isSelected ? theme.green : theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: isSelected ? theme.green : theme.text, marginBottom: 8 }}>{team.name}</div>
-                            {isSelected ? <div style={{ fontSize: 18, marginTop: 6 }}>🏆</div> : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const err = validatePadelScore(scoreText);
-                          if (err) { showToast(err); return; }
-                          if (!selectedWinnerId) { showToast('Vælg en vinder.'); return; }
-                          setConfirmPending({ winnerId: selectedWinnerId, score: scoreText.trim() });
-                        }}
-                        style={{ ...btn(true), padding: '9px 18px', fontSize: 13, opacity: (!scoreText || !selectedWinnerId) ? 0.5 : 1 }}
-                      >
-                        Fortsæt →
-                      </button>
-                      <button type="button" onClick={cancelReporting} style={{ ...btn(false), padding: '8px 12px', fontSize: 12 }}>Annullér</button>
-                    </div>
+                    {(() => {
+                      const played = sets.filter((s) => s.a + s.b > 0);
+                      const tiedAfterTwo = played.length === 2
+                        && ((sets[0].a > sets[0].b ? 1 : sets[0].b > sets[0].a ? 2 : 0)
+                          !== (sets[1].a > sets[1].b ? 1 : sets[1].b > sets[1].a ? 2 : 0));
+                      const visibleSets = tiedAfterTwo || (sets[2].a + sets[2].b > 0) ? 3 : 2;
+                      let wonA = 0, wonB = 0;
+                      played.forEach((s) => { if (s.a > s.b) wonA++; else if (s.b > s.a) wonB++; });
+                      const winnerId = wonA > wonB ? myTeam.id : wonB > wonA ? opponentTeam.id : null;
+                      const scoreStr = played.map((s) => `${s.a}-${s.b}`).join(', ');
+
+                      const bump = (idx, side, delta) => {
+                        setSets((prev) => prev.map((s, i) => i === idx
+                          ? { ...s, [side]: Math.max(0, Math.min(9, s[side] + delta)) }
+                          : s));
+                      };
+
+                      const Stepper = ({ idx, side, value }) => (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <button type="button" aria-label="minus" onClick={() => bump(idx, side, -1)}
+                            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>−</button>
+                          <span style={{ minWidth: 22, textAlign: 'center', fontSize: 18, fontWeight: 800, color: theme.text, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+                          <button type="button" aria-label="plus" onClick={() => bump(idx, side, 1)}
+                            style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: theme.accent, color: 'var(--pm-on-accent)', fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>+</button>
+                        </div>
+                      );
+
+                      return (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 2px 8px' }}>
+                            <span>{myTeam.name.split(' & ')[0]} …</span>
+                            <span>Score pr. sæt</span>
+                            <span>{opponentTeam.name.split(' & ')[0]} …</span>
+                          </div>
+                          {Array.from({ length: visibleSets }, (_, idx) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', marginBottom: 8, border: '1px solid ' + theme.border, borderRadius: 10, background: theme.surface }}>
+                              <Stepper idx={idx} side="a" value={sets[idx].a} />
+                              <span style={{ fontSize: 10, fontWeight: 700, color: theme.textLight }}>SÆT {idx + 1}{idx === 2 ? ' (afgørende)' : ''}</span>
+                              <Stepper idx={idx} side="b" value={sets[idx].b} />
+                            </div>
+                          ))}
+                          <div style={{ textAlign: 'center', fontSize: 12, color: theme.textMid, margin: '4px 0 14px' }}>
+                            {winnerId ? (
+                              <>Vinder: <strong style={{ color: theme.green }}>{winnerId === myTeam.id ? myTeam.name : opponentTeam.name}</strong> · {scoreStr}</>
+                            ) : played.length === 0 ? 'Indtast sæt-scores' : 'Uafgjort — spil et afgørende sæt'}
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!scoreStr || played.length < 2) { showToast('Indtast mindst 2 sæt.'); return; }
+                                for (const s of played) {
+                                  const err = validatePadelScore(`${s.a}-${s.b}`);
+                                  if (err) { showToast(`Sæt ${s.a}-${s.b}: ${err}`); return; }
+                                }
+                                if (!winnerId) { showToast('Resultatet er uafgjort — spil et afgørende sæt.'); return; }
+                                setScoreText(scoreStr);
+                                setSelectedWinnerId(winnerId);
+                                setConfirmPending({ winnerId, score: scoreStr });
+                              }}
+                              style={{ ...btn(true), padding: '9px 18px', fontSize: 13, opacity: winnerId ? 1 : 0.5 }}
+                            >
+                              Fortsæt →
+                            </button>
+                            <button type="button" onClick={cancelReporting} style={{ ...btn(false), padding: '8px 12px', fontSize: 12 }}>Annullér</button>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 )
               ) : (
@@ -638,7 +717,7 @@ function CompletedDetail({ league, standings, myTeam, isCreator }) {
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
             Slutstilling
           </div>
-          <LigaStandingsTable standings={standings} myTeamId={myTeam?.id} />
+          <LigaDivisionStandings standings={standings} myTeamId={myTeam?.id} numDivisions={league.num_divisions} />
         </>
       ) : null}
       {isCreator ? (

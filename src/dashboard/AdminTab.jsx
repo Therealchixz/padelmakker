@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, font, btn, inputStyle, heading, labelStyle } from '../lib/platformTheme';
-import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle, Smartphone } from 'lucide-react';
+import { Search, User, Swords, Trash2, ShieldAlert, ShieldCheck, Edit2, X, ChevronUp, ChevronDown, AlertTriangle, CheckCircle2, RefreshCw, Flag, MessageCircle, AlertCircle, Smartphone, LayoutDashboard, ChevronRight } from 'lucide-react';
 import {
   dismissAdminUserReportNotificationsIfQueueEmpty,
   fetchAdminSubTabBadges,
@@ -88,9 +88,17 @@ function adminMatchStatusBucket(status, kind) {
   return 'open';
 }
 
+function adminMatchHasPendingResult(row) {
+  return (row.match_results || []).some((r) => !r.confirmed);
+}
+
 function sortAndFilterAdminMatches(rows, kind, statusFilter) {
   const sorted = [...rows].sort((a, b) => adminMatchSortMs(b, kind) - adminMatchSortMs(a, kind));
   if (statusFilter === 'all') return sorted;
+  if (statusFilter === 'pending_confirm') {
+    if (kind !== '2v2') return sorted;
+    return sorted.filter(adminMatchHasPendingResult);
+  }
   return sorted.filter((row) => adminMatchStatusBucket(row.status, kind) === statusFilter);
 }
 
@@ -107,6 +115,47 @@ function formatDateTimeDa(value) {
   }).format(dt);
 }
 
+/** Fælles audit-log-panel — bruges af både Oversigt (begrænset + "Se hele") og Konsol (fuld). */
+function AdminAuditLogPanel({ title, emptyText, loading, error, entries, limit = null, onSeeAll = null }) {
+  const shown = limit ? entries.slice(0, limit) : entries;
+  return (
+    <div className="pm-ui-card pm-admin-console-panel">
+      <div className="pm-admin-console-panel-head">
+        <div className="pm-admin-console-panel-title">{title}</div>
+        <div className="pm-admin-console-panel-meta">
+          {loading ? 'Indlæser...' : `${entries.length} poster`}
+        </div>
+      </div>
+      {error ? <div className="pm-admin-error-msg">{error}</div> : null}
+      {!error && entries.length === 0 && !loading ? (
+        <div className="pm-admin-empty">{emptyText}</div>
+      ) : null}
+      {entries.length > 0 ? (
+        <div className="pm-admin-audit-list">
+          {shown.map((entry) => (
+            <div key={entry.id} className="pm-admin-audit-entry">
+              <div className="pm-admin-audit-entry-head">
+                <span className="pm-admin-audit-action">{adminAuditActionLabel(entry.action)}</span>
+                <span className="pm-admin-audit-time">{formatDateTimeDa(entry.created_at)}</span>
+              </div>
+              {entry.target_user_id ? (
+                <div className="pm-admin-audit-target">
+                  Bruger: {String(entry.target_user_id).slice(0, 8)}…
+                </div>
+              ) : null}
+            </div>
+          ))}
+          {onSeeAll && limit && entries.length > limit ? (
+            <button type="button" className="pm-admin-audit-more" onClick={onSeeAll} style={btn(false)}>
+              Se hele admin-loggen
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function AdminTab({ initialSubTab = null }) {
   const { user } = useAuth();
   const ask = useConfirm();
@@ -115,8 +164,8 @@ export function AdminTab({ initialSubTab = null }) {
       ? 'reports'
       : initialSubTab === 'result_errors'
         ? 'result_errors'
-        : 'users'
-  ); // 'users' | 'matches' | 'console' | 'reports' | 'result_errors'
+        : 'oversigt'
+  ); // 'oversigt' | 'users' | 'matches' | 'console' | 'reports' | 'result_errors'
   const [matchSubTab, setMatchSubTab] = useState('2v2'); // '2v2' | 'americano' | 'liga'
   const [matchStatusFilter, setMatchStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -195,6 +244,7 @@ export function AdminTab({ initialSubTab = null }) {
 
   const prevSubTabBadgesRef = useRef(null);
   const badgesSyncedRef = useRef(false);
+  const consoleFetchedAtRef = useRef(0);
 
   const refreshSubTabBadges = useCallback(async () => {
     try {
@@ -343,14 +393,40 @@ export function AdminTab({ initialSubTab = null }) {
     const seq = ++matchesLoadSeqRef.current;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('matches')
-        .select('*, match_results(*), match_players(*, profiles(full_name, name))')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
+      const MATCH_EMBED = '*, match_results(*), match_players(*, profiles(full_name, name))';
+      const [recentRes, pendingIdsRes] = await Promise.all([
+        supabase
+          .from('matches')
+          .select(MATCH_EMBED)
+          .order('created_at', { ascending: false })
+          .limit(100),
+        // Let id-opslag: kampe med et ubekræftet resultat kan være ældre end de
+        // 100 nyeste, og listen skal altid matche Kampe-badget.
+        supabase
+          .from('match_results')
+          .select('match_id')
+          .eq('confirmed', false)
+          .limit(200),
+      ]);
+      if (recentRes.error) throw recentRes.error;
       if (seq !== matchesLoadSeqRef.current) return;
-      setMatches(data || []);
+      const byId = new Map();
+      for (const m of recentRes.data || []) byId.set(m.id, m);
+      const missingIds = [...new Set(
+        (pendingIdsRes.error ? [] : pendingIdsRes.data || [])
+          .map((r) => r.match_id)
+          .filter((id) => id && !byId.has(id)),
+      )];
+      // Hent kun de ældre pending-kampe der mangler — samme embed, så alle rækker har ens facon.
+      if (missingIds.length > 0) {
+        const { data: olderPending, error: olderErr } = await supabase
+          .from('matches')
+          .select(MATCH_EMBED)
+          .in('id', missingIds);
+        if (seq !== matchesLoadSeqRef.current) return;
+        if (!olderErr) for (const m of olderPending || []) byId.set(m.id, m);
+      }
+      setMatches(Array.from(byId.values()));
     } catch (err) {
       if (seq !== matchesLoadSeqRef.current) return;
       console.warn('AdminTab fetchMatches:', err?.message || err);
@@ -443,6 +519,7 @@ export function AdminTab({ initialSubTab = null }) {
   );
 
   const fetchAdminConsole = async () => {
+    consoleFetchedAtRef.current = Date.now();
     setConsoleLoading(true);
     setConsoleError('');
     try {
@@ -505,7 +582,6 @@ export function AdminTab({ initialSubTab = null }) {
           flags: flagRows,
         }),
       );
-      void refreshSubTabBadges();
 
       const reviewerIds = [...new Set(flagRows.map((f) => f.reviewed_by).filter(Boolean))];
       if (reviewerIds.length > 0) {
@@ -710,7 +786,7 @@ export function AdminTab({ initialSubTab = null }) {
     }
     if (activeSubTab === 'reports') return fetchUserReports();
     if (activeSubTab === 'result_errors') return fetchResultErrorReports();
-    if (activeSubTab === 'console') return fetchAdminConsole();
+    if (activeSubTab === 'console' || activeSubTab === 'oversigt') return fetchAdminConsole();
     return Promise.resolve();
   }, [activeSubTab, matchSubTab, fetchUsers, fetchMatches, fetchAmericano, fetchLiga]);
 
@@ -754,8 +830,11 @@ export function AdminTab({ initialSubTab = null }) {
       void fetchUserReports();
     } else if (activeSubTab === 'result_errors') {
       void fetchResultErrorReports();
-    } else if (activeSubTab === 'console') {
-      void fetchAdminConsole();
+    } else if (activeSubTab === 'console' || activeSubTab === 'oversigt') {
+      // Oversigt og Konsol deler samme data — skift mellem dem uden at genhente
+      // hele konsol-datasættet, medmindre det er over 30 sekunder gammelt.
+      // "Opdater"-knappen og visibilitychange henter altid (via fetchAdminConsole direkte).
+      if (Date.now() - consoleFetchedAtRef.current > 30_000) void fetchAdminConsole();
     }
   }, [
     activeSubTab,
@@ -796,7 +875,11 @@ export function AdminTab({ initialSubTab = null }) {
       .update({ role: newRole })
       .eq('id', user.id);
 
-    if (!error) fetchUsers();
+    if (error) {
+      await ask({ notice: true, title: 'Kunne ikke ændre rolle', message: error.message });
+      return;
+    }
+    fetchUsers();
   };
 
   const togglePhoneExempt = async (targetUser) => {
@@ -1110,6 +1193,10 @@ export function AdminTab({ initialSubTab = null }) {
     () => sortAndFilterAdminMatches(matches, '2v2', matchStatusFilter),
     [matches, matchStatusFilter],
   );
+  const pendingConfirmCount = useMemo(
+    () => matches.filter(adminMatchHasPendingResult).length,
+    [matches],
+  );
   const filteredAmericano = useMemo(
     () => sortAndFilterAdminMatches(americanoTournaments, 'americano', matchStatusFilter),
     [americanoTournaments, matchStatusFilter],
@@ -1119,7 +1206,60 @@ export function AdminTab({ initialSubTab = null }) {
     [ligaLeagues, matchStatusFilter],
   );
 
+  /** Oversigtens KPI-kort — hvert kort hopper til sin under-fane. */
+  const oversigtKpiCards = useMemo(() => [
+    {
+      key: 'players',
+      label: 'Spillere',
+      value: consoleStats.totalPlayers,
+      footer: `${consoleStats.bannedPlayers} bannet`,
+      accent: theme.accent,
+      target: 'users',
+    },
+    {
+      key: 'matches',
+      label: 'Kampe i gang',
+      value: consoleStats.inProgressMatches,
+      footer: `${consoleStats.openMatches} åbne · ${consoleStats.completedMatches24h} afsl. (24t)`,
+      accent: theme.text,
+      target: 'matches',
+    },
+    {
+      key: 'tournaments',
+      label: 'Aktive turneringer',
+      value: consoleStats.americanoActive,
+      footer: `${consoleStats.americanoOpen} åbne · ${consoleStats.americanoCompleted7d} afsl. (7d)`,
+      accent: theme.accent,
+      target: 'matches',
+    },
+    {
+      key: 'reports',
+      label: 'Anmeldelser',
+      value: subTabBadges.reports || 0,
+      footer: 'Brugeranmeldelser',
+      accent: (subTabBadges.reports || 0) > 0 ? theme.red : theme.textMid,
+      target: 'reports',
+    },
+    {
+      key: 'resultErrors',
+      label: 'Resultat-fejl',
+      value: subTabBadges.resultErrors || 0,
+      footer: `${consoleStats.pendingResults} afventer bekræft.`,
+      accent: (subTabBadges.resultErrors || 0) > 0 ? theme.warm : theme.textMid,
+      target: 'result_errors',
+    },
+    {
+      key: 'flags',
+      label: 'Flags',
+      value: consoleStats.openFlags,
+      footer: `${consoleStats.highFlags} høj risiko`,
+      accent: consoleStats.openFlags > 0 ? theme.red : theme.textMid,
+      target: 'console',
+    },
+  ], [consoleStats, subTabBadges]);
+
   const adminSubTabs = [
+    { id: 'oversigt', label: 'Oversigt', shortLabel: 'Oversigt', icon: LayoutDashboard, badgeKey: null },
     { id: 'users', label: 'Brugere', shortLabel: 'Brugere', icon: User, badgeKey: 'users' },
     { id: 'matches', label: 'Kampe', shortLabel: 'Kampe', icon: Swords, badgeKey: 'matches' },
     { id: 'reports', label: 'Anmeldelser', shortLabel: 'Anmeld.', icon: Flag, badgeKey: 'reports' },
@@ -1158,10 +1298,12 @@ export function AdminTab({ initialSubTab = null }) {
     { id: 'liga', label: '🏆 Liga' },
   ];
 
-  const matchStatusPills = ADMIN_MATCH_STATUS_FILTERS.map((f) => ({
-    id: f.id,
-    label: f.label,
-  }));
+  const matchStatusPills = [
+    ...ADMIN_MATCH_STATUS_FILTERS.map((f) => ({ id: f.id, label: f.label })),
+    ...(matchSubTab === '2v2' && pendingConfirmCount > 0
+      ? [{ id: 'pending_confirm', label: `Afventer bekræftelse (${pendingConfirmCount})` }]
+      : []),
+  ];
 
   const reportStatusPills = [
     { id: 'open', label: 'Åbne' },
@@ -1191,7 +1333,54 @@ export function AdminTab({ initialSubTab = null }) {
         />
       </div>
 
-      {activeSubTab === 'users' ? (
+      {activeSubTab === 'oversigt' ? (
+        <div className="pm-admin-overview">
+          <div className="pm-admin-toolbar">
+            <h3 className="pm-admin-section-title">Oversigt</h3>
+            <button
+              type="button"
+              onClick={() => { void fetchAdminConsole(); }}
+              className="pm-admin-refresh-btn"
+              style={btn(false)}
+              disabled={consoleLoading}
+            >
+              <RefreshCw size={13} style={{ marginRight: '6px', opacity: consoleLoading ? 0.6 : 1 }} />
+              Opdater
+            </button>
+          </div>
+
+          <div className="pm-admin-kpi-grid">
+            {oversigtKpiCards.map((card) => (
+              <button
+                key={card.key}
+                type="button"
+                className="pm-ui-card pm-admin-kpi-card"
+                onClick={() => setActiveSubTab(card.target)}
+                style={{ borderLeft: `3px solid ${card.accent}` }}
+              >
+                <div className="pm-admin-kpi-top">
+                  <span className="pm-admin-kpi-label">{card.label}</span>
+                  <ChevronRight size={16} className="pm-admin-kpi-chevron" aria-hidden />
+                </div>
+                <div className="pm-admin-kpi-value" style={{ color: card.accent }}>
+                  {card.value}
+                </div>
+                <div className="pm-admin-kpi-footer">{card.footer}</div>
+              </button>
+            ))}
+          </div>
+
+          <AdminAuditLogPanel
+            title="Seneste aktivitet"
+            emptyText="Ingen aktivitet endnu."
+            loading={consoleLoading}
+            error={auditLogError}
+            entries={auditLog}
+            limit={8}
+            onSeeAll={() => setActiveSubTab('console')}
+          />
+        </div>
+      ) : activeSubTab === 'users' ? (
         <>
           <div className="pm-admin-search" style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
             <div style={{ flex: 1, position: 'relative' }}>
@@ -1217,109 +1406,38 @@ export function AdminTab({ initialSubTab = null }) {
             </button>
           </div>
 
-          {isMobile && (
-            <div className="pm-admin-sort-row">
-              <button
-                type="button"
-                onClick={() => requestSort('full_name')}
-                className="pm-admin-sort-btn"
-                style={btn(sortConfig.key === 'full_name')}
-              >
-                Navn <SortIcon columnKey="full_name" />
-              </button>
-              <button
-                type="button"
-                onClick={() => requestSort('elo_rating')}
-                className="pm-admin-sort-btn"
-                style={btn(sortConfig.key === 'elo_rating')}
-              >
-                ELO <SortIcon columnKey="elo_rating" />
-              </button>
-              <button
-                type="button"
-                onClick={() => requestSort('role')}
-                className="pm-admin-sort-btn"
-                style={btn(sortConfig.key === 'role')}
-              >
-                Rolle <SortIcon columnKey="role" />
-              </button>
-            </div>
-          )}
+          <div className="pm-admin-sort-row">
+            <span className="pm-admin-sort-label">Sortér:</span>
+            <button
+              type="button"
+              onClick={() => requestSort('full_name')}
+              className="pm-admin-sort-btn"
+              style={btn(sortConfig.key === 'full_name', { size: 'sm', radius: 'pill' })}
+            >
+              Navn <SortIcon columnKey="full_name" />
+            </button>
+            <button
+              type="button"
+              onClick={() => requestSort('elo_rating')}
+              className="pm-admin-sort-btn"
+              style={btn(sortConfig.key === 'elo_rating', { size: 'sm', radius: 'pill' })}
+            >
+              ELO <SortIcon columnKey="elo_rating" />
+            </button>
+            <button
+              type="button"
+              onClick={() => requestSort('role')}
+              className="pm-admin-sort-btn"
+              style={btn(sortConfig.key === 'role', { size: 'sm', radius: 'pill' })}
+            >
+              Rolle <SortIcon columnKey="role" />
+            </button>
+          </div>
 
-          {!isMobile ? (
-            <div className="pm-ui-card pm-admin-table-wrap">
-              <table className="pm-admin-table">
-                <thead>
-                  <tr>
-                    <th className="pm-admin-th" onClick={() => requestSort('full_name')}>
-                      <div className="pm-admin-th-inner">SPILLER <SortIcon columnKey="full_name" /></div>
-                    </th>
-                    <th className="pm-admin-th" onClick={() => requestSort('elo_rating')}>
-                      <div className="pm-admin-th-inner">ELO <SortIcon columnKey="elo_rating" /></div>
-                    </th>
-                    <th className="pm-admin-th" onClick={() => requestSort('role')}>
-                      <div className="pm-admin-th-inner">ROLLE <SortIcon columnKey="role" /></div>
-                    </th>
-                    <th className="pm-admin-th pm-admin-th--static">HANDLING</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((u) => (
-                    <tr key={u.id}>
-                      <td>
-                        <div className="pm-admin-user-cell">
-                          <AvatarCircle avatar={u.avatar || '🎾'} size={32} />
-                          <div>
-                            <div className="pm-admin-user-name">{adminDisplayName(u)}</div>
-                            <div className="pm-admin-user-email">{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="pm-admin-elo-cell">{u.elo_rating || 1000}</td>
-                      <td>
-                        <div className="pm-admin-badge-row">
-                          <span className={u.role === 'admin' ? 'pm-admin-badge pm-admin-badge--admin' : 'pm-admin-badge'}>
-                            {u.role}
-                          </span>
-                          {u.is_banned && <span className="pm-admin-badge pm-admin-badge--danger">Bannet</span>}
-                          {u.phone_verification_exempt && (
-                            <span className="pm-admin-badge pm-admin-badge--muted">Ingen SMS-krav</span>
-                          )}
-                        </div>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div className="pm-admin-actions">
-                          <button type="button" onClick={() => { void openUserEditor(u); }} className="pm-admin-icon-btn pm-admin-icon-btn--accent" title="Rediger">
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => togglePhoneExempt(u)}
-                            className={`pm-admin-icon-btn ${u.phone_verification_exempt ? 'pm-admin-icon-btn--accent' : ''}`}
-                            title={u.phone_verification_exempt ? 'Kræv telefon-SMS igen' : 'Undtag fra telefon-SMS (testkonto)'}
-                          >
-                            <Smartphone size={18} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => toggleAdmin(u)}
-                            className={`pm-admin-icon-btn ${u.role === 'admin' ? 'pm-admin-icon-btn--danger' : 'pm-admin-icon-btn--accent'}`}
-                            title={u.role === 'admin' ? 'Fjern admin' : 'Gør til admin'}
-                          >
-                            {u.role === 'admin' ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
-                          </button>
-                          <button type="button" onClick={() => deleteUser(u)} className="pm-admin-icon-btn pm-admin-icon-btn--danger" title="Slet spiller">
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {filteredUsers.length === 0 ? (
+            <div className="pm-ui-card pm-admin-empty">Ingen spillere matcher søgningen.</div>
           ) : (
-            <div className="pm-admin-card-list">
+            <div className="pm-admin-card-list pm-admin-card-list--grid">
               {filteredUsers.map((u) => (
                 <div key={u.id} className="pm-ui-card pm-admin-card">
                   <div className="pm-admin-card-top">
@@ -1395,6 +1513,29 @@ export function AdminTab({ initialSubTab = null }) {
               Opdater
             </button>
           </div>
+
+          {pendingConfirmCount > 0 ? (
+            <button
+              type="button"
+              className="pm-admin-attention-banner"
+              onClick={() => {
+                setMatchSubTab('2v2');
+                setMatchStatusFilter('pending_confirm');
+              }}
+            >
+              <span className="pm-admin-attention-banner-icon" aria-hidden>
+                <AlertCircle size={18} />
+              </span>
+              <span className="pm-admin-attention-banner-text">
+                <strong>
+                  {pendingConfirmCount} kampresultat{pendingConfirmCount > 1 ? 'er' : ''} afventer bekræftelse
+                </strong>
+                <span>Dette er hvad Kampe-badget tæller. Tryk for at se kun disse kampe.</span>
+              </span>
+              <ChevronRight size={18} aria-hidden style={{ flexShrink: 0, opacity: 0.6 }} />
+            </button>
+          ) : null}
+
           <PillTabs
             tabs={matchTypePills}
             value={matchSubTab}
@@ -1530,6 +1671,7 @@ export function AdminTab({ initialSubTab = null }) {
                 const statusColor = status === 'completed' ? theme.accent : status === 'in_progress' ? theme.warm : theme.textMid;
                 const statusLabel = status === 'completed' ? 'Afsluttet' : status === 'in_progress' ? 'I gang' : status === 'full' ? 'Fuld' : 'Åben';
                 const confirmedResult = (m.match_results || []).find((r) => r.confirmed) || null;
+                const pendingResult = (m.match_results || []).find((r) => !r.confirmed) || null;
                 const canEditResult = status === 'completed' && confirmedResult;
 
                 return (
@@ -1552,6 +1694,11 @@ export function AdminTab({ initialSubTab = null }) {
                           <span className="pm-admin-status-pill" style={{ color: statusColor, background: `${statusColor}15` }}>
                             {statusLabel}
                           </span>
+                          {pendingResult ? (
+                            <span className="pm-admin-status-pill" style={{ color: theme.red, background: theme.redBg }}>
+                              Afventer bekræftelse
+                            </span>
+                          ) : null}
                           <div className="pm-admin-match-score">
                             {m.match_results?.[0]?.score_display || 'Ingen score'}
                           </div>
@@ -1888,7 +2035,7 @@ export function AdminTab({ initialSubTab = null }) {
                         className="pm-admin-action-chip"
                         style={btn(false)}
                       >
-                        Gå til Kampe
+                        Åbn i Kampe-værktøjer
                       </button>
                     </div>
                   </div>
@@ -2133,35 +2280,13 @@ export function AdminTab({ initialSubTab = null }) {
               })}
           </div>
 
-          <div className="pm-ui-card pm-admin-console-panel">
-            <div className="pm-admin-console-panel-head">
-              <div className="pm-admin-console-panel-title">Admin-log (seneste handlinger)</div>
-              <div className="pm-admin-console-panel-meta">
-                {consoleLoading ? 'Indlæser...' : `${auditLog.length} poster`}
-              </div>
-            </div>
-            {auditLogError ? <div className="pm-admin-error-msg">{auditLogError}</div> : null}
-            {!auditLogError && auditLog.length === 0 && !consoleLoading ? (
-              <div className="pm-admin-empty">Ingen logposter endnu.</div>
-            ) : null}
-            {auditLog.length > 0 ? (
-              <div className="pm-admin-audit-list">
-                {auditLog.map((entry) => (
-                  <div key={entry.id} className="pm-admin-audit-entry">
-                    <div className="pm-admin-audit-entry-head">
-                      <span className="pm-admin-audit-action">{adminAuditActionLabel(entry.action)}</span>
-                      <span className="pm-admin-audit-time">{formatDateTimeDa(entry.created_at)}</span>
-                    </div>
-                    {entry.target_user_id ? (
-                      <div className="pm-admin-audit-target">
-                        Bruger: {String(entry.target_user_id).slice(0, 8)}…
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <AdminAuditLogPanel
+            title="Admin-log (seneste handlinger)"
+            emptyText="Ingen logposter endnu."
+            loading={consoleLoading}
+            error={auditLogError}
+            entries={auditLog}
+          />
         </div>
       )}
       <AdminUserEditModal

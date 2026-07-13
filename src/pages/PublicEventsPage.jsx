@@ -8,7 +8,7 @@ import { formatMatchDateDa, formatTimeSlotDa } from '../lib/matchDisplayUtils';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 
 function statusLabel(status) {
-  if (status === 'playing') return { text: 'I gang', bg: theme.warmBg, border: theme.warningBorder, color: theme.warm };
+  if (status === 'playing') return { text: 'I gang', bg: theme.warmBg, border: theme.warningBorder, color: theme.amberText };
   return { text: 'Tilmelding åben', bg: theme.accentBg, border: theme.infoBorder, color: theme.accent };
 }
 

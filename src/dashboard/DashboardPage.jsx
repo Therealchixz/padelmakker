@@ -1,12 +1,13 @@
 import { useEffect, useLayoutEffect, useCallback, useState, useRef, useMemo, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
+import { AppModal } from '../components/AppModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { font, theme, btn, tag } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
-import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, ChevronDown, Menu, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
+import { Home, Users, MapPin, Swords, Trophy, Settings, LogOut, MessageCircle, ChevronDown, MoreHorizontal, Bug, Compass, Sun, Moon, ExternalLink } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
 import { AvatarCircle } from '../components/AvatarCircle';
 
@@ -19,6 +20,7 @@ import { supabase } from '../lib/supabase';
 import { PROFILE_REFRESH_COOLDOWN_MS } from '../lib/platformConstants';
 import { AdminPinGate } from '../components/AdminPinGate';
 import { GuidedTourOverlay } from '../components/GuidedTourOverlay';
+import { WelcomeScreen } from '../components/WelcomeScreen';
 import { PendingResultConfirmModal } from '../components/PendingResultConfirmModal';
 import {
   KAMPE_NOTIFICATION_TYPES,
@@ -777,6 +779,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [adminPinUnlocked, setAdminPinUnlocked] = useState(false);
   const hasPrefetchedTabsRef = useRef(false);
   const lastProfileRefreshAtRef = useRef(0);
@@ -786,6 +789,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const accountBtnRef = useRef(null);
   const accountDropRef = useRef(null);
   const tourStorageKey = user?.id ? `pm_dash_tour_v${TOUR_VERSION}_done_${user.id}` : null;
+  const welcomeStorageKey = user?.id ? `pm_dash_welcome_v1_${user.id}` : null;
 
   const tabTourSelector = useCallback((tabId) => {
     return isMobileView ? `[data-tour="mobile-tab-${tabId}"]` : `[data-tour="tab-${tabId}"]`;
@@ -940,6 +944,20 @@ export function DashboardPage({ user, onLogout, showToast }) {
     setTourOpen(true);
   }, []);
 
+  const markWelcomeSeen = useCallback(() => {
+    try { if (welcomeStorageKey) localStorage.setItem(welcomeStorageKey, '1'); } catch { /* ignore */ }
+  }, [welcomeStorageKey]);
+
+  // Luk Velkommen. Hvis brugeren ikke valgte rundturen, markeres turen også som
+  // set, så den ikke popper op bagefter (undgå dobbelt-onboarding).
+  const dismissWelcome = useCallback((markTourDone = true) => {
+    markWelcomeSeen();
+    if (markTourDone) {
+      try { if (tourStorageKey) localStorage.setItem(tourStorageKey, '1'); } catch { /* ignore */ }
+    }
+    setWelcomeOpen(false);
+  }, [markWelcomeSeen, tourStorageKey]);
+
   const closeTour = useCallback((withToastMessage) => {
     persistTourCompleted();
     setTourOpen(false);
@@ -962,17 +980,26 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   useEffect(() => {
     if (!accountOpen) return;
+    // Sæt altid en position, så dropdown'en monteres selv hvis måling af knappen
+    // fejler (fx endnu-ikke-layoutet ref) — ellers kan menuen aldrig åbne.
     const rect = accountBtnRef.current?.getBoundingClientRect();
-    if (rect) {
-      const left = Math.min(Math.max(8, rect.right - 230), window.innerWidth - 238);
-      setAccountPos({ top: rect.bottom + 6, left });
-    }
+    const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
+    const left = rect
+      ? Math.min(Math.max(8, rect.right - 230), vw - 238)
+      : Math.max(8, vw - 238);
+    const top = rect ? rect.bottom + 6 : 56;
+    setAccountPos({ top, left });
     const handler = (e) => {
       if (accountBtnRef.current?.contains(e.target) || accountDropRef.current?.contains(e.target)) return;
       setAccountOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    // Tilknyt outside-click-lukkeren efter den aktuelle klik-cyklus, så det klik
+    // der åbnede menuen ikke selv når at lukke den igen.
+    const attach = setTimeout(() => document.addEventListener("mousedown", handler), 0);
+    return () => {
+      clearTimeout(attach);
+      document.removeEventListener("mousedown", handler);
+    };
   }, [accountOpen]);
 
   useEffect(() => {
@@ -1011,19 +1038,27 @@ export function DashboardPage({ user, onLogout, showToast }) {
     hasAutoStartedTourRef.current = true;
 
     let alreadyCompleted = false;
+    let welcomeSeen = false;
     try {
       alreadyCompleted = localStorage.getItem(tourStorageKey) === '1';
+      welcomeSeen = welcomeStorageKey ? localStorage.getItem(welcomeStorageKey) === '1' : true;
     } catch {
       alreadyCompleted = false;
     }
     if (alreadyCompleted) return undefined;
+
+    // Første login: vis Velkommen-skærmen i stedet for at auto-starte turen.
+    if (!welcomeSeen) {
+      const wTimer = window.setTimeout(() => setWelcomeOpen(true), 400);
+      return () => window.clearTimeout(wTimer);
+    }
 
     const timer = window.setTimeout(() => {
       setTourStepIndex(0);
       setTourOpen(true);
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [tourStorageKey]);
+  }, [tourStorageKey, welcomeStorageKey]);
 
   useLayoutEffect(() => {
     if (!tourOpen) return;
@@ -1167,23 +1202,6 @@ export function DashboardPage({ user, onLogout, showToast }) {
     return true;
   }, [ask, feedbackMessage, feedbackSending, feedbackTopic]);
 
-  useEffect(() => {
-    if (!feedbackOpen) return undefined;
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeFeedbackModal();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [closeFeedbackModal, feedbackOpen]);
-
   const submitFeedbackReport = useCallback(async () => {
     const message = feedbackMessage.trim();
     if (message.length < 10) {
@@ -1299,7 +1317,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
     { id: "beskeder", label: "Beskeder",     icon: <MessageCircle size={15} />, badge: unreadMessages > 0 ? unreadMessages : null },
   ];
   // Profil vises i konto-dropdown på desktop, men beholdes i mobilens "Mere"-menu.
-  if (isMobileView) allTabs.push({ id: "profil", label: "Profil", icon: <Settings size={15} /> });
+  if (isMobileView) allTabs.push({ id: "profil", label: "Min profil", icon: <Settings size={15} /> });
   if (isAdmin && isMobileView) {
     allTabs.push({
       id: "admin",
@@ -1682,43 +1700,37 @@ export function DashboardPage({ user, onLogout, showToast }) {
         zIndex={mobileMoreTourActive ? 10060 : undefined}
       />
 
+      {welcomeOpen && (
+        <WelcomeScreen
+          name={displayName}
+          levelText={user?.level != null ? formatPlaytomicLevel(user.level) : null}
+          onFindPartner={() => { dismissWelcome(); setTab('makkere'); }}
+          onJoinMatch={() => { dismissWelcome(); setTab('kampe'); }}
+          onStartTour={() => { markWelcomeSeen(); setWelcomeOpen(false); startTour(); }}
+          onGoToApp={() => dismissWelcome()}
+        />
+      )}
+
       <PendingResultConfirmModal user={user} />
 
-      {feedbackOpen && createPortal(
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Rapportér fejl"
-          onClick={closeFeedbackModal}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: theme.overlay,
-            zIndex: 10020,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-          }}
+      {feedbackOpen && (
+        <AppModal
+          open
+          onClose={feedbackSending ? undefined : closeFeedbackModal}
+          ariaLabel="Rapportér fejl"
+          maxWidth="560px"
+          zIndex={10020}
+          closeOnEscape={!feedbackSending}
+          closeOnBackdrop={!feedbackSending}
         >
-          <div
-            onClick={(event) => event.stopPropagation()}
-            style={{
-              width: "min(560px, 100%)",
-              background: theme.surface,
-              border: "1px solid " + theme.border,
-              borderRadius: "14px",
-              boxShadow: theme.modalShadow,
-              overflow: "hidden",
-            }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
             <div style={{ padding: "14px 16px", borderBottom: "1px solid " + theme.border }}>
               <div style={{ fontSize: "17px", fontWeight: 800, color: theme.text }}>Rapportér fejl</div>
               <div style={{ marginTop: "4px", fontSize: "12px", color: theme.textMid }}>
                 Beskriv bug eller problem — vi sender den direkte til kontakt@padelmakker.dk.
               </div>
             </div>
-            <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", flex: 1, minHeight: 0 }}>
               <div
                 style={{
                   display: "grid",
@@ -1876,8 +1888,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
               </button>
             </div>
           </div>
-        </div>,
-        document.body
+        </AppModal>
       )}
 
       {mobileMoreVisible && !mobileMoreTourActive && (
@@ -2034,7 +2045,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           title="Mere"
         >
           <span className="pm-mobile-bottom-icon-wrap">
-            <Menu size={18} color={mobileMoreIsActive || mobileMoreOpen ? theme.accent : theme.textMid} />
+            <MoreHorizontal size={18} color={mobileMoreIsActive || mobileMoreOpen ? theme.accent : theme.textMid} />
             {mobileMoreBadge > 0 && (
               <span className="pm-mobile-bottom-badge">
                 {mobileMoreBadge > 9 ? "9+" : mobileMoreBadge}

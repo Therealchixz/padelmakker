@@ -69,7 +69,7 @@ export function ChatInbox({
                 type="button"
                 className={`pm-chat-v2-inbox-row${unread > 0 ? ' pm-chat-v2-inbox-row--unread' : ''}`}
                 onClick={() => onOpenItem(item)}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', background: '#fff', borderRadius: 14, margin: '0 18px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', border: '1px solid #E2E8F0', width: 'calc(100% - 36px)', textAlign: 'left' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', background: 'var(--pm-surface)', borderRadius: 14, margin: '0 18px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', border: '1px solid var(--pm-border)', width: 'calc(100% - 36px)', textAlign: 'left' }}
               >
                 <ChatInitialsAvatar
                   id={item.avatarId || item.key}

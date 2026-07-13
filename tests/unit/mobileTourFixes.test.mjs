@@ -24,6 +24,7 @@ test('mobile tour opens mere-sheet and scrolls activity/profile to top', () => {
   assert.match(dash, /waitForMount: true/);
   assert.doesNotMatch(dash, /tourForceOpen=\{tourOnNotificationStep\}/);
   assert.match(home, /pm-home-bell/);
+  assert.match(home, /data-tour="home-latest-activity" className="pm-tour-scroll-anchor"/);
   assert.match(dash, /clampHighlight: true/);
   assert.match(dash, /scrollTourTarget/);
   assert.doesNotMatch(home, /pm-feed-filters-header.*home-latest-activity/);

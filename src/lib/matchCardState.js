@@ -1,3 +1,5 @@
+import { canConfirmPadelMatchResult } from './resolvePadelMatchResult.js';
+
 export function matchStatusLabel(status, left) {
   const labels = {
     open: {
@@ -49,6 +51,36 @@ export function buildMatchCardState({
   const pendingRequests = requestRows.filter((request) => request.status === 'pending');
   const pendingJoinAttention = isCreator && pendingRequests.length > 0 ? pendingRequests.length : 0;
   const unreadMatchCountNum = Number(unreadMatchCount) || 0;
+  // Et resultat er indberettet og afventer netop DIN bekræftelse (modstanderholdet)
+  const needsResultConfirm = Boolean(
+    matchResult
+    && !matchResult.confirmed
+    && isPlayerInMatch
+    && String(matchResult.submitted_by) !== currentUserKey
+    && canConfirmPadelMatchResult({
+      result: matchResult,
+      players,
+      confirmedBy: currentUserId,
+      isAdmin: false,
+    }).ok,
+  );
+  // Du har selv indberettet et resultat og venter på modstanderens bekræftelse (ingen handling fra dig)
+  const waitingForOpponentConfirm = Boolean(
+    matchResult
+    && !matchResult.confirmed
+    && isPlayerInMatch
+    && String(matchResult.submitted_by) === currentUserKey,
+  );
+  // Neutral statuslinje (grå) — ikke en "kræver handling"-markering
+  const statusNote = waitingForOpponentConfirm ? 'Venter på modstander' : null;
+  // Tydelig grund til at kortet kræver handling (vises på kortet)
+  const attentionReason = needsResultConfirm
+    ? 'Bekræft resultat'
+    : pendingJoinAttention > 0
+      ? `${pendingJoinAttention} tilmeldingsanmodning${pendingJoinAttention > 1 ? 'er' : ''}`
+      : unreadMatchCountNum > 0
+        ? 'Nyt siden sidst'
+        : null;
   const hasCreatorTools = Boolean(
     isCreator && (
       (status === 'open' || status === 'full') ||
@@ -89,7 +121,11 @@ export function buildMatchCardState({
     isClosed: (match?.match_type || 'open') === 'closed',
     myRequest: requestRows.find((request) => String(request.user_id) === currentUserKey),
     pendingRequests,
-    attentionCount: Math.max(unreadMatchCountNum, pendingJoinAttention),
+    attentionCount: Math.max(unreadMatchCountNum, pendingJoinAttention, needsResultConfirm ? 1 : 0),
+    needsResultConfirm,
+    waitingForOpponentConfirm,
+    statusNote,
+    attentionReason,
     hasAdminActions,
     adminActionsOpen: Boolean(adminActionsOpen),
     canUseMatchChat: Boolean(joined || isAdmin),

@@ -337,21 +337,22 @@ export function ActiveSeekingPanel({
   }
 
   if (variant === 'homeCard') {
-    const active = isSeekingUiActive(displayUser, 'makker') || isSeekingUiActive(displayUser, 'kamp');
+    // Kortet styrer kun "makker"-kanalen, så tilstanden skal afspejle netop den
+    // (ellers kan switchen se låst ud, hvis "kamp"-søgning er slået til andetsteds).
+    const active = isSeekingUiActive(displayUser, 'makker');
     const busy = busyChannel != null;
     return (
       <div>
         <div
           style={{
             margin: '2px 18px 13px',
-            background: theme.surface,
-            border: `1px solid ${theme.border}`,
+            background: 'var(--pm-surface-muted)',
+            border: '1px solid var(--pm-americano-tie-border)',
             borderRadius: 14,
             padding: '13px 15px',
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            boxShadow: theme.shadow,
           }}
         >
           <div style={{

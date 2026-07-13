@@ -116,17 +116,17 @@ test.describe('Public smoke flows', () => {
   test('onboarding page shows step-one fields', async ({ page }) => {
     await page.goto('/opret')
 
-    await expect(page.getByRole('heading', { name: /Velkommen/i })).toBeVisible()
-    await expect(page.getByLabel(/Fornavn/i)).toBeVisible()
-    await expect(page.getByLabel(/Efternavn/i)).toBeVisible()
-    await expect(page.getByLabel(/^Email$/i)).toBeVisible()
-    await expect(page.getByLabel(/Bekræft email/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Opret profil/i })).toBeVisible()
+    await expect(page.getByPlaceholder('Fornavn')).toBeVisible()
+    await expect(page.getByPlaceholder('Efternavn')).toBeVisible()
+    await expect(page.getByPlaceholder('din@email.dk')).toBeVisible()
+    await expect(page.getByPlaceholder('Gentag din e-mail')).toBeVisible()
   })
 
   test('events page is reachable', async ({ page }) => {
     await page.goto('/events')
 
-    await expect(page.getByRole('heading', { name: /Americano/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Turneringer & events/i })).toBeVisible()
   })
 
   test('unauthenticated dashboard request lands on public app', async ({ page }) => {

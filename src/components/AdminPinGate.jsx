@@ -3,6 +3,7 @@ import { ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ADMIN_PIN_SESSION_MINUTES } from '../lib/adminPinConfig';
 import { theme, btn, font } from '../lib/platformTheme';
+import { AppModal } from './AppModal';
 
 function digitsOnly(value) {
   return String(value || '').replace(/\D/g, '').slice(0, 6);
@@ -75,17 +76,6 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
     void loadStatus();
     return () => { cancelled = true; };
   }, [userId, onUnlocked]);
-
-  useEffect(() => {
-    if (!onCancel) return undefined;
-    const onKeyDown = (event) => {
-      if (event.key !== 'Escape' || busy) return;
-      event.preventDefault();
-      onCancel();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [busy, onCancel]);
 
   const handleSetup = async () => {
     setErrorText('');
@@ -167,32 +157,18 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Admin sikkerhedskode"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 10030,
-        background: 'rgba(2, 6, 23, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-      }}
+    <AppModal
+      open
+      onClose={busy ? undefined : onCancel}
+      ariaLabel="Admin sikkerhedskode"
+      maxWidth="420px"
+      zIndex={10030}
+      closeOnEscape={!busy}
+      closeOnBackdrop={!busy}
     >
       <form
         onSubmit={handleSubmit}
-        style={{
-          width: 'min(420px, 100%)',
-          background: theme.surface,
-          border: '1px solid ' + theme.border,
-          borderRadius: '14px',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.24)',
-          overflow: 'hidden',
-          fontFamily: font,
-        }}
+        style={{ fontFamily: font, display: 'flex', flexDirection: 'column', minHeight: 0 }}
       >
         <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid ' + theme.border }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -339,6 +315,6 @@ export function AdminPinGate({ userId, showToast, onUnlocked, onCancel }) {
           </button>
         </div>
       </form>
-    </div>
+    </AppModal>
   );
 }

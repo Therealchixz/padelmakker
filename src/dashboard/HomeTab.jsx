@@ -5,7 +5,7 @@ import { theme, btn, font } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { supabase } from '../lib/supabase';
 import { fetchCourtsCached } from '../lib/courtsCache';
-import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X } from 'lucide-react';
+import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X, TrendingUp, TrendingDown, Trophy, Zap } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { NotificationBell } from '../components/NotificationBell';
 import { AppModal } from '../components/AppModal';
@@ -123,12 +123,15 @@ export function HomeTab({ user, setTab, showToast }) {
         for (const r of (mRes.data || [])) {
           const m = r.matches;
           if (!m) continue;
-          const statusLabel = m.status === 'open' ? 'Åben' : m.status === 'in_progress' ? 'I gang' : 'Fuld';
-          const players = (m.current_players != null && m.max_players != null) ? ` · ${m.current_players}/${m.max_players} spillere` : '';
+          const statusLabel = m.status === 'in_progress' ? 'I gang' : m.status === 'full' ? 'Fuld' : 'Bekræftet';
+          const statusTone = m.status === 'in_progress' ? theme.accent : m.status === 'full' ? theme.warm : theme.green;
+          const statusBg = m.status === 'in_progress' ? theme.accentBg : m.status === 'full' ? theme.warmBg : theme.greenBg;
+          const players = (m.current_players != null && m.max_players != null) ? `${m.current_players}/${m.max_players} spillere` : '';
           items.push({
-            key: `m-${m.id}`, kind: 'match', tone: theme.green, bg: theme.greenBg, badge: dayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
+            key: `m-${m.id}`, kind: 'match', tone: statusTone, bg: statusBg, badge: dayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
             title: <strong style={{ fontWeight: 700 }}>{m.court_name || 'Padelkamp'}</strong>, tag: '2v2',
-            subtitle: `${statusLabel} · ${m.time || 'Tidspunkt ikke sat'}${players}`,
+            statusLabel,
+            subtitle: [m.time ? `Kl. ${m.time}` : null, players].filter(Boolean).join(' · '),
             target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
           });
         }
@@ -137,10 +140,12 @@ export function HomeTab({ user, setTab, showToast }) {
           const t = r.americano_tournaments;
           if (!t) continue;
           const fmt = String(t.format || '').toLowerCase() === 'mexicano' ? 'Mexicano' : 'Americano';
+          const statusLabel = t.status === 'registration' ? 'Tilmelding' : 'Tilmeldt';
           items.push({
             key: `am-${t.id}`, kind: 'americano', tone: theme.warm, bg: theme.warmBg, badge: dayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
             title: <strong style={{ fontWeight: 700 }}>{t.name || fmt}</strong>, tag: fmt,
-            subtitle: `${t.time_slot ? `${t.time_slot} · ` : ''}${t.status === 'registration' ? 'Tilmelding åben' : 'Planlagt'}`,
+            statusLabel,
+            subtitle: t.time_slot ? `Kl. ${t.time_slot}` : 'Planlagt',
             target: { tab: 'kampe', search: `format=americano&focus=${encodeURIComponent(String(t.id))}` },
           });
         }
@@ -163,7 +168,8 @@ export function HomeTab({ user, setTab, showToast }) {
             items.push({
               key: `lm-${lm.id}`, kind: 'liga', tone: theme.accent, bg: theme.accentBg, badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
               title: <strong style={{ fontWeight: 700 }}>{leagueName.get(lm.league_id) || 'Ligakamp'}</strong>, tag: 'Liga',
-              subtitle: `Runde ${lm.round_number ?? '?'}${oppId && teamName.get(oppId) ? ` mod ${teamName.get(oppId)}` : ''}`,
+              statusLabel: `Runde ${lm.round_number ?? '?'}`,
+              subtitle: oppId && teamName.get(oppId) ? `mod ${teamName.get(oppId)}` : 'Kommende kamp',
               target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(lm.league_id))}` },
             });
           }
@@ -808,19 +814,18 @@ export function HomeTab({ user, setTab, showToast }) {
   };
 
   const actions = [
-    { Icon: Users,       color: theme.accent, bg: theme.accentBg, title: "Find Makker",  tab: "makkere" },
-    { Icon: MapPin,      color: theme.accent, bg: theme.accentBg, title: "Book Bane",    tab: "baner"   },
-    { Icon: CalendarPlus,color: theme.accent, bg: theme.accentBg, title: "Åbne Kampe",   tab: "kampe"   },
-    { Icon: BarChart2,   color: theme.accent, bg: theme.accentBg, title: "Rangliste",    tab: "ranking" },
+    { Icon: Users,       color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Find Makker",  tab: "makkere" },
+    { Icon: MapPin,      color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Book Bane",    tab: "baner"   },
+    { Icon: CalendarPlus,color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Åbne Kampe",   tab: "kampe"   },
+    { Icon: BarChart2,   color: theme.accent, bg: 'var(--pm-surface-muted)', title: "Rangliste",    tab: "ranking" },
   ];
 
   const activityRowBaseStyle = {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    borderRadius: "12px",
-    minHeight: "74px",
-    padding: "10px 12px",
+    gap: "11px",
+    borderRadius: "16px",
+    padding: "12px 14px",
     border: "1px solid " + theme.border,
     boxShadow: theme.shadowSoft,
     background: theme.surface,
@@ -840,8 +845,8 @@ export function HomeTab({ user, setTab, showToast }) {
     height: "auto",
     borderRadius: "9px",
     border: "none",
-    color: "var(--pm-on-accent, #fff)",
-    background: "var(--pm-navy, #16377E)",
+    color: "var(--pm-on-accent)",
+    background: "var(--pm-navy)",
     boxShadow: "0 1px 2px rgba(16,24,40,0.12)",
     flexShrink: 0,
   });
@@ -874,7 +879,7 @@ export function HomeTab({ user, setTab, showToast }) {
     height: "auto",
     borderRadius: "10px",
     border: "1px solid rgba(0,0,0,0.05)",
-    color: "#fff",
+    color: "var(--pm-on-accent)",
     background: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 55%), " + theme.green,
     boxShadow: "0 1px 2px rgba(16,24,40,0.12)",
     flexShrink: 0,
@@ -893,7 +898,6 @@ export function HomeTab({ user, setTab, showToast }) {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    minHeight: "18px",
     minWidth: 0,
   };
 
@@ -942,8 +946,8 @@ export function HomeTab({ user, setTab, showToast }) {
   });
 
   const activityLeadingSlotStyle = {
-    width: "40px",
-    minWidth: "40px",
+    width: "34px",
+    minWidth: "34px",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -994,15 +998,22 @@ export function HomeTab({ user, setTab, showToast }) {
     <div key={key} style={activityCardStyle(isHighlight)}>
       <div style={activityLeadingSlotStyle}>{leading}</div>
       <div style={activityBodyStyle}>
-        <div style={activityMetaRowStyle}>
-          {tag ? <span style={activityTypeTagStyle(tone || theme.accent)}>{tag}</span> : null}
-          {meta ? <span style={activityMetaTextStyle}>{meta}</span> : null}
-        </div>
+        {(tag || meta) ? (
+          <div style={activityMetaRowStyle}>
+            {tag ? <span style={activityTypeTagStyle(tone || theme.accent)}>{tag}</span> : null}
+            {meta ? <span style={activityMetaTextStyle}>{meta}</span> : null}
+          </div>
+        ) : null}
         <div style={activityTitleStyle}>{title}</div>
         {subtitle ? <div style={activitySubtitleStyle}>{subtitle}</div> : null}
       </div>
       <div style={activityRightRailStyle}>
-        {action || stat || null}
+        {stat && action ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+            {stat}
+            {action}
+          </div>
+        ) : (action || stat || null)}
       </div>
     </div>
   );
@@ -1125,7 +1136,7 @@ export function HomeTab({ user, setTab, showToast }) {
       )}
       {/* Compact topbar: avatar + greeting */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px 12px' }}>
-        <AvatarCircle avatar={user.avatar} size={42} emojiSize="20px" style={{ flexShrink: 0, background: 'linear-gradient(135deg, #3D6CB3, #1A3E78)', color: '#fff' }} />
+        <AvatarCircle avatar={user.avatar} size={42} emojiSize="20px" style={{ flexShrink: 0, background: 'linear-gradient(135deg, var(--pm-navy-soft), var(--pm-navy))', color: 'var(--pm-on-accent)' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: theme.textLight, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{greetingText}</div>
           <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{displayName}</div>
@@ -1136,11 +1147,11 @@ export function HomeTab({ user, setTab, showToast }) {
       {/* Seeking onboarding prompt */}
       {showToast ? <ActiveSeekingOnboardingPrompt user={user} showToast={showToast} /> : null}
 
-      {/* Seek card */}
+      {/* Seek card (toggle aktiv søgning) */}
       {showToast ? <ActiveSeekingPanel variant="homeCard" user={user} showToast={showToast} /> : null}
 
       {/* Quick 2×2 grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, margin: '4px 18px 18px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, margin: '4px 18px 0' }}>
         {actions.map(({ Icon, color, bg, title, tab: t }) => (
           <button
             key={t}
@@ -1149,7 +1160,7 @@ export function HomeTab({ user, setTab, showToast }) {
             data-tour={`quick-action-${t}`}
             style={{
               background: theme.surface,
-              borderRadius: 14,
+              borderRadius: 16,
               boxShadow: theme.shadow,
               border: `1px solid ${theme.border}`,
               padding: '13px 12px',
@@ -1218,65 +1229,6 @@ export function HomeTab({ user, setTab, showToast }) {
         </div>
       )}
 
-      {/* Invitationer */}
-      {(inviteItems.length > 0 || invitesLoadError) && (
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 18px 10px' }}>
-            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Invitationer</h3>
-            {inviteItems.length > 0 && (
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: '#EF4444', borderRadius: 999, minWidth: 18, height: 18, padding: '0 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                {inviteItems.length}
-              </span>
-            )}
-          </div>
-          {invitesLoadError ? (
-            <div style={{ padding: '0 18px' }}>
-              <div className="pm-state-card pm-state-card--error">
-                <div className="pm-state-icon" aria-hidden="true">⚠️</div>
-                <div className="pm-state-title">Kunne ikke hente invitationer</div>
-                <div className="pm-state-copy">{invitesLoadError}</div>
-              </div>
-            </div>
-          ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
-            {inviteItems.map((it) => (
-              <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: it.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }} aria-hidden="true">
-                    {it.icon}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.title}</div>
-                    {it.subtitle ? <div style={{ fontSize: 11.5, color: theme.textMid, marginTop: 2 }}>{it.subtitle}</div> : null}
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: it.bg, color: it.tone, flexShrink: 0 }}>{it.tag}</span>
-                </div>
-                {it.kind === 'inbound' ? (
-                  <div style={{ display: 'flex', gap: 8, marginTop: 11, paddingTop: 11, borderTop: `1px solid ${theme.border}` }}>
-                    <button type="button" disabled={busyInviteId === it.key} onClick={() => approveInvite(it)}
-                      style={{ flex: 1, background: theme.navy, color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
-                      Godkend
-                    </button>
-                    <button type="button" disabled={busyInviteId === it.key} onClick={() => rejectInvite(it)}
-                      style={{ flex: 1, background: theme.surface, color: theme.navy, fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: `1.5px solid ${theme.border}`, borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
-                      Afvis
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${theme.border}` }}>
-                    <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })}
-                      style={{ width: '100%', background: theme.navy, color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer' }}>
-                      Se
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          )}
-        </div>
-      )}
-
       {/* Kommende kampe */}
       {(upcomingItems.length > 0 || upcomingLoadError) && (
         <div style={{ marginBottom: 18 }}>
@@ -1297,8 +1249,13 @@ export function HomeTab({ user, setTab, showToast }) {
           ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
             {upcomingItems.map((it) => (
-              <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 14, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: theme.surfaceAlt, border: `1px solid ${theme.border}`, borderRadius: 10, padding: '6px 0' }}>
+              <button
+                key={it.key}
+                type="button"
+                onClick={() => setTab(it.target.tab, { search: it.target.search })}
+                style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 16, padding: '13px 14px', boxShadow: theme.shadow, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', width: '100%', fontFamily: 'inherit', cursor: 'pointer' }}
+              >
+                <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 10, padding: '6px 0' }}>
                   <span style={{ display: 'block', fontSize: it.kind === 'liga' ? 13 : 16, fontWeight: 700, lineHeight: 1.1, color: theme.text }}>{it.badge.top}</span>
                   {it.badge.bottom ? <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: theme.textMid, letterSpacing: 0.5 }}>{it.badge.bottom}</span> : null}
                 </div>
@@ -1306,10 +1263,70 @@ export function HomeTab({ user, setTab, showToast }) {
                   <div style={{ fontWeight: 600, fontSize: 13.5, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.tag} · {it.title}</div>
                   <div style={{ fontSize: 12, color: theme.textMid, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.subtitle}</div>
                 </div>
-                <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })}
-                  style={{ background: it.tone, color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 12, border: 'none', borderRadius: 9, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                  Se
-                </button>
+                {it.statusLabel ? (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, background: it.bg, color: it.tone, border: `1px solid ${it.tone}40`, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    {it.statusLabel}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+          )}
+        </div>
+      )}
+
+      {/* Invitationer */}
+      {(inviteItems.length > 0 || invitesLoadError) && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 18px 10px' }}>
+            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Invitationer</h3>
+            {inviteItems.length > 0 && (
+              <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: 'var(--pm-surface-muted)', color: 'var(--pm-accent)', border: '1px solid var(--pm-americano-tie-border)', whiteSpace: 'nowrap' }}>
+                {inviteItems.length} nye
+              </span>
+            )}
+          </div>
+          {invitesLoadError ? (
+            <div style={{ padding: '0 18px' }}>
+              <div className="pm-state-card pm-state-card--error">
+                <div className="pm-state-icon" aria-hidden="true">⚠️</div>
+                <div className="pm-state-title">Kunne ikke hente invitationer</div>
+                <div className="pm-state-copy">{invitesLoadError}</div>
+              </div>
+            </div>
+          ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+            {inviteItems.map((it) => (
+              <div key={it.key} style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 16, padding: '13px 14px', boxShadow: theme.shadow }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: it.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }} aria-hidden="true">
+                    {it.icon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.title}</div>
+                    {it.subtitle ? <div style={{ fontSize: 11.5, color: theme.textMid, marginTop: 2 }}>{it.subtitle}</div> : null}
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: it.bg, color: it.tone, flexShrink: 0 }}>{it.tag}</span>
+                </div>
+                {it.kind === 'inbound' ? (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 11, paddingTop: 11, borderTop: `1px solid ${theme.border}` }}>
+                    <button type="button" disabled={busyInviteId === it.key} onClick={() => approveInvite(it)}
+                      style={{ flex: 1, background: theme.navy, color: 'var(--pm-on-accent)', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
+                      Godkend
+                    </button>
+                    <button type="button" disabled={busyInviteId === it.key} onClick={() => rejectInvite(it)}
+                      style={{ flex: 1, background: theme.surface, color: theme.accent, fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: `1.5px solid ${theme.border}`, borderRadius: 9, padding: '9px 16px', cursor: 'pointer', opacity: busyInviteId === it.key ? 0.5 : 1 }}>
+                      Afvis
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${theme.border}` }}>
+                    <button type="button" onClick={() => setTab(it.target.tab, { search: it.target.search })}
+                      style={{ width: '100%', background: theme.navy, color: 'var(--pm-on-accent)', fontFamily: 'inherit', fontWeight: 600, fontSize: 12.5, border: 'none', borderRadius: 9, padding: '9px 16px', cursor: 'pointer' }}>
+                      Se
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -1388,7 +1405,7 @@ export function HomeTab({ user, setTab, showToast }) {
             </div>
           ) : null}
           <div className="pm-feed-filters-header">
-            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '18px 0 0' }}>Aktivitet</h3>
+            <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: '18px 18px 0' }}>Aktivitet</h3>
             <div className="pm-feed-filters-scroll" aria-label="Aktivitetstyper">
               <div className="pm-feed-filters-row">
                 <button
@@ -1474,8 +1491,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.warm,
                   leading: (
-                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
-                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.warmBg, color: theme.amberText, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Trophy size={16} />
                     </div>
                   ),
                   tag: formatLabel,
@@ -1527,8 +1544,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.green,
                   leading: (
-                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
-                      <AvatarCircle avatar={row.creatorAvatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.greenBg, color: theme.green, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CalendarPlus size={16} />
                     </div>
                   ),
                   tag: "2v2",
@@ -1580,8 +1597,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.warm,
                   leading: (
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" }}>
-                      🎾
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.warmBg, color: theme.amberText, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CalendarPlus size={16} />
                     </div>
                   ),
                   tag: formatLabel,
@@ -1611,8 +1628,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.purple,
                   leading: (
-                    <div onClick={() => setViewPlayer(player)} style={{ cursor: "pointer" }}>
-                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.purpleBg, color: theme.purple, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <TrendingUp size={16} />
                     </div>
                   ),
                   tag: "ELO",
@@ -1633,6 +1650,7 @@ export function HomeTab({ user, setTab, showToast }) {
                 const writeToPlayer = () => setTab("beskeder", { search: `med=${encodeURIComponent(String(row.userId))}` });
                 const isMakker = row.seekingChannel === 'makker';
                 const seekTone = isMakker ? theme.green : theme.blue;
+                const seekBg = isMakker ? theme.greenBg : theme.blueBg;
                 const levelStr = row.level != null && row.level !== '' ? formatPlaytomicLevel(row.level) : null;
                 const sub = [row.area, levelStr].filter(Boolean).join(' · ');
                 return renderActivityRowCard({
@@ -1640,15 +1658,15 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: seekTone,
                   leading: (
-                    <div onClick={openSeekingPlayer} style={{ cursor: "pointer" }}>
-                      <AvatarCircle avatar={row.avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: seekBg, color: seekTone, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Zap size={16} />
                     </div>
                   ),
                   tag: isMakker ? "Søger makker" : "Søger kamp",
                   meta: formatTimeAgo(row.created_at),
                   title: <><span style={{ fontWeight: 700, cursor: "pointer" }} onClick={openSeekingPlayer}>{row.name}</span> {seekingActivityLabelForRow(row)}</>,
                   subtitle: sub || "Klar til kamp",
-                  action: <button onClick={writeToPlayer} style={activityActionBtnStyle(theme.green)}>Skriv</button>,
+                  action: <button onClick={writeToPlayer} style={activityActionBtnStyle(theme.green)}>Besked</button>,
                 });
               }
 
@@ -1659,8 +1677,8 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.accent,
                   leading: (
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: theme.surfaceAlt, border: "1px solid " + theme.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px" }}>
-                      🏆
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.accentBg, color: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Trophy size={16} />
                     </div>
                   ),
                   tag: "Liga",
@@ -1691,14 +1709,12 @@ export function HomeTab({ user, setTab, showToast }) {
                   isHighlight,
                   tone: theme.accent,
                   leading: (
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: theme.surfaceAlt, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Swords size={16} color={theme.accent} />
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: theme.accentBg, color: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Swords size={16} />
                     </div>
                   ),
-                  tag: "Kamp",
-                  meta: formatTimeAgo(row.created_at),
                   title: <><strong>{winnerNames}</strong> slog <strong>{loserNames}</strong></>,
-                  subtitle: `${row.court} · ${row.score}`,
+                  subtitle: [row.score, row.court, formatTimeAgo(row.created_at)].filter(Boolean).join(' · '),
                   action: (
                     <button
                       onClick={() =>
@@ -1721,18 +1737,20 @@ export function HomeTab({ user, setTab, showToast }) {
                 });
               }
               const name = row.profiles?.full_name || row.profiles?.name || "En spiller";
-              const avatar = row.profiles?.avatar || "🎾";
               const won = row.result === 'win';
               const change = Number(row.change) || 0;
               const tone = change >= 0 ? theme.green : theme.red;
               return renderActivityRowCard({
                 key: `elo-${i}`,
                 isHighlight,
-                tone: theme.accent,
-                leading: <AvatarCircle avatar={avatar} size={36} emojiSize="22px" style={{ background: theme.surfaceAlt, border: "1px solid " + theme.border }} />,
-                tag: "Kamp",
-                meta: formatTimeAgo(row.created_at),
+                tone,
+                leading: (
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: won ? theme.greenBg : theme.redBg, color: won ? theme.green : theme.red, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {won ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                  </div>
+                ),
                 title: <><strong>{name}</strong> {won ? "vandt" : "tabte"}</>,
+                subtitle: formatTimeAgo(row.created_at),
                 stat: <span style={activityStatPillStyle(tone)}>{change >= 0 ? "+" : ""}{change} ELO</span>,
               });
             })}

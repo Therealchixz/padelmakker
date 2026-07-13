@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
-import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
-import { Trophy, Plus } from 'lucide-react';
+import { theme, btn, inputStyle, labelStyle, font } from '../lib/platformTheme';
+import { Trophy, Plus, Check, Copy, ArrowRight } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 import { PillTabs } from '../components/PillTabs';
 import { ScopeSearchControls } from '../components/ScopeSearchControls';
@@ -14,7 +14,7 @@ import { LigaDetailSheet } from './LigaDetailSheet';
 import { LigaScheduleSheet } from './LigaScheduleSheet';
 import { LigaTeamProfileSheet } from './LigaTeamProfileSheet';
 import { LigaSelectedDetail, SwissRulesBox } from './LigaSelectedDetail';
-import { computeStandings, generatePairings } from '../lib/ligaStandings';
+import { computeStandings, generatePairings, assignDivisionsByElo, groupByDivision } from '../lib/ligaStandings';
 import { getLigaBadge } from '../lib/ligaDisplayUtils';
 import { kampeCreateHint } from '../lib/kampeCreateHint';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
@@ -94,7 +94,14 @@ export function LigaTab({
   const setCreateOpen = onCreateOpenChange !== undefined ? onCreateOpenChange : setCreateOpenLocal;
   const ligaCreateFormRef = useRef(null);
   useScrollIntoViewWhen(createOpen, ligaCreateFormRef, { enabled: isAdmin, block: 'start' });
-  const [createForm, setCreateForm] = useState({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
+  const [createForm, setCreateForm] = useState({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
+  const [createStep, setCreateStep] = useState(1);
+  const [createStepErr, setCreateStepErr] = useState('');
+
+  // Scroll til toppen ved skift mellem trin i opret-wizarden
+  useEffect(() => {
+    if (createOpen && typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [createStep, createOpen]);
 
   // Create team form
   const [teamFormLeagueId, setTeamFormLeagueId] = useState(null);
@@ -110,6 +117,8 @@ export function LigaTab({
   const [scheduleLeagueId, setScheduleLeagueId] = useState(null);
   const [profileTeam, setProfileTeam] = useState(null);
   const [profileTeamLeagueId, setProfileTeamLeagueId] = useState(null);
+  const [createdLeagueReceipt, setCreatedLeagueReceipt] = useState(null);
+  const [ligaReceiptUrlCopied, setLigaReceiptUrlCopied] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -379,25 +388,37 @@ export function LigaTab({
   };
 
   const createLeague = async () => {
-    if (!createForm.name.trim() || !createForm.start_date || !createForm.end_date) {
-      showToast('Udfyld navn og datoer.'); return;
+    if (!createForm.name.trim() || !createForm.start_date) {
+      showToast('Udfyld navn og startdato.'); return;
     }
     setBusyId('create');
     try {
       const maxT = createForm.max_teams !== '' ? parseInt(createForm.max_teams, 10) : null;
-      const { error } = await supabase.from('leagues').insert({
+      const { data: created, error } = await supabase.from('leagues').insert({
         name: createForm.name.trim(),
         description: createForm.description.trim() || null,
         season_type: createForm.season_type,
         start_date: createForm.start_date,
-        end_date: createForm.end_date,
+        end_date: createForm.end_date || null,
         max_teams: maxT && maxT > 0 ? maxT : null,
+        region: createForm.region || null,
+        num_divisions: createForm.num_divisions || 1,
+        registration_deadline: createForm.registration_deadline || null,
+        match_system: createForm.match_system || 'round_robin',
+        points_win: createForm.points_win ?? 3,
+        points_draw: createForm.points_draw ?? 1,
+        points_loss: createForm.points_loss ?? 0,
+        promotion_spots: createForm.promotion_spots ?? 2,
+        relegation_spots: createForm.relegation_spots ?? 2,
+        rules_notes: createForm.rules_notes.trim() || null,
         created_by: user.id,
-      });
+      }).select('id').single();
       if (error) throw error;
-      showToast('Liga oprettet!');
       setCreateOpen(false);
-      setCreateForm({ name: '', description: '', season_type: 'monthly', start_date: '', end_date: '', max_teams: '' });
+      setCreateStep(1);
+      setCreateStepErr('');
+      setCreatedLeagueReceipt({ id: created?.id, name: createForm.name.trim(), start_date: createForm.start_date, end_date: createForm.end_date, max_teams: maxT, num_divisions: createForm.num_divisions || 1, match_system: createForm.match_system, region: createForm.region, registration_deadline: createForm.registration_deadline, points_win: createForm.points_win, points_draw: createForm.points_draw, points_loss: createForm.points_loss });
+      setCreateForm({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
     finally { setBusyId(null); }
@@ -413,20 +434,34 @@ export function LigaTab({
     if (!ok) return;
     setBusyId(league.id + '-start');
     try {
-      // Use the larger of log2 (Swiss minimum) and teams-1 (full round-robin for small groups)
-      const totalRounds = Math.max(
-        Math.ceil(Math.log2(Math.max(2, teams.length))),
-        teams.length <= 6 ? teams.length - 1 : 0
-      );
-      const allMatches = matchesByLeague[league.id] || [];
-      const standings = computeStandings(teams, allMatches);
-      const pairings = generatePairings(standings, allMatches);
-      const rows = pairings.map(p => ({
-        league_id: league.id, round_number: 1,
-        team1_id: p.team1_id, team2_id: p.team2_id || null,
-        status: p.team2_id ? 'pending' : 'reported',
-        winner_id: p.team2_id ? null : p.team1_id,
-      }));
+      const numDiv = Math.min(Number(league.num_divisions) || 1, teams.length);
+      // Inddel hold i divisioner efter niveau og gem det på holdene
+      let teamsWithDiv = teams.map(t => ({ ...t, division: Number(t.division) || 1 }));
+      if (numDiv > 1) {
+        const divMap = assignDivisionsByElo(teams, numDiv);
+        teamsWithDiv = teams.map(t => ({ ...t, division: divMap.get(t.id) || 1 }));
+        await Promise.all([...divMap].map(([teamId, d]) =>
+          supabase.from('league_teams').update({ division: d }).eq('id', teamId)));
+      }
+      // Generér runde 1 inden for hver division
+      const groups = numDiv > 1 ? groupByDivision(teamsWithDiv) : [[1, teamsWithDiv]];
+      const rows = [];
+      let totalRounds = 0;
+      for (const [, divTeams] of groups) {
+        const standings = computeStandings(divTeams, []);
+        const pairings = generatePairings(standings, []);
+        rows.push(...pairings.map(p => ({
+          league_id: league.id, round_number: 1,
+          team1_id: p.team1_id, team2_id: p.team2_id || null,
+          status: p.team2_id ? 'pending' : 'reported',
+          winner_id: p.team2_id ? null : p.team1_id,
+        })));
+        const r = Math.max(
+          Math.ceil(Math.log2(Math.max(2, divTeams.length))),
+          divTeams.length <= 6 ? divTeams.length - 1 : 0
+        );
+        totalRounds = Math.max(totalRounds, r);
+      }
       const { error: mErr } = await supabase.from('league_matches').insert(rows);
       if (mErr) throw mErr;
       const { error: uErr } = await supabase.from('leagues').update({ status: 'active', current_round: 1, total_rounds: totalRounds }).eq('id', league.id);
@@ -477,14 +512,22 @@ export function LigaTab({
     if (!okGen) return;
     setBusyId(league.id + '-next');
     try {
-      const standings = computeStandings(teams, allMatches);
-      const pairings = generatePairings(standings, allMatches);
-      const rows = pairings.map(p => ({
-        league_id: league.id, round_number: round,
-        team1_id: p.team1_id, team2_id: p.team2_id || null,
-        status: p.team2_id ? 'pending' : 'reported',
-        winner_id: p.team2_id ? null : p.team1_id,
-      }));
+      const numDiv = Math.min(Number(league.num_divisions) || 1, teams.length);
+      // Parr inden for hver division ud fra divisionens egen stilling
+      const groups = numDiv > 1 ? groupByDivision(teams) : [[1, teams]];
+      const rows = [];
+      for (const [, divTeams] of groups) {
+        const divTeamIds = new Set(divTeams.map(t => t.id));
+        const divMatches = allMatches.filter(m => divTeamIds.has(m.team1_id) || divTeamIds.has(m.team2_id));
+        const standings = computeStandings(divTeams, divMatches);
+        const pairings = generatePairings(standings, divMatches);
+        rows.push(...pairings.map(p => ({
+          league_id: league.id, round_number: round,
+          team1_id: p.team1_id, team2_id: p.team2_id || null,
+          status: p.team2_id ? 'pending' : 'reported',
+          winner_id: p.team2_id ? null : p.team1_id,
+        })));
+      }
       const { error: mErr } = await supabase.from('league_matches').insert(rows);
       if (mErr) throw mErr;
       const { error: uErr } = await supabase.from('leagues').update({ current_round: round }).eq('id', league.id);
@@ -576,9 +619,9 @@ export function LigaTab({
     completed: leaguesMatchingListFilters.filter((l) => l.status === 'completed').length,
   }), [leaguesMatchingListFilters]);
   const leagueStatusTabs = [
-    { id: 'registration', label: `Tilmelding${leagueStatusCount.registration > 0 ? ` ${leagueStatusCount.registration}` : ''}` },
-    { id: 'active', label: `Aktiv${leagueStatusCount.active > 0 ? ` ${leagueStatusCount.active}` : ''}` },
-    { id: 'completed', label: `Afsluttede${leagueStatusCount.completed > 0 ? ` ${leagueStatusCount.completed}` : ''}` },
+    { id: 'registration', label: <>Tilmelding{leagueStatusCount.registration > 0 ? <span className="pm-tab-count">{leagueStatusCount.registration}</span> : null}</> },
+    { id: 'active', label: <>Aktiv{leagueStatusCount.active > 0 ? <span className="pm-tab-count">{leagueStatusCount.active}</span> : null}</> },
+    { id: 'completed', label: <>Afsluttede{leagueStatusCount.completed > 0 ? <span className="pm-tab-count">{leagueStatusCount.completed}</span> : null}</> },
   ];
 
   const selectedLeague = useMemo(
@@ -589,6 +632,30 @@ export function LigaTab({
     () => (scheduleLeagueId ? leagues.find((l) => l.id === scheduleLeagueId) : null),
     [scheduleLeagueId, leagues],
   );
+
+  const myActiveLeagueHero = useMemo(() => {
+    const activeLeague = leagues.find((l) => l.status === 'active' && myTeamByLeague[l.id]);
+    if (!activeLeague) return null;
+    const myTeam = myTeamByLeague[activeLeague.id];
+    const teams = teamsByLeague[activeLeague.id] || [];
+    const matches = matchesByLeague[activeLeague.id] || [];
+    const numDiv = Math.min(Number(activeLeague.num_divisions) || 1, teams.length);
+    // Rang inden for spillerens egen division (eller hele ligaen ved 1 division)
+    const myDivision = numDiv > 1 ? (Number(myTeam?.division) || 1) : null;
+    const divTeams = myDivision ? teams.filter((t) => (Number(t.division) || 1) === myDivision) : teams;
+    const divTeamIds = new Set(divTeams.map((t) => t.id));
+    const divMatches = myDivision ? matches.filter((m) => divTeamIds.has(m.team1_id) || divTeamIds.has(m.team2_id)) : matches;
+    const standings = computeStandings(divTeams, divMatches, { pointsWin: activeLeague.points_win, pointsDraw: activeLeague.points_draw, pointsLoss: activeLeague.points_loss });
+    const rankIdx = myTeam ? standings.findIndex((t) => t.id === myTeam.id) : -1;
+    const rank = rankIdx >= 0 ? rankIdx + 1 : null;
+    const totalTeams = standings.length;
+    const currentRoundMatches = matches.filter((m) => m.round_number === activeLeague.current_round);
+    const myNextMatch = currentRoundMatches.find(
+      (m) => (m.team1_id === myTeam?.id || m.team2_id === myTeam?.id) && m.status !== 'reported',
+    );
+    const nextMatchDate = myNextMatch?.scheduled_date || null;
+    return { league: activeLeague, myTeam, rank, totalTeams, nextMatchDate, division: myDivision };
+  }, [leagues, myTeamByLeague, teamsByLeague, matchesByLeague]);
 
   return (
     <div>
@@ -635,72 +702,299 @@ export function LigaTab({
         />
       )}
 
-      {isAdmin && createOpen ? (
+      {isAdmin && createOpen ? (() => {
+        const ligaInputStyle = { ...inputStyle, marginBottom: 0 };
+        const REGIONS = ['Region Midtjylland', 'Region Hovedstaden', 'Region Sjælland', 'Region Syddanmark', 'Region Nordjylland'];
+        const MATCH_SYSTEMS = [
+          { id: 'round_robin', label: 'Alle-mod-alle', desc: 'Standard ligaformat hvor alle hold mødes.' },
+          { id: 'swiss', label: 'Swiss-system', desc: 'Hold parres efter stilling — færre kampe, jævnbyrdigt.' },
+        ];
+        const SummaryRow = ({ label, value }) => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--pm-americano-tie-border)' }}>
+            <span style={{ fontSize: 12, color: theme.textLight }}>{label}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: theme.text, textAlign: 'right' }}>{value}</span>
+          </div>
+        );
+        return (
         <div
           ref={ligaCreateFormRef}
           className="pm-ui-card pm-create-form-anchor pm-create-form-panel"
-          style={{ padding: '20px', marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+          style={{ paddingTop: '16px', paddingBottom: '16px', marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflow: 'hidden' }}
         >
-          <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '14px' }}>Ny liga</div>
-          <label style={labelStyle}>Navn</label>
-          <input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder="F.eks. Forårssæson 2026" style={{ ...inputStyle, marginBottom: '10px' }} />
-          <label style={labelStyle}>Beskrivelse <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-          <input value={createForm.description} onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))} placeholder="Kort beskrivelse..." style={{ ...inputStyle, marginBottom: '10px' }} />
-          <label style={labelStyle}>Type</label>
-          <PillTabs
-            tabs={[
-              { id: 'weekly', label: SEASON_LABELS.weekly },
-              { id: 'monthly', label: SEASON_LABELS.monthly },
-            ]}
-            value={createForm.season_type}
-            onChange={(id) => setCreateForm((f) => ({ ...f, season_type: id }))}
-            ariaLabel="Liga-type"
-            size="sm"
-            style={{ marginBottom: '10px' }}
-          />
-          <DateInputField
-            label="Startdato"
-            value={createForm.start_date}
-            onChange={(e) => setCreateForm((f) => ({ ...f, start_date: e.target.value }))}
-            labelStyle={labelStyle}
-            inputStyle={{ ...inputStyle, marginBottom: '10px' }}
-          />
-          <DateInputField
-            label="Slutdato"
-            value={createForm.end_date}
-            onChange={(e) => setCreateForm((f) => ({ ...f, end_date: e.target.value }))}
-            labelStyle={labelStyle}
-            inputStyle={{ ...inputStyle, marginBottom: '10px' }}
-          />
-          <label style={labelStyle}>Maks antal hold <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
-          <input
-            type="number"
-            min="2"
-            value={createForm.max_teams}
-            onChange={e => setCreateForm(f => ({ ...f, max_teams: e.target.value }))}
-            placeholder="Ubegrænset"
-            style={{ ...inputStyle, marginBottom: '14px' }}
-          />
-          <div className="pm-form-submit pm-form-submit-actions">
+          {/* Wizard indicator */}
+          <div className="pm-wiz" style={{ margin: '0 0 16px' }}>
+            {[{ n: 1, label: 'Info' }, { n: 2, label: 'Regler' }, { n: 3, label: 'Bekræft' }].map((s, i, arr) => {
+              const state = s.n < createStep ? 'done' : s.n === createStep ? 'on' : '';
+              return (
+                <span key={s.n} style={{ display: 'contents' }}>
+                  <div className={`pm-wiz-step${state ? ' ' + state : ''}`}>
+                    <div className="pm-wiz-num">{state === 'done' ? '✓' : s.n}</div>
+                    <span className="pm-wiz-label">{s.label}</span>
+                  </div>
+                  {i < arr.length - 1 && <div className="pm-wiz-line" />}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Step 1: Grundlæggende info */}
+          {createStep === 1 && (
+            <>
+              <div className="pm-field">
+                <label>Ligaens navn</label>
+                <input
+                  value={createForm.name}
+                  onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="F.eks. Sommer Liga 2026"
+                  style={ligaInputStyle}
+                />
+              </div>
+              <div className="pm-field">
+                <label>Region</label>
+                <select
+                  value={createForm.region}
+                  onChange={e => setCreateForm(f => ({ ...f, region: e.target.value }))}
+                  style={ligaInputStyle}
+                >
+                  <option value="">Vælg region</option>
+                  {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div className="pm-field">
+                <label>Antal divisioner</label>
+                <div className="pm-stepper">
+                  <button type="button" className="pm-stepper-btn" onClick={() => setCreateForm(f => ({ ...f, num_divisions: Math.max(1, (f.num_divisions || 1) - 1) }))}>−</button>
+                  <span className="pm-stepper-val">{createForm.num_divisions || 1}</span>
+                  <button type="button" className="pm-stepper-btn" onClick={() => setCreateForm(f => ({ ...f, num_divisions: Math.min(8, (f.num_divisions || 1) + 1) }))}>+</button>
+                </div>
+                <div className="pm-field-hint">Hold inddeles automatisk i divisioner efter niveau, når ligaen starter.</div>
+              </div>
+              <div className="pm-field">
+                <label>Tilmeldingsfrist &amp; sæsonstart</label>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: theme.textLight, marginBottom: 4 }}>Frist</div>
+                    <DateInputField
+                      value={createForm.registration_deadline}
+                      onChange={e => setCreateForm(f => ({ ...f, registration_deadline: e.target.value }))}
+                      inputStyle={ligaInputStyle}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: theme.textLight, marginBottom: 4 }}>Start</div>
+                    <DateInputField
+                      value={createForm.start_date}
+                      onChange={e => setCreateForm(f => ({ ...f, start_date: e.target.value }))}
+                      inputStyle={ligaInputStyle}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <svg style={{ width: 15, height: 15, color: 'var(--pm-accent)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                <span style={{ fontSize: 11.5, color: theme.textLight, lineHeight: 1.55 }}>Du kan konfigurere specifikke regler og kampsystem i de næste trin.</span>
+              </div>
+              <div className="pm-format-card">
+                <b>Skab dit fællesskab</b>
+                <p>Ligaer samler spillere på alle niveauer — og giver faste kampe hele sæsonen.</p>
+              </div>
+            </>
+          )}
+
+          {/* Step 2: Divisionsindstillinger / Regler */}
+          {createStep === 2 && (
+            <>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '0 18px 8px' }}>Kampsystem</div>
+              {MATCH_SYSTEMS.map(ms => (
+                <div
+                  key={ms.id}
+                  onClick={() => setCreateForm(f => ({ ...f, match_system: ms.id }))}
+                  style={{ margin: '0 18px 9px', padding: '13px 14px', borderRadius: 14, border: `1.5px solid ${createForm.match_system === ms.id ? 'var(--pm-navy)' : 'var(--pm-border)'}`, background: createForm.match_system === ms.id ? 'var(--pm-navy-bg)' : 'var(--pm-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: theme.text }}>{ms.label}</div>
+                    <div style={{ fontSize: 11.5, color: theme.textLight, marginTop: 2 }}>{ms.desc}</div>
+                  </div>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${createForm.match_system === ms.id ? 'var(--pm-navy)' : 'var(--pm-border)'}`, background: createForm.match_system === ms.id ? 'var(--pm-navy)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {createForm.match_system === ms.id && <svg style={{ width: 10, height: 10 }} viewBox="0 0 24 24" fill="none" stroke="var(--pm-on-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>}
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '4px 18px 8px' }}>Pointsystem</div>
+              <div style={{ margin: '0 18px 12px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', overflow: 'hidden' }}>
+                {[
+                  { key: 'points_win', label: 'Vundet kamp (2-0 eller 2-1)', desc: 'Standard point for sejr', min: 1, max: 9 },
+                  { key: 'points_draw', label: 'Uafgjort kamp', desc: 'Hvis sæt og partier ender lige', min: 0, max: 5 },
+                  { key: 'points_loss', label: 'Tabt kamp', desc: 'Gives ofte for fremmøde', min: 0, max: 3 },
+                ].map((row, idx, arr) => (
+                  <div key={row.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: idx < arr.length - 1 ? '1px solid var(--pm-border)' : 'none' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: theme.text }}>{row.label}</div>
+                      <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>{row.desc}</div>
+                    </div>
+                    <div className="pm-stepper" style={{ width: 108 }}>
+                      <button type="button" className="pm-stepper-btn" style={{ width: 30, height: 30 }} onClick={() => setCreateForm(f => ({ ...f, [row.key]: Math.max(row.min, (f[row.key] ?? 0) - 1) }))}>−</button>
+                      <span className="pm-stepper-val" style={{ fontSize: 14 }}>{createForm[row.key] ?? 0}</span>
+                      <button type="button" className="pm-stepper-btn" style={{ width: 30, height: 30 }} onClick={() => setCreateForm(f => ({ ...f, [row.key]: Math.min(row.max, (f[row.key] ?? 0) + 1) }))}>+</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pm-field">
+                <label>Særlige regler eller noter <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
+                <textarea
+                  value={createForm.rules_notes}
+                  onChange={e => setCreateForm(f => ({ ...f, rules_notes: e.target.value }))}
+                  placeholder="Eks: 'Golden point ved 40-40' eller 'Match-tiebreak i 3. sæt'..."
+                  rows={3}
+                  style={{ ...ligaInputStyle, resize: 'vertical' }}
+                />
+              </div>
+              <div className="pm-format-card">
+                <b>Officielle regler som udgangspunkt</b>
+                <p>Din liga følger de officielle Dansk Padel Forbund-regler, medmindre du tilføjer egne.</p>
+              </div>
+            </>
+          )}
+
+          {/* Step 3: Bekræft */}
+          {createStep === 3 && (
+            <>
+              {/* Grundlæggende info */}
+              <div style={{ margin: '0 18px 12px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', padding: '14px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, marginBottom: 8, borderBottom: '1px solid var(--pm-border)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Grundlæggende info</span>
+                  <button type="button" onClick={() => { setCreateStep(1); setCreateStepErr(''); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Redigér</button>
+                </div>
+                <SummaryRow label="Navn" value={createForm.name || '—'} />
+                <SummaryRow label="Region" value={createForm.region || '—'} />
+                <SummaryRow label="Antal divisioner" value={createForm.num_divisions || 1} />
+                <SummaryRow label="Tilmeldingsfrist" value={createForm.registration_deadline || '—'} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, paddingTop: 6 }}>
+                  <span style={{ fontSize: 12, color: theme.textLight }}>Sæsonstart</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{createForm.start_date || '—'}</span>
+                </div>
+              </div>
+              {/* Regler & kampsystem */}
+              <div style={{ margin: '0 18px 14px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', padding: '14px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, marginBottom: 8, borderBottom: '1px solid var(--pm-border)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Regler &amp; kampsystem</span>
+                  <button type="button" onClick={() => { setCreateStep(2); setCreateStepErr(''); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Redigér</button>
+                </div>
+                <SummaryRow label="Kampsystem" value={{ round_robin: 'Alle-mod-alle', swiss: 'Swiss-system' }[createForm.match_system] || createForm.match_system} />
+                <SummaryRow label="Point" value={`${createForm.points_win} sejr · ${createForm.points_draw} uafgjort · ${createForm.points_loss} nederlag`} />
+              </div>
+              <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1.5px solid var(--pm-navy)', borderLeft: '3px solid var(--pm-navy)', borderRadius: 10, padding: '11px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <svg style={{ width: 15, height: 15, color: 'var(--pm-accent)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 13v-2Z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+                <span style={{ fontSize: 11.5, color: theme.textLight, lineHeight: 1.6 }}>Når du trykker <b style={{ color: theme.text }}>&quot;Opret liga&quot;</b>, bliver ligaen synlig i oversigten, og hold kan tilmelde sig med det samme.</span>
+              </div>
+            </>
+          )}
+
+          {createStepErr && (
+            <div style={{ margin: '0 18px 10px', color: theme.red, fontSize: 12 }}>{createStepErr}</div>
+          )}
+
+          {/* Navigation */}
+          <div style={{ display: 'flex', gap: 10, padding: '0 18px' }}>
+            {createStep > 1 ? (
+              <button type="button" onClick={() => { setCreateStep(s => s - 1); setCreateStepErr(''); }} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
+                ← Tilbage
+              </button>
+            ) : (
+              <button type="button" onClick={() => { setCreateOpen(false); setCreateStep(1); setCreateStepErr(''); }} style={{ ...btn(false, { size: 'md', fontWeight: 600 }), flex: 1 }}>
+                Annullér
+              </button>
+            )}
+            {createStep < 3 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (createStep === 1 && !createForm.name.trim()) { setCreateStepErr('Angiv et navn til ligaen.'); return; }
+                  if (createStep === 1 && !createForm.start_date) { setCreateStepErr('Angiv en sæsonstart-dato.'); return; }
+                  setCreateStepErr('');
+                  setCreateStep(s => s + 1);
+                }}
+                style={{ ...btn(true, { size: 'md', fontWeight: 600 }), flex: 2 }}
+              >
+                {createStep === 1 ? 'Næste: Divisionsindstillinger →' : 'Næste: Bekræft liga →'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={createLeague}
+                disabled={busyId === 'create'}
+                style={{ ...btn(true, { size: 'md', fontWeight: 600 }), flex: 2 }}
+              >
+                {busyId === 'create' ? 'Opretter…' : 'Opret liga'}
+              </button>
+            )}
+          </div>
+        </div>
+        );
+      })() : (
+        <>
+      {/* Min liga hero — vis brugerens aktive liga øverst */}
+      {myActiveLeagueHero && !loading && (
+        <div style={{
+          background: 'linear-gradient(135deg, var(--pm-navy-deep) 0%, var(--pm-navy) 100%)',
+          borderRadius: 16, padding: '18px 18px 16px', marginBottom: 16,
+          color: 'var(--pm-on-accent)', position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <svg style={{ width: 13, height: 13, color: 'var(--pm-amber)', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9l6.6-.8Z"/></svg>
+            <span style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.9px', textTransform: 'uppercase', color: 'var(--pm-hero-subtitle)' }}>Aktiv sæson</span>
+          </div>
+          <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2, marginBottom: 4 }}>
+            {myActiveLeagueHero.league.name}
+          </div>
+          {myActiveLeagueHero.league.current_round ? (
+            <div style={{ fontSize: '12px', color: 'var(--pm-hero-subtitle)', marginBottom: 14 }}>
+              {myActiveLeagueHero.division ? `Division ${myActiveLeagueHero.division}` : (myActiveLeagueHero.league.season_type === 'weekly' ? 'Ugentlig liga' : 'Månedlig liga')}
+              {myActiveLeagueHero.league.total_rounds ? ` · Runde ${myActiveLeagueHero.league.current_round}/${myActiveLeagueHero.league.total_rounds}` : ''}
+            </div>
+          ) : null}
+          <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Placering</div>
+              <div style={{ fontSize: '20px', fontWeight: 700 }}>
+                {myActiveLeagueHero.rank != null ? (
+                  <>#<span>{myActiveLeagueHero.rank}</span> <small style={{ fontSize: '13px', color: 'var(--pm-hero-subtitle)', fontWeight: 600 }}>/ {myActiveLeagueHero.totalTeams}</small></>
+                ) : '—'}
+              </div>
+            </div>
+            {myActiveLeagueHero.nextMatchDate ? (
+              <div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Næste kamp</div>
+                <div style={{ fontSize: '14px', fontWeight: 700 }}>{myActiveLeagueHero.nextMatchDate}</div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--pm-hero-subtitle)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>Hold</div>
+                <div style={{ fontSize: '14px', fontWeight: 700 }}>{myActiveLeagueHero.myTeam?.name || '—'}</div>
+              </div>
+            )}
+          </div>
+          <div style={{ textAlign: 'right' }}>
             <button
               type="button"
-              onClick={createLeague}
-              disabled={busyId === 'create'}
-              style={btn(true, { size: 'md', fontWeight: 600 })}
+              onClick={() => setScheduleLeagueId(myActiveLeagueHero.league.id)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'var(--pm-amber)', color: 'var(--pm-navy-deep)', border: 'none',
+                borderRadius: 10, padding: '9px 16px', fontSize: '13px', fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
             >
-              {busyId === 'create' ? 'Opretter…' : 'Opret liga'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setCreateOpen(false)}
-              style={btn(false, { size: 'md', fontWeight: 600 })}
-            >
-              Annullér
+              Se program
+              <svg style={{ width: 13, height: 13 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
           </div>
         </div>
-      ) : (
-        <>
+      )}
+
       <div style={{ marginBottom: '14px' }}>
         <SwissRulesBox collapsible />
       </div>
@@ -745,7 +1039,6 @@ export function LigaTab({
           if (user?.id) mergeLigaSessionPrefs(user.id, { ligaView: nextView });
         }}
         ariaLabel="Liga status"
-        size="sm"
         style={{ marginBottom: '16px' }}
       />
 
@@ -800,7 +1093,7 @@ export function LigaTab({
             const regTeams = allTeamsByLeague[league.id] || [];
             const matches = matchesByLeague[league.id] || [];
             const myTeam = myTeamByLeague[league.id];
-            const standings = computeStandings(teams, matches);
+            const standings = computeStandings(teams, matches, { pointsWin: league.points_win, pointsDraw: league.points_draw, pointsLoss: league.points_loss });
             const rankIdx = myTeam ? standings.findIndex((t) => t.id === myTeam.id) : -1;
             const myTeamRank = rankIdx >= 0 ? rankIdx + 1 : null;
             const regionLabel = creatorAreasByUserId[String(league.created_by)] || '';
@@ -821,6 +1114,25 @@ export function LigaTab({
               />
             );
           })}
+
+          {/* "Start en ny liga" CTA card */}
+          {!isAdmin && view === 'registration' && (
+            <button
+              type="button"
+              onClick={async () => {
+                const { data } = await supabase.from('profiles').select('id').eq('role', 'admin').ilike('full_name', '%Mike Pedersen%').maybeSingle();
+                if (data?.id) navigate('/dashboard/beskeder?med=' + data.id);
+                else showToast('Ingen admin fundet.');
+              }}
+              style={{ width: '100%', textAlign: 'center', background: theme.surface, border: `1.5px dashed ${theme.border}`, borderRadius: 14, padding: '22px 20px', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: theme.accentBg, color: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                <Plus size={20} strokeWidth={2.4} />
+              </div>
+              <b style={{ fontSize: 14, color: theme.text, display: 'block', marginBottom: 6 }}>Start en ny liga</b>
+              <p style={{ fontSize: 12, color: theme.textMid, margin: 0, lineHeight: 1.5 }}>Kan du ikke finde en, der passer? Kontakt en admin for at oprette din egen private eller offentlige liga.</p>
+            </button>
+          )}
         </div>
       )}
         </>
@@ -832,7 +1144,7 @@ export function LigaTab({
         const matches = matchesByLeague[selectedLeague.id] || [];
         const myTeam = myTeamByLeague[selectedLeague.id];
         const joined = !!myTeam;
-        const standings = computeStandings(teams, matches);
+        const standings = computeStandings(teams, matches, { pointsWin: selectedLeague.points_win, pointsDraw: selectedLeague.points_draw, pointsLoss: selectedLeague.points_loss });
         const maxTeams = selectedLeague.max_teams || regTeams.length || teams.length;
         const regTeamCount = regTeams.length;
         const isFull = selectedLeague.max_teams && regTeamCount >= selectedLeague.max_teams;
@@ -979,6 +1291,122 @@ export function LigaTab({
           showToast={showToast}
         />
       ) : null}
+
+      {/* Liga oprettet kvittering */}
+      {createdLeagueReceipt && (() => {
+        const r = createdLeagueReceipt;
+        const ligaUrl = typeof window !== 'undefined'
+          ? `${window.location.origin}/dashboard/kampe`
+          : '';
+        const handleCopy = () => {
+          if (!ligaUrl) return;
+          navigator.clipboard?.writeText(ligaUrl).then(() => {
+            setLigaReceiptUrlCopied(true);
+            setTimeout(() => setLigaReceiptUrlCopied(false), 2000);
+          }).catch(() => showToast('Kopiering mislykkedes'));
+        };
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: theme.bg, display: 'flex', flexDirection: 'column', fontFamily: font }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', padding: 'max(10px, calc(env(safe-area-inset-top) + 8px)) 14px 10px', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
+              <h2 style={{ flex: 1, fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, textAlign: 'center' }}>PadelMakker</h2>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+              {/* Checkmark */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Check size={32} strokeWidth={2.8} />
+                </div>
+              </div>
+
+              {/* Title */}
+              <div style={{ textAlign: 'center', padding: '16px 32px 0' }}>
+                <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.3px', color: theme.text }}>Liga oprettet!</div>
+                <p style={{ fontSize: 12.5, color: theme.textMid, marginTop: 6, marginBottom: 0 }}>Ligaen er synlig i oversigten, og hold kan tilmelde sig nu.</p>
+              </div>
+
+              {/* Summary card */}
+              <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 14, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
+                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>LIGA</span>
+                  {Number(r.num_divisions) > 1 ? (
+                    <span style={{ background: theme.navyBg || 'var(--pm-navy-bg)', color: theme.navy, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>{r.num_divisions} divisioner</span>
+                  ) : null}
+                  <span style={{ background: theme.greenBg, color: theme.green, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>Tilmelding åben</span>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, marginTop: 10 }}>{r.name}</div>
+                {(() => {
+                  const sys = { round_robin: 'Alle mod alle', swiss: 'Swiss', knockout: 'Knockout' }[r.match_system];
+                  const rows = [];
+                  if (sys) rows.push(['Kampsystem', `${sys} · ${r.points_win ?? 3} sejr · ${r.points_draw ?? 1} uafgjort · ${r.points_loss ?? 0} nederlag`]);
+                  if (r.start_date || r.end_date) rows.push(['Sæson', `${r.start_date || '?'}${r.end_date ? ` – ${r.end_date}` : ''}`]);
+                  if (r.registration_deadline) rows.push(['Tilmeldingsfrist', r.registration_deadline]);
+                  if (r.region) rows.push(['Region', r.region]);
+                  if (r.max_teams) rows.push(['Maks. hold', String(r.max_teams)]);
+                  return rows.map(([label, value]) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12, marginTop: 6 }}>
+                      <span style={{ color: theme.textLight, flexShrink: 0 }}>{label}</span>
+                      <span style={{ color: theme.text, fontWeight: 600, textAlign: 'right' }}>{value}</span>
+                    </div>
+                  ));
+                })()}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 13, paddingTop: 12, borderTop: '1px solid ' + theme.border }}>
+                  <span style={{ fontSize: 12, color: theme.textMid }}>Hold tilmeldt</span>
+                  <span style={{ fontSize: 11.5, color: theme.textMid, fontWeight: 600 }}>0 hold</span>
+                </div>
+              </div>
+
+              {/* Share section */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '16px 18px 8px' }}>
+                Del liga
+              </div>
+              <div style={{ margin: '0 18px 12px', background: theme.surface, borderRadius: 10, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>
+                <span style={{ flex: 1, fontSize: 12, color: theme.textMid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {ligaUrl || 'padelmakker.dk/liga/…'}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 7, border: '1px solid ' + theme.border, background: theme.surfaceAlt, color: ligaReceiptUrlCopied ? theme.green : theme.textMid, cursor: 'pointer', flexShrink: 0, fontFamily: font }}
+                >
+                  <Copy size={12} />
+                  {ligaReceiptUrlCopied ? 'Kopieret!' : 'Kopiér'}
+                </button>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ padding: '0 18px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof navigator !== 'undefined' && navigator.share) {
+                      void navigator.share({ title: r.name, url: ligaUrl }).catch(() => {});
+                    } else {
+                      handleCopy();
+                    }
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 16px', borderRadius: 10, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font }}
+                >
+                  Invitér hold til ligaen
+                </button>
+              </div>
+            </div>
+
+            {/* CTA bar */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 18px calc(12px + env(safe-area-inset-bottom))', background: theme.surface, borderTop: '1px solid ' + theme.border }}>
+              <button
+                type="button"
+                onClick={() => setCreatedLeagueReceipt(null)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
+              >
+                Gå til liga-oversigt
+                <ArrowRight size={16} strokeWidth={2.4} />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -15,9 +15,11 @@ import { AvatarCircle } from '../components/AvatarCircle';
 import { SeekingCallout, SeekingCalloutDetail } from '../components/SeekingCallout';
 import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { resolveAmericanoEloDisplay } from '../features/americano/americanoDisplayUtils';
+import { useAuth } from '../lib/AuthContext';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined, onInviteMatch = undefined }) {
   const open = !!player;
+  const { profile: currentProfile } = useAuth();
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
     enabled: open,
@@ -32,6 +34,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
   const [americanoHistoryRows, setAmericanoHistoryRows] = useState([]);
   const [profileRow, setProfileRow] = useState(null);
   const [ligaStats, setLigaStats] = useState(null);
+  const [sharedHistory, setSharedHistory] = useState(null);
 
   const loadProfileData = useCallback(async () => {
     if (!player?.id) {
@@ -55,6 +58,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
     setAmericanoHistoryRows([]);
     setProfileRow(null);
     setLigaStats(null);
+    setSharedHistory(null);
 
     try {
       const [pr, hist, amHist, teamsRes] = await Promise.all([
@@ -93,6 +97,24 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             result: Number(row.change) > 0 ? 'win' : Number(row.change) < 0 ? 'loss' : 'draw',
           }))
         );
+      }
+
+      if (currentProfile?.id && String(currentProfile.id) !== String(player.id) && !hist.error) {
+        const { data: myMatchIds } = await supabase
+          .from('elo_history')
+          .select('match_id, result')
+          .eq('user_id', currentProfile.id)
+          .not('match_id', 'is', null);
+        const viewedMatchIds = new Set(
+          (hist.data || []).map((r) => r.match_id).filter(Boolean)
+        );
+        const shared = (myMatchIds || []).filter((r) => r.match_id && viewedMatchIds.has(r.match_id));
+        if (shared.length > 0) {
+          setSharedHistory({
+            count: shared.length,
+            wins: shared.filter((r) => r.result === 'win').length,
+          });
+        }
       }
 
       const teams = teamsRes.data || [];
@@ -173,6 +195,15 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
   const americanoRounds = americanoWins + americanoDraws + americanoLosses;
   const americanoWinPct = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : 0;
 
+  const recentForm = useMemo(
+    () =>
+      [...ratedHistoryRows]
+        .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
+        .slice(0, 4)
+        .map((row) => (row.result === 'win' ? 'V' : row.result === 'loss' ? 'T' : 'U')),
+    [ratedHistoryRows],
+  );
+
   const americanoForm = useMemo(
     () =>
       [...americanoHistoryRows]
@@ -204,8 +235,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         : [
             { label: 'ELO', value: elo, color: theme.accent },
             { label: 'Kampe', value: games, color: theme.blue },
-            { label: 'Sejre', value: wins, color: theme.warm },
             { label: 'Win %', value: games != null && games > 0 ? `${winPct}%` : '—', color: theme.accent },
+            { label: 'Seneste form', value: null, form: recentForm },
           ];
 
   const age = calcAge(pRef.birth_year, pRef.birth_month, pRef.birth_day);
@@ -261,17 +292,24 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         <div style={{ textAlign: 'center', marginBottom: '20px', paddingTop: '4px' }}>
           <div style={{ display: 'inline-block', position: 'relative', marginBottom: '10px' }}>
             <AvatarCircle avatar={pRef.avatar} size={72} emojiSize="36px" style={{ background: theme.accentBg, border: '2px solid ' + theme.accent + '40' }} />
+            {pRef.level != null && pRef.level !== '' && (
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid ' + theme.surface }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+              </div>
+            )}
           </div>
           <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', wordBreak: 'break-word' }}>{pRef.full_name || pRef.name || 'Spiller'}</div>
-          {locationDisplay && (
-            <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '3px' }}>{locationDisplay}</div>
+          {(locationDisplay || pRef.created_at) && (
+            <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '3px' }}>
+              {[locationDisplay, pRef.created_at ? `Medlem siden ${new Date(pRef.created_at).getFullYear()}` : null].filter(Boolean).join(' · ')}
+            </div>
           )}
           <div style={{ display: 'flex', gap: '6px', marginTop: '9px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {levelDisplay ? (
               <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
             ) : null}
-            {pRef.court_side && <span style={tag(theme.navySoft, theme.navy)}>{pRef.court_side}</span>}
-            {pRef.play_style && <span style={tag(theme.navySoft, theme.navy)}>{pRef.play_style}</span>}
+            {pRef.court_side && <span style={tag(theme.navySoft, theme.onAccent)}>{pRef.court_side}</span>}
+            {pRef.play_style && <span style={tag(theme.navySoft, theme.onAccent)}>{pRef.play_style}</span>}
             {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
             {age && <span style={tag(theme.surfaceAlt, theme.textMid)}>{age} år</span>}
           </div>
@@ -325,11 +363,19 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         {dataLoading ? (
           <div style={{ textAlign: 'center', padding: '16px', color: theme.textMid, fontSize: '13px', marginBottom: '16px' }}>Indlæser statistik...</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '11px', padding: '0 0 2px', marginBottom: '16px' }}>
             {activeOverviewCards.map((s, i) => (
-              <div key={i} style={{ textAlign: 'center', padding: '10px 4px', background: theme.surfaceAlt, borderRadius: '8px' }}>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: s.color }}>{s.value}</div>
-                <div style={{ fontSize: '9px', fontWeight: 700, color: theme.textLight, marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+              <div key={i} style={{ textAlign: 'center', padding: '13px 15px', background: theme.surfaceAlt, borderRadius: theme.radius, border: '1px solid ' + theme.border }}>
+                <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: theme.textLight }}>{s.label}</div>
+                {s.form ? (
+                  <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 9 }}>
+                    {s.form.length > 0 ? s.form.map((r, j) => (
+                      <div key={j} style={{ width: 21, height: 21, borderRadius: '50%', background: r === 'V' ? 'var(--pm-green)' : r === 'T' ? 'var(--pm-red)' : 'var(--pm-border)', color: 'var(--pm-on-accent)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{r}</div>
+                    )) : <div style={{ fontSize: '12px', color: theme.textLight, marginTop: 4 }}>—</div>}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '23px', fontWeight: 700, color: theme.accent, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
+                )}
               </div>
             ))}
           </div>
@@ -459,6 +505,20 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           <p style={{ fontSize: '13px', color: theme.textMid, lineHeight: 1.5, marginBottom: '16px', padding: '12px', background: theme.surfaceAlt, borderRadius: '8px', fontStyle: 'italic' }}>
             &ldquo;{pRef.bio}&rdquo;
           </p>
+        )}
+
+        {sharedHistory && sharedHistory.count > 0 && (
+          <div style={{ marginBottom: 16, padding: '12px 14px', background: theme.surfaceAlt, borderRadius: 10, border: '1px solid ' + theme.border }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Fælles historik</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 600, color: theme.text }}>
+                I har spillet {sharedHistory.count} kamp{sharedHistory.count !== 1 ? 'e' : ''} sammen
+              </div>
+              {sharedHistory.wins > 0 && (
+                <span style={tag(theme.greenBg, theme.green)}>{sharedHistory.wins} sejr{sharedHistory.wins !== 1 ? 'e' : ''}</span>
+              )}
+            </div>
+          </div>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>

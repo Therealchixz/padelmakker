@@ -345,17 +345,15 @@ export function usePartnerOpponentStats(userId, ratedRows) {
 
         const all = Object.values(statsMap);
 
-        const partners = all
-          .filter((p) => p.asPartner.games >= MIN_RELATION_GAMES_TOGETHER)
-          .sort(sortByPartnerWinRateDesc)
-          .slice(0, 3);
+        const qualifiedPartners = all.filter((p) => p.asPartner.games >= MIN_RELATION_GAMES_TOGETHER);
+        const qualifiedOpponents = all.filter((p) => p.asOpponent.games >= MIN_RELATION_GAMES_TOGETHER);
 
-        const opponents = all
-          .filter((p) => p.asOpponent.games >= MIN_RELATION_GAMES_TOGETHER)
-          .sort(sortByOpponentWinRateAsc)
-          .slice(0, 3);
+        const partners = [...qualifiedPartners].sort(sortByPartnerWinRateDesc).slice(0, 3);
+        const worstPartners = [...qualifiedPartners].sort((a, b) => -sortByPartnerWinRateDesc(a, b)).slice(0, 2);
+        const opponents = [...qualifiedOpponents].sort(sortByOpponentWinRateAsc).slice(0, 3);
+        const bestOpponents = [...qualifiedOpponents].sort((a, b) => -sortByOpponentWinRateAsc(a, b)).slice(0, 2);
 
-        setStats({ partners, opponents });
+        setStats({ partners, worstPartners, opponents, bestOpponents });
         setLoading(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,4 +1,4 @@
-import { Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { Plus, Search, SlidersHorizontal, ArrowLeft, Info } from 'lucide-react';
 
 function UnreadBadge({ count }) {
   if (!count) return null;
@@ -86,6 +86,34 @@ export function KampeRedesignToolbar({
           <SlidersHorizontal size={18} strokeWidth={2} aria-hidden />
         </button>
       </div>
+    </div>
+  );
+}
+
+export function KampeCreateHeader({ title, onBack, onInfo }) {
+  return (
+    <div className="pm-kampe-v2-create-head">
+      <button
+        type="button"
+        className="pm-kampe-v2-circle-btn"
+        onClick={onBack}
+        aria-label="Tilbage"
+      >
+        <ArrowLeft size={18} strokeWidth={2.2} aria-hidden />
+      </button>
+      <h2 className="pm-kampe-v2-create-title">{title}</h2>
+      {onInfo ? (
+        <button
+          type="button"
+          className="pm-kampe-v2-circle-btn"
+          onClick={onInfo}
+          aria-label="Information"
+        >
+          <Info size={18} strokeWidth={2} aria-hidden />
+        </button>
+      ) : (
+        <span className="pm-kampe-v2-circle-btn pm-kampe-v2-circle-btn--ghost" aria-hidden />
+      )}
     </div>
   );
 }

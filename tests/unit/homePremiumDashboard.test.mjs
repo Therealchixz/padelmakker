@@ -39,6 +39,27 @@ test('makkere tab supports seeking deep link from URL', async () => {
   assert.match(makkereTab, /ref=\{seekingResultsRef\}/)
 })
 
+// Den blå ELO-hero ("player-card") blev bevidst fjernet fra Hjem for at matche
+// mockup'en. Denne vagt sikrer at den ikke sniger sig tilbage – hverken som JSX
+// eller som CSS – så Hjem beholder den kompakte hilsen-topbar.
+test('home does not render the blue premium ELO hero (removed per mockups)', async () => {
+  const homeTab = await readFile(HOME_TAB_URL, 'utf8')
+
+  assert.doesNotMatch(homeTab, /pm-home-premium-hero/)
+  assert.doesNotMatch(homeTab, /pm-home-player-card-head/)
+  assert.doesNotMatch(homeTab, /pm-home-premium-stats/)
+  assert.doesNotMatch(homeTab, /pm-home-next-goal-card/)
+  assert.doesNotMatch(homeTab, /pm-home-form-row/)
+})
+
+test('the blue premium hero styles are not reintroduced', async () => {
+  const css = await readFile(RESPONSIVE_CSS_URL, 'utf8')
+
+  assert.doesNotMatch(css, /\.pm-home-premium-hero\s*\{/)
+  assert.doesNotMatch(css, /\.pm-home-player-card-head\s*\{/)
+  assert.doesNotMatch(css, /\.pm-home-next-goal-card\s*\{/)
+})
+
 test('home dashboard keeps mobile layout hooks and seeking CTA styling', async () => {
   const dashboardPage = await readFile(DASHBOARD_PAGE_URL, 'utf8')
   const css = await readFile(RESPONSIVE_CSS_URL, 'utf8')

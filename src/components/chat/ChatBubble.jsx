@@ -18,6 +18,8 @@ export function ChatBubble({
   onReact,
   onJoinInvite,
   joiningInviteId = null,
+  onAcceptTime,
+  acceptingTimeId = null,
 }) {
   const mine = message.from === 'me';
   const messageType = message.messageType || message.message_type || CHAT_MESSAGE_TYPES.TEXT;
@@ -70,7 +72,12 @@ export function ChatBubble({
             ) : messageType === CHAT_MESSAGE_TYPES.VENUE_SHARE ? (
               <ChatVenueCard payload={message.payload} />
             ) : messageType === CHAT_MESSAGE_TYPES.TIME_SUGGESTION ? (
-              <ChatTimeCard payload={message.payload} />
+              <ChatTimeCard
+                payload={message.payload}
+                mine={mine}
+                onAccept={onAcceptTime ? () => onAcceptTime(message) : undefined}
+                accepting={acceptingTimeId === message.id}
+              />
             ) : (
               <div className={`pm-chat-v2-bubble ${mine ? 'pm-chat-v2-bubble--mine' : 'pm-chat-v2-bubble--them'} ${bubbleRadius}`}>
                 {message.text}

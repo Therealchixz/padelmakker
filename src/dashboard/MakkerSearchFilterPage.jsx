@@ -161,7 +161,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   return (
     <div style={{ fontFamily: font }}>
       {/* Topbar — matches mockup */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid ' + theme.border, background: theme.surface, marginBottom: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'max(10px, calc(env(safe-area-inset-top) + 8px)) 14px 10px', borderBottom: '1px solid ' + theme.border, background: theme.surface, marginBottom: 0 }}>
         <button
           type="button"
           onClick={() => navigate(returnTo)}
@@ -174,12 +174,17 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         <button
           type="button"
           onClick={() => setPrefs(normalizeMakkerSearchPrefs({}, user))}
-          style={{ fontSize: '11.5px', fontWeight: 600, color: theme.navy, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '4px 0' }}
+          style={{ fontSize: '11.5px', fontWeight: 600, color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '4px 0' }}
         >
           Nulstil
         </button>
       </div>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px 0' }}>
+
+      <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 16 }}>
+        Dette styrer hvornår du får besked og hvilke makkere der matcher. Slå aktiv søgning til/fra på
+        Hjem eller Find makker — her finjusterer du region, niveau og spilletider.
+      </p>
 
       <div
         style={{
@@ -414,6 +419,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
                     type="button"
                     onClick={() => set({ levelWindow: value })}
                     title={`${label}: ${levelRangeSummary(min, max)}`}
+                    aria-label={`${label}: niveau ${levelRangeSummary(min, max)}`}
                     style={{
                       ...btn(active),
                       padding: '8px 10px',
@@ -439,6 +445,17 @@ export function MakkerSearchFilterPage({ user, showToast }) {
                 );
               })}
             </div>
+            <p
+              style={{
+                fontSize: 11,
+                color: theme.textMid,
+                margin: '8px 0 0',
+                lineHeight: 1.4,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              Resultat: niveau <strong style={{ color: theme.text }}>{levelRangeSummary(levelSpan.min, levelSpan.max)}</strong>
+            </p>
           </div>
         ) : null}
 
