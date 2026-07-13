@@ -3056,6 +3056,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                       <LevelRangeSlider
                         minVal={lvlMin}
                         maxVal={lvlMax}
+                        step={0.1}
                         onMinChange={(v) => setNewMatch(m => ({ ...m, level_min: String(levelToElo(v)) }))}
                         onMaxChange={(v) => setNewMatch(m => ({ ...m, level_max: String(levelToElo(v)) }))}
                       />
