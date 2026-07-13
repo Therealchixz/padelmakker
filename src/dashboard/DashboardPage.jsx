@@ -1908,9 +1908,18 @@ export function DashboardPage({ user, onLogout, showToast }) {
               <div style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
               <div style={{ fontSize: '11.5px', color: theme.textMid, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{authUser?.email}</div>
             </div>
-            {user?.level && (
-              <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(user.level)}</span>
-            )}
+            {user ? (
+              <>
+                <span style={tag(theme.accentBg, theme.accent)}>
+                  ELO {Math.round(Number(user.elo_rating) || 1000)}
+                </span>
+                {user?.level != null && user.level !== '' ? (
+                  <span style={tag(theme.amberBg, theme.amberText)}>
+                    ≈ Niveau {formatPlaytomicLevel(user.level)}
+                  </span>
+                ) : null}
+              </>
+            ) : null}
           </div>
           {mobileMoreTabs.map((t) => (
             <button

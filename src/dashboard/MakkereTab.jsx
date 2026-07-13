@@ -202,9 +202,12 @@ function SuggestionCard({ suggestion, onView, onInvite, onMessage, onDismiss, di
             >
               {p.full_name || p.name}
             </span>
-            {p.level != null && p.level !== '' && (
-              <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
-            )}
+            <span style={tag(theme.accentBg, theme.accent)}>
+              ELO {Math.round(Number(p.elo_rating) || 1000)}
+            </span>
+            {p.level != null && p.level !== '' ? (
+              <span style={tag(theme.amberBg, theme.amberText)}>≈ Niveau {formatPlaytomicLevel(p.level)}</span>
+            ) : null}
           </div>
           <div style={{ fontSize: 12, color: theme.textLight, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
             <MapPin size={10} />
@@ -830,9 +833,12 @@ export function MakkereTab({ user, showToast }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', alignItems: 'center' }}>
                     <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.2px' }}>{p.full_name || p.name}</span>
-                    {p.level != null && p.level !== '' && (
-                      <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
-                    )}
+                    <span style={tag(theme.accentBg, theme.accent)}>
+                      ELO {Math.round(Number(p.elo_rating) || 1000)}
+                    </span>
+                    {p.level != null && p.level !== '' ? (
+                      <span style={tag(theme.amberBg, theme.amberText)}>≈ Niveau {formatPlaytomicLevel(p.level)}</span>
+                    ) : null}
                     {isSeekingActive(p) && (
                       <span style={tag(theme.greenBg, theme.green)}>{seekingActivityLabelDisplay(p)}</span>
                     )}
