@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } fro
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
-import { Court } from '../api/base44Client';
+import { fetchCourtsCached } from '../lib/courtsCache';
 import { fetchProfilesByIdMap } from '../lib/profileQueries';
 import { supabase } from '../lib/supabase';
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
@@ -357,7 +357,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     try {
       const uid = user.id;
       const [cd, openPoolRes, createdRes, myMpRes] = await Promise.all([
-        Court.filter(),
+        fetchCourtsCached(),
         supabase
           .from("matches")
           .select("*")

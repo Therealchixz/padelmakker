@@ -5,6 +5,7 @@ import { normalizeProfileRow, buildOnboardingProfileRowPatch, canonicalRegionFor
 import { applyPendingAvatar } from './avatarUpload'
 import { DEFAULT_REGION } from './platformConstants'
 import { isSeekingActiveProfile } from './seekingFeedTtl'
+import { fetchPhoneVerificationExemptFromServer } from './phoneVerification'
 import { BanNoticeModal } from '../components/BanNoticeModal'
 import { startPresence, stopPresence } from './presence'
 
@@ -167,6 +168,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileLoadError, setProfileLoadError] = useState(false)
+  const [phoneVerificationExempt, setPhoneVerificationExempt] = useState(false)
   const [banNotice, setBanNotice] = useState(null)
   const profileReqId = useRef(0)
   const profileIdRef = useRef('')
@@ -180,6 +182,7 @@ export function AuthProvider({ children }) {
     signingOutRef.current = true
     profileReqId.current += 1
     setProfile(null)
+    setPhoneVerificationExempt(false)
     setBanNotice({ reason: reason || '' })
     try {
       await supabase.rpc('admin_clear_pin_session')
@@ -266,6 +269,7 @@ export function AuthProvider({ children }) {
     const uid = userRow?.id != null ? String(userRow.id) : ''
     if (!userRow?.id) {
       setProfile(null)
+      setPhoneVerificationExempt(false)
       profileIdRef.current = ''
       setProfileLoadError(false)
       if (!quiet) setProfileLoading(false)
@@ -287,6 +291,11 @@ export function AuthProvider({ children }) {
 
     if (!quiet) setProfileLoading(true)
     setProfileLoadError(false)
+
+    void fetchPhoneVerificationExemptFromServer(supabase).then((exempt) => {
+      if (profileReqId.current !== id) return
+      setPhoneVerificationExempt(exempt === true)
+    })
 
     const fetchWithTimeout = () =>
       Promise.race([
@@ -591,6 +600,7 @@ export function AuthProvider({ children }) {
     setSession(null)
     setUser(null)
     setProfile(null)
+    setPhoneVerificationExempt(false)
     profileIdRef.current = ''
     setProfileLoading(false)
     setProfileLoadError(false)
@@ -663,6 +673,7 @@ export function AuthProvider({ children }) {
         session,
         user,
         profile,
+        phoneVerificationExempt,
         loading,
         profileLoading,
         profileLoadError,

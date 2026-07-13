@@ -6,9 +6,16 @@ export function availabilityTags(profileLike) {
   return normalizeStringArrayField(profileLike?.availability);
 }
 
+/** Fjern vinkelparenteser ved gem (React escaper ved visning). */
 export function sanitizeText(str) {
   if (typeof str !== 'string') return str;
-  return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return str.replace(/</g, '').replace(/>/g, '');
+}
+
+/** Vis brugertekst gemt med ældre entity-encoding (&lt; / &gt;). */
+export function displayUserText(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 }
 
 export function resolveDisplayName(profileRow, authUser) {

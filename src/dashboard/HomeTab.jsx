@@ -4,7 +4,7 @@ import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { supabase } from '../lib/supabase';
-import { Court } from '../api/base44Client';
+import { fetchCourtsCached } from '../lib/courtsCache';
 import { Users, MapPin, Swords, BarChart2, CalendarPlus, ChevronRight, X } from 'lucide-react';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { NotificationBell } from '../components/NotificationBell';
@@ -478,7 +478,7 @@ export function HomeTab({ user, setTab, showToast }) {
         regAmIds.length       ? supabase.from('americano_participants').select('tournament_id').in('tournament_id', regAmIds)                                                                                                                     : Promise.resolve({ data: [] }),
         newLigaIds.length     ? supabase.from('league_teams').select('league_id').in('league_id', newLigaIds).eq('status', 'ready')                                                                                                              : Promise.resolve({ data: [] }),
         openMatchIds.length   ? supabase.from('match_players').select('match_id, user_id, user_name, user_emoji, team').in('match_id', openMatchIds)                                                                                            : Promise.resolve({ data: [] }),
-        Court.filter(),
+        fetchCourtsCached(),
       ]);
       const round2Results = {
         mResultsRes, mDetailsRes, amPartsRes, amMatchesRes, amEloRes, lgTeamsRes, lgMatchesRes, creatorProfilesRes, regAmPartsRes, newLgTeamsRes, openMatchPlayersRes, courtsRes,
@@ -763,9 +763,10 @@ export function HomeTab({ user, setTab, showToast }) {
     let retryTimer = null;
     const scheduleRefetch = () => {
       if (cancelled) return;
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        if (!cancelled) fetchFeed({ silent: true });
+        if (!cancelled && document.visibilityState !== 'hidden') fetchFeed({ silent: true });
       }, 1500);
     };
     const channel = supabase

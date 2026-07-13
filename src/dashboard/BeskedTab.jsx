@@ -313,25 +313,32 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       setLoadingMsgs(true);
     }
 
+    let cancelled = false;
+    const loadPartnerId = selectedId;
+
     if (!isCacheFresh) {
       setLoadingMsgs(true);
       setMessageLoadError(null);
-      fetchMessages(user.id, selectedId)
+      fetchMessages(user.id, loadPartnerId)
         .then(msgs => {
+          if (cancelled || loadPartnerId !== selectedId) return;
           setMessages(msgs);
           setMessageThreadCache(threadKey, msgs);
           const lastMsg = msgs[msgs.length - 1];
           if (lastMsg) upsertConversationFromMessage(lastMsg, { incomingRead: true });
-          scheduleMarkRead(selectedId, 60);
-          clearConversationUnread(selectedId);
+          scheduleMarkRead(loadPartnerId, 60);
+          clearConversationUnread(loadPartnerId);
         })
         .catch((e) => {
+          if (cancelled || loadPartnerId !== selectedId) return;
           console.warn('load messages:', e);
           const msg = 'Kunne ikke hente beskeder. Prøv igen.';
           setMessageLoadError(msg);
           showToast?.(msg);
         })
-        .finally(() => setLoadingMsgs(false));
+        .finally(() => {
+          if (!cancelled && loadPartnerId === selectedId) setLoadingMsgs(false);
+        });
     }
 
     const handleIncomingMessage = (payload) => {
@@ -406,6 +413,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     });
 
     return () => {
+      cancelled = true;
       supabase.removeChannel(incomingChannel);
       supabase.removeChannel(outgoingChannel);
       supabase.removeChannel(updateChannelIncoming);
@@ -414,7 +422,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       setOtherTyping(false);
       setPartnerProfile(null);
     };
-  }, [clearConversationUnread, scheduleMarkRead, selectedId, upsertConversationFromMessage, user?.id]);
+  }, [clearConversationUnread, scheduleMarkRead, selectedId, showToast, upsertConversationFromMessage, user?.id]);
 
   // Liga-hold chat
   useEffect(() => {

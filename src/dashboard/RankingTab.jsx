@@ -24,7 +24,7 @@ import {
 import { TabbedFilterCard } from '../components/TabbedFilterCard';
 
 const RANKING_PAGE_SIZE = 50;
-const PERIOD_HISTORY_LIMIT = 5000;
+const PERIOD_HISTORY_LIMIT = 1500;
 
 const PROFILE_RANKING_SELECT =
   'id, full_name, name, avatar, area, elo_rating, games_played, games_won, level, americano_elo_rating, americano_played, americano_wins';
@@ -74,7 +74,7 @@ export function RankingTab({ user }) {
 
   const profileOffsetRef = useRef(0);
   const profileFetchGenRef = useRef(0);
-  const periodHistoryLoadedRef = useRef(false);
+  const periodHistoryLoadedRef = useRef('');
   const prevPeriodRef = useRef(period);
   const prevRankModeRef = useRef(rankMode);
 
@@ -144,17 +144,22 @@ export function RankingTab({ user }) {
     setMyGlobalRank((count ?? 0) + 1);
   }, [myId, period, isAmericano, myAllTimeElo, myAllTimeAmericanoElo, orderColumn]);
 
-  const loadPeriodHistory = useCallback(async () => {
+  const loadPeriodHistory = useCallback(async (activePeriod) => {
+    const cutoff = periodCutoffDate(activePeriod);
+    const cutoffStr = formatLocalDateYMD(cutoff);
+    const cutoffIso = cutoff.toISOString();
     const [historyData, americanoHistoryData] = await Promise.all([
       supabase
         .from('elo_history')
         .select('user_id, result, change, old_rating, new_rating, date, match_id')
+        .gte('date', cutoffStr)
         .order('date', { ascending: false })
         .order('match_id', { ascending: false })
         .limit(PERIOD_HISTORY_LIMIT),
       supabase
         .from('americano_elo_history')
         .select('id, tournament_id, user_id, old_rating, new_rating, change, points, created_at')
+        .gte('created_at', cutoffIso)
         .order('created_at', { ascending: false })
         .limit(PERIOD_HISTORY_LIMIT),
     ]);
@@ -218,16 +223,16 @@ export function RankingTab({ user }) {
   );
 
   const ensurePeriodHistory = useCallback(
-    async ({ background = false } = {}) => {
-      if (periodHistoryLoadedRef.current) return;
+    async ({ background = false, activePeriod = period } = {}) => {
+      if (periodHistoryLoadedRef.current === activePeriod) return;
       profileFetchGenRef.current += 1;
       const gen = profileFetchGenRef.current;
       setLoadError(null);
       if (!background) setInitialLoading(true);
       else setRefreshing(true);
       try {
-        await loadPeriodHistory();
-        if (gen === profileFetchGenRef.current) periodHistoryLoadedRef.current = true;
+        await loadPeriodHistory(activePeriod);
+        if (gen === profileFetchGenRef.current) periodHistoryLoadedRef.current = activePeriod;
       } catch (e) {
         console.error(e);
         if (gen === profileFetchGenRef.current) {
@@ -252,7 +257,7 @@ export function RankingTab({ user }) {
     profileOffsetRef.current = 0;
     setMyGlobalRank(null);
     setLoadError(null);
-    periodHistoryLoadedRef.current = false;
+    periodHistoryLoadedRef.current = '';
     setEloHistory([]);
     setAmericanoHistory([]);
     if (period === 'all') {
@@ -263,7 +268,7 @@ export function RankingTab({ user }) {
   }, [period, loadAllTimeProfiles, ensurePeriodHistory]);
 
   useEffect(() => {
-    periodHistoryLoadedRef.current = false;
+    periodHistoryLoadedRef.current = '';
     setEloHistory([]);
     setAmericanoHistory([]);
     setVisibleCount(RANKING_PAGE_SIZE);
@@ -284,7 +289,8 @@ export function RankingTab({ user }) {
     if (period === 'all') {
       void loadAllTimeProfiles({ background: players.length > 0 });
     } else {
-      void ensurePeriodHistory({ background: true });
+      periodHistoryLoadedRef.current = '';
+      void ensurePeriodHistory({ background: true, activePeriod: period });
     }
   }, [period, loadAllTimeProfiles, ensurePeriodHistory, players.length]);
 

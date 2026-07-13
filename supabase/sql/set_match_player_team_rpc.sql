@@ -1,5 +1,6 @@
 -- SECURITY DEFINER: spillere kan skifte eget hold; opretter/admin kan flytte alle.
 -- Direkte UPDATE på match_players fejler ofte stille pga. manglende RLS UPDATE-policy.
+-- Race-safe: låser match-rækken (FOR UPDATE) — se join_request_team_race_fix.sql
 CREATE OR REPLACE FUNCTION public.set_match_player_team(
   p_match_id uuid,
   p_user_id uuid,
@@ -33,7 +34,8 @@ BEGIN
   SELECT m.creator_id, lower(coalesce(m.status, 'open'))
   INTO v_creator_id, v_status
   FROM public.matches m
-  WHERE m.id = p_match_id;
+  WHERE m.id = p_match_id
+  FOR UPDATE;
 
   IF v_creator_id IS NULL THEN
     RETURN jsonb_build_object('success', false, 'error', 'match_not_found');
@@ -85,6 +87,14 @@ BEGIN
   INTO v_t1, v_t2, v_total
   FROM public.match_players
   WHERE match_id = p_match_id;
+
+  IF v_t1 > 2 OR v_t2 > 2 THEN
+    UPDATE public.match_players
+    SET team = v_current_team
+    WHERE match_id = p_match_id
+      AND user_id = p_user_id;
+    RETURN jsonb_build_object('success', false, 'error', 'team_full', 'team', p_team);
+  END IF;
 
   IF v_t1 >= 2 AND v_t2 >= 2 THEN
     UPDATE public.matches

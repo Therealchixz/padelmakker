@@ -19,6 +19,6 @@ test('RankingTab loads profiles in pages of 50 with load more', () => {
 test('RankingTab only loads elo history for week and month periods', () => {
   const src = readFileSync(rankingPath, 'utf8');
   assert.match(src, /if \(period === 'all'\)/);
-  assert.match(src, /await loadPeriodHistory\(\)/);
-  assert.match(src, /setEloHistory\(\[\]\)/);
+  assert.match(src, /await loadPeriodHistory\(activePeriod\)/);
+  assert.match(src, /\.gte\('date', cutoffStr\)/);
 });

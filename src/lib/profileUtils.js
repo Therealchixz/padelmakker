@@ -384,11 +384,9 @@ export function validateDisplayName(raw) {
   return { valid: true }
 }
 
-/** Har brugeren gennemført onboarding (email eller OAuth)? */
+/** Har brugeren gennemført onboarding (profilfelter — ikke JWT metadata)? */
 export function isOnboardingComplete(user, profile) {
   if (!user || !profile) return false
-  const meta = user.user_metadata || {}
-  if (meta.onboarding_completed === true) return true
   const birthOk = profile.birth_year != null && String(profile.birth_year).trim() !== ''
   const style = String(profile.play_style || '').trim()
   const styleOk = style !== '' && style !== 'Ved ikke endnu'

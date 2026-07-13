@@ -4,7 +4,7 @@ import { EmptyStateIcon } from '../../components/EmptyStateIcon'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
 import { useConfirm } from '../../lib/ConfirmDialogProvider'
-import { Court } from '../../api/base44Client'
+import { fetchCourtsCached } from '../../lib/courtsCache'
 import { CreateAmericanoTournamentForm } from './CreateAmericanoTournamentForm'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { AmericanoListCard } from './AmericanoListCard'
@@ -202,7 +202,7 @@ export function AmericanoTab({
         return
       }
       const [cd, trRes, myRes] = await Promise.all([
-        Court.filter(),
+        fetchCourtsCached(),
         supabase.from('americano_tournaments').select('*').order('tournament_date', { ascending: false }).order('created_at', { ascending: false }).limit(200),
         supabase.from('americano_participants').select('tournament_id').eq('user_id', profileId),
       ])

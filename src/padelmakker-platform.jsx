@@ -37,13 +37,13 @@ const NotFoundPageLazy = lazy(() => import("./pages/NotFoundPage").then((m) => (
 const SignupEmailSentPageLazy = lazy(() => import("./pages/SignupEmailSentPage").then((m) => ({ default: m.SignupEmailSentPage })));
 const PhoneVerificationPageLazy = lazy(() => import("./pages/PhoneVerificationPage").then((m) => ({ default: m.PhoneVerificationPage })));
 export default function PadelMakker() {
-  const { user, profile, loading, profileLoading, profileLoadError, refreshProfile, signOut } = useAuth();
+  const { user, profile, loading, profileLoading, profileLoadError, phoneVerificationExempt, refreshProfile, signOut } = useAuth();
   const hasProfile = Boolean(user && profile);
-  const phoneExempt = hasProfile && isPhoneVerificationExempt(user, profile);
+  const phoneExempt = hasProfile && isPhoneVerificationExempt(user, profile, phoneVerificationExempt);
   const onboardingComplete = hasProfile && canAccessDashboard(user, profile, { phoneExempt });
   const canUseApp = onboardingComplete;
   const requiresEmailVerification = Boolean(user && shouldRequireEmailVerification(user));
-  const requiresPhoneVerification = canUseApp && !requiresEmailVerification && shouldRequirePhoneVerification(user, profile);
+  const requiresPhoneVerification = canUseApp && !requiresEmailVerification && shouldRequirePhoneVerification(user, profile, phoneVerificationExempt);
   const defaultAuthedPath = requiresEmailVerification
     ? "/opret/bekraeft-email"
     : requiresPhoneVerification

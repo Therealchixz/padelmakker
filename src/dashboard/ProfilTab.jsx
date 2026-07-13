@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, inputStyle, labelStyle, heading, tag } from '../lib/platformTheme';
-import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
+import { resolveDisplayName, sanitizeText, displayUserText } from '../lib/platformUtils';
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { mergeLigaSessionPrefs, openMineLigaerFromProfile } from '../lib/ligaSessionPrefs';
 import { useLigaPartnerOpponentStats } from '../lib/ligaRelationStats';
@@ -603,7 +603,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           </div>
 
           <div style={{ padding: '0 18px' }}>
-          {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{user.bio}&rdquo;</p>}
+          {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{displayUserText(user.bio)}&rdquo;</p>}
 
           {!editing && !isValidProfileRegion(user.area) ? (
             <div style={profilePromptCardStyle}>
