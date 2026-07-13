@@ -79,7 +79,7 @@ export function SwissRulesBox({ collapsible = false, storageKey = '' }) {
 function partnerMetaLine(p) {
   const lvl = formatPlaytomicLevel(eloToLevel(Number(p.elo_rating) || 1000));
   const games = Number(p.gamesTogether) || 0;
-  return games > 0 ? `Niveau ${lvl} · spillet ${games} ${games === 1 ? 'kamp' : 'kampe'} sammen` : `Niveau ${lvl}`;
+  return games > 0 ? `≈ Niveau ${lvl} · spillet ${games} ${games === 1 ? 'kamp' : 'kampe'} sammen` : `≈ Niveau ${lvl}`;
 }
 
 function PartnerSearch({ userId, onSelect, selectedId = null }) {

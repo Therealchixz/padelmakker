@@ -194,7 +194,7 @@ export function describeMatchFilter(prefs, profile = {}) {
   const lvl = resolveFilterLevel(prefs, profile);
   const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
   const { min, max } = levelRangeForWindow(lvl, win);
-  parts.push(`Niveau ${formatPlaytomicLevel(lvl)} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
+  parts.push(`≈ Niveau ${formatPlaytomicLevel(lvl)} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
   const days = normalizeStringArrayField(prefs.days);
   if (days.length > 0) parts.push(`${days.length} ${days.length === 1 ? 'dag' : 'dage'}`);
   const avail = normalizeStringArrayField(prefs.availability);

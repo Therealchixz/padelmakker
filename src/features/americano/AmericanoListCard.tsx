@@ -43,7 +43,7 @@ function fmtLevel(v: number | null | undefined): string {
 function levelLabel(t: AmericanoTournament): string {
   const min = t.level_min
   const max = t.level_max
-  if (min != null && max != null) return `Niveau ${fmtLevel(min)}–${fmtLevel(max)}`
+  if (min != null && max != null) return `≈ Niveau ${fmtLevel(min)}–${fmtLevel(max)}`
   return 'Alle niveauer'
 }
 

@@ -3390,7 +3390,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         const m = createdMatchReceipt;
         const matchPrefs = parseMatchLevelRange(m.level_range);
         const levelStr = (matchPrefs?.min != null && matchPrefs?.max != null)
-          ? `Niveau ${matchPrefs.min}–${matchPrefs.max}`
+          ? `≈ Niveau ${matchPrefs.min}–${matchPrefs.max}`
           : null;
         const isClosed = m.match_type === 'closed';
         const court = m.court_name?.trim() || null;

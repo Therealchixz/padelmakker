@@ -612,7 +612,8 @@ export function RankingTab({ user }) {
           {firstName}{isMe ? ' ✓' : ''}
         </b>
         <span style={{ fontSize: 10.5, color: 'var(--pm-hero-subtitle)' }}>
-          {p.level ? `Niveau ${formatPlaytomicLevel(p.level)}` : (p.area || '')}
+          {Math.round(Number((isAmericano ? p.americano_elo_rating : p.elo_rating)) || 1000)} ELO
+          {p.level ? ` · ≈ Niveau ${formatPlaytomicLevel(p.level)}` : ''}
         </span>
         <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: 'var(--pm-on-accent)' }}>{p.score}</div>
         <div style={{
@@ -904,7 +905,7 @@ export function RankingTab({ user }) {
                             ? `${p.area || '?'} · ${p.periodGames} Americano/Mexicano`
                             : `${p.periodGames} Americano/Mexicano · ${p.periodPoints || 0} point`
                           : period === 'all'
-                            ? `${p.level ? `Niveau ${formatPlaytomicLevel(p.level)}` : (p.area || '?')} · ${p.periodGames} kampe`
+                            ? `${Math.round(Number(p.elo_rating) || 1000)} ELO${p.level ? ` · ≈ Niveau ${formatPlaytomicLevel(p.level)}` : ''} · ${p.periodGames} kampe`
                             : `${p.periodGames} kampe · ${p.periodWins} sejre`}
                       </div>
                     </div>
@@ -972,7 +973,7 @@ export function RankingTab({ user }) {
             <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>
               {isAmericano
                 ? `${userEntry.periodGames || 0} Americano/Mexicano`
-                : `${userEntry.level ? `Niveau ${formatPlaytomicLevel(userEntry.level)}` : (userEntry.area || '')} · ${userEntry.periodGames || 0} kampe`}
+                : `${Math.round(Number(userEntry.elo_rating) || 1000)} ELO${userEntry.level ? ` · ≈ Niveau ${formatPlaytomicLevel(userEntry.level)}` : ''} · ${userEntry.periodGames || 0} kampe`}
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>

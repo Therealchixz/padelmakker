@@ -402,7 +402,7 @@ export function CreateAmericanoTournamentForm({
                 onMinChange={setLevelMin} onMaxChange={setLevelMax}
               />
             </div>
-            <div className="pm-field-hint">Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)} · Kan håndhæves ved tilmelding (slås til i næste trin)</div>
+            <div className="pm-field-hint">≈ Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)} · Kan håndhæves ved tilmelding (slås til i næste trin)</div>
           </div>
 
           <button
@@ -514,7 +514,7 @@ export function CreateAmericanoTournamentForm({
 
           {[
             { label: 'Offentlig turnering', desc: 'Alle kan se og tilmelde sig', value: isPublic, set: setIsPublic },
-            { label: 'Kun niveau-interval kan tilmelde sig', desc: `Niveau ${levelMin.toFixed(1)}–${levelMax.toFixed(1)} håndhæves ved tilmelding`, value: enforceLevelInterval, set: setEnforceLevelInterval },
+            { label: 'Kun niveau-interval kan tilmelde sig', desc: `≈ Niveau ${levelMin.toFixed(1)}–${levelMax.toFixed(1)} håndhæves ved tilmelding`, value: enforceLevelInterval, set: setEnforceLevelInterval },
           ].map(row => (
             <div key={row.label} style={{ margin: '0 18px 12px', padding: '13px 15px', borderRadius: 14, border: '1px solid var(--pm-border)', background: 'var(--pm-surface)', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ flex: 1 }}>
@@ -544,7 +544,7 @@ export function CreateAmericanoTournamentForm({
                   {formatLabel}
                 </span>
                 <span style={{ background: 'rgba(255,255,255,0.93)', color: 'var(--pm-navy-deep)', fontSize: 9.5, fontWeight: 700, padding: '3px 8px', borderRadius: 5 }}>
-                  Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)}
+                  ≈ Niveau {levelMin.toFixed(1)}–{levelMax.toFixed(1)}
                 </span>
               </div>
               {/* Padel court illustration */}

@@ -93,15 +93,15 @@ export function MatchCourtView({
             <div className="pm-kd-slot-name">{player.user_name || 'Spiller'}</div>
             <div className="pm-kd-slot-meta">
               {showEloChanges && delta != null ? (
-                levelLabel ? (
-                  <span className="pm-kd-lvl-badge">Niveau {levelLabel}</span>
-                ) : (
-                  <span className="pm-kd-lvl-badge">ELO {playerElo(player)}</span>
-                )
-              ) : levelLabel ? (
-                <span className="pm-kd-lvl-badge">Niveau {levelLabel}</span>
+                <span className="pm-kd-lvl-badge">
+                  ELO {playerElo(player)}
+                  {levelLabel ? ` · ≈ Niveau ${levelLabel}` : ''}
+                </span>
               ) : (
-                <span className="pm-kd-lvl-badge">ELO {playerElo(player)}</span>
+                <span className="pm-kd-lvl-badge">
+                  ELO {playerElo(player)}
+                  {levelLabel ? ` · ≈ Niveau ${levelLabel}` : ''}
+                </span>
               )}
               {!showEloChanges && games > 0 ? (
                 <span className="pm-kd-slot-kampe">{games} kampe</span>
