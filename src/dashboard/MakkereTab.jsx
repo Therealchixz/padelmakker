@@ -26,6 +26,8 @@ import {
   normalizeMakkerSearchPrefs,
   isMakkerFilterActive,
   countSeekersMatchingMakkerFilter,
+  profileMatchesMakkerFilter,
+  describeMakkerFilter,
 } from '../lib/makkerSearchFilterUtils';
 import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
 import { PillTabs } from '../components/PillTabs';
@@ -149,15 +151,39 @@ function writeFavoritesSet(userId, set) {
   }
 }
 
+function dismissedSuggKey(userId) {
+  return userId ? `pm_makker_dismissed_v1_${userId}` : null;
+}
+function readDismissedSugg(userId) {
+  const key = dismissedSuggKey(userId);
+  if (!key) return new Set();
+  try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); } catch { return new Set(); }
+}
+function writeDismissedSugg(userId, set) {
+  const key = dismissedSuggKey(userId);
+  if (!key) return;
+  try { localStorage.setItem(key, JSON.stringify([...set])); } catch { /* quota */ }
+}
+
 // ----- Suggested player card -----
 
-function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
+function SuggestionCard({ suggestion, onView, onInvite, onMessage, onDismiss, displayEloFor }) {
   const { profile: p, score, breakdown } = suggestion;
   const reason = matchReason(breakdown, p);
   const quality = makkerMatchBadge(score);
 
   return (
-    <div className="pm-ui-card" style={{ padding: '14px 16px', margin: '0 18px' }}>
+    <div className="pm-ui-card" style={{ padding: '14px 16px', margin: '0 18px', position: 'relative' }}>
+      {onDismiss ? (
+        <button
+          type="button"
+          onClick={() => onDismiss(p.id)}
+          aria-label="Skjul forslag"
+          style={{ position: 'absolute', top: 0, right: 0, width: 44, height: 44, borderRadius: '50%', border: 'none', background: 'transparent', color: theme.textLight, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, lineHeight: 1 }}
+        >
+          ✕
+        </button>
+      ) : null}
       <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
         <div onClick={() => onView(p)} style={{ cursor: 'pointer', flexShrink: 0 }}>
           <AvatarCircle
@@ -168,7 +194,7 @@ function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
           />
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, paddingRight: onDismiss ? 36 : 0 }}>
           <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span
               onClick={() => onView(p)}
@@ -205,11 +231,11 @@ function SuggestionCard({ suggestion, onView, onInvite, displayEloFor }) {
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: quality.color, flexShrink: 0 }} />
           {quality.label}
         </span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => onView(p)} style={{ ...btn(false), padding: '7px 12px', fontSize: '12px' }}>
-            Profil
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button onClick={() => onMessage(p)} style={{ ...btn(false), padding: '7px 12px', fontSize: '12px', minHeight: 44 }}>
+            Besked
           </button>
-          <button onClick={() => onInvite(p)} style={{ ...btn(true), padding: '7px 12px', fontSize: '12px' }}>
+          <button onClick={() => onInvite(p)} style={{ ...btn(true), padding: '7px 12px', fontSize: '12px', minHeight: 44 }}>
             Invitér
           </button>
         </div>
@@ -244,6 +270,7 @@ export function MakkereTab({ user, showToast }) {
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [inviteTarget, setInviteTarget] = useState(null);
   const [favorites, setFavorites]     = useState(() => readFavoritesSet(user?.id));
+  const [dismissedSugg, setDismissedSugg] = useState(() => readDismissedSugg(user?.id));
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [telemetryVersion, setTelemetryVersion] = useState(0);
   /** Aggregeret kamp-historik mod hver anden spiller — fodres til matchmakingen
@@ -303,8 +330,7 @@ export function MakkereTab({ user, showToast }) {
 
   useEffect(() => {
     setFavorites(readFavoritesSet(user.id));
-    setFilterFav(false);
-  }, [user.id, showToast]);
+  }, [user.id]);
 
   const toggleFavorite = (playerId) => {
     setFavorites(prev => {
@@ -455,10 +481,22 @@ export function MakkereTab({ user, showToast }) {
     favoriteIds: favorites,
   }), [user, players, eloByUserId, gamesByUserId, inviteStatsByUserId, exposureCountByUserId, pastMatchesByUserId, favorites]);
 
-  const visibleSuggestions = useMemo(
-    () => (showAllSuggestions ? suggestions : suggestions.slice(0, 3)),
-    [showAllSuggestions, suggestions]
+  const activeSuggestions = useMemo(
+    () => suggestions.filter((s) => !dismissedSugg.has(String(s?.profile?.id))),
+    [suggestions, dismissedSugg]
   );
+  const visibleSuggestions = useMemo(
+    () => (showAllSuggestions ? activeSuggestions : activeSuggestions.slice(0, 3)),
+    [showAllSuggestions, activeSuggestions]
+  );
+  const dismissSuggestion = useCallback((id) => {
+    setDismissedSugg((prev) => {
+      const next = new Set(prev);
+      next.add(String(id));
+      writeDismissedSugg(user.id, next);
+      return next;
+    });
+  }, [user.id]);
 
   useEffect(() => {
     if (!user?.id || visibleSuggestions.length === 0) return;
@@ -520,6 +558,8 @@ export function MakkereTab({ user, showToast }) {
     const n = p.full_name || p.name || '';
     const c = p.city || '';
     if (search && !n.toLowerCase().includes(search.toLowerCase()) && !c.toLowerCase().includes(search.toLowerCase())) return false;
+    // Dit gemte makker-filter gælder også browse-listen (én kilde til sandhed)
+    if (makkerFilterOn && !profileMatchesMakkerFilter(p, makkerFilterPrefs, user, user.id)) return false;
     if (filterArea !== 'all' && p.area !== filterArea) return false;
     if (filterElo === 'close' && Math.abs(displayElo(p) - myElo) > 150) return false;
     if (filterStyle !== 'all' && p.play_style !== filterStyle) return false;
@@ -613,16 +653,16 @@ export function MakkereTab({ user, showToast }) {
       )}
 
       {/* Foreslåede makkere */}
-      {suggestions.length > 0 && (
+      {activeSuggestions.length > 0 && (
         <div style={{ marginBottom: '28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 18px 10px' }}>
             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Foreslåede makkere</h3>
-            {suggestions.length > 3 && (
+            {activeSuggestions.length > 3 && (
               <button
                 onClick={() => setShowAllSuggestions(v => !v)}
                 style={{ fontSize: '12.5px', color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
               >
-                {showAllSuggestions ? 'Vis færre' : `Se alle ${suggestions.length}`}
+                {showAllSuggestions ? 'Vis færre' : `Se alle ${activeSuggestions.length}`}
               </button>
             )}
           </div>
@@ -635,6 +675,8 @@ export function MakkereTab({ user, showToast }) {
                 displayEloFor={displayElo}
                 onView={setViewPlayer}
                 onInvite={setInviteTarget}
+                onMessage={(p) => navigate(`/dashboard/beskeder?med=${p.id}`)}
+                onDismiss={dismissSuggestion}
               />
             ))}
           </div>
@@ -649,6 +691,26 @@ export function MakkereTab({ user, showToast }) {
         <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Alle spillere</h3>
       </div>
 
+      {/* Aktivt makker-filter — gælder også listen herunder */}
+      {makkerFilterOn && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 18px 12px', padding: '10px 13px', borderRadius: 12, background: theme.blueBg, border: `1px solid ${theme.accent}` }}>
+          <SlidersHorizontal size={15} color={theme.accent} style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>Dit makker-filter er aktivt</div>
+            <div style={{ fontSize: 11.5, color: theme.textMid, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {describeMakkerFilter(makkerFilterPrefs, user).summary}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard/makker-filter')}
+            style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}
+          >
+            Justér
+          </button>
+        </div>
+      )}
+
       <div style={{ position: 'relative', marginBottom: '10px' }}>
         <Search size={15} color={theme.textLight} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         <input
@@ -661,6 +723,7 @@ export function MakkereTab({ user, showToast }) {
 
       {/* Filterknap + aktive filtre */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+        {!makkerFilterOn && (
         <button
           type="button"
           onClick={() => setShowFilters((v) => !v)}
@@ -685,6 +748,7 @@ export function MakkereTab({ user, showToast }) {
             </span>
           )}
         </button>
+        )}
         <PillTabs
           tabs={[
             { id: 'all', label: 'Alle spillere' },
@@ -696,7 +760,7 @@ export function MakkereTab({ user, showToast }) {
           size="sm"
           style={{ width: 'auto', flex: '1 1 200px', maxWidth: '320px' }}
         />
-        {activeFilterCount > 0 && (
+        {!makkerFilterOn && activeFilterCount > 0 && (
           <button
             onClick={() => { setFilterElo('all'); setFilterArea('all'); setFilterStyle('all'); setFilterIntent('all'); setFilterCourtSide('all'); setFilterSeeking(false); setFilterFav(false); setPage(0); }}
             style={{ fontSize: '12px', color: theme.red, background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontWeight: 600 }}
@@ -706,30 +770,30 @@ export function MakkereTab({ user, showToast }) {
         )}
       </div>
 
-      {showFilters && (
+      {!makkerFilterOn && showFilters && (
         <div className="pm-filter-panel">
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <select value={filterElo} onChange={e => handleFilterChange(() => setFilterElo(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+            <select value={filterElo} onChange={e => handleFilterChange(() => setFilterElo(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
               <option value="all">Alle ELO-niveauer</option>
               <option value="close">±150 ELO om dig ({myElo})</option>
             </select>
-            <select value={filterArea} onChange={e => handleFilterChange(() => setFilterArea(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+            <select value={filterArea} onChange={e => handleFilterChange(() => setFilterArea(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
               <option value="all">Alle regioner</option>
               {REGIONS.map((r) => <option key={r} value={r}>{r.replace('Region ', '')}</option>)}
             </select>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <select value={filterStyle} onChange={e => handleFilterChange(() => setFilterStyle(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+            <select value={filterStyle} onChange={e => handleFilterChange(() => setFilterStyle(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
               <option value="all">Alle spillestile</option>
               {PLAY_STYLES.filter(s => s !== 'Ved ikke endnu').map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <select value={filterIntent} onChange={e => handleFilterChange(() => setFilterIntent(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+            <select value={filterIntent} onChange={e => handleFilterChange(() => setFilterIntent(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
               <option value="all">Alle intentioner</option>
               {INTENTS.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
             </select>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <select value={filterCourtSide} onChange={e => handleFilterChange(() => setFilterCourtSide(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px' }}>
+            <select value={filterCourtSide} onChange={e => handleFilterChange(() => setFilterCourtSide(e.target.value))} style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: '13px', flex: '1 1 140px', minHeight: 'var(--pm-control-h)' }}>
               <option value="all">Alle bandesider</option>
               {COURT_SIDES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -784,14 +848,15 @@ export function MakkereTab({ user, showToast }) {
                 <button
                   onClick={() => toggleFavorite(p.id)}
                   title={favorites.has(String(p.id)) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'}
-                  style={{ ...btn(false), padding: '8px 11px', fontSize: '14px' }}
+                  aria-label={favorites.has(String(p.id)) ? 'Fjern fra favoritter' : 'Tilføj til favoritter'}
+                  style={{ ...btn(false), padding: '8px 11px', fontSize: '14px', minHeight: 44, minWidth: 44 }}
                 >
                   {favorites.has(String(p.id)) ? '★' : '☆'}
                 </button>
-                <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '8px 14px', fontSize: '12px' }}>
+                <button onClick={() => navigate(`/dashboard/beskeder?med=${p.id}`)} style={{ ...btn(false), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
                   Besked
                 </button>
-                <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '8px 14px', fontSize: '12px' }}>
+                <button onClick={() => setInviteTarget(p)} style={{ ...btn(true), padding: '8px 14px', fontSize: '12px', minHeight: 44 }}>
                   Invitér
                 </button>
               </div>
@@ -802,20 +867,22 @@ export function MakkereTab({ user, showToast }) {
           <div style={{ textAlign: 'center', padding: '48px 20px', color: theme.textLight }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</div>
             <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
-              {activeFilterCount > 0 ? 'Ingen spillere matcher dine filtre' : 'Ingen spillere at vise'}
+              {makkerFilterOn ? 'Ingen spillere matcher dit makker-filter' : activeFilterCount > 0 ? 'Ingen spillere matcher dine filtre' : 'Ingen spillere at vise'}
             </div>
             <div style={{ fontSize: '13px', lineHeight: 1.5 }}>
-              {activeFilterCount > 0
-                ? 'Prøv at ændre filtre eller søg med et andet navn.'
-                : 'Der er endnu få spillere i dit område — prøv at udvide region eller niveau under filter.'}
+              {makkerFilterOn
+                ? 'Prøv at udvide dit makker-filter (fx region eller niveau-spænd).'
+                : activeFilterCount > 0
+                  ? 'Prøv at ændre filtre eller søg med et andet navn.'
+                  : 'Der er endnu få spillere i dit område — prøv at udvide region eller niveau under filter.'}
             </div>
-            {activeFilterCount === 0 && (
+            {(makkerFilterOn || activeFilterCount === 0) && (
               <button
                 type="button"
                 onClick={() => navigate('/dashboard/makker-filter')}
                 style={{ ...btn(true), marginTop: '14px', fontSize: '13px' }}
               >
-                Åbn filter
+                Justér makker-filter
               </button>
             )}
           </div>
@@ -858,6 +925,7 @@ export function MakkereTab({ user, showToast }) {
           currentUser={user}
           showToast={showToast}
           onInviteSent={handleInviteSent}
+          onCreateMatch={() => { setInviteTarget(null); navigate('/dashboard/kampe?create=1'); }}
           onClose={() => setInviteTarget(null)}
         />
       )}

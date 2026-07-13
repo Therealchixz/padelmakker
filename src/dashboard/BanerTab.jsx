@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { theme, btn, inputStyle, heading, tag } from '../lib/platformTheme';
 import { BANER_REGION_SUBTITLE } from '../lib/banerRegions';
 import {
@@ -16,7 +16,7 @@ import {
 } from '../lib/banerVenues';
 import { filterPastSlotsIfToday } from '../lib/banerPastSlots';
 import { BanerVenueLocation } from '../components/BanerVenueLocation';
-import { MapPin, Building2, Sun, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown, Search, X } from 'lucide-react';
+import { MapPin, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown, Search, X } from 'lucide-react';
 
 /**
  * @typedef {{ time: string, status: string, ruleHint?: string }} SlotRow
@@ -34,9 +34,8 @@ function banerSlotClass(status) {
 
 function DateNavigator({ dateYmd, todayYmd, loading = false, onChangeDate }) {
   const navButtonStyle = (primary = false) => ({
-    ...btn(primary),
-    fontSize: '12px',
-    padding: primary ? '8px 12px' : '8px 10px',
+    ...btn(primary, { size: 'sm' }),
+    minHeight: '44px',
     opacity: loading ? 0.65 : 1,
     cursor: loading ? 'not-allowed' : 'pointer',
   });
@@ -67,8 +66,8 @@ function DateNavigator({ dateYmd, todayYmd, loading = false, onChangeDate }) {
 }
 
 export function BanerTab() {
-  const detailRefs = useRef(/** @type {Record<string, HTMLDetailsElement | null>} */ ({}));
   const venueGroups = useMemo(() => groupBanerVenuesByRegion(), []);
+  const [expandedVenueId, setExpandedVenueId] = useState(/** @type {string | null} */ (null));
   const [venueSearch, setVenueSearch] = useState('');
   const filteredVenueGroups = useMemo(
     () => filterGroupedBanerVenuesBySearch(venueGroups, venueSearch),
@@ -105,19 +104,17 @@ export function BanerTab() {
     const q = venueSearch.trim();
     if (!q) {
       setExpandedRegions(new Set());
-      Object.values(detailRefs.current).forEach((node) => {
-        if (node) node.open = false;
-      });
+      setExpandedVenueId(null);
       return;
     }
     setExpandedRegions(new Set(filteredVenueGroups.map((g) => g.region)));
   }, [venueSearch, filteredVenueGroups]);
 
   const closeVenuesInRegion = useCallback((venues) => {
-    for (const v of venues) {
-      const node = detailRefs.current[v.id];
-      if (node) node.open = false;
-    }
+    setExpandedVenueId((prev) => {
+      if (prev && venues.some((v) => v.id === prev)) return null;
+      return prev;
+    });
   }, []);
 
   const onRegionToggle = useCallback((region, venues, e) => {
@@ -233,42 +230,48 @@ export function BanerTab() {
     }
   }, []);
 
-  /** Accordion: kun ét `<details>` åbent ad gangen. */
-  const onDetailsToggle = (v, e) => {
-    const el = e.currentTarget;
-    if (!el.open) return;
-
-    Object.values(detailRefs.current).forEach((node) => {
-      if (node && node !== el) node.open = false;
+  const openVenue = useCallback((v) => {
+    setExpandedVenueId((prev) => {
+      const opening = prev !== v.id;
+      if (!opening) return null;
+      const today = copenhagenDateYmd();
+      if (v.kind === 'halbooking') {
+        const d = halbookingDateByVenue[v.id] || today;
+        if (!halbookingDateByVenue[v.id]) setHalbookingDateByVenue((m) => ({ ...m, [v.id]: today }));
+        loadHalbookingVenue(v.id, d);
+      } else if (v.kind === 'bookli') {
+        const d = bookliDateByVenue[v.id] || today;
+        if (!bookliDateByVenue[v.id]) setBookliDateByVenue((m) => ({ ...m, [v.id]: today }));
+        loadBookliVenue(v.id, d);
+      } else if (v.kind === 'matchi') {
+        const d = matchiDateByVenue[v.id] || today;
+        if (!matchiDateByVenue[v.id]) setMatchiDateByVenue((m) => ({ ...m, [v.id]: today }));
+        loadMatchiVenue(v.id, d);
+      } else if (v.kind === 'link') {
+        if (!linkDateByVenue[v.id]) setLinkDateByVenue((m) => ({ ...m, [v.id]: today }));
+      }
+      return v.id;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [halbookingDateByVenue, bookliDateByVenue, matchiDateByVenue, linkDateByVenue, loadHalbookingVenue, loadBookliVenue, loadMatchiVenue]);
 
-    if (v.kind === 'halbooking') {
-      const today = copenhagenDateYmd();
-      const d = halbookingDateByVenue[v.id] || today;
-      if (!halbookingDateByVenue[v.id]) {
-        setHalbookingDateByVenue((m) => ({ ...m, [v.id]: today }));
-      }
-      loadHalbookingVenue(v.id, d);
-    } else if (v.kind === 'bookli') {
-      const today = copenhagenDateYmd();
-      const d = bookliDateByVenue[v.id] || today;
-      if (!bookliDateByVenue[v.id]) {
-        setBookliDateByVenue((m) => ({ ...m, [v.id]: today }));
-      }
-      loadBookliVenue(v.id, d);
-    } else if (v.kind === 'matchi') {
-      const today = copenhagenDateYmd();
-      const d = matchiDateByVenue[v.id] || today;
-      if (!matchiDateByVenue[v.id]) {
-        setMatchiDateByVenue((m) => ({ ...m, [v.id]: today }));
-      }
-      loadMatchiVenue(v.id, d);
-    } else if (v.kind === 'link') {
-      const today = copenhagenDateYmd();
-      if (!linkDateByVenue[v.id]) {
-        setLinkDateByVenue((m) => ({ ...m, [v.id]: today }));
-      }
-    }
+  /** Unikke "gul tid"-forklaringer — vises én gang under banens slots i stedet for pr. chip. */
+  const renderBlockedRuleNotes = (slots) => {
+    const hints = [...new Set(
+      (slots || [])
+        .filter((s) => s.status === 'blocked_rule')
+        .map((s) => s.ruleHint || 'Kan ikke bookes (klubbens regel)'),
+    )];
+    if (hints.length === 0) return null;
+    return (
+      <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {hints.map((hint) => (
+          <span key={hint} style={{ fontSize: 11, lineHeight: 1.3, color: theme.textMid }}>
+            Gul tid: {hint}
+          </span>
+        ))}
+      </div>
+    );
   };
 
   /**
@@ -331,10 +334,12 @@ export function BanerTab() {
       );
     }
     if (s.status === 'blocked_rule') {
+      const hint = s.ruleHint || 'Kan ikke bookes (klubbens regel)';
       return (
         <span
           key={s.time}
-          title={s.ruleHint || 'Kan ikke bookes (klubbens regel)'}
+          title={hint}
+          aria-label={`${s.time} · Ikke bookbar. ${hint}`}
           className={banerSlotClass('blocked_rule')}
         >
           {s.time} · Ikke bookbar
@@ -475,30 +480,46 @@ export function BanerTab() {
           const linkDate = linkDateByVenue[v.id] || copenhagenDateYmd();
           const todayYmd = copenhagenDateYmd();
 
+          const isExpanded = expandedVenueId === v.id;
           return (
-            <details
+            <div
               key={v.id}
-              ref={(node) => {
-                detailRefs.current[v.id] = node;
-              }}
               className="pm-baner-venue pm-ui-card"
-              onToggle={(e) => onDetailsToggle(v, e)}
+              style={{ marginBottom: 12 }}
             >
-              <summary className="pm-baner-summary">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: theme.text }}>{v.title}</span>
-                    <span style={v.indoor ? tag(theme.accentBg, theme.accent) : tag(theme.warmBg, theme.warm)}>
-                      {v.indoor ? <><Building2 size={10} /> Indendørs</> : <><Sun size={10} /> Udendørs</>}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: theme.textLight, marginTop: 3 }}>
-                    <MapPin size={11} />{v.address}
-                  </div>
+              {/* Card header */}
+              <div style={{ padding: '14px 16px 12px' }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: theme.text }}>{v.title}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: theme.textLight, marginTop: 3 }}>
+                  <MapPin size={11} />{v.address}
                 </div>
-              </summary>
+                <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                  <span style={{ ...tag('var(--pm-surface-muted)', 'var(--pm-navy)'), border: '1px solid var(--pm-americano-tie-border)' }}>
+                    {v.indoor ? 'Indendørs' : 'Udendørs'}
+                  </span>
+                </div>
+              </div>
+              {/* CTA buttons row */}
+              <div style={{ display: 'flex', gap: 8, padding: '0 16px 14px', borderTop: '1px solid var(--pm-border)', paddingTop: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => openVenue(v)}
+                  style={{ flex: 1, ...btn(false), fontSize: 13, padding: '9px 0', fontFamily: 'inherit' }}
+                >
+                  {isExpanded ? 'Luk' : 'Se center'}
+                </button>
+                <a
+                  href={openHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ flex: 1, ...btn(true), fontSize: 13, padding: '9px 0', textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontFamily: 'inherit' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Book bane
+                </a>
+              </div>
 
-              <div className="pm-baner-venue-body">
+              {isExpanded ? <div className="pm-baner-venue-body">
                 <BanerVenueLocation
                   title={v.title}
                   address={v.address}
@@ -628,9 +649,13 @@ export function BanerTab() {
                             <div className="pm-baner-slots">
                               {c.slots.map((s) => renderSlot(s, v, c))}
                             </div>
+                            {renderBlockedRuleNotes(c.slots)}
                           </div>
                         ))}
                       </div>
+                    )}
+                    {loaded && loaded.courts.length === 0 && !loading && !err && (
+                      <div className="pm-baner-status">Ingen ledige tider</div>
                     )}
                   </>
                 ) : v.kind === 'bookli' ? (
@@ -726,9 +751,13 @@ export function BanerTab() {
                             <div className="pm-baner-slots">
                               {c.slots.map((s) => renderSlot(s, v, c))}
                             </div>
+                            {renderBlockedRuleNotes(c.slots)}
                           </div>
                         ))}
                       </div>
+                    )}
+                    {loaded && loaded.courts.length === 0 && !loading && !err && (
+                      <div className="pm-baner-status">Ingen ledige tider</div>
                     )}
                   </>
                 ) : (
@@ -812,14 +841,19 @@ export function BanerTab() {
                             <div className="pm-baner-slots">
                               {c.slots.map((s) => renderSlot(s, v, c))}
                             </div>
+                            {renderBlockedRuleNotes(c.slots)}
                           </div>
                         ))}
                       </div>
                     )}
+                    {loaded && loaded.courts.length === 0 && !loading && !err && (
+                      <div className="pm-baner-status">Ingen ledige tider</div>
+                    )}
                   </>
                 )}
               </div>
-            </details>
+            : null}
+            </div>
           );
             })}
           </div>

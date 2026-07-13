@@ -9,9 +9,11 @@ import path from 'node:path';
 const ROOT = path.resolve(import.meta.dirname, '..');
 const SRC = path.join(ROOT, 'src');
 const HEX_RE = /#[0-9A-Fa-f]{3,8}\b/g;
-/** Brand SVG fills (Google) — exempt until replaced with CSS masks */
+/** Selvstændige SVG-illustrationer (brand-fills / bane-grafik) — theme-uafhængige
+ *  farver der ikke kan være CSS-variabler. Se docs/UI_GUIDELINES.md (Farver). */
 const ALLOWED_FILES = new Set([
   'src/components/OAuthButtons.jsx',
+  'src/components/kampe/PadelCourtArt.jsx',
 ]);
 
 async function walk(dir, out = []) {
@@ -35,6 +37,9 @@ for (const file of files) {
   lines.forEach((line, i) => {
     const trimmed = line.trim();
     if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
+    // Eksplicit, auditerbar undtagelse: dekorative paletter / leaflet-SVG-markører
+    // som ikke kan bruge CSS-variabler. Markér linjen med "ui-hex-allow".
+    if (line.includes('ui-hex-allow')) return;
     const matches = line.match(HEX_RE);
     if (matches) {
       for (const m of matches) {

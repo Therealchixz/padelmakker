@@ -172,10 +172,13 @@ export function daysOverlap(watcherDays, subjectDays) {
   return w.some((d) => s.includes(d));
 }
 
-export function seekingProfileMatchesFilter(subjectProfile, prefs, watcherProfile, watcherUserId) {
+/**
+ * Matcher en profil mod makker-filteret UDEN at kræve at de søger lige nu.
+ * Bruges til "Find makker"-browse-listen, så den afspejler de gemte filtre.
+ */
+export function profileMatchesMakkerFilter(subjectProfile, prefs, watcherProfile, watcherUserId) {
   if (!subjectProfile || !isMakkerFilterConfigured(prefs, watcherProfile)) return false;
   if (watcherUserId && String(subjectProfile.id) === String(watcherUserId)) return false;
-  if (!isSeekingActiveProfile(subjectProfile)) return false;
 
   const filterRegion = resolveMakkerFilterRegion(prefs, watcherProfile);
   const subjectRegion = canonicalRegionForForm(subjectProfile?.area) || subjectProfile?.area || '';
@@ -189,27 +192,18 @@ export function seekingProfileMatchesFilter(subjectProfile, prefs, watcherProfil
     return false;
   }
 
-  if (!daysOverlap(prefs.days, subjectProfile.available_days)) {
-    return false;
-  }
-
-  if (!availabilityMatchesMakkerFilter(prefs.availability, subjectProfile.availability)) {
-    return false;
-  }
-
-  if (!playStyleMatchesMakkerFilter(prefs.playStyle, subjectProfile.play_style)) {
-    return false;
-  }
-
-  if (!intentMatchesMakkerFilter(prefs.intents, prefs.intentMode, subjectProfile.intent_now)) {
-    return false;
-  }
-
-  if (!courtSideMatchesMakkerFilter(prefs.partnerCourtSide, subjectProfile.court_side)) {
-    return false;
-  }
+  if (!daysOverlap(prefs.days, subjectProfile.available_days)) return false;
+  if (!availabilityMatchesMakkerFilter(prefs.availability, subjectProfile.availability)) return false;
+  if (!playStyleMatchesMakkerFilter(prefs.playStyle, subjectProfile.play_style)) return false;
+  if (!intentMatchesMakkerFilter(prefs.intents, prefs.intentMode, subjectProfile.intent_now)) return false;
+  if (!courtSideMatchesMakkerFilter(prefs.partnerCourtSide, subjectProfile.court_side)) return false;
 
   return true;
+}
+
+export function seekingProfileMatchesFilter(subjectProfile, prefs, watcherProfile, watcherUserId) {
+  if (!subjectProfile || !isSeekingActiveProfile(subjectProfile)) return false;
+  return profileMatchesMakkerFilter(subjectProfile, prefs, watcherProfile, watcherUserId);
 }
 
 export function describeMakkerFilter(prefs, profile = {}) {

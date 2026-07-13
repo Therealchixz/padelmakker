@@ -60,17 +60,21 @@ test('notifications.js exports invalidateNotificationPrefsCache', () => {
 
 test('InviteToMatchModal uses americano_invite with entity context', () => {
   const src = readSrc('src/dashboard/InviteToMatchModal.jsx');
-  const tournamentHandler = src.slice(src.indexOf('handleInviteTournament'));
-  assert.match(tournamentHandler, /americano_invite/);
-  assert.match(tournamentHandler, /entityType:\s*['"]americano['"]/);
-  assert.match(tournamentHandler, /entityId:\s*tournament\.id/);
-  assert.doesNotMatch(tournamentHandler, /match_invite/);
+  // Scoped til selve americano-notifikationskaldet, så en regression der
+  // dropper entity-konteksten fra kaldet fanges (ikke bare et hel-fils-match).
+  assert.match(
+    src,
+    /createNotification\(\s*invitee\.id,\s*'americano_invite'[\s\S]*?\{\s*entityType:\s*'americano',\s*entityId:\s*item\.id\s*\}/,
+  );
 });
 
 test('InviteToMatchModal still uses match_invite for 2v2 matches', () => {
   const src = readSrc('src/dashboard/InviteToMatchModal.jsx');
-  assert.match(src, /handleInviteMatch[\s\S]*match_invite/s);
-  assert.match(src, /match\.id/);
+  // Scoped til selve match-notifikationskaldet: match_invite skal sendes med kampens id.
+  assert.match(
+    src,
+    /createNotification\(\s*invitee\.id,\s*'match_invite'[\s\S]*?item\.id\s*\)/,
+  );
 });
 
 test('resultErrorReports passes entity context for americano and league', () => {
@@ -115,6 +119,7 @@ test('AuthContext profile load retries and exposes profileLoadError', () => {
   assert.match(auth, /profileLoadError/);
   assert.match(auth, /fetchProfileFast\(userRow\)/);
   assert.match(auth, /\.maybeSingle\(\)/);
+  assert.match(auth, /setProfileLoadError\(true\)/);
   assert.match(platform, /Kunne ikke hente din profil/);
   assert.match(platform, /refreshProfile/);
 });

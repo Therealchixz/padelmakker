@@ -86,6 +86,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
   const [shareableCourts, setShareableCourts] = useState([]);
   const [timeDraft, setTimeDraft] = useState({ date: '', time: '18:00' });
   const [joiningInviteId, setJoiningInviteId] = useState(null);
+  const [acceptingTimeId, setAcceptingTimeId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -644,6 +645,22 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
     }
   }, [joiningInviteId, showToast, user]);
 
+  const handleAcceptTime = useCallback(async (message) => {
+    const payload = message?.payload;
+    if (!payload || !selectedId || acceptingTimeId) return;
+    const label = payload.label || `${payload.date || ''} · ${payload.time || ''}`.trim();
+    setAcceptingTimeId(message.id);
+    try {
+      const msg = await sendMessage(user.id, selectedId, `✅ ${label} passer mig 👍`);
+      setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
+      upsertConversationFromMessage(msg);
+    } catch {
+      showToast?.('Kunne ikke sende svar.');
+    } finally {
+      setAcceptingTimeId(null);
+    }
+  }, [selectedId, acceptingTimeId, user, showToast, upsertConversationFromMessage]);
+
   const openMatchPicker = async () => {
     setActionSheet('match');
     setPickerLoading(true);
@@ -980,6 +997,8 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           onReact={handleReact}
           onJoinInvite={handleJoinInvite}
           joiningInviteId={joiningInviteId}
+          onAcceptTime={handleAcceptTime}
+          acceptingTimeId={acceptingTimeId}
           onScroll={updateStickToBottom}
           loadOlderSlot={!isTeamThread && hiddenMessageCount > 0 ? (
             <div className="pm-besked-load-older">

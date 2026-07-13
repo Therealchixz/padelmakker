@@ -207,7 +207,7 @@ export function OnboardingPage() {
 
     if (targetStep === 2) {
       if (!isValidProfileRegion(form.area)) missing.push("region");
-      if (form.availability.length === 0) missing.push("hvornår du kan spille");
+      // Tilgængelighed er valgfri ved onboarding — kan altid sættes/ændres på profilen
     }
 
     if (targetStep === 3 && !acceptedTerms) {
@@ -621,7 +621,7 @@ export function OnboardingPage() {
     <div key={1}>
       <div style={{ textAlign: "center", padding: "0 8px 16px" }}>
         <div style={screenHeading}>Hvor godt spiller du?</div>
-        <div style={screenSub}>Vælg det, der passer bedst – din Elo justerer sig automatisk efter dine kampe</div>
+        <div style={screenSub}>Dit niveau bruges til at matche dig med spillere på samme niveau – din Elo justerer sig automatisk efter dine kampe</div>
       </div>
       {LEVEL_CARDS.map((c) => {
         const sel = selectedLevelCard === c.value;
@@ -654,7 +654,7 @@ export function OnboardingPage() {
                 height: "46px",
                 borderRadius: "12px",
                 background: sel ? theme.navy : theme.surfaceAlt,
-                color: sel ? "#fff" : theme.navy,
+                color: sel ? "var(--pm-on-accent)" : theme.accent,
                 fontWeight: 700,
                 fontSize: "15px",
                 display: "flex",
@@ -683,7 +683,7 @@ export function OnboardingPage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#fff",
+                color: "var(--pm-on-accent)",
               }}
             >
               {sel && <Check size={12} strokeWidth={3} />}
@@ -697,7 +697,7 @@ export function OnboardingPage() {
         style={{
           border: "none",
           background: "transparent",
-          color: theme.navy,
+          color: theme.accent,
           fontWeight: 600,
           fontSize: "12.5px",
           cursor: "pointer",
@@ -764,9 +764,10 @@ export function OnboardingPage() {
           placeholder="F.eks. Aarhus, København, Aalborg..."
           style={obInput}
         />
+        <div style={fieldHint}>Byen er valgfri og kan tilføjes under profil senere.</div>
       </div>
       <div style={fieldWrap}>
-        <label style={obLabel}>Hvornår kan du spille?</label>
+        <label style={obLabel}>Hvornår kan du spille? <span style={{ fontWeight: 400, opacity: 0.7 }}>(valgfri)</span></label>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           {AVAILABILITY.map(a => (
             <button key={a} type="button" onClick={() => toggleAvail(a)} style={chipStyle(form.availability.includes(a))}>{a}</button>
@@ -812,8 +813,9 @@ export function OnboardingPage() {
             ? <img src={avatarPreviewUrl} alt="Valgt profilbillede" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : <span style={{ fontSize: "30px", lineHeight: 1 }}>{form.avatar}</span>}
         </div>
-        <div style={{ fontSize: "12px", fontWeight: 600, color: theme.navy, marginTop: "8px" }}>Vælg profilbillede</div>
+        <div style={{ fontSize: "12px", fontWeight: 600, color: theme.accent, marginTop: "8px" }}>Vælg profilbillede</div>
         <div style={{ fontSize: "10.5px", color: theme.textLight, marginTop: "2px" }}>Emoji eller upload et billede</div>
+        <div style={{ fontSize: "12px", fontWeight: 600, color: theme.green, marginTop: "10px" }}>Din profil er klar til at finde makkere 🎾</div>
       </div>
       <div style={{ marginBottom: "10px" }}>
         <AvatarPicker
@@ -880,18 +882,18 @@ export function OnboardingPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#fff",
+            color: "var(--pm-on-accent)",
           }}
         >
           {acceptedTerms && <Check size={13} strokeWidth={3} />}
         </span>
         <span style={{ fontSize: "12px", color: theme.textMid, lineHeight: 1.5 }}>
           Jeg accepterer {LEGAL_INFO.brand}s{" "}
-          <Link to="/handelsbetingelser" target="_blank" rel="noopener noreferrer" style={{ color: theme.navy, fontWeight: 600 }}>
+          <Link to="/handelsbetingelser" target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
             handelsbetingelser
           </Link>{" "}
           og{" "}
-          <Link to="/privatlivspolitik" target="_blank" rel="noopener noreferrer" style={{ color: theme.navy, fontWeight: 600 }}>
+          <Link to="/privatlivspolitik" target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
             privatlivspolitik
           </Link>
           , og bekræfter at jeg er mindst {LEGAL_INFO.minAgeYears} år.
@@ -900,7 +902,7 @@ export function OnboardingPage() {
       {turnstileEnabled && (
         <div style={{ ...insetCard, marginBottom: "14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-            <ShieldCheck size={16} style={{ color: captchaToken ? theme.green : theme.navy, flexShrink: 0 }} />
+            <ShieldCheck size={16} style={{ color: captchaToken ? theme.green : theme.accent, flexShrink: 0 }} />
             <span style={{ fontSize: "12px", color: theme.textMid, flex: 1 }}>
               {captchaToken ? "Sikkerhedscheck gennemført" : "Sikkerhedscheck — bekræft at du ikke er en robot"}
             </span>

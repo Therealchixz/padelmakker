@@ -100,7 +100,7 @@ export const AdminUserProfileOverview = memo(function AdminUserProfileOverview({
             <span style={tag(theme.blueBg, theme.blue)}>Americano/Mexicano ELO {americanoElo}</span>
             {age ? <span style={tag(theme.blueBg, theme.blue)}>{age} år</span> : null}
             {location ? (
-              <span style={tag(theme.warmBg, theme.warm)}>
+              <span style={tag(theme.warmBg, theme.amberText)}>
                 <MapPin size={9} aria-hidden /> {location}
               </span>
             ) : null}

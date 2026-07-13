@@ -6,7 +6,7 @@ import { resolveDisplayName, sanitizeText, displayUserText } from '../lib/platfo
 import { mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 import { mergeLigaSessionPrefs, openMineLigaerFromProfile } from '../lib/ligaSessionPrefs';
 import { useLigaPartnerOpponentStats } from '../lib/ligaRelationStats';
-import { REGIONS, PLAY_STYLES, COURT_SIDES } from '../lib/platformConstants';
+import { REGIONS, PLAY_STYLES, COURT_SIDES, AVAILABILITY, DAYS_OF_WEEK } from '../lib/platformConstants';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import { PlaytomicLevelPicker } from '../components/PlaytomicLevelPicker';
 import { canonicalRegionForForm, calcAge } from '../lib/profileUtils';
@@ -17,10 +17,12 @@ import { EloGraph } from '../components/EloGraph';
 import { MapPin, Settings, Swords, Trophy, TrendingUp, Save, X } from 'lucide-react';
 import { profileFormState } from './profileTabHelpers';
 import { isValidProfileRegion } from '../lib/profileUtils';
+import { isSeekingActiveProfile } from '../lib/seekingFeedTtl';
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { uploadAvatar, hasPendingAvatar, applyPendingAvatar } from '../lib/avatarUpload';
 import { AvatarPicker } from '../components/AvatarPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { PlayerProfileModal } from './PlayerProfileModal';
 import { PillTabs } from '../components/PillTabs';
 import {
   TOURNAMENT_DATA_SOURCE,
@@ -107,6 +109,42 @@ const RELATION_SECTION_LABELS = {
   loseMostAgainst: "Taber mest mod",
 };
 
+function RelationRow({ emoji, name, subtitle, statValue, statColor, statLabel, avatarStyle, onOpen }) {
+  const interactive = typeof onOpen === "function";
+  const handleKeyDown = interactive
+    ? (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }
+    : undefined;
+  return (
+    <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? onOpen : undefined}
+      onKeyDown={handleKeyDown}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        cursor: interactive ? "pointer" : undefined,
+      }}
+    >
+      <AvatarCircle avatar={emoji} size={40} emojiSize="16px" style={{ ...avatarStyle, flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+        <div style={{ fontSize: "11px", color: theme.textLight }}>{subtitle}</div>
+      </div>
+      <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <div style={{ fontSize: "15px", fontWeight: 800, color: statColor }}>{statValue}</div>
+        <div style={{ fontSize: "10px", color: theme.textLight }}>{statLabel}</div>
+      </div>
+    </div>
+  );
+}
+
 export function ProfilTab({ user, showToast, setTab }) {
   const { updateProfile, user: authUser } = useAuth();
   const displayName = resolveDisplayName(user, authUser);
@@ -138,6 +176,14 @@ export function ProfilTab({ user, showToast, setTab }) {
     return peak;
   }, [ratedRows]);
   const recentForm = ratedRows.slice(-5).reverse();
+  const { currentStreak: twoV2CurrentStreak } = useMemo(() => winStreaksFromEloHistory(ratedRows), [ratedRows]);
+
+  const todayEloChange = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    return ratedRows
+      .filter((r) => (r.date || '').slice(0, 10) === todayStr)
+      .reduce((sum, r) => sum + (Number(r.change) || 0), 0);
+  }, [ratedRows]);
 
   const { partnerOpponentStats, partnerOpponentLoading } = usePartnerOpponentStats(user.id, ratedRows);
   const americanoStatsEnabled =
@@ -195,6 +241,7 @@ export function ProfilTab({ user, showToast, setTab }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  const [viewPlayer, setViewPlayer] = useState(null);
   const [pendingAvatarFile, setPendingAvatarFile]   = useState(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl]     = useState(null);
   const [avatarUploading, setAvatarUploading]       = useState(false);
@@ -415,6 +462,8 @@ export function ProfilTab({ user, showToast, setTab }) {
         level: form.levelNumeric,
         play_style: form.play_style,
         court_side: form.court_side || null,
+        availability: form.availability || [],
+        available_days: form.available_days || [],
         bio: sanitizeText(form.bio.trim()),
         avatar: avatarValue,
         birth_year: form.birth_year ? parseInt(form.birth_year, 10) : null,
@@ -442,10 +491,10 @@ export function ProfilTab({ user, showToast, setTab }) {
   const americanoWinPct = americanoRounds > 0 ? Math.round((americanoWins / americanoRounds) * 100) : 0;
   const ligaWinPct = ligaStats.matches > 0 ? Math.round((ligaStats.wins / ligaStats.matches) * 100) : 0;
   const twoVTwoOverviewCards = [
-    { label: "ELO", value: elo, color: theme.accent },
-    { label: "Win %", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
-    { label: "Kampe", value: games, color: theme.blue },
-    { label: "Sejre", value: wins, color: theme.warm },
+    { label: "Kampe spillet", value: games, color: theme.blue },
+    { label: "Win rate", value: games > 0 ? winPct + "%" : "—", color: theme.accent },
+    { label: "Nuværende stime", value: twoV2CurrentStreak > 0 ? `🔥 ${twoV2CurrentStreak}` : twoV2CurrentStreak, color: twoV2CurrentStreak > 0 ? theme.warm : theme.textLight },
+    { label: "Turneringer", value: americanoPlayed || 0, color: theme.accent },
   ];
   const americanoOverviewCards = [
     { label: "ELO", value: americanoElo, color: theme.accent },
@@ -553,15 +602,6 @@ export function ProfilTab({ user, showToast, setTab }) {
           <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Min profil</h2>
         </div>
         <div className="pm-profile-top">
-        <PillTabs
-          tabs={profileSectionTabs}
-          value={profileSectionValue}
-          onChange={handleProfileSectionChange}
-          ariaLabel="Profil-sektioner"
-          size="sm"
-          className="pm-pill-tabs--wrap"
-        />
-
         {/* Profile card – centered pf-head layout matching mockup */}
         <div ref={overviewRef} className="pm-profile-card" style={{ background: theme.surface, borderRadius: theme.radius, padding: "0 0 16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px", overflow: 'hidden', position: 'relative' }}>
           {/* Edit button floating in top-right corner */}
@@ -575,32 +615,87 @@ export function ProfilTab({ user, showToast, setTab }) {
           </div>
           {/* Centered header: avatar + name + location + tags */}
           <div style={{ textAlign: 'center', padding: '18px 18px 14px' }}>
-            <AvatarCircle
-              avatar={user.avatar}
-              size={96}
-              emojiSize="29px"
-              style={{ margin: '0 auto', border: '3px solid ' + theme.surface, boxShadow: theme.shadow }}
-            />
+            <div style={{ position: 'relative', display: 'inline-block', margin: '0 auto' }}>
+              <AvatarCircle
+                avatar={user.avatar}
+                size={96}
+                emojiSize="29px"
+                style={{ border: '3px solid ' + theme.surface, boxShadow: theme.shadow }}
+              />
+              {user.level != null && user.level !== '' && (
+                <div style={{ position: 'absolute', bottom: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid ' + theme.surface }}>
+                  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+                </div>
+              )}
+            </div>
             <h2 style={{ fontSize: 19, fontWeight: 600, marginTop: 12, letterSpacing: '-0.3px', color: theme.text, margin: '12px 0 0' }}>{displayName}</h2>
             <p style={{ color: theme.textLight, fontSize: 12.5, marginTop: 3 }}>
               {user.city ? `${user.city}, ` : ''}{user.area || authUser?.email}
             </p>
             <div style={{ display: 'flex', gap: 7, marginTop: 9, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
-              {!statsLoading && is2v2Mode && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
+              {user.level != null && user.level !== '' ? (
+                <span style={tag(theme.amberBg, theme.amberText)}>
+                  Niveau {formatPlaytomicLevel(user.level)}
+                </span>
+              ) : !statsLoading && is2v2Mode && elo != null ? (
+                <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>
+              ) : null}
               {!statsLoading && isAmericanoMode && <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}
               {!statsLoading && isLigaMode && !ligaLoading && ligaStats.matches > 0 && (
                 <span style={tag(theme.blueBg, theme.blue)}>{ligaStats.matches} ligakampe</span>
               )}
               {user.birth_year && <span style={tag(theme.blueBg, theme.blue)}>{calcAge(user.birth_year, user.birth_month, user.birth_day)} år</span>}
-              {user.level != null && user.level !== '' ? (
-                <span style={tag(theme.amberBg, theme.amberText)}>
-                  Niveau {formatPlaytomicLevel(user.level)}
-                </span>
-              ) : null}
               {user.play_style && <span style={tag(theme.blueBg, theme.blue)}>{user.play_style}</span>}
               {user.court_side && <span style={tag(theme.blueBg, theme.blue)}>{user.court_side}</span>}
+              {isSeekingActiveProfile(user) && <span style={tag(theme.greenBg, theme.green)}>Søger makker</span>}
             </div>
           </div>
+
+          {/* Summary stat grid — always visible below profile header, mirrors mockup 2×2 layout */}
+          {!statsLoading && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, padding: '12px 18px 2px' }}>
+              {[
+                { label: 'Kampe spillet', val: games },
+                { label: 'Win rate', val: games > 0 ? winPct + '%' : '—' },
+                { label: 'Nuværende stime', val: twoV2CurrentStreak || 0 },
+                { label: 'Turneringer', val: americanoPlayed || 0 },
+              ].map((s, i) => (
+                <div key={i} style={{ background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 16, padding: '13px 15px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '10.5px', fontWeight: 600, color: theme.textLight, letterSpacing: '0.03em' }}>{s.label}</div>
+                  <div style={{ fontSize: 23, fontWeight: 700, color: theme.accent, marginTop: 4 }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ELO hero inside profile card — matches mockup position (between stat-grid and padded content) */}
+          {showPerformanceSection && (
+            <div style={{ margin: '4px 18px 0', borderRadius: 16, padding: '17px', background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))', color: 'var(--pm-on-accent)', boxShadow: theme.shadowLg }}>
+              <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pm-hero-subtitle)', marginBottom: '6px' }}>
+                Aktuel Elo Rating · {activeModeLabel}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: '12px' }}>
+                <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
+                  {(is2v2Mode ? elo : americanoElo) ?? '—'}
+                </div>
+                {is2v2Mode && todayEloChange !== 0 && (
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: todayEloChange > 0 ? 'var(--pm-success-border)' : 'var(--pm-danger-border)', letterSpacing: '-0.2px' }}>
+                    {todayEloChange > 0 ? '↑' : '↓'} {todayEloChange > 0 ? '+' : ''}{todayEloChange} i dag
+                  </div>
+                )}
+              </div>
+              {activeEloGraphLoading ? (
+                <div style={{ textAlign: "center", padding: "16px 0", color: 'var(--pm-hero-subtitle)', fontSize: "13px" }}>Indlæser...</div>
+              ) : (
+                <EloGraph
+                  data={activeEloGraphData}
+                  valueLabel={activeEloGraphLabel}
+                  emptyText={activeEloGraphEmptyText}
+                  dark
+                />
+              )}
+            </div>
+          )}
 
           <div style={{ padding: '0 18px' }}>
           {user.bio && <p style={{ fontSize: "13px", color: theme.textMid, lineHeight: 1.5, marginBottom: "16px", fontStyle: "italic" }}>&ldquo;{displayUserText(user.bio)}&rdquo;</p>}
@@ -650,9 +745,6 @@ export function ProfilTab({ user, showToast, setTab }) {
             </div>
           ) : null}
 
-          <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Overblik
-          </div>
           <PillTabs
             tabs={PROFILE_OVERVIEW_TABS}
             value={overviewMode}
@@ -669,18 +761,67 @@ export function ProfilTab({ user, showToast, setTab }) {
           ) : (
           <>
           <div style={{ fontSize: "10px", color: theme.textLight, marginBottom: "10px" }}>
-            {activeOverviewSource} · Sidst opdateret: {activeOverviewUpdatedAt}
+            {activeOverviewSource}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px", marginBottom: "20px" }}>
+          {!is2v2Mode && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginBottom: "20px" }}>
             {activeOverviewCards.map((s, i) => (
-              <div key={i} style={{ textAlign: "center", padding: "14px 6px 12px", background: theme.surfaceAlt, borderRadius: "12px", border: "1px solid " + theme.border }}>
-                <div style={{ fontSize: "9.5px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</div>
-                <div style={{ fontSize: "22px", fontWeight: 700, color: theme.navy, marginTop: "4px", letterSpacing: "-0.3px" }}>{s.value}</div>
+              <div key={i} style={{ textAlign: "center", padding: "13px 15px", background: "var(--pm-surface-muted)", borderRadius: 16, border: "1px solid var(--pm-americano-tie-border)" }}>
+                <div style={{ fontSize: "10.5px", fontWeight: 600, color: theme.textLight, letterSpacing: "0.03em" }}>{s.label}</div>
+                {s.form ? (
+                  <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 9 }}>
+                    {s.form.length > 0 ? s.form.map((r, j) => (
+                      <div key={j} style={{ width: 21, height: 21, borderRadius: "50%", background: r.result === "win" ? "var(--pm-green)" : r.result === "loss" ? "var(--pm-red)" : "var(--pm-border)", color: "var(--pm-on-accent)", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {r.result === "win" ? "V" : r.result === "loss" ? "T" : "U"}
+                      </div>
+                    )) : <div style={{ fontSize: "13px", color: theme.textLight, marginTop: 4 }}>—</div>}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 23, fontWeight: 700, color: theme.accent, marginTop: 4 }}>{s.value}</div>
+                )}
               </div>
             ))}
           </div>
+          )}
           </>
           )}
+
+          {is2v2Mode && !statsLoading && (() => {
+            const badges = [
+              { key: 'champion', label: 'Champion', earned: games >= 10 && winPct >= 60, hint: 'Vind 60% af mindst 10 kampe',
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg> },
+              { key: 'local', label: 'Lokal Helt', earned: games >= 25, hint: 'Spil 25 kampe',
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.5 14 17 22l-5-3-5 3 1.5-8"/></svg> },
+              { key: 'sprinter', label: 'Sprinter', earned: twoV2CurrentStreak >= 3, hint: '3 sejre i træk',
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg> },
+              { key: 'team', label: 'Holdspiller', earned: games >= 5, hint: 'Spil 5 kampe',
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+            ];
+            const earnedCount = badges.filter(b => b.earned).length;
+            return (
+              <div style={{ marginTop: 4, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Badges</h3>
+                  <span style={{ fontSize: 11.5, color: theme.textLight, fontWeight: 600 }}>{earnedCount}/{badges.length} opnået</span>
+                </div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                  {badges.map(b => (
+                    <div key={b.key} style={{ textAlign: 'center', flex: 1 }} aria-label={b.earned ? `${b.label} — opnået` : `${b.label} — ${b.hint}`}>
+                      <div style={{ width: 52, height: 52, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
+                        opacity: b.earned ? 1 : 0.45,
+                        background: b.earned ? theme.navy : theme.surfaceAlt,
+                        color: b.earned ? 'var(--pm-on-accent)' : theme.textLight,
+                        border: b.earned ? 'none' : `1px solid ${theme.border}` }}>
+                        {b.icon}
+                      </div>
+                      <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 600, marginTop: 6, color: b.earned ? theme.textMid : theme.textLight }}>{b.label}</span>
+                      <span style={{ display: 'block', fontSize: '9px', lineHeight: 1.25, marginTop: 3, color: b.earned ? theme.green : theme.textLight }}>{b.earned ? 'Opnået' : b.hint}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
         </div>
         </div>
@@ -688,30 +829,10 @@ export function ProfilTab({ user, showToast, setTab }) {
 
         {showPerformanceSection ? (
         <>
-        <div ref={performanceRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <div ref={performanceRef} style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
           Performance · {activeModeLabel}
         </div>
-        {/* ELO hero — navy gradient card */}
-        <div style={{ margin: '0 0 16px', borderRadius: 14, padding: '17px', background: 'linear-gradient(150deg, #0D2752, #1D4A9E)', color: '#fff', boxShadow: theme.shadowLg }}>
-          <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9DB6DE', marginBottom: '6px' }}>
-            Aktuel Elo Rating · {activeModeLabel}
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: '12px' }}>
-            {(is2v2Mode ? elo : americanoElo) ?? '—'}
-          </div>
-          {activeEloGraphLoading ? (
-            <div style={{ textAlign: "center", padding: "16px 0", color: '#9DB6DE', fontSize: "13px" }}>Indlæser...</div>
-          ) : (
-            <EloGraph
-              data={activeEloGraphData}
-              valueLabel={activeEloGraphLabel}
-              emptyText={activeEloGraphEmptyText}
-              dark
-            />
-          )}
-        </div>
-
-        {/* Ekstra statistik — kun 2v2 */}
+        {/* Ekstra statistik — kun 2v2: samlet 2×2 gitter */}
         {!statsLoading && is2v2Mode && (() => {
           const { currentStreak, bestStreak } = winStreaksFromEloHistory(eloHistory);
 
@@ -731,61 +852,73 @@ export function ProfilTab({ user, showToast, setTab }) {
           const monthNames = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
           const fmtMonth = (m) => { const [y, mo] = m.split("-"); return monthNames[parseInt(mo, 10) - 1] + " " + y; };
 
+          const statCard = (children) => (
+            <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "14px 16px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+              {children}
+            </div>
+          );
+
           return (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginBottom: "16px" }}>
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+              {statCard(<>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Sejrsstreak</div>
-                <div style={{ fontSize: "28px", fontWeight: 800, color: theme.warm, letterSpacing: "-0.03em" }}>{currentStreak > 0 ? `🔥 ${currentStreak}` : "0"}</div>
+                <div style={{ fontSize: "26px", fontWeight: 800, color: theme.warm, letterSpacing: "-0.03em" }}>{currentStreak > 0 ? `🔥 ${currentStreak}` : "0"}</div>
                 <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste: {bestStreak} i træk</div>
-              </div>
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
+              </>)}
+              {statCard(<>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Bedste måned</div>
                 {bestMonth && bestMonth.month ? (
                   <>
-                    <div style={{ fontSize: "16px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.02em", textTransform: "capitalize" }}>{fmtMonth(bestMonth.month)}</div>
+                    <div style={{ fontSize: "15px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.02em", textTransform: "capitalize" }}>{fmtMonth(bestMonth.month)}</div>
                     <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>
                       {bestMonth.wins}/{bestMonth.games} sejre · {bestMonth.change > 0 ? "+" : ""}{bestMonth.change} ELO
                     </div>
                   </>
                 ) : (
-                  <div style={{ fontSize: "14px", color: theme.textMid }}>Ingen data endnu</div>
+                  <div style={{ fontSize: "13px", color: theme.textMid, marginTop: "2px" }}>Ingen data endnu</div>
                 )}
-              </div>
+              </>)}
+              {statCard(<>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
+                {peakElo ? (
+                  <>
+                    <div style={{ fontSize: "22px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.03em" }}>🏆 {peakElo}</div>
+                    <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste nogensinde</div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: "22px", fontWeight: 800, color: theme.textLight }}>—</div>
+                )}
+              </>)}
+              {statCard(<>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>Seneste form</div>
+                {recentForm.length > 0 ? (
+                  <>
+                    <div style={{ display: "flex", gap: "5px", alignItems: "center", justifyContent: "center", marginBottom: "6px" }}>
+                      {recentForm.map((r, i) => (
+                        <div key={i} title={r.result === 'win' ? 'Sejr' : r.result === 'loss' ? 'Nederlag' : 'Uafgjort'} style={{
+                          width: "24px", height: "24px", borderRadius: "50%", flexShrink: 0,
+                          background: r.result === 'win' ? 'var(--pm-form-win)' : r.result === 'loss' ? 'var(--pm-form-loss)' : 'var(--pm-form-draw)',
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "10px", fontWeight: 700, color: "var(--pm-on-accent)",
+                        }}>
+                          {r.result === 'win' ? 'V' : r.result === 'loss' ? 'T' : 'U'}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: "11px", color: theme.textMid }}>Seneste {recentForm.length} kampe</div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: "13px", color: theme.textMid }}>Ingen kampe endnu</div>
+                )}
+              </>)}
             </div>
           );
         })()}
-
-        {/* Peak ELO + Seneste form — kun 2v2 */}
-        {!statsLoading && is2v2Mode && ratedRows.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px", marginBottom: "10px" }}>
-            {peakElo && (
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>Højeste ELO</div>
-                <div style={{ fontSize: "24px", fontWeight: 800, color: theme.accent, letterSpacing: "-0.03em" }}>🏆 {peakElo}</div>
-                <div style={{ fontSize: "11px", color: theme.textMid, marginTop: "4px" }}>Bedste nogensinde</div>
-              </div>
-            )}
-            {recentForm.length > 0 && (
-              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>Seneste form</div>
-                <div style={{ display: "flex", gap: "5px", alignItems: "center", marginBottom: "6px" }}>
-                  {recentForm.map((r, i) => (
-                    <div key={i} title={r.result === 'win' ? 'Sejr' : r.result === 'loss' ? 'Nederlag' : 'Uafgjort'} style={{
-                      width: "22px", height: "22px", borderRadius: "50%", flexShrink: 0,
-                      background: r.result === 'win' ? 'var(--pm-form-win)' : r.result === 'loss' ? 'var(--pm-form-loss)' : 'var(--pm-form-draw)',
-                    }} />
-                  ))}
-                </div>
-                <div style={{ fontSize: "11px", color: theme.textMid }}>Seneste {recentForm.length} kampe</div>
-              </div>
-            )}
-          </div>
-        )}
         </>
         ) : null}
 
         {showRelationsSection && (
-          <div ref={relationsRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <div ref={relationsRef} style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
             Relationer · {activeModeLabel}
           </div>
         )}
@@ -818,16 +951,55 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostWith}</div>
                 {partnerOpponentStats.partners.map((p, i) => (
-                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < partnerOpponentStats.partners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.games} kampe sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
-                    </div>
+                  <div key={p.userId} style={{ marginBottom: i < partnerOpponentStats.partners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.games} kampe sammen`}
+                      statValue={`${Math.round((p.asPartner.wins / p.asPartner.games) * 100)}%`}
+                      statColor={theme.green}
+                      statLabel="sejr"
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            {(partnerOpponentStats.worstPartners || []).length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostWith}</div>
+                {partnerOpponentStats.worstPartners.map((p, i) => (
+                  <div key={p.userId} style={{ marginBottom: i < partnerOpponentStats.worstPartners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.games} kampe sammen`}
+                      statValue={`${Math.round((1 - p.asPartner.wins / p.asPartner.games) * 100)}%`}
+                      statColor={theme.warm}
+                      statLabel="nederlag som makker"
+                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            {(partnerOpponentStats.bestOpponents || []).length > 0 && (
+              <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostAgainst}</div>
+                {partnerOpponentStats.bestOpponents.map((p, i) => (
+                  <div key={p.userId} style={{ marginBottom: i < partnerOpponentStats.bestOpponents.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asOpponent.games} kampe imod`}
+                      statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.games) * 100)}%`}
+                      statColor={theme.green}
+                      statLabel="din sejr"
+                      avatarStyle={{ background: theme.greenBg, border: "1px solid " + theme.green + "40" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -841,16 +1013,17 @@ export function ProfilTab({ user, showToast, setTab }) {
                   {hardOpponents.map((p, i) => {
                     const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.games) * 100);
                     return (
-                      <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < hardOpponents.length - 1 ? "10px" : 0 }}>
-                        <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.redBg, border: `1px solid ${theme.red}`, flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                          <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.games} kampe imod</div>
-                        </div>
-                        <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontSize: "15px", fontWeight: 800, color: theme.red }}>{theirWinPct}%</div>
-                          <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
-                        </div>
+                      <div key={p.userId} style={{ marginBottom: i < hardOpponents.length - 1 ? "10px" : 0 }}>
+                        <RelationRow
+                          emoji={p.emoji}
+                          name={p.name}
+                          subtitle={`${p.asOpponent.games} kampe imod`}
+                          statValue={`${theirWinPct}%`}
+                          statColor={theme.red}
+                          statLabel="de vinder"
+                          avatarStyle={{ background: theme.redBg, border: `1px solid ${theme.red}` }}
+                          onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                        />
                       </div>
                     );
                   })}
@@ -867,16 +1040,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostWith}</div>
                 {americanoRelationStats.bestPartners.map((p, i) => (
-                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.rounds} runder sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: americanoOutcomeColors.win.text }}>{Math.round((p.asPartner.wins / p.asPartner.rounds) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr på banen</div>
-                    </div>
+                  <div key={p.userId} style={{ marginBottom: i < americanoRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.rounds} runder sammen`}
+                      statValue={`${Math.round((p.asPartner.wins / p.asPartner.rounds) * 100)}%`}
+                      statColor={americanoOutcomeColors.win.text}
+                      statLabel="sejr på banen"
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -885,16 +1059,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostWith}</div>
                 {americanoRelationStats.toughestPartners.map((p, i) => (
-                  <div key={`tough-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.rounds} runder sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((1 - p.asPartner.wins / p.asPartner.rounds) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>nederlag som makker</div>
-                    </div>
+                  <div key={`tough-${p.userId}`} style={{ marginBottom: i < americanoRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.rounds} runder sammen`}
+                      statValue={`${Math.round((1 - p.asPartner.wins / p.asPartner.rounds) * 100)}%`}
+                      statColor={theme.warm}
+                      statLabel="nederlag som makker"
+                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -905,16 +1080,17 @@ export function ProfilTab({ user, showToast, setTab }) {
                 {americanoRelationStats.hardestOpponents.map((p, i) => {
                   const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.rounds) * 100);
                   return (
-                    <div key={`hard-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
-                      <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.redBg, border: `1px solid ${theme.red}`, flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                        <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.rounds} runder imod</div>
-                      </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontSize: "15px", fontWeight: 800, color: americanoOutcomeColors.loss.text }}>{theirWinPct}%</div>
-                        <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
-                      </div>
+                    <div key={`hard-${p.userId}`} style={{ marginBottom: i < americanoRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
+                      <RelationRow
+                        emoji={p.emoji}
+                        name={p.name}
+                        subtitle={`${p.asOpponent.rounds} runder imod`}
+                        statValue={`${theirWinPct}%`}
+                        statColor={americanoOutcomeColors.loss.text}
+                        statLabel="de vinder"
+                        avatarStyle={{ background: theme.redBg, border: `1px solid ${theme.red}` }}
+                        onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                      />
                     </div>
                   );
                 })}
@@ -924,16 +1100,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostAgainst}</div>
                 {americanoRelationStats.easiestOpponents.map((p, i) => (
-                  <div key={`easy-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < americanoRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.rounds} runder imod</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: americanoOutcomeColors.win.text }}>{Math.round((p.asOpponent.wins / p.asOpponent.rounds) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>din sejr</div>
-                    </div>
+                  <div key={`easy-${p.userId}`} style={{ marginBottom: i < americanoRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asOpponent.rounds} runder imod`}
+                      statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.rounds) * 100)}%`}
+                      statColor={americanoOutcomeColors.win.text}
+                      statLabel="din sejr"
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -947,16 +1124,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostWith}</div>
                 {ligaRelationStats.bestPartners.map((p, i) => (
-                  <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.matches} kampe sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asPartner.wins / p.asPartner.matches) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>sejr</div>
-                    </div>
+                  <div key={p.userId} style={{ marginBottom: i < ligaRelationStats.bestPartners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.matches} kampe sammen`}
+                      statValue={`${Math.round((p.asPartner.wins / p.asPartner.matches) * 100)}%`}
+                      statColor={theme.green}
+                      statLabel="sejr"
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -965,16 +1143,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "10px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.loseMostWith}</div>
                 {ligaRelationStats.toughestPartners.map((p, i) => (
-                  <div key={`liga-tough-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asPartner.matches} kampe sammen</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.warm }}>{Math.round((1 - p.asPartner.wins / p.asPartner.matches) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>nederlag som makker</div>
-                    </div>
+                  <div key={`liga-tough-${p.userId}`} style={{ marginBottom: i < ligaRelationStats.toughestPartners.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asPartner.matches} kampe sammen`}
+                      statValue={`${Math.round((1 - p.asPartner.wins / p.asPartner.matches) * 100)}%`}
+                      statColor={theme.warm}
+                      statLabel="nederlag som makker"
+                      avatarStyle={{ background: theme.warmBg, border: "1px solid " + theme.warm + "40" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -985,16 +1164,17 @@ export function ProfilTab({ user, showToast, setTab }) {
                 {ligaRelationStats.hardestOpponents.map((p, i) => {
                   const theirWinPct = Math.round((1 - p.asOpponent.wins / p.asOpponent.matches) * 100);
                   return (
-                    <div key={`liga-hard-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
-                      <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.redBg, border: `1px solid ${theme.red}`, flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                        <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.matches} kampe imod</div>
-                      </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontSize: "15px", fontWeight: 800, color: theme.red }}>{theirWinPct}%</div>
-                        <div style={{ fontSize: "10px", color: theme.textLight }}>de vinder</div>
-                      </div>
+                    <div key={`liga-hard-${p.userId}`} style={{ marginBottom: i < ligaRelationStats.hardestOpponents.length - 1 ? "10px" : 0 }}>
+                      <RelationRow
+                        emoji={p.emoji}
+                        name={p.name}
+                        subtitle={`${p.asOpponent.matches} kampe imod`}
+                        statValue={`${theirWinPct}%`}
+                        statColor={theme.red}
+                        statLabel="de vinder"
+                        avatarStyle={{ background: theme.redBg, border: `1px solid ${theme.red}` }}
+                        onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                      />
                     </div>
                   );
                 })}
@@ -1004,16 +1184,17 @@ export function ProfilTab({ user, showToast, setTab }) {
               <div style={{ background: theme.surface, borderRadius: theme.radius, padding: "18px", boxShadow: theme.shadow, border: "1px solid " + theme.border, marginBottom: "16px" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: theme.textLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px" }}>{RELATION_SECTION_LABELS.winMostAgainst}</div>
                 {ligaRelationStats.easiestOpponents.map((p, i) => (
-                  <div key={`liga-easy-${p.userId}`} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: i < ligaRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
-                    <AvatarCircle avatar={p.emoji} size={32} emojiSize="16px" style={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                      <div style={{ fontSize: "11px", color: theme.textLight }}>{p.asOpponent.matches} kampe imod</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "15px", fontWeight: 800, color: theme.green }}>{Math.round((p.asOpponent.wins / p.asOpponent.matches) * 100)}%</div>
-                      <div style={{ fontSize: "10px", color: theme.textLight }}>din sejr</div>
-                    </div>
+                  <div key={`liga-easy-${p.userId}`} style={{ marginBottom: i < ligaRelationStats.easiestOpponents.length - 1 ? "10px" : 0 }}>
+                    <RelationRow
+                      emoji={p.emoji}
+                      name={p.name}
+                      subtitle={`${p.asOpponent.matches} kampe imod`}
+                      statValue={`${Math.round((p.asOpponent.wins / p.asOpponent.matches) * 100)}%`}
+                      statColor={theme.green}
+                      statLabel="din sejr"
+                      avatarStyle={{ background: theme.accentBg, border: "1px solid " + theme.accent + "30" }}
+                      onOpen={() => setViewPlayer({ id: p.userId, name: p.name, avatar: p.emoji })}
+                    />
                   </div>
                 ))}
               </div>
@@ -1021,7 +1202,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           </>
         )}
 
-        <div ref={actionsRef} style={{ fontSize: "11px", fontWeight: 700, color: theme.textLight, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <div ref={actionsRef} style={{ fontSize: "10.5px", fontWeight: 700, color: theme.textLight, margin: "14px 18px 8px", textTransform: "uppercase", letterSpacing: "1.2px" }}>
           Handlinger · {activeModeLabel}
         </div>
         {/* Quick links — matcher valgt format i Overblik */}
@@ -1180,6 +1361,36 @@ export function ProfilTab({ user, showToast, setTab }) {
           style={{ marginBottom: "14px" }}
         />
 
+        {/* Tilgængelighed */}
+        {(() => {
+          const chip = (active) => ({
+            padding: '8px 13px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+            border: `1.5px solid ${active ? theme.navy : theme.border}`,
+            background: active ? theme.navy : theme.surface,
+            color: active ? 'var(--pm-on-accent)' : theme.textMid, fontFamily: 'inherit',
+          });
+          const avail = form.availability || [];
+          const days = form.available_days || [];
+          const toggleAvail = (a) => set('availability', avail.includes(a) ? avail.filter(x => x !== a) : [...avail, a]);
+          const toggleDay = (d) => set('available_days', days.includes(d) ? days.filter(x => x !== d) : [...days, d]);
+          return (
+            <>
+              <div style={labelStyle}>Hvornår kan du spille?</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                {AVAILABILITY.map((a) => (
+                  <button key={a} type="button" onClick={() => toggleAvail(a)} style={chip(avail.includes(a))}>{a}</button>
+                ))}
+              </div>
+              <div style={labelStyle}>Spilledage</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                {DAYS_OF_WEEK.map(({ key, label }) => (
+                  <button key={key} type="button" onClick={() => toggleDay(key)} style={chip(days.includes(key))}>{label}</button>
+                ))}
+              </div>
+            </>
+          );
+        })()}
+
         {/* Bio */}
         <label htmlFor="profil-bio" style={labelStyle}>Bio</label>
         <textarea id="profil-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl lidt om dig som spiller..." style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "20px" }} />
@@ -1214,6 +1425,7 @@ export function ProfilTab({ user, showToast, setTab }) {
       </div>
     </div>
       )}
+      {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
     </div>
   );
 }

@@ -231,13 +231,14 @@ export function NotifikationerPage({ onBack }) {
     background: unread ? theme.accentBg + '40' : theme.surface,
     borderRadius: 14,
     border: '1px solid ' + (unread ? theme.accent + '30' : theme.border),
+    borderLeft: unread ? `3px solid ${theme.navy}` : '1px solid ' + theme.border,
     margin: '0 18px 11px',
     position: 'relative',
   });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, background: theme.bg, fontFamily: font }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', paddingTop: 'max(10px, env(safe-area-inset-top))', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'max(10px, calc(env(safe-area-inset-top) + 8px)) 14px 10px', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
         <button
           type="button"
           onClick={goBack}
@@ -251,7 +252,7 @@ export function NotifikationerPage({ onBack }) {
           <button
             type="button"
             onClick={markAllRead}
-            style={{ fontSize: '11.5px', fontWeight: 600, color: theme.navy, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '8px 0', minHeight: 44 }}
+            style={{ ...btn(false, { size: 'sm', radius: 'pill' }), minHeight: 40, color: theme.accent, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             Markér alle læst
           </button>
@@ -323,14 +324,14 @@ export function NotifikationerPage({ onBack }) {
                   </div>
                 )}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
                 <time style={{ fontSize: 11, color: theme.textLight, fontWeight: 500, whiteSpace: 'nowrap' }}>{timeAgo(n.created_at)}</time>
                 {!n.read && <div style={{ width: 8, height: 8, borderRadius: '50%', background: theme.accent }} />}
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); void deleteNotif(n); }}
                   aria-label="Slet"
-                  style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', color: theme.textLight, display: 'flex', minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: theme.textLight, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, minWidth: 40, position: 'relative', zIndex: 2 }}
                 >
                   <Trash2 size={15} />
                 </button>

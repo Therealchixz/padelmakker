@@ -1,5 +1,5 @@
-import { CalendarDays, Clock, MapPin } from 'lucide-react';
-import { shortLigaDate, getLigaBadge } from '../lib/ligaDisplayUtils';
+import { CalendarDays, Clock, MapPin, Trophy } from 'lucide-react';
+import { shortLigaDate, getLigaBadge, ligaTypeLabel } from '../lib/ligaDisplayUtils';
 
 function badgeToneClass(tone) {
   if (tone === 'live') return 'pm-kampe-v2-badge--live';
@@ -28,7 +28,7 @@ function hashStr(s) {
   return Math.abs(h);
 }
 
-const TEAM_COLORS = ['#16377E', '#059669', '#D97706', '#7C3AED', '#DC2626', '#0891B2'];
+const TEAM_COLORS = ['#16377E', '#059669', '#D97706', '#7C3AED', '#DC2626', '#0891B2']; // ui-hex-allow: dekorativ hold-palet (${color}22 alpha-tints, kan ikke være CSS-var)
 
 function teamColor(teamId) {
   return TEAM_COLORS[hashStr(String(teamId || 'x')) % TEAM_COLORS.length];
@@ -81,9 +81,9 @@ export function LigaListCard({
     totalRounds,
   });
 
-  const headerClass = isCompleted
-    ? 'pm-liga-v2-list-top pm-liga-v2-list-top--done'
-    : 'pm-liga-v2-list-top';
+  const bandClass = isCompleted
+    ? 'pm-liga-v2-list-band pm-liga-v2-list-band--done'
+    : 'pm-liga-v2-list-band';
 
   const previewTeams = isRegistration ? regTeams.slice(0, 4) : [];
   const isFull = Boolean(maxTeams && filled >= maxTeams);
@@ -100,28 +100,12 @@ export function LigaListCard({
       aria-label={`Åbn liga: ${league.name}`}
       style={{ scrollMarginTop: '88px' }}
     >
-      <div className={headerClass}>
-        <div className="pm-liga-v2-list-top-main">
-          <div className="pm-liga-v2-list-type">Liga · Swiss</div>
-          <div className="pm-liga-v2-list-title">{league.name}</div>
-          <div className="pm-liga-v2-list-meta">
-            {isRegistration ? (
-              <>
-                <CalendarDays size={13} strokeWidth={2} aria-hidden />
-                <span>Start {shortDateLabel(league.start_date)}</span>
-              </>
-            ) : (
-              <>
-                <MapPin size={11} strokeWidth={2.5} aria-hidden />
-                <span>
-                  {regionLabel || 'Danmark'}
-                  {' · '}
-                  {filled} hold
-                </span>
-              </>
-            )}
-          </div>
+      {/* Smal identitetsstribe — beholder Liga-identiteten uden et fyldt hero-felt */}
+      <div className={bandClass}>
+        <div className="pm-liga-v2-list-icon" aria-hidden="true">
+          <Trophy size={15} strokeWidth={2} />
         </div>
+        <span className="pm-liga-v2-list-type">{ligaTypeLabel(league)}</span>
         <span className={`pm-kampe-v2-badge pm-liga-v2-list-badge ${badgeToneClass(badgeTone)}`}>
           {badgeTone === 'live' ? <span className="pm-live-dot" aria-hidden /> : null}
           {badgeLabel}
@@ -129,6 +113,24 @@ export function LigaListCard({
       </div>
 
       <div className="pm-liga-v2-list-body">
+        <div className="pm-liga-v2-list-title">{league.name}</div>
+        <div className="pm-liga-v2-list-meta">
+          {isRegistration ? (
+            <>
+              <CalendarDays size={13} strokeWidth={2} aria-hidden />
+              <span>Start {shortDateLabel(league.start_date)}</span>
+            </>
+          ) : (
+            <>
+              <MapPin size={11} strokeWidth={2.5} aria-hidden />
+              <span>
+                {regionLabel || 'Danmark'}
+                {' · '}
+                {filled} hold
+              </span>
+            </>
+          )}
+        </div>
         {isRegistration ? (
           <>
             <div className="pm-americano-v2-list-venue">

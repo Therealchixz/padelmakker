@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
@@ -18,6 +18,83 @@ function maskPhone(phone) {
 
 function cleanOtp(raw) {
   return String(raw || '').replace(/\D/g, '').slice(0, 6)
+}
+
+/** 6-felts SMS-kode med auto-advance, backspace og indsæt (paste) af hele koden. */
+function OtpBoxes({ value, onChange, onComplete, disabled }) {
+  const refs = useRef([])
+  const digits = Array.from({ length: 6 }, (_, i) => value[i] || '')
+
+  const setAt = (i, d) => {
+    const next = (value.slice(0, i) + d + value.slice(i + 1)).replace(/\D/g, '').slice(0, 6)
+    onChange(next)
+    return next
+  }
+
+  const handleChange = (i, raw) => {
+    const d = raw.replace(/\D/g, '')
+    if (d.length > 1) {
+      // Indsæt/auto-fyld flere cifre fra position i
+      const next = (value.slice(0, i) + d).replace(/\D/g, '').slice(0, 6)
+      onChange(next)
+      const focusIdx = Math.min(next.length, 5)
+      refs.current[focusIdx]?.focus()
+      if (next.length === 6) onComplete?.(next)
+      return
+    }
+    const next = setAt(i, d)
+    if (d && i < 5) refs.current[i + 1]?.focus()
+    if (next.length === 6) onComplete?.(next)
+  }
+
+  const handleKeyDown = (i, e) => {
+    if (e.key === 'Backspace') {
+      if (digits[i]) {
+        setAt(i, '')
+      } else if (i > 0) {
+        refs.current[i - 1]?.focus()
+        setAt(i - 1, '')
+      }
+    } else if (e.key === 'ArrowLeft' && i > 0) {
+      refs.current[i - 1]?.focus()
+    } else if (e.key === 'ArrowRight' && i < 5) {
+      refs.current[i + 1]?.focus()
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 14 }} role="group" aria-label="6-cifret SMS-kode">
+      {digits.map((d, i) => (
+        <input
+          key={i}
+          ref={(el) => { refs.current[i] = el }}
+          type="text"
+          inputMode="numeric"
+          autoComplete={i === 0 ? 'one-time-code' : 'off'}
+          aria-label={`Ciffer ${i + 1}`}
+          value={d}
+          disabled={disabled}
+          onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          onFocus={(e) => e.target.select()}
+          style={{
+            width: 44,
+            height: 54,
+            textAlign: 'center',
+            fontSize: 22,
+            fontWeight: 700,
+            fontFamily: font,
+            color: theme.text,
+            border: `2px solid ${d ? theme.accent : theme.border}`,
+            borderRadius: 12,
+            background: theme.surface,
+            outline: 'none',
+            transition: 'border-color 0.15s',
+          }}
+        />
+      ))}
+    </div>
+  )
 }
 
 function readPendingSignup() {
@@ -385,23 +462,15 @@ export function PhoneVerificationPage() {
               void verifyCode()
             }}
           >
-            <label htmlFor="verify-otp" style={labelStyle}>SMS-kode (6 cifre)</label>
+            <div style={labelStyle}>SMS-kode (6 cifre)</div>
             <p style={{ fontSize: '12px', color: theme.textLight, margin: '0 0 8px', lineHeight: 1.45 }}>
               Koden står i SMS’en fra os. Kommer den ikke frem, vent et minut og tryk «Send kode igen».
             </p>
-            <input
-              id="verify-otp"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
+            <OtpBoxes
               value={otpCode}
-              onChange={(e) => {
-                setOtpCode(cleanOtp(e.target.value))
-                setErr('')
-              }}
-              placeholder="000000"
-              maxLength={6}
-              style={{ ...inputStyle, marginBottom: '14px', letterSpacing: '0.22em', textAlign: 'center', fontSize: '18px' }}
+              disabled={submitting}
+              onChange={(v) => { setOtpCode(v); setErr('') }}
+              onComplete={() => { void verifyCode() }}
             />
             <button
               type="submit"

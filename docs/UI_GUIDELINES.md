@@ -48,6 +48,9 @@ Presets: `sm` (380px), `md` (520px), `lg` (640px).
 ## Farver
 
 - **Aldrig** nye hardcodede `#RRGGBB` i JSX/TSX (brug `theme.*` eller `var(--pm-*)`).
+- Eneste undtagelse: kontekster der ikke kan bruge CSS-variabler (fx Leaflet-markør-options
+  og brand-SVG'er). Markér linjen med en `// ui-hex-allow`-kommentar OG en begrundelse —
+  brug den aldrig for almindelige inline-styles, der kan bruge tokens.
 - Gul «søger»-accent = `--pm-warning-bg` / `--pm-warm` (se `SeekingCallout`).
 - Match-score badges i Find makker: `tag(theme.warmBg, theme.warm)`.
 
@@ -72,7 +75,8 @@ Alt nyt UI skal virke med `[data-theme="dark"]` via tokens — test Profil, Hjem
 
 ## CI
 
-GitHub Actions kører `STRICT=1 npm run check:ui-hex` — nye `#hex` i JSX fejler build.
+GitHub Actions kører `STRICT=1 npm run check:ui-hex` — nye `#hex` i JSX fejler build,
+medmindre linjen bærer en begrundet `// ui-hex-allow`-markering (se Farver-afsnittet).
 
 ## Inventar
 

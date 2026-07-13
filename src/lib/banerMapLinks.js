@@ -21,10 +21,10 @@ export function banerMapsDirectionsUrl(address) {
 }
 
 export function venueHasMapCoords(venue) {
-  const latRaw = venue?.latitude;
-  const lngRaw = venue?.longitude;
-  if (latRaw == null || lngRaw == null) return false;
-  const lat = Number(latRaw);
-  const lng = Number(lngRaw);
+  const rawLat = venue?.latitude;
+  const rawLng = venue?.longitude;
+  if (rawLat == null || rawLat === '' || rawLng == null || rawLng === '') return false;
+  const lat = Number(rawLat);
+  const lng = Number(rawLng);
   return Number.isFinite(lat) && Number.isFinite(lng);
 }

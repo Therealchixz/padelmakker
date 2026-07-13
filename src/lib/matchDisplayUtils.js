@@ -65,7 +65,8 @@ export function formatTimeSlotDa(timeVal) {
   if (!m) return s
   const h = Math.min(23, Math.max(0, parseInt(m[1], 10)))
   const min = Math.min(59, Math.max(0, parseInt(m[2], 10)))
-  return `${pad2(h)}.${pad2(min)}`
+  // Kolon som i resten af appen (2v2 viser "Kl. 18:00")
+  return `${pad2(h)}:${pad2(min)}`
 }
 
 /** ELO fra profil-række (fallback når historik ikke er hentet). */

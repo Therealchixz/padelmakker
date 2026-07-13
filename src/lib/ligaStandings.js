@@ -13,7 +13,10 @@ export function parseGameDiff(scoreText, winnerId, team1Id) {
   return winnerId === team1Id ? winnerGames - loserGames : loserGames - winnerGames;
 }
 
-export function computeStandings(teams, matches) {
+export function computeStandings(teams, matches, opts = {}) {
+  const pointsWin = Number.isFinite(opts.pointsWin) ? opts.pointsWin : 3;
+  const pointsDraw = Number.isFinite(opts.pointsDraw) ? opts.pointsDraw : 1;
+  const pointsLoss = Number.isFinite(opts.pointsLoss) ? opts.pointsLoss : 0;
   const map = {};
   for (const t of teams) map[t.id] = { ...t, points: 0, wins: 0, losses: 0, played: 0, gameDiff: 0 };
   for (const m of matches) {
@@ -25,13 +28,13 @@ export function computeStandings(teams, matches) {
     const diffT1 = parseGameDiff(m.score_text, m.winner_id, m.team1_id);
     if (winner) {
       winner.wins++;
-      winner.points += 3;
+      winner.points += pointsWin;
       winner.played++;
       winner.gameDiff += m.winner_id === m.team1_id ? diffT1 : -diffT1;
     }
     if (loser) {
       loser.losses++;
-      if (tb) loser.points += 1;
+      loser.points += tb ? pointsDraw : pointsLoss;
       loser.played++;
       loser.gameDiff += loserId === m.team1_id ? diffT1 : -diffT1;
     }
@@ -85,4 +88,38 @@ export function validatePadelScore(score) {
   const lo = Math.min(a, b);
   if ((hi === 6 && lo <= 4) || (hi === 7 && (lo === 5 || lo === 6))) return null;
   return 'Ugyldig padel-score. Gyldige resultater: 6-0 → 6-4, 7-5 eller 7-6';
+}
+
+/**
+ * Inddel hold i divisioner efter niveau (elo_combined). Division 1 = højeste
+ * niveau. Grupperne gøres så jævnstore som muligt.
+ * @returns {Map<string, number>} teamId → division (1-baseret)
+ */
+export function assignDivisionsByElo(teams, numDivisions) {
+  const n = teams.length;
+  const divs = Math.max(1, Math.min(numDivisions || 1, n));
+  const sorted = [...teams].sort((a, b) => (b.elo_combined || 0) - (a.elo_combined || 0));
+  const base = Math.floor(n / divs);
+  const rem = n % divs;
+  const map = new Map();
+  let idx = 0;
+  for (let d = 1; d <= divs; d++) {
+    const size = base + (d <= rem ? 1 : 0);
+    for (let k = 0; k < size; k++) {
+      if (idx < sorted.length) map.set(sorted[idx].id, d);
+      idx++;
+    }
+  }
+  return map;
+}
+
+/** Grupperer hold/standings-rækker efter deres division-felt (default 1). */
+export function groupByDivision(teamsOrStandings) {
+  const groups = new Map();
+  for (const t of teamsOrStandings) {
+    const d = Number(t.division) || 1;
+    if (!groups.has(d)) groups.set(d, []);
+    groups.get(d).push(t);
+  }
+  return [...groups.entries()].sort((a, b) => a[0] - b[0]); // [[1, rows], [2, rows], ...]
 }

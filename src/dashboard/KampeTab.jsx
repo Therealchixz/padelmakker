@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
+﻿import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
@@ -13,10 +13,10 @@ const AmericanoTab = lazy(() =>
 const LigaTabLazyEmbed = lazy(() =>
   import('./LigaTab').then((m) => ({ default: m.LigaTab }))
 );
-import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
+import { theme, btn, inputStyle, labelStyle, font } from '../lib/platformTheme';
 import { resolveDisplayName, sanitizeText } from '../lib/platformUtils';
 import { statsFromEloHistoryRows, useProfileEloBundle, fetchEloByUserIdFromHistory } from '../lib/eloHistoryUtils';
-import { eloOf, fmtClock, timeToMinutes, matchCompletedSortMs } from '../lib/matchDisplayUtils';
+import { eloOf, fmtClock, matchTimeLabel, timeToMinutes, matchCompletedSortMs, formatMatchDateDa } from '../lib/matchDisplayUtils';
 import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import {
   createNotification,
@@ -40,6 +40,7 @@ import {
   getKampeListRegionLabel,
   getKampeListEloBandLabel,
 } from '../lib/kampeListFilterCore';
+import { facilityLabel } from '../lib/courtFacilities.jsx';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { buildMatchLevelRange, clampElo, parseMatchLevelRange } from '../lib/matchLevelRange';
 import {
@@ -49,19 +50,25 @@ import {
   KAMPE_FORMAT_LIGA,
 } from '../lib/kampeFocusNavigation';
 import { DateTime } from 'luxon';
-import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarPlus, Share2, Swords, Users, BarChart3 } from 'lucide-react';
+import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarDays, CalendarPlus, Share2, Swords, Users, BarChart3, Check, Copy, ArrowRight, MapPin } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
 import { KAMPE_CREATE_PLUS_HINT } from '../lib/kampeCreateHint';
 import { sharePadelMatch, shareResultToastMessage } from '../lib/shareUtils';
 import { TeamSelectModal } from './TeamSelectModal';
 import { ResultModal } from './ResultModal';
+import { ConfirmResultModal } from './ConfirmResultModal';
 import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
+import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
+import { completionMsFor2v2, isWithinResultErrorReportWindow } from '../lib/resultErrorReports';
 import { calculate2v2MatchWinPrediction } from '../lib/matchWinPrediction';
 import { PillTabs } from '../components/PillTabs';
+import { LevelRangeSlider } from '../components/LevelRangeSlider';
+import { eloToLevel, levelToElo } from '../lib/padelLevelUtils';
 import {
   KampeRedesignToolbar,
   KampeActiveFilterChips,
+  KampeCreateHeader,
 } from '../components/kampe/KampeRedesignToolbar';
 import { KampeFilterSheet } from '../components/kampe/KampeFilterSheet';
 import { VenueRegionPicker } from '../components/VenueRegionPicker';
@@ -235,6 +242,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [showCreate, setShowCreate]   = useState(false);
   const [showAmericanoCreate, setShowAmericanoCreate] = useState(false);
   const [showLigaCreate, setShowLigaCreate] = useState(false);
+  const [createdMatchReceipt, setCreatedMatchReceipt] = useState(null); // match row after creation
+  const [receiptUrlCopied, setReceiptUrlCopied] = useState(false);
   const padelCreateFormRef = useRef(null);
   const [courts, setCourts]           = useState([]);
   const [matches, setMatches]         = useState([]);
@@ -251,6 +260,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [eloByUserId, setEloByUserId] = useState({});
   const [teamSelectMatch, setTeamSelectMatch] = useState(null);
   const [resultMatch, setResultMatch] = useState(null);
+  const [confirmModalMatchId, setConfirmModalMatchId] = useState(null);
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [expandedAdminActions, setExpandedAdminActions] = useState({});
   const [profilesById, setProfilesById] = useState({});
@@ -320,6 +330,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     level_max: "",
     description: "",
     match_type: "open",
+    price_per_person: "",
+    payment_method: "mobilepay",
   });
 
   /**
@@ -567,6 +579,31 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   useEffect(() => {
     setMatchChatOpenById({});
   }, [viewTab, kampeScope]);
+
+  /* Kamp-detaljen opfører sig som en side: åbning skubber et history-trin,
+     så telefonens tilbage-gestus/knap lukker arket i stedet for at forlade Kampe.
+     mounted-ref'en (defineret FØR effekten, så dens cleanup kører først ved unmount)
+     sikrer at vi ikke kalder history.back() når hele fanen forlades. */
+  const kampeMountedRef = useRef(true);
+  useEffect(() => () => { kampeMountedRef.current = false; }, []);
+  const detailHistoryArmedRef = useRef(false);
+  useEffect(() => {
+    if (!detailMatchId || typeof window === "undefined") return undefined;
+    window.history.pushState({ pmKampeDetail: String(detailMatchId) }, "");
+    detailHistoryArmedRef.current = true;
+    const onPop = () => {
+      detailHistoryArmedRef.current = false;
+      setDetailMatchId(null);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      if (detailHistoryArmedRef.current) {
+        detailHistoryArmedRef.current = false;
+        if (kampeMountedRef.current) window.history.back();
+      }
+    };
+  }, [detailMatchId]);
 
   useEffect(() => {
     const closeChatPanels = () => setMatchChatOpenById({});
@@ -892,6 +929,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         status: "open", max_players: 4, current_players: 1,
         description: sanitizeText(newMatch.description.trim()) || null,
         match_type: newMatch.match_type || "open",
+        price_per_person: (() => {
+          if (newMatch.payment_method === "free") return 0;
+          const n = parseFloat(String(newMatch.price_per_person).replace(",", "."));
+          return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+        })(),
+        payment_method: newMatch.payment_method || "mobilepay",
       };
       const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
@@ -903,7 +946,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         void notifyMatchWatchersForMatch(created.id);
       }
       setShowCreate(false);
-      showToast(newMatch.match_type === "closed" ? "Lukket kamp oprettet! Du er på Hold 1 🔒" : "Kamp oprettet! Du er på Hold 1 🎾");
+      setCreatedMatchReceipt(created);
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setCreating(false); }
@@ -1048,6 +1091,29 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       return;
     }
 
+    const mp = matchPlayers[matchId] || [];
+    const isCreator = String(match.creator_id) === String(user.id);
+    const soonNotice = (() => {
+      if (!match.date || !match.time) return '';
+      try {
+        const dt = new Date(`${match.date}T${match.time}`);
+        const hoursLeft = (dt - Date.now()) / 3_600_000;
+        if (hoursLeft > 0 && hoursLeft < 24) return ' Kampen er om under 24 timer.';
+      } catch { /* ignore */ }
+      return '';
+    })();
+
+    const ok = await ask({
+      title: isCreator ? 'Slet kampen?' : 'Forlad kampen?',
+      description: isCreator
+        ? `Du er opretter — kampen overdrages til den næste spiller, eller slettes hvis du er den eneste.${soonNotice}`
+        : `Din plads bliver ledig igen, og de andre spillere får besked.${soonNotice}`,
+      confirmLabel: isCreator ? 'Slet / forlad' : 'Forlad kampen',
+      cancelLabel: isCreator ? 'Fortryd' : 'Bliv i kampen',
+      danger: true,
+    });
+    if (!ok) return;
+
     setBusyId(matchId);
     try {
       // Notify creator BEFORE delete (while still in match_players so RPC check passes)
@@ -1181,8 +1247,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     const label = String(targetName || "spilleren").trim();
     const actor = isAdmin ? "admin" : "kampopretter";
     const ok = await ask({
-      message: `Er du sikker på, at du vil smide ${label} ud af kampen som ${actor}?`,
-      confirmLabel: "Ja, smid ud",
+      title: `Fjern ${label}?`,
+      description: `${label} bliver fjernet fra kampen som ${actor}. De vil modtage en notifikation.`,
+      confirmLabel: "Ja, fjern",
+      cancelLabel: "Fortryd",
       danger: true,
     });
     if (!ok) return;
@@ -1262,15 +1330,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     const mp = matchPlayers[matchId] || [];
     const others = mp.filter(p => p.user_id !== user.id);
-    const msg = isAdmin 
-      ? `Slet denne kamp som admin? Dette kan ikke fortrydes.`
-      : others.length > 0
-      ? `Slet denne kamp? ${others.length} andre spillere bliver også afmeldt.`
-      : "Slet denne kamp?";
 
     const ok = await ask({
-      message: msg,
-      confirmLabel: "Ja, slet",
+      title: isAdmin ? 'Slet kamp (admin)?' : 'Slet kampen?',
+      description: isAdmin
+        ? 'Dette kan ikke fortrydes. Alle spillere fjernes.'
+        : others.length > 0
+        ? `${others.length} ${others.length === 1 ? 'anden spiller' : 'andre spillere'} bliver også afmeldt. Dette kan ikke fortrydes.`
+        : 'Kampen slettes permanent.',
+      confirmLabel: 'Ja, slet',
+      cancelLabel: 'Fortryd',
       danger: true,
     });
     if (!ok) return;
@@ -1613,7 +1682,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   }, [matchPlayers, showToast]);
 
   const submitResult = async (matchId, result) => {
-    setResultMatch(null);
     setBusyId(matchId);
     try {
       const mp = matchPlayers[matchId] || [];
@@ -1629,13 +1697,15 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         getTeam: matchPlayerTeam,
       });
       if (!submission.ok) {
-        showToast(submission.reason || "Resultatet er ikke gyldigt.");
-        return;
+        return { ok: false, reason: submission.reason || "Resultatet er ikke gyldigt." };
       }
-      showToast("Resultat indsendt! Venter på bekræftelse ⏳");
-      await loadData();
-    } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
-    finally { setBusyId(null); }
+      void loadData();
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, reason: "Fejl: " + (e.message || "Prøv igen") };
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const confirmResult = async (matchId) => {
@@ -1711,6 +1781,22 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return ids;
   }, [matchPlayers, myUidStr]);
 
+  const courtFacilitiesById = useMemo(() => {
+    const map = {};
+    for (const c of courts) {
+      if (c?.id) map[String(c.id)] = Array.isArray(c.facilities) ? c.facilities : [];
+    }
+    return map;
+  }, [courts]);
+
+  const availableFacilities = useMemo(() => {
+    const set = new Set();
+    for (const c of courts) {
+      if (Array.isArray(c?.facilities)) c.facilities.forEach((f) => set.add(String(f)));
+    }
+    return [...set];
+  }, [courts]);
+
   const { openMatches, activeMatches, completedMatches } = useMemo(() => buildKampeMatchLists({
     matches,
     matchPlayers,
@@ -1722,8 +1808,21 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     listFilter: kampeListFilter,
     profilesById,
     userElo: myElo,
+    courtFacilitiesById,
     completedSortMs: matchCompletedSortMs,
-  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById, myElo]);
+  }), [isMine, joinedMatchIds, matchPlayers, matchResults, matches, myUidStr, searchQuery, kampeListFilter, profilesById, myElo, courtFacilitiesById]);
+
+  /* Deep-link: ?create=1 åbner opret-kamp-formularen direkte (fx fra "Opret ny kamp" i makker-invitation). */
+  useEffect(() => {
+    if (!tabActive) return;
+    const params = new URLSearchParams(location.search);
+    if (params.get("create") !== "1") return;
+    setKampeFormat("padel");
+    setShowCreate(true);
+    params.delete("create");
+    const q = params.toString();
+    navigate({ pathname: "/dashboard/kampe", search: q ? `?${q}` : "" }, { replace: true });
+  }, [tabActive, location.search, navigate]);
 
   /* Notifikation: ?format=americano|liga&focus=<id> eller ?focus=<matchId> (padel) */
   useEffect(() => {
@@ -1868,7 +1967,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     return stats;
   }, [eloByUserId, eloChangesByMatchId, eloFromHistoryByUserId, matchPlayers, myElo, myUidStr, profilesById, user.games_played]);
 
-
   const padelUnreadCounts = useMemo(() => {
     const counts = { open: 0, active: 0, completed: 0, total: 0 };
     if (!matches.length) return counts;
@@ -1909,43 +2007,10 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     { id: "yes", label: "Ja, booket" },
     { id: "no", label: "Nej, ikke endnu" },
   ];
-  const eloPresetTabs = [
-    { id: "tight", label: "Tæt på mig (±100)" },
-    { id: "flex", label: "Fleksibel (±200)" },
-    { id: "open", label: "Åben (±350)" },
-  ];
   const matchTypeTabs = [
     { id: "open", label: "🔓 Åben kamp" },
     { id: "closed", label: "🔒 Lukket kamp" },
   ];
-  const eloPresetValue = useMemo(() => {
-    const min = Number(newMatch.level_min);
-    const max = Number(newMatch.level_max);
-    if (!Number.isFinite(min) || !Number.isFinite(max)) return "";
-    const presets = [
-      { id: "tight", delta: 100 },
-      { id: "flex", delta: 200 },
-      { id: "open", delta: 350 },
-    ];
-    for (const preset of presets) {
-      if (
-        min === clampElo(myElo - preset.delta, myElo)
-        && max === clampElo(myElo + preset.delta, myElo)
-      ) {
-        return preset.id;
-      }
-    }
-    return "";
-  }, [newMatch.level_min, newMatch.level_max, myElo]);
-  const applyEloPreset = (presetId) => {
-    const delta = { tight: 100, flex: 200, open: 350 }[presetId];
-    if (!delta) return;
-    setNewMatch((m) => ({
-      ...m,
-      level_min: String(clampElo(myElo - delta, myElo)),
-      level_max: String(clampElo(myElo + delta, myElo)),
-    }));
-  };
   const onScopeChange = (nextScope) => {
     setKampeScope(nextScope);
     mergeKampeSessionPrefs(user.id, { scope: nextScope });
@@ -2099,7 +2164,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     }
     if (isCreator && (status === "open" || status === "full")) {
       return {
-        label: isFull ? "Start kamp" : "Venter på spillere (2 mod 2)",
+        label: isFull ? "Start kamp" : "Venter på spillere",
         onClick: () => {
           setDetailMatchId(null);
           void startMatch(m.id);
@@ -2124,7 +2189,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           label: "Bekræft resultat",
           onClick: () => {
             setDetailMatchId(null);
-            void confirmResult(m.id);
+            setConfirmModalMatchId(m.id);
           },
           disabled: busy,
         };
@@ -2198,6 +2263,51 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         </div>
       </div>
     );
+  };
+
+  const handleRematch = (m) => {
+    if (!m) return;
+    const prefs = parseMatchLevelRange(m.level_range);
+    const booked = !!m.court_id;
+    setDetailMatchId(null);
+    setKampeFormat('padel');
+    setNewMatch((prev) => ({
+      ...prev,
+      court_id: m.court_id || MATCH_VENUE_TBD,
+      court_booked: booked,
+      level_min: prefs.min != null ? String(prefs.min) : '',
+      level_max: prefs.max != null ? String(prefs.max) : '',
+      description: m.court_name ? `Revanche · ${m.court_name}` : 'Revanche',
+      match_type: 'open',
+    }));
+    setShowCreate(true);
+  };
+
+  const renderResultErrorControl = (m, bundle) => {
+    const mr = bundle.mr;
+    const isCreator = bundle.cardState.isCreator;
+    const joined = bundle.cardState.joined;
+    if (!mr) return null;
+    const withinWindow = isWithinResultErrorReportWindow(completionMsFor2v2(m, mr));
+    if (isCreator) {
+      return (
+        <ReportResultErrorButton
+          sourceType="match_2v2"
+          entityId={m.id}
+          completedAtMs={completionMsFor2v2(m, mr)}
+          isCreator={isCreator}
+          entityLabel={`2v2 · ${formatMatchDateDa(m.date)}${m.court_name ? ` · ${m.court_name}` : ''}`}
+        />
+      );
+    }
+    if (joined && withinWindow) {
+      return (
+        <p style={{ fontSize: 11.5, color: theme.textLight, textAlign: 'center', margin: '4px 0', lineHeight: 1.45 }}>
+          Er resultatet forkert? Kontakt opretteren, som kan rette det inden for tidsfristen.
+        </p>
+      );
+    }
+    return null;
   };
 
   const renderDetailManagePanel = (m, bundle) => {
@@ -2408,14 +2518,14 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 {busyId === m.id + "-seek" ? "Sender..." : m.seeking_player ? "Stop råb" : "Råb op for spiller"}
               </button>
             ) : null}
-            {joined && !isCreator && (status === "open" || status === "full") ? (
+            {joined && (status === "open" || status === "full") ? (
               <button
                 type="button"
                 onClick={() => leaveMatch(m.id)}
                 disabled={busy}
                 style={{ background: "none", border: "none", padding: 0, color: theme.red, fontWeight: 600, fontSize: "12px", cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(220,38,38,0.3)", display: "inline-flex", alignItems: "center", gap: "4px" }}
               >
-                <UserMinus size={12} /> Afmeld mig
+                <UserMinus size={12} /> {isCreator ? "Forlad / overdrag" : "Afmeld mig"}
               </button>
             ) : null}
           </div>
@@ -2510,7 +2620,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                     disabled={busy}
                     style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
                   >
-                    📊 Indrapportér resultat (Admin)
+                    Indrapportér resultat (Admin)
                   </button>
                 ) : null}
                 {adminCanForceConfirm ? (
@@ -2522,7 +2632,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                         disabled={busy}
                         style={{ ...btn(true), flex: 1, justifyContent: "center", fontSize: "13px", background: theme.warm, borderColor: theme.warm }}
                       >
-                        ✅ Bekræft (Admin)
+                        Bekræft (Admin)
                       </button>
                     ) : null}
                     <button
@@ -2531,7 +2641,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                       disabled={busy}
                       style={{ ...btn(false), flex: 1, justifyContent: "center", fontSize: "13px", color: theme.warm, borderColor: theme.warm + "55" }}
                     >
-                      ❌ Slet (Admin)
+                      Slet (Admin)
                     </button>
                   </div>
                 ) : null}
@@ -2555,7 +2665,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   const renderPadelListItem = useCallback((m) => {
     const bundle = getMatchCardBundle(m);
-    const { cardState, matchPrefs, status, mr } = bundle;
+    const { cardState, matchPrefs, status, mr, winnerTeam } = bundle;
     const myEloChange =
       status === 'completed' && mr?.confirmed && cardState.joined
         ? eloChangesByMatchId[String(m.id)]?.[myUidStr] ?? null
@@ -2581,27 +2691,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           myRequest={cardState.myRequest}
           myEloChange={myEloChange}
           unreadCount={cardState.attentionCount}
-          ctaBusy={busyId === m.id + '-req'}
+          matchResult={mr}
+          winnerTeam={winnerTeam}
+          myTeam={cardState.myTeam}
+          currentUserId={myUidStr}
+          primaryAction={buildMatchPrimaryAction(m, bundle)}
+          attentionReason={cardState.attentionReason}
+          statusNote={cardState.statusNote}
           onClick={() => {
             if (matchUnreadByIdRef.current[matchKey]) {
               void markMatchNotifsRead(m.id);
             }
             setDetailMatchId(m.id);
-          }}
-          onCtaClick={() => {
-            if (cardState.joined) {
-              setDetailMatchId(m.id);
-              return;
-            }
-            if (cardState.isFull && !cardState.isClosed) {
-              if (cardState.myRequest?.status === 'pending') {
-                setDetailMatchId(m.id);
-                return;
-              }
-              void requestJoin(m.id);
-              return;
-            }
-            setTeamSelectMatch(m.id);
           }}
         />
       </div>
@@ -2609,6 +2710,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   }, [
     eloChangesByMatchId,
     getMatchCardBundle,
+    buildMatchPrimaryAction,
     markMatchNotifsRead,
     myUidStr,
     observeMatchCard,
@@ -2627,9 +2729,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     { id: "liga", label: "Liga" },
   ];
   const padelSubTabs = [
-    { id: "open", label: `Åbne (${openMatches.length})` },
-    { id: "active", label: `I gang (${activeMatches.length})` },
-    { id: "completed", label: `Afsluttede (${completedMatches.length})` },
+    { id: "open", label: <>Åbne<span className="pm-tab-count">{openMatches.length}</span></> },
+    { id: "active", label: <>I gang<span className="pm-tab-count">{activeMatches.length}</span></> },
+    { id: "completed", label: <>Spillede<span className="pm-tab-count">{completedMatches.length}</span></> },
   ];
   const currentPadelMatches =
     viewTab === "open" ? openMatches : viewTab === "active" ? activeMatches : completedMatches;
@@ -2639,13 +2741,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     || (kampeFormat === "padel" && isProfileMatchFeedVisible(user));
   const activeFilterChips = useMemo(() => {
     const chips = [];
-    if (kampeScope === "mine") {
-      chips.push({
-        id: "mine",
-        label: "Kun mine kampe ×",
-        onClick: () => onScopeChange("alle"),
-      });
-    }
     if (kampeListFilter.regionId) {
       chips.push({
         id: "region",
@@ -2658,6 +2753,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         id: "elo",
         label: `ELO ${getKampeListEloBandLabel(kampeListFilter.eloBandId, myElo)} ×`,
         onClick: () => onListFilterChange({ ...kampeListFilter, eloBandId: "" }),
+      });
+    }
+    if (kampeFormat === "padel" && Array.isArray(kampeListFilter.facilities)) {
+      kampeListFilter.facilities.forEach((key) => {
+        chips.push({
+          id: `fac-${key}`,
+          label: `${facilityLabel(key)} ×`,
+          onClick: () => onListFilterChange({
+            ...kampeListFilter,
+            facilities: kampeListFilter.facilities.filter((f) => f !== key),
+          }),
+        });
       });
     }
     if (kampeFormat === "padel" && isProfileMatchFeedVisible(user)) {
@@ -2687,6 +2794,23 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       : kampeFormat === "americano"
         ? "Opret Americano/Mexicano"
         : "Opret liga";
+  const createHeaderTitle =
+    kampeFormat === "padel"
+      ? "Opret kamp"
+      : kampeFormat === "americano"
+        ? "Opret turnering"
+        : "Opret liga";
+  const handleCreateBack = () => {
+    if (kampeFormat === "padel") setShowCreate(false);
+    else if (kampeFormat === "americano") setShowAmericanoCreate(false);
+    else if (kampeFormat === "liga") setShowLigaCreate(false);
+  };
+  const createHeaderInfo =
+    kampeFormat === "padel"
+      ? () => showToast("Opret en 2v2-kamp: vælg bane, tid og inviter spillere.")
+      : kampeFormat === "americano"
+        ? () => showToast("Americano/Mexicano: alle spiller med skiftende makkere. Vælg format, antal spillere og baner.")
+        : () => showToast("Opret en liga med divisioner, kampsystem og point. Hold kan tilmelde sig efter oprettelse.");
   const detailMatch = detailMatchId
     ? ([...openMatches, ...activeMatches, ...completedMatches].find((m) => String(m.id) === String(detailMatchId))
         // Fald tilbage til matches-listen for deeplink (?focus=), men aldrig aflyste kampe.
@@ -2699,37 +2823,47 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
   return (
     <div>
-      <KampeRedesignToolbar
-        formatTabs={toolbarFormatTabs}
-        format={kampeFormat}
-        onFormatChange={(nextFormat) => {
-          setKampeFormat(nextFormat);
-          setPadelHelpOpen(false);
-          setShowCreate(false);
-          setShowAmericanoCreate(false);
-          setShowLigaCreate(false);
-          setFilterSheetOpen(false);
-          setDetailMatchId(null);
-        }}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder={searchPlaceholder}
-        onFilterOpen={() => setFilterSheetOpen(true)}
-        filterActive={filterActive}
-        onCreate={handleToolbarCreate}
-        createLabel={toolbarCreateLabel}
-      />
-
-      <KampeActiveFilterChips chips={activeFilterChips} />
-
-      {kampeFormat === 'padel' && (
-        <ActiveSeekingPanel
-          variant="compact"
-          channel="kamp"
-          user={user}
-          showToast={showToast}
-          filterReturnTo={FILTER_RETURN_KAMPE}
+      {showCreatePanel ? (
+        <KampeCreateHeader
+          title={createHeaderTitle}
+          onBack={handleCreateBack}
+          onInfo={createHeaderInfo}
         />
+      ) : (
+        <>
+          <KampeRedesignToolbar
+            formatTabs={toolbarFormatTabs}
+            format={kampeFormat}
+            onFormatChange={(nextFormat) => {
+              setKampeFormat(nextFormat);
+              setPadelHelpOpen(false);
+              setShowCreate(false);
+              setShowAmericanoCreate(false);
+              setShowLigaCreate(false);
+              setFilterSheetOpen(false);
+              setDetailMatchId(null);
+            }}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder={searchPlaceholder}
+            onFilterOpen={() => setFilterSheetOpen(true)}
+            filterActive={filterActive}
+            onCreate={handleToolbarCreate}
+            createLabel={toolbarCreateLabel}
+          />
+
+          <KampeActiveFilterChips chips={activeFilterChips} />
+
+          {kampeFormat === 'padel' && (
+            <ActiveSeekingPanel
+              variant="compact"
+              channel="kamp"
+              user={user}
+              showToast={showToast}
+              filterReturnTo={FILTER_RETURN_KAMPE}
+            />
+          )}
+        </>
       )}
 
       <KampeFilterSheet
@@ -2750,6 +2884,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         }
         showRegionFilter
         showEloFilter={kampeFormat === "padel"}
+        facilityOptions={availableFacilities}
       />
       {kampeFormat === "liga" && (
         <Suspense
@@ -2911,36 +3046,26 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <option value="180">3 timer</option>
               </select></div>
             <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Hvilket spiller-niveau søger du? (ELO til kampen)</label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "4px" }}>
-                <input
-                  type="number"
-                  min="400"
-                  max="3000"
-                  value={newMatch.level_min}
-                  onChange={e => setNewMatch(m => ({ ...m, level_min: e.target.value }))}
-                  placeholder="Fra"
-                  style={{ ...inputStyle, fontSize: "13px" }}
-                />
-                <input
-                  type="number"
-                  min="400"
-                  max="3000"
-                  value={newMatch.level_max}
-                  onChange={e => setNewMatch(m => ({ ...m, level_max: e.target.value }))}
-                  placeholder="Til"
-                  style={{ ...inputStyle, fontSize: "13px" }}
-                />
-              </div>
-              <PillTabs
-                tabs={eloPresetTabs}
-                value={eloPresetValue}
-                onChange={applyEloPreset}
-                ariaLabel="ELO-interval"
-                size="sm"
-                className="pm-pill-tabs--wrap"
-                style={{ marginTop: "8px" }}
-              />
+              <label style={labelStyle}>Hvilket niveau søger du?</label>
+              {(() => {
+                const lvlMin = eloToLevel(Number(newMatch.level_min) || clampElo(myElo - 100, myElo));
+                const lvlMax = eloToLevel(Number(newMatch.level_max) || clampElo(myElo + 100, myElo));
+                return (
+                  <>
+                    <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "0 8px 8px", marginTop: 4 }}>
+                      <LevelRangeSlider
+                        minVal={lvlMin}
+                        maxVal={lvlMax}
+                        onMinChange={(v) => setNewMatch(m => ({ ...m, level_min: String(levelToElo(v)) }))}
+                        onMaxChange={(v) => setNewMatch(m => ({ ...m, level_max: String(levelToElo(v)) }))}
+                      />
+                    </div>
+                    <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
+                      Spillere på niveau {lvlMin.toFixed(1)}–{lvlMax.toFixed(1)} matcher kampen.
+                    </p>
+                  </>
+                );
+              })()}
             </div>
           </div>
           <label style={{ ...labelStyle, marginTop: "14px" }}>
@@ -2952,6 +3077,37 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             placeholder="F.eks. 'Søger venstreside-spiller' eller 'Begyndervenlig kamp'"
             style={{ ...inputStyle, marginBottom: "10px" }}
           />
+
+          <div className="pm-form-2col" style={{ marginBottom: "10px" }}>
+            <div style={{ minWidth: 0 }}>
+              <label style={labelStyle}>
+                Pris pr. person <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfrit)</span>
+              </label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={newMatch.price_per_person}
+                  onChange={(e) => setNewMatch((m) => ({ ...m, price_per_person: e.target.value }))}
+                  placeholder="0"
+                  style={{ ...inputStyle, fontSize: "13px", paddingRight: "32px" }}
+                />
+                <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: theme.textLight, pointerEvents: "none" }}>kr.</span>
+              </div>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <label style={labelStyle}>Betaling</label>
+              <select
+                value={newMatch.payment_method}
+                onChange={(e) => setNewMatch((m) => ({ ...m, payment_method: e.target.value }))}
+                style={{ ...inputStyle, fontSize: "13px" }}
+              >
+                <option value="mobilepay">MobilePay</option>
+                <option value="cash">Ved fremmøde</option>
+                <option value="free">Gratis</option>
+              </select>
+            </div>
+          </div>
 
           <label style={labelStyle}>Kamptype</label>
           <PillTabs
@@ -2969,6 +3125,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           </p>
 
           <div className="pm-form-submit pm-form-submit-actions">
+            {(() => {
+              const reason = venueOptions.length === 0
+                ? 'Ingen baner tilgængelige i dit område endnu.'
+                : (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id)))
+                  ? 'Vælg en booket bane for at fortsætte.'
+                  : null;
+              return reason ? (
+                <p style={{ width: '100%', margin: '0 0 4px', fontSize: 12.5, fontWeight: 600, color: 'var(--pm-text-mid)' }}>
+                  {reason}
+                </p>
+              ) : null;
+            })()}
             <button
               type="button"
               onClick={createMatch}
@@ -3033,7 +3201,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             value={viewTab}
             onChange={onViewTabChange}
             ariaLabel="2v2 kampstatus"
-            size="sm"
             style={{ marginBottom: 16 }}
           />
 
@@ -3051,13 +3218,22 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             )}
 
             {viewTab === "open" && openMatches.length === 0 && (
-              <div className="pm-state-card pm-state-card--empty">
-                <EmptyStateIcon icon={Swords} />
-                <div className="pm-state-title">Ingen åbne kampe</div>
-                <div className="pm-state-copy" style={{ marginBottom: "16px" }}>{KAMPE_CREATE_PLUS_HINT.padel}</div>
-                <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), fontSize: "13px" }}>
-                  <Plus size={14} /> Opret kamp
-                </button>
+              <div className="pm-state-card pm-state-card--empty" style={{ padding: '40px 24px 32px' }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--pm-accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', color: 'var(--pm-accent)' }}>
+                  <svg style={{ width: 32, height: 32 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a14 14 0 0 0 0 18M3.5 9h17M3.5 15h17"/></svg>
+                </div>
+                <div className="pm-state-title" style={{ fontSize: '16px', marginBottom: '8px' }}>Ingen åbne kampe i dit område</div>
+                <div className="pm-state-copy" style={{ marginBottom: '20px', maxWidth: 280, margin: '0 auto 20px' }}>
+                  Der er ikke oprettet nogen kampe, der matcher dine filtre lige nu. Opret den første – eller udvid din søgning.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 8px' }}>
+                  <button type="button" onClick={() => setShowCreate(true)} style={{ ...btn(true), justifyContent: 'center', fontSize: '14px', padding: '12px' }}>
+                    Opret den første kamp
+                  </button>
+                  <button type="button" onClick={() => setFilterSheetOpen(true)} style={{ ...btn(false), justifyContent: 'center', fontSize: '14px', padding: '12px', color: 'var(--pm-accent)', borderColor: 'var(--pm-border)' }}>
+                    Justér filtre
+                  </button>
+                </div>
               </div>
             )}
             {viewTab === "active" && activeMatches.length === 0 && (
@@ -3065,6 +3241,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <EmptyStateIcon icon={Users} />
                 <div className="pm-state-title">Ingen aktive kampe</div>
                 <div className="pm-state-copy">Tilmeld dig en åben kamp for at komme i gang.</div>
+                <button
+                  type="button"
+                  onClick={() => onViewTabChange("open")}
+                  style={{ ...btn(true), justifyContent: "center", fontSize: "14px", padding: "12px 20px", marginTop: 14 }}
+                >
+                  Se åbne kampe
+                </button>
               </div>
             )}
             {viewTab === "completed" && completedMatches.length === 0 && (
@@ -3072,6 +3255,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                 <EmptyStateIcon icon={BarChart3} />
                 <div className="pm-state-title">Ingen afsluttede kampe endnu</div>
                 <div className="pm-state-copy">Spil din første kamp og se dit resultat her.</div>
+                <button
+                  type="button"
+                  onClick={() => onViewTabChange("open")}
+                  style={{ ...btn(true), justifyContent: "center", fontSize: "14px", padding: "12px 20px", marginTop: 14 }}
+                >
+                  Se åbne kampe
+                </button>
               </div>
             )}
           </div>
@@ -3089,6 +3279,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
       {/* Result input modal */}
       {resultMatch && kampeFormat === "padel" && (() => {
+        const matchObj = matches.find((m) => m.id === resultMatch);
         const mp = matchPlayers[resultMatch] || [];
         const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
         const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
@@ -3098,8 +3289,36 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           <ResultModal
             team1Names={t1Names}
             team2Names={t2Names}
+            match={matchObj}
             onSubmit={(result) => submitResult(resultMatch, result)}
             onClose={() => setResultMatch(null)}
+          />
+        );
+      })()}
+
+      {/* Confirm result modal */}
+      {confirmModalMatchId && (() => {
+        const matchObj = matches.find((m) => m.id === confirmModalMatchId);
+        const mr = matchResults[confirmModalMatchId];
+        const mp = matchPlayers[confirmModalMatchId] || [];
+        const t1 = mp.filter(p => matchPlayerTeam(p) === 1);
+        const t2 = mp.filter(p => matchPlayerTeam(p) === 2);
+        const t1Names = t1.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "Hold 1";
+        const t2Names = t2.map(p => (p.user_name || "?").split(" ")[0]).join(" & ") || "Hold 2";
+        const submitter = mr?.submitted_by ? profilesById[String(mr.submitted_by)] : null;
+        const submitterName = submitter?.name?.split(" ")[0] || null;
+        return (
+          <ConfirmResultModal
+            open
+            onClose={() => setConfirmModalMatchId(null)}
+            matchResult={mr}
+            match={matchObj}
+            team1Names={t1Names}
+            team2Names={t2Names}
+            submitterName={submitterName}
+            busy={busyId === confirmModalMatchId}
+            onConfirm={() => { void confirmResult(confirmModalMatchId).then(() => setConfirmModalMatchId(null)); }}
+            onReject={() => { void rejectResult(confirmModalMatchId).then(() => setConfirmModalMatchId(null)); }}
           />
         );
       })()}
@@ -3143,6 +3362,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           onKickPlayer={kickPlayer}
           onProfileClick={(prof) => setViewPlayer(prof)}
           managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
+          facilities={courts.find((c) => String(c.id) === String(detailMatch.court_id))?.facilities || []}
+          onRematch={detailBundle.status === 'completed' ? () => handleRematch(detailMatch) : undefined}
+          reportErrorNode={detailBundle.status === 'completed' ? renderResultErrorControl(detailMatch, detailBundle) : null}
         />
       ) : null}
 
@@ -3161,6 +3383,163 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       )}
       </>
       )}
+
+      {/* Kamp oprettet kvittering */}
+      {createdMatchReceipt && (() => {
+        const m = createdMatchReceipt;
+        const matchPrefs = parseMatchLevelRange(m.level_range);
+        const levelStr = (matchPrefs?.min != null && matchPrefs?.max != null)
+          ? `Niveau ${matchPrefs.min}–${matchPrefs.max}`
+          : null;
+        const isClosed = m.match_type === 'closed';
+        const court = m.court_name?.trim() || null;
+        const datePart = m.date ? formatMatchDateDa(m.date) : '';
+        const timePart = matchTimeLabel(m);
+        const timeStr = timePart && timePart !== '—' ? `Kl. ${timePart}` : '';
+        const matchUrl = typeof window !== 'undefined'
+          ? `${window.location.origin}/dashboard/kampe#pm-match-${m.id}`
+          : '';
+        const handleCopy = () => {
+          if (!matchUrl) return;
+          navigator.clipboard?.writeText(matchUrl).then(() => {
+            setReceiptUrlCopied(true);
+            setTimeout(() => setReceiptUrlCopied(false), 2000);
+          }).catch(() => showToast('Kopiering mislykkedes'));
+        };
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 1200,
+            background: theme.bg, display: 'flex', flexDirection: 'column',
+            fontFamily: font,
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', padding: 'max(10px, calc(env(safe-area-inset-top) + 8px)) 14px 10px', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
+              <h2 style={{ flex: 1, fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, textAlign: 'center' }}>PadelMakker</h2>
+            </div>
+
+            {/* Scrollable content */}
+            <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+              {/* Checkmark */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+                <div style={{
+                  width: 72, height: 72, borderRadius: '50%',
+                  background: theme.navy, color: 'var(--pm-on-accent)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Check size={32} strokeWidth={2.8} />
+                </div>
+              </div>
+
+              {/* Title */}
+              <div style={{ textAlign: 'center', padding: '16px 32px 0' }}>
+                <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.3px', color: theme.text }}>Kamp oprettet!</div>
+                <p style={{ fontSize: 12.5, color: theme.textMid, marginTop: 6, marginBottom: 0 }}>
+                  {isClosed ? 'Din lukkede kamp er klar – invitér dine spillere.' : 'Din kamp er nu synlig for andre spillere.'}
+                </p>
+              </div>
+
+              {/* Summary card */}
+              <div style={{ margin: '16px 18px 0', background: theme.surface, borderRadius: 16, border: '1px solid ' + theme.border, padding: '14px 16px' }}>
+                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ background: theme.navy, color: 'var(--pm-on-accent)', borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em' }}>
+                    {isClosed ? 'LUKKET' : '2V2'}
+                  </span>
+                  {levelStr && (
+                    <span style={{ background: theme.accentBg, color: theme.accent, borderRadius: 6, padding: '3px 9px', fontSize: 11.5, fontWeight: 600 }}>
+                      {levelStr}
+                    </span>
+                  )}
+                </div>
+
+                {/* Date + time row */}
+                {(datePart || timeStr) && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 12 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CalendarDays size={14} color={theme.textMid} />
+                    </div>
+                    <div style={{ fontSize: 12.5, lineHeight: 1.55 }}>
+                      {datePart && <b style={{ color: theme.text, display: 'block' }}>{datePart}</b>}
+                      {timeStr && <span style={{ color: theme.textMid }}>{timeStr}</span>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Location row */}
+                {court && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 8 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <MapPin size={14} color={theme.textMid} />
+                    </div>
+                    <div style={{ fontSize: 12.5, lineHeight: 1.55 }}>
+                      <b style={{ color: theme.text }}>{court}</b>
+                    </div>
+                  </div>
+                )}
+
+                {/* Slots row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 13, paddingTop: 12, borderTop: '1px solid ' + theme.border }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: theme.navy, color: 'var(--pm-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                      {(user?.avatar || '🎾')}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 11.5, color: theme.textMid, fontWeight: 600 }}>1/4 pladser optaget</span>
+                </div>
+              </div>
+
+              {/* Share section */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: theme.textMid, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '16px 18px 8px' }}>
+                Del kamp
+              </div>
+              <div style={{ margin: '0 18px 12px', background: theme.surface, borderRadius: 10, border: '1px solid ' + theme.border, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>
+                <span style={{ flex: 1, fontSize: 12, color: theme.textMid, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {matchUrl || 'padelmakker.dk/kamp/…'}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 7, border: '1px solid ' + theme.border, background: theme.surfaceAlt, color: receiptUrlCopied ? theme.green : theme.textMid, cursor: 'pointer', flexShrink: 0, fontFamily: font }}
+                >
+                  <Copy size={12} />
+                  {receiptUrlCopied ? 'Kopieret!' : 'Kopiér'}
+                </button>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ padding: '0 18px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                <button
+                  type="button"
+                  onClick={() => void shareMatch(m)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 16px', borderRadius: 10, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font }}
+                >
+                  <Share2 size={15} />
+                  Send invitation til venner
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addMatchToCalendar(m)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 16px', borderRadius: 10, border: '1px solid ' + theme.border, background: theme.surface, color: theme.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font }}
+                >
+                  <CalendarPlus size={15} />
+                  Tilføj til kalender
+                </button>
+              </div>
+            </div>
+
+            {/* CTA bar */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 18px', background: theme.surface, borderTop: '1px solid ' + theme.border }}>
+              <button
+                type="button"
+                onClick={() => { setCreatedMatchReceipt(null); setViewTab('open'); }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: theme.navy, color: 'var(--pm-on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font }}
+              >
+                Gå til kamp-oversigt
+                <ArrowRight size={16} strokeWidth={2.4} />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

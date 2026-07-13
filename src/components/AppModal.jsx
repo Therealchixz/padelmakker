@@ -24,6 +24,7 @@ export function AppModal({
   lockBodyScroll = true,
   contentStyle = {},
   backdropStyle = {},
+  footer = null,
 }) {
   const contentRef = useRef(null);
   const openerRef = useRef(null);
@@ -101,6 +102,7 @@ export function AppModal({
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel}
+      className="pm-app-modal-backdrop"
       onClick={(event) => {
         if (!closeOnBackdrop) return;
         if (event.target === event.currentTarget) onClose?.();
@@ -122,6 +124,7 @@ export function AppModal({
       <div
         ref={contentRef}
         tabIndex={-1}
+        className="pm-app-modal-content"
         onClick={(event) => event.stopPropagation()}
         style={{
           width: "min(100%, " + resolvedMaxWidth + ")",
@@ -137,6 +140,7 @@ export function AppModal({
         }}
       >
         {children}
+        {footer ? <div className="pm-app-modal-footer">{footer}</div> : null}
       </div>
     </div>,
     document.body

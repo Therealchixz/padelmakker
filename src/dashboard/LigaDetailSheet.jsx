@@ -1,5 +1,7 @@
 import { MapPin, X } from 'lucide-react';
 import { useBottomSheetDragToClose } from '../lib/useBottomSheetDragToClose';
+import { ligaTypeLabel } from '../lib/ligaDisplayUtils';
+import { groupByDivision } from '../lib/ligaStandings';
 
 function badgeToneClass(tone) {
   if (tone === 'live') return 'pm-kampe-v2-badge--live';
@@ -46,7 +48,7 @@ export function LigaDetailSheet({
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />
           <div className="pm-liga-v2-detail-head">
             <div className="pm-liga-v2-detail-head-main">
-              <div className="pm-liga-v2-detail-type">Liga · Swiss</div>
+              <div className="pm-liga-v2-detail-type">{ligaTypeLabel(league)}</div>
               <h2 className="pm-liga-v2-detail-title">{league.name}</h2>
               <div className="pm-liga-v2-detail-meta">
                 <MapPin size={12} aria-hidden />
@@ -79,6 +81,30 @@ export function LigaDetailSheet({
         {footer ? <div className="pm-liga-v2-detail-footer">{footer}</div> : null}
       </div>
     </>
+  );
+}
+
+/**
+ * Stilling grupperet pr. division. Ved 1 division vises blot én tabel; ved
+ * flere vises en "Division N"-overskrift + tabel for hver (rang nulstilles
+ * pr. division, som det forventes i en divisionsliga).
+ */
+export function LigaDivisionStandings({ standings, myTeamId, numDivisions = 1 }) {
+  if ((Number(numDivisions) || 1) <= 1) {
+    return <LigaStandingsTable standings={standings} myTeamId={myTeamId} />;
+  }
+  const groups = groupByDivision(standings);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {groups.map(([division, rows]) => (
+        <div key={division}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--pm-accent)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 8px' }}>
+            Division {division}
+          </div>
+          <LigaStandingsTable standings={rows} myTeamId={myTeamId} />
+        </div>
+      ))}
+    </div>
   );
 }
 

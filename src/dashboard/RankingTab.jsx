@@ -1,6 +1,8 @@
 ﻿import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { font, theme, btn, heading } from '../lib/platformTheme';
+import { REGIONS } from '../lib/platformConstants';
+import { ChevronDown } from 'lucide-react';
 import { formatPlaytomicLevel } from '../lib/padelLevelUtils';
 import {
   statsFromEloHistoryRows,
@@ -71,6 +73,7 @@ export function RankingTab({ user }) {
       return 'all';
     }
   });
+  const [filterArea, setFilterArea] = useState('all');
 
   const profileOffsetRef = useRef(0);
   const profileFetchGenRef = useRef(0);
@@ -476,7 +479,16 @@ export function RankingTab({ user }) {
 
   const totalRanked = period === 'all' ? null : periodRankList.length;
 
+  const displaySorted = useMemo(
+    () => filterArea === 'all' ? sorted : sorted.filter((p) => p.area === filterArea),
+    [sorted, filterArea],
+  );
+
   const userRank = useMemo(() => {
+    if (filterArea !== 'all') {
+      const idx = displaySorted.findIndex((p) => String(p.id) === myId);
+      return idx >= 0 ? idx + 1 : 0;
+    }
     if (period === 'all' && myGlobalRank != null) return myGlobalRank;
     const idx = sorted.findIndex((p) => String(p.id) === myId);
     if (idx >= 0) return idx + 1;
@@ -485,7 +497,7 @@ export function RankingTab({ user }) {
       return globalIdx >= 0 ? globalIdx + 1 : 0;
     }
     return 0;
-  }, [period, myGlobalRank, sorted, myId, periodRankList]);
+  }, [period, myGlobalRank, sorted, displaySorted, filterArea, myId, periodRankList]);
 
   const userEntry = useMemo(() => {
     const inList = sorted.find((p) => String(p.id) === myId);
@@ -507,6 +519,22 @@ export function RankingTab({ user }) {
           ? myAllTimeAmericanoElo
           : myAllTimeElo ?? allTimeFromHistory[myId]?.elo ?? Math.round(Number(user.elo_rating) || 1000)
       : userEntry?.score || 0;
+
+  // Rank change tracking using localStorage (global/all-area only)
+  const rankStorageKey = myId ? `pm_prevrank_${myId}_${rankMode}_${period}` : null;
+  const [rankChange, setRankChange] = useState(0);
+  const rankProcessedKeyRef = useRef('');
+
+  useEffect(() => {
+    if (!rankStorageKey || userRank <= 0 || myBundleLoading || filterArea !== 'all') return;
+    if (rankProcessedKeyRef.current === rankStorageKey) return; // already processed this key
+    rankProcessedKeyRef.current = rankStorageKey;
+    try {
+      const stored = parseInt(localStorage.getItem(rankStorageKey) || '0', 10) || 0;
+      if (stored > 0 && stored !== userRank) setRankChange(stored - userRank);
+      localStorage.setItem(rankStorageKey, String(userRank));
+    } catch { /* ignore */ }
+  }, [rankStorageKey, userRank, myBundleLoading, filterArea]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -541,9 +569,9 @@ export function RankingTab({ user }) {
   const rankTotalLabel =
     period === 'all'
       ? hasMore
-        ? `${sorted.length}+`
-        : String(sorted.length)
-      : String(totalRanked ?? sorted.length);
+        ? `${displaySorted.length}+`
+        : String(displaySorted.length)
+      : String(totalRanked ?? displaySorted.length);
 
   const rankModeTabs = [
     { id: '2v2', label: '2v2 ELO' },
@@ -556,7 +584,7 @@ export function RankingTab({ user }) {
   ];
 
   const showInitialLoader = initialLoading && sorted.length === 0;
-  const hasPodium = period === 'all' && !showInitialLoader && sorted.length >= 3;
+  const hasPodium = period === 'all' && !showInitialLoader && displaySorted.length >= 3;
 
   const renderPod = (p, place) => {
     const isFirst = place === 1;
@@ -580,17 +608,17 @@ export function RankingTab({ user }) {
           alt={`${p.full_name || p.name || 'Spiller'} avatar`}
           style={{ margin: '0 auto 7px', border: `2.5px solid ${isFirst ? theme.amber : 'rgba(255,255,255,0.35)'}` }}
         />
-        <b style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#fff' }}>
+        <b style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--pm-on-accent)' }}>
           {firstName}{isMe ? ' ✓' : ''}
         </b>
-        <span style={{ fontSize: 10.5, color: '#9DB6DE' }}>
+        <span style={{ fontSize: 10.5, color: 'var(--pm-hero-subtitle)' }}>
           {p.level ? `Niveau ${formatPlaytomicLevel(p.level)}` : (p.area || '')}
         </span>
-        <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: '#fff' }}>{p.score}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3, color: 'var(--pm-on-accent)' }}>{p.score}</div>
         <div style={{
           width: 22, height: 22, borderRadius: '50%',
           background: isFirst ? theme.amber : 'rgba(255,255,255,0.14)',
-          color: isFirst ? '#0D2752' : '#fff',
+          color: isFirst ? 'var(--pm-navy-deep)' : 'var(--pm-on-accent)',
           fontSize: 11, fontWeight: 700,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '7px auto 0',
@@ -605,6 +633,31 @@ export function RankingTab({ user }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 8px' }}>
         <h2 style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.3px', color: theme.text, margin: 0 }}>Rangliste</h2>
+        <div style={{ position: 'relative' }}>
+          <select
+            value={filterArea}
+            onChange={(e) => setFilterArea(e.target.value)}
+            aria-label="Filtrer efter region"
+            style={{
+              appearance: 'none',
+              WebkitAppearance: 'none',
+              background: filterArea !== 'all' ? theme.accentBg : theme.surfaceAlt,
+              border: `1px solid ${filterArea !== 'all' ? theme.accent : theme.border}`,
+              borderRadius: 8,
+              padding: '5px 26px 5px 10px',
+              fontSize: 12,
+              fontWeight: 600,
+              color: filterArea !== 'all' ? theme.accent : theme.textMid,
+              cursor: 'pointer',
+              fontFamily: font,
+              outline: 'none',
+            }}
+          >
+            <option value="all">Alle</option>
+            {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <ChevronDown size={13} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: filterArea !== 'all' ? theme.accent : theme.textMid }} />
+        </div>
       </div>
 
       {loadError && sorted.length === 0 ? (
@@ -685,8 +738,8 @@ export function RankingTab({ user }) {
             <span style={{ fontSize: '14px', marginLeft: '8px', opacity: 0.6 }}>
               {period === 'all' && myBundleLoading
                 ? ''
-                : userRank > 0 && (totalRanked != null || sorted.length > 0)
-                  ? `af ${period === 'all' && myGlobalRank != null ? rankTotalLabel : totalRanked ?? sorted.length}`
+                : userRank > 0 && (totalRanked != null || displaySorted.length > 0)
+                  ? `af ${filterArea !== 'all' ? displaySorted.length : period === 'all' && myGlobalRank != null ? rankTotalLabel : totalRanked ?? displaySorted.length}`
                   : ''}
             </span>
           </div>
@@ -728,6 +781,11 @@ export function RankingTab({ user }) {
               : `${userEntry.periodGames} kampe · ${userEntry.periodWins} sejre`}
           </div>
         )}
+        {rankChange !== 0 && (
+          <div style={{ marginTop: '8px', fontSize: '11px', fontWeight: 600, color: rankChange > 0 ? 'var(--pm-success-border)' : 'var(--pm-danger-border)' }}>
+            {rankChange > 0 ? `↑ ${rankChange} pladser` : `↓ ${Math.abs(rankChange)} pladser`}
+          </div>
+        )}
       </div>
       )}
 
@@ -737,16 +795,16 @@ export function RankingTab({ user }) {
           margin: '14px 18px 0',
           borderRadius: 14,
           padding: '18px 14px 14px',
-          background: 'linear-gradient(150deg, #0D2752, #1D4A9E)',
-          color: '#fff',
+          background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))',
+          color: 'var(--pm-on-accent)',
           boxShadow: theme.shadowLg,
           display: 'flex',
           alignItems: 'flex-end',
           gap: 10,
         }}>
-          {renderPod(sorted[1], 2)}
-          {renderPod(sorted[0], 1)}
-          {renderPod(sorted[2], 3)}
+          {renderPod(displaySorted[1], 2)}
+          {renderPod(displaySorted[0], 1)}
+          {renderPod(displaySorted[2], 3)}
         </div>
       )}
 
@@ -756,28 +814,32 @@ export function RankingTab({ user }) {
             Indlæser ranking...
           </div>
         </div>
-      ) : sorted.length === 0 ? (
+      ) : displaySorted.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 20px', color: theme.textLight }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>📊</div>
           <div style={{ fontSize: '15px', fontWeight: 600, color: theme.text, marginBottom: '6px' }}>
-            {period === 'week'
-              ? isAmericano
-                ? TOURNAMENT_RANKING_EMPTY_WEEK
-                : 'Ingen kampe denne uge endnu'
-              : period === 'month'
+            {filterArea !== 'all'
+              ? `Ingen spillere i ${filterArea} endnu`
+              : period === 'week'
                 ? isAmericano
-                  ? TOURNAMENT_RANKING_EMPTY_MONTH
-                  : 'Ingen kampe denne måned endnu'
-                : 'Ingen spillere fundet'}
+                  ? TOURNAMENT_RANKING_EMPTY_WEEK
+                  : 'Ingen kampe denne uge endnu'
+                : period === 'month'
+                  ? isAmericano
+                    ? TOURNAMENT_RANKING_EMPTY_MONTH
+                    : 'Ingen kampe denne måned endnu'
+                  : 'Ingen spillere fundet'}
           </div>
           <div style={{ fontSize: '13px', lineHeight: 1.5 }}>
-            {isAmericano
-              ? TOURNAMENT_RANKING_CTA
-              : 'Spil en kamp for at komme på ranglisten!'}
+            {filterArea !== 'all'
+              ? 'Prøv en anden region eller vælg "Alle".'
+              : isAmericano
+                ? TOURNAMENT_RANKING_CTA
+                : 'Spil en kamp for at komme på ranglisten!'}
           </div>
         </div>
       ) : (() => {
-        const listPlayers = hasPodium ? sorted.slice(3) : sorted;
+        const listPlayers = hasPodium ? displaySorted.slice(3) : displaySorted;
         if (listPlayers.length === 0) return null;
         return (
           <div style={{
@@ -793,7 +855,9 @@ export function RankingTab({ user }) {
               const score = p.score;
               const isPositive = period !== 'all' && score > 0;
               const isNegative = period !== 'all' && score < 0;
-              const place = p._globalRank ?? (hasPodium ? sliceIdx + 4 : sliceIdx + 1);
+              const place = filterArea !== 'all'
+                ? (hasPodium ? sliceIdx + 4 : sliceIdx + 1)
+                : (p._globalRank ?? (hasPodium ? sliceIdx + 4 : sliceIdx + 1));
               const isLast = sliceIdx === listPlayers.length - 1;
               return (
                 <div key={p.id}>
@@ -861,7 +925,7 @@ export function RankingTab({ user }) {
         );
       })()}
 
-      {hasMore && sorted.length > 0 && (
+      {hasMore && sorted.length > 0 && filterArea === 'all' && (
         <button
           type="button"
           onClick={() => void loadMore()}
@@ -878,6 +942,50 @@ export function RankingTab({ user }) {
         >
           {loadingMore ? 'Indlæser…' : `Indlæs ${RANKING_PAGE_SIZE} flere`}
         </button>
+      )}
+
+      {/* User position card — shown below list when podium is visible */}
+      {hasPodium && userRank > 0 && !myBundleLoading && userEntry && (
+        <div style={{
+          margin: '12px 18px 18px',
+          background: theme.surface,
+          borderRadius: 12,
+          border: `1.5px solid ${theme.navy}`,
+          padding: '11px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 11,
+        }}>
+          <div style={{ width: 24, textAlign: 'center', fontWeight: 700, fontSize: 13, color: theme.accent, flexShrink: 0 }}>
+            {userRank}
+          </div>
+          <AvatarCircle
+            avatar={userEntry.avatar}
+            size={36}
+            emojiSize="12px"
+            style={{ background: theme.surfaceAlt, border: `1px solid ${theme.border}`, flexShrink: 0 }}
+          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: '-0.01em' }}>
+              Dig
+            </div>
+            <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>
+              {isAmericano
+                ? `${userEntry.periodGames || 0} Americano/Mexicano`
+                : `${userEntry.level ? `Niveau ${formatPlaytomicLevel(userEntry.level)}` : (userEntry.area || '')} · ${userEntry.periodGames || 0} kampe`}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: theme.accent }}>
+              {period === 'all' ? displayScore : displayScore > 0 ? `+${displayScore}` : displayScore}
+            </div>
+            {rankChange !== 0 && (
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: rankChange > 0 ? theme.green : theme.red, marginTop: 1 }}>
+                {rankChange > 0 ? `↑ ${rankChange} pladser` : `↓ ${Math.abs(rankChange)} pladser`}
+              </div>
+            )}
+          </div>
+        </div>
       )}
       </div>
 

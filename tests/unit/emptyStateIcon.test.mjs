@@ -13,7 +13,10 @@ test('tom-tilstande på Kampe bruger Lucide via EmptyStateIcon', () => {
   const icon = readFileSync(join(root, 'src/components/EmptyStateIcon.jsx'), 'utf8');
 
   assert.match(icon, /pm-empty-state-icon/);
-  assert.match(kampe, /EmptyStateIcon icon=\{Swords\}/);
+  // The "open" Kampe empty state was redesigned from <EmptyStateIcon icon={Swords}/>
+  // to a custom inline region SVG icon + CTAs. Intent preserved: it still uses a
+  // Lucide-style inline SVG (no emoji), not an emoji icon.
+  assert.match(kampe, /pm-state-card--empty[\s\S]*?<svg/);
   assert.match(kampe, /EmptyStateIcon icon=\{Users\}/);
   assert.match(kampe, /EmptyStateIcon icon=\{BarChart3\}/);
   assert.doesNotMatch(kampe, /pm-state-icon">⚔️/);
