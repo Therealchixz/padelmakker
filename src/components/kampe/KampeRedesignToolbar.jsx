@@ -32,14 +32,13 @@ export function KampeRedesignToolbar({
         {onCreate ? (
           <button
             type="button"
-            className="pm-kampe-v2-create"
+            className="pm-kampe-v2-create pm-kampe-v2-create--icon"
             onClick={onCreate}
             disabled={createBusy}
             aria-label={createLabel}
             title={createLabel}
           >
-            <Plus size={16} strokeWidth={2.5} aria-hidden />
-            <span className="pm-kampe-v2-create-label">{createLabel}</span>
+            <Plus size={18} strokeWidth={2.5} aria-hidden />
           </button>
         ) : null}
       </div>

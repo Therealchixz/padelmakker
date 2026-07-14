@@ -6714,8 +6714,9 @@ button,
   box-shadow: 0 4px 14px color-mix(in srgb, var(--pm-accent) 35%, transparent);
 }
 
-.pm-kampe-v2-create-label {
-  white-space: nowrap;
+.pm-kampe-v2-create--icon {
+  width: 36px;
+  padding: 0;
 }
 
 .pm-kampe-v2-create:disabled {
