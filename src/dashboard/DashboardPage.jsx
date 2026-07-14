@@ -1366,9 +1366,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
     if (fromMoreSheet) setMobileMoreOpen(false);
   }, [tab, isMobileView, mobileMoreOpen, setTab]);
 
-  const hideMobileBottomNav =
-    (isMobileView && tab === "beskeder" && mobileConversationOpen)
-    || (isMobileView && isKampeDetailRoute(location.pathname));
+  const hideMobileBottomNavForChat = isMobileView && tab === "beskeder" && mobileConversationOpen;
+  const hideMobileBottomNavForKampeDetail = isMobileView && isKampeDetailRoute(location.pathname);
+  const hideMobileBottomNav = hideMobileBottomNavForChat || hideMobileBottomNavForKampeDetail;
 
   return (
     <div
@@ -1624,7 +1624,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
       </div>
 
-      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${hideMobileBottomNav ? " pm-dash-main--chat" : ""}${isKampeDetailRoute(location.pathname) ? " pm-dash-main--kampe-detail" : ""}`}>
+      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${hideMobileBottomNavForChat ? " pm-dash-main--chat" : ""}${hideMobileBottomNavForKampeDetail ? " pm-dash-main--kampe-detail" : ""}`}>
         <Suspense
           fallback={
             <div

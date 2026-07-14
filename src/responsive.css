@@ -7809,14 +7809,24 @@ button,
 
 /* Full-screen Kampe detail pages (2v2 / Americano / Liga) */
 .pm-kampe-v2-detail-page {
+  --pm-kampe-detail-gutter: clamp(12px, 3.5vw, 18px);
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - 120px);
   margin-bottom: 8px;
+  box-sizing: border-box;
 }
 
-.pm-dash-main--kampe-detail {
+.pm-dash-main.pm-dash-main--kampe-detail {
+  /* Horisontal indrykning styres af detail-siden (inkl. safe-area) */
+  padding-left: 0;
+  padding-right: 0;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.pm-kampe-v2-detail-page .pm-kampe-v2-create-head {
+  padding-left: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px));
 }
 
 .pm-kampe-v2-detail-page.pm-kampe-v2-detail-sheet,
@@ -7834,12 +7844,43 @@ button,
 .pm-kampe-v2-detail-page .pm-americano-v2-detail-scroll {
   flex: 1;
   min-height: 0;
+  padding-left: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+}
+
+/* Scroll har allerede gutter — undgå dobbelt indrykning på hero/kort */
+.pm-kampe-v2-detail-page .pm-kampe-v2-detail-scroll .pm-kd-hero,
+.pm-kampe-v2-detail-page .pm-kampe-v2-detail-scroll .pm-kd-price-card,
+.pm-kampe-v2-detail-page .pm-americano-v2-detail-scroll .pm-kd-price-card {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-head,
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-body,
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-footer {
+  padding-left: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
 }
 
 .pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .pm-dash-main.pm-dash-main--kampe-detail {
+    padding-top: max(clamp(20px, 5vw, 28px), calc(env(safe-area-inset-top) + 12px));
+    /* Ingen plads til bundnavigation — den er skjult på detail-sider */
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .pm-kampe-v2-detail-page {
+    min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 56px);
+  }
 }
 
 .pm-kampe-v2-detail-head {
