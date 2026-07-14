@@ -95,12 +95,12 @@ export function MatchCourtView({
               {showEloChanges && delta != null ? (
                 <span className="pm-kd-lvl-badge">
                   ELO {playerElo(player)}
-                  {levelLabel ? ` · ≈ Niveau ${levelLabel}` : ''}
+                  {levelLabel ? ` · Niveau ${levelLabel}` : ''}
                 </span>
               ) : (
                 <span className="pm-kd-lvl-badge">
                   ELO {playerElo(player)}
-                  {levelLabel ? ` · ≈ Niveau ${levelLabel}` : ''}
+                  {levelLabel ? ` · Niveau ${levelLabel}` : ''}
                 </span>
               )}
               {!showEloChanges && games > 0 ? (

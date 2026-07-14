@@ -3244,7 +3244,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             const summaryRows = [
               { label: "Bane", value: courtLabel },
               { label: "Tid", value: `${dateLabel} · ${newMatch.time}${endTime ? `–${endTime}` : ""}` },
-              { label: "Niveau", value: formatMatchLevelRangeLabel(newMatch.level_min, newMatch.level_max) || `≈ Niveau ${formatPlaytomicLevelRange(lvlMin, lvlMax)}` },
+              { label: "Niveau", value: formatMatchLevelRangeLabel(newMatch.level_min, newMatch.level_max) || `Niveau ${formatPlaytomicLevelRange(lvlMin, lvlMax)}` },
               { label: "Kamptype", value: newMatch.match_type === "closed" ? "Lukket (godkendelse)" : "Åben" },
               { label: "Pris", value: `${priceLabel} · ${paymentLabels[newMatch.payment_method] || newMatch.payment_method}` },
             ];
@@ -3558,9 +3558,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       {createdMatchReceipt && (() => {
         const m = createdMatchReceipt;
         const matchPrefs = parseMatchLevelRange(m.level_range);
-        const levelStr = (matchPrefs?.min != null && matchPrefs?.max != null)
-          ? `≈ Niveau ${matchPrefs.min}–${matchPrefs.max}`
-          : null;
+        const levelStr = formatMatchLevelRangeLabel(matchPrefs?.min, matchPrefs?.max);
         const isClosed = m.match_type === 'closed';
         const court = m.court_name?.trim() || null;
         const datePart = m.date ? formatMatchDateDa(m.date) : '';

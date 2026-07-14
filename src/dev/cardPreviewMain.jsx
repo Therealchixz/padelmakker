@@ -230,7 +230,7 @@ function CourtPreview() {
         <PadelCourtArt className="pm-kd-hero-court" />
         <div className="pm-kd-hero-badges">
           <span className="pm-kd-chip pm-kd-chip--navy">2V2</span>
-          <span className="pm-kd-chip pm-kd-chip--light">≈ Niveau 3.0–4.0</span>
+          <span className="pm-kd-chip pm-kd-chip--light">Niveau 3.0–4.0</span>
         </div>
       </div>
     </div>

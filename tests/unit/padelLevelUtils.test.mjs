@@ -38,7 +38,8 @@ test('padelLevelUtils exports spaced ELO and niveau range labels', () => {
   assert.match(src, /export function formatMatchLevelRangeLabel/);
   assert.match(src, /\$\{formatPlaytomicLevel\(min\)\} – \$\{formatPlaytomicLevel\(max\)\}/);
   assert.match(src, /\$\{lo\} – \$\{hi\} ELO/);
-  assert.match(src, /≈ Niveau \$\{formatPlaytomicLevelRange/);
+  assert.match(src, /export function formatMatchLevelRangeParts/);
+  assert.match(src, /Niveau \$\{formatPlaytomicLevelRange/);
 });
 
 test('SQL notify_match_watchers uses niveau in notification body', () => {

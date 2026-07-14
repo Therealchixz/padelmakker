@@ -1915,7 +1915,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
                 </span>
                 {user?.level != null && user.level !== '' ? (
                   <span style={tag(theme.amberBg, theme.amberText)}>
-                    ≈ Niveau {formatPlaytomicLevel(user.level)}
+                    Niveau {formatPlaytomicLevel(user.level)}
                   </span>
                 ) : null}
               </>

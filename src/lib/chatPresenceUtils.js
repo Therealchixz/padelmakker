@@ -54,8 +54,8 @@ export function onlineStatusLabel(isOnline, lastActiveAt, { elo, level } = {}) {
   if (isOnline) return 'Aktiv nu';
   const seen = lastSeenLabel(lastActiveAt);
   if (seen && seen !== 'Offline') return seen;
-  if (elo && level) return `${elo} ELO · ≈ Niveau ${level}`;
+  if (elo && level) return `${elo} ELO · Niveau ${level}`;
   if (elo) return `${elo} ELO`;
-  if (level) return `≈ Niveau ${level}`;
+  if (level) return `Niveau ${level}`;
   return 'Offline';
 }

@@ -7393,6 +7393,65 @@ button,
   line-height: 1.3;
 }
 
+.pm-kampe-v2-list-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+  width: 100%;
+}
+
+.pm-kampe-v2-list-meta-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--pm-text-light);
+  line-height: 1.3;
+}
+
+.pm-kampe-v2-list-meta-live {
+  color: var(--pm-red);
+  font-weight: 700;
+}
+
+.pm-kampe-v2-list-meta-duration::before {
+  content: '·';
+  margin: 0 6px;
+  opacity: 0.65;
+}
+
+.pm-kampe-v2-list-meta-levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pm-kampe-v2-list-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+  padding: 4px 8px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+
+.pm-kampe-v2-list-meta-chip--elo {
+  background: color-mix(in srgb, var(--pm-navy) 7%, var(--pm-surface));
+  color: var(--pm-text-mid);
+  border: 1px solid var(--pm-border);
+}
+
+.pm-kampe-v2-list-meta-chip--niveau {
+  background: color-mix(in srgb, var(--pm-warm) 10%, var(--pm-surface));
+  color: var(--pm-text-mid);
+  border: 1px solid color-mix(in srgb, var(--pm-warm) 22%, var(--pm-border));
+}
+
 .pm-kampe-v2-list-datetime {
   display: block;
   font-size: 12px;

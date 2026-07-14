@@ -638,7 +638,7 @@ export function ProfilTab({ user, showToast, setTab }) {
               ) : null}
               {user.level != null && user.level !== '' ? (
                 <span style={tag(theme.amberBg, theme.amberText)}>
-                  ≈ Niveau {formatPlaytomicLevel(user.level)}
+                  Niveau {formatPlaytomicLevel(user.level)}
                 </span>
               ) : null}
               {!statsLoading && isAmericanoMode && <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>}

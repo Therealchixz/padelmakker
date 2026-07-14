@@ -184,7 +184,7 @@ export function buildActiveSeekingFilterSummary(user, channel) {
     const lvl = resolveFilterLevel(prefs, user);
     const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
     const { min, max } = levelRangeForWindow(lvl, win);
-    parts.push(`≈ Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`);
+    parts.push(`Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`);
     const days = formatSeekingDaysLine(prefs);
     if (days) parts.push(days);
     parts.push(seekingAvailabilitySummary(prefs));
@@ -198,7 +198,7 @@ export function buildActiveSeekingFilterSummary(user, channel) {
   const lvl = resolveMakkerFilterLevel(prefs, user);
   const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
   const { min, max } = levelRangeForMakkerPartnerPref(lvl, win, prefs.partnerLevel, user);
-  parts.push(`≈ Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`);
+  parts.push(`Niveau ${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)}`);
   if (prefs.playStyle && prefs.playStyle !== 'all') parts.push(prefs.playStyle);
   const intents = normalizeStringArrayField(prefs.intents)
     .map((k) => intentDisplayLabel(k))

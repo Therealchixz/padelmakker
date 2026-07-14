@@ -1,7 +1,7 @@
 import { AvatarCircle } from '../AvatarCircle';
 import { matchTimeLabel, formatMatchDateHeadlineDa } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
-import { formatMatchLevelRangeLabel } from '../../lib/padelLevelUtils';
+import { formatMatchLevelRangeParts } from '../../lib/padelLevelUtils';
 
 const DA_MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAJ','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
 
@@ -110,8 +110,8 @@ export function KampeMatchListCard({
   const eloDelta = showMyEloDelta ? Number(myEloChange) : null;
   const showEloRange =
     !isCompleted && matchPrefs?.min != null && matchPrefs?.max != null;
-  const levelRangeLabel = showEloRange
-    ? formatMatchLevelRangeLabel(matchPrefs.min, matchPrefs.max)
+  const levelRangeParts = showEloRange
+    ? formatMatchLevelRangeParts(matchPrefs.min, matchPrefs.max)
     : null;
   const hasConfirmedResult = isCompleted && matchResult?.confirmed && winnerTeam != null;
   const setScoreStr = hasConfirmedResult ? computeSetScoreStr(matchResult) : null;
@@ -162,16 +162,25 @@ export function KampeMatchListCard({
             <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary" style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--pm-text)' }}>
               {venue}
             </div>
-            <div className="pm-kampe-v2-list-venue" style={{ marginTop: 2 }}>
-              {isInProgress && minutesPlayed != null ? (
-                <span style={{ color: 'var(--pm-red)', fontWeight: 700 }}>
-                  {minutesPlayed > 0 ? `${minutesPlayed} min spillet` : 'Netop startet'}
-                </span>
-              ) : (
-                <>Kl. {timeLabel}</>
-              )}
-              {match.duration ? <> · {match.duration} min</> : null}
-              {levelRangeLabel ? <> · {levelRangeLabel}</> : null}
+            <div className="pm-kampe-v2-list-meta">
+              <div className="pm-kampe-v2-list-meta-time">
+                {isInProgress && minutesPlayed != null ? (
+                  <span className="pm-kampe-v2-list-meta-live">
+                    {minutesPlayed > 0 ? `${minutesPlayed} min spillet` : 'Netop startet'}
+                  </span>
+                ) : (
+                  <>Kl. {timeLabel}</>
+                )}
+                {match.duration ? (
+                  <span className="pm-kampe-v2-list-meta-duration">{match.duration} min</span>
+                ) : null}
+              </div>
+              {levelRangeParts ? (
+                <div className="pm-kampe-v2-list-meta-levels">
+                  <span className="pm-kampe-v2-list-meta-chip pm-kampe-v2-list-meta-chip--elo">{levelRangeParts.elo}</span>
+                  <span className="pm-kampe-v2-list-meta-chip pm-kampe-v2-list-meta-chip--niveau">{levelRangeParts.niveau}</span>
+                </div>
+              ) : null}
             </div>
           </div>
           <div className="pm-kampe-v2-list-badges">

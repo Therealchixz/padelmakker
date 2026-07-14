@@ -936,7 +936,7 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
         });
 
     const partnerLevelTag = !isTeamThread && (otherProfile?.elo_rating || otherProfile?.level)
-      ? `${Math.round(Number(otherProfile?.elo_rating) || 1000)} ELO${otherProfile?.level ? ` · ≈ Niveau ${formatPlaytomicLevel(otherProfile.level)}` : ''}`
+      ? `${Math.round(Number(otherProfile?.elo_rating) || 1000)} ELO${otherProfile?.level ? ` · Niveau ${formatPlaytomicLevel(otherProfile.level)}` : ''}`
       : null;
 
     const threadHeader = (

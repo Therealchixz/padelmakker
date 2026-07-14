@@ -282,7 +282,7 @@ export function AmericanoDetailSheet({
             </span>
             {tournament.level_min != null && tournament.level_max != null ? (
               <span className="pm-kd-chip pm-kd-chip--light">
-                ≈ Niveau {Number(tournament.level_min).toFixed(1)}–{Number(tournament.level_max).toFixed(1)}
+                Niveau {Number(tournament.level_min).toFixed(1)}–{Number(tournament.level_max).toFixed(1)}
               </span>
             ) : null}
             {badgeTone === 'live' ? (

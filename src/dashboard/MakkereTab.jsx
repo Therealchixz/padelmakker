@@ -206,7 +206,7 @@ function SuggestionCard({ suggestion, onView, onInvite, onMessage, onDismiss, di
               ELO {Math.round(Number(p.elo_rating) || 1000)}
             </span>
             {p.level != null && p.level !== '' ? (
-              <span style={tag(theme.amberBg, theme.amberText)}>≈ Niveau {formatPlaytomicLevel(p.level)}</span>
+              <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
             ) : null}
           </div>
           <div style={{ fontSize: 12, color: theme.textLight, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -837,7 +837,7 @@ export function MakkereTab({ user, showToast }) {
                       ELO {Math.round(Number(p.elo_rating) || 1000)}
                     </span>
                     {p.level != null && p.level !== '' ? (
-                      <span style={tag(theme.amberBg, theme.amberText)}>≈ Niveau {formatPlaytomicLevel(p.level)}</span>
+                      <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(p.level)}</span>
                     ) : null}
                     {isSeekingActive(p) && (
                       <span style={tag(theme.greenBg, theme.green)}>{seekingActivityLabelDisplay(p)}</span>

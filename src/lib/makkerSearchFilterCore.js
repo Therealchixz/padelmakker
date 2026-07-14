@@ -216,7 +216,7 @@ export function describeMakkerFilter(prefs, profile = {}) {
   const lvl = resolveMakkerFilterLevel(prefs, profile);
   const win = Number(prefs.levelWindow) || DEFAULT_LEVEL_WINDOW;
   const { min, max } = levelRangeForMakkerPartnerPref(lvl, win, prefs.partnerLevel, profile);
-  parts.push(`≈ Niveau ${formatPlaytomicLevel(lvl)} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
+  parts.push(`Niveau ${formatPlaytomicLevel(lvl)} (${formatPlaytomicLevel(min)}–${formatPlaytomicLevel(max)})`);
 
   if (prefs.playStyle && prefs.playStyle !== 'all') parts.push(prefs.playStyle);
   if (normalizeStringArrayField(prefs.intents).length > 0) {
