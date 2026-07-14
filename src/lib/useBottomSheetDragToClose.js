@@ -220,7 +220,12 @@ export function useBottomSheetDragToClose({ onClose, enabled = true } = {}) {
         }
       : undefined;
 
-  const sheetClassName = isDragging ? 'pm-kampe-v2-sheet--dragging' : '';
+  const sheetClassName = [
+    isDragging ? 'pm-kampe-v2-sheet--dragging' : '',
+    isAnimating ? 'pm-kampe-v2-sheet--animating' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return {
     sheetRef: sheetElRef,
