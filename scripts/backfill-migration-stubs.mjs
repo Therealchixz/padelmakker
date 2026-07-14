@@ -12,7 +12,6 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const migrationsDir = join(root, 'supabase', 'migrations');
 const sqlDir = join(root, 'supabase', 'sql');
-const recoveredDir = join(sqlDir, 'recovered');
 
 const dryRun = process.argv.includes('--dry-run');
 const renameMcp = process.argv.includes('--rename-mcp');

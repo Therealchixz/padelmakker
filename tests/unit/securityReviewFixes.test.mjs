@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { sanitizePostgrestIlikePattern, buildProfileNameSearchOrFilter } from '../../src/lib/postgrestFilterUtils.js';
 import { safeHttpUrl } from '../../src/lib/safeUrl.js';
-import { mapJoinMatchError } from '../../src/lib/matchJoinUtils.js';
+import { mapJoinMatchError } from '../../src/lib/matchJoinErrorUtils.js';
 
 test('sanitizePostgrestIlikePattern strips filter-breaking characters', () => {
   assert.equal(sanitizePostgrestIlikePattern('  foo,bar(baz)%  '), 'foo bar baz');
