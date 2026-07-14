@@ -26,6 +26,7 @@ import {
 import { activateSeekingPlayer, deactivateSeekingPlayer } from '../lib/seekingPlayerUtils';
 import { notifyMatchWatchersForMatch } from '../lib/matchWatchUtils';
 import { fetchMatchMessages, fetchMatchMessageCounts, sendMatchMessage, subscribeToMatchMessages } from '../lib/matchChatUtils';
+import { rpcJoinOpenMatch, rpcLeaveMatch } from '../lib/matchJoinUtils';
 import { submitPadelMatchResult } from '../lib/submitPadelMatchResult';
 import { canConfirmPadelMatchResult, confirmPadelMatchResult, rejectPadelMatchResult } from '../lib/resolvePadelMatchResult';
 import { KAMPE_NON_CHAT_NOTIFICATION_TYPES as KAMPE_NON_CHAT_NOTIF_TYPES } from '../lib/kampeNotificationTypes';
@@ -364,16 +365,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   }, [kampeRatedRows, kampeProfileFresh, myUidStr, eloByUserId, user.elo_rating]);
 
   const loadData = useCallback(async () => {
+    const reqId = ++loadDataReqIdRef.current;
+    const isStale = () => reqId !== loadDataReqIdRef.current;
     setLoadingMatches(true);
     setLoadError("");
     try {
       const uid = user.id;
+      const openPoolCutoff = DateTime.now().minus({ days: 30 }).toISODate();
       const [cd, openPoolRes, createdRes, myMpRes] = await Promise.all([
         fetchCourtsCached(),
         supabase
           .from("matches")
           .select("*")
           .in("status", ["open", "full", "in_progress"])
+          .gte("date", openPoolCutoff)
           .order("date", { ascending: true })
           .limit(400),
         supabase.from("matches").select("*").eq("creator_id", uid),
@@ -382,6 +387,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       if (openPoolRes.error) throw openPoolRes.error;
       if (createdRes.error) throw createdRes.error;
       if (myMpRes.error) throw myMpRes.error;
+      if (isStale()) return;
 
       setCourts(cd || []);
 
@@ -398,11 +404,13 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         .limit(300);
       if (rcErr) throw rcErr;
       (recentCompleted || []).forEach((r) => idSet.add(r.id));
+      if (isStale()) return;
 
       const allMatchIds = [...idSet];
 
       const allMatches =
         allMatchIds.length > 0 ? await fetchRowsInChunks(supabase, "matches", "id", allMatchIds) : [];
+      if (isStale()) return;
       setMatches(allMatches);
 
       const vOpts = getMatchVenueOptions(cd || []);
@@ -444,6 +452,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       }
       setEloByUserId(eloMap);
       setProfilesById(pById);
+      if (isStale()) return;
       setMatchPlayers(mm);
 
       const mrd =
@@ -500,14 +509,18 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           jrMap[mid].push(jr);
         }
       }
+      if (isStale()) return;
       setJoinRequests(jrMap);
     } catch (e) {
+      if (isStale()) return;
       console.error(e);
       setLoadError("Kunne ikke hente kampe lige nu.");
       showToast('Kunne ikke hente data. Tjek din forbindelse og prøv igen.');
     } finally {
-      setLoadingMatches(false);
-      void reloadKampeEloBundle();
+      if (reqId === loadDataReqIdRef.current) {
+        setLoadingMatches(false);
+        void reloadKampeEloBundle();
+      }
     }
   }, [user.id, showToast, reloadKampeEloBundle]);
 
@@ -584,6 +597,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
      så telefonens tilbage-gestus/knap lukker arket i stedet for at forlade Kampe.
      mounted-ref'en (defineret FØR effekten, så dens cleanup kører først ved unmount)
      sikrer at vi ikke kalder history.back() når hele fanen forlades. */
+  const loadDataReqIdRef = useRef(0);
   const kampeMountedRef = useRef(true);
   useEffect(() => () => { kampeMountedRef.current = false; }, []);
   const detailHistoryArmedRef = useRef(false);
@@ -938,9 +952,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       };
       const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
-      await supabase.from("match_players").insert({
-        match_id: created.id, user_id: user.id, user_name: myDisplayName,
-        user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾", team: 1,
+      await rpcJoinOpenMatch({
+        matchId: created.id,
+        team: 1,
+        userName: myDisplayName,
+        userEmail: authUser?.email || user.email,
+        userEmoji: user.avatar || "🎾",
       });
       if (row.match_type !== "closed" && row.status === "open") {
         void notifyMatchWatchersForMatch(created.id);
@@ -956,29 +973,28 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     setTeamSelectMatch(null);
     setBusyId(matchId);
     const match = matches.find((m) => String(m.id) === String(matchId));
+    if ((match?.match_type || 'open') === 'closed') {
+      showToast('Denne kamp kræver godkendelse fra opretteren.');
+      setBusyId(null);
+      return;
+    }
     try {
-      const { error } = await supabase.from("match_players").insert({
-        match_id: matchId, user_id: user.id, user_name: myDisplayName,
-        user_email: authUser?.email || user.email, user_emoji: user.avatar || "🎾", team: teamNum,
+      const result = await rpcJoinOpenMatch({
+        matchId,
+        team: teamNum,
+        userName: myDisplayName,
+        userEmail: authUser?.email || user.email,
+        userEmoji: user.avatar || "🎾",
       });
-      if (error) throw error;
-
-      // Check if match is now full (4 players, 2 per team)
-      const mp = [...(matchPlayers[matchId] || []), { user_id: user.id, team: teamNum }];
-      const t1 = mp.filter(p => matchPlayerTeam(p) === 1).length;
-      const t2 = mp.filter(p => matchPlayerTeam(p) === 2).length;
-      if (t1 >= 2 && t2 >= 2) {
-        await supabase.from("matches").update({ status: "full", current_players: 4, seeking_player: false }).eq("id", matchId);
-      } else {
-        await supabase.from("matches").update({ current_players: mp.length }).eq("id", matchId);
-      }
+      const joinedTeam = result?.team ?? teamNum;
+      const isFull = result?.is_full === true;
 
       /* Underret opretter via RPC (læser creator_id server-side — RLS kan skjule creator for B) */
-      {
+      if (!result?.already_joined) {
         const { error: nErr } = await supabase.rpc("notify_match_creator_on_join", {
           p_match_id: matchId,
           p_title: "Ny spiller tilmeldt!",
-          p_body: `${myDisplayName} har tilmeldt sig Hold ${teamNum} i din kamp.`,
+          p_body: `${myDisplayName} har tilmeldt sig Hold ${joinedTeam} i din kamp.`,
         });
         if (nErr) {
           console.warn("notify_match_creator_on_join:", nErr.message || nErr);
@@ -990,14 +1006,20 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             [match.creator_id],
             'match_join',
             'Ny spiller tilmeldt!',
-            `${myDisplayName} har tilmeldt sig Hold ${teamNum} i din kamp.`,
+            `${myDisplayName} har tilmeldt sig Hold ${joinedTeam} i din kamp.`,
             matchId,
           );
         }
       }
-      // Notify all players if match is now full
-      if (t1 >= 2 && t2 >= 2) {
-        const fullNotifyIds = mp.filter((p) => p.user_id !== user.id).map((p) => p.user_id);
+
+      if (isFull) {
+        const { data: playerRows } = await supabase
+          .from("match_players")
+          .select("user_id")
+          .eq("match_id", matchId);
+        const fullNotifyIds = (playerRows || [])
+          .filter((p) => p.user_id !== user.id)
+          .map((p) => p.user_id);
         void createNotificationsForUsers(
           fullNotifyIds,
           "match_full",
@@ -1007,7 +1029,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         );
       }
 
-      showToast(`Du er tilmeldt Hold ${teamNum}! ⚔️`);
+      showToast(result?.already_joined ? "Du er allerede tilmeldt kampen." : `Du er tilmeldt Hold ${joinedTeam}! ⚔️`);
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }
@@ -1116,29 +1138,16 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     setBusyId(matchId);
     try {
-      // Notify creator BEFORE delete (while still in match_players so RPC check passes)
       const isCreator = match && String(match.creator_id) === String(user.id);
       if (!isCreator && match?.creator_id) {
         await createNotification(match.creator_id, 'match_cancelled', 'Spiller afmeldt ❌', `${myDisplayName} er afmeldt kampen.`, matchId);
       }
-      const { error } = await supabase.from("match_players").delete().eq("match_id", matchId).eq("user_id", user.id);
-      if (error) throw error;
-      /* Genindlæs match_players fra DB — stale React state kan ramme forkert tal hvis flere forlader samtidigt. */
-      const { data: remainingRows, error: remainingError } = await supabase
-        .from("match_players")
-        .select("user_id, team")
-        .eq("match_id", matchId);
-      if (remainingError) throw remainingError;
-      const mp = (remainingRows ?? []).filter(p => p.user_id !== user.id);
-
-      if (mp.length === 0) {
-        await supabase.from("matches").update({ status: "cancelled", current_players: 0 }).eq("id", matchId);
+      const leaveResult = await rpcLeaveMatch(matchId);
+      if (leaveResult?.cancelled) {
         showToast("Kampen er slettet (ingen spillere tilbage).");
-      } else if (isCreator) {
-        await supabase.from("matches").update({ creator_id: mp[0].user_id, status: "open", current_players: mp.length }).eq("id", matchId);
+      } else if (leaveResult?.creator_transferred) {
         showToast("Du er afmeldt. Kampen er givet videre.");
       } else {
-        await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
         showToast("Du er afmeldt.");
       }
       await loadData();
@@ -1491,7 +1500,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     };
 
     const onVisibilityChange = () => refreshOpenChats();
-    const intervalId = setInterval(refreshOpenChats, 7000);
     if (typeof document !== "undefined") {
       document.addEventListener("visibilitychange", onVisibilityChange);
     }
@@ -1503,7 +1511,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
 
     return () => {
       cancelled = true;
-      clearInterval(intervalId);
       if (typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", onVisibilityChange);
       }

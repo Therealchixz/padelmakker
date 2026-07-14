@@ -9,6 +9,7 @@ import { completionMsForLeague } from '../lib/resultErrorReports';
 import { shortLigaDate, ligaIsSwiss } from '../lib/ligaDisplayUtils';
 import { validatePadelScore } from '../lib/ligaStandings';
 import { LigaStandingsTable, LigaDivisionStandings } from './LigaDetailSheet';
+import { buildProfileNameSearchOrFilter } from '../lib/postgrestFilterUtils';
 
 const SWISS_RULES = [
   { icon: '🎾', text: 'Hvert hold spiller én kamp per runde — ingen eliminering, alle spiller videre.' },
@@ -120,10 +121,15 @@ function PartnerSearch({ userId, onSelect, selectedId = null }) {
   useEffect(() => {
     if (query.length < 2) { setResults([]); return; }
     const t = setTimeout(async () => {
+      const orFilter = buildProfileNameSearchOrFilter(query);
+      if (!orFilter) {
+        setResults([]);
+        return;
+      }
       const { data } = await supabase
         .from('profiles')
         .select('id, full_name, name, avatar, elo_rating')
-        .or(`full_name.ilike.%${query}%,name.ilike.%${query}%`)
+        .or(orFilter)
         .neq('id', userId)
         .limit(6);
       const gamesById = Object.fromEntries(suggested.map((s) => [s.id, s.gamesTogether]));

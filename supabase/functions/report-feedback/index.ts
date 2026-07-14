@@ -175,14 +175,10 @@ Deno.serve(async (req: Request) => {
       });
 
       if (rateErr) {
-        const allowedByFallback = consumeLocalRateLimit(key, windowStart, rateLimitMaxPerWindow);
-        if (!allowedByFallback) {
-          return new Response(JSON.stringify({ error: "For mange foresporgsler. Prov igen om et ojeblik." }), {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        continue;
+        return new Response(JSON.stringify({ error: "For mange foresporgsler. Prov igen om et ojeblik." }), {
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       if (allowedByRpc !== true) {

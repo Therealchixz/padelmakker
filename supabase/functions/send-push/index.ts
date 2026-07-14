@@ -583,35 +583,15 @@ function resolveServerPushPolicy(type: unknown, clientHints: Record<string, unkn
   const normalizedType = normalizeType(type);
   const isKnownType = Boolean(PUSH_POLICY_BY_TYPE[normalizedType]);
   const known = PUSH_POLICY_BY_TYPE[normalizedType] || {};
+  // Unknown types: never trust client hints — in-app only, no push.
+  if (!isKnownType) {
+    return { ...DEFAULT_PUSH_POLICY, sendPush: false };
+  }
+
   const merged: PushPolicy = {
     ...DEFAULT_PUSH_POLICY,
     ...known,
   };
-
-  // For unknown types we accept client hints as a fallback.
-  if (!isKnownType) {
-    if (typeof clientHints.channel === "string" && clientHints.channel.trim()) {
-      merged.channel = clientHints.channel.trim().slice(0, 32);
-    }
-    if (typeof clientHints.level === "string" && PUSH_LEVELS.has(clientHints.level)) {
-      merged.level = clientHints.level as PushPolicy["level"];
-    }
-    if (typeof clientHints.silent === "boolean") {
-      merged.silent = clientHints.silent;
-    }
-    if (typeof clientHints.urgency === "string" && PUSH_URGENCIES.has(clientHints.urgency)) {
-      merged.urgency = clientHints.urgency as PushPolicy["urgency"];
-    }
-    if (typeof clientHints.sendPush === "boolean") {
-      merged.sendPush = clientHints.sendPush;
-    }
-    if (typeof clientHints.aggregate === "boolean") {
-      merged.aggregate = clientHints.aggregate;
-    }
-    if (typeof clientHints.renotify === "boolean") {
-      merged.renotify = clientHints.renotify;
-    }
-  }
 
   if (isKnownType) {
     merged.cooldownSeconds = sanitizeCooldownSeconds(

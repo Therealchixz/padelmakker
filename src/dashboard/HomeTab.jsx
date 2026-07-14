@@ -269,9 +269,11 @@ export function HomeTab({ user, setTab, showToast }) {
       setInviteItems((prev) => prev.filter((x) => x.key !== it.key));
     } catch (e) {
       console.warn("home approve invite:", e?.message || e);
+      showToast?.(e?.message || "Kunne ikke godkende anmodningen.");
+    } finally {
       setBusyInviteId(null);
     }
-  }, [busyInviteId, user]);
+  }, [busyInviteId, user, showToast]);
   const rejectInvite = useCallback(async (it) => {
     if (busyInviteId) return;
     setBusyInviteId(it.key);
@@ -284,9 +286,11 @@ export function HomeTab({ user, setTab, showToast }) {
       setInviteItems((prev) => prev.filter((x) => x.key !== it.key));
     } catch (e) {
       console.warn("home reject invite:", e?.message || e);
+      showToast?.(e?.message || "Kunne ikke afvise anmodningen.");
+    } finally {
       setBusyInviteId(null);
     }
-  }, [busyInviteId]);
+  }, [busyInviteId, showToast]);
 
   const fetchIdRef = useRef(0);
   const [feed, setFeed] = useState([]);

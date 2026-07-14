@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { sanitizeText } from './platformUtils';
 
 /**
  * Henter totalt antal beskeder per kamp i bulk — bruges til at vise
@@ -13,15 +14,40 @@ export async function fetchMatchMessageCounts(matchIds) {
     : [];
   if (ids.length === 0) return {};
 
-  const { data, error } = await supabase
+  const uuidIds = ids;
+  const { data, error } = await supabase.rpc('fetch_match_message_counts', {
+    p_match_ids: uuidIds,
+  });
+
+  if (!error) {
+    const counts = {};
+    for (const row of data || []) {
+      if (row?.match_id != null) {
+        counts[String(row.match_id)] = Number(row.message_count) || 0;
+      }
+    }
+    return counts;
+  }
+
+  const msg = String(error.message || '').toLowerCase();
+  if (
+    !msg.includes('could not find the function')
+    && !msg.includes('does not exist')
+    && !msg.includes('schema cache')
+  ) {
+    throw error;
+  }
+
+  // Fallback for environments before migration is applied.
+  const { data: rows, error: fallbackError } = await supabase
     .from('match_messages')
     .select('match_id')
     .in('match_id', ids);
 
-  if (error) throw error;
+  if (fallbackError) throw fallbackError;
 
   const counts = {};
-  for (const row of data || []) {
+  for (const row of rows || []) {
     const key = String(row.match_id);
     counts[key] = (counts[key] || 0) + 1;
   }
@@ -50,7 +76,7 @@ export async function sendMatchMessage({
   senderAvatar = null,
   content,
 }) {
-  const trimmed = String(content || '').trim();
+  const trimmed = sanitizeText(String(content || '').trim());
   if (!trimmed) return null;
 
   const { data, error } = await supabase
@@ -82,7 +108,7 @@ export function subscribeToMatchMessages(matchId, onInsert) {
         table: 'match_messages',
         filter: `match_id=eq.${matchId}`,
       },
-      (payload) => onInsert(payload?.new || null)
+      (payload) => onInsert(payload?.new || null),
     )
     .subscribe();
 

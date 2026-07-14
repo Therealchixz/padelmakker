@@ -16,20 +16,20 @@ DECLARE
   v_creator uuid;
   v_joiner uuid;
 BEGIN
-  v_joiner := (SELECT auth.uid());
+  v_joiner := auth.uid();
   IF v_joiner IS NULL THEN
     RAISE EXCEPTION 'Ikke logget ind';
+  END IF;
+
+  IF to_regprocedure('public._rpc_rate_limit_or_raise(text,integer,integer)') IS NOT NULL THEN
+    PERFORM public._rpc_rate_limit_or_raise('match_creator_join_notify', 20, 3600);
   END IF;
 
   SELECT m.creator_id INTO v_creator
   FROM public.matches m
   WHERE m.id = p_match_id;
 
-  IF v_creator IS NULL THEN
-    RETURN;
-  END IF;
-
-  IF v_creator = v_joiner THEN
+  IF v_creator IS NULL OR v_creator = v_joiner THEN
     RETURN;
   END IF;
 
@@ -38,6 +38,17 @@ BEGIN
     WHERE mp.match_id = p_match_id AND mp.user_id = v_joiner
   ) THEN
     RAISE EXCEPTION 'Du er ikke tilmeldt denne kamp';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.notifications n
+    WHERE n.user_id = v_creator
+      AND n.match_id = p_match_id
+      AND n.type = 'match_join'
+      AND n.created_at > now() - interval '3 minutes'
+      AND n.body = left(coalesce(p_body, ''), 500)
+  ) THEN
+    RETURN;
   END IF;
 
   INSERT INTO public.notifications (user_id, type, title, body, match_id, read)

@@ -1,4 +1,5 @@
 import { MapPin, Swords } from 'lucide-react';
+import { safeHttpUrl } from '../../lib/safeUrl';
 
 export function ChatInviteCard({ invite, mine, onJoin, joining = false }) {
   if (!invite) return null;
@@ -41,13 +42,14 @@ export function ChatInviteCard({ invite, mine, onJoin, joining = false }) {
 
 export function ChatVenueCard({ payload }) {
   if (!payload) return null;
+  const bookingUrl = safeHttpUrl(payload.url);
   return (
     <div className="pm-chat-v2-rich-card pm-chat-v2-rich-card--venue">
       <div className="pm-chat-v2-rich-kicker">📍 Bane</div>
       <div className="pm-chat-v2-rich-title">{payload.venue}</div>
       {payload.city ? <div className="pm-chat-v2-rich-sub">{payload.city}</div> : null}
-      {payload.url ? (
-        <a href={payload.url} target="_blank" rel="noreferrer" className="pm-chat-v2-rich-link">
+      {bookingUrl ? (
+        <a href={bookingUrl} target="_blank" rel="noreferrer" className="pm-chat-v2-rich-link">
           Se booking
         </a>
       ) : null}

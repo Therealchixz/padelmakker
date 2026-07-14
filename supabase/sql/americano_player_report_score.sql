@@ -27,7 +27,7 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'not_authenticated');
   END IF;
 
-  SELECT * INTO v_match FROM public.americano_matches WHERE id = p_match_id;
+  SELECT * INTO v_match FROM public.americano_matches WHERE id = p_match_id FOR UPDATE;
   IF NOT FOUND THEN
     RETURN jsonb_build_object('success', false, 'error', 'match_not_found');
   END IF;

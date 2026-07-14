@@ -38,27 +38,17 @@ import {
   blurActiveMobileChatFocus,
   nudgeMobileChatViewportAfterKeyboard,
 } from '../lib/mobileChatViewport';
+import {
+  CONVO_CACHE_TTL_MS,
+  CONVO_CACHE_BY_USER,
+  MESSAGE_CACHE_TTL_MS,
+  MESSAGE_CACHE_BY_THREAD,
+  PROCESSED_UNREAD_MESSAGE_IDS,
+  setMessageThreadCache,
+} from '../lib/chatCacheUtils';
+import { buildProfileNameSearchOrFilter } from '../lib/postgrestFilterUtils';
 
 const CHAT_WINDOW_SIZE = 80;
-const CONVO_CACHE_TTL_MS = 30_000;
-const CONVO_CACHE_BY_USER = new Map();
-const MESSAGE_CACHE_TTL_MS = 20_000;
-const MESSAGE_CACHE_MAX_THREADS = 20;
-const MESSAGE_CACHE_BY_THREAD = new Map();
-
-function setMessageThreadCache(threadKey, messages) {
-  if (!threadKey) return;
-  MESSAGE_CACHE_BY_THREAD.set(threadKey, {
-    at: Date.now(),
-    ok: true,
-    messages: messages || [],
-  });
-  while (MESSAGE_CACHE_BY_THREAD.size > MESSAGE_CACHE_MAX_THREADS) {
-    const oldestKey = MESSAGE_CACHE_BY_THREAD.keys().next().value;
-    if (!oldestKey) break;
-    MESSAGE_CACHE_BY_THREAD.delete(oldestKey);
-  }
-}
 
 export function BeskedTab({ user, showToast, setTab, onMobileConversationStateChange }) {
   const location = useLocation();
@@ -188,7 +178,10 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       const nextLastMs = msg.created_at ? new Date(msg.created_at).getTime() : 0;
       const lastMessage = nextLastMs >= prevLastMs ? msg : existing?.lastMessage || msg;
       const isIncomingUnread = msg.receiver_id === user.id && msg.is_read === false;
-      const unread = incomingRead ? 0 : (existing?.unread || 0) + (isIncomingUnread ? 1 : 0);
+      const alreadyCounted = msg.id && PROCESSED_UNREAD_MESSAGE_IDS.has(msg.id);
+      const shouldCountUnread = isIncomingUnread && !alreadyCounted && !incomingRead;
+      if (shouldCountUnread && msg.id) PROCESSED_UNREAD_MESSAGE_IDS.add(msg.id);
+      const unread = incomingRead ? 0 : (existing?.unread || 0) + (shouldCountUnread ? 1 : 0);
       const nextConversation = { otherId, lastMessage, unread };
       const next = idx >= 0
         ? prev.map((c, i) => (i === idx ? nextConversation : c))
@@ -835,10 +828,15 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
       const requestId = ++composeSearchSeqRef.current;
       setComposeSearching(true);
       try {
+        const orFilter = buildProfileNameSearchOrFilter(q);
+        if (!orFilter) {
+          if (requestId === composeSearchSeqRef.current) setComposeResults([]);
+          return;
+        }
         const { data } = await supabase
           .from('profiles')
           .select('id, full_name, name, avatar')
-          .or(`full_name.ilike.%${q}%,name.ilike.%${q}%`)
+          .or(orFilter)
           .neq('id', user.id)
           .limit(8);
         if (requestId === composeSearchSeqRef.current) {

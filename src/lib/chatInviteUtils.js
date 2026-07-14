@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { buildMatchInvitePayload } from './chatMessageUtils';
+import { rpcJoinOpenMatch } from './matchJoinUtils';
 
 export async function fetchInvitableMatches(userId) {
   if (!userId) return [];
@@ -48,46 +49,40 @@ export async function joinMatchFromChatInvite({
   userEmail,
   userAvatar,
 }) {
-  const { data: existing } = await supabase
-    .from('match_players')
-    .select('id')
-    .eq('match_id', matchId)
-    .eq('user_id', userId)
+  const { data: matchRow, error: matchErr } = await supabase
+    .from('matches')
+    .select('id, status, match_type, current_players, max_players')
+    .eq('id', matchId)
     .maybeSingle();
+  if (matchErr) throw matchErr;
+  if (!matchRow) throw new Error('Kampen findes ikke længere.');
 
-  if (existing?.id) return { alreadyJoined: true };
-
-  const { data: players } = await supabase
-    .from('match_players')
-    .select('team')
-    .eq('match_id', matchId);
-
-  const team1 = (players || []).filter((p) => Number(p.team) === 1).length;
-  const team2 = (players || []).filter((p) => Number(p.team) === 2).length;
-  const teamNum = team1 <= team2 ? 1 : 2;
-
-  const { error } = await supabase.from('match_players').insert({
-    match_id: matchId,
-    user_id: userId,
-    user_name: userName || 'Spiller',
-    user_email: userEmail || null,
-    user_emoji: userAvatar || '🎾',
-    team: teamNum,
-  });
-
-  if (error) throw error;
-
-  const total = (players || []).length + 1;
-  const t1 = teamNum === 1 ? team1 + 1 : team1;
-  const t2 = teamNum === 2 ? team2 + 1 : team2;
-
-  if (t1 >= 2 && t2 >= 2) {
-    await supabase.from('matches').update({ status: 'full', current_players: 4, seeking_player: false }).eq('id', matchId);
-  } else {
-    await supabase.from('matches').update({ current_players: total }).eq('id', matchId);
+  const matchType = matchRow.match_type || 'open';
+  const status = (matchRow.status || 'open').toLowerCase();
+  if (matchType === 'closed') {
+    throw new Error('Denne kamp kræver godkendelse fra opretteren.');
+  }
+  if (!['open', 'full'].includes(status)) {
+    throw new Error('Kampen accepterer ikke tilmeldinger lige nu.');
+  }
+  const maxPlayers = Number(matchRow.max_players) || 4;
+  if (Number(matchRow.current_players) >= maxPlayers) {
+    throw new Error('Kampen er allerede fuld.');
   }
 
-  return { alreadyJoined: false, teamNum };
+  const result = await rpcJoinOpenMatch({
+    matchId,
+    team: null,
+    userName,
+    userEmail,
+    userAvatar,
+  });
+
+  return {
+    alreadyJoined: result?.already_joined === true,
+    teamNum: result?.team,
+    isFull: result?.is_full === true,
+  };
 }
 
 export async function fetchShareableCourts(limit = 80) {

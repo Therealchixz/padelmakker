@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import { fetchDmHiddenUserIds } from './userModeration';
 import { messagePreview } from './chatMessageUtils';
+import { sanitizeText } from './platformUtils';
 
 /** Seneste beskeder der dækker samtalelisten (undgår fuld tabel-scan). */
 const CONVERSATION_SCAN_LIMIT = 800;
@@ -121,7 +122,7 @@ export async function fetchMessages(userId, otherId) {
 export async function sendMessage(senderId, receiverId, content, options = {}) {
   const messageType = options.messageType || 'text';
   const payload = options.payload ?? null;
-  const trimmed = String(content || '').trim();
+  const trimmed = sanitizeText(String(content || '').trim());
   const preview = trimmed || messagePreview({ message_type: messageType, payload, content: trimmed });
 
   const { data, error } = await supabase

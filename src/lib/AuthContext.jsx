@@ -6,6 +6,7 @@ import { applyPendingAvatar } from './avatarUpload'
 import { DEFAULT_REGION } from './platformConstants'
 import { isSeekingActiveProfile } from './seekingFeedTtl'
 import { fetchPhoneVerificationExemptFromServer } from './phoneVerification'
+import { clearAllChatCaches } from './chatCacheUtils'
 import { BanNoticeModal } from '../components/BanNoticeModal'
 import { startPresence, stopPresence } from './presence'
 
@@ -334,6 +335,11 @@ export function AuthProvider({ children }) {
       })
   }, [enforceBanLogout, runProfileBackgroundSync])
 
+  const loadProfileRef = useRef(loadProfile)
+  loadProfileRef.current = loadProfile
+  const touchLastActiveRef = useRef(touchLastActive)
+  touchLastActiveRef.current = touchLastActive
+
   /**
    * Init + auth-state-listener: kører kun én gang ved mount.
    * Tidligere lå ban-realtime-subscription i samme effekt med user?.id i deps,
@@ -360,7 +366,7 @@ export function AuthProvider({ children }) {
         const s = result?.data?.session ?? null
         setSession(s)
         setUser(s?.user ?? null)
-        if (s?.user) loadProfile(s.user)
+        if (s?.user) loadProfileRef.current(s.user)
         else setProfile(null)
       } catch (e) {
         if (!cancelled) {
@@ -384,13 +390,14 @@ export function AuthProvider({ children }) {
           // TOKEN_REFRESHED sker ofte når fanen bliver aktiv igen — uden quiet bliver
           // profileLoading true og hele appen erstattes af spinner (blink).
           const quietRefresh = event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED'
-          loadProfile(s.user, { quiet: quietRefresh })
-          if (event === 'SIGNED_IN') void touchLastActive(s.user.id)
+          loadProfileRef.current(s.user, { quiet: quietRefresh })
+          if (event === 'SIGNED_IN') void touchLastActiveRef.current(s.user.id)
         } else {
           profileReqId.current += 1
           setProfile(null)
           profileIdRef.current = ''
           setProfileLoading(false)
+          clearAllChatCaches()
         }
       }
     )
@@ -402,7 +409,7 @@ export function AuthProvider({ children }) {
       const now = Date.now()
       if (now - lastTouch < 5 * 60 * 1000) return // maks. ét kald pr. 5 min
       lastTouch = now
-      void touchLastActive()
+      void touchLastActiveRef.current()
     }
 
     document.addEventListener('visibilitychange', onVisibilityChange)
@@ -412,7 +419,7 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe()
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  }, [loadProfile, touchLastActive])
+  }, [])
 
   /**
    * Ægte online-presence: meld brugeren til den fælles presence-kanal mens
