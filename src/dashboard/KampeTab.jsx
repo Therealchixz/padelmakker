@@ -1553,8 +1553,8 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     })();
   }, [refreshAdminPinSession, loadMatchChat]);
 
-  const openAdminPinGate = useCallback(({ matchId = null, expandTools = false } = {}) => {
-    adminPinPendingChatMatchIdRef.current = expandTools ? null : matchId;
+  const openAdminPinGate = useCallback(({ matchId = null, expandTools = false, openChat = false } = {}) => {
+    adminPinPendingChatMatchIdRef.current = openChat ? matchId : null;
     adminPinPendingExpandMatchIdRef.current = expandTools ? matchId : null;
     setAdminPinGateOpen(true);
   }, []);
@@ -2420,24 +2420,29 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     const canKickPlayers = kickablePlayers.length > 0;
     const needsAdminPinUnlock =
       isAdmin && !adminCanAct && !isCreator && status !== "completed" && status !== "in_progress";
+    const needsAdminPinForPage = isAdmin && !adminCanAct && !isPlayerInMatch;
     const showToolsAccordion =
-      adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch || canKickPlayers || needsAdminPinUnlock;
+      adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch || canKickPlayers;
     const hasManage =
-      canUseMatchChat || needsAdminPinForMatchChat || hasSecondaryLinks || showToolsAccordion;
+      canUseMatchChat || needsAdminPinForPage || hasSecondaryLinks || showToolsAccordion;
 
     if (!hasManage) return null;
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {needsAdminPinForMatchChat ? (
+        {needsAdminPinForPage ? (
           <div className="pm-feedback-panel pm-feedback-panel--warning" style={{ fontSize: "12px", lineHeight: 1.45, padding: "10px 12px" }}>
-            <div style={{ fontWeight: 700, marginBottom: "6px" }}>Match chat (admin)</div>
+            <div style={{ fontWeight: 700, marginBottom: "6px" }}>Admin-adgang påkrævet</div>
             <div style={{ marginBottom: "10px", color: theme.textMid }}>
-              For at læse kamp-chat skal du bekræfte din admin-kode — samme som i admin-panelet.
+              Du er ikke tilmeldt kampen. Bekræft din admin-kode for at læse chat og bruge admin-værktøjer.
             </div>
             <button
               type="button"
-              onClick={() => openAdminPinGate({ matchId: m.id })}
+              onClick={() => openAdminPinGate({
+                matchId: m.id,
+                expandTools: showToolsAccordion || needsAdminPinUnlock,
+                openChat: needsAdminPinForMatchChat,
+              })}
               style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "12px" }}
             >
               Indtast admin-PIN
@@ -2645,21 +2650,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             </button>
             {adminActionsOpen ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px 12px 12px", borderTop: "1px solid " + theme.warm + "33" }}>
-                {needsAdminPinUnlock ? (
-                  <div className="pm-feedback-panel pm-feedback-panel--warning" style={{ fontSize: "12px", lineHeight: 1.45, padding: "10px 12px" }}>
-                    <div style={{ fontWeight: 700, marginBottom: "6px" }}>Admin-PIN påkrævet</div>
-                    <div style={{ marginBottom: "10px", color: theme.textMid }}>
-                      For at slette eller styre andres kampe skal du bekræfte din admin-kode.
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openAdminPinGate({ matchId: m.id, expandTools: true })}
-                      style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "12px" }}
-                    >
-                      Indtast admin-PIN
-                    </button>
-                  </div>
-                ) : null}
                 {canKickPlayers ? (
                   <div className="pm-kampe-v2-kick-players">
                     <div style={{ fontSize: "12px", fontWeight: 700, color: theme.textMid, marginBottom: "8px" }}>
@@ -3019,7 +3009,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           matchId={detailMatch.id}
           busyId={busyId}
           isCreator={detailBundle.cardState.isCreator}
-          isAdmin={isAdmin}
+          isAdmin={adminCanAct}
           currentUserId={user.id}
           onSwitchTeam={switchTeam}
           onSwitchPlayerTeam={switchPlayerTeam}
