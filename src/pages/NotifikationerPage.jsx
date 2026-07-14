@@ -237,7 +237,7 @@ export function NotifikationerPage({ onBack }) {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, background: theme.bg, fontFamily: font }}>
+    <div className="pm-notifikationer-page" style={{ background: theme.bg, fontFamily: font }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'max(10px, calc(env(safe-area-inset-top) + 8px)) 14px 10px', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
         <button
           type="button"
@@ -259,7 +259,7 @@ export function NotifikationerPage({ onBack }) {
         )}
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', paddingTop: 12 }}>
+      <div className="pm-notifikationer-list" style={{ flex: 1, overflowY: 'auto', paddingTop: 12 }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '32px 16px', color: theme.textLight, fontSize: 13 }}>Indlæser…</div>
         ) : loadError ? (

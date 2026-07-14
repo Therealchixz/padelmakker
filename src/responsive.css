@@ -1633,7 +1633,16 @@ button,
   min-height: 0;
   max-width: none;
   margin: 0;
-  padding: 0;
+  padding-left: 0;
+  padding-right: 0;
+  width: 100%;
+}
+
+.pm-notifikationer-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   width: 100%;
 }
 
@@ -1742,9 +1751,13 @@ button,
     padding-top: max(0px, env(safe-area-inset-top));
   }
 
-  .pm-dash-main--notifikationer {
+  .pm-dash-main.pm-dash-main--notifikationer {
     padding-top: max(0px, env(safe-area-inset-top));
-    padding-bottom: min(calc(79px + env(safe-area-inset-bottom)), 119px);
+    padding-bottom: 0;
+  }
+
+  .pm-notifikationer-list {
+    padding-bottom: calc(12px + 72px + env(safe-area-inset-bottom));
   }
 
   /* Mobil chat: portal-overlay efter https://github.com/mattpilott/ios-chat */
