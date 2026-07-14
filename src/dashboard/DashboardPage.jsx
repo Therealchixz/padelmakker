@@ -772,6 +772,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const [accountPos, setAccountPos] = useState(null);
   const [isMobileView, setIsMobileView] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
   const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
+  const [kampeCreatePanelOpen, setKampeCreatePanelOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackCategory, setFeedbackCategory] = useState(FEEDBACK_DEFAULT_CATEGORY);
   const [feedbackPriority, setFeedbackPriority] = useState(FEEDBACK_DEFAULT_PRIORITY);
@@ -1368,7 +1369,8 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
   const hideMobileBottomNavForChat = isMobileView && tab === "beskeder" && mobileConversationOpen;
   const hideMobileBottomNavForKampeDetail = isMobileView && isKampeDetailRoute(location.pathname);
-  const hideMobileBottomNav = hideMobileBottomNavForChat || hideMobileBottomNavForKampeDetail;
+  const hideMobileBottomNavForKampeCreate = isMobileView && tab === "kampe" && kampeCreatePanelOpen;
+  const hideMobileBottomNav = hideMobileBottomNavForChat || hideMobileBottomNavForKampeDetail || hideMobileBottomNavForKampeCreate;
 
   return (
     <div
@@ -1624,7 +1626,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
       </div>
 
-      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${hideMobileBottomNavForChat ? " pm-dash-main--chat" : ""}${hideMobileBottomNavForKampeDetail ? " pm-dash-main--kampe-detail" : ""}`}>
+      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${hideMobileBottomNavForChat ? " pm-dash-main--chat" : ""}${hideMobileBottomNavForKampeDetail ? " pm-dash-main--kampe-detail" : ""}${hideMobileBottomNavForKampeCreate ? " pm-dash-main--kampe-create" : ""}`}>
         <Suspense
           fallback={
             <div
@@ -1644,7 +1646,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
           {tab === "hjem" && <HomeTabLazy user={user} setTab={setTab} showToast={showToast} />}
             {tab === "makkere"  && <MakkereTabLazy user={user} showToast={showToast} />}
             {tab === "baner"    && <BanerTabLazy />}
-            {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive />}
+            {tab === "kampe"    && <KampeTabLazy user={user} showToast={showToast} tabActive onCreatePanelChange={setKampeCreatePanelOpen} />}
             {tab === "ranking"  && <RankingTabLazy user={user} />}
             {tab === "beskeder" && (
               <BeskedTabLazy

@@ -232,7 +232,7 @@ function buildIcsEvent({ uid, title, description, location, start, end, url }) {
   return lines.join('\r\n');
 }
 
-export function KampeTab({ user, showToast, tabActive = true }) {
+export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChange }) {
   const navigate = useNavigate();
   const location = useLocation();
   const kampeDetailRoute = parseKampeDetailRoute(location.pathname);
@@ -2796,6 +2796,12 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     (kampeFormat === "padel" && showCreate) ||
     (kampeFormat === "americano" && showAmericanoCreate) ||
     (kampeFormat === "liga" && showLigaCreate);
+
+  useEffect(() => {
+    onCreatePanelChange?.(showCreatePanel);
+    return () => onCreatePanelChange?.(false);
+  }, [showCreatePanel, onCreatePanelChange]);
+
   const handleToolbarCreate = !loadingMatches && !showCreatePanel
     ? () => {
         if (kampeFormat === "padel") setShowCreate(true);
