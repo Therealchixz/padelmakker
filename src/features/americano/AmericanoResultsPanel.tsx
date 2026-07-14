@@ -20,7 +20,7 @@ import {
   getMexicanoTotalRounds,
   isMexicanoFormat,
 } from '../../lib/mexicanoSchedule.js'
-import { getTournamentFormatLabel } from './americanoDisplayUtils'
+import { getAmericanoRoundProgressFromMatches, getAmericanoTournamentMeta, getTournamentFormatLabel } from './americanoDisplayUtils'
 import { orderParticipantsForSchedule } from '../../lib/americanoParticipantOrder'
 
 const font = 'var(--pm-font)'
@@ -656,6 +656,26 @@ export function AmericanoResultsPanel({
     return null
   }, null as number | null)
 
+  const { totalRounds: plannedTotalRounds } = useMemo(
+    () => getAmericanoTournamentMeta(tournament),
+    [tournament],
+  )
+  const roundProgress = useMemo(
+    () => getAmericanoRoundProgressFromMatches(matches),
+    [matches],
+  )
+  const totalRoundsDisplay = Math.max(
+    plannedTotalRounds,
+    roundProgress?.totalRounds ?? 0,
+    ...matchesDisplay.map((m) => m.round_number),
+    0,
+  )
+  const standingsRoundLabel = activeRoundNumber != null && totalRoundsDisplay > 0
+    ? `Runde ${activeRoundNumber} af ${totalRoundsDisplay}`
+    : matchesDisplay.length > 0 && roundProgress?.completedRounds === roundProgress?.totalRounds
+      ? `Alle ${totalRoundsDisplay} runder afsluttet`
+      : null
+
   const activeRoundRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -1026,10 +1046,12 @@ export function AmericanoResultsPanel({
       {/* ── STILLING ── */}
       {tab === 'stilling' ? (
         <>
-          {myActiveMatch ? (
+          {myActiveMatch && activeRoundNumber != null ? (
             <div style={{ marginBottom: 18 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: c.text, marginBottom: 8 }}>
-                {myOnCourtNow ? `🎾 Din bane: Bane ${myActiveMatch.court_index + 1}` : 'Din runde'}
+                {myOnCourtNow
+                  ? `🎾 Runde ${activeRoundNumber} af ${totalRoundsDisplay} · Bane ${myActiveMatch.court_index + 1}`
+                  : `Runde ${activeRoundNumber} af ${totalRoundsDisplay} · Du sidder over`}
               </div>
               {myOnCourtNow ? (
                 renderScoreCard(myActiveMatch, myActiveMatchIdx, { hideHeader: true })
@@ -1041,9 +1063,14 @@ export function AmericanoResultsPanel({
             </div>
           ) : null}
 
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10, gap: 8, flexWrap: 'wrap' }}>
             <div style={{ fontWeight: 700, color: c.text, fontSize: 14 }}>Live Stilling</div>
-            <div style={{ fontSize: 11, color: c.muted }}>Sum af kampoint</div>
+            <div style={{ fontSize: 11, color: c.muted, textAlign: 'right' }}>
+              {standingsRoundLabel ? (
+                <div style={{ fontWeight: 700, color: c.text, marginBottom: 2 }}>{standingsRoundLabel}</div>
+              ) : null}
+              Sum af kampoint
+            </div>
           </div>
           {leaderboardList}
         </>
