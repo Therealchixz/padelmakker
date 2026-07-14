@@ -27,12 +27,12 @@ function computeSetScoreStr(mr) {
     if (n1 + n2 === 0) break;
     parts.push(`${n1}-${n2}`);
   }
-  return parts.length > 0 ? parts.join(' ¬∑ ') : null;
+  return parts.length > 0 ? parts.join(' ù ') : null;
 }
 
 const SLOTS_PER_TEAM = 2;
 
-/** Kort holdnavn til VS-r√¶kken, fx "Dig & Mads". */
+/** Kort holdnavn til VS-rùkken, fx "Dig & Mads". */
 function teamNameLabel(players, profilesById, currentUserId) {
   const names = (players || []).map((p) => {
     if (currentUserId != null && String(p.user_id) === String(currentUserId)) return 'Dig';
@@ -43,13 +43,13 @@ function teamNameLabel(players, profilesById, currentUserId) {
   return names.join(' & ');
 }
 
-/** Always two slots per hold s√• listen visuelt 2 vs 2, ikke √©n lang r√¶kke. */
+/** Always two slots per hold sù listen visuelt 2 vs 2, ikke ùn lang rùkke. */
 function teamDisplaySlots(players) {
   const filled = (players || []).slice(0, SLOTS_PER_TEAM);
   return Array.from({ length: SLOTS_PER_TEAM }, (_, i) => filled[i] ?? null);
 }
 
-/** Fordel spillere p√• tv√¶rs af hold hvis DB har >2 p√• √©t hold (√¶ldre data). */
+/** Fordel spillere pù tvùrs af hold hvis DB har >2 pù ùt hold (ùldre data). */
 function balanceTeamsForListDisplay(t1, t2) {
   const team1 = t1 || [];
   const team2 = t2 || [];
@@ -125,7 +125,48 @@ export function KampeMatchListCard({
       : null;
   const t1Slots = teamDisplaySlots(t1);
   const t2Slots = teamDisplaySlots(t2);
-  const defaultAvatar = 'üéæ';
+  const defaultAvatar = '??';
+  const listAvatarSize = 28;
+
+  const renderTeamSlot = (p, i, teamKey, size = listAvatarSize) => {
+    if (p) {
+      return (
+        <AvatarCircle
+          key={p.user_id || `${teamKey}-${i}`}
+          avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || defaultAvatar}
+          size={size}
+          emojiSize={size <= 24 ? '10px' : '12px'}
+          style={{ zIndex: i + 1 }}
+        />
+      );
+    }
+    return (
+      <span
+        key={`${teamKey}-empty-${i}`}
+        className="pm-kampe-v2-list-avatar-slot--empty"
+        style={size !== listAvatarSize ? { width: size, height: size } : undefined}
+        aria-hidden
+      />
+    );
+  };
+
+  const renderSingleTeam = (slots, teamKey, size = listAvatarSize) => (
+    <div className={`pm-kampe-v2-list-team pm-kampe-v2-list-team--${teamKey}`}>
+      {slots.map((p, i) => renderTeamSlot(p, i, teamKey, size))}
+    </div>
+  );
+
+  const renderListTeams = (size = listAvatarSize) => (
+    <div className="pm-kampe-v2-list-teams">
+      <div className="pm-kampe-v2-list-team pm-kampe-v2-list-team--t1">
+        {t1Slots.map((p, i) => renderTeamSlot(p, i, 't1', size))}
+      </div>
+      <span className="pm-kampe-v2-list-teams-vs" aria-hidden>vs</span>
+      <div className="pm-kampe-v2-list-team pm-kampe-v2-list-team--t2">
+        {t2Slots.map((p, i) => renderTeamSlot(p, i, 't2', size))}
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -134,7 +175,7 @@ export function KampeMatchListCard({
       className={`pm-kampe-v2-list-card${dull ? ' pm-kampe-v2-list-card--dull' : ''}${unreadCount ? ' pm-kampe-v2-list-card--unread' : ''}`}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
-      aria-label={`√Öbn kamp: ${venue}`}
+      aria-label={`ùbn kamp: ${venue}`}
     >
       {isCompleted ? (
         <div className="pm-kampe-v2-list-card-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -143,7 +184,7 @@ export function KampeMatchListCard({
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--pm-text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
-              {formatMatchDateHeadlineDa(match.date)} ¬∑ {venue}
+              {formatMatchDateHeadlineDa(match.date)} ù {venue}
             </span>
             {unreadCount > 0 ? (
               <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
@@ -209,19 +250,7 @@ export function KampeMatchListCard({
           marginTop: 4,
         }}>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              {t1Slots.map((p, i) => p ? (
-                <AvatarCircle
-                  key={p.user_id || `vs-t1-${i}`}
-                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || defaultAvatar}
-                  size={24}
-                  emojiSize="10px"
-                  style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid var(--pm-surface)', zIndex: i + 1 }}
-                />
-              ) : (
-                <span key={`vs-t1-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-surface-muted)', border: '2px solid var(--pm-surface)', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
-              ))}
-            </div>
+            {renderSingleTeam(t1Slots, 't1', 24)}
             <span style={{ fontSize: 12, fontWeight: 700, color: didWin ? 'var(--pm-text)' : 'var(--pm-text-mid)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
               {teamNameLabel(t1, profilesById, currentUserId)}
             </span>
@@ -230,19 +259,7 @@ export function KampeMatchListCard({
             {setScoreStr}
           </div>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-            <div style={{ display: 'flex', justifyContent: 'center', direction: 'rtl' }}>
-              {t2Slots.map((p, i) => p ? (
-                <AvatarCircle
-                  key={p.user_id || `vs-t2-${i}`}
-                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || defaultAvatar}
-                  size={24}
-                  emojiSize="10px"
-                  style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid var(--pm-surface)', zIndex: i + 1 }}
-                />
-              ) : (
-                <span key={`vs-t2-empty-${i}`} style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--pm-surface-muted)', border: '2px solid var(--pm-surface)', marginLeft: i > 0 ? -7 : 0, display: 'inline-block', flexShrink: 0 }} aria-hidden />
-              ))}
-            </div>
+            {renderSingleTeam(t2Slots, 't2', 24)}
             <span style={{ fontSize: 12, fontWeight: 700, color: didLose ? 'var(--pm-text-mid)' : 'var(--pm-text)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
               {teamNameLabel(t2, profilesById, currentUserId)}
             </span>
@@ -254,23 +271,7 @@ export function KampeMatchListCard({
         {!setScoreStr ? (
           <div className="pm-kampe-v2-list-participants">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} aria-label={`${filledCount} af ${maxPlayers} spillere`}>
-              <div style={{ display: 'flex' }}>
-                {[...t1Slots, ...t2Slots].map((p, i) => p ? (
-                  <AvatarCircle
-                    key={p.user_id || `slot-${i}`}
-                    avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || defaultAvatar}
-                    size={27}
-                    emojiSize="10px"
-                    style={{ marginLeft: i > 0 ? -9 : 0, border: '2px solid var(--pm-surface)', zIndex: i + 1 }}
-                  />
-                ) : (
-                  <span
-                    key={`empty-${i}`}
-                    style={{ width: 27, height: 27, borderRadius: '50%', background: 'var(--pm-surface-muted)', border: '2px solid var(--pm-surface)', marginLeft: i > 0 ? -9 : 0, zIndex: i + 1, display: 'inline-block', flexShrink: 0 }}
-                    aria-hidden
-                  />
-                ))}
-              </div>
+              {renderListTeams()}
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-text-light)' }}>
                 {filledCount}/{maxPlayers} spillere
               </span>
@@ -322,12 +323,12 @@ export function KampeMatchListCard({
           <span
             className={`pm-kampe-v2-list-elo-result${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
           >
-            Elo {eloDelta >= 0 ? '+' : '‚àí'}{Math.abs(eloDelta)}
+            Elo {eloDelta >= 0 ? '+' : '?'}{Math.abs(eloDelta)}
           </span>
         ) : null}
         {setScoreStr ? (
           <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--pm-accent)', marginLeft: 'auto' }}>
-            Se detaljer ‚Üí
+            Se detaljer ?
           </span>
         ) : null}
       </div>

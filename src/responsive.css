@@ -7625,6 +7625,10 @@ button,
   min-height: 28px;
 }
 
+.pm-kampe-v2-list-team > * {
+  position: relative;
+}
+
 .pm-kampe-v2-list-team > * + * {
   margin-left: -8px;
 }
@@ -7632,11 +7636,13 @@ button,
 .pm-kampe-v2-list-team--t1 > .pm-avatar-circle {
   border: 1.5px solid color-mix(in srgb, var(--pm-accent) 50%, var(--pm-border));
   background: color-mix(in srgb, var(--pm-accent) 8%, var(--pm-surface));
+  box-sizing: border-box;
 }
 
 .pm-kampe-v2-list-team--t2 > .pm-avatar-circle {
   border: 1.5px solid color-mix(in srgb, var(--pm-blue) 50%, var(--pm-border));
   background: color-mix(in srgb, var(--pm-blue) 8%, var(--pm-surface));
+  box-sizing: border-box;
 }
 
 .pm-kampe-v2-list-teams-vs {
