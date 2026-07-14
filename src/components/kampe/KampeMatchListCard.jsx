@@ -1,5 +1,5 @@
 import { AvatarCircle } from '../AvatarCircle';
-import { matchTimeLabel, formatMatchDateHeadlineDa } from '../../lib/matchDisplayUtils';
+import { matchTimeLabel } from '../../lib/matchDisplayUtils';
 import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
 import { formatMatchLevelRangeParts } from '../../lib/padelLevelUtils';
 
@@ -172,6 +172,8 @@ export function KampeMatchListCard({
     </div>
   );
 
+  const displayBadge = isCompleted && completedBadge ? completedBadge : statusBadge;
+
   return (
     <div
       role="button"
@@ -181,64 +183,48 @@ export function KampeMatchListCard({
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
       aria-label={`\u00C5bn kamp: ${venue}`}
     >
-      {isCompleted ? (
-        <div className="pm-kampe-v2-list-card-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span className={`pm-kampe-v2-badge ${badgeToneClass((completedBadge || statusBadge).tone)}`}>
-            {(completedBadge || statusBadge).label}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--pm-text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
-              {formatMatchDateHeadlineDa(match.date)} {MIDDOT} {venue}
-            </span>
-            {unreadCount > 0 ? (
-              <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
-            ) : null}
+      <div className="pm-kampe-v2-list-card-top">
+        {badgeDay != null ? (
+          <div className="pm-kampe-v2-list-date-badge">
+            <b>{badgeDay}</b>
+            <span>{badgeMon}</span>
           </div>
-        </div>
-      ) : (
-        <div className="pm-kampe-v2-list-card-top">
-          {badgeDay != null ? (
-            <div style={{ width: 46, flexShrink: 0, textAlign: 'center', background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-border)', borderRadius: 10, padding: '6px 0' }}>
-              <b style={{ display: 'block', fontSize: 16, fontWeight: 700, lineHeight: 1.1 }}>{badgeDay}</b>
-              <span style={{ fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', color: 'var(--pm-text-light)', letterSpacing: '0.5px' }}>{badgeMon}</span>
-            </div>
-          ) : null}
-          <div className="pm-kampe-v2-list-card-main">
-            <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary" style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--pm-text)' }}>
-              {venue}
-            </div>
-            <div className="pm-kampe-v2-list-meta">
-              <div className="pm-kampe-v2-list-meta-time">
-                {isInProgress && minutesPlayed != null ? (
-                  <span className="pm-kampe-v2-list-meta-live">
-                    {minutesPlayed > 0 ? `${minutesPlayed} min spillet` : 'Netop startet'}
-                  </span>
-                ) : (
-                  <>Kl. {timeLabel}</>
-                )}
-                {match.duration ? (
-                  <span className="pm-kampe-v2-list-meta-duration">{match.duration} min</span>
-                ) : null}
-              </div>
-              {levelRangeParts ? (
-                <div className="pm-kampe-v2-list-meta-levels">
-                  <span className="pm-kampe-v2-list-meta-chip pm-kampe-v2-list-meta-chip--elo">{levelRangeParts.elo}</span>
-                  <span className="pm-kampe-v2-list-meta-chip pm-kampe-v2-list-meta-chip--niveau">{levelRangeParts.niveau}</span>
-                </div>
+        ) : null}
+        <div className="pm-kampe-v2-list-card-main">
+          <div className="pm-kampe-v2-list-datetime pm-kampe-v2-list-datetime--primary">
+            {venue}
+          </div>
+          <div className="pm-kampe-v2-list-meta">
+            <div className="pm-kampe-v2-list-meta-time">
+              {isInProgress && minutesPlayed != null ? (
+                <span className="pm-kampe-v2-list-meta-live">
+                  {minutesPlayed > 0 ? `${minutesPlayed} min spillet` : 'Netop startet'}
+                </span>
+              ) : (
+                <>Kl. {timeLabel}</>
+              )}
+              {match.duration ? (
+                <span className="pm-kampe-v2-list-meta-duration">{match.duration} min</span>
               ) : null}
             </div>
-          </div>
-          <div className="pm-kampe-v2-list-badges">
-            <span className={`pm-kampe-v2-badge ${badgeToneClass(statusBadge.tone)}`}>
-              {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
-              {statusBadge.label}
-            </span>
-            {unreadCount > 0 ? (
-              <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
+            {!isCompleted && levelRangeParts ? (
+              <div className="pm-kampe-v2-list-meta-levels">
+                <span className="pm-kampe-v2-list-meta-chip pm-kampe-v2-list-meta-chip--elo">{levelRangeParts.elo}</span>
+                <span className="pm-kampe-v2-list-meta-chip pm-kampe-v2-list-meta-chip--niveau">{levelRangeParts.niveau}</span>
+              </div>
             ) : null}
           </div>
         </div>
-      )}
+        <div className="pm-kampe-v2-list-badges">
+          <span className={`pm-kampe-v2-badge ${badgeToneClass(displayBadge.tone)}`}>
+            {displayBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
+            {displayBadge.label}
+          </span>
+          {unreadCount > 0 ? (
+            <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
+          ) : null}
+        </div>
+      </div>
 
       {attentionReason || statusNote ? (
         <div className={`pm-kampe-v2-list-note${attentionReason ? ' pm-kampe-v2-list-note--danger' : ''}`}>
@@ -271,8 +257,8 @@ export function KampeMatchListCard({
         </div>
       ) : null}
 
-      <div className={`pm-kampe-v2-list-card-bottom${isCompleted ? ' pm-kampe-v2-list-card-bottom--completed' : ' pm-kampe-v2-list-card-bottom--open'}`}>
-        {!setScoreStr ? (
+      <div className="pm-kampe-v2-list-card-bottom pm-kampe-v2-list-card-bottom--open">
+        {!setScoreStr && !isCompleted ? (
           <div
             className="pm-kampe-v2-list-roster"
             aria-label={`${filledCount} af ${maxPlayers} spillere`}
@@ -282,12 +268,12 @@ export function KampeMatchListCard({
               <span className="pm-kampe-v2-list-roster-count">
                 {filledCount}/{maxPlayers} spillere
               </span>
-              {!isCompleted && left > 0 ? (
+              {left > 0 ? (
                 <span className="pm-kampe-v2-list-roster-open">
                   {MIDDOT} {left} {left === 1 ? 'plads' : 'pladser'} ledig{left === 1 ? '' : 'e'}
                 </span>
               ) : null}
-              {!isCompleted && isFull && !joined ? (
+              {isFull && !joined ? (
                 <span className="pm-kampe-v2-list-roster-full">{MIDDOT} Fuldt</span>
               ) : null}
             </div>
@@ -311,17 +297,21 @@ export function KampeMatchListCard({
             </span>
           </div>
         ) : null}
-        {showMyEloDelta ? (
-          <span
-            className={`pm-kampe-v2-list-elo-result${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
-          >
-            Elo {eloDelta >= 0 ? '+' : MINUS_SIGN}{Math.abs(eloDelta)}
-          </span>
+        {isCompleted && showMyEloDelta ? (
+          <div className="pm-kampe-v2-list-roster-meta pm-kampe-v2-list-roster-meta--center">
+            <span
+              className={`pm-kampe-v2-list-elo-result${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
+            >
+              Elo {eloDelta >= 0 ? '+' : MINUS_SIGN}{Math.abs(eloDelta)}
+            </span>
+          </div>
         ) : null}
-        {setScoreStr ? (
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--pm-accent)', marginLeft: 'auto' }}>
-            Se detaljer {ARROW_RIGHT}
-          </span>
+        {isCompleted ? (
+          <div className="pm-kampe-v2-list-card-cta-row">
+            <span className="pm-kampe-v2-list-cta pm-kampe-v2-list-cta--block pm-kampe-v2-list-cta--secondary">
+              Se detaljer {ARROW_RIGHT}
+            </span>
+          </div>
         ) : null}
       </div>
     </div>

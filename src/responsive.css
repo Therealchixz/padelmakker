@@ -7356,6 +7356,32 @@ button,
   width: 100%;
 }
 
+.pm-kampe-v2-list-date-badge {
+  width: 46px;
+  flex-shrink: 0;
+  text-align: center;
+  background: var(--pm-surface-muted);
+  border: 1px solid var(--pm-border);
+  border-radius: 10px;
+  padding: 6px 0;
+}
+
+.pm-kampe-v2-list-date-badge b {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--pm-text);
+}
+
+.pm-kampe-v2-list-date-badge span {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--pm-text-light);
+  letter-spacing: 0.5px;
+}
+
 .pm-kampe-v2-list-card-main {
   display: flex;
   flex-direction: column;
@@ -7629,8 +7655,13 @@ button,
   padding-top: 10px;
 }
 
+.pm-kampe-v2-list-roster-meta--center {
+  width: 100%;
+  justify-content: center;
+}
+
 .pm-kampe-v2-list-card-bottom--completed {
-  align-items: flex-end;
+  align-items: stretch;
 }
 
 .pm-kampe-v2-list-roster {
