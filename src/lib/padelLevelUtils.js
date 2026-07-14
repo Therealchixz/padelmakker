@@ -66,15 +66,22 @@ export function formatEloRange(eloMin, eloMax) {
   return `${lo} – ${hi} ELO`;
 }
 
-/**
- * Kamp-niveau fra gemt ELO-interval: både ELO og ca. Playtomic-niveau.
- * ELO er det der gemmes og matcher internt; niveau er det brugerne typisk tænker i.
- */
-export function formatMatchLevelRangeLabel(eloMin, eloMax) {
+/** Opdelt ELO + Playtomic-niveau til kompakte UI-chips. */
+export function formatMatchLevelRangeParts(eloMin, eloMax) {
   const levelRange = eloRangeToLevelRange(eloMin, eloMax);
-  const eloLabel = formatEloRange(eloMin, eloMax);
-  if (!levelRange || !eloLabel) return null;
-  return `${eloLabel} · ≈ Niveau ${formatPlaytomicLevelRange(levelRange.min, levelRange.max)}`;
+  const elo = formatEloRange(eloMin, eloMax);
+  if (!levelRange || !elo) return null;
+  return {
+    elo,
+    niveau: `Niveau ${formatPlaytomicLevelRange(levelRange.min, levelRange.max)}`,
+  };
+}
+
+/** Én linje — bruges i opsummeringer og kvitteringer. */
+export function formatMatchLevelRangeLabel(eloMin, eloMax) {
+  const parts = formatMatchLevelRangeParts(eloMin, eloMax);
+  if (!parts) return null;
+  return `${parts.elo} · ${parts.niveau}`;
 }
 
 /** Visning af profilniveau: Playtomic-tal (fx 2,3), evt. med band-label i parentes. */
