@@ -1465,6 +1465,13 @@ button,
   white-space: nowrap;
 }
 
+/* Desktop: notifikationsklokke i konto-dropdown — skjul duplikat på Hjem-topbar */
+@media (min-width: 769px) {
+  .pm-home-bell {
+    display: none;
+  }
+}
+
 .pm-dash-header-actions-mobile {
   display: none;
 }

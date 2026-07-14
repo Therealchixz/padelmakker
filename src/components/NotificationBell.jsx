@@ -74,7 +74,14 @@ export function NotificationBell({ tourForceOpen = false }) {
   const panelRef = useRef(null);
   const realtimeRetryTimerRef = useRef(null);
   const loadSeqRef = useRef(0);
+  const loadRef = useRef(() => {});
   const pushMessageTimerRef = useRef(null);
+  /** Unikt pr. mount — undgår Supabase-kanal-kollision ved dropdown remount. */
+  const realtimeInstanceRef = useRef(
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `nb-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+  );
 
   // Push notification opt-in state
   const [pushSupported, setPushSupported] = useState(() => isPushSupported());
@@ -236,6 +243,8 @@ export function NotificationBell({ tourForceOpen = false }) {
     }
   }, [userId]);
 
+  loadRef.current = load;
+
   useEffect(() => {
     load();
   }, [load]);
@@ -250,13 +259,18 @@ export function NotificationBell({ tourForceOpen = false }) {
   useEffect(() => {
     if (!userId) return undefined;
     let cancelled = false;
+    const channelName = `notifs-${userId}-${realtimeInstanceRef.current}-v${realtimeVersion}`;
+    const stale = supabase.getChannels().find((ch) => ch.topic === `realtime:${channelName}`);
+    if (stale) {
+      try { supabase.removeChannel(stale); } catch { /* ignore */ }
+    }
     const channel = supabase
-      .channel(`notifs-${userId}-${realtimeVersion}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: "user_id=eq." + userId }, () => load())
+      .channel(channelName)
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: "user_id=eq." + userId }, () => loadRef.current())
       .subscribe((status) => {
         if (cancelled) return;
         if (status === "SUBSCRIBED") {
-          void load();
+          void loadRef.current();
           return;
         }
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
@@ -274,7 +288,7 @@ export function NotificationBell({ tourForceOpen = false }) {
       }
       try { supabase.removeChannel(channel); } catch { /* ignore */ }
     };
-  }, [userId, load, realtimeVersion]);
+  }, [userId, realtimeVersion]);
 
   // Tjek om push er understøttet og allerede aktiveret
   useEffect(() => {

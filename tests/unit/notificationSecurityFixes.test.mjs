@@ -106,6 +106,8 @@ test('NotificationBell invalidates prefs cache and rolls back on error', () => {
   assert.match(src, /setNotifPrefs\(prevPrefs\)/);
   assert.match(src, /\.eq\("user_id", userId\)/);
   assert.match(src, /loadSeqRef/);
+  assert.match(src, /realtimeInstanceRef/);
+  assert.match(src, /loadRef\.current/);
   assert.match(src, /addDismissedIds\(userId, ids\)/);
   const deleteFn = src.slice(src.indexOf('const deleteNotificationItem'));
   const successDismiss = deleteFn.indexOf('addDismissedIds(userId, ids)');
