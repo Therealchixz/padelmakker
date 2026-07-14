@@ -195,6 +195,46 @@
   margin-bottom: 2px;
 }
 
+.pm-kd-creator-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: default;
+}
+
+button.pm-kd-creator-row {
+  cursor: pointer;
+  background: var(--pm-surface);
+  border: 1px solid var(--pm-kd-card-border);
+  box-shadow: var(--pm-kd-card-shadow);
+}
+
+button.pm-kd-creator-row:hover {
+  background: color-mix(in srgb, var(--pm-accent) 5%, var(--pm-surface));
+}
+
+.pm-kd-creator-copy {
+  min-width: 0;
+}
+
+.pm-kd-creator-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-text);
+}
+
+.pm-kd-creator-sub {
+  font-size: 12px;
+  color: var(--pm-text-mid);
+  margin-top: 2px;
+}
+
 /* ── Sektionsoverskrift (mockup .section-h) ── */
 .pm-kd-section-h {
   display: flex;

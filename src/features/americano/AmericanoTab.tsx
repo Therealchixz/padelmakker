@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/AuthContext'
 import { useConfirm } from '../../lib/ConfirmDialogProvider'
 import { fetchCourtsCached } from '../../lib/courtsCache'
+import { fetchProfilesByIdMap } from '../../lib/profileQueries'
 import { CreateAmericanoTournamentForm, type CreatedTournamentInfo } from './CreateAmericanoTournamentForm'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { AmericanoListCard } from './AmericanoListCard'
@@ -185,6 +186,7 @@ export function AmericanoTab({
   const [openManageTools, setOpenManageTools] = useState<Set<string>>(() => new Set())
   const [participantSnippets, setParticipantSnippets] = useState<Record<string, ProfileSnippet>>({})
   const [creatorAreasByUserId, setCreatorAreasByUserId] = useState<Record<string, string>>({})
+  const [creatorProfilesByUserId, setCreatorProfilesByUserId] = useState<Record<string, object>>({})
   const [participantStatsPick, setParticipantStatsPick] = useState<{
     userId: string
     name: string
@@ -237,16 +239,15 @@ export function AmericanoTab({
 
       const creatorIds = [...new Set(tournamentList.map((t) => t.creator_id).filter(Boolean))]
       if (creatorIds.length > 0) {
-        const { data: creatorProfiles } = await supabase
-          .from('profiles')
-          .select('id, area')
-          .in('id', creatorIds)
+        const creatorProfiles = await fetchProfilesByIdMap(creatorIds.map(String))
+        setCreatorProfilesByUserId(creatorProfiles)
         const areaMap: Record<string, string> = {}
-        ;(creatorProfiles || []).forEach((p: { id: string; area?: string | null }) => {
-          areaMap[String(p.id)] = String(p.area || '')
-        })
+        for (const [id, profile] of Object.entries(creatorProfiles)) {
+          areaMap[id] = String((profile as { area?: string | null }).area || '')
+        }
         setCreatorAreasByUserId(areaMap)
       } else {
+        setCreatorProfilesByUserId({})
         setCreatorAreasByUserId({})
       }
       if (!myRes.error && myRes.data) {
@@ -1327,6 +1328,18 @@ export function AmericanoTab({
                   }
                 : null
             }
+            creatorUserId={t.creator_id}
+            creatorProfile={
+              creatorProfilesByUserId[String(t.creator_id)]
+              ?? participantSnippets[t.creator_id]
+              ?? null
+            }
+            currentUserId={profileId}
+            onCreatorClick={(profile) => {
+              const id = String(profile?.id || t.creator_id)
+              const name = String(profile?.full_name || profile?.name || 'Spiller')
+              openParticipantProfile(id, name)
+            }}
           />
         )
       })() : null}

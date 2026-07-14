@@ -18,6 +18,7 @@ import { computeStandings, generatePairings, assignDivisionsByElo, groupByDivisi
 import { getLigaBadge } from '../lib/ligaDisplayUtils';
 import { kampeCreateHint } from '../lib/kampeCreateHint';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
+import { fetchProfilesByIdMap } from '../lib/profileQueries';
 import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
@@ -137,6 +138,7 @@ export function LigaTab({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [creatorAreasByUserId, setCreatorAreasByUserId] = useState({});
+  const [creatorProfilesByUserId, setCreatorProfilesByUserId] = useState({});
   const [busyId, setBusyId] = useState(null);
   const [openManageTools, setOpenManageTools] = useState({});
 
@@ -187,16 +189,15 @@ export function LigaTab({
 
       const creatorIds = [...new Set(lgList.map((l) => l.created_by).filter(Boolean))];
       if (creatorIds.length > 0) {
-        const { data: creatorProfiles } = await supabase
-          .from('profiles')
-          .select('id, area')
-          .in('id', creatorIds);
+        const creatorProfiles = await fetchProfilesByIdMap(creatorIds.map(String));
+        setCreatorProfilesByUserId(creatorProfiles);
         const areaMap = {};
-        (creatorProfiles || []).forEach((p) => {
-          areaMap[String(p.id)] = String(p.area || '');
-        });
+        for (const [id, profile] of Object.entries(creatorProfiles)) {
+          areaMap[id] = String(profile?.area || '');
+        }
         setCreatorAreasByUserId(areaMap);
       } else {
+        setCreatorProfilesByUserId({});
         setCreatorAreasByUserId({});
       }
 
@@ -1266,6 +1267,10 @@ export function LigaTab({
             badgeLabel={badge.label}
             badgeTone={badge.tone}
             footer={footer}
+            creatorUserId={selectedLeague.created_by}
+            creatorProfile={creatorProfilesByUserId[String(selectedLeague.created_by)]}
+            currentUserId={user.id}
+            onCreatorClick={(profile) => openProfile(profile?.id, profile?.full_name || profile?.name, profile?.avatar)}
           >
             <LigaSelectedDetail
               league={selectedLeague}

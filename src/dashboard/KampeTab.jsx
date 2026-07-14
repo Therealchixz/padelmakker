@@ -462,6 +462,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           if (row?.user_id) idsForHist.add(String(row.user_id));
         }
       }
+      for (const m of allMatches) {
+        if (m?.creator_id) idsForHist.add(String(m.creator_id));
+      }
       idsForHist.add(String(user.id));
       const profileIdList = [...idsForHist];
       const [histEloMap, pById] = await Promise.all([

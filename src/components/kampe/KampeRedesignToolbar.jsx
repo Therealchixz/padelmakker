@@ -89,7 +89,7 @@ export function KampeRedesignToolbar({
   );
 }
 
-export function KampeCreateHeader({ title, onBack, onInfo }) {
+export function KampeCreateHeader({ title, onBack, onInfo = undefined }) {
   return (
     <div className="pm-kampe-v2-create-head">
       <button

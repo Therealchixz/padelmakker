@@ -3,6 +3,8 @@ import { useBottomSheetDragToClose } from '../lib/useBottomSheetDragToClose';
 import { ligaTypeLabel } from '../lib/ligaDisplayUtils';
 import { groupByDivision } from '../lib/ligaStandings';
 import { KampeCreateHeader } from '../components/kampe/KampeRedesignToolbar';
+import { CreatorProfileRow } from '../components/kampe/CreatorProfileRow';
+import '../styles/kampdetalje.css';
 
 function badgeToneClass(tone) {
   if (tone === 'live') return 'pm-kampe-v2-badge--live';
@@ -24,6 +26,10 @@ export function LigaDetailSheet({
   badgeTone = 'neutral',
   children,
   footer,
+  creatorProfile = null,
+  creatorUserId = null,
+  currentUserId = null,
+  onCreatorClick,
 }) {
   const isPage = presentation === 'page';
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
@@ -35,6 +41,14 @@ export function LigaDetailSheet({
 
   const isRegistration = league.status === 'registration';
   const rounds = totalRounds || league.total_rounds;
+  const creatorRow = (
+    <CreatorProfileRow
+      userId={creatorUserId ?? league.created_by}
+      profile={creatorProfile}
+      currentUserId={currentUserId}
+      onProfileClick={onCreatorClick}
+    />
+  );
 
   const detailHead = (
     <div className={`pm-liga-v2-detail-head${isPage ? ' pm-liga-v2-detail-head--page' : ''}`}>
@@ -84,6 +98,7 @@ export function LigaDetailSheet({
         <KampeCreateHeader title={league.name} onBack={onClose} />
         {detailHead}
         <div className="pm-liga-v2-detail-scroll">
+          {creatorRow}
           <div className="pm-liga-v2-detail-body">{children}</div>
           {footer ? <div className="pm-liga-v2-detail-footer">{footer}</div> : null}
         </div>
@@ -106,6 +121,7 @@ export function LigaDetailSheet({
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />
           {detailHead}
         </div>
+        {creatorRow}
         <div className="pm-liga-v2-detail-body">{children}</div>
         {footer ? <div className="pm-liga-v2-detail-footer">{footer}</div> : null}
       </div>

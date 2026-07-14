@@ -9,6 +9,7 @@ import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCompletedDetail } from './MatchCompletedDetail';
 import { MatchCourtView } from './MatchCourtView';
 import { KampeCreateHeader } from './KampeRedesignToolbar';
+import { CreatorProfileRow } from './CreatorProfileRow';
 import '../../styles/kampdetalje.css';
 
 function heroStatusChipClass(tone) {
@@ -126,6 +127,14 @@ export function KampeMatchDetailSheet({
           </div>
         </div>
       </div>
+
+      <CreatorProfileRow
+        userId={match.creator_id}
+        profile={profilesById[String(match.creator_id)]}
+        currentUserId={currentUserId}
+        onProfileClick={onProfileClick}
+        subtitle="Opretter"
+      />
 
       {description ? (
         <>
