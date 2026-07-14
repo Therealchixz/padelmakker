@@ -250,6 +250,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const adminCanAct = isAdmin && adminPinVerified;
   const [adminPinGateOpen, setAdminPinGateOpen] = useState(false);
   const adminPinPendingChatMatchIdRef = useRef(null);
+  const adminPinPendingExpandMatchIdRef = useRef(null);
   const myDisplayName                 = resolveDisplayName(user, authUser);
   const eloSyncKeyKampe = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { profileFresh: kampeProfileFresh, ratedRows: kampeRatedRows, reloadProfileEloBundle: reloadKampeEloBundle } =
@@ -1497,8 +1498,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     finally { setBusyId(null); }
   };
 
-  }, [matchPlayers, myUidStr, isAdmin, adminCanAct]);
-
   const canAccessMatchChat = useCallback((matchId, { asAdmin = false } = {}) => {
     const matchKey = String(matchId);
     const isParticipant = (matchPlayers[matchKey] || []).some((p) => String(p.user_id) === myUidStr);
@@ -1531,6 +1530,34 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       }
     }
   }, [canAccessMatchChat]);
+
+  const handleAdminPinUnlocked = useCallback(() => {
+    void (async () => {
+      setAdminPinGateOpen(false);
+      const verified = await refreshAdminPinSession();
+      const pendingChatMatchId = adminPinPendingChatMatchIdRef.current;
+      const pendingExpandMatchId = adminPinPendingExpandMatchIdRef.current;
+      adminPinPendingChatMatchIdRef.current = null;
+      adminPinPendingExpandMatchIdRef.current = null;
+
+      if (!verified) return;
+
+      if (pendingExpandMatchId != null) {
+        setExpandedAdminActions((prev) => ({ ...prev, [pendingExpandMatchId]: true }));
+      }
+
+      if (pendingChatMatchId != null) {
+        setMatchChatOpenById((prev) => ({ ...prev, [pendingChatMatchId]: true }));
+        void loadMatchChat(pendingChatMatchId, { showLoading: true, asAdmin: true });
+      }
+    })();
+  }, [refreshAdminPinSession, loadMatchChat]);
+
+  const openAdminPinGate = useCallback(({ matchId = null, expandTools = false } = {}) => {
+    adminPinPendingChatMatchIdRef.current = expandTools ? null : matchId;
+    adminPinPendingExpandMatchIdRef.current = expandTools ? matchId : null;
+    setAdminPinGateOpen(true);
+  }, []);
 
   const toggleMatchChat = async (matchId) => {
     if (!canAccessMatchChat(matchId)) return;
@@ -2410,10 +2437,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
             </div>
             <button
               type="button"
-              onClick={() => {
-                adminPinPendingChatMatchIdRef.current = m.id;
-                setAdminPinGateOpen(true);
-              }}
+              onClick={() => openAdminPinGate({ matchId: m.id })}
               style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "12px" }}
             >
               Indtast admin-PIN
@@ -2629,10 +2653,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        adminPinPendingChatMatchIdRef.current = null;
-                        setAdminPinGateOpen(true);
-                      }}
+                      onClick={() => openAdminPinGate({ matchId: m.id, expandTools: true })}
                       style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "12px" }}
                     >
                       Indtast admin-PIN
@@ -3564,30 +3585,23 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       {/* Player profile modal */}
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
 
+      </>
+      )}
+      </>
+      )}
+
       {adminPinGateOpen ? (
         <AdminPinGate
           userId={user?.id}
           showToast={showToast}
-          onUnlocked={() => {
-            setAdminPinGateOpen(false);
-            void refreshAdminPinSession().then((verified) => {
-              const pendingMatchId = adminPinPendingChatMatchIdRef.current;
-              adminPinPendingChatMatchIdRef.current = null;
-              if (!verified || pendingMatchId == null) return;
-              setMatchChatOpenById((prev) => ({ ...prev, [pendingMatchId]: true }));
-              void loadMatchChat(pendingMatchId, { showLoading: true, asAdmin: true });
-            });
-          }}
+          onUnlocked={handleAdminPinUnlocked}
           onCancel={() => {
             adminPinPendingChatMatchIdRef.current = null;
+            adminPinPendingExpandMatchIdRef.current = null;
             setAdminPinGateOpen(false);
           }}
         />
       ) : null}
-      </>
-      )}
-      </>
-      )}
 
       {/* Kamp oprettet kvittering */}
       {createdMatchReceipt && (() => {
