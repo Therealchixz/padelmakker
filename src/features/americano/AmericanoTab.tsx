@@ -33,7 +33,6 @@ import {
   TOURNAMENT_LOGIN_REQUIRED,
   TOURNAMENT_SECTION_LABEL,
 } from '../../lib/tournamentCopy'
-import { useScrollIntoViewWhen } from '../../lib/useScrollIntoViewWhen'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
 import { tournamentPassesKampeRegionFilter } from '../../lib/kampeListFilterCore'
 import {
@@ -151,11 +150,12 @@ export function AmericanoTab({
     if (!createControlled) setCreateOpenInternal(open)
   }
   const createFormRef = useRef<HTMLDivElement>(null)
-  useScrollIntoViewWhen(showCreate, createFormRef, { block: 'start' })
 
   useEffect(() => {
-    if (showCreate) setAmericanoHelpOpen(false)
-  }, [showCreate])
+    if (showCreate && typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [showCreate]);
 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [americanoView, setAmericanoView] = useState<AmericanoSubTab>(() => initialSubTab ?? 'open')
@@ -201,6 +201,11 @@ export function AmericanoTab({
     })
   }, [participantSnippets])
   const [americanoHelpOpen, setAmericanoHelpOpen] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (showCreate) setAmericanoHelpOpen(false)
+  }, [showCreate])
+
   const [createdTournamentReceipt, setCreatedTournamentReceipt] = useState<CreatedTournamentInfo | null>(null)
   const [receiptUrlCopied, setReceiptUrlCopied] = useState(false)
 

@@ -21,7 +21,6 @@ import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
-import { useScrollIntoViewWhen } from '../lib/useScrollIntoViewWhen';
 import { DateInputField } from '../components/DateInputField';
 import { profileAreaMatchesKampeRegionFilter } from '../lib/kampeListFilterCore';
 import { buildAdminChatPath } from '../lib/adminContactUtils';
@@ -146,7 +145,6 @@ export function LigaTab({
   const createOpen = createOpenProp !== undefined ? createOpenProp : createOpenLocal;
   const setCreateOpen = onCreateOpenChange !== undefined ? onCreateOpenChange : setCreateOpenLocal;
   const ligaCreateFormRef = useRef(null);
-  useScrollIntoViewWhen(createOpen, ligaCreateFormRef, { enabled: isAdmin, block: 'start' });
   const [createForm, setCreateForm] = useState({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
   const [createStep, setCreateStep] = useState(1);
   const [createStepErr, setCreateStepErr] = useState('');

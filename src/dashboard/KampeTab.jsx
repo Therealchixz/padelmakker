@@ -6,7 +6,6 @@ import { fetchCourtsCached } from '../lib/courtsCache';
 import { fetchProfilesByIdMap } from '../lib/profileQueries';
 import { supabase } from '../lib/supabase';
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
-import { useScrollIntoViewWhen } from '../lib/useScrollIntoViewWhen';
 const AmericanoTab = lazy(() =>
   import('../features/americano/AmericanoTab').then(m => ({ default: m.AmericanoTab }))
 );
@@ -304,11 +303,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const [ligaFilteredCount, setLigaFilteredCount] = useState(null);
   const [padelHelpOpen, setPadelHelpOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-
-  useScrollIntoViewWhen(showCreate, padelCreateFormRef, {
-    enabled: kampeFormat === 'padel' && !loadingMatches,
-    block: 'start',
-  });
 
   useEffect(() => {
     if (showCreate) setPadelHelpOpen(false);

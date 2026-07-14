@@ -7876,8 +7876,18 @@ button,
 
 @media (max-width: 768px) {
   .pm-dash-main.pm-dash-main--kampe-create {
-    padding-top: max(clamp(24px, 6vw, 32px), calc(env(safe-area-inset-top) + 20px));
+    /* Safe area håndteres på den sticky create-header — undgå dobbelt top-padding */
+    padding-top: 0;
     padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .pm-dash-main--kampe-create .pm-kampe-v2-create-head {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding-top: max(16px, calc(env(safe-area-inset-top, 0px) + 12px));
+    padding-bottom: 10px;
+    background: var(--pm-bg);
   }
 }
 
