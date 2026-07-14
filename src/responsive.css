@@ -7857,27 +7857,6 @@ button,
   margin-right: 0;
 }
 
-.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-head,
-.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-body,
-.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-footer {
-  padding-left: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
-  padding-right: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px));
-  box-sizing: border-box;
-}
-
-.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-body {
-  flex: 1;
-  min-height: 0;
-  max-height: none;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-footer {
-  flex-shrink: 0;
-  padding-bottom: max(20px, env(safe-area-inset-bottom));
-}
-
 @media (max-width: 768px) {
   .pm-dash-main.pm-dash-main--kampe-detail {
     padding-top: max(clamp(20px, 5vw, 28px), calc(env(safe-area-inset-top) + 12px));
@@ -9380,20 +9359,27 @@ button,
 }
 
 .pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-body {
-  flex: 1;
+  flex: none;
   min-height: 0;
   max-height: none;
+  overflow: visible;
+  padding: 0;
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 0 max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px)) 20px
-    max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
+  padding-left: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
 }
 
 .pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-footer {
   flex-shrink: 0;
-  padding: 0 max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px))
-    max(24px, env(safe-area-inset-bottom))
-    max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
+  margin-top: 16px;
+  padding: 0 0 max(24px, env(safe-area-inset-bottom));
 }
 
 @media (max-width: 480px) {

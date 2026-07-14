@@ -83,8 +83,10 @@ export function LigaDetailSheet({
       <div className="pm-kampe-v2-detail-page pm-liga-v2-detail-sheet">
         <KampeCreateHeader title={league.name} onBack={onClose} />
         {detailHead}
-        <div className="pm-liga-v2-detail-body">{children}</div>
-        {footer ? <div className="pm-liga-v2-detail-footer">{footer}</div> : null}
+        <div className="pm-liga-v2-detail-scroll">
+          <div className="pm-liga-v2-detail-body">{children}</div>
+          {footer ? <div className="pm-liga-v2-detail-footer">{footer}</div> : null}
+        </div>
       </div>
     );
   }
