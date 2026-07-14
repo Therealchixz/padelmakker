@@ -270,20 +270,30 @@ export function KampeMatchListCard({
       <div className={`pm-kampe-v2-list-card-bottom${isCompleted ? ' pm-kampe-v2-list-card-bottom--completed' : ' pm-kampe-v2-list-card-bottom--open'}`}>
         {!setScoreStr ? (
           <div
-            className="pm-kampe-v2-list-participants"
+            className="pm-kampe-v2-list-roster"
             aria-label={`${filledCount} af ${maxPlayers} spillere`}
           >
             {renderListTeams()}
-            <span className="pm-kampe-v2-list-count">
-              {filledCount}/{maxPlayers} spillere
-            </span>
+            <div className="pm-kampe-v2-list-roster-meta">
+              <span className="pm-kampe-v2-list-roster-count">
+                {filledCount}/{maxPlayers} spillere
+              </span>
+              {!isCompleted && left > 0 ? (
+                <span className="pm-kampe-v2-list-roster-open">
+                  ù {left} {left === 1 ? 'plads' : 'pladser'} ledig{left === 1 ? '' : 'e'}
+                </span>
+              ) : null}
+              {!isCompleted && isFull && !joined ? (
+                <span className="pm-kampe-v2-list-roster-full">ù Fuldt</span>
+              ) : null}
+            </div>
           </div>
         ) : null}
         {!isCompleted && primaryAction ? (
           <div className="pm-kampe-v2-list-card-cta-row">
             <button
               type="button"
-              className={`pm-kampe-v2-list-cta${primaryAction.variant === 'secondary' ? ' pm-kampe-v2-list-cta--secondary' : ''}`}
+              className={`pm-kampe-v2-list-cta pm-kampe-v2-list-cta--block${primaryAction.variant === 'secondary' ? ' pm-kampe-v2-list-cta--secondary' : ''}`}
               onClick={(e) => { e.stopPropagation(); primaryAction.onClick?.(); }}
               disabled={primaryAction.disabled}
             >
@@ -292,7 +302,7 @@ export function KampeMatchListCard({
           </div>
         ) : !isCompleted ? (
           <div className="pm-kampe-v2-list-card-cta-row">
-            <span className="pm-kampe-v2-list-cta pm-kampe-v2-list-cta--secondary">
+            <span className="pm-kampe-v2-list-cta pm-kampe-v2-list-cta--block pm-kampe-v2-list-cta--secondary">
               Se kamp
             </span>
           </div>
