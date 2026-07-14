@@ -1,7 +1,9 @@
 import { supabase } from './supabase';
 import { buildMatchInvitePayload } from './chatMessageUtils';
 import { rpcJoinOpenMatch } from './matchJoinUtils';
+import { listShareableCourts } from './chatVenueShareUtils';
 
+export { mapBanerVenueToShareableCourt } from './chatVenueShareUtils';
 export async function fetchInvitableMatches(userId) {
   if (!userId) return [];
 
@@ -85,12 +87,6 @@ export async function joinMatchFromChatInvite({
   };
 }
 
-export async function fetchShareableCourts(limit = 80) {
-  const { data, error } = await supabase
-    .from('courts')
-    .select('id, name, city, booking_url')
-    .order('name')
-    .limit(limit);
-  if (error) throw error;
-  return data || [];
+export async function fetchShareableCourts(limit = 200) {
+  return listShareableCourts(limit);
 }
