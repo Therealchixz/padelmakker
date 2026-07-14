@@ -27,12 +27,12 @@ function computeSetScoreStr(mr) {
     if (n1 + n2 === 0) break;
     parts.push(`${n1}-${n2}`);
   }
-  return parts.length > 0 ? parts.join(' · ') : null;
+  return parts.length > 0 ? parts.join(' Â· ') : null;
 }
 
 const SLOTS_PER_TEAM = 2;
 
-/** Kort holdnavn til VS-rækken, fx "Dig & Mads". */
+/** Kort holdnavn til VS-rÃ¦kken, fx "Dig & Mads". */
 function teamNameLabel(players, profilesById, currentUserId) {
   const names = (players || []).map((p) => {
     if (currentUserId != null && String(p.user_id) === String(currentUserId)) return 'Dig';
@@ -43,13 +43,13 @@ function teamNameLabel(players, profilesById, currentUserId) {
   return names.join(' & ');
 }
 
-/** Always two slots per hold so listen visuelt 2 vs 2, ikke én lang række. */
+/** Always two slots per hold sÃ¥ listen visuelt 2 vs 2, ikke Ã©n lang rÃ¦kke. */
 function teamDisplaySlots(players) {
   const filled = (players || []).slice(0, SLOTS_PER_TEAM);
   return Array.from({ length: SLOTS_PER_TEAM }, (_, i) => filled[i] ?? null);
 }
 
-/** Fordel spillere på tværs af hold hvis DB har >2 på ét hold (ældre data). */
+/** Fordel spillere pÃ¥ tvÃ¦rs af hold hvis DB har >2 pÃ¥ Ã©t hold (Ã¦ldre data). */
 function balanceTeamsForListDisplay(t1, t2) {
   const team1 = t1 || [];
   const team2 = t2 || [];
@@ -123,26 +123,7 @@ export function KampeMatchListCard({
       : null;
   const t1Slots = teamDisplaySlots(t1);
   const t2Slots = teamDisplaySlots(t2);
-  const renderTeamSlot = (player, teamNum, slotIndex) => {
-    if (!player) {
-      return (
-        <span
-          key={`t${teamNum}-empty-${slotIndex}`}
-          className="pm-kampe-v2-list-avatar-slot pm-kampe-v2-list-avatar-slot--empty"
-          aria-hidden
-        />
-      );
-    }
-    return (
-      <AvatarCircle
-        key={player.user_id || `t${teamNum}-${slotIndex}`}
-        avatar={profilesById[String(player.user_id)]?.avatar || player.user_emoji || '??'}
-        size={28}
-        emojiSize="12px"
-        style={{ zIndex: slotIndex + 1 }}
-      />
-    );
-  };
+  const defaultAvatar = 'ðŸŽ¾';
 
   return (
     <div
@@ -151,7 +132,7 @@ export function KampeMatchListCard({
       className={`pm-kampe-v2-list-card${dull ? ' pm-kampe-v2-list-card--dull' : ''}${unreadCount ? ' pm-kampe-v2-list-card--unread' : ''}`}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
-      aria-label={`Åbn kamp: ${venue}`}
+      aria-label={`Ã…bn kamp: ${venue}`}
     >
       {isCompleted ? (
         <div className="pm-kampe-v2-list-card-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -160,7 +141,7 @@ export function KampeMatchListCard({
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--pm-text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
-              {formatMatchDateHeadlineDa(match.date)} · {venue}
+              {formatMatchDateHeadlineDa(match.date)} Â· {venue}
             </span>
             {unreadCount > 0 ? (
               <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
@@ -187,8 +168,8 @@ export function KampeMatchListCard({
               ) : (
                 <>Kl. {timeLabel}</>
               )}
-              {match.duration ? <> · {match.duration} min</> : null}
-              {showEloRange && levelRange ? <> · ? Niveau {formatPlaytomicLevel(levelRange.min)}?{formatPlaytomicLevel(levelRange.max)}</> : null}
+              {match.duration ? <> Â· {match.duration} min</> : null}
+              {showEloRange && levelRange ? <> Â· â‰ˆ Niveau {formatPlaytomicLevel(levelRange.min)}â€“{formatPlaytomicLevel(levelRange.max)}</> : null}
             </div>
           </div>
           <div className="pm-kampe-v2-list-badges">
@@ -221,7 +202,7 @@ export function KampeMatchListCard({
               {t1Slots.map((p, i) => p ? (
                 <AvatarCircle
                   key={p.user_id || `vs-t1-${i}`}
-                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '??'}
+                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || defaultAvatar}
                   size={24}
                   emojiSize="10px"
                   style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid var(--pm-surface)', zIndex: i + 1 }}
@@ -242,7 +223,7 @@ export function KampeMatchListCard({
               {t2Slots.map((p, i) => p ? (
                 <AvatarCircle
                   key={p.user_id || `vs-t2-${i}`}
-                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '??'}
+                  avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || defaultAvatar}
                   size={24}
                   emojiSize="10px"
                   style={{ marginLeft: i > 0 ? -7 : 0, border: '2px solid var(--pm-surface)', zIndex: i + 1 }}
@@ -266,7 +247,7 @@ export function KampeMatchListCard({
                 {[...t1Slots, ...t2Slots].map((p, i) => p ? (
                   <AvatarCircle
                     key={p.user_id || `slot-${i}`}
-                    avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || '??'}
+                    avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || defaultAvatar}
                     size={27}
                     emojiSize="10px"
                     style={{ marginLeft: i > 0 ? -9 : 0, border: '2px solid var(--pm-surface)', zIndex: i + 1 }}
@@ -330,12 +311,12 @@ export function KampeMatchListCard({
           <span
             className={`pm-kampe-v2-list-elo-result${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
           >
-            Elo {eloDelta >= 0 ? '+' : '?'}{Math.abs(eloDelta)}
+            Elo {eloDelta >= 0 ? '+' : 'âˆ’'}{Math.abs(eloDelta)}
           </span>
         ) : null}
         {setScoreStr ? (
           <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--pm-accent)', marginLeft: 'auto' }}>
-            Se detaljer ?
+            Se detaljer â†’
           </span>
         ) : null}
       </div>
