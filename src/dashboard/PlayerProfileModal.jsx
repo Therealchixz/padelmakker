@@ -276,12 +276,14 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
   return createPortal(
     <>
       <button
+        key={`profile-backdrop-${player.id}`}
         type="button"
         className="pm-kampe-v2-sheet-backdrop pm-kampe-v2-sheet-backdrop--stacked"
         aria-label={`Luk profil for ${playerName}`}
         onClick={onClose}
       />
       <div
+        key={player.id}
         ref={sheetRef}
         className={`pm-kampe-v2-sheet pm-kampe-v2-detail-sheet pm-player-profile-sheet${sheetClassName ? ` ${sheetClassName}` : ''}`}
         style={sheetStyle}

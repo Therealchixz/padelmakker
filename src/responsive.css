@@ -9614,6 +9614,62 @@ button,
   z-index: 1050;
 }
 
+@keyframes pm-sheet-backdrop-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pm-player-profile-sheet-enter {
+  from {
+    transform: translateY(100%);
+    opacity: 0.72;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pm-kampe-v2-sheet-backdrop.pm-kampe-v2-sheet-backdrop--stacked {
+  animation: pm-sheet-backdrop-fade-in 240ms ease-out both;
+}
+
+.pm-kampe-v2-sheet.pm-player-profile-sheet {
+  height: min(85vh, 640px);
+  max-height: min(85vh, 640px);
+  overflow: hidden;
+  animation: pm-player-profile-sheet-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pm-kampe-v2-sheet.pm-player-profile-sheet.pm-kampe-v2-sheet--dragging,
+.pm-kampe-v2-sheet.pm-player-profile-sheet.pm-kampe-v2-sheet--animating {
+  animation: none;
+}
+
+@media (min-width: 769px) {
+  @keyframes pm-player-profile-sheet-enter-desktop {
+    from {
+      transform: translate(-50%, 100%);
+      opacity: 0.72;
+    }
+    to {
+      transform: translate(-50%, 0);
+      opacity: 1;
+    }
+  }
+
+  .pm-kampe-v2-sheet.pm-player-profile-sheet {
+    animation-name: pm-player-profile-sheet-enter-desktop;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-kampe-v2-sheet.pm-player-profile-sheet,
+  .pm-kampe-v2-sheet-backdrop.pm-kampe-v2-sheet-backdrop--stacked {
+    animation: none;
+  }
+}
+
 .pm-kampe-v2-sheet.pm-liga-v2-team-sheet {
   display: flex;
   flex-direction: column;
