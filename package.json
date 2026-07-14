@@ -17,6 +17,7 @@
     "db:backfill-stubs": "node scripts/backfill-migration-stubs.mjs --rename-mcp",
     "db:check-stubs": "node scripts/check-migration-stubs.mjs",
     "db:check-migration-integrity": "node scripts/test-migration-integrity.mjs",
+    "check:turnstile-prod": "node scripts/check-turnstile-prod.mjs",
     "test:e2e": "playwright test --config=playwright.config.ts",
     "test:e2e:headed": "playwright test --headed --project=chromium",
     "test:e2e:auth": "playwright test --project=authenticated",

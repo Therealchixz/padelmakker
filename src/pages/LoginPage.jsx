@@ -7,12 +7,13 @@ import { mapAuthErrorMessage } from '../lib/authErrorMessages';
 import { PublicLegalFooter } from '../components/PublicLegalFooter';
 import { TurnstileWidget } from '../components/TurnstileWidget';
 import { OAuthButtons, AuthDivider } from '../components/OAuthButtons';
+import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig';
 
 export function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const turnstileSiteKey = String(import.meta.env.VITE_TURNSTILE_SITE_KEY || "").trim();
-  const turnstileEnabled = turnstileSiteKey.length > 0;
+  const turnstileSiteKey = getTurnstileSiteKey();
+  const turnstileEnabled = isTurnstileEnabled();
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
   const [captchaToken, setCaptchaToken] = useState("");

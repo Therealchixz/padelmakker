@@ -33,6 +33,7 @@ import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
 
 import { AvatarPicker } from '../components/AvatarPicker';
 import { TurnstileWidget } from '../components/TurnstileWidget';
+import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig';
 import { LEGAL_INFO } from '../lib/legalInfo';
 import { ArrowRight, ArrowLeft, Check, ShieldCheck } from 'lucide-react';
 
@@ -55,8 +56,8 @@ export function OnboardingPage() {
   const navigate = useNavigate();
   const ask = useConfirm();
   const onboardingTopRef = useRef(null);
-  const turnstileSiteKey = String(import.meta.env.VITE_TURNSTILE_SITE_KEY || "").trim();
-  const turnstileEnabled = turnstileSiteKey.length > 0;
+  const turnstileSiteKey = getTurnstileSiteKey();
+  const turnstileEnabled = isTurnstileEnabled();
   const [step, setStep]           = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");

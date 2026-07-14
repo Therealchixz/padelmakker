@@ -7,6 +7,7 @@ import { PublicLegalFooter } from '../components/PublicLegalFooter'
 import { normalizePhoneToE164 } from '../lib/validationHelpers'
 import { mapPhoneAuthErrorMessage } from '../lib/authErrorMessages'
 import { TurnstileWidget } from '../components/TurnstileWidget'
+import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig'
 
 const PHONE_SIGNUP_PENDING_KEY = 'pm_phone_signup_pending_v1'
 
@@ -142,8 +143,8 @@ export function PhoneVerificationPage() {
   const { user, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const turnstileSiteKey = String(import.meta.env.VITE_TURNSTILE_SITE_KEY || '').trim()
-  const turnstileEnabled = turnstileSiteKey.length > 0
+  const turnstileSiteKey = getTurnstileSiteKey()
+  const turnstileEnabled = isTurnstileEnabled()
 
   const [mode, setMode] = useState('signup')
   const [phoneInput, setPhoneInput] = useState('')

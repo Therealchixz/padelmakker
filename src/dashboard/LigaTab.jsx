@@ -24,6 +24,7 @@ import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionP
 import { useScrollIntoViewWhen } from '../lib/useScrollIntoViewWhen';
 import { DateInputField } from '../components/DateInputField';
 import { profileAreaMatchesKampeRegionFilter } from '../lib/kampeListFilterCore';
+import { buildAdminChatPath } from '../lib/adminContactUtils';
 
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
 
@@ -57,6 +58,17 @@ export function LigaTab({
 }) {
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
+  const openAdminChat = async () => {
+    try {
+      const path = await buildAdminChatPath(supabase, {
+        excludeUserId: user?.id,
+        onMissing: () => showToast('Ingen admin fundet.'),
+      });
+      if (path) navigate(path);
+    } catch {
+      showToast('Kunne ikke finde admin — prøv igen.');
+    }
+  };
   const ask = useConfirm();
   const [view, setView] = useState(() => {
     const s = readLigaSessionPrefs(user?.id);
@@ -1074,11 +1086,7 @@ export function LigaTab({
                 Kontakt en admin for at få oprettet en ny liga.
               </div>
               <button
-                onClick={async () => {
-                  const { data } = await supabase.from('profiles').select('id').eq('role', 'admin').ilike('full_name', '%Mike Pedersen%').maybeSingle();
-                  if (data?.id) navigate('/dashboard/beskeder?med=' + data.id);
-                  else showToast('Ingen admin fundet.');
-                }}
+                onClick={openAdminChat}
                 style={{ ...btn(true), fontSize: '13px', display: 'inline-flex' }}
               >
                 💬 Kontakt admin
@@ -1119,11 +1127,7 @@ export function LigaTab({
           {!isAdmin && view === 'registration' && (
             <button
               type="button"
-              onClick={async () => {
-                const { data } = await supabase.from('profiles').select('id').eq('role', 'admin').ilike('full_name', '%Mike Pedersen%').maybeSingle();
-                if (data?.id) navigate('/dashboard/beskeder?med=' + data.id);
-                else showToast('Ingen admin fundet.');
-              }}
+              onClick={openAdminChat}
               style={{ width: '100%', textAlign: 'center', background: theme.surface, border: `1.5px dashed ${theme.border}`, borderRadius: 14, padding: '22px 20px', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: theme.accentBg, color: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
