@@ -249,6 +249,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const { adminPinVerified, refreshAdminPinSession } = useAdminPinSession(isAdmin && tabActive);
   const adminCanAct = isAdmin && adminPinVerified;
   const [adminPinGateOpen, setAdminPinGateOpen] = useState(false);
+  const adminPinPendingChatMatchIdRef = useRef(null);
   const myDisplayName                 = resolveDisplayName(user, authUser);
   const eloSyncKeyKampe = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { profileFresh: kampeProfileFresh, ratedRows: kampeRatedRows, reloadProfileEloBundle: reloadKampeEloBundle } =
@@ -626,14 +627,14 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       for (const matchId of Object.keys(prev)) {
         if (!prev[matchId]) continue;
         const isParticipant = (matchPlayers[matchId] || []).some((p) => String(p.user_id) === myUidStr);
-        if (!isParticipant) {
+        if (!isParticipant && !(isAdmin && adminCanAct)) {
           delete next[matchId];
           changed = true;
         }
       }
       return changed ? next : prev;
     });
-  }, [matchPlayers, myUidStr]);
+  }, [matchPlayers, myUidStr, isAdmin, adminCanAct]);
 
   useEffect(() => {
     setMatchChatOpenById({});
@@ -1496,11 +1497,17 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     finally { setBusyId(null); }
   };
 
-  const loadMatchChat = useCallback(async (matchId, options = {}) => {
-    const { showLoading = true } = options;
+  }, [matchPlayers, myUidStr, isAdmin, adminCanAct]);
+
+  const canAccessMatchChat = useCallback((matchId, { asAdmin = false } = {}) => {
     const matchKey = String(matchId);
     const isParticipant = (matchPlayers[matchKey] || []).some((p) => String(p.user_id) === myUidStr);
-    if (!isParticipant) return;
+    return isParticipant || asAdmin || adminCanAct;
+  }, [matchPlayers, myUidStr, adminCanAct]);
+
+  const loadMatchChat = useCallback(async (matchId, options = {}) => {
+    const { showLoading = true, asAdmin = false } = options;
+    if (!canAccessMatchChat(matchId, { asAdmin })) return;
     if (showLoading) {
       setMatchChatLoadingById((prev) => ({ ...prev, [matchId]: true }));
     }
@@ -1523,12 +1530,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         setMatchChatLoadingById((prev) => ({ ...prev, [matchId]: false }));
       }
     }
-  }, [matchPlayers, myUidStr]);
+  }, [canAccessMatchChat]);
 
   const toggleMatchChat = async (matchId) => {
-    const matchKey = String(matchId);
-    const isParticipant = (matchPlayers[matchKey] || []).some((p) => String(p.user_id) === myUidStr);
-    if (!isParticipant) return;
+    if (!canAccessMatchChat(matchId)) return;
     const openNow = !!matchChatOpenById[matchId];
     const nextOpen = !openNow;
     setMatchChatOpenById((prev) => ({ ...prev, [matchId]: nextOpen }));
@@ -1932,7 +1937,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
     void refreshJoinRequestsForMatch(detailMatchId);
 
-    if (openChat && imIn) {
+    if ((openChat && imIn) || (openChat && adminCanAct)) {
       const matchKey = String(detailMatchId);
       setMatchChatOpenById((prev) => ({ ...prev, [matchKey]: true }));
       void loadMatchChat(matchKey, { showLoading: true });
@@ -2359,6 +2364,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       busy,
       canUseMatchChat,
       canWriteMatchChat,
+      needsAdminPinForMatchChat,
       chatOpen,
       chatMessages,
       chatDraft,
@@ -2390,12 +2396,30 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     const showToolsAccordion =
       adminCanForceStart || adminCanForceReport || adminCanForceConfirm || canDeleteMatch || canKickPlayers || needsAdminPinUnlock;
     const hasManage =
-      canUseMatchChat || hasSecondaryLinks || showToolsAccordion;
+      canUseMatchChat || needsAdminPinForMatchChat || hasSecondaryLinks || showToolsAccordion;
 
     if (!hasManage) return null;
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        {needsAdminPinForMatchChat ? (
+          <div className="pm-feedback-panel pm-feedback-panel--warning" style={{ fontSize: "12px", lineHeight: 1.45, padding: "10px 12px" }}>
+            <div style={{ fontWeight: 700, marginBottom: "6px" }}>Match chat (admin)</div>
+            <div style={{ marginBottom: "10px", color: theme.textMid }}>
+              For at læse kamp-chat skal du bekræfte din admin-kode — samme som i admin-panelet.
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                adminPinPendingChatMatchIdRef.current = m.id;
+                setAdminPinGateOpen(true);
+              }}
+              style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "12px" }}
+            >
+              Indtast admin-PIN
+            </button>
+          </div>
+        ) : null}
         {canUseMatchChat ? (
           <>
             <button
@@ -2444,6 +2468,11 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
             {chatOpen ? (
               <div className="pm-card-subpanel pm-match-chat-panel" style={{ marginBottom: "4px" }}>
+                {!canWriteMatchChat && isAdmin ? (
+                  <div className="pm-match-chat-empty" style={{ marginBottom: "8px" }}>
+                    Admin-visning: Kun tilmeldte spillere kan skrive i chatten.
+                  </div>
+                ) : null}
                 <div
                   className="pm-match-chat-list"
                   ref={(node) => {
@@ -2600,7 +2629,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
                     </div>
                     <button
                       type="button"
-                      onClick={() => setAdminPinGateOpen(true)}
+                      onClick={() => {
+                        adminPinPendingChatMatchIdRef.current = null;
+                        setAdminPinGateOpen(true);
+                      }}
                       style={{ ...btn(true), width: "100%", justifyContent: "center", fontSize: "12px" }}
                     >
                       Indtast admin-PIN
@@ -3538,9 +3570,18 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           showToast={showToast}
           onUnlocked={() => {
             setAdminPinGateOpen(false);
-            void refreshAdminPinSession();
+            void refreshAdminPinSession().then((verified) => {
+              const pendingMatchId = adminPinPendingChatMatchIdRef.current;
+              adminPinPendingChatMatchIdRef.current = null;
+              if (!verified || pendingMatchId == null) return;
+              setMatchChatOpenById((prev) => ({ ...prev, [pendingMatchId]: true }));
+              void loadMatchChat(pendingMatchId, { showLoading: true, asAdmin: true });
+            });
           }}
-          onCancel={() => setAdminPinGateOpen(false)}
+          onCancel={() => {
+            adminPinPendingChatMatchIdRef.current = null;
+            setAdminPinGateOpen(false);
+          }}
         />
       ) : null}
       </>

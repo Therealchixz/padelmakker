@@ -107,6 +107,9 @@ export function buildMatchCardState({
   );
   const hasAdminActions = hasCreatorTools || hasAdminTools || needsAdminPinUnlock;
 
+  const canUseMatchChat = Boolean(joined || (isAdmin && adminCanAct));
+  const needsAdminPinForMatchChat = Boolean(isAdmin && !joined && !adminCanAct);
+
   return {
     left,
     joined: Boolean(joined),
@@ -128,8 +131,9 @@ export function buildMatchCardState({
     attentionReason,
     hasAdminActions,
     adminActionsOpen: Boolean(adminActionsOpen),
-    canUseMatchChat: Boolean(joined),
+    canUseMatchChat,
     canWriteMatchChat: Boolean(joined),
+    needsAdminPinForMatchChat,
     chatOpen: Boolean(chatOpen),
     chatMessages: Array.isArray(chatMessages) ? chatMessages : [],
     chatDraft: chatDraft || '',

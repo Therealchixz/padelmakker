@@ -98,9 +98,30 @@ test('buildMatchCardState hides match chat for admins who are not participants',
     status: 'open',
     joinRequests: [],
     isAdmin: true,
-    adminCanAct: true,
+    adminCanAct: false,
   });
 
   assert.equal(state.canUseMatchChat, false);
   assert.equal(state.canWriteMatchChat, false);
+  assert.equal(state.needsAdminPinForMatchChat, true);
+});
+
+test('buildMatchCardState lets verified admins read match chat without joining', () => {
+  const state = buildMatchCardState({
+    match: { id: 'match-4', creator_id: 'creator', max_players: 4, match_type: 'open' },
+    players: [{ user_id: 'p1', team: 1 }],
+    teamStats: { t1: [{ user_id: 'p1' }], t2: [], t1Avg: 1000, t2Avg: null, playerEloByUserId: {} },
+    matchResult: null,
+    joined: false,
+    currentUserId: 'admin-user',
+    busyId: null,
+    status: 'open',
+    joinRequests: [],
+    isAdmin: true,
+    adminCanAct: true,
+  });
+
+  assert.equal(state.canUseMatchChat, true);
+  assert.equal(state.canWriteMatchChat, false);
+  assert.equal(state.needsAdminPinForMatchChat, false);
 });
