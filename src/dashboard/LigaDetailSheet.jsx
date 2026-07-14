@@ -37,10 +37,10 @@ export function LigaDetailSheet({
   const rounds = totalRounds || league.total_rounds;
 
   const detailHead = (
-    <div className="pm-liga-v2-detail-head">
+    <div className={`pm-liga-v2-detail-head${isPage ? ' pm-liga-v2-detail-head--page' : ''}`}>
       <div className="pm-liga-v2-detail-head-main">
         <div className="pm-liga-v2-detail-type">{ligaTypeLabel(league)}</div>
-        <h2 className="pm-liga-v2-detail-title">{league.name}</h2>
+        {!isPage ? <h2 className="pm-liga-v2-detail-title">{league.name}</h2> : null}
         <div className="pm-liga-v2-detail-meta">
           <MapPin size={12} aria-hidden />
           {regionLabel || 'Danmark'}
@@ -66,6 +66,13 @@ export function LigaDetailSheet({
           >
             <X size={18} />
           </button>
+        </div>
+      ) : badgeLabel ? (
+        <div className="pm-liga-v2-detail-head-right pm-liga-v2-detail-head-right--page">
+          <span className={`pm-kampe-v2-badge ${badgeToneClass(badgeTone)}`}>
+            {badgeTone === 'live' ? <span className="pm-live-dot" aria-hidden /> : null}
+            {badgeLabel}
+          </span>
         </div>
       ) : null}
     </div>

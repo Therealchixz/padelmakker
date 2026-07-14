@@ -7809,7 +7809,7 @@ button,
 
 /* Full-screen Kampe detail pages (2v2 / Americano / Liga) */
 .pm-kampe-v2-detail-page {
-  --pm-kampe-detail-gutter: clamp(12px, 3.5vw, 18px);
+  --pm-kampe-detail-gutter: clamp(16px, 4vw, 20px);
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - 120px);
@@ -7868,7 +7868,14 @@ button,
 .pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-body {
   flex: 1;
   min-height: 0;
+  max-height: none;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-footer {
+  flex-shrink: 0;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 
 @media (max-width: 768px) {
@@ -9347,6 +9354,68 @@ button,
 
 .pm-liga-v2-detail-footer {
   padding: 0 20px 28px;
+}
+
+/* Liga detail — fuldskærms-side (efter sheet-defaults så de vinder i kaskaden) */
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-head {
+  flex-shrink: 0;
+  padding: 0 max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px)) 10px
+    max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
+}
+
+.pm-liga-v2-detail-head--page .pm-liga-v2-detail-type {
+  margin-top: 0;
+}
+
+.pm-liga-v2-detail-head-right--page {
+  flex-direction: row;
+  align-items: center;
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-body {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px)) 20px
+    max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-footer {
+  flex-shrink: 0;
+  padding: 0 max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px))
+    max(24px, env(safe-area-inset-bottom))
+    max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
+}
+
+@media (max-width: 480px) {
+  .pm-kampe-v2-detail-page .pm-liga-v2-standings-head,
+  .pm-kampe-v2-detail-page .pm-liga-v2-standings-row {
+    grid-template-columns: 22px minmax(0, 1fr) 36px 36px 30px;
+    gap: 4px;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .pm-kampe-v2-detail-page .pm-liga-v2-meta-cards {
+    gap: 6px;
+  }
+
+  .pm-kampe-v2-detail-page .pm-liga-v2-meta-card {
+    padding: 8px 6px;
+  }
+
+  .pm-kampe-v2-detail-page .pm-liga-v2-meta-card-val {
+    font-size: 12px;
+  }
 }
 
 .pm-liga-v2-standings {
