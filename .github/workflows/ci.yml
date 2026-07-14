@@ -43,6 +43,9 @@ jobs:
       - name: Migration stubs (no empty history-sync placeholders)
         run: npm run db:check-stubs
 
+      - name: Migration integrity (backfilled versions present)
+        run: npm run db:check-migration-integrity
+
       - name: Production build
         run: npm run build
 
