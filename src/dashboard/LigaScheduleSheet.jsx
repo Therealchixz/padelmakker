@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useBottomSheetDragToClose } from '../lib/useBottomSheetDragToClose';
 import { theme } from '../lib/platformTheme';
+import { KampeCreateHeader } from '../components/kampe/KampeRedesignToolbar';
 
 function matchResultTag(match, myTeamId) {
   if (!match.team2_id) return { label: 'Fri runde', color: theme.textLight, bg: theme.surfaceAlt, border: theme.border };
@@ -25,6 +26,7 @@ function matchResultTag(match, myTeamId) {
 export function LigaScheduleSheet({
   open,
   onClose,
+  presentation = 'sheet',
   league,
   teams,
   matches,
@@ -32,9 +34,10 @@ export function LigaScheduleSheet({
   currentRound,
   totalRounds,
 }) {
+  const isPage = presentation === 'page';
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
-    enabled: open,
+    enabled: open && !isPage,
   });
 
   const teamMap = useMemo(
@@ -135,6 +138,69 @@ export function LigaScheduleSheet({
       ));
   };
 
+  const scheduleContent = (
+    <div className="pm-liga-v2-schedule-body">
+      {allRounds.map((rn) => {
+        const roundMatches = roundsMap[rn] || [];
+        const isCurrent = rn === currentRound;
+        const isDone =
+          roundMatches.length > 0 && roundMatches.every((m) => m.status === 'reported');
+        const isFuture = rn > (currentRound || 0) && !isDone;
+
+        const roundStatusLabel = isDone
+          ? 'Afsluttet'
+          : isCurrent
+            ? 'I gang'
+            : isFuture
+              ? 'Kommende'
+              : `Runde ${rn}`;
+
+        return (
+          <div key={rn} className="pm-liga-v2-round-section">
+            <div className="pm-liga-v2-round-label">
+              <span className="pm-liga-v2-round-label-title">Runde {rn}</span>
+              <span
+                className={`pm-liga-v2-round-label-status${isDone ? ' pm-liga-v2-round-label-status--done' : isCurrent ? ' pm-liga-v2-round-label-status--live' : ''}`}
+              >
+                {roundStatusLabel}
+              </span>
+            </div>
+
+            {isFuture && roundMatches.length === 0 ? (
+              <div className="pm-liga-v2-round-future">
+                Genereres efter runde {rn - 1}
+              </div>
+            ) : roundMatches.length === 0 ? (
+              <div className="pm-liga-v2-round-future">Ingen kampe</div>
+            ) : (
+              renderRoundMatches(roundMatches)
+            )}
+          </div>
+        );
+      })}
+
+      <div className="pm-liga-v2-schedule-note">
+        I aftaler selv tidspunktet for hver runde inden for rundens uge — brug holdchatten eller kontakt din modstander direkte.
+      </div>
+    </div>
+  );
+
+  if (isPage) {
+    const pageTitle = isCompleted ? 'Sæsonoversigt' : 'Kampplan';
+    return (
+      <div className="pm-kampe-v2-detail-page pm-liga-v2-schedule-page">
+        <KampeCreateHeader title={pageTitle} onBack={onClose} />
+        <div className="pm-liga-v2-schedule-head pm-liga-v2-schedule-head--page">
+          <div className="pm-liga-v2-schedule-kicker">
+            {isCompleted ? 'SÆSONOVERSIGT' : 'KAMPPLAN & RESULTATER'}
+          </div>
+          <div className="pm-liga-v2-schedule-meta">{league.name}</div>
+        </div>
+        {scheduleContent}
+      </div>
+    );
+  }
+
   return (
     <>
       <button
@@ -165,50 +231,7 @@ export function LigaScheduleSheet({
           </div>
         </div>
 
-        <div className="pm-liga-v2-schedule-body">
-          {allRounds.map((rn) => {
-            const roundMatches = roundsMap[rn] || [];
-            const isCurrent = rn === currentRound;
-            const isDone =
-              roundMatches.length > 0 && roundMatches.every((m) => m.status === 'reported');
-            const isFuture = rn > (currentRound || 0) && !isDone;
-
-            const roundStatusLabel = isDone
-              ? 'Afsluttet'
-              : isCurrent
-                ? 'I gang'
-                : isFuture
-                  ? 'Kommende'
-                  : `Runde ${rn}`;
-
-            return (
-              <div key={rn} className="pm-liga-v2-round-section">
-                <div className="pm-liga-v2-round-label">
-                  <span className="pm-liga-v2-round-label-title">Runde {rn}</span>
-                  <span
-                    className={`pm-liga-v2-round-label-status${isDone ? ' pm-liga-v2-round-label-status--done' : isCurrent ? ' pm-liga-v2-round-label-status--live' : ''}`}
-                  >
-                    {roundStatusLabel}
-                  </span>
-                </div>
-
-                {isFuture && roundMatches.length === 0 ? (
-                  <div className="pm-liga-v2-round-future">
-                    Genereres efter runde {rn - 1}
-                  </div>
-                ) : roundMatches.length === 0 ? (
-                  <div className="pm-liga-v2-round-future">Ingen kampe</div>
-                ) : (
-                  renderRoundMatches(roundMatches)
-                )}
-              </div>
-            );
-          })}
-
-          <div className="pm-liga-v2-schedule-note">
-            I aftaler selv tidspunktet for hver runde inden for rundens uge — brug holdchatten eller kontakt din modstander direkte.
-          </div>
-        </div>
+        {scheduleContent}
       </div>
     </>
   );

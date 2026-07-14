@@ -28,6 +28,8 @@ import { buildAdminChatPath } from '../lib/adminContactUtils';
 import {
   parseKampeDetailRoute,
   buildKampeLigaDetailPath,
+  buildKampeLigaSchedulePath,
+  buildKampeLigaTeamPath,
   buildKampeListPath,
   KAMPE_FORMAT_LIGA,
 } from '../lib/kampeDetailRoutes';
@@ -65,12 +67,38 @@ export function LigaTab({
   const location = useLocation();
   const embedDetailRoute = embedInKampe ? parseKampeDetailRoute(location.pathname) : null;
   const embedDetailLeagueId = embedDetailRoute?.kind === 'liga' ? embedDetailRoute.id : null;
+  const embedLigaSub = embedDetailRoute?.kind === 'liga' ? embedDetailRoute.sub : null;
+  const embedTeamId = embedLigaSub && typeof embedLigaSub === 'object' && embedLigaSub.team
+    ? String(embedLigaSub.team)
+    : null;
   const closeLigaDetail = useCallback(() => {
     navigate(buildKampeListPath(KAMPE_FORMAT_LIGA));
   }, [navigate]);
   const openLigaDetail = useCallback((leagueId) => {
     navigate(buildKampeLigaDetailPath(leagueId));
   }, [navigate]);
+  const openLigaSchedule = useCallback((leagueId) => {
+    if (embedInKampe) navigate(buildKampeLigaSchedulePath(leagueId));
+    else setScheduleLeagueId(leagueId);
+  }, [embedInKampe, navigate]);
+  const closeLigaSchedule = useCallback((leagueId) => {
+    if (embedInKampe) navigate(buildKampeLigaDetailPath(leagueId));
+    else setScheduleLeagueId(null);
+  }, [embedInKampe, navigate]);
+  const openLigaTeamProfile = useCallback((leagueId, team) => {
+    if (embedInKampe) navigate(buildKampeLigaTeamPath(leagueId, team.id));
+    else {
+      setProfileTeam(team);
+      setProfileTeamLeagueId(leagueId);
+    }
+  }, [embedInKampe, navigate]);
+  const closeLigaTeamProfile = useCallback((leagueId) => {
+    if (embedInKampe) navigate(buildKampeLigaDetailPath(leagueId));
+    else {
+      setProfileTeam(null);
+      setProfileTeamLeagueId(null);
+    }
+  }, [embedInKampe, navigate]);
   const openAdminChat = async () => {
     try {
       const path = await buildAdminChatPath(supabase, {
@@ -609,11 +637,18 @@ export function LigaTab({
       navigate(buildKampeListPath(KAMPE_FORMAT_LIGA), { replace: true });
       return;
     }
+    if (embedTeamId) {
+      const teams = teamsByLeague[lid] || [];
+      if (!teams.some((t) => String(t.id) === embedTeamId)) {
+        navigate(buildKampeLigaDetailPath(lid), { replace: true });
+        return;
+      }
+    }
     const st = String(league.status || '').toLowerCase();
     if (st === 'registration' || st === 'active' || st === 'completed') {
       setView(st);
     }
-  }, [embedDetailLeagueId, tabActive, embedInKampe, loading, leagues, navigate]);
+  }, [embedDetailLeagueId, embedTeamId, tabActive, embedInKampe, loading, leagues, teamsByLeague, navigate]);
 
   const leaguesMatchingListFilters = useMemo(() => leagues.filter((l) => {
     if (scope === 'mine' && !myTeamByLeague[l.id] && l.created_by !== user.id) return false;
@@ -654,10 +689,19 @@ export function LigaTab({
     () => (activeLeagueId ? leagues.find((l) => l.id === activeLeagueId) : null),
     [activeLeagueId, leagues],
   );
+  const scheduleLeagueIdEffective = embedInKampe && embedLigaSub === 'schedule'
+    ? embedDetailLeagueId
+    : scheduleLeagueId;
   const scheduleLeague = useMemo(
-    () => (scheduleLeagueId ? leagues.find((l) => l.id === scheduleLeagueId) : null),
-    [scheduleLeagueId, leagues],
+    () => (scheduleLeagueIdEffective ? leagues.find((l) => l.id === scheduleLeagueIdEffective) : null),
+    [scheduleLeagueIdEffective, leagues],
   );
+  const routeProfileTeam = embedTeamId && selectedLeague
+    ? (teamsByLeague[selectedLeague.id] || []).find((t) => String(t.id) === embedTeamId)
+    : null;
+  const activeProfileTeam = routeProfileTeam || profileTeam;
+  const showTeamProfile = embedInKampe ? !!routeProfileTeam : !!profileTeam;
+  const activeProfileLeagueId = profileTeamLeagueId || embedDetailLeagueId;
 
   const myActiveLeagueHero = useMemo(() => {
     const activeLeague = leagues.find((l) => l.status === 'active' && myTeamByLeague[l.id]);
@@ -1006,7 +1050,7 @@ export function LigaTab({
           <div style={{ textAlign: 'right' }}>
             <button
               type="button"
-              onClick={() => setScheduleLeagueId(myActiveLeagueHero.league.id)}
+              onClick={() => openLigaSchedule(myActiveLeagueHero.league.id)}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 background: 'var(--pm-amber)', color: 'var(--pm-navy-deep)', border: 'none',
@@ -1156,7 +1200,7 @@ export function LigaTab({
         </>
       ) : null}
 
-      {selectedLeague && (() => {
+      {selectedLeague && !(embedInKampe && embedLigaSub) && (() => {
         const teams = teamsByLeague[selectedLeague.id] || [];
         const regTeams = allTeamsByLeague[selectedLeague.id] || [];
         const matches = matchesByLeague[selectedLeague.id] || [];
@@ -1194,7 +1238,7 @@ export function LigaTab({
               type="button"
               className="pm-liga-v2-secondary-cta"
               style={btn(false)}
-              onClick={() => setScheduleLeagueId(selectedLeague.id)}
+              onClick={() => openLigaSchedule(selectedLeague.id)}
             >
               Se kampplan & resultater
             </button>
@@ -1205,7 +1249,7 @@ export function LigaTab({
               type="button"
               className="pm-liga-v2-secondary-cta"
               style={btn(false)}
-              onClick={() => setScheduleLeagueId(selectedLeague.id)}
+              onClick={() => openLigaSchedule(selectedLeague.id)}
             >
               Se sæsonoversigt
             </button>
@@ -1250,7 +1294,7 @@ export function LigaTab({
               onCancelTeamForm={() => { setTeamFormLeagueId(null); setTeamName(''); setSelectedPartner(null); }}
               onLeaveLeague={() => leaveLeague(selectedLeague.id)}
               onKickTeam={kickTeam}
-              onTeamProfile={(t) => { setProfileTeam(t); setProfileTeamLeagueId(selectedLeague.id); }}
+              onTeamProfile={(t) => openLigaTeamProfile(selectedLeague.id, t)}
               onPlayerClick={openProfile}
               manageToolsOpen={manageToolsOpen}
               toggleManageTools={() => toggleManageTools(selectedLeague.id)}
@@ -1277,7 +1321,8 @@ export function LigaTab({
       {scheduleLeague ? (
         <LigaScheduleSheet
           open
-          onClose={() => setScheduleLeagueId(null)}
+          presentation={embedInKampe ? 'page' : 'sheet'}
+          onClose={() => closeLigaSchedule(scheduleLeague.id)}
           league={scheduleLeague}
           teams={teamsByLeague[scheduleLeague.id] || []}
           matches={matchesByLeague[scheduleLeague.id] || []}
@@ -1287,17 +1332,17 @@ export function LigaTab({
         />
       ) : null}
 
-      {profileTeam ? (
+      {showTeamProfile && activeProfileTeam ? (
         <LigaTeamProfileSheet
           open
-          onClose={() => { setProfileTeam(null); setProfileTeamLeagueId(null); }}
-          team={profileTeam}
-          leagueId={profileTeamLeagueId}
-          matches={profileTeamLeagueId ? (matchesByLeague[profileTeamLeagueId] || []) : []}
+          presentation={embedInKampe ? 'page' : 'sheet'}
+          onClose={() => closeLigaTeamProfile(activeProfileLeagueId)}
+          team={activeProfileTeam}
+          leagueId={activeProfileLeagueId}
+          matches={activeProfileLeagueId ? (matchesByLeague[activeProfileLeagueId] || []) : []}
           onPlayerClick={openProfile}
           onOpenInMessages={(teamId) => {
-            setProfileTeam(null);
-            setProfileTeamLeagueId(null);
+            closeLigaTeamProfile(activeProfileLeagueId);
             navigate(`/dashboard/beskeder?hold=${teamId}`);
           }}
           userId={user.id}
@@ -1305,7 +1350,7 @@ export function LigaTab({
           userAvatar={user.avatar}
           canWriteTeamChat={
             isAdmin
-            || (profileTeamLeagueId ? !!myTeamByLeague[profileTeamLeagueId] : false)
+            || (activeProfileLeagueId ? !!myTeamByLeague[activeProfileLeagueId] : false)
           }
           showToast={showToast}
         />

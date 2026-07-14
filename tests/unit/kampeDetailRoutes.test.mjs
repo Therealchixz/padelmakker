@@ -6,6 +6,8 @@ import {
   isKampeDetailRoute,
   buildKampe2v2DetailPath,
   buildKampeLigaDetailPath,
+  buildKampeLigaSchedulePath,
+  buildKampeLigaTeamPath,
   buildKampeDetailPathFromFormat,
   resolveLegacyKampeFocusRedirect,
   buildKampeListPath,
@@ -34,6 +36,18 @@ describe('kampeDetailRoutes', () => {
       format: 'liga',
       id: 'l1',
     });
+    assert.deepEqual(parseKampeDetailRoute('/dashboard/kampe/liga/l1/schedule'), {
+      kind: 'liga',
+      format: 'liga',
+      id: 'l1',
+      sub: 'schedule',
+    });
+    assert.deepEqual(parseKampeDetailRoute('/dashboard/kampe/liga/l1/hold/t9'), {
+      kind: 'liga',
+      format: 'liga',
+      id: 'l1',
+      sub: { team: 't9' },
+    });
     assert.equal(parseKampeDetailRoute('/dashboard/kampe'), null);
   });
 
@@ -44,6 +58,8 @@ describe('kampeDetailRoutes', () => {
       '/dashboard/kampe/americano/t?chat=1',
     );
     assert.equal(buildKampeLigaDetailPath('l'), '/dashboard/kampe/liga/l');
+    assert.equal(buildKampeLigaSchedulePath('l'), '/dashboard/kampe/liga/l/schedule');
+    assert.equal(buildKampeLigaTeamPath('l', 't1'), '/dashboard/kampe/liga/l/hold/t1');
   });
 
   it('resolveLegacyKampeFocusRedirect upgrades old links', () => {
@@ -71,6 +87,8 @@ describe('kampeDetailRoutes', () => {
 
   it('isKampeDetailRoute and buildKampeListPath', () => {
     assert.equal(isKampeDetailRoute('/dashboard/kampe/liga/x'), true);
+    assert.equal(isKampeDetailRoute('/dashboard/kampe/liga/x/schedule'), true);
+    assert.equal(isKampeDetailRoute('/dashboard/kampe/liga/x/hold/t1'), true);
     assert.equal(isKampeDetailRoute('/dashboard/kampe'), false);
     assert.equal(buildKampeListPath('liga'), '/dashboard/kampe?format=liga');
     assert.equal(buildKampe2v2DetailPath('m'), '/dashboard/kampe/2v2/m');

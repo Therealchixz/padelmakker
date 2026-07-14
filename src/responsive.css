@@ -9418,6 +9418,57 @@ button,
   }
 }
 
+/* Liga kampplan / holdprofil — fuldskærms-side */
+.pm-kampe-v2-detail-page.pm-liga-v2-schedule-page,
+.pm-kampe-v2-detail-page.pm-liga-v2-team-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-schedule-page .pm-liga-v2-schedule-head,
+.pm-kampe-v2-detail-page.pm-liga-v2-schedule-page .pm-liga-v2-schedule-body,
+.pm-kampe-v2-detail-page.pm-liga-v2-team-page .pm-liga-v2-team-body {
+  padding-left: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--pm-kampe-detail-gutter), env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-schedule-page .pm-liga-v2-schedule-head {
+  flex-shrink: 0;
+  padding-bottom: 8px;
+}
+
+.pm-liga-v2-schedule-head--page {
+  padding-top: 0;
+}
+
+.pm-liga-v2-schedule-meta {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pm-text-mid);
+  margin-top: 2px;
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-schedule-page .pm-liga-v2-schedule-body {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-team-page .pm-liga-v2-team-body {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
 .pm-liga-v2-standings {
   border: 1px solid var(--pm-border-soft);
   border-radius: 12px;

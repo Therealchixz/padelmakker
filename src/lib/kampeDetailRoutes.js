@@ -23,7 +23,8 @@ const DASHBOARD_TABS = new Set([
   'notifikationer',
 ]);
 
-/** @typedef {{ kind: '2v2' | 'americano' | 'liga', format: string, id: string }} KampeDetailRoute */
+/** @typedef {'schedule' | { team: string }} KampeLigaSubRoute */
+/** @typedef {{ kind: '2v2' | 'americano' | 'liga', format: string, id: string, sub?: KampeLigaSubRoute }} KampeDetailRoute */
 
 /**
  * @param {string} pathname
@@ -54,7 +55,11 @@ export function parseKampeDetailRoute(pathname) {
     return { kind: 'americano', format: KAMPE_FORMAT_AMERICANO, id };
   }
   if (kind === 'liga') {
-    return { kind: 'liga', format: KAMPE_FORMAT_LIGA, id };
+    /** @type {KampeDetailRoute} */
+    const route = { kind: 'liga', format: KAMPE_FORMAT_LIGA, id };
+    if (parts[4] === 'schedule') route.sub = 'schedule';
+    else if (parts[4] === 'hold' && parts[5]) route.sub = { team: String(parts[5]) };
+    return route;
   }
   return null;
 }
@@ -95,6 +100,23 @@ export function buildKampeAmericanoDetailPath(tournamentId, { openChat = false }
 export function buildKampeLigaDetailPath(leagueId, { openChat = false } = {}) {
   const base = `/dashboard/kampe/liga/${encodeURIComponent(String(leagueId))}`;
   return openChat ? `${base}?chat=1` : base;
+}
+
+/**
+ * @param {string} leagueId
+ * @returns {string}
+ */
+export function buildKampeLigaSchedulePath(leagueId) {
+  return `${buildKampeLigaDetailPath(leagueId)}/schedule`;
+}
+
+/**
+ * @param {string} leagueId
+ * @param {string} teamId
+ * @returns {string}
+ */
+export function buildKampeLigaTeamPath(leagueId, teamId) {
+  return `${buildKampeLigaDetailPath(leagueId)}/hold/${encodeURIComponent(String(teamId))}`;
 }
 
 /**
