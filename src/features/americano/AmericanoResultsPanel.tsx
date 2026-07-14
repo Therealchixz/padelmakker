@@ -1046,19 +1046,38 @@ export function AmericanoResultsPanel({
       {/* ── STILLING ── */}
       {tab === 'stilling' ? (
         <>
-          {myActiveMatch && activeRoundNumber != null ? (
+          {activeRoundNumber != null && (canManage ? activeRoundMatches.length > 0 : myActiveMatch) ? (
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: c.text, marginBottom: 8 }}>
-                {myOnCourtNow
-                  ? `🎾 Runde ${activeRoundNumber} af ${totalRoundsDisplay} · Bane ${myActiveMatch.court_index + 1}`
-                  : `Runde ${activeRoundNumber} af ${totalRoundsDisplay} · Du sidder over`}
-              </div>
-              {myOnCourtNow ? (
-                renderScoreCard(myActiveMatch, myActiveMatchIdx, { hideHeader: true })
+              {canManage ? (
+                <>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: c.text, marginBottom: 8 }}>
+                    Runde {activeRoundNumber} af {totalRoundsDisplay}
+                    {myActiveMatch
+                      ? (myOnCourtNow
+                        ? ` · Du spiller på bane ${myActiveMatch.court_index + 1}`
+                        : ' · Du sidder over')
+                      : null}
+                  </div>
+                  {activeRoundMatches.map((m) => {
+                    const idx = matchesDisplay.findIndex((x) => x.id === m.id)
+                    return renderScoreCard(m, idx)
+                  })}
+                </>
               ) : (
-                <div style={{ padding: '18px', textAlign: 'center', color: c.muted, fontSize: 13, background: 'var(--pm-surface)', border: `1px solid ${c.line}`, borderRadius: 14 }}>
-                  ☕ Du sidder over i denne runde
-                </div>
+                <>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: c.text, marginBottom: 8 }}>
+                    {myOnCourtNow
+                      ? `🎾 Runde ${activeRoundNumber} af ${totalRoundsDisplay} · Bane ${myActiveMatch!.court_index + 1}`
+                      : `Runde ${activeRoundNumber} af ${totalRoundsDisplay} · Du sidder over`}
+                  </div>
+                  {myOnCourtNow ? (
+                    renderScoreCard(myActiveMatch!, myActiveMatchIdx, { hideHeader: true })
+                  ) : (
+                    <div style={{ padding: '18px', textAlign: 'center', color: c.muted, fontSize: 13, background: 'var(--pm-surface)', border: `1px solid ${c.line}`, borderRadius: 14 }}>
+                      ☕ Du sidder over i denne runde
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ) : null}
