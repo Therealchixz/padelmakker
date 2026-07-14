@@ -1,5 +1,6 @@
 import { absoluteUrl } from './siteMeta';
 import { formatMatchDateDa, matchTimeLabel } from './matchDisplayUtils';
+import { buildKampe2v2DetailPath } from './kampeDetailRoutes.js';
 
 /**
  * @typedef {{ ok: boolean; method: 'share' | 'clipboard' | 'none'; error?: string }} ShareResult
@@ -74,7 +75,7 @@ export async function sharePadelMatch({ match, hostName }) {
   const when = [dateTxt, timeTxt].filter(Boolean).join(' kl. ');
   const host = hostName?.trim() || 'En spiller';
 
-  const url = absoluteUrl(`/dashboard/kampe?focus=${encodeURIComponent(String(match.id))}`);
+  const url = absoluteUrl(buildKampe2v2DetailPath(String(match.id)));
   const text = [
     `${host} inviterer dig til en padel-kamp på ${court}${when ? ` (${when})` : ''}.`,
     'Log ind eller opret gratis profil på PadelMakker for at se kampen og tilmelde dig:',

@@ -2,6 +2,7 @@ import { MapPin, X } from 'lucide-react';
 import { useBottomSheetDragToClose } from '../lib/useBottomSheetDragToClose';
 import { ligaTypeLabel } from '../lib/ligaDisplayUtils';
 import { groupByDivision } from '../lib/ligaStandings';
+import { KampeCreateHeader } from '../components/kampe/KampeRedesignToolbar';
 
 function badgeToneClass(tone) {
   if (tone === 'live') return 'pm-kampe-v2-badge--live';
@@ -14,6 +15,7 @@ function badgeToneClass(tone) {
 export function LigaDetailSheet({
   open,
   onClose,
+  presentation = 'sheet',
   league,
   regionLabel = '',
   teamCount = 0,
@@ -23,15 +25,62 @@ export function LigaDetailSheet({
   children,
   footer,
 }) {
+  const isPage = presentation === 'page';
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
-    enabled: open,
+    enabled: open && !isPage,
   });
 
   if (!open || !league) return null;
 
   const isRegistration = league.status === 'registration';
   const rounds = totalRounds || league.total_rounds;
+
+  const detailHead = (
+    <div className="pm-liga-v2-detail-head">
+      <div className="pm-liga-v2-detail-head-main">
+        <div className="pm-liga-v2-detail-type">{ligaTypeLabel(league)}</div>
+        <h2 className="pm-liga-v2-detail-title">{league.name}</h2>
+        <div className="pm-liga-v2-detail-meta">
+          <MapPin size={12} aria-hidden />
+          {regionLabel || 'Danmark'}
+          {' · '}
+          {isRegistration ? `${league.max_teams || teamCount} hold max` : `${teamCount} hold`}
+          {rounds ? ` · ${rounds} runder` : ''}
+        </div>
+      </div>
+      {!isPage ? (
+        <div className="pm-liga-v2-detail-head-right">
+          {badgeLabel ? (
+            <span className={`pm-kampe-v2-badge ${badgeToneClass(badgeTone)}`}>
+              {badgeTone === 'live' ? <span className="pm-live-dot" aria-hidden /> : null}
+              {badgeLabel}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="pm-kampe-v2-detail-close"
+            onClick={onClose}
+            onPointerDown={(event) => event.stopPropagation()}
+            aria-label="Luk"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  if (isPage) {
+    return (
+      <div className="pm-kampe-v2-detail-page pm-liga-v2-detail-sheet">
+        <KampeCreateHeader title={league.name} onBack={onClose} />
+        {detailHead}
+        <div className="pm-liga-v2-detail-body">{children}</div>
+        {footer ? <div className="pm-liga-v2-detail-footer">{footer}</div> : null}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -46,36 +95,7 @@ export function LigaDetailSheet({
       >
         <div {...dragZoneProps} className="pm-kampe-v2-sheet-drag-header">
           <div className="pm-kampe-v2-sheet-handle" aria-hidden />
-          <div className="pm-liga-v2-detail-head">
-            <div className="pm-liga-v2-detail-head-main">
-              <div className="pm-liga-v2-detail-type">{ligaTypeLabel(league)}</div>
-              <h2 className="pm-liga-v2-detail-title">{league.name}</h2>
-              <div className="pm-liga-v2-detail-meta">
-                <MapPin size={12} aria-hidden />
-                {regionLabel || 'Danmark'}
-                {' · '}
-                {isRegistration ? `${league.max_teams || teamCount} hold max` : `${teamCount} hold`}
-                {rounds ? ` · ${rounds} runder` : ''}
-              </div>
-            </div>
-            <div className="pm-liga-v2-detail-head-right">
-              {badgeLabel ? (
-                <span className={`pm-kampe-v2-badge ${badgeToneClass(badgeTone)}`}>
-                  {badgeTone === 'live' ? <span className="pm-live-dot" aria-hidden /> : null}
-                  {badgeLabel}
-                </span>
-              ) : null}
-              <button
-                type="button"
-                className="pm-kampe-v2-detail-close"
-                onClick={onClose}
-                onPointerDown={(event) => event.stopPropagation()}
-                aria-label="Luk"
-              >
-                <X size={18} />
-              </button>
-            </div>
-          </div>
+          {detailHead}
         </div>
         <div className="pm-liga-v2-detail-body">{children}</div>
         {footer ? <div className="pm-liga-v2-detail-footer">{footer}</div> : null}

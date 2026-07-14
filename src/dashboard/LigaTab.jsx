@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, btn, inputStyle, labelStyle, font } from '../lib/platformTheme';
@@ -25,6 +25,12 @@ import { useScrollIntoViewWhen } from '../lib/useScrollIntoViewWhen';
 import { DateInputField } from '../components/DateInputField';
 import { profileAreaMatchesKampeRegionFilter } from '../lib/kampeListFilterCore';
 import { buildAdminChatPath } from '../lib/adminContactUtils';
+import {
+  parseKampeDetailRoute,
+  buildKampeLigaDetailPath,
+  buildKampeListPath,
+  KAMPE_FORMAT_LIGA,
+} from '../lib/kampeDetailRoutes';
 
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
 
@@ -47,8 +53,6 @@ export function LigaTab({
   onCreateOpenChange,
   embedInKampe = false,
   tabActive = true,
-  focusLeagueId = null,
-  onFocusLeagueHandled,
   scope: scopeProp,
   onScopeChange,
   searchQuery: searchQueryProp,
@@ -58,6 +62,15 @@ export function LigaTab({
 }) {
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
+  const location = useLocation();
+  const embedDetailRoute = embedInKampe ? parseKampeDetailRoute(location.pathname) : null;
+  const embedDetailLeagueId = embedDetailRoute?.kind === 'liga' ? embedDetailRoute.id : null;
+  const closeLigaDetail = useCallback(() => {
+    navigate(buildKampeListPath(KAMPE_FORMAT_LIGA));
+  }, [navigate]);
+  const openLigaDetail = useCallback((leagueId) => {
+    navigate(buildKampeLigaDetailPath(leagueId));
+  }, [navigate]);
   const openAdminChat = async () => {
     try {
       const path = await buildAdminChatPath(supabase, {
@@ -578,29 +591,29 @@ export function LigaTab({
   const toggleManageTools = (id) => setOpenManageTools((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const closeDetailSheet = () => {
-    if (teamFormLeagueId === selectedLeagueId) {
+    const openId = embedInKampe ? embedDetailLeagueId : selectedLeagueId;
+    if (teamFormLeagueId === openId) {
       setTeamFormLeagueId(null);
       setTeamName('');
       setSelectedPartner(null);
     }
-    setSelectedLeagueId(null);
+    if (embedInKampe) closeLigaDetail();
+    else setSelectedLeagueId(null);
   };
 
   useEffect(() => {
-    const lid = focusLeagueId;
+    const lid = embedDetailLeagueId;
     if (!lid || !tabActive || !embedInKampe || loading) return;
     const league = leagues.find((l) => String(l.id) === String(lid));
     if (!league) {
-      onFocusLeagueHandled?.();
+      navigate(buildKampeListPath(KAMPE_FORMAT_LIGA), { replace: true });
       return;
     }
     const st = String(league.status || '').toLowerCase();
     if (st === 'registration' || st === 'active' || st === 'completed') {
       setView(st);
     }
-    setSelectedLeagueId(league.id);
-    onFocusLeagueHandled?.();
-  }, [focusLeagueId, tabActive, embedInKampe, loading, leagues, onFocusLeagueHandled]);
+  }, [embedDetailLeagueId, tabActive, embedInKampe, loading, leagues, navigate]);
 
   const leaguesMatchingListFilters = useMemo(() => leagues.filter((l) => {
     if (scope === 'mine' && !myTeamByLeague[l.id] && l.created_by !== user.id) return false;
@@ -636,9 +649,10 @@ export function LigaTab({
     { id: 'completed', label: <>Afsluttede{leagueStatusCount.completed > 0 ? <span className="pm-tab-count">{leagueStatusCount.completed}</span> : null}</> },
   ];
 
+  const activeLeagueId = embedInKampe ? embedDetailLeagueId : selectedLeagueId;
   const selectedLeague = useMemo(
-    () => (selectedLeagueId ? leagues.find((l) => l.id === selectedLeagueId) : null),
-    [selectedLeagueId, leagues],
+    () => (activeLeagueId ? leagues.find((l) => l.id === activeLeagueId) : null),
+    [activeLeagueId, leagues],
   );
   const scheduleLeague = useMemo(
     () => (scheduleLeagueId ? leagues.find((l) => l.id === scheduleLeagueId) : null),
@@ -946,7 +960,7 @@ export function LigaTab({
           </div>
         </div>
         );
-      })() : (
+      })() : !embedDetailLeagueId ? (
         <>
       {/* Min liga hero — vis brugerens aktive liga øverst */}
       {myActiveLeagueHero && !loading && (
@@ -1118,7 +1132,7 @@ export function LigaTab({
                 myTeam={myTeam}
                 myTeamRank={myTeamRank}
                 nextMatchLabel={nextMatchLabel}
-                onClick={() => setSelectedLeagueId(league.id)}
+                onClick={() => (embedInKampe ? openLigaDetail(league.id) : setSelectedLeagueId(league.id))}
               />
             );
           })}
@@ -1140,7 +1154,7 @@ export function LigaTab({
         </div>
       )}
         </>
-      )}
+      ) : null}
 
       {selectedLeague && (() => {
         const teams = teamsByLeague[selectedLeague.id] || [];
@@ -1201,6 +1215,7 @@ export function LigaTab({
         return (
           <LigaDetailSheet
             open
+            presentation={embedInKampe ? 'page' : 'sheet'}
             onClose={closeDetailSheet}
             league={selectedLeague}
             regionLabel={regionLabel}
@@ -1300,8 +1315,8 @@ export function LigaTab({
       {createdLeagueReceipt && (() => {
         const r = createdLeagueReceipt;
         const ligaUrl = typeof window !== 'undefined'
-          ? `${window.location.origin}/dashboard/kampe`
-          : '';
+          ? `${window.location.origin}${buildKampeLigaDetailPath(r.id)}`
+          : buildKampeLigaDetailPath(r.id);
         const handleCopy = () => {
           if (!ligaUrl) return;
           navigator.clipboard?.writeText(ligaUrl).then(() => {

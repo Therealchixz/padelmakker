@@ -8,6 +8,7 @@ import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose';
 import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCompletedDetail } from './MatchCompletedDetail';
 import { MatchCourtView } from './MatchCourtView';
+import { KampeCreateHeader } from './KampeRedesignToolbar';
 import '../../styles/kampdetalje.css';
 
 function heroStatusChipClass(tone) {
@@ -18,6 +19,7 @@ function heroStatusChipClass(tone) {
 export function KampeMatchDetailSheet({
   open,
   onClose,
+  presentation = 'sheet',
   match,
   profilesById = {},
   matchPrefs,
@@ -47,9 +49,10 @@ export function KampeMatchDetailSheet({
   onKickPlayer,
   onProfileClick,
 }) {
+  const isPage = presentation === 'page';
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
-    enabled: open,
+    enabled: open && !isPage,
   });
 
   if (!open || !match) return null;
@@ -69,6 +72,135 @@ export function KampeMatchDetailSheet({
     joined,
     myTeam,
   });
+
+  const detailBody = (
+    <>
+      <div className="pm-kd-hero">
+        <div className="pm-kd-hero-badges">
+          <span className="pm-kd-chip pm-kd-chip--light">2V2</span>
+          {matchPrefs?.min != null && matchPrefs?.max != null ? (
+            <span className="pm-kd-chip pm-kd-chip--amber">
+              ELO {matchPrefs.min}–{matchPrefs.max}
+            </span>
+          ) : null}
+          <span className={`pm-kd-chip ${heroStatusChipClass(statusBadge.tone)}`}>
+            {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
+            {statusBadge.label}
+          </span>
+        </div>
+        <div className="pm-kd-hero-court" aria-hidden />
+      </div>
+
+      <div className="pm-kd-card pm-kd-price-card">
+        <div className="pm-kd-title-block">
+          <h2 className="pm-kd-title">{venue}</h2>
+          {directionsQuery ? (
+            <a
+              className="pm-kd-maplink pm-kd-maplink--under-title"
+              href={banerMapsDirectionsUrl(directionsQuery)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(event) => event.stopPropagation()}
+            >
+              Vis på kort <ArrowUpRight size={11} aria-hidden />
+            </a>
+          ) : null}
+        </div>
+        {matchPrefs?.booked != null || unreadCount > 0 ? (
+          <div className="pm-kd-price-meta">
+            {matchPrefs?.booked != null ? (
+              <span className={`pm-kd-tag ${matchPrefs.booked ? 'pm-kd-tag--green' : 'pm-kd-tag--amber'}`}>
+                {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
+              </span>
+            ) : null}
+            {unreadCount > 0 ? (
+              <span className="pm-kd-tag pm-kd-tag--amber">{unreadCount} ulæst i chat</span>
+            ) : null}
+          </div>
+        ) : null}
+        <div className="pm-kd-info-row">
+          <div className="pm-kd-info-ic"><CalendarDays size={18} aria-hidden /></div>
+          <div>
+            <b>{formatMatchDateHeadlineDa(match.date)}</b>
+            <span className="pm-kd-info-sub">{matchTimeLabel(match)}</span>
+          </div>
+        </div>
+      </div>
+
+      {description ? (
+        <>
+          <div className="pm-kd-section-h"><h3>Om kampen</h3></div>
+          <p className="pm-kd-about">{description}</p>
+        </>
+      ) : null}
+
+      {status === 'completed' && matchResult?.confirmed ? (
+        <MatchCompletedDetail
+          matchResult={matchResult}
+          teamStats={teamStats}
+          winnerTeam={winnerTeam}
+          currentUserId={currentUserId}
+          profilesById={profilesById}
+        />
+      ) : null}
+
+      <MatchCourtView
+        teamStats={teamStats}
+        status={status}
+        winnerTeam={winnerTeam}
+        profilesById={profilesById}
+        readOnly={status === 'completed'}
+        joined={joined}
+        myTeam={myTeam}
+        matchId={matchId}
+        busyId={busyId}
+        isCreator={isCreator}
+        isAdmin={isAdmin}
+        currentUserId={currentUserId}
+        onSwitchTeam={onSwitchTeam}
+        onSwitchPlayerTeam={onSwitchPlayerTeam}
+        onKickPlayer={onKickPlayer}
+        onProfileClick={onProfileClick}
+      />
+
+      {status === 'completed' && matchResult && !matchResult.confirmed ? (
+        <MatchResultStrip
+          matchResult={matchResult}
+          myTeam={
+            myTeam === 1 ? 'team1' : myTeam === 2 ? 'team2' : null
+          }
+          eloChange={myEloChange}
+        />
+      ) : null}
+
+      {joinRequestsPanel}
+
+      {primaryAction ? (
+        <button
+          type="button"
+          className="pm-kampe-v2-detail-primary"
+          style={btn(primaryAction.variant !== 'secondary', { size: 'md', fontWeight: 600 })}
+          onClick={primaryAction.onClick}
+          disabled={primaryAction.disabled}
+        >
+          {primaryAction.label}
+        </button>
+      ) : null}
+
+      {managePanel ? (
+        <div className="pm-kampe-v2-detail-manage">{managePanel}</div>
+      ) : null}
+    </>
+  );
+
+  if (isPage) {
+    return (
+      <div className="pm-kampe-v2-detail-page pm-kampe-v2-detail-sheet">
+        <KampeCreateHeader title="2v2-kamp" onBack={onClose} />
+        <div className="pm-kampe-v2-detail-scroll">{detailBody}</div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -104,123 +236,7 @@ export function KampeMatchDetailSheet({
           </div>
         </div>
 
-        <div className="pm-kampe-v2-detail-scroll">
-        <div className="pm-kd-hero">
-          <div className="pm-kd-hero-badges">
-            <span className="pm-kd-chip pm-kd-chip--light">2V2</span>
-            {matchPrefs?.min != null && matchPrefs?.max != null ? (
-              <span className="pm-kd-chip pm-kd-chip--amber">
-                ELO {matchPrefs.min}–{matchPrefs.max}
-              </span>
-            ) : null}
-            <span className={`pm-kd-chip ${heroStatusChipClass(statusBadge.tone)}`}>
-              {statusBadge.tone === 'live' ? <span className="pm-live-dot" /> : null}
-              {statusBadge.label}
-            </span>
-          </div>
-          <div className="pm-kd-hero-court" aria-hidden />
-        </div>
-
-        <div className="pm-kd-card pm-kd-price-card">
-          <div className="pm-kd-title-block">
-            <h2 className="pm-kd-title">{venue}</h2>
-            {directionsQuery ? (
-              <a
-                className="pm-kd-maplink pm-kd-maplink--under-title"
-                href={banerMapsDirectionsUrl(directionsQuery)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(event) => event.stopPropagation()}
-              >
-                Vis på kort <ArrowUpRight size={11} aria-hidden />
-              </a>
-            ) : null}
-          </div>
-          {matchPrefs?.booked != null || unreadCount > 0 ? (
-            <div className="pm-kd-price-meta">
-              {matchPrefs?.booked != null ? (
-                <span className={`pm-kd-tag ${matchPrefs.booked ? 'pm-kd-tag--green' : 'pm-kd-tag--amber'}`}>
-                  {matchPrefs.booked ? 'Bane booket' : 'Bane ikke booket'}
-                </span>
-              ) : null}
-              {unreadCount > 0 ? (
-                <span className="pm-kd-tag pm-kd-tag--amber">{unreadCount} ulæst i chat</span>
-              ) : null}
-            </div>
-          ) : null}
-          <div className="pm-kd-info-row">
-            <div className="pm-kd-info-ic"><CalendarDays size={18} aria-hidden /></div>
-            <div>
-              <b>{formatMatchDateHeadlineDa(match.date)}</b>
-              <span className="pm-kd-info-sub">{matchTimeLabel(match)}</span>
-            </div>
-          </div>
-        </div>
-
-        {description ? (
-          <>
-            <div className="pm-kd-section-h"><h3>Om kampen</h3></div>
-            <p className="pm-kd-about">{description}</p>
-          </>
-        ) : null}
-
-        {status === 'completed' && matchResult?.confirmed ? (
-          <MatchCompletedDetail
-            matchResult={matchResult}
-            teamStats={teamStats}
-            winnerTeam={winnerTeam}
-            currentUserId={currentUserId}
-            profilesById={profilesById}
-          />
-        ) : null}
-
-        <MatchCourtView
-          teamStats={teamStats}
-          status={status}
-          winnerTeam={winnerTeam}
-          profilesById={profilesById}
-          readOnly={status === 'completed'}
-          joined={joined}
-          myTeam={myTeam}
-          matchId={matchId}
-          busyId={busyId}
-          isCreator={isCreator}
-          isAdmin={isAdmin}
-          currentUserId={currentUserId}
-          onSwitchTeam={onSwitchTeam}
-          onSwitchPlayerTeam={onSwitchPlayerTeam}
-          onKickPlayer={onKickPlayer}
-          onProfileClick={onProfileClick}
-        />
-
-        {status === 'completed' && matchResult && !matchResult.confirmed ? (
-          <MatchResultStrip
-            matchResult={matchResult}
-            myTeam={
-              myTeam === 1 ? 'team1' : myTeam === 2 ? 'team2' : null
-            }
-            eloChange={myEloChange}
-          />
-        ) : null}
-
-        {joinRequestsPanel}
-
-        {primaryAction ? (
-          <button
-            type="button"
-            className="pm-kampe-v2-detail-primary"
-            style={btn(primaryAction.variant !== 'secondary', { size: 'md', fontWeight: 600 })}
-            onClick={primaryAction.onClick}
-            disabled={primaryAction.disabled}
-          >
-            {primaryAction.label}
-          </button>
-        ) : null}
-
-        {managePanel ? (
-          <div className="pm-kampe-v2-detail-manage">{managePanel}</div>
-        ) : null}
-        </div>
+        <div className="pm-kampe-v2-detail-scroll">{detailBody}</div>
       </div>
     </>
   );

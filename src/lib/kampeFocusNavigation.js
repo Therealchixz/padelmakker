@@ -21,15 +21,7 @@ export function parseKampeFocusFromSearch(search) {
   };
 }
 
-export function buildKampeFocusPath(format, focusId, { openChat = false } = {}) {
-  const params = new URLSearchParams();
-  const f = normalizeKampeFormat(format);
-  if (f !== KAMPE_FORMAT_PADEL) params.set('format', f);
-  if (focusId) params.set('focus', String(focusId));
-  if (openChat) params.set('chat', '1');
-  const q = params.toString();
-  return `/dashboard/kampe${q ? `?${q}` : ''}`;
-}
+export { buildKampeDetailPathFromFormat as buildKampeFocusPath } from './kampeDetailRoutes.js';
 
 export function kampeFocusOpensChat(notifType) {
   const type = String(notifType || '').toLowerCase();

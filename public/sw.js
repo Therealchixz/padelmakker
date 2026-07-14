@@ -99,11 +99,11 @@ self.addEventListener('notificationclick', (event) => {
   const entityId = d.entityId;
   let url = '/dashboard';
   if (entityType === 'americano' && entityId) {
-    url = '/dashboard/kampe?format=americano&focus=' + encodeURIComponent(String(entityId));
+    url = '/dashboard/kampe/americano/' + encodeURIComponent(String(entityId));
   } else if (entityType === 'league' && entityId) {
-    url = '/dashboard/kampe?format=liga&focus=' + encodeURIComponent(String(entityId));
+    url = '/dashboard/kampe/liga/' + encodeURIComponent(String(entityId));
   } else if (matchId) {
-    url = '/dashboard/kampe?focus=' + encodeURIComponent(String(matchId));
+    url = '/dashboard/kampe/2v2/' + encodeURIComponent(String(matchId));
   }
 
   event.waitUntil(

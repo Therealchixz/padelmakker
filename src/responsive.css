@@ -7807,6 +7807,41 @@ button,
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
+/* Full-screen Kampe detail pages (2v2 / Americano / Liga) */
+.pm-kampe-v2-detail-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 120px);
+  margin-bottom: 8px;
+}
+
+.pm-dash-main--kampe-detail {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.pm-kampe-v2-detail-page.pm-kampe-v2-detail-sheet,
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet {
+  position: static;
+  max-height: none;
+  transform: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.pm-kampe-v2-detail-page .pm-kampe-v2-detail-scroll,
+.pm-kampe-v2-detail-page .pm-americano-v2-detail-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+.pm-kampe-v2-detail-page.pm-liga-v2-detail-sheet .pm-liga-v2-detail-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .pm-kampe-v2-detail-head {
   display: flex;
   flex-direction: column;

@@ -45,11 +45,16 @@ import { facilityLabel } from '../lib/courtFacilities.jsx';
 import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { buildMatchLevelRange, clampElo, parseMatchLevelRange } from '../lib/matchLevelRange';
 import {
-  parseKampeFocusFromSearch,
   KAMPE_FORMAT_PADEL,
   KAMPE_FORMAT_AMERICANO,
   KAMPE_FORMAT_LIGA,
 } from '../lib/kampeFocusNavigation';
+import {
+  parseKampeDetailRoute,
+  buildKampe2v2DetailPath,
+  buildKampeListPath,
+  resolveLegacyKampeFocusRedirect,
+} from '../lib/kampeDetailRoutes';
 import { DateTime } from 'luxon';
 import { Plus, UserMinus, Trash2, Zap, ChevronDown, ChevronUp, MessageCircle, SendHorizontal, CalendarDays, CalendarPlus, Share2, Swords, Users, BarChart3, Check, Copy, ArrowRight, MapPin } from 'lucide-react';
 import { EmptyStateIcon } from '../components/EmptyStateIcon';
@@ -230,6 +235,15 @@ function buildIcsEvent({ uid, title, description, location, start, end, url }) {
 export function KampeTab({ user, showToast, tabActive = true }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const kampeDetailRoute = parseKampeDetailRoute(location.pathname);
+  const detailMatchId = kampeDetailRoute?.kind === '2v2' ? kampeDetailRoute.id : null;
+  const isOnKampeDetailPage = !!kampeDetailRoute;
+  const close2v2Detail = useCallback(() => {
+    navigate(buildKampeListPath(KAMPE_FORMAT_PADEL));
+  }, [navigate]);
+  const open2v2Detail = useCallback((matchId) => {
+    navigate(buildKampe2v2DetailPath(matchId));
+  }, [navigate]);
   const { user: authUser, refreshProfile } = useAuth();
   const ask = useConfirm();
   const isAdmin = user?.role === 'admin';
@@ -290,7 +304,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
   const [ligaFilteredCount, setLigaFilteredCount] = useState(null);
   const [padelHelpOpen, setPadelHelpOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-  const [detailMatchId, setDetailMatchId] = useState(null);
 
   useScrollIntoViewWhen(showCreate, padelCreateFormRef, {
     enabled: kampeFormat === 'padel' && !loadingMatches,
@@ -608,31 +621,9 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     setMatchChatOpenById({});
   }, [viewTab, kampeScope]);
 
-  /* Kamp-detaljen opfører sig som en side: åbning skubber et history-trin,
-     så telefonens tilbage-gestus/knap lukker arket i stedet for at forlade Kampe.
-     mounted-ref'en (defineret FØR effekten, så dens cleanup kører først ved unmount)
-     sikrer at vi ikke kalder history.back() når hele fanen forlades. */
   const loadDataReqIdRef = useRef(0);
   const kampeMountedRef = useRef(true);
   useEffect(() => () => { kampeMountedRef.current = false; }, []);
-  const detailHistoryArmedRef = useRef(false);
-  useEffect(() => {
-    if (!detailMatchId || typeof window === "undefined") return undefined;
-    window.history.pushState({ pmKampeDetail: String(detailMatchId) }, "");
-    detailHistoryArmedRef.current = true;
-    const onPop = () => {
-      detailHistoryArmedRef.current = false;
-      setDetailMatchId(null);
-    };
-    window.addEventListener("popstate", onPop);
-    return () => {
-      window.removeEventListener("popstate", onPop);
-      if (detailHistoryArmedRef.current) {
-        detailHistoryArmedRef.current = false;
-        if (kampeMountedRef.current) window.history.back();
-      }
-    };
-  }, [detailMatchId]);
 
   useEffect(() => {
     const closeChatPanels = () => setMatchChatOpenById({});
@@ -928,11 +919,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     (v) => mergeKampeSessionPrefs(user.id, { americanoView: v }),
     [user.id]
   );
-
-  /** Deep link scroll-mål (state så ny notifikation trigger scroll på samme underfane). */
-  const [focusScrollMatchId, setFocusScrollMatchId] = useState(null);
-  const [focusScrollAmericanoId, setFocusScrollAmericanoId] = useState(null);
-  const [focusScrollLeagueId, setFocusScrollLeagueId] = useState(null);
 
   const createMatch = async () => {
     if (newMatch.court_booked && (!newMatch.court_id || isMatchVenueTbd(newMatch.court_id))) {
@@ -1429,7 +1415,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         isAdmin ? "En admin har aflyst kampen." : `${myDisplayName} har aflyst kampen.`,
         matchId,
       );
-      setDetailMatchId((current) => (String(current) === String(matchId) ? null : current));
+      if (String(detailMatchId) === String(matchId)) close2v2Detail();
       showToast("Kamp slettet.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
@@ -1679,7 +1665,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       .filter(Boolean);
     const locationName = String(match.court_name || 'Padelbane').trim();
     const title = `Padelkamp - ${locationName}`;
-    const matchUrl = `${windowRef.location.origin}/dashboard/kampe#pm-match-${match.id}`;
+    const matchUrl = `${windowRef.location.origin}${buildKampe2v2DetailPath(match.id)}`;
     const descriptionParts = [
       match.description ? `Beskrivelse: ${match.description}` : '',
       players.length ? `Spillere: ${players.join(', ')}` : '',
@@ -1874,100 +1860,79 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     navigate({ pathname: "/dashboard/kampe", search: q ? `?${q}` : "" }, { replace: true });
   }, [tabActive, location.search, navigate]);
 
-  /* Notifikation: ?format=americano|liga&focus=<id> eller ?focus=<matchId> (padel) */
+  /* Legacy ?focus= / #pm-match- → nye detail-ruter */
   useEffect(() => {
     if (!tabActive) return;
-    const { format, focusId, openChat } = parseKampeFocusFromSearch(location.search);
-    if (!focusId) return;
-
-    const clearFocusInUrl = (keepFormat) => {
-      const params = new URLSearchParams();
-      if (keepFormat && keepFormat !== KAMPE_FORMAT_PADEL) params.set("format", keepFormat);
-      const q = params.toString();
-      navigate({ pathname: "/dashboard/kampe", search: q ? `?${q}` : "" }, { replace: true });
-    };
-
-    if (format === KAMPE_FORMAT_AMERICANO) {
-      setKampeFormat(KAMPE_FORMAT_AMERICANO);
-      setFocusScrollAmericanoId(focusId);
-      clearFocusInUrl(KAMPE_FORMAT_AMERICANO);
-      return;
+    const redirectPath = resolveLegacyKampeFocusRedirect(
+      location.pathname,
+      location.search,
+      location.hash,
+    );
+    if (redirectPath) {
+      navigate(redirectPath, { replace: true });
     }
+  }, [tabActive, location.pathname, location.search, location.hash, navigate]);
 
-    if (format === KAMPE_FORMAT_LIGA) {
-      setKampeFormat(KAMPE_FORMAT_LIGA);
-      setFocusScrollLeagueId(focusId);
-      clearFocusInUrl(KAMPE_FORMAT_LIGA);
-      return;
-    }
+  /* Detail-side: sync kampe-format efter URL */
+  useEffect(() => {
+    if (!tabActive || !kampeDetailRoute) return;
+    if (kampeDetailRoute.kind === "2v2") setKampeFormat(KAMPE_FORMAT_PADEL);
+    else if (kampeDetailRoute.kind === "americano") setKampeFormat(KAMPE_FORMAT_AMERICANO);
+    else if (kampeDetailRoute.kind === "liga") setKampeFormat(KAMPE_FORMAT_LIGA);
+  }, [tabActive, kampeDetailRoute]);
 
-    if (loadingMatches || !matches.length) return;
-    const m = matches.find((x) => String(x.id) === String(focusId));
+  /* 2v2 detail-route: underfane, join requests og ?chat=1 */
+  useEffect(() => {
+    if (!tabActive || !detailMatchId) return;
+
+    const params = new URLSearchParams(location.search);
+    const openChat = params.get("chat") === "1";
+
+    if (loadingMatches && !matches.length) return;
+    const m = matches.find((x) => String(x.id) === String(detailMatchId))
+      ?? matches.find((x) => {
+        if (String(x.id) !== String(detailMatchId)) return false;
+        return getStatus(x) !== "cancelled";
+      });
     if (!m) {
-      clearFocusInUrl(KAMPE_FORMAT_PADEL);
+      if (!loadingMatches) navigate(buildKampeListPath(KAMPE_FORMAT_PADEL), { replace: true });
       return;
     }
-    setKampeFormat(KAMPE_FORMAT_PADEL);
-    setFocusScrollMatchId(focusId);
-    const st = (m.status ?? "open").toString().toLowerCase();
+
+    const st = getStatus(m);
     const mp = matchPlayers[m.id] || [];
     const imIn = mp.some((p) => p.user_id === user.id);
     if (st === "in_progress" && imIn) setViewTab("active");
     else if (st === "completed" && imIn) setViewTab("completed");
     else setViewTab("open");
-    // Åbn detaljer direkte, så deeplinket altid viser kampen — også hvis et
-    // aktivt filter ellers ville skjule den fra den synlige liste.
-    setDetailMatchId(String(focusId));
+
+    void refreshJoinRequestsForMatch(detailMatchId);
+
     if (openChat) {
-      const matchKey = String(focusId);
+      const matchKey = String(detailMatchId);
       setMatchChatOpenById((prev) => ({ ...prev, [matchKey]: true }));
       void loadMatchChat(matchKey, { showLoading: true });
       void markMatchChatNotifsRead(matchKey);
+      params.delete("chat");
+      navigate(
+        { pathname: location.pathname, search: params.toString() ? `?${params}` : "" },
+        { replace: true },
+      );
     }
-    clearFocusInUrl(KAMPE_FORMAT_PADEL);
-  }, [tabActive, loadingMatches, matches, matchPlayers, user.id, location.search, navigate, loadMatchChat, markMatchChatNotifsRead]);
-
-  useEffect(() => {
-    const mid = focusScrollMatchId;
-    if (!mid || !tabActive || loadingMatches) return;
-
-    const matchInRenderedList = () => {
-      if (viewTab === "open") {
-        return openMatches.some((x) => String(x.id) === String(mid));
-      }
-      if (viewTab === "active") {
-        return activeMatches.some((x) => String(x.id) === String(mid));
-      }
-      if (viewTab === "completed") {
-        return completedMatches.slice(0, completedLimit).some((x) => String(x.id) === String(mid));
-      }
-      return false;
-    };
-
-    if (viewTab === "completed") {
-      const idx = completedMatches.findIndex((x) => String(x.id) === String(mid));
-      if (idx >= 0 && idx >= completedLimit) {
-        setCompletedLimit(idx + 1);
-        return;
-      }
-    }
-
-    if (!matchInRenderedList()) return;
-
-    setDetailMatchId(String(mid));
-    void refreshJoinRequestsForMatch(mid);
-    setFocusScrollMatchId(null);
   }, [
     tabActive,
+    detailMatchId,
     loadingMatches,
     matches,
-    focusScrollMatchId,
-    viewTab,
-    openMatches,
-    activeMatches,
-    completedMatches,
-    completedLimit,
+    matchPlayers,
+    user.id,
+    location.pathname,
+    location.search,
+    navigate,
+    loadMatchChat,
+    markMatchChatNotifsRead,
     refreshJoinRequestsForMatch,
+    getStatus,
   ]);
 
   const matchTeamStatsById = useMemo(() => {
@@ -2157,7 +2122,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       return {
         label: "Tilmeld mig",
         onClick: () => {
-          setDetailMatchId(null);
+          close2v2Detail();
           setTeamSelectMatch(m.id);
         },
         disabled: busy,
@@ -2168,7 +2133,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         return {
           label: busyId === m.id + "-req" ? "Sender..." : "Anmod om tilmelding",
           onClick: () => {
-            setDetailMatchId(null);
+            close2v2Detail();
             void requestJoin(m.id);
           },
           disabled: busyId === m.id + "-req",
@@ -2178,7 +2143,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         return {
           label: "Vælg hold og anmod",
           onClick: () => {
-            setDetailMatchId(null);
+            close2v2Detail();
             setTeamSelectMatch(m.id);
           },
           disabled: busy,
@@ -2205,7 +2170,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         return {
           label: "Vælg hold og tilmeld",
           onClick: () => {
-            setDetailMatchId(null);
+            close2v2Detail();
             setTeamSelectMatch(m.id);
           },
           disabled: busy,
@@ -2216,7 +2181,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       return {
         label: isFull ? "Start kamp" : "Venter på spillere",
         onClick: () => {
-          setDetailMatchId(null);
+          close2v2Detail();
           void startMatch(m.id);
         },
         disabled: busy || !isFull,
@@ -2227,7 +2192,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       return {
         label: "Indrapportér resultat",
         onClick: () => {
-          setDetailMatchId(null);
+          close2v2Detail();
           setResultMatch(m.id);
         },
         disabled: busy,
@@ -2238,7 +2203,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         return {
           label: "Bekræft resultat",
           onClick: () => {
-            setDetailMatchId(null);
+            close2v2Detail();
             setConfirmModalMatchId(m.id);
           },
           disabled: busy,
@@ -2319,7 +2284,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
     if (!m) return;
     const prefs = parseMatchLevelRange(m.level_range);
     const booked = !!m.court_id;
-    setDetailMatchId(null);
+    close2v2Detail();
     setKampeFormat('padel');
     setNewMatch((prev) => ({
       ...prev,
@@ -2752,7 +2717,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             if (matchUnreadByIdRef.current[matchKey]) {
               void markMatchNotifsRead(m.id);
             }
-            setDetailMatchId(m.id);
+            open2v2Detail(m.id);
           }}
         />
       </div>
@@ -2879,7 +2844,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
           onBack={handleCreateBack}
           onInfo={createHeaderInfo}
         />
-      ) : (
+      ) : !isOnKampeDetailPage ? (
         <>
           <KampeRedesignToolbar
             formatTabs={toolbarFormatTabs}
@@ -2891,7 +2856,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
               setShowAmericanoCreate(false);
               setShowLigaCreate(false);
               setFilterSheetOpen(false);
-              setDetailMatchId(null);
+              if (isOnKampeDetailPage) navigate(buildKampeListPath(nextFormat));
             }}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -2914,7 +2879,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             />
           )}
         </>
-      )}
+      ) : null}
 
       <KampeFilterSheet
         open={filterSheetOpen}
@@ -2936,6 +2901,54 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         showEloFilter={kampeFormat === "padel"}
         facilityOptions={availableFacilities}
       />
+
+      {detailMatchId && loadingMatches && !detailMatch ? (
+        <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: "14px" }}>
+          <div className="pm-spinner pm-state-spinner" />
+          <div className="pm-state-title">Indlæser kamp…</div>
+        </div>
+      ) : null}
+
+      {detailMatch && detailBundle ? (
+        <KampeMatchDetailSheet
+          open
+          onClose={close2v2Detail}
+          presentation="page"
+          match={detailMatch}
+          profilesById={profilesById}
+          matchPrefs={detailBundle.matchPrefs}
+          statusLabel={detailBundle.cardState.statusLabel}
+          status={detailBundle.status}
+          isClosed={detailBundle.cardState.isClosed}
+          left={detailBundle.cardState.left}
+          isFull={detailBundle.cardState.isFull}
+          teamStats={detailBundle.teamStats}
+          winnerTeam={detailBundle.winnerTeam}
+          matchResult={detailBundle.mr}
+          myEloChange={
+            detailBundle.mr?.confirmed && detailBundle.cardState.joined
+              ? eloChangesByMatchId[String(detailMatch.id)]?.[myUidStr] ?? null
+              : null
+          }
+          myTeam={detailBundle.cardState.myTeam}
+          description={detailMatch.description}
+          primaryAction={buildMatchPrimaryAction(detailMatch, detailBundle)}
+          joinRequestsPanel={renderJoinRequestsPanel(detailMatch, detailBundle)}
+          unreadCount={detailBundle.cardState.attentionCount}
+          joined={detailBundle.cardState.joined}
+          matchId={detailMatch.id}
+          busyId={busyId}
+          isCreator={detailBundle.cardState.isCreator}
+          isAdmin={isAdmin}
+          currentUserId={user.id}
+          onSwitchTeam={switchTeam}
+          onSwitchPlayerTeam={switchPlayerTeam}
+          onKickPlayer={kickPlayer}
+          onProfileClick={(prof) => setViewPlayer(prof)}
+          managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
+        />
+      ) : null}
+
       {kampeFormat === "liga" && (
         <Suspense
           fallback={
@@ -2952,8 +2965,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             onCreateOpenChange={setShowLigaCreate}
             embedInKampe
             tabActive={tabActive && kampeFormat === "liga"}
-            focusLeagueId={focusScrollLeagueId}
-            onFocusLeagueHandled={() => setFocusScrollLeagueId(null)}
             scope={kampeScope}
             onScopeChange={onScopeChange}
             searchQuery={searchQuery}
@@ -3007,8 +3018,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             searchQuery={searchQuery}
             listRegionFilter={kampeListFilter.regionId}
             onFilteredCountChange={setAmericanoFilteredCount}
-          focusTournamentId={focusScrollAmericanoId}
-          onFocusTournamentHandled={() => setFocusScrollAmericanoId(null)}
           initialSubTab={(() => {
             const s = readKampeSessionPrefs(user.id);
             if (s?.americanoView === "open" || s?.americanoView === "playing" || s?.americanoView === "completed") {
@@ -3021,7 +3030,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         </Suspense>
       )}
 
-      {kampeFormat === "padel" && !loadingMatches && !loadError && (
+      {kampeFormat === "padel" && !detailMatchId && !loadingMatches && !loadError && (
       <>
       {showCreate ? (
         <div
@@ -3496,48 +3505,6 @@ export function KampeTab({ user, showToast, tabActive = true }) {
       {/* Player profile modal */}
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
 
-      {detailMatch && detailBundle ? (
-        <KampeMatchDetailSheet
-          open
-          onClose={() => setDetailMatchId(null)}
-          match={detailMatch}
-          profilesById={profilesById}
-          matchPrefs={detailBundle.matchPrefs}
-          statusLabel={detailBundle.cardState.statusLabel}
-          status={detailBundle.status}
-          isClosed={detailBundle.cardState.isClosed}
-          left={detailBundle.cardState.left}
-          isFull={detailBundle.cardState.isFull}
-          teamStats={detailBundle.teamStats}
-          winnerTeam={detailBundle.winnerTeam}
-          matchResult={detailBundle.mr}
-          myEloChange={
-            detailBundle.mr?.confirmed && detailBundle.cardState.joined
-              ? eloChangesByMatchId[String(detailMatch.id)]?.[myUidStr] ?? null
-              : null
-          }
-          myTeam={detailBundle.cardState.myTeam}
-          description={detailMatch.description}
-          primaryAction={buildMatchPrimaryAction(detailMatch, detailBundle)}
-          joinRequestsPanel={renderJoinRequestsPanel(detailMatch, detailBundle)}
-          unreadCount={detailBundle.cardState.attentionCount}
-          joined={detailBundle.cardState.joined}
-          matchId={detailMatch.id}
-          busyId={busyId}
-          isCreator={detailBundle.cardState.isCreator}
-          isAdmin={isAdmin}
-          currentUserId={user.id}
-          onSwitchTeam={switchTeam}
-          onSwitchPlayerTeam={switchPlayerTeam}
-          onKickPlayer={kickPlayer}
-          onProfileClick={(prof) => setViewPlayer(prof)}
-          managePanel={renderDetailManagePanel(detailMatch, detailBundle)}
-          facilities={courts.find((c) => String(c.id) === String(detailMatch.court_id))?.facilities || []}
-          onRematch={detailBundle.status === 'completed' ? () => handleRematch(detailMatch) : undefined}
-          reportErrorNode={detailBundle.status === 'completed' ? renderResultErrorControl(detailMatch, detailBundle) : null}
-        />
-      ) : null}
-
       {adminPinGateOpen ? (
         <AdminPinGate
           userId={user?.id}
@@ -3565,8 +3532,8 @@ export function KampeTab({ user, showToast, tabActive = true }) {
         const timePart = matchTimeLabel(m);
         const timeStr = timePart && timePart !== '—' ? `Kl. ${timePart}` : '';
         const matchUrl = typeof window !== 'undefined'
-          ? `${window.location.origin}/dashboard/kampe#pm-match-${m.id}`
-          : '';
+          ? `${window.location.origin}${buildKampe2v2DetailPath(m.id)}`
+          : buildKampe2v2DetailPath(m.id);
         const handleCopy = () => {
           if (!matchUrl) return;
           navigator.clipboard?.writeText(matchUrl).then(() => {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { CalendarDays, ChevronDown, ChevronUp, Inbox, Trash2, Check, Copy, Share2, CalendarPlus, ArrowRight, MapPin } from 'lucide-react'
 import { EmptyStateIcon } from '../../components/EmptyStateIcon'
 import { supabase } from '../../lib/supabase'
@@ -35,6 +36,12 @@ import {
 import { useScrollIntoViewWhen } from '../../lib/useScrollIntoViewWhen'
 import { PlayerStatsModal } from '../../components/PlayerStatsModal'
 import { tournamentPassesKampeRegionFilter } from '../../lib/kampeListFilterCore'
+import {
+  parseKampeDetailRoute,
+  buildKampeAmericanoDetailPath,
+  buildKampeListPath,
+  KAMPE_FORMAT_AMERICANO,
+} from '../../lib/kampeDetailRoutes'
 
 const font = 'var(--pm-font)'
 
@@ -58,9 +65,6 @@ type Props = {
   embedInKampe?: boolean
   /** Kampe-fanen er aktiv (til notifikations-deep-link) */
   tabActive?: boolean
-  /** Scroll til denne turnering (fra notifikation) */
-  focusTournamentId?: string | null
-  onFocusTournamentHandled?: () => void
   /** Styret opret-formular (sammen med onCreateOpenChange) */
   createOpen?: boolean
   onCreateOpenChange?: (open: boolean) => void
@@ -110,9 +114,17 @@ export function AmericanoTab({
   searchQuery = '',
   listRegionFilter = '',
   onFilteredCountChange,
-  focusTournamentId = null,
-  onFocusTournamentHandled,
 }: Props) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const embedDetailRoute = embedInKampe ? parseKampeDetailRoute(location.pathname) : null
+  const embedDetailId = embedDetailRoute?.kind === 'americano' ? embedDetailRoute.id : null
+  const closeAmericanoDetail = useCallback(() => {
+    navigate(buildKampeListPath(KAMPE_FORMAT_AMERICANO))
+  }, [navigate])
+  const openAmericanoDetail = useCallback((id: string) => {
+    navigate(buildKampeAmericanoDetailPath(id))
+  }, [navigate])
   const { user: authUser, refreshProfileQuiet } = useAuth()
   const ask = useConfirm()
   const authEmail =
@@ -295,20 +307,18 @@ export function AmericanoTab({
   }, [initialSubTab])
 
   useEffect(() => {
-    const tid = focusTournamentId
-    if (!tid || !tabActive || loading) return
+    const tid = embedDetailId
+    if (!tid || !tabActive || !embedInKampe || loading) return
     const t = rows.find((x) => String(x.id) === String(tid))
     if (!t) {
-      onFocusTournamentHandled?.()
+      navigate(buildKampeListPath(KAMPE_FORMAT_AMERICANO), { replace: true })
       return
     }
     const st = String(t.status || '').toLowerCase()
     if (st === 'registration') setAmericanoView('open')
     else if (st === 'playing') setAmericanoView('playing')
     else setAmericanoView('completed')
-    setDetailTournamentId(t.id)
-    onFocusTournamentHandled?.()
-  }, [focusTournamentId, tabActive, loading, rows, onFocusTournamentHandled])
+  }, [embedDetailId, tabActive, embedInKampe, loading, rows, navigate])
 
   useEffect(() => {
     const uidSet = new Set<string>()
@@ -472,10 +482,11 @@ export function AmericanoTab({
   }, [rows, joinedIds, profileId, loading, americanoView, scope, searchQuery, participantsByTournament, listRegionFilter, creatorAreasByUserId])
 
   useEffect(() => {
-    if (!detailTournamentId || !profileId) return undefined
-    const t = rows.find((x) => x.id === detailTournamentId)
+    const openDetailId = embedInKampe ? embedDetailId : detailTournamentId
+    if (!openDetailId || !profileId) return undefined
+    const t = rows.find((x) => x.id === openDetailId)
     if (!t || t.status !== 'completed') return undefined
-    if (completedDetailCache[detailTournamentId]) return undefined
+    if (completedDetailCache[openDetailId]) return undefined
 
     let cancelled = false
     ;(async () => {
@@ -525,7 +536,7 @@ export function AmericanoTab({
     return () => {
       cancelled = true
     }
-  }, [detailTournamentId, rows, profileId, participantsByTournament])
+  }, [embedInKampe, embedDetailId, detailTournamentId, rows, profileId, participantsByTournament])
 
   const filterTournamentRow = useCallback(
     (t: AmericanoTournament) => {
@@ -790,7 +801,8 @@ export function AmericanoTab({
       const { error } = await supabase.from('americano_tournaments').delete().eq('id', t.id)
       if (error) throw error
       showToast('Americano/Mexicano slettet.')
-      setDetailTournamentId(null)
+      if (embedInKampe) closeAmericanoDetail()
+      else setDetailTournamentId(null)
       await load()
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -841,8 +853,9 @@ export function AmericanoTab({
     { id: 'completed' as const, label: <>Spillede<span className="pm-tab-count">{completedAmericanosFiltered.length}</span></> },
   ]
 
-  const detailTournament = detailTournamentId
-    ? rows.find((x) => x.id === detailTournamentId) ?? null
+  const activeDetailId = embedInKampe ? embedDetailId : detailTournamentId
+  const detailTournament = activeDetailId
+    ? rows.find((x) => x.id === activeDetailId) ?? null
     : null
 
   const buildDetailPlayers = (
@@ -921,7 +934,7 @@ export function AmericanoTab({
             onCancel={() => setShowCreate(false)}
           />
         </div>
-      ) : (
+      ) : !embedDetailId ? (
         <>
       <div className="pm-help-box" style={{ marginBottom: 16 }}>
         <button
@@ -1048,14 +1061,14 @@ export function AmericanoTab({
                 roundProgress={listMeta.roundProgress[t.id] ?? null}
                 myEloChange={listMeta.myEloChange[t.id] ?? null}
                 playedDurationMinutes={listMeta.playedDurationMinutes[t.id] ?? null}
-                onClick={() => setDetailTournamentId(t.id)}
+                onClick={() => (embedInKampe ? openAmericanoDetail(t.id) : setDetailTournamentId(t.id))}
               />
             )
           })}
         </div>
       )}
         </>
-      )}
+      ) : null}
 
       {detailTournament ? (() => {
         const t = detailTournament
@@ -1258,7 +1271,8 @@ export function AmericanoTab({
         return (
           <AmericanoDetailSheet
             open
-            onClose={() => setDetailTournamentId(null)}
+            presentation={embedInKampe ? 'page' : 'sheet'}
+            onClose={() => (embedInKampe ? closeAmericanoDetail() : setDetailTournamentId(null))}
             tournament={t}
             courts={courts}
             dateLabel={dateLabel}
@@ -1328,7 +1342,7 @@ export function AmericanoTab({
         const datePart = t.tournament_date ? formatMatchDateDa(t.tournament_date) : ''
         const timeStr = t.time_slot ? `Kl. ${formatTimeSlotDa(t.time_slot)}` : ''
         const tournamentUrl = typeof window !== 'undefined'
-          ? `${window.location.origin}/dashboard/kampe#pm-americano-${t.id}`
+          ? `${window.location.origin}${buildKampeAmericanoDetailPath(t.id)}`
           : ''
         const handleCopy = () => {
           if (!tournamentUrl) return

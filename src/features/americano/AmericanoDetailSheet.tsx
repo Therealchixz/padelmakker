@@ -6,6 +6,7 @@ import { resolveCourtNameDirectionsQuery } from '../../lib/kampeListFilterCore'
 import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
+import { KampeCreateHeader } from '../../components/kampe/KampeRedesignToolbar'
 import { PadelCourtArt } from '../../components/kampe/PadelCourtArt'
 import {
   formatAmericanoLiveRoundLabel,
@@ -44,6 +45,7 @@ export type AmericanoDetailPlayer = {
 type Props = {
   open: boolean
   onClose: () => void
+  presentation?: 'sheet' | 'page'
   tournament: AmericanoTournament | null
   courts: { id: string; name: string }[]
   dateLabel: string
@@ -161,6 +163,7 @@ function PlayerTile({
 export function AmericanoDetailSheet({
   open,
   onClose,
+  presentation = 'sheet',
   tournament,
   courts,
   dateLabel,
@@ -178,10 +181,11 @@ export function AmericanoDetailSheet({
   resultsPanel,
   completedTournament,
 }: Props) {
+  const isPage = presentation === 'page'
   const [resultsExpanded, setResultsExpanded] = useState(false)
   const { sheetRef, dragZoneProps, sheetStyle, sheetClassName } = useBottomSheetDragToClose({
     onClose,
-    enabled: open,
+    enabled: open && !isPage,
   })
 
   useEffect(() => {
@@ -231,47 +235,7 @@ export function AmericanoDetailSheet({
     ? null
     : `pr. person${tournament.payment_method === 'cash' ? ' · betales ved fremmøde' : tournament.payment_method === 'mobilepay' ? ' · MobilePay' : ''}`
 
-  return (
-    <>
-      <button
-        type="button"
-        className="pm-kampe-v2-sheet-backdrop"
-        aria-label="Luk Americano/Mexicano-detaljer"
-        onClick={onClose}
-      />
-      <div
-        ref={sheetRef}
-        className={`pm-kampe-v2-sheet pm-kampe-v2-detail-sheet pm-americano-v2-detail-sheet${sheetClassName ? ` ${sheetClassName}` : ''}`}
-        style={sheetStyle}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Americano/Mexicano-detaljer"
-      >
-        <div {...dragZoneProps} aria-label="Træk her for at lukke">
-          <div className="pm-kampe-v2-sheet-handle" aria-hidden />
-          <div className="pm-americano-v2-detail-head">
-            <div className="pm-americano-v2-detail-head-main">
-              <div className="pm-americano-v2-detail-type">{getTournamentFormatLabel(tournament.format)}</div>
-              <h2 className="pm-americano-v2-detail-title">{tournament.name}</h2>
-            </div>
-            <div className="pm-americano-v2-detail-head-right">
-              <span className={`pm-kampe-v2-badge ${badgeToneClass(badgeTone)}`}>
-                {badgeTone === 'live' ? <span className="pm-live-dot" /> : null}
-                {badgeLabel}
-              </span>
-              <button
-                type="button"
-                className="pm-kampe-v2-detail-close"
-                onClick={onClose}
-                onPointerDown={(event) => event.stopPropagation()}
-                aria-label="Luk"
-              >
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
-
+  const detailScroll = (
         <div className="pm-americano-v2-detail-scroll">
         {/* Court hero visual */}
         <div className="pm-kd-hero" style={{ marginBottom: 0, borderRadius: 0 }} aria-hidden="true">
@@ -430,6 +394,59 @@ export function AmericanoDetailSheet({
 
         {extras}
         </div>
+  )
+
+  if (isPage) {
+    return (
+      <div className="pm-kampe-v2-detail-page pm-kampe-v2-detail-sheet pm-americano-v2-detail-sheet">
+        <KampeCreateHeader title={getTournamentFormatLabel(tournament.format)} onBack={onClose} />
+        {detailScroll}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className="pm-kampe-v2-sheet-backdrop"
+        aria-label="Luk Americano/Mexicano-detaljer"
+        onClick={onClose}
+      />
+      <div
+        ref={sheetRef}
+        className={`pm-kampe-v2-sheet pm-kampe-v2-detail-sheet pm-americano-v2-detail-sheet${sheetClassName ? ` ${sheetClassName}` : ''}`}
+        style={sheetStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Americano/Mexicano-detaljer"
+      >
+        <div {...dragZoneProps} aria-label="Træk her for at lukke">
+          <div className="pm-kampe-v2-sheet-handle" aria-hidden />
+          <div className="pm-americano-v2-detail-head">
+            <div className="pm-americano-v2-detail-head-main">
+              <div className="pm-americano-v2-detail-type">{getTournamentFormatLabel(tournament.format)}</div>
+              <h2 className="pm-americano-v2-detail-title">{tournament.name}</h2>
+            </div>
+            <div className="pm-americano-v2-detail-head-right">
+              <span className={`pm-kampe-v2-badge ${badgeToneClass(badgeTone)}`}>
+                {badgeTone === 'live' ? <span className="pm-live-dot" /> : null}
+                {badgeLabel}
+              </span>
+              <button
+                type="button"
+                className="pm-kampe-v2-detail-close"
+                onClick={onClose}
+                onPointerDown={(event) => event.stopPropagation()}
+                aria-label="Luk"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {detailScroll}
       </div>
     </>
   )

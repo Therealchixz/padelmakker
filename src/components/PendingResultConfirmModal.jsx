@@ -9,6 +9,7 @@ import { resolveDisplayName } from '../lib/platformUtils';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import { formatMatchResultScore } from '../lib/matchResultScore';
 import { canConfirmPadelMatchResult, filterConfirmablePendingResults } from '../lib/resolvePadelMatchResult';
+import { buildKampe2v2DetailPath } from '../lib/kampeDetailRoutes.js';
 
 /**
  * Globalt pop-up som tvinger brugeren til at forholde sig til ubekræftede
@@ -321,7 +322,7 @@ export function PendingResultConfirmModal({ user }) {
       next.add(result.id);
       return next;
     });
-    navigate('/dashboard/kampe?focus=' + encodeURIComponent(result.match_id));
+    navigate(buildKampe2v2DetailPath(result.match_id));
   };
 
   const dateLabel = match?.date ? formatMatchDateDa(match.date) : '';

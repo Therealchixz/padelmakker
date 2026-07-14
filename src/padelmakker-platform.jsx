@@ -202,18 +202,7 @@ export default function PadelMakker() {
             <Route path="/hjaelp" element={<HelpContactPageLazy />} />
             <Route path="/app" element={<InstallAppPageLazy />} />
             <Route
-              path="/dashboard"
-              element={
-                dashboardGate
-                  ?? (canUseApp
-                    ? <DashboardPageLazy user={profile} onLogout={handleLogout} showToast={showToast} />
-                    : hasProfile
-                      ? <Navigate to="/opret" replace />
-                      : <Navigate to="/" replace />)
-              }
-            />
-            <Route
-              path="/dashboard/:tab"
+              path="/dashboard/*"
               element={
                 dashboardGate
                   ?? (canUseApp

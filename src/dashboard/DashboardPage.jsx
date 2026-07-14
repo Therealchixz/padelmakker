@@ -44,6 +44,7 @@ import {
   scrollDashboardToTop,
   shouldScrollDashboardToTopOnTabReselect,
 } from '../lib/dashboardScroll';
+import { parseDashboardTab, isKampeDetailRoute } from '../lib/kampeDetailRoutes';
 
 const loadMakkereTab = () => import('./MakkereTab');
 const loadBanerTab = () => import('./BanerTab');
@@ -746,7 +747,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
   const hasKampeAttention = pendingKampe > 0 || unreadKampeNotifs > 0 || pendingLigaInvites > 0;
   const kampeTabBadge =
     pendingKampe + pendingLigaInvites > 0 ? pendingKampe + pendingLigaInvites : null;
-  const pathTab = location.pathname.split("/")[2] || "hjem";
+  const pathTab = parseDashboardTab(location.pathname);
   const validTabs = ["hjem", "makkere", "baner", "kampe", "ranking", "liga", "beskeder", "profil", "kamp-filter", "makker-filter", "admin", "notifikationer"];
   const tab = validTabs.includes(pathTab) ? pathTab : "hjem";
   const setTab = useCallback((tabId, opts = {}) => {
@@ -1365,7 +1366,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
     if (fromMoreSheet) setMobileMoreOpen(false);
   }, [tab, isMobileView, mobileMoreOpen, setTab]);
 
-  const hideMobileBottomNav = isMobileView && tab === "beskeder" && mobileConversationOpen;
+  const hideMobileBottomNav =
+    (isMobileView && tab === "beskeder" && mobileConversationOpen)
+    || (isMobileView && isKampeDetailRoute(location.pathname));
 
   return (
     <div
@@ -1621,7 +1624,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
 
       </div>
 
-      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${hideMobileBottomNav ? " pm-dash-main--chat" : ""}`}>
+      <div className={`pm-dash-main${tab === "hjem" ? " pm-dash-main--home" : ""}${tab === "notifikationer" ? " pm-dash-main--notifikationer" : ""}${hideMobileBottomNav ? " pm-dash-main--chat" : ""}${isKampeDetailRoute(location.pathname) ? " pm-dash-main--kampe-detail" : ""}`}>
         <Suspense
           fallback={
             <div
