@@ -7,7 +7,7 @@ import { banerMapsDirectionsUrl } from '../../lib/banerMapLinks'
 import { isAvatarUrl } from '../../lib/avatarUpload'
 import { useBottomSheetDragToClose } from '../../lib/useBottomSheetDragToClose'
 import { KampeCreateHeader } from '../../components/kampe/KampeRedesignToolbar'
-import { CreatorProfileRow } from '../../components/kampe/CreatorProfileRow'
+import { CreatorTag } from '../../components/kampe/CreatorTag'
 import { PadelCourtArt } from '../../components/kampe/PadelCourtArt'
 import {
   formatAmericanoLiveRoundLabel,
@@ -35,6 +35,7 @@ export type AmericanoDetailPlayer = {
   name: string
   avatar?: string | null
   isMe?: boolean
+  isCreator?: boolean
   elo?: number | null
   points?: number | null
   eloChange?: number | null
@@ -72,10 +73,6 @@ type Props = {
     isCreator: boolean
     onParticipantView: (userId: string, name: string) => void
   } | null
-  creatorProfile?: { id?: string; full_name?: string | null; name?: string | null; avatar?: string | null } | null
-  creatorUserId?: string | null
-  currentUserId?: string | null
-  onCreatorClick?: (profile: { id?: string; full_name?: string | null; name?: string | null; avatar?: string | null }) => void
 }
 
 function badgeToneClass(tone: string) {
@@ -146,6 +143,7 @@ function PlayerTile({
       <span className={`pm-americano-v2-detail-player-name${player.isMe ? ' pm-americano-v2-detail-player-name--me' : ''}`}>
         {player.name.split(' ')[0]}
         {player.isMe ? ' (dig)' : ''}
+        {player.isCreator ? <CreatorTag /> : null}
       </span>
       {player.elo != null && Number.isFinite(player.elo) ? (
         <span className="pm-americano-v2-detail-player-elo">{Math.round(player.elo)}</span>
@@ -185,10 +183,6 @@ export function AmericanoDetailSheet({
   extras,
   resultsPanel,
   completedTournament,
-  creatorProfile = null,
-  creatorUserId = null,
-  currentUserId = null,
-  onCreatorClick,
 }: Props) {
   const isPage = presentation === 'page'
   const [resultsExpanded, setResultsExpanded] = useState(false)
@@ -298,13 +292,6 @@ export function AmericanoDetailSheet({
             </div>
           </div>
         </div>
-
-        <CreatorProfileRow
-          userId={creatorUserId ?? tournament.creator_id}
-          profile={creatorProfile}
-          currentUserId={currentUserId}
-          onProfileClick={onCreatorClick}
-        />
 
         <div className="pm-americano-v2-detail-stats">
           <div className="pm-americano-v2-detail-stat">

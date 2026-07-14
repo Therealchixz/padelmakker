@@ -9,7 +9,6 @@ import { MatchResultStrip } from '../MatchResultStrip';
 import { MatchCompletedDetail } from './MatchCompletedDetail';
 import { MatchCourtView } from './MatchCourtView';
 import { KampeCreateHeader } from './KampeRedesignToolbar';
-import { CreatorProfileRow } from './CreatorProfileRow';
 import '../../styles/kampdetalje.css';
 
 function heroStatusChipClass(tone) {
@@ -128,14 +127,6 @@ export function KampeMatchDetailSheet({
         </div>
       </div>
 
-      <CreatorProfileRow
-        userId={match.creator_id}
-        profile={profilesById[String(match.creator_id)]}
-        currentUserId={currentUserId}
-        onProfileClick={onProfileClick}
-        subtitle="Opretter"
-      />
-
       {description ? (
         <>
           <div className="pm-kd-section-h"><h3>Om kampen</h3></div>
@@ -170,6 +161,7 @@ export function KampeMatchDetailSheet({
         onSwitchPlayerTeam={onSwitchPlayerTeam}
         onKickPlayer={onKickPlayer}
         onProfileClick={onProfileClick}
+        creatorId={match.creator_id}
       />
 
       {status === 'completed' && matchResult && !matchResult.confirmed ? (

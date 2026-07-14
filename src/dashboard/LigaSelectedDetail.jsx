@@ -10,6 +10,18 @@ import { shortLigaDate, ligaIsSwiss } from '../lib/ligaDisplayUtils';
 import { validatePadelScore } from '../lib/ligaStandings';
 import { LigaStandingsTable, LigaDivisionStandings } from './LigaDetailSheet';
 import { buildProfileNameSearchOrFilter } from '../lib/postgrestFilterUtils';
+import { CreatorTag } from '../components/kampe/CreatorTag';
+
+function ligaPlayerLabel(name, userId, creatorUserId, currentUserId) {
+  const isCreator = creatorUserId && userId && String(userId) === String(creatorUserId);
+  const isMe = currentUserId && userId && String(userId) === String(currentUserId);
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      {isMe ? 'Dig' : name}
+      {isCreator ? <CreatorTag /> : null}
+    </span>
+  );
+}
 
 const SWISS_RULES = [
   { icon: '🎾', text: 'Hvert hold spiller én kamp per runde — ingen eliminering, alle spiller videre.' },
@@ -318,8 +330,10 @@ function RegistrationDetail({
                     {t.name}
                     {isMine ? <span style={{ fontSize: 11, color: theme.accent, fontWeight: 700 }}> · dig</span> : null}
                   </span>
-                  <span style={{ display: 'block', fontSize: 11, color: theme.textMid, marginTop: 2 }}>
-                    {t.player1_name} + {t.player2_name}
+                  <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, fontSize: 11, color: theme.textMid, marginTop: 2 }}>
+                    {ligaPlayerLabel(t.player1_name, t.player1_id, league.created_by, user.id)}
+                    <span aria-hidden>+</span>
+                    {ligaPlayerLabel(t.player2_name, t.player2_id, league.created_by, user.id)}
                   </span>
                 </span>
                 {t.status === 'pending' ? (
@@ -461,6 +475,7 @@ function ActiveDetail({
   myTeam,
   standings,
   joined,
+  user,
   onPlayerClick,
   onTeamProfile,
   reportingMatch,
@@ -528,11 +543,15 @@ function ActiveDetail({
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
                     <span onClick={() => onPlayerClick(myTeam.player1_id, myTeam.player1_name, myTeam.player1_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
                       <AvatarCircle avatar={myTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600 }}>{myTeam.player1_name}</span>
+                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        {ligaPlayerLabel(myTeam.player1_name, myTeam.player1_id, league.created_by, user?.id)}
+                      </span>
                     </span>
                     <span onClick={() => onPlayerClick(myTeam.player2_id, myTeam.player2_name, myTeam.player2_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
                       <AvatarCircle avatar={myTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600 }}>{myTeam.player2_name}</span>
+                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        {ligaPlayerLabel(myTeam.player2_name, myTeam.player2_id, league.created_by, user?.id)}
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -544,11 +563,15 @@ function ActiveDetail({
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
                     <span onClick={() => onPlayerClick(opponentTeam.player1_id, opponentTeam.player1_name, opponentTeam.player1_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
                       <AvatarCircle avatar={opponentTeam.player1_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600 }}>{opponentTeam.player1_name}</span>
+                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        {ligaPlayerLabel(opponentTeam.player1_name, opponentTeam.player1_id, league.created_by, user?.id)}
+                      </span>
                     </span>
                     <span onClick={() => onPlayerClick(opponentTeam.player2_id, opponentTeam.player2_name, opponentTeam.player2_avatar)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
                       <AvatarCircle avatar={opponentTeam.player2_avatar} size={28} emojiSize="13px" style={{ background: theme.surface, border: '1px solid ' + theme.border }} />
-                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600 }}>{opponentTeam.player2_name}</span>
+                      <span style={{ fontSize: 10, color: theme.textMid, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        {ligaPlayerLabel(opponentTeam.player2_name, opponentTeam.player2_id, league.created_by, user?.id)}
+                      </span>
                     </span>
                   </div>
                 </div>

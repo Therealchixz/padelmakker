@@ -1,5 +1,6 @@
 import { Plus, UserPlus } from 'lucide-react';
 import { AvatarCircle } from '../AvatarCircle';
+import { CreatorTag } from './CreatorTag';
 import { formatPlaytomicLevel } from '../../lib/padelLevelUtils';
 import {
   getMatchCourtHeaderLabel,
@@ -29,6 +30,7 @@ export function MatchCourtView({
   onKickPlayer,
   onSwitchTeam,
   onSwitchPlayerTeam,
+  creatorId = null,
 }) {
   const t1 = teamStats?.t1 || [];
   const t2 = teamStats?.t2 || [];
@@ -90,7 +92,10 @@ export function MatchCourtView({
             emojiSize="18px"
           />
           <div className="pm-kd-slot-copy">
-            <div className="pm-kd-slot-name">{player.user_name || 'Spiller'}</div>
+            <div className="pm-kd-slot-name">
+              {player.user_name || 'Spiller'}
+              {creatorId != null && String(player.user_id) === String(creatorId) ? <CreatorTag /> : null}
+            </div>
             <div className="pm-kd-slot-meta">
               {showEloChanges && delta != null ? (
                 <span className="pm-kd-lvl-badge">

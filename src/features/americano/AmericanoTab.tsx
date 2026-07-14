@@ -883,6 +883,7 @@ export function AmericanoTab({
         name,
         avatar: snap?.avatar || null,
         isMe,
+        isCreator: String(p.user_id) === String(t.creator_id),
         elo: eloRaw != null && Number.isFinite(Number(eloRaw)) ? Math.round(Number(eloRaw)) : null,
         points: cache?.pointsByUserId[p.user_id],
         eloChange: cache?.eloByUserId[p.user_id]?.change,
@@ -1328,18 +1329,6 @@ export function AmericanoTab({
                   }
                 : null
             }
-            creatorUserId={t.creator_id}
-            creatorProfile={
-              creatorProfilesByUserId[String(t.creator_id)]
-              ?? participantSnippets[t.creator_id]
-              ?? null
-            }
-            currentUserId={profileId}
-            onCreatorClick={(profile) => {
-              const id = String(profile?.id || t.creator_id)
-              const name = String(profile?.full_name || profile?.name || 'Spiller')
-              openParticipantProfile(id, name)
-            }}
           />
         )
       })() : null}

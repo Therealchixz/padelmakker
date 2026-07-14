@@ -8881,14 +8881,16 @@ button,
 }
 
 .pm-americano-v2-detail-player-name {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
   font-size: 12px;
   font-weight: 700;
   color: var(--pm-text);
   text-align: center;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .pm-americano-v2-detail-player-name--me {

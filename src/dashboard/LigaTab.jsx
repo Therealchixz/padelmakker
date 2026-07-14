@@ -1215,6 +1215,12 @@ export function LigaTab({
         const manageToolsOpen = !!openManageTools[selectedLeague.id];
         const busy = busyId === selectedLeague.id || (typeof busyId === 'string' && busyId.startsWith(selectedLeague.id + '-'));
         const regionLabel = creatorAreasByUserId[String(selectedLeague.created_by)] || '';
+        const creatorProfile = creatorProfilesByUserId[String(selectedLeague.created_by)];
+        const creatorLabel = String(creatorProfile?.full_name || creatorProfile?.name || '').trim();
+        const creatorInTeams = [...regTeams, ...teams].some(
+          (t) => String(t.player1_id) === String(selectedLeague.created_by)
+            || String(t.player2_id) === String(selectedLeague.created_by),
+        );
         const totalRounds = selectedLeague.total_rounds || (maxTeams > 0 ? Math.max(1, maxTeams - 1) : null);
         const badge = getLigaBadge(selectedLeague, { regTeamCount, maxTeams, totalRounds });
         const teamCount = selectedLeague.status === 'registration' ? regTeamCount : teams.length;
@@ -1267,10 +1273,9 @@ export function LigaTab({
             badgeLabel={badge.label}
             badgeTone={badge.tone}
             footer={footer}
-            creatorUserId={selectedLeague.created_by}
-            creatorProfile={creatorProfilesByUserId[String(selectedLeague.created_by)]}
+            creatorInTeams={creatorInTeams}
+            creatorLabel={creatorLabel}
             currentUserId={user.id}
-            onCreatorClick={(profile) => openProfile(profile?.id, profile?.full_name || profile?.name, profile?.avatar)}
           >
             <LigaSelectedDetail
               league={selectedLeague}
