@@ -40,6 +40,9 @@ jobs:
       - name: Notification health audit
         run: npm run audit:notifications
 
+      - name: Migration stubs (no empty history-sync placeholders)
+        run: npm run db:check-stubs
+
       - name: Production build
         run: npm run build
 

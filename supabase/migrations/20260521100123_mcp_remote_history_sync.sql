@@ -1,2 +1,0 @@
--- Migration applied on prod via dashboard/MCP (history sync stub).
--- Do not re-run manually.
