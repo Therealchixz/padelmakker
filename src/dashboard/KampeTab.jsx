@@ -65,7 +65,7 @@ import { completionMsFor2v2, isWithinResultErrorReportWindow } from '../lib/resu
 import { calculate2v2MatchWinPrediction } from '../lib/matchWinPrediction';
 import { PillTabs } from '../components/PillTabs';
 import { LevelRangeSlider } from '../components/LevelRangeSlider';
-import { eloToLevel, levelToElo } from '../lib/padelLevelUtils';
+import { eloToLevel, levelToElo, formatMatchLevelRangeLabel, formatPlaytomicLevelRange } from '../lib/padelLevelUtils';
 import {
   KampeRedesignToolbar,
   KampeActiveFilterChips,
@@ -3150,7 +3150,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
                           />
                         </div>
                         <p style={{ fontSize: "11px", color: theme.textLight, marginTop: "6px", lineHeight: 1.45 }}>
-                          Spillere på niveau {lvlMin.toFixed(1)}–{lvlMax.toFixed(1)} matcher kampen.
+                          Spillere på niveau {formatPlaytomicLevelRange(lvlMin, lvlMax)} matcher kampen.
                         </p>
                       </>
                     );
@@ -3244,7 +3244,7 @@ export function KampeTab({ user, showToast, tabActive = true }) {
             const summaryRows = [
               { label: "Bane", value: courtLabel },
               { label: "Tid", value: `${dateLabel} · ${newMatch.time}${endTime ? `–${endTime}` : ""}` },
-              { label: "Niveau", value: `≈ Niveau ${lvlMin.toFixed(1)}–${lvlMax.toFixed(1)}` },
+              { label: "Niveau", value: formatMatchLevelRangeLabel(newMatch.level_min, newMatch.level_max) || `≈ Niveau ${formatPlaytomicLevelRange(lvlMin, lvlMax)}` },
               { label: "Kamptype", value: newMatch.match_type === "closed" ? "Lukket (godkendelse)" : "Åben" },
               { label: "Pris", value: `${priceLabel} · ${paymentLabels[newMatch.payment_method] || newMatch.payment_method}` },
             ];

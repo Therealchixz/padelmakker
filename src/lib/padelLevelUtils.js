@@ -3,7 +3,7 @@
  * ELO bruges internt til overlap mod kampe der kun har elo: i level_range.
  */
 
-import { parseMatchLevelRange } from './matchLevelRange';
+import { parseMatchLevelRange } from './matchLevelRange.js';
 import { levelLabel } from './platformConstants';
 
 export const PLAYTOMIC_LEVEL_MIN = 1;
@@ -49,6 +49,32 @@ export function eloToLevel(elo) {
 
 export function formatPlaytomicLevel(level) {
   return clampPlaytomicLevel(level).toFixed(1);
+}
+
+/** Playtomic-interval med luft omkring tankestreg, fx "3.3 – 6.6". */
+export function formatPlaytomicLevelRange(min, max) {
+  return `${formatPlaytomicLevel(min)} – ${formatPlaytomicLevel(max)}`;
+}
+
+/** ELO-interval med luft omkring tankestreg, fx "1040 – 1200 ELO". */
+export function formatEloRange(eloMin, eloMax) {
+  const a = Number(eloMin);
+  const b = Number(eloMax);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  const lo = Math.round(Math.min(a, b));
+  const hi = Math.round(Math.max(a, b));
+  return `${lo} – ${hi} ELO`;
+}
+
+/**
+ * Kamp-niveau fra gemt ELO-interval: både ELO og ca. Playtomic-niveau.
+ * ELO er det der gemmes og matcher internt; niveau er det brugerne typisk tænker i.
+ */
+export function formatMatchLevelRangeLabel(eloMin, eloMax) {
+  const levelRange = eloRangeToLevelRange(eloMin, eloMax);
+  const eloLabel = formatEloRange(eloMin, eloMax);
+  if (!levelRange || !eloLabel) return null;
+  return `${eloLabel} · ≈ Niveau ${formatPlaytomicLevelRange(levelRange.min, levelRange.max)}`;
 }
 
 /** Visning af profilniveau: Playtomic-tal (fx 2,3), evt. med band-label i parentes. */

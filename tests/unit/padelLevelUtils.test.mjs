@@ -31,6 +31,16 @@ test('match filter core stores myLevel and levelWindow', () => {
   assert.match(core, /matchPassesLevelFilter/);
 });
 
+test('padelLevelUtils exports spaced ELO and niveau range labels', () => {
+  const src = readFileSync(join(root, 'src/lib/padelLevelUtils.js'), 'utf8');
+  assert.match(src, /export function formatPlaytomicLevelRange/);
+  assert.match(src, /export function formatEloRange/);
+  assert.match(src, /export function formatMatchLevelRangeLabel/);
+  assert.match(src, /\$\{formatPlaytomicLevel\(min\)\} – \$\{formatPlaytomicLevel\(max\)\}/);
+  assert.match(src, /\$\{lo\} – \$\{hi\} ELO/);
+  assert.match(src, /≈ Niveau \$\{formatPlaytomicLevelRange/);
+});
+
 test('SQL notify_match_watchers uses niveau in notification body', () => {
   const sql = readFileSync(join(root, 'supabase/sql/match_filter_niveau.sql'), 'utf8');
   assert.match(sql, /Niveau ~%s/);
