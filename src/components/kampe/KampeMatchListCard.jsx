@@ -4,6 +4,10 @@ import { getKampeListStatusBadge } from '../../lib/kampeListCardStatus';
 import { formatMatchLevelRangeParts } from '../../lib/padelLevelUtils';
 
 const DA_MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAJ','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
+const MIDDOT = '\u00B7';
+const MINUS_SIGN = '\u2212';
+const ARROW_RIGHT = '\u2192';
+const DEFAULT_LIST_AVATAR = '\u{1F3BE}';
 
 function badgeToneClass(tone) {
   if (tone === 'live') return 'pm-kampe-v2-badge--live';
@@ -27,12 +31,12 @@ function computeSetScoreStr(mr) {
     if (n1 + n2 === 0) break;
     parts.push(`${n1}-${n2}`);
   }
-  return parts.length > 0 ? parts.join(' ù ') : null;
+  return parts.length > 0 ? parts.join(` ${MIDDOT} `) : null;
 }
 
 const SLOTS_PER_TEAM = 2;
 
-/** Kort holdnavn til VS-rùkken, fx "Dig & Mads". */
+/** Kort holdnavn til VS-raekken, fx "Dig & Mads". */
 function teamNameLabel(players, profilesById, currentUserId) {
   const names = (players || []).map((p) => {
     if (currentUserId != null && String(p.user_id) === String(currentUserId)) return 'Dig';
@@ -43,13 +47,13 @@ function teamNameLabel(players, profilesById, currentUserId) {
   return names.join(' & ');
 }
 
-/** Always two slots per hold sù listen visuelt 2 vs 2, ikke ùn lang rùkke. */
+/** Always two slots per hold sa listen visuelt 2 vs 2, ikke en lang raekke. */
 function teamDisplaySlots(players) {
   const filled = (players || []).slice(0, SLOTS_PER_TEAM);
   return Array.from({ length: SLOTS_PER_TEAM }, (_, i) => filled[i] ?? null);
 }
 
-/** Fordel spillere pù tvùrs af hold hvis DB har >2 pù ùt hold (ùldre data). */
+/** Fordel spillere pa tvaers af hold hvis DB har >2 pa et hold (aeldre data). */
 function balanceTeamsForListDisplay(t1, t2) {
   const team1 = t1 || [];
   const team2 = t2 || [];
@@ -125,7 +129,7 @@ export function KampeMatchListCard({
       : null;
   const t1Slots = teamDisplaySlots(t1);
   const t2Slots = teamDisplaySlots(t2);
-  const defaultAvatar = '??';
+  const defaultAvatar = DEFAULT_LIST_AVATAR;
   const listAvatarSize = 28;
 
   const renderTeamSlot = (p, i, teamKey, size = listAvatarSize) => {
@@ -175,7 +179,7 @@ export function KampeMatchListCard({
       className={`pm-kampe-v2-list-card${dull ? ' pm-kampe-v2-list-card--dull' : ''}${unreadCount ? ' pm-kampe-v2-list-card--unread' : ''}`}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
-      aria-label={`ùbn kamp: ${venue}`}
+      aria-label={`\u00C5bn kamp: ${venue}`}
     >
       {isCompleted ? (
         <div className="pm-kampe-v2-list-card-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -184,7 +188,7 @@ export function KampeMatchListCard({
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--pm-text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
-              {formatMatchDateHeadlineDa(match.date)} ù {venue}
+              {formatMatchDateHeadlineDa(match.date)} {MIDDOT} {venue}
             </span>
             {unreadCount > 0 ? (
               <span className="pm-kampe-v2-list-unread">{unreadCount > 9 ? '9+' : unreadCount}</span>
@@ -280,11 +284,11 @@ export function KampeMatchListCard({
               </span>
               {!isCompleted && left > 0 ? (
                 <span className="pm-kampe-v2-list-roster-open">
-                  ù {left} {left === 1 ? 'plads' : 'pladser'} ledig{left === 1 ? '' : 'e'}
+                  {MIDDOT} {left} {left === 1 ? 'plads' : 'pladser'} ledig{left === 1 ? '' : 'e'}
                 </span>
               ) : null}
               {!isCompleted && isFull && !joined ? (
-                <span className="pm-kampe-v2-list-roster-full">ù Fuldt</span>
+                <span className="pm-kampe-v2-list-roster-full">{MIDDOT} Fuldt</span>
               ) : null}
             </div>
           </div>
@@ -311,12 +315,12 @@ export function KampeMatchListCard({
           <span
             className={`pm-kampe-v2-list-elo-result${eloDelta >= 0 ? ' pm-kampe-v2-list-elo-result--up' : ' pm-kampe-v2-list-elo-result--down'}`}
           >
-            Elo {eloDelta >= 0 ? '+' : '?'}{Math.abs(eloDelta)}
+            Elo {eloDelta >= 0 ? '+' : MINUS_SIGN}{Math.abs(eloDelta)}
           </span>
         ) : null}
         {setScoreStr ? (
           <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--pm-accent)', marginLeft: 'auto' }}>
-            Se detaljer ?
+            Se detaljer {ARROW_RIGHT}
           </span>
         ) : null}
       </div>
