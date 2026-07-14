@@ -4400,15 +4400,14 @@ button,
 @media (max-width: 600px) {
   .pm-app-modal-backdrop {
     align-items: flex-end;
-    padding: 0;
+    padding: 0 10px calc(10px + env(safe-area-inset-bottom));
   }
 
   .pm-app-modal-content {
     width: 100% !important;
     max-width: 100% !important;
     max-height: 92dvh !important;
-    border-radius: var(--pm-radius-xl) var(--pm-radius-xl) 0 0 !important;
-    border-bottom: none !important;
+    border-radius: var(--pm-radius-xl) !important;
   }
 
   /* Uden footer: sørg for at indholdet rydder home-indikatoren */
