@@ -46,6 +46,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
       setAmericanoHistoryRows([]);
       setProfileRow(null);
       setLigaStats(null);
+      setSharedHistory(null);
       setStreakError(false);
       return;
     }
@@ -60,8 +61,11 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
     setLigaStats(null);
     setSharedHistory(null);
 
+    const canLoadSharedHistory =
+      currentProfile?.id && String(currentProfile.id) !== String(player.id);
+
     try {
-      const [pr, hist, amHist, teamsRes] = await Promise.all([
+      const [pr, hist, amHist, teamsRes, myHistRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', player.id).maybeSingle(),
         supabase.from('elo_history').select('*').eq('user_id', player.id).order('date', { ascending: true }),
         supabase
@@ -70,77 +74,91 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           .eq('user_id', player.id)
           .order('created_at', { ascending: true }),
         supabase.from('league_teams').select('id, league_id').or(`player1_id.eq.${player.id},player2_id.eq.${player.id}`),
+        canLoadSharedHistory
+          ? supabase
+            .from('elo_history')
+            .select('match_id, result')
+            .eq('user_id', currentProfile.id)
+            .not('match_id', 'is', null)
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (pr.error) throw pr.error;
 
-      setProfileRow(pr.data || player);
-
-      if (hist.error) {
-        setStreakError(true);
-        setStreakStats({ currentStreak: 0, bestStreak: 0 });
-        setRatedHistoryRows([]);
-      } else {
-        const rows = filterRatedEloHistoryRows(hist.data || []);
-        setStreakStats(winStreaksFromEloHistory(rows));
-        setRatedHistoryRows(rows);
-      }
-
-      if (amHist.error) {
-        setAmericanoHistoryRows([]);
-      } else {
-        setAmericanoHistoryRows(
-          (amHist.data || []).map((row) => ({
-            ...row,
-            date: row.created_at,
-            match_id: row.id,
-            result: Number(row.change) > 0 ? 'win' : Number(row.change) < 0 ? 'loss' : 'draw',
-          }))
-        );
-      }
-
-      if (currentProfile?.id && String(currentProfile.id) !== String(player.id) && !hist.error) {
-        const { data: myMatchIds } = await supabase
-          .from('elo_history')
-          .select('match_id, result')
-          .eq('user_id', currentProfile.id)
-          .not('match_id', 'is', null);
-        const viewedMatchIds = new Set(
-          (hist.data || []).map((r) => r.match_id).filter(Boolean)
-        );
-        const shared = (myMatchIds || []).filter((r) => r.match_id && viewedMatchIds.has(r.match_id));
-        if (shared.length > 0) {
-          setSharedHistory({
-            count: shared.length,
-            wins: shared.filter((r) => r.result === 'win').length,
-          });
-        }
-      }
-
       const teams = teamsRes.data || [];
       const teamIds = teams.map((t) => t.id);
       const leagueIds = [...new Set(teams.map((t) => t.league_id).filter(Boolean))];
+
+      let leagueMatches = [];
       if (teamIds.length > 0) {
-        const { data: leagueMatches, error: lmErr } = await supabase
+        const { data, error: lmErr } = await supabase
           .from('league_matches')
           .select('winner_id, team1_id, team2_id')
           .eq('status', 'reported')
           .or(`team1_id.in.(${teamIds.join(',')}),team2_id.in.(${teamIds.join(',')})`);
         if (lmErr) throw lmErr;
-        let wins = 0;
-        let played = 0;
-        for (const m of leagueMatches || []) {
-          const mine = teamIds.includes(m.team1_id) || teamIds.includes(m.team2_id);
-          if (!mine) continue;
-          played++;
-          if (m.winner_id && teamIds.includes(m.winner_id)) wins++;
-        }
-        const losses = played - wins;
-        const winPct = played > 0 ? Math.round((wins / played) * 100) : 0;
-        setLigaStats({ wins, losses, played, leagues: leagueIds.length, winPct });
-      } else {
-        setLigaStats({ wins: 0, losses: 0, played: 0, leagues: 0, winPct: 0 });
+        leagueMatches = data || [];
       }
+
+      let nextStreakError = false;
+      let nextStreakStats = { currentStreak: 0, bestStreak: 0 };
+      let nextRatedRows = [];
+      if (hist.error) {
+        nextStreakError = true;
+      } else {
+        nextRatedRows = filterRatedEloHistoryRows(hist.data || []);
+        nextStreakStats = winStreaksFromEloHistory(nextRatedRows);
+      }
+
+      const nextAmericanoRows = amHist.error
+        ? []
+        : (amHist.data || []).map((row) => ({
+          ...row,
+          date: row.created_at,
+          match_id: row.id,
+          result: Number(row.change) > 0 ? 'win' : Number(row.change) < 0 ? 'loss' : 'draw',
+        }));
+
+      let nextSharedHistory = null;
+      if (canLoadSharedHistory && !hist.error) {
+        const viewedMatchIds = new Set(
+          (hist.data || []).map((r) => r.match_id).filter(Boolean),
+        );
+        const shared = (myHistRes.data || []).filter(
+          (r) => r.match_id && viewedMatchIds.has(r.match_id),
+        );
+        if (shared.length > 0) {
+          nextSharedHistory = {
+            count: shared.length,
+            wins: shared.filter((r) => r.result === 'win').length,
+          };
+        }
+      }
+
+      let wins = 0;
+      let played = 0;
+      for (const m of leagueMatches) {
+        const mine = teamIds.includes(m.team1_id) || teamIds.includes(m.team2_id);
+        if (!mine) continue;
+        played++;
+        if (m.winner_id && teamIds.includes(m.winner_id)) wins++;
+      }
+      const losses = played - wins;
+      const nextLigaStats = {
+        wins,
+        losses,
+        played,
+        leagues: leagueIds.length,
+        winPct: played > 0 ? Math.round((wins / played) * 100) : 0,
+      };
+
+      setProfileRow(pr.data || player);
+      setStreakError(nextStreakError);
+      setStreakStats(nextStreakStats);
+      setRatedHistoryRows(nextRatedRows);
+      setAmericanoHistoryRows(nextAmericanoRows);
+      setSharedHistory(nextSharedHistory);
+      setLigaStats(nextLigaStats);
     } catch (e) {
       console.warn('[PlayerProfileModal] load failed:', e);
       setLoadError('Kunne ikke hente profil og statistik. Tjek forbindelsen og prøv igen.');
@@ -150,10 +168,11 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
       setAmericanoHistoryRows([]);
       setProfileRow(player);
       setLigaStats({ wins: 0, losses: 0, played: 0, leagues: 0, winPct: 0 });
+      setSharedHistory(null);
     } finally {
       setDataLoading(false);
     }
-  }, [player]);
+  }, [player, currentProfile?.id]);
 
   useEffect(() => {
     void loadProfileData();
@@ -176,7 +195,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
     };
   }, [onClose, open]);
 
-  const pRef = profileRow || player || {};
+  const pRef = dataLoading ? (player || {}) : (profileRow || player || {});
   const histStatsModal = statsFromEloHistoryRows(ratedHistoryRows);
   const elo = dataLoading ? null : (histStatsModal?.elo ?? eloOf(pRef));
   const games = dataLoading ? null : (histStatsModal?.games ?? (pRef.games_played || 0));
@@ -288,6 +307,14 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           </div>
         </div>
         <div className="pm-kampe-v2-detail-scroll">
+        {dataLoading ? (
+          <div className="pm-state-card pm-state-card--loading" style={{ margin: '24px 0 32px' }}>
+            <div className="pm-spinner pm-state-spinner" />
+            <div className="pm-state-title">Indlæser profil…</div>
+            <div className="pm-state-copy">Henter statistik og profildetaljer.</div>
+          </div>
+        ) : (
+        <>
         {/* Profile head — centered, matches mockup */}
         <div style={{ textAlign: 'center', marginBottom: '20px', paddingTop: '4px' }}>
           <div style={{ display: 'inline-block', position: 'relative', marginBottom: '10px' }}>
@@ -315,7 +342,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           </div>
         </div>
 
-        {loadError && !dataLoading ? (
+        {loadError ? (
           <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '14px' }}>
             <div className="pm-state-icon" aria-hidden="true">⚠️</div>
             <div className="pm-state-title">Kunne ikke hente alle data</div>
@@ -360,29 +387,24 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           </button>
         </div>
 
-        {dataLoading ? (
-          <div style={{ textAlign: 'center', padding: '16px', color: theme.textMid, fontSize: '13px', marginBottom: '16px' }}>Indlæser statistik...</div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '11px', padding: '0 0 2px', marginBottom: '16px' }}>
-            {activeOverviewCards.map((s, i) => (
-              <div key={i} style={{ textAlign: 'center', padding: '13px 15px', background: theme.surfaceAlt, borderRadius: theme.radius, border: '1px solid ' + theme.border }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: theme.textLight }}>{s.label}</div>
-                {s.form ? (
-                  <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 9 }}>
-                    {s.form.length > 0 ? s.form.map((r, j) => (
-                      <div key={j} style={{ width: 21, height: 21, borderRadius: '50%', background: r === 'V' ? 'var(--pm-green)' : r === 'T' ? 'var(--pm-red)' : 'var(--pm-border)', color: 'var(--pm-on-accent)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{r}</div>
-                    )) : <div style={{ fontSize: '12px', color: theme.textLight, marginTop: 4 }}>—</div>}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '23px', fontWeight: 700, color: theme.accent, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '11px', padding: '0 0 2px', marginBottom: '16px' }}>
+          {activeOverviewCards.map((s, i) => (
+            <div key={i} style={{ textAlign: 'center', padding: '13px 15px', background: theme.surfaceAlt, borderRadius: theme.radius, border: '1px solid ' + theme.border }}>
+              <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: theme.textLight }}>{s.label}</div>
+              {s.form ? (
+                <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 9 }}>
+                  {s.form.length > 0 ? s.form.map((r, j) => (
+                    <div key={j} style={{ width: 21, height: 21, borderRadius: '50%', background: r === 'V' ? 'var(--pm-green)' : r === 'T' ? 'var(--pm-red)' : 'var(--pm-border)', color: 'var(--pm-on-accent)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{r}</div>
+                  )) : <div style={{ fontSize: '12px', color: theme.textLight, marginTop: 4 }}>—</div>}
+                </div>
+              ) : (
+                <div style={{ fontSize: '23px', fontWeight: 700, color: theme.accent, marginTop: '4px', letterSpacing: '-0.4px' }}>{s.value}</div>
+              )}
+            </div>
+          ))}
+        </div>
 
         {statsMode === 'liga' ? (
-          !dataLoading &&
           ligaStats !== null && (
             <div
               style={{
@@ -437,9 +459,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         ) : statsMode === '2v2' ? (
           <div style={{ marginBottom: '16px', padding: '12px 14px', background: theme.surfaceAlt, borderRadius: '10px', border: '1px solid ' + theme.border }}>
             <div style={{ fontSize: '10px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sejrsstreak</div>
-            {dataLoading ? (
-              <div style={{ fontSize: '13px', color: theme.textMid, marginTop: '8px' }}>Indlæser...</div>
-            ) : streakError ? (
+            {streakError ? (
               <div style={{ fontSize: '12px', color: theme.textMid, marginTop: '6px', lineHeight: 1.4 }}>
                 Kamphistorik kunne ikke hentes.
                 <button type="button" onClick={() => void loadProfileData()} style={{ ...btn(false), display: 'block', marginTop: '8px', padding: '6px 12px', fontSize: '12px' }}>
@@ -533,6 +553,8 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             </button>
           )}
         </div>
+        </>
+        )}
         </div>
       </div>
     </>,
