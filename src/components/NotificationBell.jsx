@@ -598,7 +598,7 @@ export function NotificationBell({ tourForceOpen = false }) {
         },
       );
       if (notifyError) {
-        showPushMessage('Test fejlede - proev igen');
+        showPushMessage('Test fejlede — prøv igen');
         return;
       }
       showPushMessage('Test sendt - tjek popup nu');

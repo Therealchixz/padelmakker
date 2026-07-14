@@ -18,6 +18,7 @@
     "db:check-stubs": "node scripts/check-migration-stubs.mjs",
     "db:check-migration-integrity": "node scripts/test-migration-integrity.mjs",
     "check:turnstile-prod": "node scripts/check-turnstile-prod.mjs",
+    "check:encoding": "node scripts/scan-corrupt-chars.mjs",
     "test:e2e": "playwright test --config=playwright.config.ts",
     "test:e2e:headed": "playwright test --headed --project=chromium",
     "test:e2e:auth": "playwright test --project=authenticated",
