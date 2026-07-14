@@ -677,6 +677,10 @@ export function AmericanoResultsPanel({
   const myMatchesDisplay = matchesDisplay
     .map((m, i) => ({ m, i }))
     .filter(({ m }) => isMyMatch(m))
+    .sort((a, b) => {
+      if (a.m.round_number !== b.m.round_number) return a.m.round_number - b.m.round_number
+      return a.m.court_index - b.m.court_index
+    })
   const activeRoundMatches = activeRoundNumber != null
     ? matchesDisplay.filter((m) => m.round_number === activeRoundNumber)
     : []
@@ -1067,7 +1071,7 @@ export function AmericanoResultsPanel({
             </div>
           ) : (
             [...new Set(matchesDisplay.map((m) => m.round_number))]
-              .sort((a, b) => b - a)
+              .sort((a, b) => a - b)
               .map((roundNum) => {
                 const isLatest = roundNum === Math.max(...matchesDisplay.map((m) => m.round_number))
                 return (
