@@ -7286,7 +7286,8 @@ button,
 }
 
 .pm-kampe-v2-list-card-cta-row {
-  padding: 0 14px 12px;
+  width: 100%;
+  padding: 0;
   display: flex;
   justify-content: flex-end;
 }
@@ -7303,6 +7304,15 @@ button,
   color: #fff;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(22, 55, 126, 0.22);
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.pm-kampe-v2-list-cta--secondary {
+  background: var(--pm-surface, #fff);
+  color: var(--pm-accent);
+  border: 1.5px solid var(--pm-border);
+  box-shadow: none;
 }
 
 .pm-kampe-v2-list-cta--on-waitlist {
@@ -7600,6 +7610,13 @@ button,
   border-top: 1px solid var(--pm-border, #E2E8F0);
 }
 
+.pm-kampe-v2-list-card-bottom--open {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
 .pm-kampe-v2-list-card-bottom--completed {
   align-items: flex-end;
 }
@@ -7607,8 +7624,10 @@ button,
 .pm-kampe-v2-list-participants {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 10px;
   min-width: 0;
+  width: 100%;
 }
 
 .pm-kampe-v2-list-teams {
@@ -7679,8 +7698,9 @@ button,
 .pm-kampe-v2-list-count {
   font-size: 12px;
   font-weight: 600;
-  color: var(--pm-text-mid);
+  color: var(--pm-text-light);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .pm-kampe-v2-list-elo-col {

@@ -267,57 +267,35 @@ export function KampeMatchListCard({
         </div>
       ) : null}
 
-      <div className={`pm-kampe-v2-list-card-bottom${isCompleted ? ' pm-kampe-v2-list-card-bottom--completed' : ''}`}>
+      <div className={`pm-kampe-v2-list-card-bottom${isCompleted ? ' pm-kampe-v2-list-card-bottom--completed' : ' pm-kampe-v2-list-card-bottom--open'}`}>
         {!setScoreStr ? (
-          <div className="pm-kampe-v2-list-participants">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} aria-label={`${filledCount} af ${maxPlayers} spillere`}>
-              {renderListTeams()}
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-text-light)' }}>
-                {filledCount}/{maxPlayers} spillere
-              </span>
-            </div>
+          <div
+            className="pm-kampe-v2-list-participants"
+            aria-label={`${filledCount} af ${maxPlayers} spillere`}
+          >
+            {renderListTeams()}
+            <span className="pm-kampe-v2-list-count">
+              {filledCount}/{maxPlayers} spillere
+            </span>
           </div>
         ) : null}
         {!isCompleted && primaryAction ? (
-          <button
-            type="button"
-            className="pm-kampe-v2-list-cta"
-            onClick={(e) => { e.stopPropagation(); primaryAction.onClick?.(); }}
-            disabled={primaryAction.disabled}
-            style={{
-              flexShrink: 0,
-              marginLeft: 'auto',
-              padding: '9px 16px',
-              borderRadius: 10,
-              fontSize: 12.5,
-              fontWeight: 700,
-              fontFamily: 'inherit',
-              cursor: primaryAction.disabled ? 'default' : 'pointer',
-              ...(primaryAction.variant === 'secondary'
-                ? { background: 'var(--pm-surface)', color: 'var(--pm-accent)', border: '1.5px solid var(--pm-border)' }
-                : { background: 'var(--pm-navy)', color: 'var(--pm-on-accent)', border: 'none' }),
-            }}
-          >
-            {primaryAction.label}
-          </button>
+          <div className="pm-kampe-v2-list-card-cta-row">
+            <button
+              type="button"
+              className={`pm-kampe-v2-list-cta${primaryAction.variant === 'secondary' ? ' pm-kampe-v2-list-cta--secondary' : ''}`}
+              onClick={(e) => { e.stopPropagation(); primaryAction.onClick?.(); }}
+              disabled={primaryAction.disabled}
+            >
+              {primaryAction.label}
+            </button>
+          </div>
         ) : !isCompleted ? (
-          <span
-            className="pm-kampe-v2-list-cta"
-            style={{
-              flexShrink: 0,
-              marginLeft: 'auto',
-              padding: '9px 16px',
-              borderRadius: 10,
-              fontSize: 12.5,
-              fontWeight: 700,
-              fontFamily: 'inherit',
-              background: 'var(--pm-surface)',
-              color: 'var(--pm-accent)',
-              border: '1.5px solid var(--pm-border)',
-            }}
-          >
-            Se kamp
-          </span>
+          <div className="pm-kampe-v2-list-card-cta-row">
+            <span className="pm-kampe-v2-list-cta pm-kampe-v2-list-cta--secondary">
+              Se kamp
+            </span>
+          </div>
         ) : null}
         {showMyEloDelta ? (
           <span
