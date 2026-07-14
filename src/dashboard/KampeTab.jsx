@@ -568,10 +568,18 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
   refreshJoinRequestsForMatchRef.current = refreshJoinRequestsForMatch;
 
-  /* Hent totalt antal chat-beskeder per kamp så badgen "Match chat (N)"
-     kan vises uden at brugeren først skal åbne chatten. */
+  /* Hent totalt antal chat-beskeder per kamp brugeren er tilmeldt — kun deltagere
+     må se match chat. */
   useEffect(() => {
-    const ids = matches.map((m) => String(m.id)).filter(Boolean);
+    const joinedIds = new Set();
+    for (const [matchId, players] of Object.entries(matchPlayers || {})) {
+      if ((players || []).some((p) => String(p.user_id) === myUidStr)) {
+        joinedIds.add(String(matchId));
+      }
+    }
+    const ids = matches
+      .map((m) => String(m.id))
+      .filter((id) => id && joinedIds.has(id));
     if (ids.length === 0) {
       setMatchChatTotalById({});
       return undefined;
@@ -587,7 +595,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     return () => {
       cancelled = true;
     };
-  }, [matches]);
+  }, [matches, matchPlayers, myUidStr]);
 
   useEffect(() => {
     if (!showCreate) return;
@@ -610,6 +618,22 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       setMatchChatOpenById({});
     }
   }, [kampeFormat]);
+
+  useEffect(() => {
+    setMatchChatOpenById((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const matchId of Object.keys(prev)) {
+        if (!prev[matchId]) continue;
+        const isParticipant = (matchPlayers[matchId] || []).some((p) => String(p.user_id) === myUidStr);
+        if (!isParticipant) {
+          delete next[matchId];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [matchPlayers, myUidStr]);
 
   useEffect(() => {
     setMatchChatOpenById({});
@@ -1474,6 +1498,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
   const loadMatchChat = useCallback(async (matchId, options = {}) => {
     const { showLoading = true } = options;
+    const matchKey = String(matchId);
+    const isParticipant = (matchPlayers[matchKey] || []).some((p) => String(p.user_id) === myUidStr);
+    if (!isParticipant) return;
     if (showLoading) {
       setMatchChatLoadingById((prev) => ({ ...prev, [matchId]: true }));
     }
@@ -1496,9 +1523,12 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         setMatchChatLoadingById((prev) => ({ ...prev, [matchId]: false }));
       }
     }
-  }, []);
+  }, [matchPlayers, myUidStr]);
 
   const toggleMatchChat = async (matchId) => {
+    const matchKey = String(matchId);
+    const isParticipant = (matchPlayers[matchKey] || []).some((p) => String(p.user_id) === myUidStr);
+    if (!isParticipant) return;
     const openNow = !!matchChatOpenById[matchId];
     const nextOpen = !openNow;
     setMatchChatOpenById((prev) => ({ ...prev, [matchId]: nextOpen }));
@@ -1902,7 +1932,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
     void refreshJoinRequestsForMatch(detailMatchId);
 
-    if (openChat) {
+    if (openChat && imIn) {
       const matchKey = String(detailMatchId);
       setMatchChatOpenById((prev) => ({ ...prev, [matchKey]: true }));
       void loadMatchChat(matchKey, { showLoading: true });
@@ -2073,7 +2103,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       chatLoading: !!matchChatLoadingById[m.id],
       chatSending: !!matchChatSendingById[m.id],
       chatError: matchChatErrorById[m.id] || "",
-      unreadChatCount: matchChatUnreadById[String(m.id)] || 0,
+      unreadChatCount: joinedMatchIds.has(String(m.id))
+        ? (matchChatUnreadById[String(m.id)] || 0)
+        : 0,
       unreadMatchCount: matchUnreadById[String(m.id)] || 0,
     });
     return { mp, teamStats, mr, matchPrefs, status, isInProgress, winnerTeam, cardState };
@@ -2412,11 +2444,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
             {chatOpen ? (
               <div className="pm-card-subpanel pm-match-chat-panel" style={{ marginBottom: "4px" }}>
-                {!canWriteMatchChat && isAdmin ? (
-                  <div className="pm-match-chat-empty" style={{ marginBottom: "8px" }}>
-                    Admin-visning: Kun tilmeldte spillere kan skrive i chatten.
-                  </div>
-                ) : null}
                 <div
                   className="pm-match-chat-list"
                   ref={(node) => {

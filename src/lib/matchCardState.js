@@ -128,7 +128,7 @@ export function buildMatchCardState({
     attentionReason,
     hasAdminActions,
     adminActionsOpen: Boolean(adminActionsOpen),
-    canUseMatchChat: Boolean(joined || isAdmin),
+    canUseMatchChat: Boolean(joined),
     canWriteMatchChat: Boolean(joined),
     chatOpen: Boolean(chatOpen),
     chatMessages: Array.isArray(chatMessages) ? chatMessages : [],

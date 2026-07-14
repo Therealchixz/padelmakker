@@ -1,4 +1,4 @@
--- Aggregated match chat counts (avoids fetching every message row).
+-- Match chat counts: respekter RLS (kun deltagere ser beskeder).
 
 CREATE OR REPLACE FUNCTION public.fetch_match_message_counts(p_match_ids uuid[])
 RETURNS TABLE(match_id uuid, message_count bigint)

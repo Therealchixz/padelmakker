@@ -64,7 +64,7 @@ test('buildMatchCardState derives membership, teams, requests and unread state',
   assert.deepEqual(state.statusLabel, { text: 'I gang', tone: 'warm' });
 });
 
-test('buildMatchCardState keeps non-participants read-only for match chat', () => {
+test('buildMatchCardState hides match chat from non-participants', () => {
   const state = buildMatchCardState({
     match: { id: 'match-2', creator_id: 'creator', max_players: 4, match_type: 'open' },
     players: [{ user_id: 'p1', team: 1 }],
@@ -84,4 +84,23 @@ test('buildMatchCardState keeps non-participants read-only for match chat', () =
   assert.equal(state.canUseMatchChat, false);
   assert.equal(state.canWriteMatchChat, false);
   assert.deepEqual(state.statusLabel, { text: '3 ledige', tone: 'accent' });
+});
+
+test('buildMatchCardState hides match chat for admins who are not participants', () => {
+  const state = buildMatchCardState({
+    match: { id: 'match-3', creator_id: 'creator', max_players: 4, match_type: 'open' },
+    players: [{ user_id: 'p1', team: 1 }],
+    teamStats: { t1: [{ user_id: 'p1' }], t2: [], t1Avg: 1000, t2Avg: null, playerEloByUserId: {} },
+    matchResult: null,
+    joined: false,
+    currentUserId: 'admin-user',
+    busyId: null,
+    status: 'open',
+    joinRequests: [],
+    isAdmin: true,
+    adminCanAct: true,
+  });
+
+  assert.equal(state.canUseMatchChat, false);
+  assert.equal(state.canWriteMatchChat, false);
 });
