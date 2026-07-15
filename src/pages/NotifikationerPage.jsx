@@ -238,7 +238,7 @@ export function NotifikationerPage({ onBack }) {
 
   return (
     <div className="pm-notifikationer-page" style={{ background: theme.bg, fontFamily: font }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'max(10px, calc(env(safe-area-inset-top) + 8px)) 14px 10px', borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
+      <div className="pm-notifikationer-head" style={{ borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
         <button
           type="button"
           onClick={goBack}
