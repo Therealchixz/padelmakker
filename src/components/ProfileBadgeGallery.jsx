@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { AppModal } from './AppModal';
-import { theme, btn } from '../lib/platformTheme';
+import { theme } from '../lib/platformTheme';
 import { groupProfileBadgesByCategory } from '../lib/profileBadges';
 
 const PREVIEW_LIMIT = 5;
@@ -115,6 +115,12 @@ function ProfileBadgeGalleryFull({ badges }) {
 
 export function ProfileBadgeGallery({ badges, modeLabel }) {
   const [open, setOpen] = useState(false);
+  const scrollRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    scrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [open]);
 
   if (!badges?.length) return null;
 
@@ -207,24 +213,38 @@ export function ProfileBadgeGallery({ badges, modeLabel }) {
         onClose={() => setOpen(false)}
         ariaLabel={`Badges for ${modeLabel}`}
         maxWidthPreset="sm"
-        contentStyle={{ maxHeight: 'min(82vh, 720px)', overflowY: 'auto', padding: '18px 16px 12px' }}
-        footer={(
-          <div style={{ padding: '12px 16px 16px', borderTop: `1px solid ${theme.border}` }}>
-            <button type="button" onClick={() => setOpen(false)} style={{ ...btn(false), width: '100%' }}>
+        contentStyle={{ overflow: 'hidden', maxHeight: 'min(82vh, 720px)' }}
+      >
+        <div ref={scrollRef} className="pm-modal-body" style={{ maxHeight: 'min(82vh, 720px)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: theme.text, margin: '0 0 4px', letterSpacing: '-0.3px' }}>
+                Badges · {modeLabel}
+              </h2>
+              <p style={{ margin: 0, fontSize: 12.5, color: theme.textMid, lineHeight: 1.45 }}>
+                {earnedCount} af {badges.length} opnået. Låste badges viser hvad du kan sigte efter næste.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              style={{
+                flexShrink: 0,
+                background: 'none',
+                border: 'none',
+                padding: '2px 0',
+                fontFamily: 'inherit',
+                fontSize: 13,
+                fontWeight: 700,
+                color: theme.accent,
+                cursor: 'pointer',
+              }}
+            >
               Luk
             </button>
           </div>
-        )}
-      >
-        <div style={{ marginBottom: 14 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: theme.text, margin: '0 0 4px', letterSpacing: '-0.3px' }}>
-            Badges · {modeLabel}
-          </h2>
-          <p style={{ margin: 0, fontSize: 12.5, color: theme.textMid, lineHeight: 1.45 }}>
-            {earnedCount} af {badges.length} opnået. Låste badges viser hvad du kan sigte efter næste.
-          </p>
+          <ProfileBadgeGalleryFull badges={badges} />
         </div>
-        <ProfileBadgeGalleryFull badges={badges} />
       </AppModal>
     </>
   );
