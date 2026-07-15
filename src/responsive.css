@@ -7697,13 +7697,13 @@ button,
   width: 100%;
 }
 
-.pm-kampe-v2-list-roster .pm-kampe-v2-list-team--t1 {
+.pm-kampe-v2-list-team--pill.pm-kampe-v2-list-team--t1 {
   padding: 4px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--pm-accent) 11%, var(--pm-surface));
 }
 
-.pm-kampe-v2-list-roster .pm-kampe-v2-list-team--t2 {
+.pm-kampe-v2-list-team--pill.pm-kampe-v2-list-team--t2 {
   padding: 4px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--pm-blue) 11%, var(--pm-surface));

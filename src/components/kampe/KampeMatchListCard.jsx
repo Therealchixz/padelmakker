@@ -154,18 +154,18 @@ export function KampeMatchListCard({
   };
 
   const renderSingleTeam = (slots, teamKey, size = listAvatarSize) => (
-    <div className={`pm-kampe-v2-list-team pm-kampe-v2-list-team--${teamKey}`}>
+    <div className={`pm-kampe-v2-list-team pm-kampe-v2-list-team--pill pm-kampe-v2-list-team--${teamKey}`}>
       {slots.map((p, i) => renderTeamSlot(p, i, teamKey, size))}
     </div>
   );
 
   const renderListTeams = (size = listAvatarSize) => (
     <div className="pm-kampe-v2-list-teams">
-      <div className="pm-kampe-v2-list-team pm-kampe-v2-list-team--t1">
+      <div className="pm-kampe-v2-list-team pm-kampe-v2-list-team--pill pm-kampe-v2-list-team--t1">
         {t1Slots.map((p, i) => renderTeamSlot(p, i, 't1', size))}
       </div>
       <span className="pm-kampe-v2-list-teams-vs" aria-hidden>vs</span>
-      <div className="pm-kampe-v2-list-team pm-kampe-v2-list-team--t2">
+      <div className="pm-kampe-v2-list-team pm-kampe-v2-list-team--pill pm-kampe-v2-list-team--t2">
         {t2Slots.map((p, i) => renderTeamSlot(p, i, 't2', size))}
       </div>
     </div>
