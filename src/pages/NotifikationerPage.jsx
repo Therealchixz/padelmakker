@@ -92,22 +92,39 @@ export function NotifikationerPage({ onBack }) {
   const navigate = useNavigate();
   const userId = authUser?.id;
   const [notifs, setNotifs] = useState([]);
+  const [unreadTotal, setUnreadTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [markingAll, setMarkingAll] = useState(false);
   const [matchMetaById, setMatchMetaById] = useState({});
 
   const load = useCallback(async () => {
-    if (!userId) { setNotifs([]); setLoading(false); setLoadError(''); return; }
+    if (!userId) {
+      setNotifs([]);
+      setUnreadTotal(0);
+      setLoading(false);
+      setLoadError('');
+      return;
+    }
     setLoading(true);
     setLoadError('');
     try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(40);
+      const [{ data, error }, { count: unreadCount, error: unreadError }] = await Promise.all([
+        supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(40),
+        supabase
+          .from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('read', false),
+      ]);
       if (error) throw error;
+      if (unreadError) throw unreadError;
+      setUnreadTotal(unreadCount || 0);
       const dismissed = loadDismissedIds(userId);
       const filtered = (data || []).filter((n) => !dismissed.has(n.id));
       setNotifs(filtered);
@@ -124,12 +141,19 @@ export function NotifikationerPage({ onBack }) {
       setMatchMetaById(nextMeta);
     } catch (err) {
       setNotifs([]);
+      setUnreadTotal(0);
       setMatchMetaById({});
       setLoadError(err?.message || 'Kunne ikke hente notifikationer.');
     } finally { setLoading(false); }
   }, [userId]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const onSync = () => { void load(); };
+    window.addEventListener('pm-notifications-sync', onSync);
+    return () => window.removeEventListener('pm-notifications-sync', onSync);
+  }, [load]);
 
   const displayNotifs = useMemo(() => {
     const rows = [];
@@ -153,8 +177,6 @@ export function NotifikationerPage({ onBack }) {
     return rows;
   }, [notifs]);
 
-  const unreadCount = notifs.filter(n => !n.read).length;
-
   const goBack = useCallback(() => {
     if (typeof onBack === 'function') {
       onBack();
@@ -164,18 +186,33 @@ export function NotifikationerPage({ onBack }) {
   }, [navigate, onBack]);
 
   const markAllRead = async () => {
-    const unread = notifs.filter(n => !n.read).map(n => n.id);
-    if (!unread.length || !userId) return;
-    await supabase.from('notifications').update({ read: true }).in('id', unread).eq('user_id', userId);
-    setNotifs(prev => prev.map(n => ({ ...n, read: true })));
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
+    if (!userId || unreadTotal === 0 || markingAll) return;
+    setMarkingAll(true);
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', userId)
+        .eq('read', false);
+      if (error) throw error;
+      setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadTotal(0);
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
+    } catch (err) {
+      console.warn('notifications markAllRead:', err?.message || err);
+      void load();
+    } finally {
+      setMarkingAll(false);
+    }
   };
 
   const deleteNotif = async (n) => {
     const ids = Array.isArray(n?.notifIds) ? n.notifIds : [n?.id].filter(Boolean);
     if (!ids.length || !userId) return;
     const idSet = new Set(ids);
+    const unreadRemoved = notifs.filter((x) => idSet.has(x.id) && !x.read).length;
     setNotifs(prev => prev.filter(x => !idSet.has(x.id)));
+    if (unreadRemoved > 0) setUnreadTotal((prev) => Math.max(0, prev - unreadRemoved));
     await supabase.from('notifications').delete().in('id', ids).eq('user_id', userId).select('id');
     addDismissedIds(userId, ids);
     if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
@@ -184,8 +221,11 @@ export function NotifikationerPage({ onBack }) {
   const markNotifRead = async (n) => {
     const ids = Array.isArray(n?.notifIds) ? n.notifIds : [n?.id].filter(Boolean);
     if (!ids.length || !userId || n.read) return;
+    const idSet = new Set(ids);
+    const unreadMarked = notifs.filter((x) => idSet.has(x.id) && !x.read).length;
     await supabase.from('notifications').update({ read: true }).in('id', ids).eq('user_id', userId);
-    setNotifs(prev => prev.map(x => (x.id === n.id ? { ...x, read: true } : x)));
+    setNotifs((prev) => prev.map((x) => (idSet.has(x.id) ? { ...x, read: true } : x)));
+    if (unreadMarked > 0) setUnreadTotal((prev) => Math.max(0, prev - unreadMarked));
     if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
   };
 
@@ -247,16 +287,26 @@ export function NotifikationerPage({ onBack }) {
         >
           <ChevronLeft size={20} />
         </button>
-        <h2 style={{ flex: 1, fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Notifikationer</h2>
-        {unreadCount > 0 && (
-          <button
-            type="button"
-            onClick={markAllRead}
-            style={{ ...btn(false, { size: 'sm', radius: 'pill' }), minHeight: 40, color: theme.accent, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
-          >
-            Markér alle læst
-          </button>
-        )}
+        <h2 className="pm-notifikationer-head-title" style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Notifikationer</h2>
+        <button
+          type="button"
+          className="pm-notifikationer-mark-all"
+          onClick={() => void markAllRead()}
+          disabled={unreadTotal === 0 || markingAll}
+          aria-label="Markér alle notifikationer som læst"
+          style={{
+            ...btn(false, { size: 'sm', radius: 'pill' }),
+            minHeight: 40,
+            color: theme.accent,
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            opacity: unreadTotal === 0 || markingAll ? 0.45 : 1,
+            cursor: unreadTotal === 0 || markingAll ? 'default' : 'pointer',
+          }}
+        >
+          {markingAll ? 'Markerer…' : 'Læs alle'}
+        </button>
       </div>
 
       <div className="pm-notifikationer-list" style={{ flex: 1, overflowY: 'auto', paddingTop: 12 }}>

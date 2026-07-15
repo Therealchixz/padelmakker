@@ -345,13 +345,12 @@ export function NotificationBell({ tourForceOpen = false }) {
   }, [open]);
 
   const markAllRead = async () => {
-    const unread = notifs.filter(n => !n.read).map(n => n.id);
-    if (!unread.length || !userId) return;
+    if (!userId || unreadCount === 0) return;
     const { error } = await supabase
       .from("notifications")
       .update({ read: true })
-      .in("id", unread)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .eq("read", false);
     if (error) {
       console.warn("notifications markAllRead:", error.message || error);
       void load();
@@ -687,8 +686,8 @@ export function NotificationBell({ tourForceOpen = false }) {
             <span style={{ fontSize: "14px", fontWeight: 700, color: theme.text, flex: "1 1 auto", minWidth: "100px" }}>Notifikationer</span>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", marginLeft: "auto" }}>
               {unreadCount > 0 && (
-                <button type="button" onClick={markAllRead} style={{ background: "none", border: "none", color: theme.accent, fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontFamily: font, padding: "4px 6px" }}>
-                  <CheckCheck size={13} /> Læst
+                <button type="button" onClick={() => void markAllRead()} aria-label="Markér alle notifikationer som læst" style={{ background: "none", border: "none", color: theme.accent, fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontFamily: font, padding: "6px 8px", minHeight: 32 }}>
+                  <CheckCheck size={13} /> Læs alle
                 </button>
               )}
               {notifs.length > 0 && (

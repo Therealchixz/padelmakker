@@ -1651,6 +1651,23 @@ button,
   align-items: center;
   gap: 10px;
   padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+
+.pm-notifikationer-head-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-notifikationer-mark-all {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .pm-profile-header {
