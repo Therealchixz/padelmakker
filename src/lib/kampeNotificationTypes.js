@@ -18,6 +18,7 @@ export const KAMPE_ENTITY_NOTIFICATION_TYPES = Object.freeze([
   'americano_started',
   'americano_completed',
   'americano_spot_open',
+  'americano_cancelled',
   'league_full',
   'league_started',
   'league_completed',

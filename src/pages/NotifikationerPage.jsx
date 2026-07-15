@@ -59,6 +59,7 @@ function NotifIcon({ type }) {
     case 'match_chat_group':
       return wrap(theme.surfaceAlt, theme.textMid, <MessageCircle style={iconStyle} />);
     case 'match_cancelled':
+    case 'americano_cancelled':
       return wrap(theme.redBg, theme.red, <X style={iconStyle} />);
     case 'elo_change':
     case 'americano_completed':

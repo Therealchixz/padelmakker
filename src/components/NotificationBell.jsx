@@ -506,6 +506,7 @@ export function NotificationBell({ tourForceOpen = false }) {
       case "americano_full": return "\u2705";
       case "americano_started": return "\uD83C\uDFBE";
       case "americano_spot_open": return "\uD83D\uDD14";
+      case "americano_cancelled": return "\u274C";
       case "match_watch_match": return "\uD83D\uDD0D";
       case "makker_suggestion": return "\uD83E\uDD1D";
       case "league_started": return "\uD83C\uDFBE";

@@ -25,7 +25,10 @@ import { PillTabs } from '../../components/PillTabs'
 import { btn, theme } from '../../lib/platformTheme'
 import { notifyAmericanoTournamentFull } from '../../lib/notifyKampeEntityFull'
 import { notifyAmericanoTournamentStarted } from '../../lib/notifyKampeEntityStarted'
-import { notifyAmericanoSpotOpened } from '../../lib/notifyKampeEntityRoster'
+import {
+  notifyAmericanoSpotOpened,
+  notifyAmericanoTournamentCancelled,
+} from '../../lib/notifyKampeEntityRoster'
 import {
   TOURNAMENT_EMPTY,
   TOURNAMENT_LOAD_ERROR_TITLE,
@@ -818,8 +821,11 @@ export function AmericanoTab({
     if (!okDelete) return
     setBusyId(t.id)
     try {
+      const participants = participantsByTournament[t.id] || []
+      const participantIds = participants.map((p) => p.user_id).filter(Boolean)
       const { error } = await supabase.from('americano_tournaments').delete().eq('id', t.id)
       if (error) throw error
+      void notifyAmericanoTournamentCancelled(t, profileId, participantIds)
       showToast('Americano/Mexicano slettet.')
       if (embedInKampe) closeAmericanoDetail()
       else setDetailTournamentId(null)

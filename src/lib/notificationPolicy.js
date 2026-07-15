@@ -179,6 +179,15 @@ const TYPE_POLICIES = Object.freeze({
     urgency: "low",
     cooldownSeconds: 300,
   },
+  americano_cancelled: {
+    channel: "kampe",
+    level: "critical",
+    sendPush: true,
+    silent: false,
+    urgency: "high",
+    cooldownSeconds: 60,
+    renotify: true,
+  },
   americano_full: {
     channel: "kampe",
     level: "normal",

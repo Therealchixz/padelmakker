@@ -964,7 +964,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         creator_id: user.id, court_id: cid, court_name: cname || '',
         date: newMatch.date, time: fmtClock(newMatch.time), time_end: timeEnd,
         level_range: buildMatchLevelRange(newMatch.level_min, newMatch.level_max, newMatch.court_booked, myElo),
-        status: "open", max_players: 4, current_players: 1,
+        status: "open", max_players: 4, current_players: 0,
         description: sanitizeText(newMatch.description.trim()) || null,
         match_type: newMatch.match_type || "open",
         price_per_person: (() => {
@@ -976,13 +976,19 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       };
       const { data: created, error } = await supabase.from("matches").insert(row).select().single();
       if (error) throw error;
-      await rpcJoinOpenMatch({
-        matchId: created.id,
-        team: 1,
-        userName: myDisplayName,
-        userEmail: authUser?.email || user.email,
-        userEmoji: user.avatar || "🎾",
-      });
+      try {
+        await rpcJoinOpenMatch({
+          matchId: created.id,
+          team: 1,
+          userName: myDisplayName,
+          userEmail: authUser?.email || user.email,
+          userEmoji: user.avatar || "🎾",
+        });
+      } catch (joinErr) {
+        // Undgå orphan-kamp uden spillere hvis man ikke kan joine som opretter.
+        await supabase.from("matches").delete().eq("id", created.id);
+        throw joinErr;
+      }
       if (row.match_type !== "closed" && row.status === "open") {
         void notifyMatchWatchersForMatch(created.id);
       }
@@ -1191,10 +1197,17 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     setBusyId(matchId);
     try {
       const isCreator = match && String(match.creator_id) === String(user.id);
-      if (!isCreator && match?.creator_id) {
-        await createNotification(match.creator_id, 'match_cancelled', 'Spiller afmeldt ❌', `${myDisplayName} er afmeldt kampen.`, matchId);
-      }
       const leaveResult = await rpcLeaveMatch(matchId);
+      if (!isCreator && match?.creator_id && !leaveResult?.cancelled) {
+        const leaveNotifyErr = await createNotification(
+          match.creator_id,
+          'match_cancelled',
+          'Spiller afmeldt ❌',
+          `${myDisplayName} er afmeldt kampen.`,
+          matchId,
+        );
+        if (leaveNotifyErr) console.warn('leave notify:', leaveNotifyErr.message || leaveNotifyErr);
+      }
       if (leaveResult?.cancelled) {
         showToast("Kampen er slettet (ingen spillere tilbage).");
       } else if (leaveResult?.creator_transferred) {
@@ -1318,15 +1331,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
     setBusyId(matchId + '-kick-' + targetUserId);
     try {
-      const kickNotifyErr = await createNotification(
-        targetUserId,
-        'match_cancelled',
-        'Du er fjernet fra kampen ❌',
-        'En admin/opretter har fjernet dig fra kampen.',
-        matchId,
-      );
-      if (kickNotifyErr) console.warn('kick notify:', kickNotifyErr.message || kickNotifyErr);
-
+      const match = matches.find((m) => String(m.id) === String(matchId));
       const { error } = await supabase.from("match_players").delete()
         .eq("match_id", matchId).eq("user_id", targetUserId);
       if (error) throw error;
@@ -1336,8 +1341,28 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         .eq("match_id", matchId);
       if (remainingError) throw remainingError;
       const mp = remainingRows ?? [];
-      await supabase.from("matches").update({ status: "open", current_players: mp.length }).eq("id", matchId);
-      showToast("Spiller fjernet.");
+      const patch = { current_players: mp.length };
+      if (mp.length === 0) {
+        patch.status = "cancelled";
+      } else {
+        patch.status = "open";
+        if (match?.creator_id && String(match.creator_id) === String(targetUserId)) {
+          patch.creator_id = mp[0].user_id;
+        }
+      }
+      const { error: updateErr } = await supabase.from("matches").update(patch).eq("id", matchId);
+      if (updateErr) throw updateErr;
+
+      const kickNotifyErr = await createNotification(
+        targetUserId,
+        'match_cancelled',
+        'Du er fjernet fra kampen ❌',
+        'En admin/opretter har fjernet dig fra kampen.',
+        matchId,
+      );
+      if (kickNotifyErr) console.warn('kick notify:', kickNotifyErr.message || kickNotifyErr);
+
+      showToast(mp.length === 0 ? "Spiller fjernet — kampen er annulleret." : "Spiller fjernet.");
       await loadData();
     } catch (e) { showToast("Fejl: " + (e.message || "Prøv igen")); }
     finally { setBusyId(null); }
@@ -2201,13 +2226,12 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         };
       }
       if (myRequest.status === "approved") {
+        // Approve indsætter allerede spilleren — ingen separat "join efter godkendelse".
         return {
-          label: "Vælg hold og anmod",
-          onClick: () => {
-            close2v2Detail();
-            setTeamSelectMatch(m.id);
-          },
+          label: "Godkendt — genindlæs",
+          onClick: () => void loadData(),
           disabled: busy,
+          variant: "secondary",
         };
       }
     }
@@ -2229,12 +2253,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       }
       if (myRequest.status === "approved") {
         return {
-          label: "Vælg hold og tilmeld",
-          onClick: () => {
-            close2v2Detail();
-            setTeamSelectMatch(m.id);
-          },
+          label: "Godkendt — genindlæs",
+          onClick: () => void loadData(),
           disabled: busy,
+          variant: "secondary",
         };
       }
     }

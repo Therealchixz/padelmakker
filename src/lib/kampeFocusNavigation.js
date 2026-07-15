@@ -51,6 +51,7 @@ export function kampeFocusFooterLabel(format, notifType) {
   if (format === KAMPE_FORMAT_AMERICANO) {
     if (type === 'americano_completed') return `Tryk for at åbne ${TOURNAMENT_KAMPE_TAB_LABEL} → Afsluttede →`;
     if (type === 'americano_started') return `Tryk for at åbne ${TOURNAMENT_KAMPE_TAB_LABEL} → I gang →`;
+    if (type === 'americano_cancelled') return `Tryk for at åbne ${TOURNAMENT_KAMPE_TAB_LABEL} → Åbne →`;
     return `Tryk for at åbne ${TOURNAMENT_KAMPE_TAB_LABEL} → Åbne →`;
   }
   if (format === KAMPE_FORMAT_LIGA) {

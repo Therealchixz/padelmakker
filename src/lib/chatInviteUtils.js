@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { buildMatchInvitePayload } from './chatMessageUtils';
 import { rpcJoinOpenMatch } from './matchJoinUtils';
 import { listShareableCourts } from './chatVenueShareUtils';
+import { createNotificationsForUsers, sendPushNotificationsForUsers } from './notifications';
 
 export { mapBanerVenueToShareableCourt } from './chatVenueShareUtils';
 export async function fetchInvitableMatches(userId) {
@@ -53,7 +54,7 @@ export async function joinMatchFromChatInvite({
 }) {
   const { data: matchRow, error: matchErr } = await supabase
     .from('matches')
-    .select('id, status, match_type, current_players, max_players')
+    .select('id, status, match_type, current_players, max_players, creator_id')
     .eq('id', matchId)
     .maybeSingle();
   if (matchErr) throw matchErr;
@@ -77,13 +78,54 @@ export async function joinMatchFromChatInvite({
     team: null,
     userName,
     userEmail,
-    userAvatar,
+    userEmoji: userAvatar || '🎾',
   });
 
+  const alreadyJoined = result?.already_joined === true;
+  const teamNum = result?.team;
+  const isFull = result?.is_full === true;
+
+  if (!alreadyJoined) {
+    const { error: nErr } = await supabase.rpc('notify_match_creator_on_join', {
+      p_match_id: matchId,
+      p_title: 'Ny spiller tilmeldt!',
+      p_body: `${userName || 'En spiller'} har tilmeldt sig Hold ${teamNum} i din kamp.`,
+    });
+    if (nErr) console.warn('notify_match_creator_on_join (chat invite):', nErr.message || nErr);
+    else if (matchRow.creator_id && userId && String(matchRow.creator_id) !== String(userId)) {
+      void sendPushNotificationsForUsers(
+        [matchRow.creator_id],
+        'match_join',
+        'Ny spiller tilmeldt!',
+        `${userName || 'En spiller'} har tilmeldt sig Hold ${teamNum} i din kamp.`,
+        matchId,
+      );
+    }
+  }
+
+  if (isFull && userId) {
+    const { data: playerRows } = await supabase
+      .from('match_players')
+      .select('user_id')
+      .eq('match_id', matchId);
+    const fullNotifyIds = (playerRows || [])
+      .filter((p) => p.user_id && String(p.user_id) !== String(userId))
+      .map((p) => p.user_id);
+    if (fullNotifyIds.length) {
+      void createNotificationsForUsers(
+        fullNotifyIds,
+        'match_full',
+        'Kampen er fuld! 🎾',
+        'Alle 4 pladser er fyldt — kampen er klar til at starte.',
+        matchId,
+      );
+    }
+  }
+
   return {
-    alreadyJoined: result?.already_joined === true,
-    teamNum: result?.team,
-    isFull: result?.is_full === true,
+    alreadyJoined,
+    teamNum,
+    isFull,
   };
 }
 

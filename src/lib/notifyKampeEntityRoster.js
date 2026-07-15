@@ -1,5 +1,25 @@
-import { createNotification } from './notifications';
+import { createNotification, createNotificationsForUsers } from './notifications';
 import { tournamentDefaultName } from './tournamentCopy.js';
+
+/**
+ * Underret deltagere når opretter sletter en Americano/Mexicano under tilmelding.
+ */
+export async function notifyAmericanoTournamentCancelled(tournament, actorUserId, participantUserIds) {
+  if (!tournament?.id) return;
+  const name = tournamentDefaultName(tournament);
+  const ids = [...new Set((participantUserIds || []).filter(Boolean))]
+    .filter((id) => String(id) !== String(actorUserId));
+  if (!ids.length) return;
+  const err = await createNotificationsForUsers(
+    ids,
+    'americano_cancelled',
+    'Americano/Mexicano aflyst',
+    `"${name}" er slettet af opretteren. Tilmeldingen er annulleret.`,
+    null,
+    { entityType: 'americano', entityId: tournament.id },
+  );
+  if (err) console.warn('notifyAmericano cancelled:', err.message || err);
+}
 
 /**
  * Opretter: plads åbnet igen — kun ved tilmelding og når turneringen var/næsten fuld.
