@@ -707,23 +707,6 @@ export function ProfilTab({ user, showToast, setTab }) {
             </div>
           </div>
 
-          {/* Summary stat grid — always visible below profile header, mirrors mockup 2×2 layout */}
-          {!statsLoading && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, padding: '12px 18px 10px' }}>
-              {[
-                { label: 'Kampe spillet', val: games },
-                { label: 'Win rate', val: games > 0 ? winPct + '%' : '—' },
-                { label: 'Nuværende stime', val: twoV2CurrentStreak || 0 },
-                { label: 'Turneringer', val: americanoPlayed || 0 },
-              ].map((s, i) => (
-                <div key={i} style={{ background: 'var(--pm-surface-muted)', border: '1px solid var(--pm-americano-tie-border)', borderRadius: 16, padding: '13px 15px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '10.5px', fontWeight: 600, color: theme.textLight, letterSpacing: '0.03em' }}>{s.label}</div>
-                  <div style={{ fontSize: 23, fontWeight: 700, color: theme.accent, marginTop: 4 }}>{s.val}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* ELO hero inside profile card — matches mockup position (between stat-grid and padded content) */}
           {showPerformanceSection && (
             <div style={{ margin: '10px 18px 0', borderRadius: 16, padding: '17px', background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))', color: 'var(--pm-on-accent)', boxShadow: theme.shadowLg }}>
@@ -817,29 +800,30 @@ export function ProfilTab({ user, showToast, setTab }) {
             <div style={{ textAlign: "center", padding: "20px", color: theme.textLight, fontSize: "13px", marginBottom: "20px" }}>Indlæser {activeModeLabel}-statistik…</div>
           ) : (
           <>
-          <div style={{ fontSize: "10px", color: theme.textLight, marginBottom: "10px" }}>
-            {activeOverviewSource}
+          <div style={{ fontSize: 10, color: theme.textLight, marginBottom: 10, lineHeight: 1.45 }}>
+            <div>{activeOverviewSource}</div>
+            {activeOverviewUpdatedAt !== 'ukendt' ? (
+              <div style={{ marginTop: 2, opacity: 0.85 }}>Opdateret {activeOverviewUpdatedAt}</div>
+            ) : null}
           </div>
-          {!is2v2Mode && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginBottom: "20px" }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, marginBottom: 20 }}>
             {activeOverviewCards.map((s, i) => (
-              <div key={i} style={{ textAlign: "center", padding: "13px 15px", background: "var(--pm-surface-muted)", borderRadius: 16, border: "1px solid var(--pm-americano-tie-border)" }}>
-                <div style={{ fontSize: "10.5px", fontWeight: 600, color: theme.textLight, letterSpacing: "0.03em" }}>{s.label}</div>
+              <div key={i} style={{ textAlign: 'center', padding: '13px 15px', background: 'var(--pm-surface-muted)', borderRadius: 16, border: '1px solid var(--pm-americano-tie-border)' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: 600, color: theme.textLight, letterSpacing: '0.03em' }}>{s.label}</div>
                 {s.form ? (
-                  <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 9 }}>
+                  <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 9 }}>
                     {s.form.length > 0 ? s.form.map((r, j) => (
-                      <div key={j} style={{ width: 21, height: 21, borderRadius: "50%", background: r.result === "win" ? "var(--pm-green)" : r.result === "loss" ? "var(--pm-red)" : "var(--pm-border)", color: "var(--pm-on-accent)", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {r.result === "win" ? "V" : r.result === "loss" ? "T" : "U"}
+                      <div key={j} style={{ width: 21, height: 21, borderRadius: '50%', background: r.result === 'win' ? 'var(--pm-green)' : r.result === 'loss' ? 'var(--pm-red)' : 'var(--pm-border)', color: 'var(--pm-on-accent)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {r.result === 'win' ? 'V' : r.result === 'loss' ? 'T' : 'U'}
                       </div>
-                    )) : <div style={{ fontSize: "13px", color: theme.textLight, marginTop: 4 }}>—</div>}
+                    )) : <div style={{ fontSize: '13px', color: theme.textLight, marginTop: 4 }}>—</div>}
                   </div>
                 ) : (
-                  <div style={{ fontSize: 23, fontWeight: 700, color: theme.accent, marginTop: 4 }}>{s.value}</div>
+                  <div style={{ fontSize: 23, fontWeight: 700, color: s.color || theme.accent, marginTop: 4 }}>{s.value}</div>
                 )}
               </div>
             ))}
           </div>
-          )}
           </>
           )}
 
