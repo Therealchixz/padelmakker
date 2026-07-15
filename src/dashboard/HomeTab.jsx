@@ -58,6 +58,104 @@ function openMatchLocationChipLabel(court, creatorArea) {
   return regionDisplayLabel(area) || area;
 }
 
+function homeDayMonBadge(ymd) {
+  if (!ymd) return { top: '–', bottom: '' };
+  const d = new Date(`${ymd}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return { top: '–', bottom: '' };
+  return {
+    top: d.toLocaleDateString('da-DK', { day: 'numeric' }).replace('.', ''),
+    bottom: d.toLocaleDateString('da-DK', { month: 'short' }).replace('.', ''),
+  };
+}
+
+/** Brugerens kommende 2v2, turneringer og ligakampe — køres parallelt med aktivitetsfeed. */
+async function fetchHomeUpcomingItems(userId) {
+  const now = new Date();
+  const todayYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const [mRes, amRes, ltRes] = await Promise.all([
+    supabase.from('match_players')
+      .select('matches!inner(id, date, time, court_name, status, current_players, max_players)')
+      .eq('user_id', userId)
+      .gte('matches.date', todayYMD)
+      .in('matches.status', ['open', 'full', 'in_progress'])
+      .order('date', { referencedTable: 'matches', ascending: true })
+      .limit(8),
+    supabase.from('americano_participants')
+      .select('americano_tournaments!inner(id, name, tournament_date, time_slot, status, format)')
+      .eq('user_id', userId)
+      .gte('americano_tournaments.tournament_date', todayYMD)
+      .neq('americano_tournaments.status', 'completed')
+      .order('tournament_date', { referencedTable: 'americano_tournaments', ascending: true })
+      .limit(8),
+    supabase.from('league_teams')
+      .select('id, name, league_id, leagues!inner(id, name, status)')
+      .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+      .eq('status', 'ready'),
+  ]);
+  if (mRes.error) throw mRes.error;
+  if (amRes.error) throw amRes.error;
+  if (ltRes.error) throw ltRes.error;
+
+  const items = [];
+
+  for (const r of (mRes.data || [])) {
+    const m = r.matches;
+    if (!m) continue;
+    const statusLabel = m.status === 'in_progress' ? 'I gang' : m.status === 'full' ? 'Fuld' : 'Bekræftet';
+    const statusTone = m.status === 'in_progress' ? theme.accent : m.status === 'full' ? theme.warm : theme.green;
+    const statusBg = m.status === 'in_progress' ? theme.accentBg : m.status === 'full' ? theme.warmBg : theme.greenBg;
+    const players = (m.current_players != null && m.max_players != null) ? `${m.current_players}/${m.max_players} spillere` : '';
+    items.push({
+      key: `m-${m.id}`, kind: 'match', tone: statusTone, bg: statusBg, badge: homeDayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
+      title: <strong style={{ fontWeight: 700 }}>{m.court_name || 'Padelkamp'}</strong>, tag: '2v2',
+      statusLabel,
+      subtitle: [m.time ? `Kl. ${m.time}` : null, players].filter(Boolean).join(' · '),
+      target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
+    });
+  }
+
+  for (const r of (amRes.data || [])) {
+    const t = r.americano_tournaments;
+    if (!t) continue;
+    const fmt = String(t.format || '').toLowerCase() === 'mexicano' ? 'Mexicano' : 'Americano';
+    const statusLabel = t.status === 'registration' ? 'Tilmelding' : 'Tilmeldt';
+    items.push({
+      key: `am-${t.id}`, kind: 'americano', tone: theme.warm, bg: theme.warmBg, badge: homeDayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
+      title: <strong style={{ fontWeight: 700 }}>{t.name || fmt}</strong>, tag: fmt,
+      statusLabel,
+      subtitle: t.time_slot ? `Kl. ${t.time_slot}` : 'Planlagt',
+      target: { tab: 'kampe', search: `format=americano&focus=${encodeURIComponent(String(t.id))}` },
+    });
+  }
+
+  const myTeams = (ltRes.data || []).filter((t) => t.leagues && t.leagues.status !== 'completed');
+  if (myTeams.length) {
+    const leagueIds = [...new Set(myTeams.map((t) => t.league_id))];
+    const myTeamIds = new Set(myTeams.map((t) => t.id));
+    const [lmRes, allTeamsRes] = await Promise.all([
+      supabase.from('league_matches').select('id, league_id, round_number, team1_id, team2_id, status').in('league_id', leagueIds).eq('status', 'pending'),
+      supabase.from('league_teams').select('id, name, league_id').in('league_id', leagueIds),
+    ]);
+    const teamName = new Map((allTeamsRes.data || []).map((t) => [t.id, t.name]));
+    const leagueName = new Map(myTeams.map((t) => [t.league_id, t.leagues?.name]));
+    for (const lm of (lmRes.data || [])) {
+      const involvesMe = myTeamIds.has(lm.team1_id) || myTeamIds.has(lm.team2_id);
+      if (!involvesMe) continue;
+      const oppId = myTeamIds.has(lm.team1_id) ? lm.team2_id : lm.team1_id;
+      items.push({
+        key: `lm-${lm.id}`, kind: 'liga', tone: theme.accent, bg: theme.accentBg, badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
+        title: <strong style={{ fontWeight: 700 }}>{leagueName.get(lm.league_id) || 'Ligakamp'}</strong>, tag: 'Liga',
+        statusLabel: `Runde ${lm.round_number ?? '?'}`,
+        subtitle: oppId && teamName.get(oppId) ? `mod ${teamName.get(oppId)}` : 'Kommende kamp',
+        target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(lm.league_id))}` },
+      });
+    }
+  }
+
+  items.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  return items.slice(0, 5);
+}
+
 export function HomeTab({ user, setTab, showToast }) {
   const { user: authUser } = useAuth();
   const [viewTournament, setViewTournament] = useState(null);
@@ -85,108 +183,7 @@ export function HomeTab({ user, setTab, showToast }) {
   // Kommende kampe: 2v2-kampe, Americano/Mexicano og liga-kampe brugeren er en del af, fra i dag og frem.
   const [upcomingItems, setUpcomingItems] = useState([]);
   const [upcomingLoadError, setUpcomingLoadError] = useState('');
-  useEffect(() => {
-    if (!user?.id) {
-      setUpcomingItems([]);
-      setUpcomingLoadError('');
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        setUpcomingLoadError('');
-        const now = new Date();
-        const todayYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const [mRes, amRes, ltRes] = await Promise.all([
-          supabase.from('match_players')
-            .select('matches!inner(id, date, time, court_name, status, current_players, max_players)')
-            .eq('user_id', user.id)
-            .gte('matches.date', todayYMD)
-            .in('matches.status', ['open', 'full', 'in_progress']),
-          supabase.from('americano_participants')
-            .select('americano_tournaments!inner(id, name, tournament_date, time_slot, status, format)')
-            .eq('user_id', user.id)
-            .gte('americano_tournaments.tournament_date', todayYMD)
-            .neq('americano_tournaments.status', 'completed'),
-          supabase.from('league_teams')
-            .select('id, name, league_id, leagues!inner(id, name, status)')
-            .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`)
-            .eq('status', 'ready'),
-        ]);
-        if (cancelled) return;
-        if (mRes.error) throw mRes.error;
-        if (amRes.error) throw amRes.error;
-        if (ltRes.error) throw ltRes.error;
-
-        const items = [];
-
-        for (const r of (mRes.data || [])) {
-          const m = r.matches;
-          if (!m) continue;
-          const statusLabel = m.status === 'in_progress' ? 'I gang' : m.status === 'full' ? 'Fuld' : 'Bekræftet';
-          const statusTone = m.status === 'in_progress' ? theme.accent : m.status === 'full' ? theme.warm : theme.green;
-          const statusBg = m.status === 'in_progress' ? theme.accentBg : m.status === 'full' ? theme.warmBg : theme.greenBg;
-          const players = (m.current_players != null && m.max_players != null) ? `${m.current_players}/${m.max_players} spillere` : '';
-          items.push({
-            key: `m-${m.id}`, kind: 'match', tone: statusTone, bg: statusBg, badge: dayMonBadge(m.date), sortKey: `${m.date} ${m.time || ''}`,
-            title: <strong style={{ fontWeight: 700 }}>{m.court_name || 'Padelkamp'}</strong>, tag: '2v2',
-            statusLabel,
-            subtitle: [m.time ? `Kl. ${m.time}` : null, players].filter(Boolean).join(' · '),
-            target: { tab: 'kampe', search: `focus=${encodeURIComponent(String(m.id))}` },
-          });
-        }
-
-        for (const r of (amRes.data || [])) {
-          const t = r.americano_tournaments;
-          if (!t) continue;
-          const fmt = String(t.format || '').toLowerCase() === 'mexicano' ? 'Mexicano' : 'Americano';
-          const statusLabel = t.status === 'registration' ? 'Tilmelding' : 'Tilmeldt';
-          items.push({
-            key: `am-${t.id}`, kind: 'americano', tone: theme.warm, bg: theme.warmBg, badge: dayMonBadge(t.tournament_date), sortKey: `${t.tournament_date} ${t.time_slot || ''}`,
-            title: <strong style={{ fontWeight: 700 }}>{t.name || fmt}</strong>, tag: fmt,
-            statusLabel,
-            subtitle: t.time_slot ? `Kl. ${t.time_slot}` : 'Planlagt',
-            target: { tab: 'kampe', search: `format=americano&focus=${encodeURIComponent(String(t.id))}` },
-          });
-        }
-
-        const myTeams = (ltRes.data || []).filter((t) => t.leagues && t.leagues.status !== 'completed');
-        if (myTeams.length) {
-          const leagueIds = [...new Set(myTeams.map((t) => t.league_id))];
-          const myTeamIds = new Set(myTeams.map((t) => t.id));
-          const [lmRes, allTeamsRes] = await Promise.all([
-            supabase.from('league_matches').select('id, league_id, round_number, team1_id, team2_id, status').in('league_id', leagueIds).eq('status', 'pending'),
-            supabase.from('league_teams').select('id, name, league_id').in('league_id', leagueIds),
-          ]);
-          if (cancelled) return;
-          const teamName = new Map((allTeamsRes.data || []).map((t) => [t.id, t.name]));
-          const leagueName = new Map(myTeams.map((t) => [t.league_id, t.leagues?.name]));
-          for (const lm of (lmRes.data || [])) {
-            const involvesMe = myTeamIds.has(lm.team1_id) || myTeamIds.has(lm.team2_id);
-            if (!involvesMe) continue;
-            const oppId = myTeamIds.has(lm.team1_id) ? lm.team2_id : lm.team1_id;
-            items.push({
-              key: `lm-${lm.id}`, kind: 'liga', tone: theme.accent, bg: theme.accentBg, badge: { top: `R${lm.round_number ?? '?'}`, bottom: 'LIGA' }, sortKey: `zzzz-${lm.round_number ?? 0}`,
-              title: <strong style={{ fontWeight: 700 }}>{leagueName.get(lm.league_id) || 'Ligakamp'}</strong>, tag: 'Liga',
-              statusLabel: `Runde ${lm.round_number ?? '?'}`,
-              subtitle: oppId && teamName.get(oppId) ? `mod ${teamName.get(oppId)}` : 'Kommende kamp',
-              target: { tab: 'kampe', search: `format=liga&focus=${encodeURIComponent(String(lm.league_id))}` },
-            });
-          }
-        }
-
-        items.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-        setUpcomingItems(items.slice(0, 5));
-      } catch (err) {
-        console.warn('home upcoming items load:', err?.message || err);
-        if (!cancelled) {
-          setUpcomingItems([]);
-          setUpcomingLoadError(err?.message || 'Kunne ikke hente kommende kampe.');
-        }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [user?.id]);
+  const [upcomingLoading, setUpcomingLoading] = useState(true);
 
   // Invitationer: (1) anmodninger om at komme med i DINE kampe, (2) holdinvitationer i ligaen, (3) dine egne ventende anmodninger.
   const [inviteItems, setInviteItems] = useState([]);
@@ -391,6 +388,11 @@ export function HomeTab({ user, setTab, showToast }) {
     setMilestoneFeed(payload.milestoneFeed || []);
     setSeekingFeed(payload.seekingFeed || []);
     setLeagueNewFeed(payload.leagueNewFeed || []);
+    if (Array.isArray(payload.upcomingItems)) {
+      setUpcomingItems(payload.upcomingItems);
+      setUpcomingLoading(false);
+      setUpcomingLoadError('');
+    }
   }, []);
 
   const fetchFeed = useCallback(async ({ silent = false } = {}) => {
@@ -399,10 +401,31 @@ export function HomeTab({ user, setTab, showToast }) {
     if (!silent) {
       setFeedLoading(true);
       setFeedLoadError(null);
+      setUpcomingLoading(true);
+      setUpcomingLoadError('');
       // Sikkerhedsnet: hvis fetchen mod forventning hænger, så sluk skelettet
       // alligevel, så brugeren ikke ser grå bokse i det uendelige.
-      watchdog = setTimeout(() => setFeedLoading(false), 15000);
+      watchdog = setTimeout(() => {
+        setFeedLoading(false);
+        setUpcomingLoading(false);
+      }, 15000);
     }
+    const upcomingPromise = user?.id
+      ? fetchHomeUpcomingItems(user.id).catch((err) => {
+          console.warn('home upcoming items load:', err?.message || err);
+          if (fetchIdRef.current === fetchId) {
+            setUpcomingItems([]);
+            setUpcomingLoadError(err?.message || 'Kunne ikke hente kommende kampe.');
+          }
+          return [];
+        })
+      : Promise.resolve([]);
+    void upcomingPromise.then((items) => {
+      if (fetchIdRef.current !== fetchId) return;
+      setUpcomingItems(items);
+      setUpcomingLoading(false);
+      if (items.length) setUpcomingLoadError('');
+    });
     try {
       const today = new Date().toISOString().split('T')[0];
       const sinceSeeking = new Date(Date.now() - SEEK_FEED_QUERY_TTL_MS).toISOString();
@@ -707,6 +730,8 @@ export function HomeTab({ user, setTab, showToast }) {
 
       // Sæt al state på én gang (React 18 batcher disse i async-kontekst)
       if (fetchIdRef.current !== fetchId) return;
+      const upcomingItems_ = await upcomingPromise;
+      if (fetchIdRef.current !== fetchId) return;
       const payload = {
         feed: groupedFeed,
         americanoFeed: completedAmFeed,
@@ -716,6 +741,7 @@ export function HomeTab({ user, setTab, showToast }) {
         milestoneFeed: milestoneItems,
         seekingFeed: seekingFeed_,
         leagueNewFeed: leagueNewFeed_,
+        upcomingItems: upcomingItems_,
       };
       applyFeedPayload(payload);
       HOME_FEED_CACHE_BY_USER.set(String(user.id), { at: Date.now(), payload });
@@ -1234,11 +1260,11 @@ export function HomeTab({ user, setTab, showToast }) {
       )}
 
       {/* Kommende kampe */}
-      {(upcomingItems.length > 0 || upcomingLoadError) && (
+      {(upcomingLoading || upcomingItems.length > 0 || upcomingLoadError) && (
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '18px 18px 10px' }}>
             <h3 style={{ fontSize: 15.5, fontWeight: 600, letterSpacing: '-0.2px', color: theme.text, margin: 0 }}>Kommende</h3>
-            {upcomingItems.length > 0 && (
+            {!upcomingLoading && upcomingItems.length > 0 && (
               <button type="button" onClick={() => setTab('kampe')} style={{ color: theme.accent, fontWeight: 600, fontSize: 12.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Se alle</button>
             )}
           </div>
@@ -1249,6 +1275,22 @@ export function HomeTab({ user, setTab, showToast }) {
                 <div className="pm-state-title">Kunne ikke hente kommende kampe</div>
                 <div className="pm-state-copy">{upcomingLoadError}</div>
               </div>
+            </div>
+          ) : upcomingLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
+              {[0, 1].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    height: 72,
+                    borderRadius: 16,
+                    background: theme.border,
+                    opacity: 0.45 + i * 0.12,
+                    animation: 'pm-pulse 1.4s ease-in-out infinite',
+                    animationDelay: `${i * 0.12}s`,
+                  }}
+                />
+              ))}
             </div>
           ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 18px' }}>
