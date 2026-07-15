@@ -239,7 +239,7 @@ export function KampeMatchListCard({
           marginTop: 4,
         }}>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-            {renderSingleTeam(t1Slots, 't1', 24)}
+            {renderSingleTeam(t1Slots, 't1')}
             <span style={{ fontSize: 12, fontWeight: 700, color: didWin ? 'var(--pm-text)' : 'var(--pm-text-mid)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
               {teamNameLabel(t1, profilesById, currentUserId)}
             </span>
@@ -248,7 +248,7 @@ export function KampeMatchListCard({
             {setScoreStr}
           </div>
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-            {renderSingleTeam(t2Slots, 't2', 24)}
+            {renderSingleTeam(t2Slots, 't2')}
             <span style={{ fontSize: 12, fontWeight: 700, color: didLose ? 'var(--pm-text-mid)' : 'var(--pm-text)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
               {teamNameLabel(t2, profilesById, currentUserId)}
             </span>
