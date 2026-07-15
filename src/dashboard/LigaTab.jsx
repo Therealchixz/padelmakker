@@ -257,10 +257,12 @@ export function LigaTab({
   const maybeNotifyLeagueFull = async (leagueId) => {
     const league = leagues.find((l) => l.id === leagueId);
     if (!league?.max_teams || String(league.status || '').toLowerCase() !== 'registration') return;
+    // Kun ready-hold tæller som "fuld og klar" — pending invitationer kan stadig afvises.
     const { count, error: cErr } = await supabase
       .from('league_teams')
       .select('*', { count: 'exact', head: true })
-      .eq('league_id', leagueId);
+      .eq('league_id', leagueId)
+      .eq('status', 'ready');
     if (cErr) {
       console.warn('maybeNotifyLeagueFull count:', cErr.message);
       return;
@@ -385,6 +387,11 @@ export function LigaTab({
   const leaveLeague = async (leagueId) => {
     const myTeam = myTeamByLeague[leagueId];
     if (!myTeam) return;
+    const league = leagues.find((l) => l.id === leagueId);
+    if (String(league?.status || '').toLowerCase() !== 'registration') {
+      showToast('Du kan kun afmelde holdet mens ligaen er åben for tilmelding.');
+      return;
+    }
     const ok = await ask({
       message: 'Afmeld dit hold fra ligaen?',
       confirmLabel: 'Ja, afmeld',
@@ -402,6 +409,12 @@ export function LigaTab({
   };
 
   const kickTeam = async (team) => {
+    const league = leagues.find((l) => l.id === team.league_id)
+      || (selectedLeague?.id === team.league_id ? selectedLeague : null);
+    if (String(league?.status || '').toLowerCase() !== 'registration') {
+      showToast('Hold kan kun fjernes mens ligaen er åben for tilmelding.');
+      return;
+    }
     const ok = await ask({
       message: `Smid "${team.name}" ud af ligaen?`,
       confirmLabel: 'Ja, smid ud',
@@ -1207,6 +1220,8 @@ export function LigaTab({
         const joined = !!myTeam;
         const standings = computeStandings(teams, matches, { pointsWin: selectedLeague.points_win, pointsDraw: selectedLeague.points_draw, pointsLoss: selectedLeague.points_loss });
         const maxTeams = selectedLeague.max_teams || regTeams.length || teams.length;
+        // Pladser reserveres af ready + pending (indtil invitation afvises).
+        // "Liga fuld"-notifikation bruger kun ready-hold (se maybeNotifyLeagueFull).
         const regTeamCount = regTeams.length;
         const isFull = selectedLeague.max_teams && regTeamCount >= selectedLeague.max_teams;
         const showTeamForm = teamFormLeagueId === selectedLeague.id;

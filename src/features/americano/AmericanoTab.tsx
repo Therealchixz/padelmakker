@@ -726,7 +726,13 @@ export function AmericanoTab({
       await load()
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
-      showToast('Kunne ikke tilmelde: ' + msg)
+      if (/tournament_full/i.test(msg)) {
+        showToast('Americano/Mexicano er fuld.')
+      } else if (/tournament_not_open/i.test(msg)) {
+        showToast('Tilmeldingen er lukket.')
+      } else {
+        showToast('Kunne ikke tilmelde: ' + msg)
+      }
     } finally {
       setBusyId(null)
     }
@@ -734,6 +740,10 @@ export function AmericanoTab({
 
   const leaveTournament = async (tournamentId: string) => {
     const tournament = rows.find((x) => x.id === tournamentId)
+    if (String(tournament?.status || '').toLowerCase() !== 'registration') {
+      showToast('Du kan kun afmelde dig mens tilmeldingen er åben.')
+      return
+    }
     const countBefore = (participantsByTournament[tournamentId] || []).length
     setBusyId(tournamentId)
     try {
@@ -761,6 +771,10 @@ export function AmericanoTab({
 
   const kickParticipant = async (tournamentId: string, participantId: string) => {
     const tournament = rows.find((x) => x.id === tournamentId)
+    if (String(tournament?.status || '').toLowerCase() !== 'registration') {
+      showToast('Spillere kan kun fjernes mens tilmeldingen er åben.')
+      return
+    }
     const countBefore = (participantsByTournament[tournamentId] || []).length
     setBusyId(tournamentId + '-kick-' + participantId)
     try {

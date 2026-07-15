@@ -3,12 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { theme, btn } from '../lib/platformTheme';
 import { AppModal } from './AppModal';
 import { supabase } from '../lib/supabase';
-import { calculateAndApplyElo } from '../lib/applyEloMatch';
 import { createNotification, createNotificationsForUsers } from '../lib/notifications';
 import { resolveDisplayName } from '../lib/platformUtils';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
 import { formatMatchResultScore } from '../lib/matchResultScore';
-import { canConfirmPadelMatchResult, filterConfirmablePendingResults } from '../lib/resolvePadelMatchResult';
+import {
+  canConfirmPadelMatchResult,
+  confirmPadelMatchResult,
+  filterConfirmablePendingResults,
+  rejectPadelMatchResult,
+} from '../lib/resolvePadelMatchResult';
 import { buildKampe2v2DetailPath } from '../lib/kampeDetailRoutes.js';
 
 /**
@@ -21,8 +25,8 @@ import { buildKampe2v2DetailPath } from '../lib/kampeDetailRoutes.js';
  *   - mr.confirmed = false
  *
  * Brugeren har tre muligheder:
- *   - Bekræft resultat  → UPDATE + ELO + notifikationer
- *   - Afvis resultat    → DELETE + notifikationer (kræver fix RLS-policy)
+ *   - Bekræft resultat  → atomisk confirm + ELO RPC + notifikationer
+ *   - Afvis resultat    → DELETE + notifikationer
  *   - Vis kampen        → naviger til kampen og luk popup midlertidigt
  */
 export function PendingResultConfirmModal({ user }) {
@@ -206,48 +210,21 @@ export function PendingResultConfirmModal({ user }) {
     setBusy(true);
     setError('');
     try {
-      const confirmationAccess = canConfirmPadelMatchResult({
+      const outcome = await confirmPadelMatchResult({
+        supabaseClient: supabase,
+        createNotificationFn: createNotification,
+        createNotificationsForUsersFn: createNotificationsForUsers,
+        matchId: result.match_id,
         result,
         players: current.players,
         confirmedBy: userId,
         isAdmin,
       });
-      if (!confirmationAccess.ok) {
-        setError(confirmationAccess.reason || 'Du kan ikke bekræfte dette resultat.');
+      if (!outcome.ok) {
+        setError(outcome.reason || 'Du kan ikke bekræfte dette resultat.');
         await load();
         return;
       }
-
-      const { error: updateErr } = await supabase
-        .from('match_results')
-        .update({ confirmed: true, confirmed_by: userId })
-        .eq('id', result.id);
-      if (updateErr) throw updateErr;
-
-      try {
-        await calculateAndApplyElo(result.match_id, () => {}, { matchResultId: result.id });
-      } catch (eloErr) {
-        console.warn('apply elo on modal confirm:', eloErr?.message || eloErr);
-      }
-
-      // Notify alle deltagere om bekræftet resultat
-      try {
-        const { data: players } = await supabase
-          .from('match_players')
-          .select('user_id')
-          .eq('match_id', result.match_id);
-        const playerIds = (players || []).map((p) => p.user_id).filter(Boolean);
-        await createNotificationsForUsers(
-          playerIds,
-          'result_confirmed',
-          'Resultat bekræftet! 🏆',
-          `Kampen er afsluttet (${scoreDisplay}). Personlig ELO er opdateret.`,
-          result.match_id,
-        );
-      } catch (notifyErr) {
-        console.warn('notify on modal confirm:', notifyErr?.message || notifyErr);
-      }
-
       await load();
     } catch (e) {
       setError('Kunne ikke bekræfte: ' + (e?.message || 'Prøv igen'));
@@ -272,41 +249,18 @@ export function PendingResultConfirmModal({ user }) {
         return;
       }
 
-      const { error: deleteErr } = await supabase
-        .from('match_results')
-        .delete()
-        .eq('id', result.id);
-      if (deleteErr) throw deleteErr;
-
-      // Notifikation til submitter
-      if (result.submitted_by) {
-        createNotification(
-          result.submitted_by,
-          'result_submitted',
-          'Resultat afvist ❌',
-          `${myDisplayName} har afvist dit indberettede resultat. Indrapportér igen.`,
-          result.match_id,
-        );
-      }
-
-      // Notifikation til admins (på nær brugeren selv)
-      try {
-        const { data: admins } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('role', 'admin')
-          .neq('id', userId);
-        const adminIds = (admins || []).map((a) => a.id).filter(Boolean);
-        await createNotificationsForUsers(
-          adminIds,
-          'result_submitted',
-          'Resultat afvist ❌',
-          `${myDisplayName} har afvist et indberettet resultat. Kampen venter på et nyt resultat.`,
-          result.match_id,
-        );
-      } catch (notifyErr) {
-        console.warn('notify admins on modal reject:', notifyErr?.message || notifyErr);
-      }
+      await rejectPadelMatchResult({
+        supabaseClient: supabase,
+        createNotificationFn: createNotification,
+        createNotificationsForUsersFn: createNotificationsForUsers,
+        matchId: result.match_id,
+        result,
+        rejectedBy: userId,
+        rejecterName: myDisplayName,
+        onWarn: (notifyErr) => {
+          console.warn('notify admins on modal reject:', notifyErr?.message || notifyErr);
+        },
+      });
 
       await load();
     } catch (e) {
