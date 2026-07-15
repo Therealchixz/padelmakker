@@ -389,8 +389,10 @@ export function getProfileBadges(mode, raw = {}) {
     key: def.key,
     label: def.label,
     hint: def.hint,
+    description: def.description || '',
     icon: def.icon,
     category: def.category,
+    categoryLabel: PROFILE_BADGE_CATEGORY_LABELS[def.category] || def.category,
     earned: def.check(ctx),
   }));
 }
