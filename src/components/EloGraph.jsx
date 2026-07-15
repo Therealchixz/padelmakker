@@ -2,14 +2,65 @@ import { useRef, useState } from 'react';
 import { font, theme } from '../lib/platformTheme';
 import { sortEloHistoryChronological, formatEloHistoryDate } from '../lib/eloHistoryUtils';
 
-export function EloGraph({ data, valueLabel = 'ELO', emptyText = 'Spil mindst 2 kampe for at se din ELO-graf.' }) {
+function shortEloDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }).replace('.', '');
+}
+
+function graphPalette(dark) {
+  if (dark) {
+    return {
+      gridLine: 'rgba(255, 255, 255, 0.24)',
+      gridText: 'rgba(255, 255, 255, 0.68)',
+      line: '#FFFFFF',
+      lineHover: 'rgba(255, 255, 255, 0.38)',
+      areaStart: 'rgba(255, 255, 255, 0.3)',
+      areaEnd: 'rgba(255, 255, 255, 0.03)',
+      dotFill: '#FFFFFF',
+      dotStroke: 'rgba(13, 39, 82, 0.35)',
+      valueLabel: '#FFFFFF',
+      axisLabel: 'rgba(255, 255, 255, 0.72)',
+      emptyText: 'var(--pm-hero-subtitle)',
+      lineWidth: 2.5,
+      dotR: { active: 5.5, last: 4.5, default: 3.5 },
+    };
+  }
+  return {
+    gridLine: theme.border,
+    gridText: theme.textLight,
+    line: theme.accent,
+    lineHover: theme.accent,
+    areaStart: theme.accent,
+    areaStartOpacity: 0.25,
+    areaEnd: theme.accent,
+    areaEndOpacity: 0.02,
+    dotFill: theme.accent,
+    dotStroke: theme.onAccent,
+    valueLabel: theme.accent,
+    axisLabel: theme.textLight,
+    emptyText: theme.textLight,
+    lineWidth: 2,
+    dotR: { active: 5, last: 4, default: 2.5 },
+  };
+}
+
+export function EloGraph({
+  data,
+  valueLabel = 'ELO',
+  emptyText = 'Spil mindst 2 kampe for at se din ELO-graf.',
+  dark = false,
+}) {
   const svgRef = useRef(null);
   const [hoverIdx, setHoverIdx] = useState(null);
+  const palette = graphPalette(dark);
+  const gradId = dark ? 'eloGradDark' : 'eloGradLight';
 
   const W = 320;
-  const H = 140;
-  const PX = 32;
-  const PY = 20;
+  const H = 150;
+  const PX = 36;
+  const PY = 22;
   const hasGraph = data && data.length >= 2;
   const sorted = hasGraph ? sortEloHistoryChronological(data) : [];
   const values = (() => {
@@ -37,7 +88,7 @@ export function EloGraph({ data, valueLabel = 'ELO', emptyText = 'Spil mindst 2 
   const points = hasGraph
     ? sorted.map((d, i) => {
         const x = PX + (i / (sorted.length - 1)) * (W - PX * 2);
-        const y = PY + (1 - (values[i] - minV) / rangeV) * (H - PY * 2);
+        const y = PY + (1 - (values[i] - minV) / rangeV) * (H - PY * 2 - 14);
         return { x, y, val: values[i], date: d.date };
       })
     : [];
@@ -87,7 +138,7 @@ export function EloGraph({ data, valueLabel = 'ELO', emptyText = 'Spil mindst 2 
   const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
   const areaPath =
     hasGraph && points.length > 0
-      ? line + ` L${points[points.length - 1].x},${H - PY} L${points[0].x},${H - PY} Z`
+      ? line + ` L${points[points.length - 1].x},${H - PY - 8} L${points[0].x},${H - PY - 8} Z`
       : '';
 
   const gridLines = 3;
@@ -97,10 +148,11 @@ export function EloGraph({ data, valueLabel = 'ELO', emptyText = 'Spil mindst 2 
 
   const hi = hoverIdx != null && points[hoverIdx] ? points[hoverIdx] : null;
   const last = points[points.length - 1];
+  const showXLabels = points.length <= 6;
 
   if (!hasGraph) {
     return (
-      <div style={{ textAlign: 'center', padding: '24px', color: theme.textLight, fontSize: '13px' }}>
+      <div style={{ textAlign: 'center', padding: '24px', color: palette.emptyText, fontSize: '13px' }}>
         {emptyText}
       </div>
     );
@@ -111,7 +163,7 @@ export function EloGraph({ data, valueLabel = 'ELO', emptyText = 'Spil mindst 2 
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        style={{ width: '100%', height: 'auto', maxHeight: '180px', display: 'block', cursor: 'crosshair' }}
+        style={{ width: '100%', height: 'auto', maxHeight: '190px', display: 'block', cursor: 'crosshair' }}
         onMouseMove={onSvgPointerMove}
         onMouseLeave={onSvgPointerLeave}
         onTouchStart={(e) => {
@@ -121,59 +173,96 @@ export function EloGraph({ data, valueLabel = 'ELO', emptyText = 'Spil mindst 2 
           if (e.touches[0]) setHoverIdx(pickNearestIndex(e.touches[0].clientX));
         }}
         onTouchEnd={onSvgPointerLeave}
+        aria-label={`${valueLabel}-graf over tid`}
       >
         {gridVals.map((v, i) => {
-          const y = PY + (1 - (v - minV) / rangeV) * (H - PY * 2);
+          const y = PY + (1 - (v - minV) / rangeV) * (H - PY * 2 - 14);
           return (
             <g key={i}>
-              <line x1={PX} y1={y} x2={W - PX} y2={y} stroke={theme.border} strokeWidth="0.5" strokeDasharray="3,3" />
-              <text x={PX - 4} y={y + 3} textAnchor="end" fontSize="8" fill={theme.textLight} fontFamily={font}>
+              <line x1={PX} y1={y} x2={W - PX} y2={y} stroke={palette.gridLine} strokeWidth="1" strokeDasharray="4,4" />
+              <text x={PX - 6} y={y + 3} textAnchor="end" fontSize="9" fill={palette.gridText} fontFamily={font}>
                 {v}
               </text>
             </g>
           );
         })}
         <defs>
-          <linearGradient id="eloGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={theme.accent} stopOpacity="0.25" />
-            <stop offset="100%" stopColor={theme.accent} stopOpacity="0.02" />
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop
+              offset="0%"
+              stopColor={dark ? palette.areaStart : palette.areaStart}
+              stopOpacity={dark ? 1 : palette.areaStartOpacity}
+            />
+            <stop
+              offset="100%"
+              stopColor={dark ? palette.areaEnd : palette.areaEnd}
+              stopOpacity={dark ? 1 : palette.areaEndOpacity}
+            />
           </linearGradient>
         </defs>
-        <path d={areaPath} fill="url(#eloGrad)" />
-        <path d={line} fill="none" stroke={theme.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={areaPath} fill={`url(#${gradId})`} />
+        <path
+          d={line}
+          fill="none"
+          stroke={palette.line}
+          strokeWidth={palette.lineWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
         {hi && (
           <line
             x1={hi.x}
             y1={PY}
             x2={hi.x}
-            y2={H - PY}
-            stroke={theme.accent}
+            y2={H - PY - 8}
+            stroke={palette.lineHover}
             strokeWidth="1"
-            strokeOpacity={0.35}
             pointerEvents="none"
           />
         )}
         {points.map((p, i) => {
           const active = hoverIdx === i;
           const isLast = i === points.length - 1;
-          const r = active ? 5 : isLast ? 4 : 2.5;
+          const r = active ? palette.dotR.active : isLast ? palette.dotR.last : palette.dotR.default;
           return (
             <circle
               key={i}
               cx={p.x}
               cy={p.y}
               r={r}
-              fill={theme.accent}
-              stroke={theme.onAccent}
+              fill={palette.dotFill}
+              stroke={palette.dotStroke}
               strokeWidth={active ? 2 : 1.5}
             />
           );
         })}
         {!hi && points.length > 0 && (
-          <text x={last.x} y={last.y - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill={theme.accent} fontFamily={font}>
+          <text
+            x={last.x}
+            y={last.y - 10}
+            textAnchor="middle"
+            fontSize="10"
+            fontWeight="700"
+            fill={palette.valueLabel}
+            fontFamily={font}
+          >
             {Math.round(last.val)}
           </text>
         )}
+        {showXLabels &&
+          points.map((p, i) => (
+            <text
+              key={`x-${i}`}
+              x={p.x}
+              y={H - 4}
+              textAnchor="middle"
+              fontSize="8.5"
+              fill={palette.axisLabel}
+              fontFamily={font}
+            >
+              {shortEloDate(p.date)}
+            </text>
+          ))}
       </svg>
       {hi && (
         <div
