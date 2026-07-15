@@ -823,9 +823,10 @@ export function AmericanoTab({
     try {
       const participants = participantsByTournament[t.id] || []
       const participantIds = participants.map((p) => p.user_id).filter(Boolean)
+      // Notify while tournament + participants still exist (RPC entity auth + push).
+      await notifyAmericanoTournamentCancelled(t, profileId, participantIds)
       const { error } = await supabase.from('americano_tournaments').delete().eq('id', t.id)
       if (error) throw error
-      void notifyAmericanoTournamentCancelled(t, profileId, participantIds)
       showToast('Americano/Mexicano slettet.')
       if (embedInKampe) closeAmericanoDetail()
       else setDetailTournamentId(null)

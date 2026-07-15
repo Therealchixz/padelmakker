@@ -1332,6 +1332,16 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     setBusyId(matchId + '-kick-' + targetUserId);
     try {
       const match = matches.find((m) => String(m.id) === String(matchId));
+      // Notify while recipient is still on the match — RPC requires related recipient.
+      const kickNotifyErr = await createNotification(
+        targetUserId,
+        'match_cancelled',
+        'Du er fjernet fra kampen ❌',
+        'En admin/opretter har fjernet dig fra kampen.',
+        matchId,
+      );
+      if (kickNotifyErr) console.warn('kick notify:', kickNotifyErr.message || kickNotifyErr);
+
       const { error } = await supabase.from("match_players").delete()
         .eq("match_id", matchId).eq("user_id", targetUserId);
       if (error) throw error;
@@ -1352,15 +1362,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       }
       const { error: updateErr } = await supabase.from("matches").update(patch).eq("id", matchId);
       if (updateErr) throw updateErr;
-
-      const kickNotifyErr = await createNotification(
-        targetUserId,
-        'match_cancelled',
-        'Du er fjernet fra kampen ❌',
-        'En admin/opretter har fjernet dig fra kampen.',
-        matchId,
-      );
-      if (kickNotifyErr) console.warn('kick notify:', kickNotifyErr.message || kickNotifyErr);
 
       showToast(mp.length === 0 ? "Spiller fjernet — kampen er annulleret." : "Spiller fjernet.");
       await loadData();

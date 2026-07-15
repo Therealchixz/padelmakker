@@ -169,6 +169,7 @@ test('client and server push policies share core notification types', () => {
   const critical = [
     'match_invite',
     'americano_invite',
+    'americano_cancelled',
     'seeking_player',
     'result_error_report',
     'user_report',

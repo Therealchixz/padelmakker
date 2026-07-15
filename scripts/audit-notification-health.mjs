@@ -173,6 +173,21 @@ if (unawaited > awaited) {
   });
 }
 
+const americano = read('src/features/americano/AmericanoTab.tsx');
+const deleteBlock = americano.slice(
+  americano.indexOf('const deleteTournament'),
+  americano.indexOf('if (loading)'),
+);
+const cancelNotifyAt = deleteBlock.indexOf('notifyAmericanoTournamentCancelled');
+const cancelDeleteAt = deleteBlock.indexOf(".from('americano_tournaments').delete");
+if (cancelNotifyAt >= 0 && cancelDeleteAt >= 0 && cancelNotifyAt > cancelDeleteAt) {
+  issues.push({
+    severity: 'high',
+    code: 'AMERICANO_CANCEL_NOTIFY_ORDER',
+    message: 'deleteTournament notifies after DELETE (RPC/entity auth may fail)',
+  });
+}
+
 // 6) Deprecated SQL scripts without warning
 for (const rel of [
   'supabase/sql/create_notification_rpc.sql',
