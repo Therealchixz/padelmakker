@@ -7698,19 +7698,15 @@ button,
 }
 
 .pm-kampe-v2-list-roster .pm-kampe-v2-list-team--t1 {
-  padding: 4px 10px 4px 4px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--pm-accent) 11%, var(--pm-surface));
 }
 
 .pm-kampe-v2-list-roster .pm-kampe-v2-list-team--t2 {
-  padding: 4px 4px 4px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--pm-blue) 11%, var(--pm-surface));
-}
-
-.pm-kampe-v2-list-roster .pm-kampe-v2-list-team > * + * {
-  margin-left: -6px;
 }
 
 .pm-kampe-v2-list-roster-meta {
@@ -7758,15 +7754,13 @@ button,
 .pm-kampe-v2-list-team {
   display: flex;
   align-items: center;
+  gap: 4px;
   min-height: 28px;
 }
 
 .pm-kampe-v2-list-team > * {
   position: relative;
-}
-
-.pm-kampe-v2-list-team > * + * {
-  margin-left: -8px;
+  flex-shrink: 0;
 }
 
 .pm-kampe-v2-list-team--t1 > .pm-avatar-circle {

@@ -140,7 +140,6 @@ export function KampeMatchListCard({
           avatar={profilesById[String(p.user_id)]?.avatar || p.user_emoji || defaultAvatar}
           size={size}
           emojiSize={size <= 24 ? '10px' : '12px'}
-          style={{ zIndex: i + 1 }}
         />
       );
     }

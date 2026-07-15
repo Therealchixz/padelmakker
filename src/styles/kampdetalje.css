@@ -440,6 +440,7 @@
 .pm-kd-avstack {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 4px;
   margin-bottom: 6px;
 }
@@ -517,8 +518,6 @@
   color: var(--pm-text);
   overflow-wrap: anywhere;
 }
-
-.pm-kd-avstack { display: flex; justify-content: center; }
 
 .pm-kd-set-score {
   text-align: center;
