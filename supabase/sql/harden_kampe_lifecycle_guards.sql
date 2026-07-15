@@ -41,6 +41,8 @@ CREATE POLICY americano_participants_delete
 
 -- ─── 3) Liga team DELETE ─────────────────────────────────────────────────────
 DROP POLICY IF EXISTS league_teams_delete ON public.league_teams;
+DROP POLICY IF EXISTS lteams_delete_own ON public.league_teams;
+DROP POLICY IF EXISTS "lteams_delete_own" ON public.league_teams;
 
 CREATE POLICY league_teams_delete
   ON public.league_teams
