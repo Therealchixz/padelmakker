@@ -286,7 +286,7 @@ export function usePartnerOpponentStats(userId, ratedRows) {
 
   useEffect(() => {
     if (!userId || !matchIdsKey) {
-      setStats({ partners: [], opponents: [] });
+      setStats({ partners: [], opponents: [], maxPartnerGames: 0 });
       return;
     }
     const matchIds = matchIdsKey.split(',').filter(Boolean);
@@ -298,7 +298,7 @@ export function usePartnerOpponentStats(userId, ratedRows) {
       .in('match_id', matchIds)
       .then(({ data: players, error }) => {
         if (error || !players) {
-          setStats({ partners: [], opponents: [] });
+          setStats({ partners: [], opponents: [], maxPartnerGames: 0 });
           setLoading(false);
           return;
         }
@@ -344,6 +344,7 @@ export function usePartnerOpponentStats(userId, ratedRows) {
         }
 
         const all = Object.values(statsMap);
+        const maxPartnerGames = all.reduce((max, p) => Math.max(max, p.asPartner.games), 0);
 
         const qualifiedPartners = all.filter((p) => p.asPartner.games >= MIN_RELATION_GAMES_TOGETHER);
         const qualifiedOpponents = all.filter((p) => p.asOpponent.games >= MIN_RELATION_GAMES_TOGETHER);
@@ -353,7 +354,7 @@ export function usePartnerOpponentStats(userId, ratedRows) {
         const opponents = [...qualifiedOpponents].sort(sortByOpponentWinRateAsc).slice(0, 3);
         const bestOpponents = [...qualifiedOpponents].sort((a, b) => -sortByOpponentWinRateAsc(a, b)).slice(0, 2);
 
-        setStats({ partners, worstPartners, opponents, bestOpponents });
+        setStats({ partners, worstPartners, opponents, bestOpponents, maxPartnerGames });
         setLoading(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
