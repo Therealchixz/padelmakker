@@ -3019,6 +3019,16 @@ button,
   gap: 20px;
 }
 
+.pm-profile-overview-tabs {
+  margin: 18px 0 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pm-border);
+}
+
+.pm-profile-overview-tabs .pm-pill-tabs {
+  margin-bottom: 0;
+}
+
 @media (max-width: 768px) {
   .pm-profile-top {
     gap: 24px;

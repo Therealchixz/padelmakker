@@ -709,7 +709,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
           {/* Summary stat grid — always visible below profile header, mirrors mockup 2×2 layout */}
           {!statsLoading && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, padding: '12px 18px 2px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 11, padding: '12px 18px 10px' }}>
               {[
                 { label: 'Kampe spillet', val: games },
                 { label: 'Win rate', val: games > 0 ? winPct + '%' : '—' },
@@ -726,7 +726,7 @@ export function ProfilTab({ user, showToast, setTab }) {
 
           {/* ELO hero inside profile card — matches mockup position (between stat-grid and padded content) */}
           {showPerformanceSection && (
-            <div style={{ margin: '4px 18px 0', borderRadius: 16, padding: '17px', background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))', color: 'var(--pm-on-accent)', boxShadow: theme.shadowLg }}>
+            <div style={{ margin: '10px 18px 0', borderRadius: 16, padding: '17px', background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))', color: 'var(--pm-on-accent)', boxShadow: theme.shadowLg }}>
               <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pm-hero-subtitle)', marginBottom: '6px' }}>
                 Aktuel Elo Rating · {activeModeLabel}
               </div>
@@ -801,6 +801,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             </div>
           ) : null}
 
+          <div className="pm-profile-overview-tabs">
           <PillTabs
             tabs={PROFILE_OVERVIEW_TABS}
             value={overviewMode}
@@ -808,8 +809,8 @@ export function ProfilTab({ user, showToast, setTab }) {
             ariaLabel="Statistik-type"
             size="sm"
             className="pm-pill-tabs--fill"
-            style={{ marginBottom: "6px" }}
           />
+          </div>
 
           {/* Stats — først når frisk profil + historik er hentet (ingen flash) */}
           {statsLoading || (overviewMode === "liga" && ligaLoading) ? (
