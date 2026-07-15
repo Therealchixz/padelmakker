@@ -13,9 +13,15 @@ import { LigaListCard } from './LigaListCard';
 import { LigaDetailSheet } from './LigaDetailSheet';
 import { LigaScheduleSheet } from './LigaScheduleSheet';
 import { LigaTeamProfileSheet } from './LigaTeamProfileSheet';
-import { LigaSelectedDetail, SwissRulesBox } from './LigaSelectedDetail';
-import { computeStandings, generatePairings, assignDivisionsByElo, groupByDivision } from '../lib/ligaStandings';
-import { getLigaBadge } from '../lib/ligaDisplayUtils';
+import { LigaSelectedDetail } from './LigaSelectedDetail';
+import { computeStandings, assignDivisionsByElo } from '../lib/ligaStandings';
+import {
+  buildInitialLeagueMatches,
+  buildNextLeagueRound,
+  divisionGroupsFromTeams,
+  resolveLigaMatchSystem,
+} from '../lib/ligaSchedule';
+import { getLigaBadge, ligaMatchSystemLabel } from '../lib/ligaDisplayUtils';
 import { kampeCreateHint } from '../lib/kampeCreateHint';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 import { fetchProfilesByIdMap } from '../lib/profileQueries';
@@ -492,15 +498,18 @@ export function LigaTab({
   const startLeague = async (league) => {
     const teams = teamsByLeague[league.id] || [];
     if (teams.length < 2) { showToast('Mindst 2 hold kræves for at starte.'); return; }
+    const system = resolveLigaMatchSystem(league);
+    const systemLabel = ligaMatchSystemLabel(system);
     const ok = await ask({
-      message: `Start "${league.name}" og generér runde 1?`,
+      message: system === 'round_robin'
+        ? `Start "${league.name}" (${systemLabel}) og generér hele kampprogrammet?`
+        : `Start "${league.name}" (${systemLabel}) og generér runde 1?`,
       confirmLabel: 'Ja, start',
     });
     if (!ok) return;
     setBusyId(league.id + '-start');
     try {
       const numDiv = Math.min(Number(league.num_divisions) || 1, teams.length);
-      // Inddel hold i divisioner efter niveau og gem det på holdene
       let teamsWithDiv = teams.map(t => ({ ...t, division: Number(t.division) || 1 }));
       if (numDiv > 1) {
         const divMap = assignDivisionsByElo(teams, numDiv);
@@ -508,31 +517,25 @@ export function LigaTab({
         await Promise.all([...divMap].map(([teamId, d]) =>
           supabase.from('league_teams').update({ division: d }).eq('id', teamId)));
       }
-      // Generér runde 1 inden for hver division
-      const groups = numDiv > 1 ? groupByDivision(teamsWithDiv) : [[1, teamsWithDiv]];
-      const rows = [];
-      let totalRounds = 0;
-      for (const [, divTeams] of groups) {
-        const standings = computeStandings(divTeams, []);
-        const pairings = generatePairings(standings, []);
-        rows.push(...pairings.map(p => ({
-          league_id: league.id, round_number: 1,
-          team1_id: p.team1_id, team2_id: p.team2_id || null,
-          status: p.team2_id ? 'pending' : 'reported',
-          winner_id: p.team2_id ? null : p.team1_id,
-        })));
-        const r = Math.max(
-          Math.ceil(Math.log2(Math.max(2, divTeams.length))),
-          divTeams.length <= 6 ? divTeams.length - 1 : 0
-        );
-        totalRounds = Math.max(totalRounds, r);
+      const groups = divisionGroupsFromTeams(teamsWithDiv, numDiv);
+      const { rows, totalRounds } = buildInitialLeagueMatches({
+        league,
+        teamsByDivision: groups,
+      });
+      if (!rows.length) {
+        showToast('Kunne ikke generere kampe — tjek at hver division har mindst 2 hold.');
+        return;
       }
       const { error: mErr } = await supabase.from('league_matches').insert(rows);
       if (mErr) throw mErr;
       const { error: uErr } = await supabase.from('leagues').update({ status: 'active', current_round: 1, total_rounds: totalRounds }).eq('id', league.id);
       if (uErr) throw uErr;
       void notifyLeagueStarted(league, user.id);
-      showToast(`Liga startet — runde 1 af ${totalRounds} genereret!`);
+      showToast(
+        system === 'round_robin'
+          ? `Liga startet — ${totalRounds} runder genereret (${systemLabel}).`
+          : `Liga startet — runde 1 af ${totalRounds} genereret (${systemLabel}).`,
+      );
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
     finally { setBusyId(null); }
@@ -555,49 +558,47 @@ export function LigaTab({
       if (ok) await completeLeague(league, { skipConfirm: true });
       return;
     }
-    const round = league.current_round + 1;
+    const round = (Number(league.current_round) || 1) + 1;
+    const numDiv = Math.min(Number(league.num_divisions) || 1, teams.length);
+    const groups = divisionGroupsFromTeams(teams, numDiv);
+    const plan = buildNextLeagueRound({
+      league,
+      teamsByDivision: groups,
+      allMatches,
+    });
 
-    // Check if any real pairings are possible before generating
-    const previewStandings = computeStandings(teams, allMatches);
-    const previewPairings = generatePairings(previewStandings, allMatches);
-    const hasRealMatches = previewPairings.some(p => p.team2_id !== null);
-    if (!hasRealMatches) {
-      const ok = await ask({
-        message: 'Alle hold har allerede spillet mod hinanden — der er ingen gyldige parringer tilbage.\n\nVil du afslutte ligaen og låse ranglisten?',
-        confirmLabel: 'Ja, afslut',
-      });
+    if (plan.done) {
+      const doneMsg = plan.reason === 'champion'
+        ? 'Knockout er færdig — der er en vinder. Vil du afslutte ligaen og låse resultatet?'
+        : plan.reason === 'no_pairings'
+          ? 'Der er ingen gyldige kampe tilbage.\n\nVil du afslutte ligaen og låse ranglisten?'
+          : `Programmet er færdigt.\n\nVil du afslutte ligaen nu?`;
+      const ok = await ask({ message: doneMsg, confirmLabel: 'Ja, afslut' });
       if (ok) await completeLeague(league, { skipConfirm: true });
       return;
     }
 
+    const system = resolveLigaMatchSystem(league);
     const okGen = await ask({
-      message: `Generér runde ${round}${totalRounds ? ` af ${totalRounds}` : ''}?`,
-      confirmLabel: 'Ja, generér',
+      message: plan.advanceOnly
+        ? `Gå videre til runde ${round}${totalRounds ? ` af ${totalRounds}` : ''}?`
+        : `Generér runde ${round}${totalRounds ? ` af ${totalRounds}` : ''} (${ligaMatchSystemLabel(system)})?`,
+      confirmLabel: plan.advanceOnly ? 'Ja, videre' : 'Ja, generér',
     });
     if (!okGen) return;
     setBusyId(league.id + '-next');
     try {
-      const numDiv = Math.min(Number(league.num_divisions) || 1, teams.length);
-      // Parr inden for hver division ud fra divisionens egen stilling
-      const groups = numDiv > 1 ? groupByDivision(teams) : [[1, teams]];
-      const rows = [];
-      for (const [, divTeams] of groups) {
-        const divTeamIds = new Set(divTeams.map(t => t.id));
-        const divMatches = allMatches.filter(m => divTeamIds.has(m.team1_id) || divTeamIds.has(m.team2_id));
-        const standings = computeStandings(divTeams, divMatches);
-        const pairings = generatePairings(standings, divMatches);
-        rows.push(...pairings.map(p => ({
-          league_id: league.id, round_number: round,
-          team1_id: p.team1_id, team2_id: p.team2_id || null,
-          status: p.team2_id ? 'pending' : 'reported',
-          winner_id: p.team2_id ? null : p.team1_id,
-        })));
+      if (!plan.advanceOnly && Array.isArray(plan.rows) && plan.rows.length > 0) {
+        const { error: mErr } = await supabase.from('league_matches').insert(plan.rows);
+        if (mErr) throw mErr;
       }
-      const { error: mErr } = await supabase.from('league_matches').insert(rows);
-      if (mErr) throw mErr;
       const { error: uErr } = await supabase.from('leagues').update({ current_round: round }).eq('id', league.id);
       if (uErr) throw uErr;
-      showToast(`Runde ${round}${totalRounds ? ` af ${totalRounds}` : ''} genereret!`);
+      showToast(
+        plan.advanceOnly
+          ? `Runde ${round}${totalRounds ? ` af ${totalRounds}` : ''} er nu aktiv.`
+          : `Runde ${round}${totalRounds ? ` af ${totalRounds}` : ''} genereret!`,
+      );
       await load();
     } catch (e) { showToast('Fejl: ' + e.message); }
     finally { setBusyId(null); }
@@ -788,8 +789,9 @@ export function LigaTab({
         const ligaInputStyle = { ...inputStyle, marginBottom: 0 };
         const REGIONS = ['Region Midtjylland', 'Region Hovedstaden', 'Region Sjælland', 'Region Syddanmark', 'Region Nordjylland'];
         const MATCH_SYSTEMS = [
-          { id: 'round_robin', label: 'Alle-mod-alle', desc: 'Standard ligaformat hvor alle hold mødes.' },
-          { id: 'swiss', label: 'Swiss-system', desc: 'Hold parres efter stilling — færre kampe, jævnbyrdigt.' },
+          { id: 'round_robin', label: 'Alle-mod-alle', desc: 'Alle hold mødes én gang. Hele kampprogrammet genereres ved start.' },
+          { id: 'swiss', label: 'Swiss-system', desc: 'Hold parres efter stilling hver runde — færre kampe, jævnbyrdigt.' },
+          { id: 'knockout', label: 'Knockout', desc: 'Single-elimination: tab = færdig. Kun vindere går videre.' },
         ];
         const SummaryRow = ({ label, value }) => (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--pm-americano-tie-border)' }}>
@@ -903,26 +905,34 @@ export function LigaTab({
                 </div>
               ))}
 
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '4px 18px 8px' }}>Pointsystem</div>
-              <div style={{ margin: '0 18px 12px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', overflow: 'hidden' }}>
-                {[
-                  { key: 'points_win', label: 'Vundet kamp (2-0 eller 2-1)', desc: 'Standard point for sejr', min: 1, max: 9 },
-                  { key: 'points_draw', label: 'Uafgjort kamp', desc: 'Hvis sæt og partier ender lige', min: 0, max: 5 },
-                  { key: 'points_loss', label: 'Tabt kamp', desc: 'Gives ofte for fremmøde', min: 0, max: 3 },
-                ].map((row, idx, arr) => (
-                  <div key={row.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: idx < arr.length - 1 ? '1px solid var(--pm-border)' : 'none' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, color: theme.text }}>{row.label}</div>
-                      <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>{row.desc}</div>
-                    </div>
-                    <div className="pm-stepper" style={{ width: 108 }}>
-                      <button type="button" className="pm-stepper-btn" style={{ width: 30, height: 30 }} onClick={() => setCreateForm(f => ({ ...f, [row.key]: Math.max(row.min, (f[row.key] ?? 0) - 1) }))}>−</button>
-                      <span className="pm-stepper-val" style={{ fontSize: 14 }}>{createForm[row.key] ?? 0}</span>
-                      <button type="button" className="pm-stepper-btn" style={{ width: 30, height: 30 }} onClick={() => setCreateForm(f => ({ ...f, [row.key]: Math.min(row.max, (f[row.key] ?? 0) + 1) }))}>+</button>
-                    </div>
+              {createForm.match_system === 'knockout' ? (
+                <div style={{ margin: '4px 18px 12px', padding: '12px 14px', borderRadius: 14, border: '1px solid var(--pm-border)', background: 'var(--pm-surface-muted)', fontSize: 12, color: theme.textMid, lineHeight: 1.5 }}>
+                  Knockout bruger ikke stillingspoint — kun kampresultater afgør, hvem der går videre.
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '1.2px', margin: '4px 18px 8px' }}>Pointsystem</div>
+                  <div style={{ margin: '0 18px 12px', border: '1px solid var(--pm-border)', borderRadius: 14, background: 'var(--pm-surface)', overflow: 'hidden' }}>
+                    {[
+                      { key: 'points_win', label: 'Vundet kamp (2-0 eller 2-1)', desc: 'Standard point for sejr', min: 1, max: 9 },
+                      { key: 'points_draw', label: 'Tab i tiebreak (7-6)', desc: 'Consolation-point ved 7-6-nederlag', min: 0, max: 5 },
+                      { key: 'points_loss', label: 'Tabt kamp', desc: 'Klart nederlag (fx 6-2)', min: 0, max: 3 },
+                    ].map((row, idx, arr) => (
+                      <div key={row.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: idx < arr.length - 1 ? '1px solid var(--pm-border)' : 'none' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: theme.text }}>{row.label}</div>
+                          <div style={{ fontSize: 11, color: theme.textLight, marginTop: 1 }}>{row.desc}</div>
+                        </div>
+                        <div className="pm-stepper" style={{ width: 108 }}>
+                          <button type="button" className="pm-stepper-btn" style={{ width: 30, height: 30 }} onClick={() => setCreateForm(f => ({ ...f, [row.key]: Math.max(row.min, (f[row.key] ?? 0) - 1) }))}>−</button>
+                          <span className="pm-stepper-val" style={{ fontSize: 14 }}>{createForm[row.key] ?? 0}</span>
+                          <button type="button" className="pm-stepper-btn" style={{ width: 30, height: 30 }} onClick={() => setCreateForm(f => ({ ...f, [row.key]: Math.min(row.max, (f[row.key] ?? 0) + 1) }))}>+</button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
 
               <div className="pm-field">
                 <label>Særlige regler eller noter <span style={{ fontWeight: 400, color: theme.textLight }}>(valgfri)</span></label>
@@ -965,8 +975,12 @@ export function LigaTab({
                   <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>Regler &amp; kampsystem</span>
                   <button type="button" onClick={() => { setCreateStep(2); setCreateStepErr(''); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Redigér</button>
                 </div>
-                <SummaryRow label="Kampsystem" value={{ round_robin: 'Alle-mod-alle', swiss: 'Swiss-system' }[createForm.match_system] || createForm.match_system} />
-                <SummaryRow label="Point" value={`${createForm.points_win} sejr · ${createForm.points_draw} uafgjort · ${createForm.points_loss} nederlag`} />
+                <SummaryRow label="Kampsystem" value={ligaMatchSystemLabel(createForm.match_system)} />
+                {createForm.match_system === 'knockout' ? (
+                  <SummaryRow label="Point" value="Ikke i brug (knockout)" />
+                ) : (
+                  <SummaryRow label="Point" value={`${createForm.points_win} sejr · ${createForm.points_draw} tiebreak-tab · ${createForm.points_loss} nederlag`} />
+                )}
               </div>
               <div style={{ margin: '0 18px 14px', background: 'var(--pm-surface-muted)', border: '1.5px solid var(--pm-navy)', borderLeft: '3px solid var(--pm-navy)', borderRadius: 10, padding: '11px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                 <svg style={{ width: 15, height: 15, color: 'var(--pm-accent)', flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 13v-2Z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
@@ -1076,10 +1090,6 @@ export function LigaTab({
           </div>
         </div>
       )}
-
-      <div style={{ marginBottom: '14px' }}>
-        <SwissRulesBox collapsible />
-      </div>
 
       {/* Ventende invitationer */}
       {pendingInvites.length > 0 && (
@@ -1424,9 +1434,16 @@ export function LigaTab({
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, marginTop: 10 }}>{r.name}</div>
                 {(() => {
-                  const sys = { round_robin: 'Alle mod alle', swiss: 'Swiss', knockout: 'Knockout' }[r.match_system];
+                  const sys = ligaMatchSystemLabel(r.match_system);
                   const rows = [];
-                  if (sys) rows.push(['Kampsystem', `${sys} · ${r.points_win ?? 3} sejr · ${r.points_draw ?? 1} uafgjort · ${r.points_loss ?? 0} nederlag`]);
+                  if (sys) {
+                    rows.push([
+                      'Kampsystem',
+                      r.match_system === 'knockout'
+                        ? sys
+                        : `${sys} · ${r.points_win ?? 3} sejr · ${r.points_draw ?? 1} tiebreak-tab · ${r.points_loss ?? 0} nederlag`,
+                    ]);
+                  }
                   if (r.start_date || r.end_date) rows.push(['Sæson', `${r.start_date || '?'}${r.end_date ? ` – ${r.end_date}` : ''}`]);
                   if (r.registration_deadline) rows.push(['Tilmeldingsfrist', r.registration_deadline]);
                   if (r.region) rows.push(['Region', r.region]);

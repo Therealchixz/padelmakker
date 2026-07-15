@@ -6,7 +6,13 @@ import { theme, btn, inputStyle, labelStyle } from '../lib/platformTheme';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { ReportResultErrorButton } from '../components/ReportResultErrorButton';
 import { completionMsForLeague } from '../lib/resultErrorReports';
-import { shortLigaDate, ligaIsSwiss } from '../lib/ligaDisplayUtils';
+import {
+  shortLigaDate,
+  ligaIsSwiss,
+  ligaIsRoundRobin,
+  ligaIsKnockout,
+  ligaMatchSystemLabel,
+} from '../lib/ligaDisplayUtils';
 import { validatePadelScore } from '../lib/ligaStandings';
 import { LigaStandingsTable, LigaDivisionStandings } from './LigaDetailSheet';
 import { buildProfileNameSearchOrFilter } from '../lib/postgrestFilterUtils';
@@ -29,14 +35,29 @@ const SWISS_RULES = [
   { icon: '🔁', text: 'To hold mødes aldrig hinanden mere end én gang i samme turnering.' },
   { icon: '🏆', text: 'Point: Sejr = 3 · Tab i tiebreak (7-6) = 1 · Klart tab = 0.' },
   { icon: '📏', text: 'Ved pointlighed afgøres placeringen af spilsforskel (antal games vundet minus tabt).' },
-  { icon: '🔢', text: 'Antal runder beregnes automatisk: 3 hold → 2 runder, 4 hold → 3 runder, 8 hold → 3 runder, 16 hold → 4 runder.' },
+  { icon: '🔢', text: 'Antal runder sættes automatisk som et loft (ca. log2 af holdantal) — ligaen kan afsluttes tidligere hvis alle modstandere er mødt.' },
   { icon: '🎯', text: 'Score er obligatorisk ved indberetning — gyldige: 6-0 til 6-4, 7-5 eller 7-6.' },
   { icon: '⏸️', text: 'Næste runde genereres først når alle kampe i indeværende runde er indberettet.' },
   { icon: '👥', text: 'Ulige antal hold? Ét hold får fri runde og tæller automatisk som sejr (3 point).' },
   { icon: '📋', text: 'W = Wins (sejre) · L = Losses (nederlag) · Diff = spilsforskel (games vundet minus games tabt).' },
 ];
 
-export function SwissRulesBox({ collapsible = false, storageKey = '' }) {
+const RR_RULES = [
+  { icon: '📅', text: 'Alle-mod-alle: hvert hold møder alle andre hold præcis én gang.' },
+  { icon: '🗂️', text: 'Hele kampprogrammet genereres ved start — “Næste runde” aktiverer blot næste planlagte runde.' },
+  { icon: '👥', text: 'Ulige antal hold? Ét hold har fri (bye) i hver runde.' },
+  { icon: '🏆', text: 'Stillingen opdateres med point efter hvert resultat (sejr / tiebreak-tab / tab).' },
+  { icon: '⏸️', text: 'Næste runde kan først aktiveres når alle kampe i indeværende runde er indberettet.' },
+];
+
+const KO_RULES = [
+  { icon: '⚔️', text: 'Knockout: tab = færdig. Kun vindere går videre til næste runde.' },
+  { icon: '🌱', text: 'Seedning efter kombineret hold-ELO (stærkest først). Top seeds kan få bye i runde 1.' },
+  { icon: '🏁', text: 'Turneringen slutter når der er én vinder (finalen er spillet).' },
+  { icon: '⏸️', text: 'Næste runde genereres først når alle kampe i indeværende runde er indberettet.' },
+];
+
+function LigaRulesBox({ title, rules, collapsible = false, storageKey = '' }) {
   const [open, setOpen] = useState(() => {
     if (!collapsible) return true;
     if (!storageKey) return false;
@@ -67,7 +88,7 @@ export function SwissRulesBox({ collapsible = false, storageKey = '' }) {
           className="pm-help-box-toggle"
           style={{ cursor: collapsible ? 'pointer' : 'default' }}
         >
-          <span className="pm-help-box-title">Sådan fungerer Swiss-ligaen</span>
+          <span className="pm-help-box-title">{title}</span>
           {collapsible && (
             <span className="pm-help-box-chevron">
               {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
@@ -77,7 +98,7 @@ export function SwissRulesBox({ collapsible = false, storageKey = '' }) {
       </div>
       {open && (
         <div className="pm-help-box-content">
-          {SWISS_RULES.map((r, i) => (
+          {rules.map((r, i) => (
             <div key={i} className="pm-help-box-item">
               <span style={{ flexShrink: 0 }}>{r.icon}</span>
               <span>{r.text}</span>
@@ -87,6 +108,43 @@ export function SwissRulesBox({ collapsible = false, storageKey = '' }) {
       )}
     </div>
   );
+}
+
+export function SwissRulesBox(props) {
+  return (
+    <LigaRulesBox
+      title="Sådan fungerer Swiss-ligaen"
+      rules={SWISS_RULES}
+      {...props}
+    />
+  );
+}
+
+export function LigaMatchSystemRulesBox({ league, collapsible = true }) {
+  if (ligaIsKnockout(league)) {
+    return (
+      <LigaRulesBox
+        title="Sådan fungerer knockout"
+        rules={KO_RULES}
+        collapsible={collapsible}
+        storageKey="pm-liga-ko-rules"
+      />
+    );
+  }
+  if (ligaIsRoundRobin(league)) {
+    return (
+      <LigaRulesBox
+        title="Sådan fungerer alle-mod-alle"
+        rules={RR_RULES}
+        collapsible={collapsible}
+        storageKey="pm-liga-rr-rules"
+      />
+    );
+  }
+  if (ligaIsSwiss(league)) {
+    return <SwissRulesBox collapsible={collapsible} storageKey="pm-liga-swiss-rules" />;
+  }
+  return null;
 }
 
 function partnerMetaLine(p) {
@@ -385,11 +443,11 @@ function RegistrationDetail({
 
       {totalRounds ? (
         <p style={{ fontSize: 11, color: theme.textLight, textAlign: 'center', margin: '0 0 16px' }}>
-          {totalRounds} runder · 2 pr. hold{ligaIsSwiss(league) ? ' · Swiss-parring' : ''}
+          {totalRounds} runder · 2 pr. hold · {ligaMatchSystemLabel(league.match_system)}
         </p>
       ) : null}
 
-      {ligaIsSwiss(league) ? <SwissRulesBox collapsible storageKey="pm-liga-swiss-rules" /> : null}
+      <LigaMatchSystemRulesBox league={league} collapsible />
 
       {myTeam ? (
         <div
@@ -513,6 +571,8 @@ function ActiveDetail({
 
   return (
     <>
+      <LigaMatchSystemRulesBox league={league} collapsible />
+
       {teams.length > 0 ? (
         <>
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
@@ -708,15 +768,27 @@ function ActiveDetail({
             {manageToolsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
           {manageToolsOpen ? (
-            <div style={{ borderTop: '1px solid ' + theme.border, paddingTop: 12, marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button onClick={onNextRound} disabled={busy || pendingCount > 0}
-                title={pendingCount > 0 ? `${pendingCount} kamp${pendingCount > 1 ? 'e' : ''} mangler resultat` : ''}
-                style={{ ...btn(true), padding: '7px 12px', fontSize: 12, background: pendingCount > 0 ? theme.textLight : theme.warm, borderColor: pendingCount > 0 ? theme.textLight : theme.warm, opacity: pendingCount > 0 ? 0.7 : 1 }}>
-                ⏭ Næste runde{pendingCount > 0 ? ` (${pendingCount} afventer)` : ''}
-              </button>
-              <button onClick={onCompleteLeague} disabled={busy} style={{ ...btn(false), padding: '7px 12px', fontSize: 12 }}>
-                Afslut liga
-              </button>
+            <div style={{ borderTop: '1px solid ' + theme.border, paddingTop: 12, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {ligaIsKnockout(league) ? (
+                <p style={{ margin: 0, fontSize: 12, color: theme.textLight, lineHeight: 1.4 }}>
+                  Knockout: kun vindere går videre · tab = færdig
+                </p>
+              ) : null}
+              {ligaIsRoundRobin(league) ? (
+                <p style={{ margin: 0, fontSize: 12, color: theme.textLight, lineHeight: 1.4 }}>
+                  Alle-mod-alle: næste runde aktiverer næste planlagte kampe (allerede genereret)
+                </p>
+              ) : null}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button onClick={onNextRound} disabled={busy || pendingCount > 0}
+                  title={pendingCount > 0 ? `${pendingCount} kamp${pendingCount > 1 ? 'e' : ''} mangler resultat` : ''}
+                  style={{ ...btn(true), padding: '7px 12px', fontSize: 12, background: pendingCount > 0 ? theme.textLight : theme.warm, borderColor: pendingCount > 0 ? theme.textLight : theme.warm, opacity: pendingCount > 0 ? 0.7 : 1 }}>
+                  ⏭ Næste runde{pendingCount > 0 ? ` (${pendingCount} afventer)` : ''}
+                </button>
+                <button onClick={onCompleteLeague} disabled={busy} style={{ ...btn(false), padding: '7px 12px', fontSize: 12 }}>
+                  Afslut liga
+                </button>
+              </div>
             </div>
           ) : null}
         </div>

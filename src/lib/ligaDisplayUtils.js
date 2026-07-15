@@ -7,19 +7,32 @@ export function shortLigaDate(dateVal) {
 }
 
 const MATCH_SYSTEM_LABELS = {
-  round_robin: 'Alle mod alle',
-  swiss: 'Swiss',
+  round_robin: 'Alle-mod-alle',
+  swiss: 'Swiss-system',
   knockout: 'Knockout',
 };
 
+/** Kort label til create/summary/kort. */
+export function ligaMatchSystemLabel(matchSystem) {
+  const key = String(matchSystem || '').toLowerCase().trim();
+  if (MATCH_SYSTEM_LABELS[key]) return MATCH_SYSTEM_LABELS[key];
+  if (!key) return 'Swiss-system'; // ældre ligaer uden felt
+  return key;
+}
+
 /**
- * Type-label til liga-kort/detalje, fx "Liga · Alle mod alle" eller
- * "Liga · Swiss · 2 divisioner". Falder tilbage til bare "Liga" for ældre
+ * Type-label til liga-kort/detalje, fx "Liga · Alle-mod-alle" eller
+ * "Liga · Swiss-system · 2 divisioner". Falder tilbage til bare "Liga" for ældre
  * ligaer uden kampsystem.
  */
 export function ligaTypeLabel(league) {
-  const sys = MATCH_SYSTEM_LABELS[league?.match_system];
-  const base = sys ? `Liga · ${sys}` : 'Liga';
+  const raw = league?.match_system;
+  if (raw == null || String(raw).trim() === '') {
+    const nd = Number(league?.num_divisions);
+    return nd > 1 ? `Liga · ${nd} divisioner` : 'Liga';
+  }
+  const sys = ligaMatchSystemLabel(raw);
+  const base = `Liga · ${sys}`;
   const nd = Number(league?.num_divisions);
   return nd > 1 ? `${base} · ${nd} divisioner` : base;
 }
@@ -28,6 +41,14 @@ export function ligaTypeLabel(league) {
 export function ligaIsSwiss(league) {
   // Ældre ligaer uden eksplicit kampsystem brugte Swiss-parring.
   return !league?.match_system || league.match_system === 'swiss';
+}
+
+export function ligaIsRoundRobin(league) {
+  return String(league?.match_system || '').toLowerCase() === 'round_robin';
+}
+
+export function ligaIsKnockout(league) {
+  return String(league?.match_system || '').toLowerCase() === 'knockout';
 }
 
 /**

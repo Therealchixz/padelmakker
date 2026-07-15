@@ -47,6 +47,7 @@ export function computeStandings(teams, matches, opts = {}) {
   );
 }
 
+/** Swiss-parring (nærmeste ubrugte modstander uden rematch). */
 export function generatePairings(standings, allMatches) {
   const played = new Set(
     allMatches
@@ -75,6 +76,11 @@ export function generatePairings(standings, allMatches) {
     }
   }
   return pairings;
+}
+
+/** Eksplicit alias — samme algoritme som generatePairings. */
+export function generateSwissPairings(standings, allMatches) {
+  return generatePairings(standings, allMatches);
 }
 
 export function validatePadelScore(score) {
