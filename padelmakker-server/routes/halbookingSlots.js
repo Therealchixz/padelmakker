@@ -51,7 +51,9 @@ export async function handleHalbookingSlots(req, res) {
       scheduleDate: parseScheduleDateYmd(result.dateLabel || ''),
       fetchedAt: new Date().toISOString(),
       bookingBaseUrl: result.procBaner,
-      openBookingPath: `/api/halbooking-open-padel?venue=${encodeURIComponent(venueId)}`,
+      openBookingPath: dateYmd
+        ? `/api/halbooking-open-padel?venue=${encodeURIComponent(venueId)}&date=${encodeURIComponent(dateYmd)}`
+        : `/api/halbooking-open-padel?venue=${encodeURIComponent(venueId)}`,
       courts: result.courts,
     });
   } catch (e) {

@@ -15,13 +15,23 @@ export function collectInputFields(formInner) {
   let m;
   while ((m = re.exec(formInner))) {
     const tag = m[0];
-    const nameMatch = tag.match(/\bname="([^"]+)"/i);
+    // Halbooking bruger både value="…" og value='…'
+    const nameMatch = tag.match(/\bname=(?:"([^"]*)"|'([^']*)')/i);
     if (!nameMatch) continue;
-    const name = nameMatch[1];
-    const valueMatch = tag.match(/\bvalue="([^"]*)"/i);
-    params.set(name, valueMatch ? valueMatch[1] : '');
+    const name = nameMatch[1] ?? nameMatch[2];
+    if (!name) continue;
+    const valueMatch = tag.match(/\bvalue=(?:"([^"]*)"|'([^']*)')/i);
+    const value = valueMatch ? (valueMatch[1] ?? valueMatch[2] ?? '') : '';
+    params.set(name, value);
   }
   return params;
+}
+
+/** YYYY-MM-DD → DD-MM-YYYY til Halbooking banedato (uden Date()/timezone). */
+export function ymdToHalbookingBanedato(ymd) {
+  const m = String(ymd || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  return `${m[3]}-${m[2]}-${m[1]}`;
 }
 
 export function parseDateLabel(html) {

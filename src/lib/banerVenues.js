@@ -1764,18 +1764,28 @@ export function copenhagenAddDaysYmd(ymd, deltaDays) {
  * @param {string} venueId
  * @param {string} courtName
  * @param {string} time
+ * @param {string} [dateYmd] YYYY-MM-DD — uden denne åbner Halbooking typisk i dag
  */
-export function halbookingOpenUrl(venueId, courtName, time) {
+export function halbookingOpenUrl(venueId, courtName, time, dateYmd) {
   const q = new URLSearchParams();
   q.set('venue', venueId);
   q.set('pm_bane', courtName);
   q.set('pm_tid', time);
+  if (dateYmd && /^\d{4}-\d{2}-\d{2}$/.test(String(dateYmd).trim())) {
+    q.set('date', String(dateYmd).trim());
+  }
   return `/api/halbooking-open-padel?${q.toString()}`;
 }
 
 /**
  * @param {string} venueId
+ * @param {string} [dateYmd] YYYY-MM-DD
  */
-export function halbookingOpenVenueUrl(venueId) {
-  return `/api/halbooking-open-padel?venue=${encodeURIComponent(venueId)}`;
+export function halbookingOpenVenueUrl(venueId, dateYmd) {
+  const q = new URLSearchParams();
+  q.set('venue', venueId);
+  if (dateYmd && /^\d{4}-\d{2}-\d{2}$/.test(String(dateYmd).trim())) {
+    q.set('date', String(dateYmd).trim());
+  }
+  return `/api/halbooking-open-padel?${q.toString()}`;
 }

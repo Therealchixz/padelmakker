@@ -152,7 +152,8 @@ export function BanerTab() {
           dateLabel: data.dateLabel || '',
           scheduleDate: data.scheduleDate || null,
           fetchedAt: data.fetchedAt || '',
-          openBookingPath: data.openBookingPath || halbookingOpenVenueUrl(venueId),
+          openBookingPath:
+            data.openBookingPath || halbookingOpenVenueUrl(venueId, sched || undefined),
         },
       }));
     } catch (e) {
@@ -310,10 +311,12 @@ export function BanerTab() {
       );
     }
     if (s.status === 'free') {
+      const d =
+        halbookingDateByVenue[v.id] || byVenue[v.id]?.scheduleDate || copenhagenDateYmd();
       return (
         <a
           key={s.time}
-          href={halbookingOpenUrl(v.id, c.name, s.time)}
+          href={halbookingOpenUrl(v.id, c.name, s.time, d)}
           target="_blank"
           rel="noopener noreferrer"
           title="Book på Halbooking"
@@ -468,17 +471,18 @@ export function BanerTab() {
           const loaded = byVenue[v.id];
           const loading = !!loadingVenue[v.id];
           const err = errorVenue[v.id];
-          const openHref =
-            v.kind === 'halbooking'
-              ? loaded?.openBookingPath || halbookingOpenVenueUrl(v.id)
-              : v.kind === 'bookli' || v.kind === 'link' || v.kind === 'matchi'
-                ? v.bookingUrl
-                : halbookingOpenVenueUrl(v.id);
           const bookliDate = bookliDateByVenue[v.id] || copenhagenDateYmd();
-          const halbookingDate = halbookingDateByVenue[v.id] || copenhagenDateYmd();
+          const halbookingDate =
+            halbookingDateByVenue[v.id] || loaded?.scheduleDate || copenhagenDateYmd();
           const matchiDate = matchiDateByVenue[v.id] || copenhagenDateYmd();
           const linkDate = linkDateByVenue[v.id] || copenhagenDateYmd();
           const todayYmd = copenhagenDateYmd();
+          const openHref =
+            v.kind === 'halbooking'
+              ? halbookingOpenVenueUrl(v.id, halbookingDate)
+              : v.kind === 'bookli' || v.kind === 'link' || v.kind === 'matchi'
+                ? v.bookingUrl
+                : halbookingOpenVenueUrl(v.id, halbookingDate);
 
           const isExpanded = expandedVenueId === v.id;
           return (

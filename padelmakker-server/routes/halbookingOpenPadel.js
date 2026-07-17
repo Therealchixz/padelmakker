@@ -2,7 +2,7 @@
  * GET — auto-POST til Halbooking (padel).
  */
 
-import { collectInputFields } from '../halbookingFetch.js';
+import { collectInputFields, ymdToHalbookingBanedato } from '../halbookingFetch.js';
 import { readHalbookingHtml } from '../halbookingEncoding.js';
 import { getAllowlistedVenue } from '../halbookingVenuesAllowlist.js';
 import { checkRateLimit, getClientIp } from '../rateLimit.js';
@@ -89,11 +89,20 @@ export async function handleHalbookingOpenPadel(req, res) {
 
     const params = collectInputFields(formMatch[1]);
     params.set('soeg_omraede', OMRAEDE);
-    params.set('mf_funktion', 'omr_soeg');
     params.set('mf_para1', '');
     params.set('mf_para2', '');
     params.set('mf_para3', '');
     params.set('mf_para4', '');
+
+    // Valgt dato fra Baner (YYYY-MM-DD) → Halbooking soegdato + banedato (DD-MM-YYYY).
+    // Uden dato falder vi tilbage til omr_soeg (= i dag), som tidligere så ud som "en dag for tidligt".
+    const banedato = ymdToHalbookingBanedato(qs.get('date'));
+    if (banedato) {
+      params.set('banedato', banedato);
+      params.set('mf_funktion', 'soegdato');
+    } else {
+      params.set('mf_funktion', 'omr_soeg');
+    }
 
     const pmBane = qs.get('pm_bane');
     const pmTid = qs.get('pm_tid');

@@ -5,7 +5,10 @@ import {
   pickPadelOmraedeFromOptions,
   parseSoegOmraedeOptions,
   resolveHalbookingOmraede,
+  collectInputFields,
+  ymdToHalbookingBanedato,
 } from '../../padelmakker-server/halbookingFetch.js';
+import { halbookingOpenUrl, halbookingOpenVenueUrl } from '../../src/lib/banerVenues.js';
 
 test('scheduleLooksLikePadel rejects HTPK tennis baner', () => {
   const courts = [{ name: 'Bane T1' }, { name: 'ZBM Patents - Bane T2' }];
@@ -71,4 +74,27 @@ test('scheduleLooksLikePadel accepts Padel Lounge court names with Padel heading
 test('scheduleLooksLikePadel accepts Match Padel singlebaner and sponsor-named padel baner', () => {
   assert.equal(scheduleLooksLikePadel([{ name: 'Ballerup Single 1' }]), true);
   assert.equal(scheduleLooksLikePadel([{ name: 'Kvickly Banen' }, { name: 'Hjemmefest Banen' }]), true);
+});
+
+test('collectInputFields accepts single- and double-quoted value attributes', () => {
+  const form = `
+    <input type="hidden" name="banedato" value='19-07-2026'/>
+    <input type="hidden" name='mf_funktion' value="omr_soeg"/>
+  `;
+  const params = collectInputFields(form);
+  assert.equal(params.get('banedato'), '19-07-2026');
+  assert.equal(params.get('mf_funktion'), 'omr_soeg');
+});
+
+test('ymdToHalbookingBanedato converts without timezone shift', () => {
+  assert.equal(ymdToHalbookingBanedato('2026-07-19'), '19-07-2026');
+  assert.equal(ymdToHalbookingBanedato('bad'), null);
+});
+
+test('halbookingOpenUrl includes selected date for Halbooking deep-link', () => {
+  const url = halbookingOpenUrl('skansen_ntsc', 'Bane 1', '18:00', '2026-07-19');
+  assert.match(url, /venue=skansen_ntsc/);
+  assert.match(url, /pm_tid=18%3A00|pm_tid=18:00/);
+  assert.match(url, /date=2026-07-19/);
+  assert.equal(halbookingOpenVenueUrl('skansen_ntsc', '2026-07-19').includes('date=2026-07-19'), true);
 });
