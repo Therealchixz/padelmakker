@@ -8,6 +8,7 @@ import { handleHalbookingSkansenLegacy } from '../padelmakker-server/routes/halb
 import { handleHalbookingOpenPadel } from '../padelmakker-server/routes/halbookingOpenPadel.js';
 import { handleBookliSlots } from '../padelmakker-server/routes/bookliSlots.js';
 import { handleMatchiSlots } from '../padelmakker-server/routes/matchiSlots.js';
+import { handlePlaytomicSlots } from '../padelmakker-server/routes/playtomicSlots.js';
 
 export default async function handler(req, res) {
   const slug = typeof req.query?.slug === 'string' ? req.query.slug : '';
@@ -23,6 +24,8 @@ export default async function handler(req, res) {
       return handleBookliSlots(req, res);
     case 'matchi-slots':
       return handleMatchiSlots(req, res);
+    case 'playtomic-slots':
+      return handlePlaytomicSlots(req, res);
     default:
       res.statusCode = 404;
       res.setHeader('Content-Type', 'application/json; charset=utf-8');

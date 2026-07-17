@@ -32,7 +32,7 @@ test('every venue id is unique', () => {
 });
 
 test('every venue has a region and known integration kind', () => {
-  const kinds = new Set(['halbooking', 'bookli', 'matchi', 'link']);
+  const kinds = new Set(['halbooking', 'bookli', 'matchi', 'playtomic', 'link']);
   for (const v of BANER_VENUES) {
     assert.ok(v.region, `missing region: ${v.id}`);
     assert.ok(kinds.has(v.kind), `unknown kind: ${v.id}`);

@@ -10,6 +10,8 @@ import {
   bookliSlotsUrl,
   matchiSlotsUrl,
   matchiFacilityDeepUrl,
+  playtomicSlotsUrl,
+  playtomicClubDeepUrl,
   memberlinkBookingUrlWithDate,
   copenhagenDateYmd,
   copenhagenAddDaysYmd,
@@ -94,6 +96,8 @@ export function BanerTab() {
   const [halbookingDateByVenue, setHalbookingDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
   /** Matchi: valgt dato pr. venue */
   const [matchiDateByVenue, setMatchiDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
+  /** Playtomic: valgt dato pr. venue */
+  const [playtomicDateByVenue, setPlaytomicDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
   /** Memberlink (kun link-venues): valgt dato til booking-link */
   const [linkDateByVenue, setLinkDateByVenue] = useState(/** @type {Record<string, string>} */ ({}));
   const [showBookingHelp, setShowBookingHelp] = useState(false);
@@ -231,6 +235,39 @@ export function BanerTab() {
     }
   }, []);
 
+  const loadPlaytomicVenue = useCallback(async (venueId, dateYmd) => {
+    setLoadingVenue((m) => ({ ...m, [venueId]: true }));
+    setErrorVenue((m) => ({ ...m, [venueId]: null }));
+    try {
+      const r = await fetch(playtomicSlotsUrl(venueId, dateYmd), { credentials: 'omit' });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || `Fejl ${r.status}`);
+      }
+      const data = await r.json();
+      const today = copenhagenDateYmd();
+      const scheduleDate = data.scheduleDate || data.date || dateYmd;
+      const courtsRaw = data.courts || [];
+      const courts = filterPastSlotsIfToday(courtsRaw, scheduleDate, today);
+      setByVenue((m) => ({
+        ...m,
+        [venueId]: {
+          courts,
+          dateLabel: data.dateLabel || '',
+          scheduleDate,
+          fetchedAt: data.fetchedAt || '',
+          date: scheduleDate,
+        },
+      }));
+    } catch (e) {
+      console.error(e);
+      setErrorVenue((m) => ({ ...m, [venueId]: e.message || 'Kunne ikke hente tider' }));
+      setByVenue((m) => ({ ...m, [venueId]: null }));
+    } finally {
+      setLoadingVenue((m) => ({ ...m, [venueId]: false }));
+    }
+  }, []);
+
   const openVenue = useCallback((v) => {
     setExpandedVenueId((prev) => {
       const opening = prev !== v.id;
@@ -248,13 +285,17 @@ export function BanerTab() {
         const d = matchiDateByVenue[v.id] || today;
         if (!matchiDateByVenue[v.id]) setMatchiDateByVenue((m) => ({ ...m, [v.id]: today }));
         loadMatchiVenue(v.id, d);
+      } else if (v.kind === 'playtomic') {
+        const d = playtomicDateByVenue[v.id] || today;
+        if (!playtomicDateByVenue[v.id]) setPlaytomicDateByVenue((m) => ({ ...m, [v.id]: today }));
+        loadPlaytomicVenue(v.id, d);
       } else if (v.kind === 'link') {
         if (!linkDateByVenue[v.id]) setLinkDateByVenue((m) => ({ ...m, [v.id]: today }));
       }
       return v.id;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [halbookingDateByVenue, bookliDateByVenue, matchiDateByVenue, linkDateByVenue, loadHalbookingVenue, loadBookliVenue, loadMatchiVenue]);
+  }, [halbookingDateByVenue, bookliDateByVenue, matchiDateByVenue, playtomicDateByVenue, linkDateByVenue, loadHalbookingVenue, loadBookliVenue, loadMatchiVenue, loadPlaytomicVenue]);
 
   /** Unikke "gul tid"-forklaringer — vises én gang under banens slots i stedet for pr. chip. */
   const renderBlockedRuleNotes = (slots) => {
@@ -304,6 +345,21 @@ export function BanerTab() {
           target="_blank"
           rel="noopener noreferrer"
           title="Åbner Bookli — log ind og vælg bane og tid"
+          className={banerSlotClass('free')}
+        >
+          {s.time} · Ledig
+        </a>
+      );
+    }
+    if (s.status === 'free' && v.kind === 'playtomic') {
+      const d = playtomicDateByVenue[v.id] || copenhagenDateYmd();
+      return (
+        <a
+          key={s.time}
+          href={playtomicClubDeepUrl(v, d)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Åbner Playtomic med valgt dato — vælg bane og book der"
           className={banerSlotClass('free')}
         >
           {s.time} · Ledig
@@ -426,7 +482,7 @@ export function BanerTab() {
               <li><strong>Ingen tider i listen:</strong> nogle centre viser kun tider på deres egen booking-side. Brug knappen &quot;Åbn booking&quot;.</li>
             </ul>
             <p className="pm-help-box-copy" style={{ margin: '10px 0 0' }}>
-              PadelMakker giver overblik over centre med åben online-booking (Halbooking, MATCHi, Bookli eller direkte booking-link), hvor vi kan hente eller linke til ledige tider. Selve bookingen foregår altid hos centret. Mangler du et center, tryk på dit navn øverst til højre og vælg &quot;Rapportér fejl&quot;.
+              PadelMakker giver overblik over centre med åben online-booking (Halbooking, MATCHi, Bookli, Playtomic eller direkte booking-link), hvor vi kan hente eller linke til ledige tider. Selve bookingen foregår altid hos centret. Mangler du et center, tryk på dit navn øverst til højre og vælg &quot;Rapportér fejl&quot;.
             </p>
           </div>
         )}
@@ -475,14 +531,17 @@ export function BanerTab() {
           const halbookingDate =
             halbookingDateByVenue[v.id] || loaded?.scheduleDate || copenhagenDateYmd();
           const matchiDate = matchiDateByVenue[v.id] || copenhagenDateYmd();
+          const playtomicDate = playtomicDateByVenue[v.id] || copenhagenDateYmd();
           const linkDate = linkDateByVenue[v.id] || copenhagenDateYmd();
           const todayYmd = copenhagenDateYmd();
           const openHref =
             v.kind === 'halbooking'
               ? halbookingOpenVenueUrl(v.id, halbookingDate)
-              : v.kind === 'bookli' || v.kind === 'link' || v.kind === 'matchi'
-                ? v.bookingUrl
-                : halbookingOpenVenueUrl(v.id, halbookingDate);
+              : v.kind === 'playtomic'
+                ? playtomicClubDeepUrl(v, playtomicDate)
+                : v.kind === 'bookli' || v.kind === 'link' || v.kind === 'matchi'
+                  ? v.bookingUrl
+                  : halbookingOpenVenueUrl(v.id, halbookingDate);
 
           const isExpanded = expandedVenueId === v.id;
           return (
@@ -621,6 +680,98 @@ export function BanerTab() {
                       >
                         <ExternalLink size={16} />
                         Åbn MATCHi
+                      </a>
+                    </div>
+                    {loaded?.dateLabel && (
+                      <p className="pm-baner-meta">
+                        <Clock size={12} className="pm-baner-meta-icon" />
+                        {loaded.dateLabel}
+                      </p>
+                    )}
+                    {loaded?.fetchedAt && (
+                      <p className="pm-baner-meta pm-baner-meta--fetched">
+                        Senest hentet: {new Date(loaded.fetchedAt).toLocaleString('da-DK')}
+                      </p>
+                    )}
+                    {loaded?.scheduleDate && loaded.scheduleDate === copenhagenDateYmd() && (
+                      <p className="pm-baner-meta pm-baner-meta--hint">
+                        Tider før nu på valgt dag vises ikke — mindre rod i listen.
+                      </p>
+                    )}
+                    {loading && !loaded?.courts?.length && (
+                      <div className="pm-baner-status">Henter tider…</div>
+                    )}
+                    {err && (
+                      <div className="pm-baner-error">{err}</div>
+                    )}
+                    {loaded && loaded.courts.length > 0 && (
+                      <div className="pm-baner-courts">
+                        {loaded.courts.map((c) => (
+                          <div key={c.id || c.headerName || c.name} className="pm-baner-court">
+                            <div className="pm-baner-court-name">{c.headerName || c.name}</div>
+                            <div className="pm-baner-slots">
+                              {c.slots.map((s) => renderSlot(s, v, c))}
+                            </div>
+                            {renderBlockedRuleNotes(c.slots)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {loaded && loaded.courts.length === 0 && !loading && !err && (
+                      <div className="pm-baner-status">Ingen ledige tider</div>
+                    )}
+                  </>
+                ) : v.kind === 'playtomic' ? (
+                  <>
+                    <p className="pm-baner-note">
+                      {v.note ||
+                        'Ledige tider fra Playtomic. Kun ledige starttider vises — grøn åbner Playtomic med valgt dato.'}
+                    </p>
+                    <p className="pm-baner-section-title">
+                      {loaded?.dateLabel ? `${v.title} — ${loaded.dateLabel}` : `${v.title} — ${playtomicDate}`}
+                    </p>
+                    <DateNavigator
+                      dateYmd={playtomicDate}
+                      todayYmd={todayYmd}
+                      loading={loading}
+                      onChangeDate={(next) => {
+                        setPlaytomicDateByVenue((m) => ({ ...m, [v.id]: next }));
+                        loadPlaytomicVenue(v.id, next);
+                      }}
+                    />
+                    <div className="pm-baner-toolbar">
+                      <label className="pm-baner-date-label">
+                        Dato
+                        <input
+                          type="date"
+                          value={playtomicDate}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPlaytomicDateByVenue((m) => ({ ...m, [v.id]: val }));
+                            loadPlaytomicVenue(v.id, val);
+                          }}
+                          style={inputStyle}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => loadPlaytomicVenue(v.id, playtomicDate)}
+                        disabled={loading}
+                        className="pm-baner-btn-icon"
+                        style={{ ...btn(false), fontSize: '13px', opacity: loading ? 0.65 : 1 }}
+                      >
+                        <RefreshCw size={15} className={loading ? 'pm-baner-refresh-spin' : undefined} />
+                        Opdater tider
+                      </button>
+                      <a
+                        href={playtomicClubDeepUrl(v, playtomicDate)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pm-baner-btn-link"
+                        style={{ ...btn(true), fontSize: '13px' }}
+                      >
+                        <ExternalLink size={16} />
+                        Åbn Playtomic
                       </a>
                     </div>
                     {loaded?.dateLabel && (

@@ -9,6 +9,7 @@ PadelMakker **Book bane** viser ledige tider, når centrets kalender er **offent
 | `halbooking` | Ja | Halbooking (bane + tid) | `padelmakker-server/halbookingVenuesAllowlist.js` + `src/lib/banerVenues.js` |
 | `matchi` | Ja | MATCHi med dato | `padelmakker-server/matchiAllowlist.js` + `banerVenues.js` |
 | `bookli` | Ja | Bookli | `padelmakker-server/bookliAllowlist.js` + `banerVenues.js` |
+| `playtomic` | Ja | Playtomic med dato | `padelmakker-server/playtomicAllowlist.js` + `banerVenues.js` |
 | `link` | Nej | Ekstern klubside | Kun `banerVenues.js` |
 
 ## Regioner i appen
@@ -155,6 +156,13 @@ Plus **~33 Padellife-link-centre** (Albertslund, Holbæk, Racket Club Roskilde, 
 1. Åbn facilitet på matchi.se — «Available time slots» skal loades offentligt.
 2. `facilityId` står i sidekilde (fx `facilityId=2445` i schedule-URL) eller kør `discover-padel-venues.mjs`.
 3. Tilføj i `matchiAllowlist.js` + `BANER_VENUES` (`sport: '5'` for padel hos de fleste DK-anlæg).
+
+## Tilføj nyt Playtomic-center
+
+1. Åbn `https://playtomic.com/clubs/<slug>` — find `tenant_id` i HTML (`tenant-id="…"` / `tenant_id=`).
+2. Smoke-test: `https://playtomic.com/api/clubs/availability?tenant_id=…&date=YYYY-MM-DD&sport_id=PADEL` (kun ledige slots).
+3. Tilføj i `playtomicAllowlist.js` (`tenantId`, `clubSlug`, `bookingUrl`) + `BANER_VENUES` med `kind: 'playtomic'`.
+4. API: `/api/playtomic-slots?venue=<id>&date=YYYY-MM-DD`.
 
 ## Match Padel — alle Halbooking-områder
 

@@ -11,14 +11,16 @@ export { BANER_REGION_ORDER };
  * Halbooking: id → padelmakker-server/halbookingVenuesAllowlist.js
  * Bookli: id → padelmakker-server/bookliAllowlist.js
  * Matchi: id → padelmakker-server/matchiAllowlist.js
+ * Playtomic: id → padelmakker-server/playtomicAllowlist.js
  * Link: Padellife-katalog (scripts/build-baner-link-catalog.mjs) — booking uden inline-tider
  */
 
 /** @typedef {{ kind: 'halbooking', id: string, title: string, address: string, indoor: boolean, region: string, note?: string, latitude?: number, longitude?: number }} HalbookingVenue */
 /** @typedef {{ kind: 'bookli', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, infoUrl: string, latitude?: number, longitude?: number }} BookliVenue */
 /** @typedef {{ kind: 'matchi', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, facilityId: string, sport: string, note?: string, latitude?: number, longitude?: number }} MatchiVenue */
+/** @typedef {{ kind: 'playtomic', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, clubSlug: string, note?: string, latitude?: number, longitude?: number }} PlaytomicVenue */
 /** @typedef {{ kind: 'link', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, note?: string, latitude?: number, longitude?: number }} LinkVenue */
-/** @typedef {HalbookingVenue | BookliVenue | MatchiVenue | LinkVenue} BanerVenue */
+/** @typedef {HalbookingVenue | BookliVenue | MatchiVenue | PlaytomicVenue | LinkVenue} BanerVenue */
 
 /** @param {BanerVenue} venue */
 function attachVenueCoords(venue) {
@@ -428,6 +430,28 @@ const BANER_VENUES_INTEGRATED = [
     region: 'Fyn',
   },
   {
+    kind: 'playtomic',
+    id: 'playtomic_padelboxen',
+    title: 'Padelboxen (Playtomic)',
+    address: 'Tolderlundsvej 92, 5000 Odense',
+    indoor: true,
+    region: 'Fyn',
+    clubSlug: 'padelboxen',
+    bookingUrl: 'https://playtomic.com/clubs/padelboxen',
+    note: 'Ledige tider fra Playtomic. Grøn = ledigt — klik åbner Playtomic med valgt dato.',
+  },
+  {
+    kind: 'playtomic',
+    id: 'playtomic_padel_dk',
+    title: 'Padel.dk (Playtomic)',
+    address: 'Wichmandsgade 15, 5000 Odense',
+    indoor: true,
+    region: 'Fyn',
+    clubSlug: 'padel-dk',
+    bookingUrl: 'https://playtomic.com/clubs/padel-dk',
+    note: 'Ledige tider fra Playtomic. Grøn = ledigt — klik åbner Playtomic med valgt dato.',
+  },
+  {
     kind: 'matchi',
     id: 'matchi_vissenbjerg_padel',
     title: 'Vissenbjerg Padel (MATCHi)',
@@ -593,6 +617,17 @@ const BANER_VENUES_INTEGRATED = [
     region: 'Hovedstaden',
   },
   {
+    kind: 'playtomic',
+    id: 'playtomic_padel_herlev',
+    title: 'Padel Herlev (Playtomic)',
+    address: 'Skinderskovvej 31, 2730 Herlev',
+    indoor: false,
+    region: 'Hovedstaden',
+    clubSlug: 'padel-herlev',
+    bookingUrl: 'https://playtomic.com/clubs/padel-herlev',
+    note: '2 udendørs baner via Playtomic. Grøn = ledigt — klik åbner Playtomic med valgt dato.',
+  },
+  {
     kind: 'matchi',
     id: 'matchi_padelyard',
     title: 'Padel Yard Reffen (MATCHi)',
@@ -655,6 +690,17 @@ const BANER_VENUES_INTEGRATED = [
     address: 'Milnersvej 35C, 3400 Hillerød',
     indoor: true,
     region: 'Sjælland',
+  },
+  {
+    kind: 'playtomic',
+    id: 'playtomic_the_padel_club_espergaerde',
+    title: 'The Padel Club',
+    address: 'Bybjergvej 22, 3060 Espergærde',
+    indoor: true,
+    region: 'Sjælland',
+    clubSlug: 'the-padel-club-espergaerde',
+    bookingUrl: 'https://playtomic.com/clubs/the-padel-club-espergaerde',
+    note: 'Ledige tider fra Playtomic. Grøn = ledigt — klik åbner Playtomic med valgt dato.',
   },
   {
     kind: 'halbooking',
@@ -1761,6 +1807,10 @@ const MATCHI_SLOTS_BASE =
   (viteEnv.VITE_MATCHI_SLOTS_URL && String(viteEnv.VITE_MATCHI_SLOTS_URL).trim()) ||
   '/api/matchi-slots';
 
+const PLAYTOMIC_SLOTS_BASE =
+  (viteEnv.VITE_PLAYTOMIC_SLOTS_URL && String(viteEnv.VITE_PLAYTOMIC_SLOTS_URL).trim()) ||
+  '/api/playtomic-slots';
+
 /**
  * @param {string} venueId
  * @param {string} dateYmd
@@ -1770,6 +1820,39 @@ export function matchiSlotsUrl(venueId, dateYmd) {
   q.set('venue', venueId);
   q.set('date', dateYmd);
   return `${MATCHI_SLOTS_BASE}?${q.toString()}`;
+}
+
+/**
+ * @param {string} venueId
+ * @param {string} dateYmd
+ */
+export function playtomicSlotsUrl(venueId, dateYmd) {
+  const q = new URLSearchParams();
+  q.set('venue', venueId);
+  q.set('date', dateYmd);
+  return `${PLAYTOMIC_SLOTS_BASE}?${q.toString()}`;
+}
+
+/**
+ * @param {{ bookingUrl?: string, clubSlug?: string }} v
+ * @param {string} [dateYmd]
+ */
+export function playtomicClubDeepUrl(v, dateYmd) {
+  const slug = String(v.clubSlug || '').trim();
+  const base = slug
+    ? `https://playtomic.com/clubs/${slug}`
+    : String(v.bookingUrl || '').trim() || '#';
+  if (dateYmd && /^\d{4}-\d{2}-\d{2}$/.test(dateYmd) && base !== '#') {
+    try {
+      const u = new URL(base);
+      u.searchParams.set('date', dateYmd);
+      return u.toString();
+    } catch {
+      const sep = base.includes('?') ? '&' : '?';
+      return `${base}${sep}date=${encodeURIComponent(dateYmd)}`;
+    }
+  }
+  return base;
 }
 
 /**

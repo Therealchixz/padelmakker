@@ -998,5 +998,21 @@
   "match_padel_studio_kbh": {
     "lat": 55.66599,
     "lng": 12.618958
+  },
+  "playtomic_padelboxen": {
+    "lat": 55.412524,
+    "lng": 10.385247
+  },
+  "playtomic_padel_dk": {
+    "lat": 55.402104,
+    "lng": 10.371858
+  },
+  "playtomic_the_padel_club_espergaerde": {
+    "lat": 55.998363,
+    "lng": 12.523962
+  },
+  "playtomic_padel_herlev": {
+    "lat": 55.745642,
+    "lng": 12.412117
   }
 }

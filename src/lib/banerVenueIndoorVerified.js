@@ -49,6 +49,10 @@ export const BANER_INTEGRATED_INDOOR_VERIFIED = {
   match_padel_bornholm_ude_ronne: false,
   lezgo_padel_lasby: true,
   lets_padel_hillerod: true,
+  playtomic_padelboxen: true,
+  playtomic_padel_dk: true,
+  playtomic_the_padel_club_espergaerde: true,
+  playtomic_padel_herlev: false,
 
   // Bookli
   padelpadel_aalborg: true,

@@ -2,7 +2,12 @@ import { BANER_VENUES, halbookingOpenVenueUrl } from './banerVenues.js';
 
 export function resolveBanerVenueBookingUrl(venue) {
   if (!venue) return null;
-  if (venue.kind === 'bookli' || venue.kind === 'link' || venue.kind === 'matchi') {
+  if (
+    venue.kind === 'bookli' ||
+    venue.kind === 'link' ||
+    venue.kind === 'matchi' ||
+    venue.kind === 'playtomic'
+  ) {
     return venue.bookingUrl || null;
   }
   if (venue.kind === 'halbooking') {

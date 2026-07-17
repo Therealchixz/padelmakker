@@ -5,6 +5,8 @@ interface ImportMetaEnv {
   readonly VITE_LANDING_TOUR_VIDEO_ID?: string
   /** Valgfri base-URL til `/api/matchi-slots` (fx absolut URL i preview). */
   readonly VITE_MATCHI_SLOTS_URL?: string
+  /** Valgfri base-URL til `/api/playtomic-slots` (fx absolut URL i preview). */
+  readonly VITE_PLAYTOMIC_SLOTS_URL?: string
 }
 
 interface ImportMeta {

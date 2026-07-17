@@ -66,6 +66,16 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
         },
+        '/api/matchi-slots': {
+          target: 'https://www.padelmakker.dk',
+          changeOrigin: true,
+          secure: true,
+        },
+        '/api/playtomic-slots': {
+          target: 'https://www.padelmakker.dk',
+          changeOrigin: true,
+          secure: true,
+        },
       },
     },
   }
