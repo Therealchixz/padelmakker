@@ -157,3 +157,57 @@ test('getMatchSuggestions ranks favorites and familiar partners above strangers'
   assert.ok(ids.indexOf('fav') < ids.indexOf('stranger'), `fav (${ids.indexOf('fav')}) should rank before stranger (${ids.indexOf('stranger')})`);
   assert.ok(ids.indexOf('familiar') < ids.indexOf('stranger'), 'familiar should rank before stranger');
 });
+
+test('getMatchSuggestions prioritizes same region first, then fills with others', () => {
+  const me = profile({ id: 'me', area: 'Nordjylland', elo_rating: 1000 });
+  // Better ELO/time match on Sjælland should still rank *after* a weaker Nordjylland match.
+  const localWeaker = profile({
+    id: 'local',
+    area: 'Region Nordjylland', // legacy → canonical Nordjylland
+    elo_rating: 1120,
+    available_days: ['mandag'], // overlap so hard filter passes
+    intent_now: 'hygge',
+    court_side: 'begge',
+  });
+  const remoteBetter = profile({
+    id: 'remote',
+    area: 'Sjælland',
+    elo_rating: 1000,
+    available_days: ['mandag', 'onsdag'],
+    intent_now: 'traening',
+    court_side: 'hojre',
+  });
+  const otherLocal = profile({
+    id: 'local2',
+    area: 'Nordjylland',
+    elo_rating: 1010,
+    available_days: ['mandag', 'onsdag'],
+    intent_now: 'traening',
+    court_side: 'hojre',
+  });
+
+  const result = getMatchSuggestions(me, [remoteBetter, localWeaker, otherLocal], { limit: 10 });
+  const ids = result.map((r) => r.profile.id);
+
+  assert.equal(result.length, 3, 'list is not emptied when locals exist');
+  assert.ok(ids.indexOf('local') < ids.indexOf('remote'), 'local before remote');
+  assert.ok(ids.indexOf('local2') < ids.indexOf('remote'), 'other local before remote');
+  assert.ok(result.find((r) => r.profile.id === 'local')?.sameRegion);
+  assert.equal(result.find((r) => r.profile.id === 'remote')?.sameRegion, false);
+});
+
+test('getMatchSuggestions still shows remote players when no locals match', () => {
+  const me = profile({ id: 'me', area: 'Nordjylland' });
+  const remote = profile({ id: 'remote', area: 'Sjælland', elo_rating: 1000 });
+  const result = getMatchSuggestions(me, [remote], { limit: 5 });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].profile.id, 'remote');
+});
+
+test('matchReason mentions same region when areas match canonically', () => {
+  const me = profile({ id: 'me', area: 'Nordjylland' });
+  const them = profile({ id: 'them', area: 'Region Nordjylland' });
+  const scored = scoreCandidate(me, them);
+  const reason = matchReason(scored.breakdown, them, me);
+  assert.ok(reason.includes('Samme region'), reason);
+});

@@ -9,6 +9,12 @@
  */
 
 import { SEEK_MAKKER_TTL_DAYS } from './platformConstants.js';
+import { canonicalAppRegion } from './appRegions.js';
+
+/** Kanonisk landsdel for matchmaking (legacy "Region X" → app-region). */
+export function profileMatchRegion(profile) {
+  return canonicalAppRegion(profile?.area) || '';
+}
 
 const INACTIVE_DAYS = 14;
 const SEEKING_FRESH_HOURS = SEEK_MAKKER_TTL_DAYS * 24;
@@ -232,10 +238,10 @@ function geoScore(myProfile, theirProfile) {
     return Math.max(0.05, 0.1 - (km - 60) / 200);
   }
 
-  const myArea = normalizeText(myProfile?.area);
-  const theirArea = normalizeText(theirProfile?.area);
+  const myArea = profileMatchRegion(myProfile);
+  const theirArea = profileMatchRegion(theirProfile);
   if (!myArea || !theirArea) return 0.3;
-  if (myArea === theirArea) return 0.6;
+  if (myArea === theirArea) return 0.85;
   /* Begge er villige til at rejse → mindre straf for forskellige områder */
   if (myProfile?.travel_willing && theirProfile?.travel_willing) return 0.35;
   return 0.15;
@@ -500,6 +506,8 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
     return passesHardFilters(myProfile, candidate, myElo, candidateElo, opts);
   });
 
+  const myRegion = profileMatchRegion(myProfile);
+
   return filtered
     .map((candidate) => {
       const score = scoreCandidate(myProfile, candidate, {
@@ -511,14 +519,20 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
         pastMatchesByUserId,
         favoriteIds,
       });
+      const sameRegion = Boolean(myRegion && profileMatchRegion(candidate) === myRegion);
       return {
         profile: candidate,
         score: score.total,
         breakdown: score.breakdown,
         resolvedElo: score.resolvedElo,
+        sameRegion,
       };
     })
     .sort((a, b) => {
+      // Region-first: lokale først, resten fylder listen (aldrig tom pga. region).
+      if (myRegion && a.sameRegion !== b.sameRegion) {
+        return a.sameRegion ? -1 : 1;
+      }
       if (b.score !== a.score) return b.score - a.score;
       const aExposure = Number(a.breakdown?.exposureCount || 0);
       const bExposure = Number(b.breakdown?.exposureCount || 0);
@@ -531,10 +545,14 @@ export function getMatchSuggestions(myProfile, candidates, opts = {}) {
 /**
  * Læsbar forklaring på hvorfor en spiller er foreslået.
  */
-export function matchReason(breakdown, candidate) {
+export function matchReason(breakdown, candidate, myProfile = null) {
   const reasons = [];
   if ((breakdown?.favoriteBoost || 0) > 0) reasons.push('⭐ Favorit');
   if ((breakdown?.pastMatchesBoost || 0) >= 0.05) reasons.push('Spillet sammen før');
+  const myRegion = profileMatchRegion(myProfile);
+  const theirRegion = profileMatchRegion(candidate);
+  if (myRegion && theirRegion && myRegion === theirRegion) reasons.push('Samme region');
+  else if ((breakdown?.geo || 0) >= 0.75) reasons.push('Tæt på dig');
   if ((breakdown?.reciprocal || 0) >= 0.75) reasons.push('Gensidig match');
   if ((breakdown?.skill || 0) >= 0.8) reasons.push('Tæt ELO-niveau');
   if ((breakdown?.time || 0) >= 0.75) reasons.push('Samme spilledage');

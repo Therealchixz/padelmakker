@@ -167,9 +167,9 @@ function writeDismissedSugg(userId, set) {
 
 // ----- Suggested player card -----
 
-function SuggestionCard({ suggestion, onView, onInvite, onMessage, onDismiss, displayEloFor }) {
+function SuggestionCard({ suggestion, viewer, onView, onInvite, onMessage, onDismiss, displayEloFor }) {
   const { profile: p, score, breakdown } = suggestion;
-  const reason = matchReason(breakdown, p);
+  const reason = matchReason(breakdown, p, viewer);
   const quality = makkerMatchBadge(score);
 
   return (
@@ -675,6 +675,7 @@ export function MakkereTab({ user, showToast }) {
               <SuggestionCard
                 key={s.profile.id}
                 suggestion={s}
+                viewer={user}
                 displayEloFor={displayElo}
                 onView={setViewPlayer}
                 onInvite={setInviteTarget}
