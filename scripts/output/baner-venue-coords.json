@@ -954,5 +954,49 @@
   "link_randers_vorup_fb_padel": {
     "lat": 56.4617545,
     "lng": 10.0371476
+  },
+  "smash_horsens_double": {
+    "lat": 55.8574838,
+    "lng": 9.8183412
+  },
+  "smash_horsens_single": {
+    "lat": 55.8574838,
+    "lng": 9.8183412
+  },
+  "smash_stensballe": {
+    "lat": 55.878,
+    "lng": 9.885
+  },
+  "match_padel_bornholm_inde": {
+    "lat": 55.0994511,
+    "lng": 14.7060906
+  },
+  "match_padel_bornholm_ude_ronne": {
+    "lat": 55.0994511,
+    "lng": 14.7060906
+  },
+  "padel_lounge_odense": {
+    "lat": 55.402593,
+    "lng": 10.388093
+  },
+  "match_padel_klovermarken": {
+    "lat": 55.674489,
+    "lng": 12.6179
+  },
+  "match_padel_silkeborg_syd": {
+    "lat": 56.098485,
+    "lng": 9.573459
+  },
+  "lezgo_padel_lasby": {
+    "lat": 56.155391,
+    "lng": 9.816807
+  },
+  "lets_padel_hillerod": {
+    "lat": 55.919905,
+    "lng": 12.307282
+  },
+  "match_padel_studio_kbh": {
+    "lat": 55.66599,
+    "lng": 12.618958
   }
 }

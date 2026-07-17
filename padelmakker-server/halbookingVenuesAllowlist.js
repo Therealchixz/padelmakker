@@ -132,9 +132,56 @@ export const HALBOOKING_VENUE_ALLOWLIST = {
     procBaner: 'https://padellounge.halbooking.dk/newlook/proc_baner.asp',
     omraede: '4',
   },
+  padel_lounge_odense: {
+    procBaner: 'https://padellounge.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '5',
+  },
   padel_zone_holstebro_halbooking: {
     procBaner: 'https://padelzone.halbooking.dk/newlook/proc_baner.asp',
     omraede: '1',
+  },
+  smash_horsens_double: {
+    procBaner: 'https://smash.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '1',
+    assumePadel: true,
+  },
+  smash_horsens_single: {
+    procBaner: 'https://smash.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '5',
+    assumePadel: true,
+  },
+  smash_stensballe: {
+    procBaner: 'https://smash.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '6',
+    assumePadel: true,
+  },
+  match_padel_studio_kbh: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '20',
+  },
+  match_padel_klovermarken: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '3',
+  },
+  match_padel_silkeborg_syd: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '4',
+  },
+  match_padel_bornholm_inde: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '13',
+  },
+  match_padel_bornholm_ude_ronne: {
+    procBaner: MATCH_PADEL_PROC,
+    omraede: '10',
+  },
+  lezgo_padel_lasby: {
+    procBaner: 'https://lezgopadel.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '',
+  },
+  lets_padel_hillerod: {
+    procBaner: 'https://letspadel.halbooking.dk/newlook/proc_baner.asp',
+    omraede: '',
   },
 };
 

@@ -37,7 +37,18 @@ export const BANER_INTEGRATED_INDOOR_VERIFIED = {
   bjerringbro_padel_halbooking: true,
   oksbol_padel_halbooking: true,
   padel_lounge_aarhus_halbooking: true,
+  padel_lounge_odense: true,
   padel_zone_holstebro_halbooking: true,
+  smash_horsens_double: true,
+  smash_horsens_single: true,
+  smash_stensballe: true,
+  match_padel_studio_kbh: true,
+  match_padel_klovermarken: true,
+  match_padel_silkeborg_syd: true,
+  match_padel_bornholm_inde: true,
+  match_padel_bornholm_ude_ronne: false,
+  lezgo_padel_lasby: true,
+  lets_padel_hillerod: true,
 
   // Bookli
   padelpadel_aalborg: true,

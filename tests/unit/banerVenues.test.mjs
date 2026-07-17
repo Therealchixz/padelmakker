@@ -120,6 +120,30 @@ test('Bornholm har Match Padel Gudhjem og Svaneke som Halbooking', () => {
   assert.ok(BANER_VENUES.some((v) => v.id === 'match_padel_svaneke' && v.kind === 'halbooking'));
 });
 
+test('Halbooking-udvidelse: Smash, Lounge Odense, Match Studio/Kløvermarken/Rønne, LezGo, Let\'s Padel', () => {
+  const ids = [
+    'smash_horsens_double',
+    'smash_horsens_single',
+    'smash_stensballe',
+    'padel_lounge_odense',
+    'match_padel_studio_kbh',
+    'match_padel_klovermarken',
+    'match_padel_silkeborg_syd',
+    'match_padel_bornholm_inde',
+    'match_padel_bornholm_ude_ronne',
+    'lezgo_padel_lasby',
+    'lets_padel_hillerod',
+  ];
+  for (const id of ids) {
+    const v = BANER_VENUES.find((x) => x.id === id);
+    assert.equal(v?.kind, 'halbooking', id);
+  }
+  assert.ok(
+    !BANER_VENUES.some((x) => x.kind === 'link' && normalizeVenueTitleKey(x.title) === 'smash padelcenter horsens'),
+    'Padellife-link for Smash Horsens skal filtreres væk'
+  );
+});
+
 test('Padelground Viborg er MATCHi med udendørs baner (ikke kun padelground.dk-link)', () => {
   const v = BANER_VENUES.find((x) => x.id === 'matchi_padelground_viborg');
   assert.equal(v?.kind, 'matchi');
