@@ -27,7 +27,7 @@ export function HelpContactPage() {
           <Link to="/faq" style={{ color: theme.accent, fontWeight: 600 }}>
             Ofte stillede spørgsmål (FAQ)
           </Link>{' '}
-          — pris, 2v2-ELO, Turnerings-ELO, baner, regioner, konto.
+          — pris, login (Google/SMS), 2v2-ELO, Liga, resultatbekræftelse, baner, regioner, konto.
         </li>
         <li style={{ marginBottom: '10px' }}>
           <Link to="/elo" style={{ color: theme.accent, fontWeight: 600 }}>

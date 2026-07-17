@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2 } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2, Shield, ListOrdered } from 'lucide-react';
 import { useDarkMode } from '../lib/useDarkMode';
 import { fetchLandingPublicStats, formatLandingStatCount } from '../lib/landingPublicStats';
 import { shareInviteFriendToApp, shareResultToastMessage } from '../lib/shareUtils';
@@ -133,18 +133,20 @@ export function LandingPage() {
   }, []);
 
   const steps = [
-    { step: "01", icon: <UserPlus  size={24} color={theme.onAccent} />, title: "Opret profil", desc: "Vælg niveau, region, spillestil og dine foretrukne spilledage — så kan andre finde dig rigtigt." },
-    { step: "02", icon: <Users     size={24} color={theme.onAccent} />, title: "Find makker",  desc: "Se padelspillere nær dig på samme niveau, og invitér dem til en kamp uden Facebook-tråde." },
-    { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Book bane",    desc: "Få overblik over ledige tider hos 150+ centre i Danmark, og hop videre til booking når tidspunktet passer." },
-    { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din rating", desc: "Registrér resultater, følg både 2v2- og Americano/Mexicano ELO og find mere jævnbyrdige kampe næste gang." },
+    { step: "01", icon: <UserPlus  size={24} color={theme.onAccent} />, title: "Opret profil", desc: "Bekræft telefon og e-mail, og vælg niveau, region, spillestil og spilledage — så andre kan finde dig rigtigt." },
+    { step: "02", icon: <Users     size={24} color={theme.onAccent} />, title: "Find makker",  desc: "Se spillere nær dig, brug forslag og aktiv søgning, og invitér dem til en kamp uden Facebook-tråde." },
+    { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Find kamp & bane", desc: "Opret eller tilslut dig 2v2, Liga eller Americano/Mexicano — og se ledige tider hos 150+ centre, når I skal booke." },
+    { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din rating", desc: "Bekræft resultater, følg 2v2- og Americano/Mexicano ELO på ranglisten, og find mere jævnbyrdige kampe næste gang." },
   ];
 
   const features = [
     { icon: <Trophy size={22} color={theme.accent} />, title: "2v2 ELO-ranking", desc: "Dynamisk ELO med individuel forventning, sejrsmargin og fair udsving i dine 2v2-kampe." },
-    { icon: <Swords size={22} color={theme.accent} />, title: "Holdkampe", desc: "Opret åbne eller lukkede 2v2 kampe. Åbne kampe kan alle tilslutte sig direkte — lukkede kræver godkendelse fra opretteren." },
+    { icon: <Swords size={22} color={theme.accent} />, title: "2v2-kampe", desc: "Opret åbne eller lukkede kampe med venteliste og godkendelse. Bekræft resultater, før ELO opdateres." },
+    { icon: <Shield size={22} color={theme.accent} />, title: "Liga", desc: "Opret eller deltag i holdligaer med stilling, kampprogram og hold-chat — Swiss, alle-mod-alle eller knockout." },
     { icon: <Medal size={22} color={theme.accent} />, title: "Americano/Mexicano med ELO", desc: "Americano og Mexicano med automatisk rundeplan, fair parring og separat Americano/Mexicano ELO (adskilt fra 2v2)." },
+    { icon: <ListOrdered size={22} color={theme.accent} />, title: "Rangliste", desc: "Se dig selv og andre på 2v2- og turnerings-ELO — filtrer på region og periode." },
     { icon: <MapPinned size={22} color={theme.accent} />, title: "Ledige baner", desc: "Se live ledige tider via Halbooking, MATCHi, Bookli og Playtomic — og hop direkte videre til booking hos centret." },
-    { icon: <MessageCircle size={22} color={theme.accent} />, title: "Direkte beskeder", desc: "Chat direkte med andre spillere i appen — aftale kamp, koordinér tider og hold kontakten med dine faste makkere." },
+    { icon: <MessageCircle size={22} color={theme.accent} />, title: "Beskeder & kamp-chat", desc: "Chat privat med makkere, eller i kampen og på holdet — aftal tider og hold kontakten." },
     { icon: <LineChart size={22} color={theme.accent} />, title: "Profil & udvikling", desc: "Følg din ELO over tid, se sejrsstreaks, bedste makker og kamphistorik — alt på ét sted." },
   ];
 
@@ -476,9 +478,9 @@ export function LandingPage() {
       <section style={landingSectionStyle}>
         <div className="pm-reveal" style={landingSectionIntroStyle}>
           <p style={landingSectionKickerStyle}>Sådan virker det</p>
-          <h2 style={landingSectionHeadingStyle}>Fra profil til bane — første gang ca. 5 min</h2>
+          <h2 style={landingSectionHeadingStyle}>Fra profil til kamp — hurtigt i gang</h2>
           <p style={{ fontSize: "15px", color: theme.textMid, lineHeight: 1.7, maxWidth: "620px", margin: "14px auto 0" }}>
-            Opret profil, find makker, book bane og følg din ELO — fire enkle skridt fra idéen om en kamp til en mere aktiv padel-hverdag.
+            Opret profil, find makker, spil 2v2/Liga/Americano og følg din ELO — fire enkle skridt fra idéen om en kamp til en mere aktiv padel-hverdag.
           </p>
         </div>
         <div className="pm-landing-step-flow pm-reveal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%,230px),1fr))", gap: "16px" }}>
@@ -535,7 +537,7 @@ export function LandingPage() {
             <h2>{session ? 'Klar til næste kamp?' : 'Klar til at spille?'}</h2>
             <p style={{ fontSize: "clamp(15px,3.5vw,17px)", color: "var(--pm-hero-subtitle)", maxWidth: "420px", margin: "0 auto 32px", lineHeight: 1.6 }}>
               {session
-                ? 'Du er logget ind. Hop tilbage i dashboard og find kampe, makkere og baner.'
+                ? 'Du er logget ind. Hop tilbage i dashboard og find kampe, liga, makkere og baner.'
                 : 'Opret din gratis profil, find spillere på dit niveau og gør det lettere at få næste kamp i kalenderen.'}
             </p>
             {session ? (

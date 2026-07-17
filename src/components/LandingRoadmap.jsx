@@ -3,13 +3,16 @@ import {
   CheckCircle2,
   ClipboardList,
   Lightbulb,
+  ListOrdered,
   MapPinned,
+  MessageCircle,
   MessageCircleHeart,
+  Search,
+  Shield,
   Sparkles,
   Target,
   Trophy,
   TrendingUp,
-  UserRoundCog,
   Users,
 } from 'lucide-react';
 
@@ -20,10 +23,13 @@ const roadmapColumns = [
     tone: 'live',
     icon: CheckCircle2,
     items: [
-      { icon: Users, title: 'Find makker', detail: 'Se spillere tæt på dit niveau og område.' },
-      { icon: TrendingUp, title: 'Dynamisk 2v2-ELO', detail: 'Individuel forventning, K-faktor og sejrsmargin i alle 2v2-kampe.' },
-      { icon: Trophy, title: 'Separat Americano/Mexicano ELO', detail: 'Egen rating for Americano og Mexicano, beregnet ved afslutning af Americano/Mexicano.' },
-      { icon: MapPinned, title: 'Baneoversigt', detail: 'Udvalgte centre med direkte bookingvej.' },
+      { icon: Users, title: 'Find makker', detail: 'Forslag, filtre, favoritter og aktiv søgning når du er klar til kamp.' },
+      { icon: TrendingUp, title: '2v2-kampe & ELO', detail: 'Åbne/lukkede kampe, resultatbekræftelse og dynamisk 2v2-ELO.' },
+      { icon: Shield, title: 'Liga', detail: 'Holdligaer med stilling, kampprogram og hold-chat.' },
+      { icon: Trophy, title: 'Americano/Mexicano', detail: 'Rundeplan, fair parring og separat Turnerings-ELO.' },
+      { icon: ListOrdered, title: 'Rangliste', detail: '2v2- og turnerings-ELO filtreret på region og periode.' },
+      { icon: MessageCircle, title: 'Beskeder & push', detail: 'Direkte chat, kamp-chat og notifikationer når noget sker.' },
+      { icon: MapPinned, title: 'Baneoversigt', detail: 'Ledige tider hos 150+ centre via Halbooking, MATCHi, Bookli og Playtomic.' },
     ],
   },
   {
@@ -32,10 +38,10 @@ const roadmapColumns = [
     tone: 'soon',
     icon: Sparkles,
     items: [
-      { icon: Users, title: 'Bedre makker-forslag', detail: 'Mere relevante forslag ud fra niveau, region og aktivitet.' },
+      { icon: Search, title: 'Endnu skarpere makker-match', detail: 'Finpudsning af forslag ud fra niveau, region og aktivitet.' },
       { icon: Bell, title: 'Skarpere notifikationer', detail: 'Færre støjbeskeder og mere relevante kamp-signaler.' },
-      { icon: ClipboardList, title: 'Mere statistik i profiler', detail: 'Flere indsigter om form, udvikling og historik over tid.' },
-      { icon: MapPinned, title: 'Flere centre', detail: 'Mere dækning i baneoversigten.' },
+      { icon: MapPinned, title: 'Flere centre', detail: 'Mere dækning i baneoversigten og flere booking-platforme.' },
+      { icon: ClipboardList, title: 'Mere statistik', detail: 'Flere indsigter om form, udvikling og historik over tid.' },
     ],
   },
   {
@@ -45,9 +51,8 @@ const roadmapColumns = [
     icon: Lightbulb,
     items: [
       { icon: Target, title: 'Flere Americano/Mexicano-formater', detail: 'Endnu flere formater til klubber, grupper og events.' },
-      { icon: UserRoundCog, title: 'Udvidede profiler', detail: 'Spillestil, favoritcentre og tilgængelighed.' },
-      { icon: MessageCircleHeart, title: 'Brugerønsker', detail: 'Stem på de forbedringer der betyder mest.' },
       { icon: ClipboardList, title: 'Klubfunktioner', detail: 'Flere værktøjer til arrangører og admins.' },
+      { icon: MessageCircleHeart, title: 'Brugerønsker', detail: 'Stem på de forbedringer der betyder mest.' },
     ],
   },
 ];

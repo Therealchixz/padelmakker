@@ -29,6 +29,21 @@ export function FaqPage() {
         </p>
       </Q>
 
+      <Q title="Hvordan opretter jeg en konto?">
+        <p style={{ margin: 0 }}>
+          Du kan oprette dig med e-mail og adgangskode eller logge ind med <strong style={{ color: theme.text }}>Google</strong>.
+          Nye profiler skal bekræfte <strong style={{ color: theme.text }}>telefonnummer med SMS</strong> og e-mail, før du er
+          helt klar i appen.
+        </p>
+      </Q>
+
+      <Q title="Hvorfor skal jeg bekræfte telefon og e-mail?">
+        <p style={{ margin: 0 }}>
+          Bekræftelse beskytter mod misbrug. Telefon (SMS) sikrer, at hver spiller er en rigtig person. E-mail bruges til
+          nulstilling af adgangskode og vigtige beskeder om kontoen.
+        </p>
+      </Q>
+
       <Q title="Hvordan virker ELO?">
         <p style={{ margin: 0 }}>
           Når en 2v2-kamp er bekræftet, opdateres <strong style={{ color: theme.text }}>din personlige 2v2-ELO</strong> ud fra <strong style={{ color: theme.text }}>dit niveau mod modstanderholdets snit</strong>.
@@ -41,9 +56,45 @@ export function FaqPage() {
         </p>
       </Q>
 
+      <Q title="Hvordan bekræftes et kampresultat?">
+        <p style={{ margin: 0 }}>
+          Når resultatet er indtastet, skal det bekræftes af spillerne, før ELO opdateres. Det holder ranglisten fair og
+          begrænser fejlindtastninger.
+        </p>
+      </Q>
+
+      <Q title="Hvad er forskellen på åbne og lukkede 2v2-kampe?">
+        <p style={{ margin: 0 }}>
+          <strong style={{ color: theme.text }}>Åbne</strong> kampe kan andre tilslutte sig direkte (eller via venteliste, hvis
+          holdet er fyldt). <strong style={{ color: theme.text }}>Lukkede</strong> kampe kræver godkendelse fra opretteren —
+          praktisk når I allerede har aftalt hvem der spiller.
+        </p>
+      </Q>
+
+      <Q title="Hvad er Liga?">
+        <p style={{ margin: 0 }}>
+          Liga er holdturneringer i appen: I opretter eller tilslutter jer hold, spiller efter et kampprogram (fx Swiss,
+          alle-mod-alle eller knockout) og følger stillingen. Holdet har egen chat, så I kan koordinere.
+        </p>
+      </Q>
+
       <Q title="Tæller turneringer (Americano/Mexicano) med i min almindelige ELO?">
         <p style={{ margin: 0 }}>
           Nej. Americano og Mexicano deler <strong style={{ color: theme.text }}>Turnerings-ELO</strong>, som holdes adskilt fra din 2v2-ELO, så de to spor ikke påvirker hinanden.
+        </p>
+      </Q>
+
+      <Q title="Hvad er aktiv søgning?">
+        <p style={{ margin: 0 }}>
+          Når du markerer dig som klar til kamp, kan andre se, at du søger makker eller kamp lige nu — praktisk når I vil
+          finde nogen samme dag uden at skrive rundt.
+        </p>
+      </Q>
+
+      <Q title="Får jeg notifikationer?">
+        <p style={{ margin: 0 }}>
+          Ja. Du kan få in-app-notifikationer og push (hvis du tillader det), fx om kampinvitationer, beskeder og
+          resultatbekræftelse. Du styrer præferencerne under profilen.
         </p>
       </Q>
 
@@ -58,12 +109,6 @@ export function FaqPage() {
         <p style={{ margin: 0 }}>
           Profilen bruger de samme otte landsdele som under Baner (Nordjylland, Vestjylland, Østjylland, Sydjylland,
           Fyn, Sjælland, Hovedstaden og Bornholm), så du kan angive præcis hvor du helst spiller.
-        </p>
-      </Q>
-
-      <Q title="Hvorfor skal jeg bekræfte min e-mail?">
-        <p style={{ margin: 0 }}>
-          Bekræftelse beskytter mod misbrug og sikrer, at du kan nulstille adgangskode og modtage vigtige beskeder om kontoen.
         </p>
       </Q>
 
