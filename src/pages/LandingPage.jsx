@@ -135,7 +135,7 @@ export function LandingPage() {
   const steps = [
     { step: "01", icon: <UserPlus  size={24} color={theme.onAccent} />, title: "Opret profil", desc: "Vælg niveau, region, spillestil og dine foretrukne spilledage — så kan andre finde dig rigtigt." },
     { step: "02", icon: <Users     size={24} color={theme.onAccent} />, title: "Find makker",  desc: "Se padelspillere nær dig på samme niveau, og invitér dem til en kamp uden Facebook-tråde." },
-    { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Book bane",    desc: "Få overblik over ledige tider hos udvalgte centre, og hop videre til booking når tidspunktet passer." },
+    { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Book bane",    desc: "Få overblik over ledige tider hos 150+ centre i Danmark, og hop videre til booking når tidspunktet passer." },
     { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din rating", desc: "Registrér resultater, følg både 2v2- og Americano/Mexicano ELO og find mere jævnbyrdige kampe næste gang." },
   ];
 
@@ -143,7 +143,7 @@ export function LandingPage() {
     { icon: <Trophy size={22} color={theme.accent} />, title: "2v2 ELO-ranking", desc: "Dynamisk ELO med individuel forventning, sejrsmargin og fair udsving i dine 2v2-kampe." },
     { icon: <Swords size={22} color={theme.accent} />, title: "Holdkampe", desc: "Opret åbne eller lukkede 2v2 kampe. Åbne kampe kan alle tilslutte sig direkte — lukkede kræver godkendelse fra opretteren." },
     { icon: <Medal size={22} color={theme.accent} />, title: "Americano/Mexicano med ELO", desc: "Americano og Mexicano med automatisk rundeplan, fair parring og separat Americano/Mexicano ELO (adskilt fra 2v2)." },
-    { icon: <MapPinned size={22} color={theme.accent} />, title: "Ledige baner", desc: "Se live ledige tider hos udvalgte centre og hop direkte videre til booking, når du har fundet et tidspunkt." },
+    { icon: <MapPinned size={22} color={theme.accent} />, title: "Ledige baner", desc: "Se live ledige tider via Halbooking, MATCHi, Bookli og Playtomic — og hop direkte videre til booking hos centret." },
     { icon: <MessageCircle size={22} color={theme.accent} />, title: "Direkte beskeder", desc: "Chat direkte med andre spillere i appen — aftale kamp, koordinér tider og hold kontakten med dine faste makkere." },
     { icon: <LineChart size={22} color={theme.accent} />, title: "Profil & udvikling", desc: "Følg din ELO over tid, se sejrsstreaks, bedste makker og kamphistorik — alt på ét sted." },
   ];
@@ -556,7 +556,7 @@ export function LandingPage() {
           <p style={{ ...landingSectionKickerStyle, margin: "0 0 10px" }}>Centre på platformen</p>
           <h2 style={{ ...heading("clamp(20px,4vw,24px)"), margin: "0 0 14px", letterSpacing: "-0.02em" }}>Baner-overblik i appen</h2>
           <p style={{ fontSize: "14px", color: theme.textMid, lineHeight: 1.6, margin: "0 0 16px" }}>
-            Se ledige tider og spring videre til booking hos: Skansen Padel, Padel Lounge Aalborg, Match Padel og PadelPadel Aalborg (AL Bank Arena).
+            Se ledige tider hos 150+ tilkoblede centre landet over — via Halbooking, MATCHi, Bookli og Playtomic — og hop videre til booking hos centret, når tidspunktet passer. Dækningen vokser løbende.
           </p>
           <Link to="/om" style={{ fontSize: "14px", fontWeight: 600, color: theme.accent, textDecoration: "none" }}>
             Læs mere om PadelMakker →

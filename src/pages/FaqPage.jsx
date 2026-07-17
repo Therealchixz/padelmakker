@@ -50,7 +50,7 @@ export function FaqPage() {
       <Q title="Booker jeg banen direkte i PadelMakker?">
         <p style={{ margin: 0 }}>
           I appen kan du se ledige tider hos tilkoblede centre. Når du vil booke, sendes du videre til centrets eget system
-          (fx Halbooking eller Bookli), så betaling og afbestilling følger deres regler.
+          (fx Halbooking, MATCHi, Bookli eller Playtomic), så betaling og afbestilling følger deres regler.
         </p>
       </Q>
 

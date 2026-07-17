@@ -91,8 +91,8 @@ export function PrivacyPage() {
 
       <h2 style={h2}>Eksterne bookinglinks</h2>
       <p style={p}>
-        Når du booker bane hos et center (fx via Halbooking, Bookli eller centrets egen side), gælder det pågældende
-        centres privatlivspolitik. PadelMakker modtager typisk ikke dine betalingsoplysninger fra disse systemer.
+        Når du booker bane hos et center (fx via Halbooking, MATCHi, Bookli, Playtomic eller centrets egen side), gælder det
+        pågældende centres privatlivspolitik. PadelMakker modtager typisk ikke dine betalingsoplysninger fra disse systemer.
       </p>
 
       <h2 style={h2}>Opbevaring</h2>

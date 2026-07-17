@@ -20,10 +20,11 @@ export function OmPage() {
       </ul>
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Centre med baner-overblik i appen</h2>
       <p style={{ color: theme.textMid }}>
-        Vi viser ledige tider fra centre, der er tilkoblet — herunder blandt andet{' '}
-        <strong style={{ color: theme.text }}>Skansen Padel</strong>, <strong style={{ color: theme.text }}>Padel Lounge Aalborg</strong>,{' '}
-        <strong style={{ color: theme.text }}>Match Padel</strong> (via Halbooking) og{' '}
-        <strong style={{ color: theme.text }}>PadelPadel Aalborg</strong> (Bookli). Listen kan udvides over tid.
+        Vi viser ledige tider fra 150+ tilkoblede centre i hele Danmark — via{' '}
+        <strong style={{ color: theme.text }}>Halbooking</strong>, <strong style={{ color: theme.text }}>MATCHi</strong>,{' '}
+        <strong style={{ color: theme.text }}>Bookli</strong> og <strong style={{ color: theme.text }}>Playtomic</strong>.
+        Det dækker blandt andet Match Padel, Padel Lounge, Smash, Padelboxen, Padel.dk og mange lokale klubber. Når du
+        finder en ledig tid, sendes du videre til centrets eget booking-system. Listen udvides løbende.
       </p>
       <h2 style={{ fontSize: '17px', fontWeight: 700, color: theme.text, margin: '28px 0 12px' }}>Kontakt og virksomhed</h2>
       <p style={{ color: theme.textMid }}>
