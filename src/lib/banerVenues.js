@@ -275,6 +275,17 @@ const BANER_VENUES_INTEGRATED = [
     region: 'Østjylland',
   },
   {
+    kind: 'playtomic',
+    id: 'playtomic_sambiosen',
+    title: 'SamBiosen (Playtomic)',
+    address: 'Pillemarksvej 1, 8305 Tranebjerg (Samsø)',
+    indoor: false,
+    region: 'Østjylland',
+    clubSlug: 'sambiosen',
+    bookingUrl: 'https://playtomic.com/clubs/sambiosen',
+    note: 'Panorama-bane på Samsø via Playtomic. Grøn = ledigt — klik åbner Playtomic med valgt dato.',
+  },
+  {
     kind: 'halbooking',
     id: 'padel_lounge_aarhus_halbooking',
     title: 'Padel Lounge Aarhus / Skejby (Halbooking)',
@@ -489,6 +500,17 @@ const BANER_VENUES_INTEGRATED = [
   },
 
   // —— Sydjylland (syd for Kongeå; ikke Fyn) ——
+  {
+    kind: 'playtomic',
+    id: 'playtomic_padel6100',
+    title: 'Padel 6100 (Playtomic)',
+    address: "Christian X's Vej 9A, 6100 Haderslev",
+    indoor: true,
+    region: 'Sydjylland',
+    clubSlug: 'padel6100',
+    bookingUrl: 'https://playtomic.com/clubs/padel6100',
+    note: 'Ledige tider fra Playtomic. Grøn = ledigt — klik åbner Playtomic med valgt dato.',
+  },
   {
     kind: 'link',
     id: 'matchi_breintholt_esbjerg',

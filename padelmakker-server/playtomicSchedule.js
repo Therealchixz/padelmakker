@@ -33,14 +33,14 @@ export async function fetchPlaytomicResourceNames(clubSlug) {
   const html = await res.text();
   /** @type {Map<string, string>} */
   const map = new Map();
+  // Club pages embed escaped JSON in RSC payloads: resourceId\":\"…\",\"name\":\"…\",\"sport\":\"PADEL\"
   for (const m of html.matchAll(
-    /"resourceId"\s*:\s*"([0-9a-f-]{36})"\s*,\s*"name"\s*:\s*"((?:\\.|[^"\\])*)"/gi
+    /resourceId\\":\\"([0-9a-f-]{36})\\",\\"name\\":\\"([^\\"]+)\\",\\"sport\\":\\"([A-Z_]+)\\"/g
   )) {
     const id = m[1];
-    const name = m[2].replace(/\\"/g, '"').replace(/\\u([0-9a-f]{4})/gi, (_, h) =>
-      String.fromCharCode(parseInt(h, 16))
-    );
-    if (id && name) map.set(id, name.trim());
+    const name = m[2].replace(/\\u([0-9a-f]{4})/gi, (_, h) => String.fromCharCode(parseInt(h, 16)));
+    const sport = m[3];
+    if (id && name && sport === 'PADEL') map.set(id, name.trim());
   }
   resourceNameCache.set(clubSlug, { at: Date.now(), map });
   return map;

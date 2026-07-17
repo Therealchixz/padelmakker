@@ -24,6 +24,16 @@ export const PLAYTOMIC_VENUE_ALLOWLIST = {
     clubSlug: 'padel-herlev',
     bookingUrl: 'https://playtomic.com/clubs/padel-herlev',
   },
+  playtomic_padel6100: {
+    tenantId: '2a97fcec-c57d-45dc-9cb3-df8b22c4be72',
+    clubSlug: 'padel6100',
+    bookingUrl: 'https://playtomic.com/clubs/padel6100',
+  },
+  playtomic_sambiosen: {
+    tenantId: '3ea7289f-7b60-434d-81c9-9b84c7f8e177',
+    clubSlug: 'sambiosen',
+    bookingUrl: 'https://playtomic.com/clubs/sambiosen',
+  },
 };
 
 export function getPlaytomicVenue(venueId) {

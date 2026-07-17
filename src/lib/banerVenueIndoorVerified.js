@@ -53,6 +53,8 @@ export const BANER_INTEGRATED_INDOOR_VERIFIED = {
   playtomic_padel_dk: true,
   playtomic_the_padel_club_espergaerde: true,
   playtomic_padel_herlev: false,
+  playtomic_padel6100: true,
+  playtomic_sambiosen: false,
 
   // Bookli
   padelpadel_aalborg: true,

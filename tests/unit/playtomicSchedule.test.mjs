@@ -4,12 +4,14 @@ import { getPlaytomicVenue, playtomicClubDeepUrl } from '../../padelmakker-serve
 import { fetchPlaytomicSchedule } from '../../padelmakker-server/playtomicSchedule.js';
 import { BANER_VENUES, playtomicSlotsUrl, playtomicClubDeepUrl as clientDeepUrl } from '../../src/lib/banerVenues.js';
 
-test('Playtomic allowlist covers the four Danish clubs in Baner catalog', () => {
+test('Playtomic allowlist covers Danish clubs in Baner catalog', () => {
   const ids = [
     'playtomic_padelboxen',
     'playtomic_padel_dk',
     'playtomic_the_padel_club_espergaerde',
     'playtomic_padel_herlev',
+    'playtomic_padel6100',
+    'playtomic_sambiosen',
   ];
   for (const id of ids) {
     assert.ok(getPlaytomicVenue(id), id);
@@ -44,6 +46,14 @@ test('fetchPlaytomicSchedule returns free slots for Padelboxen', async () => {
   if (result.courts.length > 0) {
     const c = result.courts[0];
     assert.ok(c.name);
+    assert.ok(!/^Bane [0-9a-f]{8}$/i.test(c.name), `expected real court name, got ${c.name}`);
     assert.ok(c.slots.every((s) => s.status === 'free' && /^\d{2}:\d{2}$/.test(s.time)));
   }
+});
+
+test('fetchPlaytomicSchedule resolves Padel 6100 court names', async () => {
+  const result = await fetchPlaytomicSchedule(getPlaytomicVenue('playtomic_padel6100'), '2026-07-18');
+  assert.ok(!result.error, result.error);
+  assert.ok(result.courts.length > 0);
+  assert.ok(result.courts.some((c) => /Display Lager|Faxe Kondi|SPIRIT/i.test(c.name)));
 });

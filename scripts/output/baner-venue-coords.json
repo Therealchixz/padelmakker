@@ -1014,5 +1014,13 @@
   "playtomic_padel_herlev": {
     "lat": 55.745642,
     "lng": 12.412117
+  },
+  "playtomic_padel6100": {
+    "lat": 55.262177,
+    "lng": 9.50234
+  },
+  "playtomic_sambiosen": {
+    "lat": 55.832146,
+    "lng": 10.584504
   }
 }
