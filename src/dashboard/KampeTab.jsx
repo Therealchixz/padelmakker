@@ -2910,12 +2910,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       : kampeFormat === "americano"
         ? "Opret Americano/Mexicano"
         : "Opret liga";
-  const createHeaderTitle =
-    kampeFormat === "padel"
-      ? "Opret kamp"
-      : kampeFormat === "americano"
-        ? "Opret turnering"
-        : "Opret liga";
+  const createHeaderTitle = toolbarCreateLabel;
   const handleCreateBack = () => {
     if (kampeFormat === "padel") setShowCreate(false);
     else if (kampeFormat === "americano") setShowAmericanoCreate(false);

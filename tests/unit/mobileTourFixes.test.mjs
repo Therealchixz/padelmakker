@@ -12,7 +12,7 @@ const profil = readFileSync(join(dir, '../../src/dashboard/ProfilTab.jsx'), 'utf
 const overlay = readFileSync(join(dir, '../../src/components/GuidedTourOverlay.jsx'), 'utf8');
 
 test('mobile tour opens mere-sheet and scrolls activity/profile to top', () => {
-  assert.match(dash, /TOUR_VERSION = 3/);
+  assert.match(dash, /TOUR_VERSION = 4/);
   assert.match(dash, /mobile-more-sheet/);
   assert.match(dash, /mobileMoreTourActive/);
   assert.match(dash, /selectors: \['\[data-tour="mobile-more-sheet"\]', '\[data-tour="mobile-tab-mere"\]'\]/);

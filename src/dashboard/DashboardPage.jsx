@@ -670,7 +670,7 @@ function useUnreadKampeNotificationsCount(userId) {
 }
 
 const PRIMARY_TAB_IDS = ["hjem", "makkere", "baner", "kampe", "ranking", "beskeder"];
-const TOUR_VERSION = 3;
+const TOUR_VERSION = 4;
 const SCROLL_RETRY_MAX = 40;
 const SCROLL_START_SETTLE_RETRIES = 16;
 
@@ -874,7 +874,7 @@ export function DashboardPage({ user, onLogout, showToast }) {
         waitForMount: true,
         skipScroll: true,
         title: 'Mere-menu',
-        description: 'Tryk på Mere nederst — her finder du Ranking, Beskeder, Profil og flere indstillinger.',
+        description: 'Tryk på Mere nederst — her finder du Baner, Rangliste, Profil og flere indstillinger.',
       });
 
       base.push({
@@ -1345,8 +1345,9 @@ export function DashboardPage({ user, onLogout, showToast }) {
   };
 
   const primaryTabs = allTabs.filter(t => PRIMARY_TAB_IDS.includes(t.id));
-  const mobilePrimaryTabs = allTabs.filter(t => ["hjem", "makkere", "baner", "kampe"].includes(t.id));
-  const mobileMoreTabs = allTabs.filter((t) => !["hjem", "makkere", "baner", "kampe"].includes(t.id));
+  const mobilePrimaryTabIds = ["hjem", "makkere", "kampe", "beskeder"];
+  const mobilePrimaryTabs = allTabs.filter((t) => mobilePrimaryTabIds.includes(t.id));
+  const mobileMoreTabs = allTabs.filter((t) => !mobilePrimaryTabIds.includes(t.id));
   const mobileMoreIsActive = mobileMoreTabs.some(t => t.id === tab);
   const mobileMoreBadge = mobileMoreTabs.reduce((s, t) => s + (t.badge || 0), 0);
   const userInitial = (displayName || "?").trim().charAt(0).toUpperCase();

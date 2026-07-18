@@ -8,6 +8,7 @@ import { normalizePhoneToE164 } from '../lib/validationHelpers'
 import { mapPhoneAuthErrorMessage } from '../lib/authErrorMessages'
 import { TurnstileWidget } from '../components/TurnstileWidget'
 import { getTurnstileSiteKey, isTurnstileEnabled } from '../lib/turnstileConfig'
+import { writePendingSignupEmail } from '../lib/signupEmailPending'
 
 const PHONE_SIGNUP_PENDING_KEY = 'pm_phone_signup_pending_v1'
 
@@ -339,10 +340,14 @@ export function PhoneVerificationPage() {
         /* dashboard er gated på email_confirmed_at — fortsæt til email-trin */
       }
 
+      writePendingSignupEmail({ email: effectiveEmail, phone: pendingPhone || undefined })
       setInfo(
         'Telefon bekræftet (trin 2/3). Du bliver logget ud nu — det er med vilje. Næste trin: åbn linket i emailen (trin 3/3), og log derefter ind.',
       )
-      navigate('/opret/bekraeft-email', { replace: true, state: { email: effectiveEmail } })
+      navigate('/opret/bekraeft-email', {
+        replace: true,
+        state: { email: effectiveEmail, phone: pendingPhone || '' },
+      })
     } catch (e) {
       setErr(mapPhoneAuthErrorMessage(e?.message))
     } finally {

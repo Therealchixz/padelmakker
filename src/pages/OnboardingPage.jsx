@@ -449,16 +449,19 @@ export function OnboardingPage() {
     <div key={0}>
       <div style={{ textAlign: "center", padding: "0 8px 18px" }}>
         <div style={screenHeading}>Lad os lære dig at kende</div>
-        <div style={screenSub}>Det tager under 2 minutter</div>
+        <div style={screenSub}>Tre trin: profil → SMS → e-mail — derefter logger du ind</div>
       </div>
       {oauthSession ? (
         <div style={{ ...insetCard, marginBottom: "14px", fontSize: "12.5px", color: theme.textMid, lineHeight: 1.55 }}>
           Du er logget ind med <strong style={{ color: theme.text }}>{user?.email || "din konto"}</strong>. Udfyld resten af
-          profilen herunder.
+          profilen herunder. Du skal stadig bekræfte telefon med SMS (og e-mail, hvis den ikke er bekræftet).
         </div>
       ) : (
         <>
           <OAuthButtons redirectPath="/opret" disabled={submitting} onError={setErr} />
+          <p style={{ fontSize: "12px", color: theme.textLight, margin: "0 0 10px", lineHeight: 1.5, textAlign: "center" }}>
+            Google sparer dig for adgangskode — SMS-bekræftelse kræves stadig.
+          </p>
           <AuthDivider />
         </>
       )}

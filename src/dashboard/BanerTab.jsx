@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { theme, btn, inputStyle, heading, tag } from '../lib/platformTheme';
 import { BANER_REGION_SUBTITLE } from '../lib/banerRegions';
 import {
@@ -25,7 +25,9 @@ import { MapPin, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown, Searc
  * @typedef {{ name: string, slots: SlotRow[], available: string[], id?: string, shortName?: string, headerName?: string }} CourtRow
  */
 
-/** @typedef {{ courts: CourtRow[], dateLabel: string, fetchedAt: string, openBookingPath?: string, date?: string }} VenueLoadState */
+/** @typedef {{ courts: CourtRow[], dateLabel: string, fetchedAt: string, openBookingPath?: string, date?: string, scheduleDate?: string }} VenueLoadState */
+
+const BANER_CACHE_TTL_MS = 60_000;
 
 function banerSlotClass(status) {
   if (status === 'free') return 'pm-baner-slot pm-baner-slot--free';
@@ -103,6 +105,68 @@ export function BanerTab() {
   const [showBookingHelp, setShowBookingHelp] = useState(false);
   /** Kun render centre når region-fold er åben (performance ved 200+ centre). */
   const [expandedRegions, setExpandedRegions] = useState(() => new Set());
+  /** @type {React.MutableRefObject<Record<string, AbortController>>} */
+  const abortByVenueRef = useRef({});
+  const byVenueRef = useRef(byVenue);
+  byVenueRef.current = byVenue;
+
+  useEffect(() => () => {
+    Object.values(abortByVenueRef.current).forEach((ac) => {
+      try { ac.abort(); } catch { /* ignore */ }
+    });
+    abortByVenueRef.current = {};
+  }, []);
+
+  const venueHasFreshCache = useCallback((venueId, dateYmd) => {
+    const loaded = byVenueRef.current[venueId];
+    if (!loaded?.fetchedAt) return false;
+    const loadedDate = loaded.scheduleDate || loaded.date;
+    if (dateYmd && loadedDate && loadedDate !== dateYmd) return false;
+    const ts = Date.parse(loaded.fetchedAt);
+    if (!Number.isFinite(ts)) return false;
+    return Date.now() - ts < BANER_CACHE_TTL_MS;
+  }, []);
+
+  /**
+   * @param {string} venueId
+   * @param {string} url
+   * @param {(data: any, dateYmd: string) => VenueLoadState} mapPayload
+   * @param {{ dateYmd: string, force?: boolean }} opts
+   */
+  const fetchVenueSlots = useCallback(async (venueId, url, mapPayload, opts) => {
+    const dateYmd = opts.dateYmd;
+    const force = Boolean(opts.force);
+    if (!force && venueHasFreshCache(venueId, dateYmd)) return;
+
+    abortByVenueRef.current[venueId]?.abort();
+    const ac = new AbortController();
+    abortByVenueRef.current[venueId] = ac;
+
+    setLoadingVenue((m) => ({ ...m, [venueId]: true }));
+    setErrorVenue((m) => ({ ...m, [venueId]: null }));
+    try {
+      const r = await fetch(url, { credentials: 'omit', signal: ac.signal });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || `Fejl ${r.status}`);
+      }
+      const data = await r.json();
+      if (ac.signal.aborted) return;
+      setByVenue((m) => ({
+        ...m,
+        [venueId]: mapPayload(data, dateYmd),
+      }));
+    } catch (e) {
+      if (e?.name === 'AbortError') return;
+      console.error(e);
+      setErrorVenue((m) => ({ ...m, [venueId]: e.message || 'Kunne ikke hente tider' }));
+      setByVenue((m) => ({ ...m, [venueId]: null }));
+    } finally {
+      if (abortByVenueRef.current[venueId] === ac) {
+        setLoadingVenue((m) => ({ ...m, [venueId]: false }));
+      }
+    }
+  }, [venueHasFreshCache]);
 
   useEffect(() => {
     const q = venueSearch.trim();
@@ -132,141 +196,93 @@ export function BanerTab() {
     if (!open) closeVenuesInRegion(venues);
   }, [closeVenuesInRegion]);
 
-  const loadHalbookingVenue = useCallback(async (venueId, dateYmd) => {
-    setLoadingVenue((m) => ({ ...m, [venueId]: true }));
-    setErrorVenue((m) => ({ ...m, [venueId]: null }));
-    try {
-      const r = await fetch(halbookingSlotsUrl(venueId, dateYmd), { credentials: 'omit' });
-      if (!r.ok) {
-        const j = await r.json().catch(() => ({}));
-        throw new Error(j.error || `Fejl ${r.status}`);
-      }
-      const data = await r.json();
-      const today = copenhagenDateYmd();
-      const courtsRaw = data.courts || [];
-      const courts = filterPastSlotsIfToday(courtsRaw, data.scheduleDate || null, today);
-      const sched = data.scheduleDate || dateYmd || null;
-      if (sched) {
-        setHalbookingDateByVenue((m) => ({ ...m, [venueId]: sched }));
-      }
-      setByVenue((m) => ({
-        ...m,
-        [venueId]: {
+  const loadHalbookingVenue = useCallback(async (venueId, dateYmd, opts = {}) => {
+    await fetchVenueSlots(
+      venueId,
+      halbookingSlotsUrl(venueId, dateYmd),
+      (data, reqDate) => {
+        const today = copenhagenDateYmd();
+        const courtsRaw = data.courts || [];
+        const courts = filterPastSlotsIfToday(courtsRaw, data.scheduleDate || null, today);
+        const sched = data.scheduleDate || reqDate || null;
+        if (sched) {
+          setHalbookingDateByVenue((m) => ({ ...m, [venueId]: sched }));
+        }
+        return {
           courts,
           dateLabel: data.dateLabel || '',
           scheduleDate: data.scheduleDate || null,
-          fetchedAt: data.fetchedAt || '',
+          fetchedAt: data.fetchedAt || new Date().toISOString(),
           openBookingPath:
             data.openBookingPath || halbookingOpenVenueUrl(venueId, sched || undefined),
-        },
-      }));
-    } catch (e) {
-      console.error(e);
-      setErrorVenue((m) => ({ ...m, [venueId]: e.message || 'Kunne ikke hente tider' }));
-      setByVenue((m) => ({ ...m, [venueId]: null }));
-    } finally {
-      setLoadingVenue((m) => ({ ...m, [venueId]: false }));
-    }
-  }, []);
+        };
+      },
+      { dateYmd, force: Boolean(opts.force) },
+    );
+  }, [fetchVenueSlots]);
 
-  const loadBookliVenue = useCallback(async (venueId, dateYmd) => {
-    setLoadingVenue((m) => ({ ...m, [venueId]: true }));
-    setErrorVenue((m) => ({ ...m, [venueId]: null }));
-    try {
-      const r = await fetch(bookliSlotsUrl(venueId, dateYmd), { credentials: 'omit' });
-      if (!r.ok) {
-        const j = await r.json().catch(() => ({}));
-        throw new Error(j.error || `Fejl ${r.status}`);
-      }
-      const data = await r.json();
-      const today = copenhagenDateYmd();
-      const scheduleDate = data.date || dateYmd;
-      const courtsRaw = data.courts || [];
-      const courts = filterPastSlotsIfToday(courtsRaw, scheduleDate, today);
-      setByVenue((m) => ({
-        ...m,
-        [venueId]: {
+  const loadBookliVenue = useCallback(async (venueId, dateYmd, opts = {}) => {
+    await fetchVenueSlots(
+      venueId,
+      bookliSlotsUrl(venueId, dateYmd),
+      (data, reqDate) => {
+        const today = copenhagenDateYmd();
+        const scheduleDate = data.date || reqDate;
+        const courtsRaw = data.courts || [];
+        const courts = filterPastSlotsIfToday(courtsRaw, scheduleDate, today);
+        return {
           courts,
           dateLabel: data.dateLabel || '',
           scheduleDate,
-          fetchedAt: data.fetchedAt || '',
+          fetchedAt: data.fetchedAt || new Date().toISOString(),
           date: scheduleDate,
-        },
-      }));
-    } catch (e) {
-      console.error(e);
-      setErrorVenue((m) => ({ ...m, [venueId]: e.message || 'Kunne ikke hente tider' }));
-      setByVenue((m) => ({ ...m, [venueId]: null }));
-    } finally {
-      setLoadingVenue((m) => ({ ...m, [venueId]: false }));
-    }
-  }, []);
+        };
+      },
+      { dateYmd, force: Boolean(opts.force) },
+    );
+  }, [fetchVenueSlots]);
 
-  const loadMatchiVenue = useCallback(async (venueId, dateYmd) => {
-    setLoadingVenue((m) => ({ ...m, [venueId]: true }));
-    setErrorVenue((m) => ({ ...m, [venueId]: null }));
-    try {
-      const r = await fetch(matchiSlotsUrl(venueId, dateYmd), { credentials: 'omit' });
-      if (!r.ok) {
-        const j = await r.json().catch(() => ({}));
-        throw new Error(j.error || `Fejl ${r.status}`);
-      }
-      const data = await r.json();
-      const today = copenhagenDateYmd();
-      const scheduleDate = data.scheduleDate || data.date || dateYmd;
-      const courtsRaw = data.courts || [];
-      const courts = filterPastSlotsIfToday(courtsRaw, scheduleDate, today);
-      setByVenue((m) => ({
-        ...m,
-        [venueId]: {
+  const loadMatchiVenue = useCallback(async (venueId, dateYmd, opts = {}) => {
+    await fetchVenueSlots(
+      venueId,
+      matchiSlotsUrl(venueId, dateYmd),
+      (data, reqDate) => {
+        const today = copenhagenDateYmd();
+        const scheduleDate = data.scheduleDate || data.date || reqDate;
+        const courtsRaw = data.courts || [];
+        const courts = filterPastSlotsIfToday(courtsRaw, scheduleDate, today);
+        return {
           courts,
           dateLabel: data.dateLabel || '',
           scheduleDate,
-          fetchedAt: data.fetchedAt || '',
+          fetchedAt: data.fetchedAt || new Date().toISOString(),
           date: scheduleDate,
-        },
-      }));
-    } catch (e) {
-      console.error(e);
-      setErrorVenue((m) => ({ ...m, [venueId]: e.message || 'Kunne ikke hente tider' }));
-      setByVenue((m) => ({ ...m, [venueId]: null }));
-    } finally {
-      setLoadingVenue((m) => ({ ...m, [venueId]: false }));
-    }
-  }, []);
+        };
+      },
+      { dateYmd, force: Boolean(opts.force) },
+    );
+  }, [fetchVenueSlots]);
 
-  const loadPlaytomicVenue = useCallback(async (venueId, dateYmd) => {
-    setLoadingVenue((m) => ({ ...m, [venueId]: true }));
-    setErrorVenue((m) => ({ ...m, [venueId]: null }));
-    try {
-      const r = await fetch(playtomicSlotsUrl(venueId, dateYmd), { credentials: 'omit' });
-      if (!r.ok) {
-        const j = await r.json().catch(() => ({}));
-        throw new Error(j.error || `Fejl ${r.status}`);
-      }
-      const data = await r.json();
-      const today = copenhagenDateYmd();
-      const scheduleDate = data.scheduleDate || data.date || dateYmd;
-      const courtsRaw = data.courts || [];
-      const courts = filterPastSlotsIfToday(courtsRaw, scheduleDate, today);
-      setByVenue((m) => ({
-        ...m,
-        [venueId]: {
+  const loadPlaytomicVenue = useCallback(async (venueId, dateYmd, opts = {}) => {
+    await fetchVenueSlots(
+      venueId,
+      playtomicSlotsUrl(venueId, dateYmd),
+      (data, reqDate) => {
+        const today = copenhagenDateYmd();
+        const scheduleDate = data.scheduleDate || data.date || reqDate;
+        const courtsRaw = data.courts || [];
+        const courts = filterPastSlotsIfToday(courtsRaw, scheduleDate, today);
+        return {
           courts,
           dateLabel: data.dateLabel || '',
           scheduleDate,
-          fetchedAt: data.fetchedAt || '',
+          fetchedAt: data.fetchedAt || new Date().toISOString(),
           date: scheduleDate,
-        },
-      }));
-    } catch (e) {
-      console.error(e);
-      setErrorVenue((m) => ({ ...m, [venueId]: e.message || 'Kunne ikke hente tider' }));
-      setByVenue((m) => ({ ...m, [venueId]: null }));
-    } finally {
-      setLoadingVenue((m) => ({ ...m, [venueId]: false }));
-    }
-  }, []);
+        };
+      },
+      { dateYmd, force: Boolean(opts.force) },
+    );
+  }, [fetchVenueSlots]);
 
   const openVenue = useCallback((v) => {
     setExpandedVenueId((prev) => {
@@ -276,19 +292,19 @@ export function BanerTab() {
       if (v.kind === 'halbooking') {
         const d = halbookingDateByVenue[v.id] || today;
         if (!halbookingDateByVenue[v.id]) setHalbookingDateByVenue((m) => ({ ...m, [v.id]: today }));
-        loadHalbookingVenue(v.id, d);
+        void loadHalbookingVenue(v.id, d, { force: false });
       } else if (v.kind === 'bookli') {
         const d = bookliDateByVenue[v.id] || today;
         if (!bookliDateByVenue[v.id]) setBookliDateByVenue((m) => ({ ...m, [v.id]: today }));
-        loadBookliVenue(v.id, d);
+        void loadBookliVenue(v.id, d, { force: false });
       } else if (v.kind === 'matchi') {
         const d = matchiDateByVenue[v.id] || today;
         if (!matchiDateByVenue[v.id]) setMatchiDateByVenue((m) => ({ ...m, [v.id]: today }));
-        loadMatchiVenue(v.id, d);
+        void loadMatchiVenue(v.id, d, { force: false });
       } else if (v.kind === 'playtomic') {
         const d = playtomicDateByVenue[v.id] || today;
         if (!playtomicDateByVenue[v.id]) setPlaytomicDateByVenue((m) => ({ ...m, [v.id]: today }));
-        loadPlaytomicVenue(v.id, d);
+        void loadPlaytomicVenue(v.id, d, { force: false });
       } else if (v.kind === 'link') {
         if (!linkDateByVenue[v.id]) setLinkDateByVenue((m) => ({ ...m, [v.id]: today }));
       }
@@ -663,7 +679,7 @@ export function BanerTab() {
                       </label>
                       <button
                         type="button"
-                        onClick={() => loadMatchiVenue(v.id, matchiDate)}
+                        onClick={() => loadMatchiVenue(v.id, matchiDate, { force: true })}
                         disabled={loading}
                         className="pm-baner-btn-icon"
                         style={{ ...btn(false), fontSize: '13px', opacity: loading ? 0.65 : 1 }}
@@ -755,7 +771,7 @@ export function BanerTab() {
                       </label>
                       <button
                         type="button"
-                        onClick={() => loadPlaytomicVenue(v.id, playtomicDate)}
+                        onClick={() => loadPlaytomicVenue(v.id, playtomicDate, { force: true })}
                         disabled={loading}
                         className="pm-baner-btn-icon"
                         style={{ ...btn(false), fontSize: '13px', opacity: loading ? 0.65 : 1 }}
@@ -847,7 +863,7 @@ export function BanerTab() {
                       </label>
                       <button
                         type="button"
-                        onClick={() => loadBookliVenue(v.id, bookliDate)}
+                        onClick={() => loadBookliVenue(v.id, bookliDate, { force: true })}
                         disabled={loading}
                         className="pm-baner-btn-icon"
                         style={{ ...btn(false), fontSize: '13px', opacity: loading ? 0.65 : 1 }}
@@ -959,7 +975,7 @@ export function BanerTab() {
                       </a>
                       <button
                         type="button"
-                        onClick={() => loadHalbookingVenue(v.id, halbookingDate)}
+                        onClick={() => loadHalbookingVenue(v.id, halbookingDate, { force: true })}
                         disabled={loading}
                         className="pm-baner-btn-icon"
                         style={{ ...btn(false), fontSize: '13px', opacity: loading ? 0.65 : 1 }}

@@ -1,4 +1,4 @@
-import { ChevronLeft, MoreVertical } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { ChatInitialsAvatar } from './ChatInitialsAvatar';
 import { tag, theme } from '../../lib/platformTheme';
 
@@ -34,11 +34,7 @@ export function ChatThreadHeader({
       {levelTag && (
         <span style={tag(theme.amberBg, theme.amberText)}>{levelTag}</span>
       )}
-      {actionsSlot || (
-        <button type="button" className="pm-chat-v2-thread-more" aria-label="Flere valg" disabled>
-          <MoreVertical size={18} aria-hidden />
-        </button>
-      )}
+      {actionsSlot || null}
     </div>
   );
 }
