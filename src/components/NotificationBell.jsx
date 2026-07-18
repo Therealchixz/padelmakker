@@ -28,39 +28,15 @@ import {
   kampeFocusFooterLabel,
   kampeFocusOpensChat,
 } from '../lib/kampeFocusNavigation';
+import {
+  deleteNotificationsForUser,
+  emitNotificationsSync,
+  loadDismissedIds,
+  NOTIFICATIONS_SYNC_EVENT,
+} from '../lib/notificationDismissStorage';
 
-const DISMISSED_MAX = 400;
 const NOTIF_REFRESH_INTERVAL_MS = 10000;
 const REALTIME_RETRY_DELAY_MS = 1500;
-
-/** Lokalt afviste id'er — så de ikke kommer tilbage ved refresh hvis DELETE fejler stille (0 rækker / RLS). */
-function dismissedStorageKey(userId) {
-  return `pm_notif_dismissed_${userId}`;
-}
-
-function loadDismissedIds(userId) {
-  if (!userId) return new Set();
-  try {
-    const raw = localStorage.getItem(dismissedStorageKey(userId));
-    const arr = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(arr) ? arr.filter((x) => typeof x === 'string') : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function addDismissedIds(userId, ids) {
-  if (!userId || !ids.length) return;
-  const s = loadDismissedIds(userId);
-  for (const id of ids) s.add(id);
-  const arr = [...s];
-  const trimmed = arr.length > DISMISSED_MAX ? arr.slice(-DISMISSED_MAX) : arr;
-  try {
-    localStorage.setItem(dismissedStorageKey(userId), JSON.stringify(trimmed));
-  } catch {
-    /* ignore quota */
-  }
-}
 
 export function NotificationBell({ tourForceOpen = false }) {
   const { user: authUser, profile, updateProfile } = useAuth();
@@ -315,7 +291,7 @@ export function NotificationBell({ tourForceOpen = false }) {
       window.addEventListener("focus", syncIfVisible);
       window.addEventListener("pageshow", syncIfVisible);
       window.addEventListener("online", syncIfVisible);
-      window.addEventListener("pm-notifications-sync", onNotificationsSync);
+      window.addEventListener(NOTIFICATIONS_SYNC_EVENT, onNotificationsSync);
     }
     return () => {
       clearInterval(intervalId);
@@ -326,7 +302,7 @@ export function NotificationBell({ tourForceOpen = false }) {
         window.removeEventListener("focus", syncIfVisible);
         window.removeEventListener("pageshow", syncIfVisible);
         window.removeEventListener("online", syncIfVisible);
-        window.removeEventListener("pm-notifications-sync", onNotificationsSync);
+        window.removeEventListener(NOTIFICATIONS_SYNC_EVENT, onNotificationsSync);
       }
     };
   }, [load]);
@@ -370,25 +346,12 @@ export function NotificationBell({ tourForceOpen = false }) {
     const idSet = new Set(ids);
     const prevNotifs = notifs;
     setNotifs((prev) => prev.filter((n) => !idSet.has(n.id)));
-    emitNotificationsSync();
 
-    const { data, error } = await supabase
-      .from("notifications")
-      .delete()
-      .in("id", ids)
-      .eq("user_id", userId)
-      .select("id");
-
-    if (error || !data?.length) {
-      console.warn(
-        "notifications delete:",
-        error?.message || error || "ingen række slettet (tjek RLS / kør notifications_add_delete_policy.sql)",
-      );
+    const deleted = await deleteNotificationsForUser(supabase, userId, ids);
+    if (!deleted.length) {
       setNotifs(prevNotifs);
       void load();
-      return;
     }
-    addDismissedIds(userId, ids);
   };
 
   const clearAll = async () => {
@@ -396,25 +359,12 @@ export function NotificationBell({ tourForceOpen = false }) {
     const ids = notifs.map((n) => n.id);
     const prevNotifs = notifs;
     setNotifs([]);
-    emitNotificationsSync();
 
-    const { data, error } = await supabase
-      .from("notifications")
-      .delete()
-      .in("id", ids)
-      .eq("user_id", userId)
-      .select("id");
-
-    if (error || !data?.length) {
-      console.warn(
-        "notifications clear:",
-        error?.message || error || "ingen rækker slettet (tjek RLS / kør notifications_add_delete_policy.sql)",
-      );
+    const deleted = await deleteNotificationsForUser(supabase, userId, ids);
+    if (!deleted.length) {
       setNotifs(prevNotifs);
       void load();
-      return;
     }
-    addDismissedIds(userId, ids);
   };
 
   const markNotifRead = async (n) => {
@@ -619,12 +569,6 @@ export function NotificationBell({ tourForceOpen = false }) {
     justifyContent: "center",
     flexShrink: 0,
     WebkitTapHighlightColor: "transparent",
-  };
-
-  const emitNotificationsSync = () => {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("pm-notifications-sync"));
-    }
   };
 
   return (

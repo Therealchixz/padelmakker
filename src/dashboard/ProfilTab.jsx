@@ -35,6 +35,8 @@ import {
   TOURNAMENT_MODE_LABEL,
   TOURNAMENT_RANKING_LABEL,
 } from '../lib/tournamentCopy';
+import { fetchUsersIBlocked, unblockUser } from '../lib/userModeration';
+import { fetchProfilesByIdMap } from '../lib/profileQueries';
 
 const PROFILE_OVERVIEW_TABS = [
   { id: '2v2', label: '2v2' },
@@ -153,6 +155,38 @@ export function ProfilTab({ user, showToast, setTab }) {
   const displayName = resolveDisplayName(user, authUser);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState(/** @type {{ id: string, name: string }[]} */ ([]));
+  const [blockedLoading, setBlockedLoading] = useState(false);
+  const [unblockingId, setUnblockingId] = useState(/** @type {string | null} */ (null));
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user?.id || !editing) return undefined;
+    setBlockedLoading(true);
+    void (async () => {
+      try {
+        const ids = [...(await fetchUsersIBlocked(user.id))];
+        if (!ids.length) {
+          if (!cancelled) setBlockedUsers([]);
+          return;
+        }
+        const map = await fetchProfilesByIdMap(ids, 'id, full_name, name');
+        if (cancelled) return;
+        setBlockedUsers(
+          ids.map((id) => ({
+            id,
+            name: resolveDisplayName(map[id] || { id }, null) || 'Spiller',
+          })),
+        );
+      } catch (e) {
+        console.warn('blocked users load:', e?.message || e);
+        if (!cancelled) setBlockedUsers([]);
+      } finally {
+        if (!cancelled) setBlockedLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, editing]);
   const eloSyncKey = `${user.elo_rating}|${user.games_played}|${user.games_won}`;
   const { bundleLoading, profileFresh, ratedRows } = useProfileEloBundle(user.id, eloSyncKey);
   const pStats = profileFresh || user;
@@ -218,9 +252,9 @@ export function ProfilTab({ user, showToast, setTab }) {
     setQuickCitySaving(true);
     try {
       await updateProfile({ city: trimmed || null });
-      showToast(trimmed ? 'By gemt' : 'By fjernet');
+      showToast(trimmed ? 'By gemt' : 'By fjernet', 'success');
     } catch (e) {
-      showToast(e?.message || 'Kunne ikke gemme by');
+      showToast(e?.message || 'Kunne ikke gemme by', 'error');
     } finally {
       setQuickCitySaving(false);
     }
@@ -477,10 +511,10 @@ export function ProfilTab({ user, showToast, setTab }) {
       setPendingAvatarFile(null);
       setAvatarPreviewUrl(null);
       setEditing(false);
-      showToast("Profil opdateret! ✅");
+      showToast('Profil opdateret!', 'success');
     } catch (e) {
       console.error(e);
-      showToast("Kunne ikke gemme. Prøv igen.");
+      showToast('Kunne ikke gemme. Prøv igen.', 'error');
     } finally { setSaving(false); }
   };
 
@@ -1416,6 +1450,57 @@ export function ProfilTab({ user, showToast, setTab }) {
         >
           <div style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
             Konto og privatliv
+          </div>
+          <div data-tour="blocked-users-section" style={{ marginBottom: '14px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: theme.text, marginBottom: '6px' }}>
+              Blokerede spillere
+            </div>
+            {blockedLoading ? (
+              <p style={{ margin: 0, fontSize: '13px', color: theme.textMid }}>Henter…</p>
+            ) : blockedUsers.length === 0 ? (
+              <p style={{ margin: 0, fontSize: '13px', color: theme.textMid }}>
+                Du har ikke blokeret nogen. Du kan blokere fra en spillerprofil eller i chat.
+              </p>
+            ) : (
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {blockedUsers.map((b) => (
+                  <li
+                    key={b.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      background: theme.surface,
+                      border: `1px solid ${theme.border}`,
+                    }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{b.name}</span>
+                    <button
+                      type="button"
+                      disabled={unblockingId === b.id}
+                      onClick={async () => {
+                        setUnblockingId(b.id);
+                        try {
+                          await unblockUser(b.id);
+                          setBlockedUsers((prev) => prev.filter((x) => x.id !== b.id));
+                          showToast?.(`${b.name} er ikke længere blokeret`, 'success');
+                        } catch (e) {
+                          showToast?.(e?.message || 'Kunne ikke fjerne blokering', 'error');
+                        } finally {
+                          setUnblockingId(null);
+                        }
+                      }}
+                      style={{ ...btn(false), fontSize: 12, padding: '6px 10px', opacity: unblockingId === b.id ? 0.6 : 1 }}
+                    >
+                      {unblockingId === b.id ? 'Fjerner…' : 'Fjern blokering'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <p style={{ margin: '0 0 10px', fontSize: '13px', color: theme.textMid, lineHeight: 1.5 }}>
             Vil du slette konto og persondata? Skriv til os — vi sletter typisk inden for 30 dage.

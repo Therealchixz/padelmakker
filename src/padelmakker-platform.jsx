@@ -59,19 +59,21 @@ export default function PadelMakker() {
         ? <Navigate to="/opret/bekraeft-telefon" replace />
         : null
     : null;
-  const [toast, setToast] = useState(null);
+  const [toast, setToast] = useState(/** @type {{ message: string, type: 'success'|'error'|'info' } | null} */ (null));
   const [resetMode, setResetMode] = useState(false);
   const toastTimerRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const showPublicLanding = new URLSearchParams(location.search).get("forside") === "1";
-  const showToast = useCallback((msg) => {
+  const showToast = useCallback((msg, type = 'info') => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToast(msg);
+    const tone = type === 'success' || type === 'error' ? type : 'info';
+    setToast({ message: String(msg || ''), type: tone });
+    const ms = tone === 'error' ? 4500 : 3000;
     toastTimerRef.current = setTimeout(() => {
       setToast(null);
       toastTimerRef.current = null;
-    }, 3000);
+    }, ms);
   }, []);
   const handleLogout = useCallback(async () => {
     await signOut();
@@ -130,10 +132,10 @@ export default function PadelMakker() {
       <ConfirmDialogProvider>
         <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text }}>
           {toast && (
-            <div className="pm-toast" role="status">{toast}</div>
+            <div className={`pm-toast pm-toast--${toast.type}`} role="status">{toast.message}</div>
           )}
           <Suspense fallback={<div className="pm-spinner" style={{ margin: "40px auto" }} />}>
-            <ResetPasswordPageLazy onDone={() => { setResetMode(false); navigate("/dashboard"); showToast("Adgangskode opdateret! ✅"); }} />
+            <ResetPasswordPageLazy onDone={() => { setResetMode(false); navigate("/dashboard"); showToast("Adgangskode opdateret!", "success"); }} />
           </Suspense>
           <CookieNoticeBar />
         </div>
@@ -145,7 +147,7 @@ export default function PadelMakker() {
     <ConfirmDialogProvider>
       <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, position: "relative" }}>
         {toast && (
-          <div className="pm-toast" role="status">{toast}</div>
+          <div className={`pm-toast pm-toast--${toast.type}`} role="status">{toast.message}</div>
         )}
         <Suspense
           fallback={

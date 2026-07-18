@@ -998,7 +998,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       setPadelCreateStepErr("");
       setCreatedMatchReceipt(created);
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setCreating(false); }
   };
 
@@ -1090,7 +1090,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
       showToast(result?.already_joined ? "Du er allerede tilmeldt kampen." : `Du er tilmeldt Hold ${joinedTeam}! ⚔️`);
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
@@ -1132,7 +1132,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         showToast(`Skiftet til Hold ${newTeam}! ⚔️`);
       }
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
@@ -1157,7 +1157,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       }
       await loadData();
     } catch (e) {
-      showToast(mapUserFacingError(e));
+      showToast(mapUserFacingError(e), 'error');
     } finally {
       setBusyId(null);
     }
@@ -1217,7 +1217,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         showToast("Du er afmeldt.");
       }
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
@@ -1252,7 +1252,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
           ? "Du har allerede anmodet om at deltage i denne kamp."
           : "Du står allerede på ventelisten.");
       } else {
-        showToast(mapUserFacingError(e));
+        showToast(mapUserFacingError(e), 'error');
       }
     }
     finally { setBusyId(null); }
@@ -1269,7 +1269,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       showToast("Du er fjernet fra ventelisten.");
       await loadData();
     } catch (e) {
-      showToast(mapUserFacingError(e));
+      showToast(mapUserFacingError(e), 'error');
     } finally { setBusyId(null); }
   };
 
@@ -1294,7 +1294,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       showToast(`${reqUserName} er godkendt og sat på Hold ${teamNum}!`);
       await markJoinRequestNotifsRead(matchId);
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
@@ -1312,7 +1312,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       showToast(`Anmodning fra ${reqUserName} afvist.`);
       await markJoinRequestNotifsRead(matchId);
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
@@ -1366,7 +1366,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
       showToast(mp.length === 0 ? "Spiller fjernet — kampen er annulleret." : "Spiller fjernet.");
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
@@ -1403,7 +1403,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       if (error) throw error;
       showToast("Kampen er startet! Held og lykke 🎾");
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
@@ -1468,7 +1468,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       if (String(detailMatchId) === String(matchId)) close2v2Detail();
       showToast("Kamp slettet.");
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
@@ -1486,7 +1486,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         await deactivateSeekingPlayer(match.id);
         showToast('Søgning stoppet.');
         await loadData();
-      } catch (e) { showToast(mapUserFacingError(e)); }
+      } catch (e) { showToast(mapUserFacingError(e), 'error'); }
       finally { setBusyId(null); }
       return;
     }
@@ -1524,7 +1524,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         );
       }
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
@@ -1860,7 +1860,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       refreshProfile();
       await reloadKampeEloBundle();
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 
@@ -1886,7 +1886,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
       showToast("Resultat afvist. Indrapportér igen.");
       await loadData();
-    } catch (e) { showToast(mapUserFacingError(e)); }
+    } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }
   };
 

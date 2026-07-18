@@ -102,17 +102,20 @@ test('LigaTab sends push for team invite flows', () => {
 
 test('NotificationBell invalidates prefs cache and rolls back on error', () => {
   const src = readSrc('src/components/NotificationBell.jsx');
+  const dismiss = readSrc('src/lib/notificationDismissStorage.js');
   assert.match(src, /invalidateNotificationPrefsCache/);
   assert.match(src, /setNotifPrefs\(prevPrefs\)/);
   assert.match(src, /\.eq\("user_id", userId\)/);
   assert.match(src, /loadSeqRef/);
   assert.match(src, /realtimeInstanceRef/);
   assert.match(src, /loadRef\.current/);
-  assert.match(src, /addDismissedIds\(userId, ids\)/);
-  const deleteFn = src.slice(src.indexOf('const deleteNotificationItem'));
-  const successDismiss = deleteFn.indexOf('addDismissedIds(userId, ids)');
-  const deleteCall = deleteFn.indexOf('.delete()');
-  assert.ok(successDismiss > deleteCall, 'addDismissedIds should run after delete in deleteNotificationItem');
+  assert.match(src, /deleteNotificationsForUser/);
+  assert.match(dismiss, /addDismissedIds/);
+  assert.match(dismiss, /\.delete\(\)/);
+  const deleteHelper = dismiss.slice(dismiss.indexOf('export async function deleteNotificationsForUser'));
+  const dismissCall = deleteHelper.indexOf('addDismissedIds(userId, deleted)');
+  const deleteCall = deleteHelper.indexOf('.delete()');
+  assert.ok(dismissCall > deleteCall, 'addDismissedIds should run after successful delete');
 });
 
 test('AuthContext profile load retries and exposes profileLoadError', () => {

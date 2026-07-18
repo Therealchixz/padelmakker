@@ -16,6 +16,8 @@ import { SeekingCallout, SeekingCalloutDetail } from '../components/SeekingCallo
 import { TWO_V_TWO_ELO_LABEL, TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { resolveAmericanoEloDisplay } from '../features/americano/americanoDisplayUtils';
 import { useAuth } from '../lib/AuthContext';
+import { BeskedChatActions } from '../components/BeskedChatActions';
+import { fetchUsersIBlocked } from '../lib/userModeration';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined, onInviteMatch = undefined }) {
   const open = !!player;
@@ -27,6 +29,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
 
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [iBlockedThem, setIBlockedThem] = useState(false);
   const [statsMode, setStatsMode] = useState('2v2');
   const [streakError, setStreakError] = useState(false);
   const [streakStats, setStreakStats] = useState({ currentStreak: 0, bestStreak: 0 });
@@ -60,12 +63,13 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
     setProfileRow(null);
     setLigaStats(null);
     setSharedHistory(null);
+    setIBlockedThem(false);
 
     const canLoadSharedHistory =
       currentProfile?.id && String(currentProfile.id) !== String(player.id);
 
     try {
-      const [pr, hist, amHist, teamsRes, myHistRes] = await Promise.all([
+      const [pr, hist, amHist, teamsRes, myHistRes, blockedSet] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', player.id).maybeSingle(),
         supabase.from('elo_history').select('*').eq('user_id', player.id).order('date', { ascending: true }),
         supabase
@@ -81,7 +85,11 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
             .eq('user_id', currentProfile.id)
             .not('match_id', 'is', null)
           : Promise.resolve({ data: [], error: null }),
+        currentProfile?.id
+          ? fetchUsersIBlocked(currentProfile.id).catch(() => new Set())
+          : Promise.resolve(new Set()),
       ]);
+      setIBlockedThem(blockedSet.has(String(player.id)));
 
       if (pr.error) throw pr.error;
 
@@ -554,6 +562,19 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
               <MessageCircle size={15} /> Send besked
             </button>
           )}
+          {currentProfile?.id && String(currentProfile.id) !== String(player.id) ? (
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }} data-tour="profile-moderation-actions">
+              <BeskedChatActions
+                otherUserId={player.id}
+                otherName={playerName}
+                iBlockedThem={iBlockedThem}
+                context="profile"
+                ariaLabel="Bloker eller anmeld spiller"
+                onBlocked={() => setIBlockedThem(true)}
+                onUnblocked={() => setIBlockedThem(false)}
+              />
+            </div>
+          ) : null}
         </div>
         </>
         )}

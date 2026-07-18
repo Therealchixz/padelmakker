@@ -17,6 +17,8 @@ export function BeskedChatActions({
   onBlocked,
   onUnblocked,
   onReported,
+  context = 'dm',
+  ariaLabel = 'Chat-indstillinger',
 }) {
   const ask = useConfirm();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -73,7 +75,7 @@ export function BeskedChatActions({
         reportedId: otherUserId,
         reason: reportReason,
         details: reportDetails,
-        context: 'dm',
+        context,
       });
       setReportOpen(false);
       setReportDetails('');
@@ -96,7 +98,7 @@ export function BeskedChatActions({
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
           disabled={busy}
-          aria-label="Chat-indstillinger"
+          aria-label={ariaLabel}
           aria-expanded={menuOpen}
           style={{
             ...btn(false),

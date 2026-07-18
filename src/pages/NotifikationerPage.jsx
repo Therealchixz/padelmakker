@@ -11,27 +11,12 @@ import {
   kampeFocusOpensChat,
 } from '../lib/kampeFocusNavigation';
 import { formatMatchDateDa, matchTimeLabel } from '../lib/matchDisplayUtils';
-
-const DISMISSED_MAX = 400;
-
-function dismissedStorageKey(userId) {
-  return `pm_notif_dismissed_${userId}`;
-}
-function loadDismissedIds(userId) {
-  try {
-    const raw = localStorage.getItem(dismissedStorageKey(userId));
-    const arr = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(arr) ? arr.filter((x) => typeof x === 'string') : []);
-  } catch { return new Set(); }
-}
-function addDismissedIds(userId, ids) {
-  if (!userId || !ids.length) return;
-  const s = loadDismissedIds(userId);
-  for (const id of ids) s.add(id);
-  const arr = [...s];
-  const trimmed = arr.length > DISMISSED_MAX ? arr.slice(-DISMISSED_MAX) : arr;
-  try { localStorage.setItem(dismissedStorageKey(userId), JSON.stringify(trimmed)); } catch { /* ignore */ }
-}
+import {
+  deleteNotificationsForUser,
+  emitNotificationsSync,
+  loadDismissedIds,
+  NOTIFICATIONS_SYNC_EVENT,
+} from '../lib/notificationDismissStorage';
 
 function NotifIcon({ type }) {
   const iconStyle = { width: 18, height: 18, strokeWidth: 2.2, flexShrink: 0 };
@@ -152,8 +137,8 @@ export function NotifikationerPage({ onBack }) {
 
   useEffect(() => {
     const onSync = () => { void load(); };
-    window.addEventListener('pm-notifications-sync', onSync);
-    return () => window.removeEventListener('pm-notifications-sync', onSync);
+    window.addEventListener(NOTIFICATIONS_SYNC_EVENT, onSync);
+    return () => window.removeEventListener(NOTIFICATIONS_SYNC_EVENT, onSync);
   }, [load]);
 
   const displayNotifs = useMemo(() => {
@@ -198,7 +183,7 @@ export function NotifikationerPage({ onBack }) {
       if (error) throw error;
       setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadTotal(0);
-      if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
+      emitNotificationsSync();
     } catch (err) {
       console.warn('notifications markAllRead:', err?.message || err);
       void load();
@@ -211,12 +196,17 @@ export function NotifikationerPage({ onBack }) {
     const ids = Array.isArray(n?.notifIds) ? n.notifIds : [n?.id].filter(Boolean);
     if (!ids.length || !userId) return;
     const idSet = new Set(ids);
+    const prevNotifs = notifs;
     const unreadRemoved = notifs.filter((x) => idSet.has(x.id) && !x.read).length;
-    setNotifs(prev => prev.filter(x => !idSet.has(x.id)));
+    setNotifs((prev) => prev.filter((x) => !idSet.has(x.id)));
     if (unreadRemoved > 0) setUnreadTotal((prev) => Math.max(0, prev - unreadRemoved));
-    await supabase.from('notifications').delete().in('id', ids).eq('user_id', userId).select('id');
-    addDismissedIds(userId, ids);
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
+
+    const deleted = await deleteNotificationsForUser(supabase, userId, ids);
+    if (!deleted.length) {
+      setNotifs(prevNotifs);
+      if (unreadRemoved > 0) setUnreadTotal((prev) => prev + unreadRemoved);
+      void load();
+    }
   };
 
   const markNotifRead = async (n) => {
@@ -227,7 +217,7 @@ export function NotifikationerPage({ onBack }) {
     await supabase.from('notifications').update({ read: true }).in('id', ids).eq('user_id', userId);
     setNotifs((prev) => prev.map((x) => (idSet.has(x.id) ? { ...x, read: true } : x)));
     if (unreadMarked > 0) setUnreadTotal((prev) => Math.max(0, prev - unreadMarked));
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('pm-notifications-sync'));
+    emitNotificationsSync();
   };
 
   const openNotif = async (n) => {

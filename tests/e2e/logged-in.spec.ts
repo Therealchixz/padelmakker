@@ -65,4 +65,34 @@ test.describe('Logged-in dashboard flows', () => {
     await page.locator('[data-tour="account-menu-profile-btn"]').click()
     await expect(page.getByText('Overblik').first()).toBeVisible({ timeout: 20_000 })
   })
+
+  test('kan åbne Baner og se søgning/regioner', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/dashboard/baner')
+    await expect(page.getByRole('button', { name: 'Baner' }).first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByPlaceholder(/Søg center/i).first()).toBeVisible({ timeout: 20_000 })
+  })
+
+  test('kan åbne Beskeder-fanen', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/dashboard/beskeder')
+    await expect(page.getByRole('button', { name: 'Beskeder' }).first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText(/Ingen samtaler endnu|Søg|Ny besked|Beskeder/i).first()).toBeVisible({
+      timeout: 20_000,
+    })
+  })
+
+  test('profil-redigering viser blokerede spillere-sektion', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/dashboard')
+    await expect(async () => {
+      await page.locator('[data-tour="account-menu-btn"]').click()
+      await expect(page.locator('[data-tour="account-menu-dropdown"]')).toBeVisible({ timeout: 2_000 })
+    }).toPass({ timeout: 20_000 })
+    await page.locator('[data-tour="account-menu-profile-btn"]').click()
+    await expect(page.getByText('Overblik').first()).toBeVisible({ timeout: 20_000 })
+    await page.getByRole('button', { name: /^Rediger$/i }).first().click()
+    await expect(page.locator('[data-tour="blocked-users-section"]')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('Blokerede spillere')).toBeVisible()
+  })
 })

@@ -32,6 +32,12 @@ import {
 import { ActiveSeekingPanel } from '../components/ActiveSeekingPanel';
 import { PillTabs } from '../components/PillTabs';
 import { FILTER_RETURN_MAKKERE } from '../lib/filterReturnNavigation';
+import {
+  loadFavoritesForUser,
+  readLocalFavoritesSet,
+  toggleFavoriteForUser,
+  writeLocalFavoritesSet,
+} from '../lib/userFavorites';
 
 const isSeekingActive = (p) => isSeekingActiveProfile(p);
 
@@ -123,32 +129,6 @@ function PlayerBioPreview({ bio }) {
       )}
     </div>
   );
-}
-
-function favoritesKeyForUser(userId) {
-  return userId != null && String(userId).trim() !== ''
-    ? `pm_favorites_${String(userId)}`
-    : null;
-}
-
-function readFavoritesSet(userId) {
-  const key = favoritesKeyForUser(userId);
-  if (!key) return new Set();
-  try {
-    return new Set(JSON.parse(localStorage.getItem(key) || '[]'));
-  } catch {
-    return new Set();
-  }
-}
-
-function writeFavoritesSet(userId, set) {
-  const key = favoritesKeyForUser(userId);
-  if (!key) return;
-  try {
-    localStorage.setItem(key, JSON.stringify([...set]));
-  } catch {
-    /* quota */
-  }
 }
 
 function dismissedSuggKey(userId) {
@@ -272,7 +252,7 @@ export function MakkereTab({ user, showToast }) {
   const [page, setPage]               = useState(0);
   const [viewPlayer, setViewPlayer]   = useState(null);
   const [inviteTarget, setInviteTarget] = useState(null);
-  const [favorites, setFavorites]     = useState(() => readFavoritesSet(user?.id));
+  const [favorites, setFavorites]     = useState(() => readLocalFavoritesSet(user?.id));
   const [dismissedSugg, setDismissedSugg] = useState(() => readDismissedSugg(user?.id));
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [telemetryVersion, setTelemetryVersion] = useState(0);
@@ -332,16 +312,29 @@ export function MakkereTab({ user, showToast }) {
   }, [shouldShowSeekingFromUrl, loading]);
 
   useEffect(() => {
-    setFavorites(readFavoritesSet(user.id));
+    let cancelled = false;
+    setFavorites(readLocalFavoritesSet(user.id));
+    void loadFavoritesForUser(user.id).then((merged) => {
+      if (!cancelled) setFavorites(merged);
+    });
+    return () => { cancelled = true; };
   }, [user.id]);
 
   const toggleFavorite = (playerId) => {
-    setFavorites(prev => {
+    const id = String(playerId);
+    setFavorites((prev) => {
       const next = new Set(prev);
-      if (next.has(String(playerId))) next.delete(String(playerId));
-      else next.add(String(playerId));
-      writeFavoritesSet(user.id, next);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      writeLocalFavoritesSet(user.id, next);
       return next;
+    });
+    void toggleFavoriteForUser(user.id, id).then((synced) => {
+      setFavorites(synced);
+    }).catch((e) => {
+      console.warn('toggleFavorite cloud sync:', e?.message || e);
+      showToast?.('Kunne ikke synce favorit. Prøv igen.', 'error');
+      void loadFavoritesForUser(user.id).then(setFavorites);
     });
   };
 
@@ -359,7 +352,7 @@ export function MakkereTab({ user, showToast }) {
       console.error(e);
       const msg = 'Kunne ikke hente spillere. Tjek din forbindelse og prøv igen.';
       setLoadError(msg);
-      showToast(msg);
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }

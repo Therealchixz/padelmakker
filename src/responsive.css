@@ -1228,6 +1228,18 @@ button,
   background: var(--pm-accent);
   box-shadow: var(--pm-shadow-lg);
 }
+.pm-toast--info {
+  background: var(--pm-accent);
+  color: var(--pm-on-accent);
+}
+.pm-toast--success {
+  background: var(--pm-success, #1f7a4d);
+  color: #fff;
+}
+.pm-toast--error {
+  background: var(--pm-danger, #b42318);
+  color: #fff;
+}
 
 /* Kampe-kort header: undgå overflow på mobil */
 .pm-kampe-card-meta {
