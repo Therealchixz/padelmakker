@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { mapUserFacingError } from '../lib/userFacingErrors';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { theme, btn, inputStyle, labelStyle, font } from '../lib/platformTheme';
 import { Trophy, Plus, Check, Copy, ArrowRight } from 'lucide-react';
@@ -322,7 +323,7 @@ export function LigaTab({
       setSelectedPartner(null);
       await load();
     } catch (e) {
-      showToast(e.message.includes('unique') ? 'En af spillerne er allerede tilmeldt denne liga.' : 'Fejl: ' + e.message);
+      showToast(e.message.includes('unique') ? 'En af spillerne er allerede tilmeldt denne liga.' : mapUserFacingError(e));
     } finally { setBusyId(null); }
   };
 
@@ -352,7 +353,7 @@ export function LigaTab({
       }
       showToast('Du har accepteret invitationen! 🎾');
       await load();
-    } catch (e) { showToast('Fejl: ' + e.message); }
+    } catch (e) { showToast(mapUserFacingError(e)); }
     finally { setBusyId(null); }
   };
 
@@ -386,7 +387,7 @@ export function LigaTab({
       if (error) throw error;
       showToast('Invitation afvist.');
       await load();
-    } catch (e) { showToast('Fejl: ' + e.message); }
+    } catch (e) { showToast(mapUserFacingError(e)); }
     finally { setBusyId(null); }
   };
 
@@ -410,7 +411,7 @@ export function LigaTab({
       if (error) throw error;
       showToast('Hold afmeldt.');
       await load();
-    } catch (e) { showToast('Fejl: ' + e.message); }
+    } catch (e) { showToast(mapUserFacingError(e)); }
     finally { setBusyId(null); }
   };
 
@@ -433,7 +434,7 @@ export function LigaTab({
       if (error) throw error;
       showToast('Hold fjernet fra ligaen.');
       await load();
-    } catch (e) { showToast('Fejl: ' + e.message); }
+    } catch (e) { showToast(mapUserFacingError(e)); }
     finally { setBusyId(null); }
   };
 
@@ -454,7 +455,7 @@ export function LigaTab({
       showToast('Resultat registreret! 🎾');
       cancelReporting();
       await load();
-    } catch (e) { showToast('Fejl: ' + e.message); }
+    } catch (e) { showToast(mapUserFacingError(e)); }
     finally { setBusyId(null); }
   };
 
@@ -491,7 +492,7 @@ export function LigaTab({
       setCreatedLeagueReceipt({ id: created?.id, name: createForm.name.trim(), start_date: createForm.start_date, end_date: createForm.end_date, max_teams: maxT, num_divisions: createForm.num_divisions || 1, match_system: createForm.match_system, region: createForm.region, registration_deadline: createForm.registration_deadline, points_win: createForm.points_win, points_draw: createForm.points_draw, points_loss: createForm.points_loss });
       setCreateForm({ name: '', region: '', num_divisions: 1, registration_deadline: '', start_date: '', description: '', season_type: 'monthly', end_date: '', max_teams: '', match_system: 'round_robin', points_win: 3, points_draw: 1, points_loss: 0, promotion_spots: 2, relegation_spots: 2, rules_notes: '' });
       await load();
-    } catch (e) { showToast('Fejl: ' + e.message); }
+    } catch (e) { showToast(mapUserFacingError(e)); }
     finally { setBusyId(null); }
   };
 
@@ -537,7 +538,7 @@ export function LigaTab({
           : `Liga startet — runde 1 af ${totalRounds} genereret (${systemLabel}).`,
       );
       await load();
-    } catch (e) { showToast('Fejl: ' + e.message); }
+    } catch (e) { showToast(mapUserFacingError(e)); }
     finally { setBusyId(null); }
   };
 
@@ -600,7 +601,7 @@ export function LigaTab({
           : `Runde ${round}${totalRounds ? ` af ${totalRounds}` : ''} genereret!`,
       );
       await load();
-    } catch (e) { showToast('Fejl: ' + e.message); }
+    } catch (e) { showToast(mapUserFacingError(e)); }
     finally { setBusyId(null); }
   };
 
@@ -625,7 +626,7 @@ export function LigaTab({
       const { notifyLeagueCompleted } = await import('../lib/notifyKampeEntityComplete');
       void notifyLeagueCompleted(league, user.id);
       await load();
-    } catch (e) { showToast('Fejl: ' + e.message); }
+    } catch (e) { showToast(mapUserFacingError(e)); }
     finally { setBusyId(null); }
   };
 

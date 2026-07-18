@@ -27,6 +27,7 @@ import { PillTabs } from '../components/PillTabs';
 import { ProfileBadgeGallery } from '../components/ProfileBadgeGallery';
 import { getProfileBadges } from '../lib/profileBadges';
 import {
+  TWO_V_TWO_ELO_LABEL,
   TOURNAMENT_DATA_SOURCE,
   TOURNAMENT_ELO_GRAPH_EMPTY,
   TOURNAMENT_ELO_GRAPH_LABEL,
@@ -499,7 +500,7 @@ export function ProfilTab({ user, showToast, setTab }) {
     { label: "Turneringer", value: americanoPlayed || 0, color: theme.accent },
   ];
   const americanoOverviewCards = [
-    { label: "ELO", value: americanoElo, color: theme.accent },
+    { label: TOURNAMENT_ELO_LABEL, value: americanoElo, color: theme.accent },
     { label: "Americano/Mexicano", value: americanoPlayed, color: theme.text },
     { label: "Runder i alt", value: americanoRounds, color: theme.blue },
     { label: "Runder vundet", value: americanoWins, color: americanoOutcomeColors.win.text },
@@ -527,10 +528,10 @@ export function ProfilTab({ user, showToast, setTab }) {
   const activeModeLabel = PROFILE_MODE_LABELS[overviewMode] || overviewMode;
   const activeEloGraphData = isAmericanoMode ? americanoEloHistoryRows : eloHistory;
   const activeEloGraphLoading = isAmericanoMode ? americanoEloHistoryLoading : statsLoading;
-  const activeEloGraphLabel = isAmericanoMode ? TOURNAMENT_ELO_GRAPH_LABEL : "ELO";
+  const activeEloGraphLabel = isAmericanoMode ? TOURNAMENT_ELO_GRAPH_LABEL : TWO_V_TWO_ELO_LABEL;
   const activeEloGraphEmptyText = isAmericanoMode
     ? TOURNAMENT_ELO_GRAPH_EMPTY
-    : "Spil mindst 2 kampe for at se din ELO-graf.";
+    : `Spil mindst 2 kampe for at se din ${TWO_V_TWO_ELO_LABEL}-graf.`;
   const showPerformanceSection = is2v2Mode || isAmericanoMode;
   const show2v2RelationsSection =
     is2v2Mode
@@ -689,7 +690,7 @@ export function ProfilTab({ user, showToast, setTab }) {
             </p>
             <div style={{ display: 'flex', gap: 7, marginTop: 9, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
               {!statsLoading && is2v2Mode && elo != null ? (
-                <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>
+                <span style={tag(theme.accentBg, theme.accent)}>{TWO_V_TWO_ELO_LABEL} {elo}</span>
               ) : null}
               {user.level != null && user.level !== '' ? (
                 <span style={tag(theme.amberBg, theme.amberText)}>
@@ -711,7 +712,7 @@ export function ProfilTab({ user, showToast, setTab }) {
           {showPerformanceSection && (
             <div style={{ margin: '10px 18px 0', borderRadius: 16, padding: '17px', background: 'linear-gradient(150deg, var(--pm-navy-deep), var(--pm-navy-soft))', color: 'var(--pm-on-accent)', boxShadow: theme.shadowLg }}>
               <div style={{ fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--pm-hero-subtitle)', marginBottom: '6px' }}>
-                Aktuel Elo Rating · {activeModeLabel}
+                Aktuel {isAmericanoMode ? TOURNAMENT_ELO_LABEL : TWO_V_TWO_ELO_LABEL} · {activeModeLabel}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: '12px' }}>
                 <div style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
@@ -1240,14 +1241,14 @@ export function ProfilTab({ user, showToast, setTab }) {
             <button onClick={() => { persistRankingModeForProfile("2v2"); setTab("ranking"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
               <Trophy size={18} color={theme.warm} />
               <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>2v2-ranking</div>
-              <div style={{ fontSize: "11px", color: theme.textLight }}>ELO {elo}</div>
+              <div style={{ fontSize: "11px", color: theme.textLight }}>{TWO_V_TWO_ELO_LABEL} {elo}</div>
             </button>
           ) : null}
           {isAmericanoMode ? (
             <button onClick={() => { persistRankingModeForProfile("americano"); setTab("ranking"); }} style={{ background: theme.surface, borderRadius: theme.radius, padding: "16px", boxShadow: theme.shadow, border: "1px solid " + theme.border, cursor: "pointer", textAlign: "left", fontFamily: font }}>
               <Trophy size={18} color={theme.warm} />
               <div style={{ fontSize: "13px", fontWeight: 700, marginTop: "8px" }}>{TOURNAMENT_RANKING_LABEL}</div>
-              <div style={{ fontSize: "11px", color: theme.textLight }}>ELO {americanoElo}</div>
+              <div style={{ fontSize: "11px", color: theme.textLight }}>{TOURNAMENT_ELO_LABEL} {americanoElo}</div>
             </button>
           ) : null}
           {isLigaMode ? (

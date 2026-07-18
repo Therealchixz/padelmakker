@@ -1585,7 +1585,7 @@ export function AdminTab({ initialSubTab = null }) {
                           type="button"
                           onClick={() => setEditAmericanoTarget(t)}
                           className="pm-admin-action-btn pm-admin-action-btn--edit"
-                          title="Ret resultater og genberegn Americano/Mexicano ELO"
+                          title="Ret resultater og genberegn Turnerings-ELO"
                         >
                           <Edit2 size={16} />
                           Ret resultater

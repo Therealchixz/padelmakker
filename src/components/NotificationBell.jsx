@@ -840,7 +840,13 @@ export function NotificationBell({ tourForceOpen = false }) {
                 n.type === "user_report" && profile?.role === "admin";
               const kampeTarget = notificationKampeTarget(n);
               const isEloProfile = n.type === 'elo_change' && !kampeTarget;
-              const isClickable = Boolean(kampeTarget) || isAdminResultError || isAdminUserReport || isEloProfile;
+              const isMakkerSuggestion = n.type === 'makker_suggestion' && Boolean(n.entity_id);
+              const isClickable =
+                Boolean(kampeTarget)
+                || isAdminResultError
+                || isAdminUserReport
+                || isEloProfile
+                || isMakkerSuggestion;
               const isMatchChatGroup = n.type === "match_chat_group";
               const itemTitle = isMatchChatGroup
                 ? (n.unreadCount > 0 ? "Nye beskeder i kamp-chat" : "Beskeder i kamp-chat")

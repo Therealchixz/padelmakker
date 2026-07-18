@@ -1,13 +1,21 @@
 /**
  * Brugertekster for det fælles turneringssystem (Americano + Mexicano).
  * DB/API bruger stadig americano_* — kun labels her.
+ *
+ * ELO-ordbog (brug overalt i UI):
+ * - TWO_V_TWO_ELO_LABEL = "2v2-ELO"
+ * - TOURNAMENT_ELO_LABEL = "Turnerings-ELO" (Americano + Mexicano)
  */
+
+/** Almindelig 2v2-kamp-rating */
+export const TWO_V_TWO_ELO_LABEL = '2v2-ELO';
 
 export const TOURNAMENT_SECTION_LABEL = 'Americano/Mexicano';
 export const TOURNAMENT_KAMPE_TAB_LABEL = 'Americano/Mexicano';
-export const TOURNAMENT_ELO_LABEL = 'Americano/Mexicano ELO';
+/** Americano + Mexicano (adskilt fra 2v2-ELO) */
+export const TOURNAMENT_ELO_LABEL = 'Turnerings-ELO';
 export const TOURNAMENT_MODE_LABEL = 'Americano/Mexicano';
-export const TOURNAMENT_RANKING_LABEL = 'Americano/Mexicano-ranking';
+export const TOURNAMENT_RANKING_LABEL = 'Turnerings-ranking';
 export const TOURNAMENT_KAMPE_PATH = 'Kampe → Americano/Mexicano';
 
 export const TOURNAMENT_EMPTY = {
@@ -27,12 +35,12 @@ export const TOURNAMENT_LOAD_ERROR_TOAST =
   'Kunne ikke hente Americano/Mexicano. Tjek din forbindelse og prøv igen.';
 export const TOURNAMENT_LOGIN_REQUIRED = 'Log ind for at bruge Americano/Mexicano-modulet.';
 
-export const TOURNAMENT_ELO_GRAPH_LABEL = 'Americano/Mexicano ELO';
+export const TOURNAMENT_ELO_GRAPH_LABEL = 'Turnerings-ELO';
 export const TOURNAMENT_ELO_GRAPH_EMPTY =
-  'Afslut mindst 2 Americano/Mexicano for at se din Americano/Mexicano ELO-graf.';
+  'Afslut mindst 2 Americano/Mexicano for at se din Turnerings-ELO-graf.';
 export const TOURNAMENT_DATA_SOURCE = 'Datakilde: Americano og Mexicano';
 
-export const TOURNAMENT_RANKING_ALL_TIME = 'Samlet Americano/Mexicano ELO-rating';
+export const TOURNAMENT_RANKING_ALL_TIME = 'Samlet Turnerings-ELO';
 export const TOURNAMENT_RANKING_EMPTY_WEEK = 'Ingen Americano/Mexicano denne uge endnu';
 export const TOURNAMENT_RANKING_EMPTY_MONTH = 'Ingen Americano/Mexicano denne måned endnu';
 export const TOURNAMENT_RANKING_CTA = 'Afslut en Americano/Mexicano for at komme på ranglisten!';

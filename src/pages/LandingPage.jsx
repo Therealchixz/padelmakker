@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { font, theme, btn, heading } from '../lib/platformTheme';
 import { useScrollReveal } from '../lib/platformUtils';
-import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2, Shield, ListOrdered } from 'lucide-react';
+import { UserPlus, Users, MapPin, TrendingUp, Trophy, Swords, MessageCircle, Medal, MapPinned, LineChart, ArrowRight, CalendarDays, LifeBuoy, Smartphone, Menu, X, Sun, Moon, Mail, Info, CircleHelp, Share2, Shield, ListOrdered, LogIn } from 'lucide-react';
 import { useDarkMode } from '../lib/useDarkMode';
 import { fetchLandingPublicStats, formatLandingStatCount } from '../lib/landingPublicStats';
 import { shareInviteFriendToApp, shareResultToastMessage } from '../lib/shareUtils';
@@ -136,15 +136,15 @@ export function LandingPage() {
     { step: "01", icon: <UserPlus  size={24} color={theme.onAccent} />, title: "Opret profil", desc: "Bekræft telefon og e-mail, og vælg niveau, region, spillestil og spilledage — så andre kan finde dig rigtigt." },
     { step: "02", icon: <Users     size={24} color={theme.onAccent} />, title: "Find makker",  desc: "Se spillere nær dig, brug forslag og aktiv søgning, og invitér dem til en kamp uden Facebook-tråde." },
     { step: "03", icon: <MapPin    size={24} color={theme.onAccent} />, title: "Find kamp & bane", desc: "Opret eller tilslut dig 2v2, Liga eller Americano/Mexicano — og se ledige tider hos 150+ centre, når I skal booke." },
-    { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din rating", desc: "Bekræft resultater, følg 2v2- og Americano/Mexicano ELO på ranglisten, og find mere jævnbyrdige kampe næste gang." },
+    { step: "04", icon: <TrendingUp size={24} color={theme.onAccent} />, title: "Følg din rating", desc: "Bekræft resultater, følg 2v2-ELO og Turnerings-ELO på ranglisten, og find mere jævnbyrdige kampe næste gang." },
   ];
 
   const features = [
-    { icon: <Trophy size={22} color={theme.accent} />, title: "2v2 ELO-ranking", desc: "Dynamisk ELO med individuel forventning, sejrsmargin og fair udsving i dine 2v2-kampe." },
-    { icon: <Swords size={22} color={theme.accent} />, title: "2v2-kampe", desc: "Opret åbne eller lukkede kampe med venteliste og godkendelse. Bekræft resultater, før ELO opdateres." },
+    { icon: <Trophy size={22} color={theme.accent} />, title: "2v2-ELO", desc: "Dynamisk rating med individuel forventning, sejrsmargin og fair udsving i dine 2v2-kampe." },
+    { icon: <Swords size={22} color={theme.accent} />, title: "2v2-kampe", desc: "Opret åbne eller lukkede kampe med venteliste og godkendelse. Bekræft resultater, før 2v2-ELO opdateres." },
     { icon: <Shield size={22} color={theme.accent} />, title: "Liga", desc: "Opret eller deltag i holdligaer med stilling, kampprogram og hold-chat — Swiss, alle-mod-alle eller knockout." },
-    { icon: <Medal size={22} color={theme.accent} />, title: "Americano/Mexicano med ELO", desc: "Americano og Mexicano med automatisk rundeplan, fair parring og separat Americano/Mexicano ELO (adskilt fra 2v2)." },
-    { icon: <ListOrdered size={22} color={theme.accent} />, title: "Rangliste", desc: "Se dig selv og andre på 2v2- og turnerings-ELO — filtrer på region og periode." },
+    { icon: <Medal size={22} color={theme.accent} />, title: "Americano/Mexicano", desc: "Automatisk rundeplan, fair parring og separat Turnerings-ELO (adskilt fra 2v2-ELO)." },
+    { icon: <ListOrdered size={22} color={theme.accent} />, title: "Rangliste", desc: "Se dig selv og andre på 2v2-ELO og Turnerings-ELO — filtrer på region og periode." },
     { icon: <MapPinned size={22} color={theme.accent} />, title: "Ledige baner", desc: "Se live ledige tider via Halbooking, MATCHi, Bookli og Playtomic — og hop direkte videre til booking hos centret." },
     { icon: <MessageCircle size={22} color={theme.accent} />, title: "Beskeder & kamp-chat", desc: "Chat privat med makkere, eller i kampen og på holdet — aftal tider og hold kontakten." },
     { icon: <LineChart size={22} color={theme.accent} />, title: "Profil & udvikling", desc: "Følg din ELO over tid, se sejrsstreaks, bedste makker og kamphistorik — alt på ét sted." },
@@ -366,7 +366,30 @@ export function LandingPage() {
               >
                 <ArrowRight size={18} color={theme.accent} /> Gå til dashboard
               </button>
-            ) : null}
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate('/login');
+                  }}
+                  style={{ ...mobileMenuActionStyle, fontFamily: 'inherit', fontWeight: 700 }}
+                >
+                  <LogIn size={18} color={theme.accent} /> Log ind
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate('/opret');
+                  }}
+                  style={{ ...mobileMenuActionStyle, fontFamily: 'inherit', fontWeight: 700, color: theme.accent }}
+                >
+                  <UserPlus size={18} color={theme.accent} /> Opret gratis profil
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={() => {

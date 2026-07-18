@@ -9,6 +9,7 @@ import { isProfileMatchFeedVisible, isProfileMakkerFeedVisible } from '../lib/se
 import { DAYS_OF_WEEK } from '../lib/platformConstants';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { resolveAmericanoEloDisplay } from '../features/americano/americanoDisplayUtils';
+import { TWO_V_TWO_ELO_LABEL, TOURNAMENT_ELO_LABEL } from '../lib/tournamentCopy';
 
 function InfoRow({ label, value }) {
   if (value == null || value === '' || value === '—') return null;
@@ -95,9 +96,9 @@ export const AdminUserProfileOverview = memo(function AdminUserProfileOverview({
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 6 }}>
             {p.elo_rating != null ? (
-              <span style={tag(theme.accentBg, theme.accent)}>2v2 ELO {p.elo_rating}</span>
+              <span style={tag(theme.accentBg, theme.accent)}>{TWO_V_TWO_ELO_LABEL} {p.elo_rating}</span>
             ) : null}
-            <span style={tag(theme.blueBg, theme.blue)}>Americano/Mexicano ELO {americanoElo}</span>
+            <span style={tag(theme.blueBg, theme.blue)}>{TOURNAMENT_ELO_LABEL} {americanoElo}</span>
             {age ? <span style={tag(theme.blueBg, theme.blue)}>{age} år</span> : null}
             {location ? (
               <span style={tag(theme.warmBg, theme.amberText)}>

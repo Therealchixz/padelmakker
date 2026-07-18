@@ -16,6 +16,7 @@ import { PlayerProfileModal } from './PlayerProfileModal';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { PillTabs } from '../components/PillTabs';
 import {
+  TWO_V_TWO_ELO_LABEL,
   TOURNAMENT_ELO_LABEL,
   TOURNAMENT_MODE_LABEL,
   TOURNAMENT_RANKING_ALL_TIME,
@@ -563,7 +564,7 @@ export function RankingTab({ user }) {
   const periodInfo = {
     week: 'Nulstilles hver mandag',
     month: 'Nulstilles d. 1 i måneden',
-    all: isAmericano ? TOURNAMENT_RANKING_ALL_TIME : 'Samlet 2v2 ELO-rating',
+    all: isAmericano ? TOURNAMENT_RANKING_ALL_TIME : `Samlet ${TWO_V_TWO_ELO_LABEL}`,
   };
 
   const rankTotalLabel =
@@ -574,7 +575,7 @@ export function RankingTab({ user }) {
       : String(totalRanked ?? displaySorted.length);
 
   const rankModeTabs = [
-    { id: '2v2', label: '2v2 ELO' },
+    { id: '2v2', label: TWO_V_TWO_ELO_LABEL },
     { id: 'americano', label: TOURNAMENT_ELO_LABEL },
   ];
   const periodTabs = [
@@ -755,7 +756,7 @@ export function RankingTab({ user }) {
                     : displayScore}
             </div>
             <div style={{ fontSize: '10px', opacity: 0.65, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              {period === 'all' ? (isAmericano ? TOURNAMENT_ELO_LABEL : '2v2 ELO') : 'ELO ændring'}
+              {period === 'all' ? (isAmericano ? TOURNAMENT_ELO_LABEL : TWO_V_TWO_ELO_LABEL) : 'ELO-ændring'}
             </div>
           </div>
         </div>

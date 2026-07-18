@@ -28,6 +28,8 @@ import { sanitizeText } from '../lib/platformUtils';
 import { validateFirstLastName, canAccessDashboard, isValidProfileRegion } from '../lib/profileUtils';
 import { isPhoneVerificationExempt, fetchPhoneVerificationExemptFromServer } from '../lib/phoneVerification';
 import { isValidSignupEmail, isValidSignupPhone, normalizePhoneToE164 } from '../lib/validationHelpers';
+import { mapAuthErrorMessage } from '../lib/authErrorMessages';
+import { mapUserFacingError } from '../lib/userFacingErrors';
 
 import { savePendingAvatar, tagPendingAvatarEmail } from '../lib/avatarUpload';
 
@@ -425,7 +427,13 @@ export function OnboardingPage() {
         state: { phone: normalizedPhone, email: form.email.trim() },
       });
     } catch (e) {
-      setErr(e.message || "Kunne ikke oprette profil.");
+      const raw = String(e?.message || '');
+      const authMapped = mapAuthErrorMessage(raw, 'login');
+      setErr(
+        authMapped !== raw
+          ? authMapped
+          : mapUserFacingError(e, 'Kunne ikke oprette profil. Prøv igen.')
+      );
       if (turnstileEnabled) setCaptchaResetNonce((n) => n + 1);
     } finally {
       setSubmitting(false);

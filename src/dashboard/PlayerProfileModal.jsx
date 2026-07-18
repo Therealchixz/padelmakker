@@ -13,7 +13,7 @@ import { profileLevelDisplayText, formatPlaytomicLevel } from '../lib/padelLevel
 import { getPlayerSeekingDetails } from '../lib/seekingActivityLabel';
 import { AvatarCircle } from '../components/AvatarCircle';
 import { SeekingCallout, SeekingCalloutDetail } from '../components/SeekingCallout';
-import { TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
+import { TWO_V_TWO_ELO_LABEL, TOURNAMENT_ELO_LABEL, TOURNAMENT_MODE_LABEL } from '../lib/tournamentCopy';
 import { resolveAmericanoEloDisplay } from '../features/americano/americanoDisplayUtils';
 import { useAuth } from '../lib/AuthContext';
 
@@ -246,13 +246,13 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
         ]
       : statsMode === 'americano'
         ? [
-            { label: 'ELO', value: americanoElo, color: theme.accent },
+            { label: TOURNAMENT_ELO_LABEL, value: americanoElo, color: theme.accent },
             { label: 'Turn.', value: americanoPlayed, color: theme.blue },
             { label: 'Vundne', value: americanoWins, color: theme.warm },
             { label: 'Win %', value: americanoRounds > 0 ? `${americanoWinPct}%` : '—', color: theme.accent },
           ]
         : [
-            { label: 'ELO', value: elo, color: theme.accent },
+            { label: TWO_V_TWO_ELO_LABEL, value: elo, color: theme.accent },
             { label: 'Kampe', value: games, color: theme.blue },
             { label: 'Win %', value: games != null && games > 0 ? `${winPct}%` : '—', color: theme.accent },
             { label: 'Seneste form', value: null, form: recentForm },
@@ -336,7 +336,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
           <div style={{ display: 'flex', gap: '6px', marginTop: '9px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {pRef.court_side && <span style={tag(theme.navySoft, theme.onAccent)}>{pRef.court_side}</span>}
             {pRef.play_style && <span style={tag(theme.navySoft, theme.onAccent)}>{pRef.play_style}</span>}
-            {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>ELO {elo}</span>}
+            {!dataLoading && elo != null && <span style={tag(theme.accentBg, theme.accent)}>{TWO_V_TWO_ELO_LABEL} {elo}</span>}
             {levelDisplay ? (
               <span style={tag(theme.amberBg, theme.amberText)}>Niveau {formatPlaytomicLevel(pRef.level)}</span>
             ) : null}
