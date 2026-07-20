@@ -1,5 +1,5 @@
 -- Mit makker-filter: makker_search_prefs + notify_makker_watchers (niveau + region).
--- Makker-notifikationer: max 2/dag (kamp-watch har egne 2/dag — se discovery_notification_limits.sql).
+-- Makker-notifikationer: max 5/dag (kamp-watch har egne 5/dag — se discovery_notification_limits.sql).
 
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS makker_search_prefs jsonb NOT NULL DEFAULT '{}'::jsonb;
@@ -46,7 +46,7 @@ DECLARE
   v_filt_lo numeric;
   v_filt_hi numeric;
   v_max_per_subject constant integer := 8;
-  v_max_per_day constant integer := 2;
+  v_max_per_day constant integer := 5;
   v_inactive_days constant integer := 21;
   v_seek_ttl interval := interval '7 days';
 BEGIN

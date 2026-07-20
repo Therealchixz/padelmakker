@@ -55,7 +55,7 @@ DECLARE
   v_watcher_days jsonb;
   v_match_dow_key text;
   v_max_per_match constant integer := 8;
-  v_max_per_day constant integer := 2;
+  v_max_per_day constant integer := 5;
   v_default_elo_window constant integer := 250;
   v_inactive_days constant integer := 21;
 BEGIN

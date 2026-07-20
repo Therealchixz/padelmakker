@@ -17,9 +17,11 @@ import { createNotification, invalidateNotificationPrefsCache } from '../lib/not
 import { shouldShowIosInstallHint, dismissIosInstallHint } from '../lib/iosInstallPrompt';
 import {
   mergeNotificationPrefToggle,
+  mergeNotificationEmailToggle,
   mergeNotificationPushLevel,
   normalizeNotificationPrefs,
   NOTIFICATION_PUSH_CHANNELS,
+  NOTIFICATION_EMAIL_CHANNELS,
   NOTIFICATION_PUSH_LEVELS,
 } from '../lib/notificationPreferences';
 import {
@@ -719,6 +721,30 @@ export function NotificationBell({ tourForceOpen = false }) {
                 ))}
               </div>
             )}
+          </div>
+
+          <div style={{ padding: "8px 14px", borderBottom: "1px solid " + theme.border, background: theme.surface }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: theme.textMid, marginBottom: "6px" }}>
+              E-mail {prefsSaving ? "…" : ""}
+            </div>
+            <p style={{ margin: "0 0 8px", fontSize: "11px", color: theme.textLight, lineHeight: 1.4 }}>
+              Brugbar hvis du ikke har installeret appen som PWA — push virker kun i browser/PWA.
+            </p>
+            {NOTIFICATION_EMAIL_CHANNELS.map((ch) => (
+              <label
+                key={ch.id}
+                style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: theme.text, cursor: "pointer" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={notifPrefs.email?.[ch.id] === true}
+                  onChange={(e) => {
+                    void persistPrefs(mergeNotificationEmailToggle(notifPrefs, ch.id, e.target.checked));
+                  }}
+                />
+                {ch.label}
+              </label>
+            ))}
           </div>
 
           {/* iOS: push virker kun i en installeret PWA — guide brugeren til hjemmeskærmen */}

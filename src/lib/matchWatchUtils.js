@@ -1,10 +1,10 @@
 /**
  * Kamp-watch: notifikation når ny åben kamp passer (region + ELO).
- * Backend: notify_match_watchers RPC. Max 8/modtager-batch, 2 kamp-discovery/dag (makker har egne 2).
+ * Backend: notify_match_watchers RPC. Max 8/modtager-batch, 5 kamp-discovery/dag (makker har egne 5).
  */
 
 import { supabase } from './supabase';
-import { sendPushNotificationsForUsers } from './notifications';
+import { sendPushNotificationsForUsers, sendDiscoveryEmailsForUsers } from './notifications';
 
 /**
  * @param {string} matchId
@@ -33,6 +33,13 @@ export async function notifyMatchWatchersForMatch(matchId) {
 
   if (recipientIds.length > 0 && result.notify_title && result.notify_body) {
     void sendPushNotificationsForUsers(
+      recipientIds,
+      'match_watch_match',
+      result.notify_title,
+      result.notify_body,
+      matchId,
+    );
+    void sendDiscoveryEmailsForUsers(
       recipientIds,
       'match_watch_match',
       result.notify_title,

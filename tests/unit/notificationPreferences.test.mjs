@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   isPushChannelEnabled,
+  isEmailChannelEnabled,
   mergeNotificationPrefToggle,
+  mergeNotificationEmailToggle,
   normalizeNotificationPrefs,
 } from '../../src/lib/notificationPreferences.js';
 
@@ -23,4 +25,13 @@ test('mergeNotificationPrefToggle updates one channel', () => {
   const next = mergeNotificationPrefToggle(normalizeNotificationPrefs(null), 'chat', false);
   assert.equal(next.push.chat, false);
   assert.equal(next.push.kampe, true);
+  assert.equal(next.email.opdagelse, false);
+});
+
+test('email discovery channel is opt-in', () => {
+  const p = normalizeNotificationPrefs(null);
+  assert.equal(p.email.opdagelse, false);
+  const on = mergeNotificationEmailToggle(p, 'opdagelse', true);
+  assert.equal(on.email.opdagelse, true);
+  assert.equal(isEmailChannelEnabled(on, 'opdagelse'), true);
 });

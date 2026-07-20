@@ -9,6 +9,11 @@ export const NOTIFICATION_PUSH_CHANNELS = Object.freeze([
   { id: 'system', label: 'Vigtige beskeder (drift)' },
 ]);
 
+/** E-mail-kanaler (valgfri backup, fx uden PWA-push). */
+export const NOTIFICATION_EMAIL_CHANNELS = Object.freeze([
+  { id: 'opdagelse', label: 'Nye makkere/kampe der passer' },
+]);
+
 /** Overordnet niveau for push til telefonen (master over kanal-til/fra). */
 export const NOTIFICATION_PUSH_LEVELS = Object.freeze([
   { id: 'all', label: 'Alle' },
@@ -28,12 +33,16 @@ const DEFAULT_PREFS = Object.freeze({
     invitation: true,
     system: true,
   },
+  email: {
+    opdagelse: false,
+  },
 });
 
 export function normalizeNotificationPrefs(raw) {
   const base = {
     pushLevel: 'all',
     push: { ...DEFAULT_PREFS.push },
+    email: { ...DEFAULT_PREFS.email },
   };
   if (!raw || typeof raw !== 'object') return base;
   if (typeof raw.pushLevel === 'string' && VALID_PUSH_LEVELS.has(raw.pushLevel)) {
@@ -43,6 +52,12 @@ export function normalizeNotificationPrefs(raw) {
   for (const ch of NOTIFICATION_PUSH_CHANNELS) {
     if (typeof push[ch.id] === 'boolean') {
       base.push[ch.id] = push[ch.id];
+    }
+  }
+  const email = raw.email && typeof raw.email === 'object' ? raw.email : {};
+  for (const ch of NOTIFICATION_EMAIL_CHANNELS) {
+    if (typeof email[ch.id] === 'boolean') {
+      base.email[ch.id] = email[ch.id];
     }
   }
   return base;
@@ -56,12 +71,32 @@ export function isPushChannelEnabled(prefs, channel) {
   return normalized.push[key] !== false;
 }
 
+export function isEmailChannelEnabled(prefs, channel) {
+  const normalized = normalizeNotificationPrefs(prefs);
+  const key = String(channel || '');
+  if (!(key in normalized.email)) return false;
+  return normalized.email[key] === true;
+}
+
 export function mergeNotificationPrefToggle(prefs, channelId, enabled) {
   const normalized = normalizeNotificationPrefs(prefs);
   return {
     pushLevel: normalized.pushLevel,
     push: {
       ...normalized.push,
+      [channelId]: Boolean(enabled),
+    },
+    email: { ...normalized.email },
+  };
+}
+
+export function mergeNotificationEmailToggle(prefs, channelId, enabled) {
+  const normalized = normalizeNotificationPrefs(prefs);
+  return {
+    pushLevel: normalized.pushLevel,
+    push: { ...normalized.push },
+    email: {
+      ...normalized.email,
       [channelId]: Boolean(enabled),
     },
   };
@@ -72,6 +107,7 @@ export function mergeNotificationPushLevel(prefs, level) {
   return {
     pushLevel: VALID_PUSH_LEVELS.has(level) ? level : 'all',
     push: { ...normalized.push },
+    email: { ...normalized.email },
   };
 }
 

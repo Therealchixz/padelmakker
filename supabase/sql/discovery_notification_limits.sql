@@ -1,4 +1,4 @@
--- Discovery-notifikationer: separat daglig cap for kamp og makker (2 + 2, ikke 2 i alt).
+-- Discovery-notifikationer: separat daglig cap for kamp og makker (5 + 5, ikke 5 i alt).
 
 CREATE OR REPLACE FUNCTION public.discovery_notifications_today_count(
   p_user_id uuid,

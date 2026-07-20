@@ -39,7 +39,7 @@ DECLARE
   v_elo_min integer;
   v_elo_max integer;
   v_max_per_match constant integer := 8;
-  v_max_per_day constant integer := 2;
+  v_max_per_day constant integer := 5;
   v_elo_window constant integer := 250;
   v_inactive_days constant integer := 21;
 BEGIN

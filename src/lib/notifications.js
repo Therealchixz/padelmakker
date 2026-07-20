@@ -178,6 +178,61 @@ export async function sendPushNotificationsForUsers(
   );
 }
 
+/**
+ * Valgfri discovery-e-mail (makker/kamp-match) via edge function.
+ * Kun sendes hvis modtager har slået e-mail til — filtreres server-side.
+ */
+export async function sendDiscoveryEmailsForUsers(
+  userIds,
+  type,
+  title,
+  body,
+  matchId = null,
+  options = {},
+) {
+  const ids = normalizeNotificationRecipientIds(userIds);
+  if (ids.length === 0) return;
+  if (type !== 'makker_suggestion' && type !== 'match_watch_match') return;
+
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+
+    fetch(`${supabaseUrl}/functions/v1/send-discovery-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        targetUserIds: ids,
+        type,
+        title,
+        body,
+        matchId,
+        entityType: options.entityType || null,
+        entityId: options.entityId || null,
+      }),
+    })
+      .then(async (res) => {
+        if (res.ok) return;
+        let details = '';
+        try {
+          details = await res.text();
+        } catch {
+          /* ignore */
+        }
+        console.warn(`[email] send-discovery-email svarede ${res.status}${details ? `: ${details}` : ''}`);
+      })
+      .catch(() => { /* ignorér netværksfejl */ });
+  } catch {
+    /* ignorér */
+  }
+}
+
 export async function createNotificationsForUsers(
   userIds,
   type,

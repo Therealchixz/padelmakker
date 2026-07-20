@@ -197,7 +197,7 @@ DECLARE
   v_filt_lo numeric;
   v_filt_hi numeric;
   v_max_per_subject constant integer := 8;
-  v_max_per_day constant integer := 2;
+  v_max_per_day constant integer := 5;
   v_inactive_days constant integer := 21;
   v_seek_ttl interval := interval '7 days';
 BEGIN

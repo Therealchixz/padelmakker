@@ -93,8 +93,10 @@ export function FaqPage() {
 
       <Q title="Får jeg notifikationer?">
         <p style={{ margin: 0 }}>
-          Ja. Du kan få in-app-notifikationer og push (hvis du tillader det), fx om kampinvitationer, beskeder og
-          resultatbekræftelse. Du styrer præferencerne under profilen.
+          Ja. Du kan få in-app-notifikationer og push (hvis du tillader det i browseren eller har installeret appen
+          som PWA), fx om kampinvitationer, beskeder og resultatbekræftelse. Under notifikationer kan du også slå
+          e-mail til for nye makkere/kampe der passer — praktisk hvis du ikke bruger PWA. Du styrer præferencerne i
+          notifikationsklokken.
         </p>
       </Q>
 

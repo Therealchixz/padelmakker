@@ -3,7 +3,7 @@
  */
 
 import { supabase } from './supabase';
-import { sendPushNotificationsForUsers } from './notifications';
+import { sendPushNotificationsForUsers, sendDiscoveryEmailsForUsers } from './notifications';
 
 /**
  * @param {string} subjectUserId — spiller der lige er blevet synlig som søgende
@@ -30,13 +30,22 @@ export async function notifyMakkerWatchersForProfile(subjectUserId) {
     : [];
 
   if (recipientIds.length > 0 && result.notify_title && result.notify_body) {
+    const opts = { entityType: 'profile', entityId: subjectUserId };
     void sendPushNotificationsForUsers(
       recipientIds,
       'makker_suggestion',
       result.notify_title,
       result.notify_body,
       null,
-      { entityType: 'profile', entityId: subjectUserId },
+      opts,
+    );
+    void sendDiscoveryEmailsForUsers(
+      recipientIds,
+      'makker_suggestion',
+      result.notify_title,
+      result.notify_body,
+      null,
+      opts,
     );
   }
 

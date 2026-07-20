@@ -200,4 +200,4 @@ export function seekingVisibleDurationLabel(channel = 'makker') {
 }
 
 /** Max discovery-push/in-app pr. kanal (kamp og makker hver for sig). */
-export const DISCOVERY_NOTIFY_DAILY_PER_CHANNEL = 2;
+export const DISCOVERY_NOTIFY_DAILY_PER_CHANNEL = 5;
