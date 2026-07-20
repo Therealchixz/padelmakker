@@ -1439,9 +1439,10 @@ export function ProfilTab({ user, showToast, setTab }) {
         <textarea id="profil-bio" value={form.bio} onChange={e => set("bio", e.target.value)} placeholder="Fortæl lidt om dig som spiller..." style={{ ...inputStyle, height: "80px", resize: "vertical", marginBottom: "20px" }} />
 
         <div
+          data-tour="blocked-users-section"
           style={{
             marginTop: '20px',
-            marginBottom: '16px',
+            marginBottom: '12px',
             padding: '14px',
             borderRadius: theme.radius,
             border: `1px solid ${theme.border}`,
@@ -1449,58 +1450,71 @@ export function ProfilTab({ user, showToast, setTab }) {
           }}
         >
           <div style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
-            Konto og privatliv
+            Blokerede spillere
           </div>
-          <div data-tour="blocked-users-section" style={{ marginBottom: '14px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: theme.text, marginBottom: '6px' }}>
-              Blokerede spillere
-            </div>
-            {blockedLoading ? (
-              <p style={{ margin: 0, fontSize: '13px', color: theme.textMid }}>Henter…</p>
-            ) : blockedUsers.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '13px', color: theme.textMid }}>
-                Du har ikke blokeret nogen. Du kan blokere fra en spillerprofil eller i chat.
-              </p>
-            ) : (
-              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {blockedUsers.map((b) => (
-                  <li
-                    key={b.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 10,
-                      padding: '8px 10px',
-                      borderRadius: 8,
-                      background: theme.surface,
-                      border: `1px solid ${theme.border}`,
+          <p style={{ margin: '0 0 10px', fontSize: '13px', color: theme.textMid, lineHeight: 1.5 }}>
+            Blokerede spillere kan ikke sende dig beskeder. Du kan også blokere fra en spillerprofil eller i chat.
+          </p>
+          {blockedLoading ? (
+            <p style={{ margin: 0, fontSize: '13px', color: theme.textMid }}>Henter…</p>
+          ) : blockedUsers.length === 0 ? (
+            <p style={{ margin: 0, fontSize: '13px', color: theme.textMid }}>
+              Du har ikke blokeret nogen endnu.
+            </p>
+          ) : (
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {blockedUsers.map((b) => (
+                <li
+                  key={b.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    background: theme.surface,
+                    border: `1px solid ${theme.border}`,
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{b.name}</span>
+                  <button
+                    type="button"
+                    disabled={unblockingId === b.id}
+                    onClick={async () => {
+                      setUnblockingId(b.id);
+                      try {
+                        await unblockUser(b.id);
+                        setBlockedUsers((prev) => prev.filter((x) => x.id !== b.id));
+                        showToast?.(`${b.name} er ikke længere blokeret`, 'success');
+                      } catch (e) {
+                        showToast?.(e?.message || 'Kunne ikke fjerne blokering', 'error');
+                      } finally {
+                        setUnblockingId(null);
+                      }
                     }}
+                    style={{ ...btn(false), fontSize: 12, padding: '6px 10px', opacity: unblockingId === b.id ? 0.6 : 1 }}
                   >
-                    <span style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{b.name}</span>
-                    <button
-                      type="button"
-                      disabled={unblockingId === b.id}
-                      onClick={async () => {
-                        setUnblockingId(b.id);
-                        try {
-                          await unblockUser(b.id);
-                          setBlockedUsers((prev) => prev.filter((x) => x.id !== b.id));
-                          showToast?.(`${b.name} er ikke længere blokeret`, 'success');
-                        } catch (e) {
-                          showToast?.(e?.message || 'Kunne ikke fjerne blokering', 'error');
-                        } finally {
-                          setUnblockingId(null);
-                        }
-                      }}
-                      style={{ ...btn(false), fontSize: 12, padding: '6px 10px', opacity: unblockingId === b.id ? 0.6 : 1 }}
-                    >
-                      {unblockingId === b.id ? 'Fjerner…' : 'Fjern blokering'}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+                    {unblockingId === b.id ? 'Fjerner…' : 'Fjern blokering'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div
+          data-tour="account-deletion-section"
+          style={{
+            marginBottom: '16px',
+            padding: '14px',
+            borderRadius: theme.radius,
+            border: `1px solid ${theme.border}`,
+            background: theme.surface,
+          }}
+        >
+          <div style={{ fontSize: '12px', fontWeight: 700, color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+            Slet konto
           </div>
           <p style={{ margin: '0 0 10px', fontSize: '13px', color: theme.textMid, lineHeight: 1.5 }}>
             Vil du slette konto og persondata? Skriv til os — vi sletter typisk inden for 30 dage.
