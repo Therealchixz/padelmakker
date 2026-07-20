@@ -4,7 +4,7 @@
 // Secrets (samme Resend-setup som report-feedback):
 //   RESEND_API_KEY
 //   FEEDBACK_FROM_EMAIL (fallback: PadelMakker <kontakt@padelmakker.dk>)
-//   DISCOVERY_FROM_EMAIL (valgfri override)
+//   DISCOVERY_FROM_EMAIL (valgfri override — gerne noreply@ på verified domain)
 //   SITE_URL (valgfri; default https://www.padelmakker.dk)
 //   CORS_ALLOWED_ORIGINS (valgfri)
 //
@@ -68,14 +68,22 @@ function wantsDiscoveryEmail(prefs: unknown): boolean {
   return (email as { opdagelse?: unknown }).opdagelse === true;
 }
 
+/** Deep links ind i dashboard (ikke /app = install-guide). */
 function deepLink(type: string, matchId: string | null, entityId: string | null, siteUrl: string) {
   if (type === "match_watch_match" && matchId) {
-    return `${siteUrl}/kamp/${matchId}`;
+    return `${siteUrl}/dashboard/kampe/2v2/${encodeURIComponent(matchId)}`;
   }
-  if (type === "makker_suggestion" && entityId) {
-    return `${siteUrl}/app?tab=makkere`;
+  if (type === "makker_suggestion") {
+    // Notifikationer-fanen — klarere end makkere-listen når man kommer fra mail.
+    return `${siteUrl}/dashboard/notifikationer`;
   }
-  return `${siteUrl}/app?tab=notifikationer`;
+  return `${siteUrl}/dashboard/notifikationer`;
+}
+
+function ctaLabel(type: string) {
+  if (type === "match_watch_match") return "Se kampen";
+  if (type === "makker_suggestion") return "Se notifikation";
+  return "Åbn PadelMakker";
 }
 
 Deno.serve(async (req: Request) => {
@@ -182,6 +190,13 @@ Deno.serve(async (req: Request) => {
       "PadelMakker <kontakt@padelmakker.dk>";
     const siteUrl = String(Deno.env.get("SITE_URL") || "https://www.padelmakker.dk").replace(/\/+$/, "");
     const link = deepLink(type, matchId, entityId, siteUrl);
+    const prefsLink = `${siteUrl}/dashboard/notifikationer`;
+    const unsubMailto =
+      "mailto:kontakt@padelmakker.dk?subject=" +
+      encodeURIComponent("Afmeld makker/kamp-mails") +
+      "&body=" +
+      encodeURIComponent("Hej — afmeld venligst e-mail om nye makkere/kampe for denne konto.");
+    const buttonLabel = ctaLabel(type);
 
     let sent = 0;
     for (const userId of optedInIds) {
@@ -190,20 +205,26 @@ Deno.serve(async (req: Request) => {
       if (authErr || !toEmail) continue;
 
       const textBody =
-        `${title}\n\n${body}\n\nÅbn PadelMakker: ${link}\n\n` +
-        `Du får denne mail, fordi du har slået e-mail til for nye makkere/kampe under notifikationer.`;
+        `${title}\n\n${body}\n\n${buttonLabel}: ${link}\n\n` +
+        `Du får denne mail, fordi du har slået e-mail til for nye makkere/kampe i PadelMakker.\n` +
+        `Slå fra her: ${prefsLink}\n` +
+        `Eller svar/afmeld: ${unsubMailto.replace(/^mailto:/, "")}`;
 
       const htmlBody = `
-        <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;line-height:1.5;color:#111">
-          <h2 style="margin:0 0 12px;font-size:18px">${escapeHtml(title)}</h2>
+        <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;line-height:1.5;color:#111;max-width:560px">
+          <p style="margin:0 0 4px;font-size:13px;color:#666">PadelMakker</p>
+          <h1 style="margin:0 0 12px;font-size:18px;font-weight:700">${escapeHtml(title)}</h1>
           <p style="margin:0 0 16px">${escapeHtml(body)}</p>
-          <p style="margin:0 0 20px">
+          <p style="margin:0 0 24px">
             <a href="${escapeHtml(link)}" style="display:inline-block;padding:10px 16px;background:#0B6E4F;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">
-              Åbn i PadelMakker
+              ${escapeHtml(buttonLabel)}
             </a>
           </p>
-          <p style="margin:0;font-size:12px;color:#666">
-            Du får denne mail, fordi du har slået e-mail til for nye makkere/kampe under notifikationer.
+          <p style="margin:0 0 8px;font-size:12px;color:#666">
+            Du får denne mail, fordi du har slået e-mail til for nye makkere/kampe.
+            <a href="${escapeHtml(prefsLink)}" style="color:#0B6E4F">Administrér i appen</a>
+            ·
+            <a href="${escapeHtml(unsubMailto)}" style="color:#0B6E4F">Afmeld via e-mail</a>
           </p>
         </div>
       `.trim();
@@ -220,6 +241,10 @@ Deno.serve(async (req: Request) => {
           subject: title,
           text: textBody,
           html: htmlBody,
+          headers: {
+            // Mailto-afmelding (ingen one-click POST-endpoint endnu — undgå List-Unsubscribe-Post).
+            "List-Unsubscribe": `<${unsubMailto}>`,
+          },
         }),
       });
 
