@@ -36,9 +36,17 @@ test('playtomicSlotsUrl builds API path', () => {
   );
 });
 
+// Live-tests skal bruge en fremtidig dato — Playtomic returnerer ingen
+// ledige tider for datoer i fortiden (hardcodede datoer udløber).
+function upcomingSaturdayYmd() {
+  const d = new Date();
+  d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
+  return d.toISOString().slice(0, 10);
+}
+
 test('fetchPlaytomicSchedule returns free slots for Padelboxen', async () => {
   const cfg = getPlaytomicVenue('playtomic_padelboxen');
-  const dateYmd = '2026-07-18';
+  const dateYmd = upcomingSaturdayYmd();
   const result = await fetchPlaytomicSchedule(cfg, dateYmd);
   assert.ok(!result.error, result.error);
   assert.equal(result.scheduleDate, dateYmd);
@@ -52,7 +60,7 @@ test('fetchPlaytomicSchedule returns free slots for Padelboxen', async () => {
 });
 
 test('fetchPlaytomicSchedule resolves Padel 6100 court names', async () => {
-  const result = await fetchPlaytomicSchedule(getPlaytomicVenue('playtomic_padel6100'), '2026-07-18');
+  const result = await fetchPlaytomicSchedule(getPlaytomicVenue('playtomic_padel6100'), upcomingSaturdayYmd());
   assert.ok(!result.error, result.error);
   assert.ok(result.courts.length > 0);
   assert.ok(result.courts.some((c) => /Display Lager|Faxe Kondi|SPIRIT/i.test(c.name)));

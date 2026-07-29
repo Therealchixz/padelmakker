@@ -36,7 +36,10 @@ DECLARE
   v_confirmed_count integer := 0;
   v_elo_applied_count integer := 0;
   v_skipped_count integer := 0;
+  v_notified_count integer := 0;
   v_elo_result jsonb;
+  -- OBS: kolonnen i match_results hedder score_display (IKKE score_text).
+  v_score_text text;
 BEGIN
   FOR v_result IN
     SELECT *
@@ -83,12 +86,22 @@ BEGIN
     v_elo_result := public.apply_elo_for_match_system(v_result.id);
     IF (v_elo_result->>'success')::boolean IS TRUE THEN
       v_elo_applied_count := v_elo_applied_count + 1;
+      PERFORM public.notify_elo_changes_for_match(v_result.match_id);
     END IF;
+
+    -- Notify players that the result was auto-confirmed
+    v_score_text := coalesce(nullif(trim(v_result.score_display), ''), 'Resultat');
+
+    v_notified_count := v_notified_count + coalesce(
+      public.notify_auto_confirmed_match_result(v_result.match_id, v_score_text),
+      0
+    );
   END LOOP;
 
   RETURN jsonb_build_object(
     'confirmed', v_confirmed_count,
     'elo_applied', v_elo_applied_count,
+    'notified', v_notified_count,
     'skipped', v_skipped_count,
     'ran_at', now()
   );

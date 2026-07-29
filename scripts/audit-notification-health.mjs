@@ -54,9 +54,29 @@ function isLegacyNotificationSig(args) {
   return !args.includes('p_entity_type') && !args.includes('p_entity_id');
 }
 
+function migrationVersion(file) {
+  const m = /(\d{14})_/.exec(file.replace(/\\/g, '/').split('/').pop() || '');
+  return m ? m[1] : '';
+}
+
+// Legacy definitions are harmless when a LATER migration drops that overload
+// (migrations run in timestamp order and are never re-run).
+const dropOverloadFile = readdirSync(join(root, 'supabase/migrations')).find((name) =>
+  name.includes('drop_duplicate_notification_rpc_overloads'),
+);
+const dropOverloadVersion = dropOverloadFile ? migrationVersion(dropOverloadFile) : '';
+const dropOverloadSql = dropOverloadFile
+  ? read(join('supabase/migrations', dropOverloadFile))
+  : '';
+
 for (const [name, defs] of byName) {
   if (!name.startsWith('create_notification')) continue;
-  const legacy = defs.filter((d) => isLegacyNotificationSig(d.args));
+  const droppedLater = dropOverloadSql.includes(`DROP FUNCTION IF EXISTS public.${name}`);
+  const legacy = defs.filter(
+    (d) =>
+      isLegacyNotificationSig(d.args) &&
+      !(droppedLater && migrationVersion(d.file) < dropOverloadVersion),
+  );
   const modern = defs.filter((d) => !isLegacyNotificationSig(d.args));
   if (legacy.length > 0 && modern.length > 0) {
     issues.push({
