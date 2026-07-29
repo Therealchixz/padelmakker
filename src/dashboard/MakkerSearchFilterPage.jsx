@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
@@ -73,12 +73,29 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   const returnTo = filterReturnFromState(location.state);
   const returnLabel = filterReturnBackLabel(returnTo);
   const { updateProfile } = useAuth();
+  const headerRef = useRef(null);
   const initial = useMemo(
     () => normalizeMakkerSearchPrefs(user?.makker_search_prefs, user),
     [user],
   );
   const [prefs, setPrefs] = useState(initial);
   const [saving, setSaving] = useState(false);
+
+  // #region agent log
+  useEffect(() => {
+    const main = document.querySelector('.pm-dash-main');
+    const header = headerRef.current;
+    if (!main || !header) return;
+    const mainCs = getComputedStyle(main);
+    const headerCs = getComputedStyle(header);
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top)';
+    document.body.appendChild(probe);
+    const safeTop = getComputedStyle(probe).paddingTop;
+    probe.remove();
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'filter-header-postfix',hypothesisId:'A',location:'MakkerSearchFilterPage.jsx:header-measure',message:'Filter header spacing post-fix',data:{safeTop,mainPaddingTop:mainCs.paddingTop,headerPaddingTop:headerCs.paddingTop,mainClasses:main.className,headerOffsetTop:header.offsetTop,headerRectTop:Math.round(header.getBoundingClientRect().top),hasFilterClass:main.classList.contains('pm-dash-main--filter')},timestamp:Date.now()})}).catch(()=>{});
+  }, []);
+  // #endregion
 
   const profileLevel = profilePlaytomicLevel(user);
   const filterLevel = resolveMakkerFilterLevel(prefs, user);
@@ -161,7 +178,19 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   return (
     <div style={{ fontFamily: font }}>
       {/* Topbar — matches mockup */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'max(10px, calc(env(safe-area-inset-top) + 8px)) 14px 10px', borderBottom: '1px solid ' + theme.border, background: theme.surface, marginBottom: 0 }}>
+      <div
+        ref={headerRef}
+        className="pm-filter-page-header"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: 'max(10px, calc(env(safe-area-inset-top) + 8px)) 14px 10px',
+          borderBottom: '1px solid ' + theme.border,
+          background: theme.surface,
+          marginBottom: 0,
+        }}
+      >
         <button
           type="button"
           onClick={() => navigate(returnTo)}

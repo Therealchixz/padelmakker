@@ -110,7 +110,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
   };
 
   return (
-    <div style={{ fontFamily: font, maxWidth: 520, margin: '0 auto' }}>
+    <div style={{ fontFamily: font, maxWidth: 520, margin: '0 auto', paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
       <button
         type="button"
         onClick={() => navigate(returnTo)}
