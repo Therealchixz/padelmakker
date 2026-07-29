@@ -3655,7 +3655,12 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         </>
       )}
 
-      {/* Team selection modal */}
+      </>
+      )}
+      </>
+      )}
+
+      {/* Modals uden for liste/detail-gate — skal kunne åbne fra kampdetalje-siden */}
       {teamSelectMatch && (
         <TeamSelectModal
           matchPlayers={matchPlayers[teamSelectMatch] || []}
@@ -3664,7 +3669,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         />
       )}
 
-      {/* Result input modal */}
       {resultMatch && kampeFormat === "padel" && (() => {
         const matchObj = matches.find((m) => m.id === resultMatch);
         const mp = matchPlayers[resultMatch] || [];
@@ -3683,7 +3687,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         );
       })()}
 
-      {/* Confirm result modal */}
       {confirmModalMatchId && (() => {
         const matchObj = matches.find((m) => m.id === confirmModalMatchId);
         const mr = matchResults[confirmModalMatchId];
@@ -3710,13 +3713,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         );
       })()}
 
-      {/* Player profile modal */}
       {viewPlayer && <PlayerProfileModal player={viewPlayer} onClose={() => setViewPlayer(null)} />}
-
-      </>
-      )}
-      </>
-      )}
 
       {adminPinGateOpen ? (
         <AdminPinGate

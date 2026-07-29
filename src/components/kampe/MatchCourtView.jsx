@@ -74,17 +74,9 @@ export function MatchCourtView({
           type="button"
           className="pm-kd-slot-main"
           onClick={() => {
-            if (canSwitchPlayer) {
-              onSwitchPlayerTeam(matchId, player.user_id, otherTeam);
-              return;
-            }
             if (prof && onProfileClick) onProfileClick(prof);
           }}
-          aria-label={
-            canSwitchPlayer
-              ? `Flyt ${player.user_name || 'spiller'} til Hold ${otherTeam}`
-              : `Åbn profil for ${player.user_name || 'spiller'}`
-          }
+          aria-label={`Åbn profil for ${player.user_name || 'spiller'}`}
         >
           <AvatarCircle
             avatar={prof?.avatar || player.user_emoji || '🎾'}
