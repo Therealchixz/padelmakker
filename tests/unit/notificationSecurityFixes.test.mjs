@@ -121,9 +121,12 @@ test('NotificationBell invalidates prefs cache and rolls back on error', () => {
 test('AuthContext profile load retries and exposes profileLoadError', () => {
   const auth = readSrc('src/lib/AuthContext.jsx');
   const platform = readSrc('src/padelmakker-platform.jsx');
+  const bootstrap = readSrc('src/lib/profileBootstrap.js');
+  const policy = readSrc('src/lib/profileBootstrapPolicy.js');
   assert.match(auth, /profileLoadError/);
-  assert.match(auth, /fetchProfileFast\(userRow\)/);
-  assert.match(auth, /\.maybeSingle\(\)/);
+  assert.match(auth, /loadOrCreateProfileResult/);
+  assert.match(policy, /shouldCreateProfileOnFetchStatus/);
+  assert.match(bootstrap, /shouldCreateProfileOnFetchStatus\(timed\.status\)/);
   assert.match(auth, /setProfileLoadError\(true\)/);
   assert.match(platform, /Kunne ikke hente din profil/);
   assert.match(platform, /refreshProfile/);

@@ -10,6 +10,10 @@ import { clearAllChatCaches } from './chatCacheUtils'
 import { BanNoticeModal } from '../components/BanNoticeModal'
 import { startPresence, stopPresence } from './presence'
 import { PROFILE_SAFE_SELECT } from './profileQueries'
+import {
+  fetchProfileRowResult,
+  loadOrCreateProfileResult,
+} from './profileBootstrap'
 
 const AuthContext = createContext(null)
 
@@ -54,16 +58,12 @@ async function syncProfileNameFromAuthIfNeeded(p, userRow) {
 }
 
 function fetchProfileQuery(userId) {
-  return supabase
-    .from('profiles')
-    .select(PROFILE_SAFE_SELECT)
-    .eq('id', userId)
-    .maybeSingle()
-    .then(({ data, error }) => {
-      if (error) console.warn('profiles:', error.message)
-      return normalizeProfileRow(data || null)
-    })
-    .catch(() => null)
+  return fetchProfileRowResult(supabase, userId).then((result) => {
+    if (result.status === 'error') {
+      console.warn('profiles:', result.message || 'fetch failed')
+    }
+    return result.profile
+  })
 }
 
 async function applyPendingAvatarToProfile(userRow, currentProfile) {
@@ -85,49 +85,6 @@ async function applyPendingAvatarToProfile(userRow, currentProfile) {
   const { error: metaErr } = await supabase.auth.updateUser({ data: { avatar: url } })
   if (metaErr) console.warn('pending avatar → auth metadata:', metaErr.message)
   return row
-}
-
-/**
- * Hent profil-række — uden navne-sync/onboarding-merge (hurtig sti til UI).
- */
-async function fetchProfileFast(userRow) {
-  if (!userRow?.id) return null
-  const existing = await fetchProfileQuery(userRow.id)
-  if (existing) return existing
-
-  const meta = userRow.user_metadata || {}
-  const email = userRow.email || ''
-  const regionFromMeta =
-    canonicalRegionForForm(meta.region || meta.area || '') || DEFAULT_REGION
-  const { data: row, error } = await supabase.from('profiles').upsert(
-    {
-      id: userRow.id,
-      email: email || '',
-      name: meta.full_name || meta.name || (email ? email.split('@')[0] : null) || 'Spiller',
-      full_name: meta.full_name || meta.name || (email ? email.split('@')[0] : null) || 'Spiller',
-      level: meta.level || 5,
-      play_style: meta.play_style || 'Ved ikke endnu',
-      area: regionFromMeta,
-      city: meta.city || null,
-      availability: meta.availability || [],
-      bio: meta.bio || '',
-      avatar: meta.avatar || '🎾',
-      birth_year: meta.birth_year ?? null,
-      birth_month: meta.birth_month ?? null,
-      birth_day: meta.birth_day ?? null,
-      court_side: meta.court_side ?? null,
-      intent_now: meta.intent_now || null,
-      preferred_partner_level: meta.preferred_partner_level || null,
-      seeking_match: meta.seeking_match === true,
-      travel_willing: meta.travel_willing === true,
-    },
-    { onConflict: 'id' }
-  ).select(PROFILE_SAFE_SELECT).single()
-  if (error) {
-    console.warn('profiles upsert:', error.message)
-    return null
-  }
-  return normalizeProfileRow(row || null)
 }
 
 /** Navne-sync + onboarding-merge — køres i baggrunden efter UI er klar. */
@@ -299,28 +256,29 @@ export function AuthProvider({ children }) {
       setPhoneVerificationExempt(exempt === true)
     })
 
-    const fetchWithTimeout = () =>
-      Promise.race([
-        fetchProfileFast(userRow),
-        new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
-      ])
+    const fetchWithTimeout = () => loadOrCreateProfileResult(supabase, userRow, {
+      timeoutMs: PROFILE_TIMEOUT_MS,
+      select: PROFILE_SAFE_SELECT,
+    })
 
     fetchWithTimeout()
-      .then(async (p) => {
+      .then(async (first) => {
         if (profileReqId.current !== id) return
-        let profileRow = p
-        if (!profileRow) {
-          profileRow = await Promise.race([
-            fetchProfileFast(userRow),
-            new Promise((resolve) => setTimeout(() => resolve(null), PROFILE_TIMEOUT_MS)),
-          ])
+        let result = first
+        if (result.status === 'timeout' || result.status === 'error' || !result.profile) {
+          // Ét retry — stadig uden at behandle fejl som "mangler profil".
+          result = await loadOrCreateProfileResult(supabase, userRow, {
+            timeoutMs: PROFILE_TIMEOUT_MS,
+            select: PROFILE_SAFE_SELECT,
+          })
         }
         if (profileReqId.current !== id) return
-        if (!profileRow) {
+        if (!result.profile) {
           setProfileLoadError(true)
           return
         }
 
+        const profileRow = result.profile
         if (profileRow.is_banned) {
           void enforceBanLogout(profileRow.ban_reason || '')
           return
