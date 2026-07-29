@@ -92,7 +92,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
     document.body.appendChild(probe);
     const safeTop = getComputedStyle(probe).paddingTop;
     probe.remove();
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'filter-header-bar-only',hypothesisId:'C',location:'MakkerSearchFilterPage.jsx:header-measure',message:'White toolbar bar height (safe-area separated)',data:{safeTop,barHeight:Math.round(bar.getBoundingClientRect().height),barPaddingTop:barCs.paddingTop,barPaddingBottom:barCs.paddingBottom,mainPaddingTop:getComputedStyle(main).paddingTop},timestamp:Date.now()})}).catch(()=>{});
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'filter-header-no-box',hypothesisId:'D',location:'MakkerSearchFilterPage.jsx:header-measure',message:'Filter header without white box',data:{safeTop,barHeight:Math.round(bar.getBoundingClientRect().height),barBg:barCs.backgroundColor,barBorder:barCs.borderBottomWidth,mainPaddingTop:getComputedStyle(main).paddingTop},timestamp:Date.now()})}).catch(()=>{});
   }, []);
   // #endregion
 
@@ -176,7 +176,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
 
   return (
     <div style={{ fontFamily: font }}>
-      {/* Safe-area uden hvid baggrund — den hvide toolbar er kun kontrol-rækken */}
+      {/* Transparent top-række — ingen hvid “boks” */}
       <div style={{ height: 'env(safe-area-inset-top)', background: 'transparent' }} aria-hidden />
       <div
         ref={headerRef}
@@ -186,25 +186,47 @@ export function MakkerSearchFilterPage({ user, showToast }) {
           alignItems: 'center',
           gap: 8,
           minHeight: 44,
-          padding: '6px 12px',
-          borderBottom: '1px solid ' + theme.border,
-          background: theme.surface,
+          padding: '4px 12px 8px',
+          background: 'transparent',
           marginBottom: 0,
         }}
       >
         <button
           type="button"
           onClick={() => navigate(returnTo)}
-          style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid ' + theme.border, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            border: 'none',
+            background: 'transparent',
+            color: theme.text,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
           aria-label="Tilbage"
         >
-          <ChevronLeft size={18} aria-hidden />
+          <ChevronLeft size={22} aria-hidden />
         </button>
-        <h2 style={{ flex: 1, fontSize: 16, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Filtre</h2>
+        <h2 style={{ flex: 1, fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: theme.text }}>
+          Filtre
+        </h2>
         <button
           type="button"
           onClick={() => setPrefs(normalizeMakkerSearchPrefs({}, user))}
-          style={{ fontSize: '11.5px', fontWeight: 600, color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font, padding: '4px 0' }}
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: theme.accent,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: font,
+            padding: '8px 4px',
+          }}
         >
           Nulstil
         </button>
