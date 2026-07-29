@@ -244,9 +244,6 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   }, [navigate]);
   // Kun selve Tilbage/luk-knappen: kom man fra fx en chat-invitation, land dér igen.
   const close2v2DetailToOrigin = useCallback(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',location:'KampeTab.jsx:close2v2DetailToOrigin',message:'Detalje Tilbage klik',data:{detailBackTo},hypothesisId:'B',timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     if (detailBackTo) navigate(detailBackTo);
     else navigate(buildKampeListPath(KAMPE_FORMAT_PADEL));
   }, [navigate, detailBackTo]);

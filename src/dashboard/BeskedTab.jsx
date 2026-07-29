@@ -275,13 +275,6 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
 
   useEffect(() => { loadConversations(); }, [loadConversations]);
 
-  // #region agent log
-  useEffect(() => {
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',location:'BeskedTab.jsx:mount',message:'BeskedTab mount',data:{initWithUser,initWithTeam,search:location.search},hypothesisId:'C',timestamp:Date.now()})}).catch(()=>{});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  // #endregion
-
   // Sikrer profil til ny samtale via URL param
   useEffect(() => {
     if (initWithUser) ensureProfile(initWithUser);
@@ -1011,9 +1004,6 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
               : selectedId
                 ? `/dashboard/beskeder?med=${selectedId}`
                 : '/dashboard/beskeder';
-            // #region agent log
-            fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',location:'BeskedTab.jsx:onOpenInviteMatch',message:'Se kamp klik: backTo sat',data:{backTo,matchId:invite.match_id},hypothesisId:'A',timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
             navigate(buildKampe2v2DetailPath(invite.match_id), { state: { backTo } });
           }}
           onAcceptTime={handleAcceptTime}
