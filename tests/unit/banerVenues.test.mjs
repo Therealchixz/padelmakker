@@ -212,6 +212,11 @@ test('curated venue facilities attach to Baner venues', () => {
   ]);
   const padelnord = BANER_VENUES.find((v) => v.id === 'matchi_padelnord');
   assert.ok(padelnord?.facilities?.includes('changing_rooms'));
-  const plain = BANER_VENUES.find((v) => v.id === 'padel_lounge_aalborg');
+  const lounge = BANER_VENUES.find((v) => v.id === 'padel_lounge_aalborg');
+  assert.ok(lounge?.facilities?.includes('parking'));
+  assert.ok(lounge?.facilities?.includes('equipment_rental'));
+  const withFacilities = BANER_VENUES.filter((v) => Array.isArray(v.facilities) && v.facilities.length > 0);
+  assert.ok(withFacilities.length >= 50, `expected >=50 curated venues, got ${withFacilities.length}`);
+  const plain = BANER_VENUES.find((v) => v.id === 'match_padel_aalborg');
   assert.equal(plain?.facilities, undefined);
 });
