@@ -1676,6 +1676,18 @@ button,
   width: 100%;
 }
 
+/* Filter-undersider: same full-bleed topbar som Notifikationer (indhold har egen padding) */
+.pm-dash-main.pm-dash-main--filter {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
+  width: 100%;
+}
+
 .pm-notifikationer-page {
   display: flex;
   flex-direction: column;
