@@ -614,7 +614,7 @@ export function AmericanoResultsPanel({
       if (eloErrorMessage) {
         console.warn('Americano ELO rpc error:', eloErrorMessage)
         if (usedLegacyFallback) {
-          showToast(`Americano/Mexicano afsluttet. ${TOURNAMENT_ELO_LABEL} blev ikke opdateret endnu (mangler DB-migration).`)
+          showToast(`Americano/Mexicano afsluttet. ${TOURNAMENT_ELO_LABEL} kunne ikke opdateres endnu. Prøv igen senere.`)
         } else {
           throw new Error(eloErrorMessage)
         }

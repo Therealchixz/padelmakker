@@ -385,7 +385,7 @@ export function LigaTab({
       }
       const { error } = await supabase.from('league_teams').delete().eq('id', team.id);
       if (error) throw error;
-      showToast('Invitation afvist.');
+      showToast('Invitation afvist.', 'success');
       await load();
     } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }

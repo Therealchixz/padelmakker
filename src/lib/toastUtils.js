@@ -4,10 +4,10 @@
  */
 
 const ERROR_RE =
-  /kunne ikke|mislykkedes|fejl[:\s]|fejl$|ikke tilladt|ikke fundet|prøv igen|kan ikke |må ikke|ugyldig|mangler |kræver |afvist\.|blokering/i;
+  /kunne ikke|mislykkedes|fejl[:\s]|fejl$|ikke tilladt|ikke fundet|prøv igen|kan ikke |må ikke|ugyldig|mangler |kræver |blokering/i;
 
 const SUCCESS_RE =
-  /gemt|sendt|tilmeldt|opdateret|godkendt|afmeldt|startet|slettet|registreret|accepteret|oprettet|fjernet|kopieret|stoppet|åbnet|hentet|synces|synkroniseret|flyttet|skiftet|skrevet på|invitation sendt|adgangskode|tak!/i;
+  /gemt|sendt|tilmeldt|opdateret|godkendt|afmeldt|startet|slettet|registreret|accepteret|oprettet|fjernet|kopieret|stoppet|åbnet|hentet|synces|synkroniseret|flyttet|skiftet|skrevet på|invitation sendt|adgangskode|tak!|afvist/i;
 
 /**
  * @param {unknown} message

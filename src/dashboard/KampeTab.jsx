@@ -1315,7 +1315,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         `Din anmodning om at deltage i kampen er desværre ikke godkendt.`, matchId);
       if (rejectErr) console.warn("reject join notify:", rejectErr.message || rejectErr);
 
-      showToast(`Anmodning fra ${reqUserName} afvist.`);
+      showToast(`Anmodning fra ${reqUserName} afvist.`, 'success');
       await markJoinRequestNotifsRead(matchId);
       await loadData();
     } catch (e) { showToast(mapUserFacingError(e), 'error'); }
@@ -1890,7 +1890,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         return;
       }
 
-      showToast("Resultat afvist. Indrapportér igen.");
+      showToast("Resultat afvist. Indrapportér igen.", 'info');
       await loadData();
     } catch (e) { showToast(mapUserFacingError(e), 'error'); }
     finally { setBusyId(null); }

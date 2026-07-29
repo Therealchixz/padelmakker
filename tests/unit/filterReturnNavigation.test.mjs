@@ -33,3 +33,21 @@ test('adminSub deep link values', () => {
   assert.match(dash, /raw === "result_errors" \|\| raw === "reports"/);
   assert.match(dash, /setAdminInitialSubTab\(raw\)/);
 });
+
+test('MakkereTab sender filterReturnTo til makker-filter', () => {
+  const makkere = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '../../src/dashboard/MakkereTab.jsx'),
+    'utf8',
+  );
+  assert.match(makkere, /navigate\('\/dashboard\/makker-filter',\s*\{\s*state:\s*\{\s*filterReturnTo:\s*FILTER_RETURN_MAKKERE/);
+  assert.doesNotMatch(makkere, /navigate\('\/dashboard\/makker-filter'\)/);
+});
+
+test('AmericanoResultsPanel undgår DB-migration i bruger-toast', () => {
+  const panel = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '../../src/features/americano/AmericanoResultsPanel.tsx'),
+    'utf8',
+  );
+  assert.doesNotMatch(panel, /DB-migration/);
+  assert.match(panel, /Prøv igen senere/);
+});

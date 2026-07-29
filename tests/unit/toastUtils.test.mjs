@@ -14,6 +14,8 @@ test('inferToastType: success', () => {
   assert.equal(inferToastType('Profil opdateret!'), 'success');
   assert.equal(inferToastType('Invitation sendt til Mike!'), 'success');
   assert.equal(inferToastType('Kamp slettet.'), 'success');
+  assert.equal(inferToastType('Invitation afvist.'), 'success');
+  assert.equal(inferToastType('Anmodning fra Mike afvist.'), 'success');
 });
 
 test('inferToastType: info fallback', () => {

@@ -700,7 +700,7 @@ export function MakkereTab({ user, showToast }) {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/dashboard/makker-filter')}
+            onClick={() => navigate('/dashboard/makker-filter', { state: { filterReturnTo: FILTER_RETURN_MAKKERE } })}
             style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: theme.accent, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}
           >
             Justér
@@ -879,7 +879,7 @@ export function MakkereTab({ user, showToast }) {
             {(makkerFilterOn || activeFilterCount === 0) && (
               <button
                 type="button"
-                onClick={() => navigate('/dashboard/makker-filter')}
+                onClick={() => navigate('/dashboard/makker-filter', { state: { filterReturnTo: FILTER_RETURN_MAKKERE } })}
                 style={{ ...btn(true), marginTop: '14px', fontSize: '13px' }}
               >
                 Justér makker-filter
