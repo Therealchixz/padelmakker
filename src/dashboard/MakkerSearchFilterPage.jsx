@@ -93,7 +93,7 @@ export function MakkerSearchFilterPage({ user, showToast }) {
     document.body.appendChild(probe);
     const safeTop = getComputedStyle(probe).paddingTop;
     probe.remove();
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'filter-header-postfix',hypothesisId:'A',location:'MakkerSearchFilterPage.jsx:header-measure',message:'Filter header spacing post-fix',data:{safeTop,mainPaddingTop:mainCs.paddingTop,headerPaddingTop:headerCs.paddingTop,mainClasses:main.className,headerOffsetTop:header.offsetTop,headerRectTop:Math.round(header.getBoundingClientRect().top),hasFilterClass:main.classList.contains('pm-dash-main--filter')},timestamp:Date.now()})}).catch(()=>{});
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'filter-header-tight',hypothesisId:'B',location:'MakkerSearchFilterPage.jsx:header-measure',message:'Filter header height after tighten',data:{safeTop,mainPaddingTop:mainCs.paddingTop,headerPaddingTop:headerCs.paddingTop,headerHeight:Math.round(header.getBoundingClientRect().height),headerRectTop:Math.round(header.getBoundingClientRect().top),hasFilterClass:main.classList.contains('pm-dash-main--filter')},timestamp:Date.now()})}).catch(()=>{});
   }, []);
   // #endregion
 
@@ -184,8 +184,8 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
-          padding: 'max(10px, calc(env(safe-area-inset-top) + 8px)) 14px 10px',
+          gap: 8,
+          padding: 'max(6px, calc(env(safe-area-inset-top) + 4px)) 12px 8px',
           borderBottom: '1px solid ' + theme.border,
           background: theme.surface,
           marginBottom: 0,
@@ -194,12 +194,12 @@ export function MakkerSearchFilterPage({ user, showToast }) {
         <button
           type="button"
           onClick={() => navigate(returnTo)}
-          style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid ' + theme.border, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid ' + theme.border, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
           aria-label="Tilbage"
         >
-          <ChevronLeft size={20} aria-hidden />
+          <ChevronLeft size={18} aria-hidden />
         </button>
-        <h2 style={{ flex: 1, fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Filtre</h2>
+        <h2 style={{ flex: 1, fontSize: 16, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Filtre</h2>
         <button
           type="button"
           onClick={() => setPrefs(normalizeMakkerSearchPrefs({}, user))}
