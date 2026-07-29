@@ -84,16 +84,15 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   // #region agent log
   useEffect(() => {
     const main = document.querySelector('.pm-dash-main');
-    const header = headerRef.current;
-    if (!main || !header) return;
-    const mainCs = getComputedStyle(main);
-    const headerCs = getComputedStyle(header);
+    const bar = headerRef.current;
+    if (!main || !bar) return;
+    const barCs = getComputedStyle(bar);
     const probe = document.createElement('div');
     probe.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top)';
     document.body.appendChild(probe);
     const safeTop = getComputedStyle(probe).paddingTop;
     probe.remove();
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'filter-header-tight',hypothesisId:'B',location:'MakkerSearchFilterPage.jsx:header-measure',message:'Filter header height after tighten',data:{safeTop,mainPaddingTop:mainCs.paddingTop,headerPaddingTop:headerCs.paddingTop,headerHeight:Math.round(header.getBoundingClientRect().height),headerRectTop:Math.round(header.getBoundingClientRect().top),hasFilterClass:main.classList.contains('pm-dash-main--filter')},timestamp:Date.now()})}).catch(()=>{});
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'filter-header-bar-only',hypothesisId:'C',location:'MakkerSearchFilterPage.jsx:header-measure',message:'White toolbar bar height (safe-area separated)',data:{safeTop,barHeight:Math.round(bar.getBoundingClientRect().height),barPaddingTop:barCs.paddingTop,barPaddingBottom:barCs.paddingBottom,mainPaddingTop:getComputedStyle(main).paddingTop},timestamp:Date.now()})}).catch(()=>{});
   }, []);
   // #endregion
 
@@ -177,7 +176,8 @@ export function MakkerSearchFilterPage({ user, showToast }) {
 
   return (
     <div style={{ fontFamily: font }}>
-      {/* Topbar — matches mockup */}
+      {/* Safe-area uden hvid baggrund — den hvide toolbar er kun kontrol-rækken */}
+      <div style={{ height: 'env(safe-area-inset-top)', background: 'transparent' }} aria-hidden />
       <div
         ref={headerRef}
         className="pm-filter-page-header"
@@ -185,7 +185,8 @@ export function MakkerSearchFilterPage({ user, showToast }) {
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          padding: 'max(6px, calc(env(safe-area-inset-top) + 4px)) 12px 8px',
+          minHeight: 44,
+          padding: '6px 12px',
           borderBottom: '1px solid ' + theme.border,
           background: theme.surface,
           marginBottom: 0,
