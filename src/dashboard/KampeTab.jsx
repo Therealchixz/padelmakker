@@ -238,9 +238,18 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const kampeDetailRoute = parseKampeDetailRoute(location.pathname);
   const detailMatchId = kampeDetailRoute?.kind === '2v2' ? kampeDetailRoute.id : null;
   const isOnKampeDetailPage = !!kampeDetailRoute;
+  const detailBackTo = location.state?.backTo || null;
   const close2v2Detail = useCallback(() => {
     navigate(buildKampeListPath(KAMPE_FORMAT_PADEL));
   }, [navigate]);
+  // Kun selve Tilbage/luk-knappen: kom man fra fx en chat-invitation, land dér igen.
+  const close2v2DetailToOrigin = useCallback(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',location:'KampeTab.jsx:close2v2DetailToOrigin',message:'Detalje Tilbage klik',data:{detailBackTo},hypothesisId:'B',timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    if (detailBackTo) navigate(detailBackTo);
+    else navigate(buildKampeListPath(KAMPE_FORMAT_PADEL));
+  }, [navigate, detailBackTo]);
   const open2v2Detail = useCallback((matchId) => {
     navigate(buildKampe2v2DetailPath(matchId));
   }, [navigate]);
@@ -3008,7 +3017,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       {detailMatch && detailBundle ? (
         <KampeMatchDetailSheet
           open
-          onClose={close2v2Detail}
+          onClose={close2v2DetailToOrigin}
           presentation="page"
           match={detailMatch}
           profilesById={profilesById}
