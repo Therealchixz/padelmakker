@@ -3,6 +3,7 @@ import { BANER_REGION_ORDER } from './banerRegions.js';
 import { BANER_VENUES_LINKS } from './banerVenuesLinks.generated.js';
 import { BANER_VENUE_COORDS } from './banerVenuesCoords.generated.js';
 import { filterLinkVenuesWithoutIntegratedDuplicates } from './banerVenueDedup.js';
+import { attachVenueFacilities } from './banerVenueFacilities.js';
 
 export { BANER_REGION_ORDER };
 
@@ -15,11 +16,11 @@ export { BANER_REGION_ORDER };
  * Link: Padellife-katalog (scripts/build-baner-link-catalog.mjs) — booking uden inline-tider
  */
 
-/** @typedef {{ kind: 'halbooking', id: string, title: string, address: string, indoor: boolean, region: string, note?: string, latitude?: number, longitude?: number }} HalbookingVenue */
-/** @typedef {{ kind: 'bookli', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, infoUrl: string, latitude?: number, longitude?: number }} BookliVenue */
-/** @typedef {{ kind: 'matchi', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, facilityId: string, sport: string, note?: string, latitude?: number, longitude?: number }} MatchiVenue */
-/** @typedef {{ kind: 'playtomic', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, clubSlug: string, note?: string, latitude?: number, longitude?: number }} PlaytomicVenue */
-/** @typedef {{ kind: 'link', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, note?: string, latitude?: number, longitude?: number }} LinkVenue */
+/** @typedef {{ kind: 'halbooking', id: string, title: string, address: string, indoor: boolean, region: string, note?: string, latitude?: number, longitude?: number, facilities?: string[] }} HalbookingVenue */
+/** @typedef {{ kind: 'bookli', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, infoUrl: string, latitude?: number, longitude?: number, facilities?: string[] }} BookliVenue */
+/** @typedef {{ kind: 'matchi', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, facilityId: string, sport: string, note?: string, latitude?: number, longitude?: number, facilities?: string[] }} MatchiVenue */
+/** @typedef {{ kind: 'playtomic', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, clubSlug: string, note?: string, latitude?: number, longitude?: number, facilities?: string[] }} PlaytomicVenue */
+/** @typedef {{ kind: 'link', id: string, title: string, address: string, indoor: boolean, region: string, bookingUrl: string, note?: string, latitude?: number, longitude?: number, facilities?: string[] }} LinkVenue */
 /** @typedef {HalbookingVenue | BookliVenue | MatchiVenue | PlaytomicVenue | LinkVenue} BanerVenue */
 
 /** @param {BanerVenue} venue */
@@ -27,6 +28,11 @@ function attachVenueCoords(venue) {
   const c = BANER_VENUE_COORDS[venue.id];
   if (!c || c.lat == null || c.lng == null) return venue;
   return { ...venue, latitude: c.lat, longitude: c.lng };
+}
+
+/** @param {BanerVenue} venue */
+function attachVenueExtras(venue) {
+  return attachVenueFacilities(attachVenueCoords(venue));
 }
 
 /** Fuldt integrerede centre (ledige tider i app når API tillader det) */
@@ -1747,7 +1753,7 @@ const BANER_VENUES_LINKS_DEDUPED = filterLinkVenuesWithoutIntegratedDuplicates(
 
 /** Integrerede + Padellife-link-katalog (uden dubletter af integrerede navne) */
 export const BANER_VENUES = [...BANER_VENUES_INTEGRATED, ...BANER_VENUES_LINKS_DEDUPED].map(
-  attachVenueCoords,
+  attachVenueExtras,
 );
 
 /**

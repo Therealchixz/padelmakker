@@ -199,3 +199,19 @@ test('Odense is on Fyn; Sydjylland has southern Jutland venues', () => {
   const sonder = BANER_VENUES.filter((v) => v.region === 'Sydjylland');
   assert.ok(sonder.length >= 2);
 });
+
+test('curated venue facilities attach to Baner venues', () => {
+  const skansen = BANER_VENUES.find((v) => v.id === 'skansen_ntsc');
+  assert.deepEqual(skansen?.facilities, [
+    'parking',
+    'changing_rooms',
+    'showers',
+    'cafe',
+    'pro_shop',
+    'wifi',
+  ]);
+  const padelnord = BANER_VENUES.find((v) => v.id === 'matchi_padelnord');
+  assert.ok(padelnord?.facilities?.includes('changing_rooms'));
+  const plain = BANER_VENUES.find((v) => v.id === 'padel_lounge_aalborg');
+  assert.equal(plain?.facilities, undefined);
+});

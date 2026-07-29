@@ -18,6 +18,7 @@ import {
 } from '../lib/banerVenues';
 import { filterPastSlotsIfToday } from '../lib/banerPastSlots';
 import { BanerVenueLocation } from '../components/BanerVenueLocation';
+import { CourtFacilitiesGrid } from '../lib/courtFacilities';
 import { MapPin, ExternalLink, RefreshCw, Clock, LogIn, Info, ChevronDown, Search, X } from 'lucide-react';
 
 /**
@@ -604,6 +605,10 @@ export function BanerTab() {
                   address={v.address}
                   latitude={v.latitude}
                   longitude={v.longitude}
+                />
+                <CourtFacilitiesGrid
+                  facilities={v.facilities}
+                  style={{ margin: '0 16px 12px' }}
                 />
                 {v.kind === 'link' ? (
                   <>
