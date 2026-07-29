@@ -93,9 +93,15 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
           .order('tournament_date', { ascending: true })
           .limit(10),
       ]);
+      // Samme regel som chat-invitationer: kampe med passeret dato kan ikke inviteres til.
+      const today = new Date().toISOString().slice(0, 10);
       setItems([
-        ...(matchRes.data || []).map((m) => ({ ...m, _type: 'match' })),
-        ...(tourRes.data || []).map((t) => ({ ...t, _type: 'americano' })),
+        ...(matchRes.data || [])
+          .filter((m) => !m.date || m.date >= today)
+          .map((m) => ({ ...m, _type: 'match' })),
+        ...(tourRes.data || [])
+          .filter((t) => !t.tournament_date || t.tournament_date >= today)
+          .map((t) => ({ ...t, _type: 'americano' })),
       ]);
       setLoading(false);
     }
@@ -166,7 +172,7 @@ export function InviteToMatchModal({ invitee, currentUser, showToast, onClose, o
           </p>
         ) : items.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '20px 0 8px', color: theme.textMid, fontSize: 13 }}>
-            Ingen åbne kampe. Opret en kamp under &quot;Kampe&quot;.
+            Ingen kommende åbne kampe — kampe med passeret dato vises ikke. Opret en ny under &quot;Kampe&quot;.
           </div>
         ) : (
           <div style={{ marginBottom: 4 }}>

@@ -1047,7 +1047,9 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           {pickerLoading ? (
             <div className="pm-chat-v2-action-sheet-status">Henter kampe…</div>
           ) : invitableMatches.length === 0 ? (
-            <div className="pm-chat-v2-action-sheet-status">Du har ingen åbne kampe at dele.</div>
+            <div className="pm-chat-v2-action-sheet-status">
+              Du har ingen kommende åbne kampe at dele. Kampe med passeret dato vises ikke — opret en ny under Kampe.
+            </div>
           ) : (
             invitableMatches.map((match) => (
               <button
