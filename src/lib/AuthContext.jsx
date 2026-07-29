@@ -9,6 +9,7 @@ import { fetchPhoneVerificationExemptFromServer } from './phoneVerification'
 import { clearAllChatCaches } from './chatCacheUtils'
 import { BanNoticeModal } from '../components/BanNoticeModal'
 import { startPresence, stopPresence } from './presence'
+import { PROFILE_SAFE_SELECT } from './profileQueries'
 
 const AuthContext = createContext(null)
 
@@ -43,7 +44,7 @@ async function syncProfileNameFromAuthIfNeeded(p, userRow) {
     .from('profiles')
     .update({ full_name: newName, name: newName })
     .eq('id', p.id)
-    .select()
+    .select(PROFILE_SAFE_SELECT)
     .single()
   if (error) {
     console.warn('profiles name sync:', error.message)
@@ -55,7 +56,7 @@ async function syncProfileNameFromAuthIfNeeded(p, userRow) {
 function fetchProfileQuery(userId) {
   return supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_SAFE_SELECT)
     .eq('id', userId)
     .maybeSingle()
     .then(({ data, error }) => {
@@ -73,7 +74,7 @@ async function applyPendingAvatarToProfile(userRow, currentProfile) {
     .from('profiles')
     .update({ avatar: url })
     .eq('id', userRow.id)
-    .select()
+    .select(PROFILE_SAFE_SELECT)
     .single()
   if (error) {
     console.warn('pending avatar → profiles:', error.message)
@@ -121,7 +122,7 @@ async function fetchProfileFast(userRow) {
       travel_willing: meta.travel_willing === true,
     },
     { onConflict: 'id' }
-  ).select().single()
+  ).select(PROFILE_SAFE_SELECT).single()
   if (error) {
     console.warn('profiles upsert:', error.message)
     return null
@@ -139,7 +140,7 @@ async function syncProfileMaintenance(userRow, profileRow) {
     .from('profiles')
     .update(obPatch)
     .eq('id', userRow.id)
-    .select()
+    .select(PROFILE_SAFE_SELECT)
     .single()
   if (!obErr && merged) {
     p = normalizeProfileRow(merged)
@@ -239,7 +240,7 @@ export function AuthProvider({ children }) {
           .from('profiles')
           .update({ seeking_match: false, seeking_match_at: null })
           .eq('id', maintained.id)
-          .select()
+          .select(PROFILE_SAFE_SELECT)
           .single()
           .then(({ data, error }) => {
             if (error || !data || profileReqId.current !== reqId) return
@@ -615,7 +616,7 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (updates) => {
     if (!user) throw new Error('Not authenticated')
-    const { data, error } = await supabase.from('profiles').update(updates).eq('id', user.id).select().single()
+    const { data, error } = await supabase.from('profiles').update(updates).eq('id', user.id).select(PROFILE_SAFE_SELECT).single()
     if (error) throw error
     const row = normalizeProfileRow(data)
     setProfile(row)

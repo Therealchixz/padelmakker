@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useConfirm } from '../lib/ConfirmDialogProvider';
 import { fetchCourtsCached } from '../lib/courtsCache';
-import { fetchProfilesByIdMap } from '../lib/profileQueries';
+import { fetchProfilesByIdMap, MATCH_PLAYERS_SAFE_SELECT } from '../lib/profileQueries';
 import { supabase } from '../lib/supabase';
 import { readKampeSessionPrefs, mergeKampeSessionPrefs } from '../lib/kampeSessionPrefs';
 const AmericanoTab = lazy(() =>
@@ -455,7 +455,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       }
 
       const mpd =
-        allMatchIds.length > 0 ? await fetchRowsInChunks(supabase, "match_players", "match_id", allMatchIds) : [];
+        allMatchIds.length > 0 ? await fetchRowsInChunks(supabase, "match_players", "match_id", allMatchIds, MATCH_PLAYERS_SAFE_SELECT) : [];
       const mm = {};
       (mpd || []).forEach((mp) => {
         if (!mm[mp.match_id]) mm[mp.match_id] = [];

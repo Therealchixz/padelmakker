@@ -18,6 +18,7 @@ import { resolveAmericanoEloDisplay } from '../features/americano/americanoDispl
 import { useAuth } from '../lib/AuthContext';
 import { BeskedChatActions } from '../components/BeskedChatActions';
 import { fetchUsersIBlocked } from '../lib/userModeration';
+import { PROFILE_SAFE_SELECT } from '../lib/profileQueries';
 
 export function PlayerProfileModal({ player, onClose, onMessage = undefined, onInviteMatch = undefined }) {
   const open = !!player;
@@ -70,7 +71,7 @@ export function PlayerProfileModal({ player, onClose, onMessage = undefined, onI
 
     try {
       const [pr, hist, amHist, teamsRes, myHistRes, blockedSet] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', player.id).maybeSingle(),
+        supabase.from('profiles').select(PROFILE_SAFE_SELECT).eq('id', player.id).maybeSingle(),
         supabase.from('elo_history').select('*').eq('user_id', player.id).order('date', { ascending: true }),
         supabase
           .from('americano_elo_history')

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabase';
 import { normalizeProfileRow } from './profileUtils';
+import { PROFILE_SAFE_SELECT } from './profileQueries';
 import {
   compareEloHistoryChronological as compareEloHistoryChronologicalPure,
   currentEloFromSortedHistory as currentEloFromSortedHistoryPure,
@@ -191,7 +192,7 @@ export function useProfileEloBundle(userId, syncKey) {
       if (showLoading && !hit) setLoading(true);
       try {
         const [pr, hist] = await Promise.all([
-          supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+          supabase.from('profiles').select(PROFILE_SAFE_SELECT).eq('id', userId).maybeSingle(),
           supabase
             .from('elo_history')
             .select('*')

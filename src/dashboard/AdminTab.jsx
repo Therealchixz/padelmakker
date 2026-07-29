@@ -25,6 +25,11 @@ import { AdminUserEditModal } from './AdminUserEditModal';
 import { fetchEloStatsBatchByUserIds, formatEloHistoryDate } from '../lib/eloHistoryUtils';
 import { eloOf } from '../lib/matchDisplayUtils';
 import { normalizeProfileRow } from '../lib/profileUtils';
+import {
+  PROFILE_SAFE_SELECT,
+  MATCH_PLAYERS_SAFE_SELECT,
+  fetchAdminProfilesWithEmailMap,
+} from '../lib/profileQueries';
 import { explainRatingAdminFlag } from '../lib/ratingAdminFlagExplain';
 import { fetchAdminAuditLogRecent, adminAuditActionLabel } from '../lib/adminAuditLog';
 import {
@@ -357,9 +362,10 @@ export function AdminTab({ initialSubTab = null }) {
     setEditingUserLoading(true);
     try {
       const uid = String(userRow.id);
-      const [profileRes, eloBatch] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', uid).maybeSingle(),
+      const [profileRes, eloBatch, emailMap] = await Promise.all([
+        supabase.from('profiles').select(PROFILE_SAFE_SELECT).eq('id', uid).maybeSingle(),
         fetchEloStatsBatchByUserIds([uid]),
+        fetchAdminProfilesWithEmailMap([uid]).catch(() => ({})),
       ]);
       if (profileRes.error) throw profileRes.error;
       const fresh = normalizeProfileRow(profileRes.data || userRow);
@@ -369,10 +375,11 @@ export function AdminTab({ initialSubTab = null }) {
           ? Math.round(Number(stats.elo))
           : eloOf(fresh);
       const americanoEloDisplay = Math.round(Number(fresh.americano_elo_rating) || 1000);
+      const emailFromAdmin = emailMap[uid]?.email;
       const editorState = {
         ...fresh,
         full_name: fresh.full_name || fresh.name || userRow.full_name || userRow.name || '',
-        email: userRow.email ?? fresh.email ?? '',
+        email: userRow.email ?? emailFromAdmin ?? '',
         elo_rating: eloFromHistory,
         americano_elo_rating: americanoEloDisplay,
         games_played: stats?.games ?? fresh.games_played,
@@ -393,7 +400,7 @@ export function AdminTab({ initialSubTab = null }) {
     const seq = ++matchesLoadSeqRef.current;
     setLoading(true);
     try {
-      const MATCH_EMBED = '*, match_results(*), match_players(*, profiles(full_name, name))';
+      const MATCH_EMBED = `*, match_results(*), match_players(${MATCH_PLAYERS_SAFE_SELECT}, profiles(full_name, name))`;
       const [recentRes, pendingIdsRes] = await Promise.all([
         supabase
           .from('matches')
@@ -494,7 +501,7 @@ export function AdminTab({ initialSubTab = null }) {
       try {
         const { data: m, error } = await supabase
           .from('matches')
-          .select('*, match_results(*), match_players(*, profiles(full_name, name))')
+          .select(`*, match_results(*), match_players(${MATCH_PLAYERS_SAFE_SELECT}, profiles(full_name, name))`)
           .eq('id', matchId)
           .maybeSingle();
         if (error) throw error;
@@ -585,12 +592,9 @@ export function AdminTab({ initialSubTab = null }) {
 
       const reviewerIds = [...new Set(flagRows.map((f) => f.reviewed_by).filter(Boolean))];
       if (reviewerIds.length > 0) {
-        const { data: reviewerRows } = await supabase
-          .from('profiles')
-          .select('id, full_name, name, email')
-          .in('id', reviewerIds);
+        const reviewerMapData = await fetchAdminProfilesWithEmailMap(reviewerIds);
         const nextReviewerMap = {};
-        for (const row of (reviewerRows || [])) {
+        for (const row of Object.values(reviewerMapData)) {
           nextReviewerMap[row.id] = adminDisplayName(row);
         }
         setReviewerMap(nextReviewerMap);
@@ -659,11 +663,7 @@ export function AdminTab({ initialSubTab = null }) {
       ];
       let profileMap = {};
       if (ids.length > 0) {
-        const { data: profs } = await supabase
-          .from('profiles')
-          .select('id, full_name, name, email')
-          .in('id', ids);
-        profileMap = Object.fromEntries((profs || []).map((p) => [p.id, p]));
+        profileMap = await fetchAdminProfilesWithEmailMap(ids);
       }
       setUserReports(
         rows.map((r) => ({
@@ -726,11 +726,7 @@ export function AdminTab({ initialSubTab = null }) {
       const reporterIds = [...new Set(rows.map((r) => r.reporter_id).filter(Boolean))];
       let profileMap = {};
       if (reporterIds.length > 0) {
-        const { data: profs } = await supabase
-          .from('profiles')
-          .select('id, full_name, name, email')
-          .in('id', reporterIds);
-        profileMap = Object.fromEntries((profs || []).map((p) => [p.id, p]));
+        profileMap = await fetchAdminProfilesWithEmailMap(reporterIds);
       }
       const matchIds = rows.filter((r) => r.source_type === 'match_2v2').map((r) => r.entity_id);
       const tournamentIds = rows.filter((r) => r.source_type === 'americano').map((r) => r.entity_id);

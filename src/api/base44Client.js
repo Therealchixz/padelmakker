@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { normalizeProfileRow } from '../lib/profileUtils'
+import { PROFILE_SAFE_SELECT } from '../lib/profileQueries'
 
 /**
  * Creates a Supabase-backed entity with standard CRUD methods.
@@ -7,6 +8,7 @@ import { normalizeProfileRow } from '../lib/profileUtils'
  */
 function createEntity(tableName, opts = {}) {
   const norm = opts.normalizeRow
+  const defaultSelect = opts.select || '*'
   const mapRow = (row) => (row && norm ? norm(row) : row)
   const mapData = (data) => {
     if (data == null) return data
@@ -20,7 +22,7 @@ function createEntity(tableName, opts = {}) {
      * Pass no args or empty object to fetch all rows.
      */
     async filter(query = {}) {
-      let q = supabase.from(tableName).select('*')
+      let q = supabase.from(tableName).select(defaultSelect)
       if (query && Object.keys(query).length > 0) {
         q = q.match(query)
       }
@@ -35,7 +37,7 @@ function createEntity(tableName, opts = {}) {
     async get(id) {
       const { data, error } = await supabase
         .from(tableName)
-        .select('*')
+        .select(defaultSelect)
         .eq('id', id)
         .single()
       if (error) throw error
@@ -49,7 +51,7 @@ function createEntity(tableName, opts = {}) {
       const { data, error } = await supabase
         .from(tableName)
         .insert(rowData)
-        .select()
+        .select(defaultSelect)
         .single()
       if (error) throw error
       return mapData(data)
@@ -63,7 +65,7 @@ function createEntity(tableName, opts = {}) {
         .from(tableName)
         .update(rowData)
         .eq('id', id)
-        .select()
+        .select(defaultSelect)
         .single()
       if (error) throw error
       return mapData(data)
@@ -83,7 +85,10 @@ function createEntity(tableName, opts = {}) {
 }
 
 // Entity exports matching the database tables
-export const Profile = createEntity('profiles', { normalizeRow: normalizeProfileRow })
+export const Profile = createEntity('profiles', {
+  normalizeRow: normalizeProfileRow,
+  select: PROFILE_SAFE_SELECT,
+})
 export const Court = createEntity('courts')
 export const CourtSlot = createEntity('court_slots')
 export const Match = createEntity('matches')
