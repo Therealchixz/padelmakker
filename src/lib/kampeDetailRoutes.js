@@ -46,8 +46,13 @@ export function parseKampeDetailRoute(pathname) {
   const parts = String(pathname || '').split('/').filter(Boolean);
   if (parts[0] !== 'dashboard' || parts[1] !== 'kampe') return null;
   const kind = parts[2];
-  const id = parts[3] ? String(parts[3]) : null;
+  let id = parts[3] ? String(parts[3]) : null;
   if (!id) return null;
+  try {
+    id = decodeURIComponent(id);
+  } catch {
+    /* keep raw id */
+  }
   if (kind === '2v2') {
     return { kind: '2v2', format: KAMPE_FORMAT_PADEL, id };
   }

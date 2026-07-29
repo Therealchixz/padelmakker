@@ -85,6 +85,14 @@ describe('kampeDetailRoutes', () => {
     );
   });
 
+  it('parseKampeDetailRoute decodes URI-encoded ids', () => {
+    assert.deepEqual(parseKampeDetailRoute('/dashboard/kampe/2v2/abc%2Fdef'), {
+      kind: '2v2',
+      format: 'padel',
+      id: 'abc/def',
+    });
+  });
+
   it('isKampeDetailRoute and buildKampeListPath', () => {
     assert.equal(isKampeDetailRoute('/dashboard/kampe/liga/x'), true);
     assert.equal(isKampeDetailRoute('/dashboard/kampe/liga/x/schedule'), true);

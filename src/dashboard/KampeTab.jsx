@@ -237,8 +237,12 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   const location = useLocation();
   const kampeDetailRoute = parseKampeDetailRoute(location.pathname);
   const detailMatchId = kampeDetailRoute?.kind === '2v2' ? kampeDetailRoute.id : null;
+  const detailMatchIdRef = useRef(detailMatchId);
+  detailMatchIdRef.current = detailMatchId;
   const isOnKampeDetailPage = !!kampeDetailRoute;
   const detailBackTo = location.state?.backTo || null;
+  /** 'idle' | 'loading' | 'ready' | 'missing' — hurtig fetch så "Se kamp" ikke venter på hele listen. */
+  const [detailFetchStatus, setDetailFetchStatus] = useState('idle');
   const close2v2Detail = useCallback(() => {
     navigate(buildKampeListPath(KAMPE_FORMAT_PADEL));
   }, [navigate]);
@@ -426,6 +430,10 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       (openPoolRes.data || []).forEach((m) => idSet.add(m.id));
       (createdRes.data || []).forEach((m) => idSet.add(m.id));
       (myMpRes.data || []).forEach((r) => idSet.add(r.match_id));
+      // Deep-link / chat "Se kamp": sørg for at den fokuserede kamp er med i poolen
+      // (åben-pool har limit + 30-dages cutoff og kan ellers mangle den).
+      const focusMatchId = detailMatchIdRef.current;
+      if (focusMatchId) idSet.add(focusMatchId);
 
       const { data: recentCompleted, error: rcErr } = await supabase
         .from("matches")
@@ -559,6 +567,85 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   }, [user.id, showToast, reloadKampeEloBundle]);
 
   useEffect(() => { void loadData(); }, [loadData]);
+
+  /* Hurtig fetch af én kamp til detail-rute (chat "Se kamp", share-link). */
+  useEffect(() => {
+    if (!tabActive || !detailMatchId) {
+      setDetailFetchStatus('idle');
+      return undefined;
+    }
+
+    let cancelled = false;
+    setDetailFetchStatus('loading');
+
+    const hydrateDetailMatch = async () => {
+      try {
+        const { data: match, error: matchErr } = await supabase
+          .from('matches')
+          .select('*')
+          .eq('id', detailMatchId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (matchErr) throw matchErr;
+        if (!match || String(match.status || '').toLowerCase() === 'cancelled') {
+          setDetailFetchStatus('missing');
+          return;
+        }
+
+        setMatches((prev) => {
+          if (prev.some((m) => String(m.id) === String(match.id))) return prev;
+          return [...prev, match];
+        });
+
+        const [{ data: players, error: playersErr }, joinRes] = await Promise.all([
+          supabase
+            .from('match_players')
+            .select(MATCH_PLAYERS_SAFE_SELECT)
+            .eq('match_id', match.id),
+          supabase
+            .from('match_join_requests')
+            .select('*')
+            .eq('match_id', match.id),
+        ]);
+        if (cancelled) return;
+        if (playersErr) throw playersErr;
+
+        const playerRows = players || [];
+        setMatchPlayers((prev) => ({ ...prev, [match.id]: playerRows }));
+        if (!joinRes.error) {
+          setJoinRequests((prev) => ({ ...prev, [String(match.id)]: joinRes.data || [] }));
+        }
+
+        const profileIds = new Set();
+        if (match.creator_id) profileIds.add(String(match.creator_id));
+        for (const p of playerRows) {
+          if (p?.user_id) profileIds.add(String(p.user_id));
+        }
+        if (profileIds.size > 0) {
+          const [histEloMap, pById] = await Promise.all([
+            fetchEloByUserIdFromHistory([...profileIds]),
+            fetchProfilesByIdMap([...profileIds]),
+          ]);
+          if (cancelled) return;
+          setEloFromHistoryByUserId((prev) => ({ ...prev, ...histEloMap }));
+          setEloByUserId((prev) => {
+            const next = { ...prev };
+            for (const [id, pr] of Object.entries(pById)) next[id] = eloOf(pr);
+            return next;
+          });
+          setProfilesById((prev) => ({ ...prev, ...pById }));
+        }
+
+        if (!cancelled) setDetailFetchStatus('ready');
+      } catch (e) {
+        console.warn('detail match hydrate:', e?.message || e);
+        if (!cancelled) setDetailFetchStatus('missing');
+      }
+    };
+
+    void hydrateDetailMatch();
+    return () => { cancelled = true; };
+  }, [tabActive, detailMatchId]);
 
   const refreshJoinRequestsForMatch = useCallback(async (matchId) => {
     const key = String(matchId || "");
@@ -1980,16 +2067,20 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     const params = new URLSearchParams(location.search);
     const openChat = params.get("chat") === "1";
 
-    if (loadingMatches && !matches.length) return;
-    const m = matches.find((x) => String(x.id) === String(detailMatchId))
-      ?? matches.find((x) => {
-        if (String(x.id) !== String(detailMatchId)) return false;
-        return getStatus(x) !== "cancelled";
-      });
-    if (!m) {
-      if (!loadingMatches) navigate(buildKampeListPath(KAMPE_FORMAT_PADEL), { replace: true });
+    // Vent på hurtig detail-fetch eller fuld liste — undgå at bounce til listen for tidligt.
+    if (detailFetchStatus === 'loading' || (loadingMatches && !matches.length && detailFetchStatus !== 'ready')) {
       return;
     }
+
+    const m = matches.find((x) => String(x.id) === String(detailMatchId));
+    if (!m || getStatus(m) === 'cancelled') {
+      if (detailFetchStatus === 'missing' || (!loadingMatches && detailFetchStatus !== 'loading')) {
+        if (detailFetchStatus !== 'missing') setDetailFetchStatus('missing');
+      }
+      return;
+    }
+
+    if (detailFetchStatus !== 'ready') setDetailFetchStatus('ready');
 
     const st = getStatus(m);
     const mp = matchPlayers[m.id] || [];
@@ -2014,6 +2105,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
   }, [
     tabActive,
     detailMatchId,
+    detailFetchStatus,
     loadingMatches,
     matches,
     matchPlayers,
@@ -2025,6 +2117,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     markMatchChatNotifsRead,
     refreshJoinRequestsForMatch,
     getStatus,
+    adminCanAct,
   ]);
 
   const matchTeamStatsById = useMemo(() => {
@@ -3004,11 +3097,24 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         facilityOptions={availableFacilities}
       />
 
-      {detailMatchId && loadingMatches && !detailMatch ? (
-        <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: "14px" }}>
-          <div className="pm-spinner pm-state-spinner" />
-          <div className="pm-state-title">Indlæser kamp…</div>
-        </div>
+      {detailMatchId && !detailMatch ? (
+        detailFetchStatus === 'missing' ? (
+          <div className="pm-state-card pm-state-card--error" style={{ marginBottom: "14px" }}>
+            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-title">Kampen blev ikke fundet</div>
+            <div className="pm-state-copy">Den kan være aflyst, eller du har ikke adgang til den længere.</div>
+            <div className="pm-state-actions">
+              <button type="button" onClick={close2v2DetailToOrigin} style={{ ...btn(true), fontSize: "13px" }}>
+                Tilbage
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: "14px" }}>
+            <div className="pm-spinner pm-state-spinner" />
+            <div className="pm-state-title">Indlæser kamp…</div>
+          </div>
+        )
       ) : null}
 
       {detailMatch && detailBundle ? (
@@ -3079,7 +3185,7 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
       {kampeFormat === "liga" ? null : (
       <>
-      {kampeFormat === "padel" && loadingMatches && (
+      {kampeFormat === "padel" && loadingMatches && !detailMatchId && (
         <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: "14px" }}>
           <div className="pm-spinner pm-state-spinner" />
           <div className="pm-state-title">Indlæser kampe…</div>
