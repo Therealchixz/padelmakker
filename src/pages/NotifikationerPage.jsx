@@ -141,18 +141,6 @@ export function NotifikationerPage({ onBack }) {
     return () => window.removeEventListener(NOTIFICATIONS_SYNC_EVENT, onSync);
   }, [load]);
 
-  // #region agent log
-  useEffect(() => {
-    const head = document.querySelector('.pm-subpage-head');
-    if (!head) return;
-    const hs = getComputedStyle(head);
-    const back = head.querySelector('.pm-subpage-head-back');
-    const title = head.querySelector('.pm-subpage-head-title');
-    const action = head.querySelector('.pm-subpage-head-action');
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'subpage-head-align',hypothesisId:'B',location:'NotifikationerPage.jsx:style-check',message:'Notifikationer subpage head computed styles',data:{headBg:hs.backgroundColor,headBorder:hs.borderBottom,headPad:hs.padding,titleSize:title?getComputedStyle(title).fontSize:null,titleWeight:title?getComputedStyle(title).fontWeight:null,backBorder:back?getComputedStyle(back).border:null,backBg:back?getComputedStyle(back).backgroundColor:null,actionColor:action?getComputedStyle(action).color:null},timestamp:Date.now()})}).catch(()=>{});
-  }, []);
-  // #endregion
-
   const displayNotifs = useMemo(() => {
     const rows = [];
     const groupedByMatchId = new Map();

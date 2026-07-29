@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
@@ -79,22 +79,6 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   );
   const [prefs, setPrefs] = useState(initial);
   const [saving, setSaving] = useState(false);
-
-  // #region agent log
-  useEffect(() => {
-    const head = document.querySelector('.pm-subpage-head');
-    const back = document.querySelector('.pm-subpage-head-back');
-    const title = document.querySelector('.pm-subpage-head-title');
-    const action = document.querySelector('.pm-subpage-head-action');
-    const main = document.querySelector('.pm-dash-main');
-    if (!head) return;
-    const hs = getComputedStyle(head);
-    const bs = back ? getComputedStyle(back) : null;
-    const ts = title ? getComputedStyle(title) : null;
-    const as_ = action ? getComputedStyle(action) : null;
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'post-fix-bleed',hypothesisId:'C',location:'MakkerSearchFilterPage.jsx:style-check',message:'Filter subpage head computed styles',data:{headBg:hs.backgroundColor,headBorder:hs.borderBottom,headPad:hs.padding,headWidth:Math.round(head.getBoundingClientRect().width),titleSize:ts?.fontSize,titleWeight:ts?.fontWeight,backBorder:bs?.border,backRadius:bs?.borderRadius,backBg:bs?.backgroundColor,actionColor:as_?.color,actionSize:as_?.fontSize,mainPadTop:main?getComputedStyle(main).paddingTop:null,mainPadLeft:main?getComputedStyle(main).paddingLeft:null,mainPadRight:main?getComputedStyle(main).paddingRight:null,mainHasFilter:main?.classList.contains('pm-dash-main--filter')},timestamp:Date.now()})}).catch(()=>{});
-  }, []);
-  // #endregion
 
   const profileLevel = profilePlaytomicLevel(user);
   const filterLevel = resolveMakkerFilterLevel(prefs, user);
