@@ -608,7 +608,7 @@ export function BanerTab() {
                 />
                 <CourtFacilitiesGrid
                   facilities={v.facilities}
-                  style={{ margin: '0 16px 12px' }}
+                  style={{ marginBottom: 12 }}
                 />
                 {v.kind === 'link' ? (
                   <>
