@@ -22,6 +22,7 @@ import {
   setLeagueTeamMessageReaction,
 } from '../lib/leagueTeamChatUtils';
 import { fetchInvitableMatches, buildInvitePayloadForMatch, joinMatchFromChatInvite, fetchShareableCourts } from '../lib/chatInviteUtils';
+import { buildKampe2v2DetailPath } from '../lib/kampeDetailRoutes';
 import { CHAT_MESSAGE_TYPES, buildTimeSuggestionPayload, buildVenueSharePayload, messagePreview } from '../lib/chatMessageUtils';
 import { onlineStatusLabel } from '../lib/chatPresenceUtils';
 import { useOnlineIds } from '../lib/presence';
@@ -995,6 +996,9 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           onReact={handleReact}
           onJoinInvite={handleJoinInvite}
           joiningInviteId={joiningInviteId}
+          onOpenInviteMatch={(invite) => {
+            if (invite?.match_id) navigate(buildKampe2v2DetailPath(invite.match_id));
+          }}
           onAcceptTime={handleAcceptTime}
           acceptingTimeId={acceptingTimeId}
           onScroll={updateStickToBottom}

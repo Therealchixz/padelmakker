@@ -10987,6 +10987,24 @@ button,
   color: var(--pm-text-light);
 }
 
+.pm-chat-v2-invite-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pm-chat-v2-invite-view {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pm-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .pm-chat-v2-invite-join {
   border: none;
   border-radius: 999px;

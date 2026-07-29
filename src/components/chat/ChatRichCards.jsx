@@ -1,7 +1,7 @@
 import { MapPin, Swords } from 'lucide-react';
 import { safeHttpUrl } from '../../lib/safeUrl';
 
-export function ChatInviteCard({ invite, mine, onJoin, joining = false }) {
+export function ChatInviteCard({ invite, mine, onJoin, joining = false, onOpenMatch }) {
   if (!invite) return null;
   const isOpen = invite.status !== 'full';
 
@@ -23,17 +23,28 @@ export function ChatInviteCard({ invite, mine, onJoin, joining = false }) {
           <span className={`pm-chat-v2-invite-badge${isOpen ? '' : ' pm-chat-v2-invite-badge--full'}`}>
             {isOpen ? 'Åben' : 'Fuldt'} · {invite.players}
           </span>
-          {!mine && isOpen ? (
-            <button
-              type="button"
-              className="pm-chat-v2-invite-join"
-              onClick={() => onJoin?.(invite)}
-              disabled={joining}
-            >
-              {joining ? 'Tilmelder…' : 'Tilmeld'}
-            </button>
-          ) : null}
-          {mine ? <span className="pm-chat-v2-invite-sent">Sendt</span> : null}
+          <div className="pm-chat-v2-invite-actions">
+            {onOpenMatch && invite.match_id ? (
+              <button
+                type="button"
+                className="pm-chat-v2-invite-view"
+                onClick={() => onOpenMatch(invite)}
+              >
+                Se kamp
+              </button>
+            ) : null}
+            {!mine && isOpen ? (
+              <button
+                type="button"
+                className="pm-chat-v2-invite-join"
+                onClick={() => onJoin?.(invite)}
+                disabled={joining}
+              >
+                {joining ? 'Tilmelder…' : 'Tilmeld'}
+              </button>
+            ) : null}
+            {mine ? <span className="pm-chat-v2-invite-sent">Sendt</span> : null}
+          </div>
         </div>
       </div>
     </div>

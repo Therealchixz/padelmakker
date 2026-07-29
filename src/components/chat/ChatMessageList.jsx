@@ -20,6 +20,7 @@ export function ChatMessageList({
   onReact,
   onJoinInvite,
   joiningInviteId = null,
+  onOpenInviteMatch,
   onAcceptTime,
   acceptingTimeId = null,
 }) {
@@ -90,6 +91,7 @@ export function ChatMessageList({
                 onReact={onReact}
                 onJoinInvite={onJoinInvite}
                 joiningInviteId={joiningInviteId}
+                onOpenInviteMatch={onOpenInviteMatch}
                 onAcceptTime={onAcceptTime}
                 acceptingTimeId={acceptingTimeId}
               />

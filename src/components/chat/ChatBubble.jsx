@@ -18,6 +18,7 @@ export function ChatBubble({
   onReact,
   onJoinInvite,
   joiningInviteId = null,
+  onOpenInviteMatch,
   onAcceptTime,
   acceptingTimeId = null,
 }) {
@@ -68,6 +69,7 @@ export function ChatBubble({
                 mine={mine}
                 onJoin={onJoinInvite}
                 joining={joiningInviteId === message.payload?.match_id}
+                onOpenMatch={onOpenInviteMatch}
               />
             ) : messageType === CHAT_MESSAGE_TYPES.VENUE_SHARE ? (
               <ChatVenueCard payload={message.payload} />
