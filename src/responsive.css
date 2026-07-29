@@ -1684,7 +1684,8 @@ button,
   width: 100%;
 }
 
-.pm-notifikationer-head {
+/* Fælles underside-header (Notifikationer, filtre, …) */
+.pm-subpage-head {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1692,6 +1693,66 @@ button,
   position: sticky;
   top: 0;
   z-index: 6;
+  border-bottom: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  flex-shrink: 0;
+}
+
+.pm-subpage-head-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--pm-text);
+}
+
+.pm-subpage-head-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--pm-border);
+  background: var(--pm-surface-alt, var(--pm-surface-muted));
+  color: var(--pm-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.pm-subpage-head-action {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pm-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 4px;
+  white-space: nowrap;
+  min-height: 40px;
+}
+
+.pm-notifikationer-head {
+  /* Alias — samme look som pm-subpage-head */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  border-bottom: 1px solid var(--pm-border);
+  background: var(--pm-surface);
+  flex-shrink: 0;
 }
 
 .pm-notifikationer-head-title {
@@ -1700,6 +1761,11 @@ button,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--pm-text);
 }
 
 .pm-notifikationer-mark-all {

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { theme, btn, font } from '../lib/platformTheme';
@@ -73,7 +73,6 @@ export function MakkerSearchFilterPage({ user, showToast }) {
   const returnTo = filterReturnFromState(location.state);
   const returnLabel = filterReturnBackLabel(returnTo);
   const { updateProfile } = useAuth();
-  const headerRef = useRef(null);
   const initial = useMemo(
     () => normalizeMakkerSearchPrefs(user?.makker_search_prefs, user),
     [user],
@@ -83,16 +82,17 @@ export function MakkerSearchFilterPage({ user, showToast }) {
 
   // #region agent log
   useEffect(() => {
+    const head = document.querySelector('.pm-subpage-head');
+    const back = document.querySelector('.pm-subpage-head-back');
+    const title = document.querySelector('.pm-subpage-head-title');
+    const action = document.querySelector('.pm-subpage-head-action');
     const main = document.querySelector('.pm-dash-main');
-    const bar = headerRef.current;
-    if (!main || !bar) return;
-    const barCs = getComputedStyle(bar);
-    const probe = document.createElement('div');
-    probe.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top)';
-    document.body.appendChild(probe);
-    const safeTop = getComputedStyle(probe).paddingTop;
-    probe.remove();
-    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'filter-header-no-box',hypothesisId:'D',location:'MakkerSearchFilterPage.jsx:header-measure',message:'Filter header without white box',data:{safeTop,barHeight:Math.round(bar.getBoundingClientRect().height),barBg:barCs.backgroundColor,barBorder:barCs.borderBottomWidth,mainPaddingTop:getComputedStyle(main).paddingTop},timestamp:Date.now()})}).catch(()=>{});
+    if (!head) return;
+    const hs = getComputedStyle(head);
+    const bs = back ? getComputedStyle(back) : null;
+    const ts = title ? getComputedStyle(title) : null;
+    const as_ = action ? getComputedStyle(action) : null;
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'subpage-head-align',hypothesisId:'A',location:'MakkerSearchFilterPage.jsx:style-check',message:'Filter subpage head computed styles',data:{headBg:hs.backgroundColor,headBorder:hs.borderBottom,headPad:hs.padding,titleSize:ts?.fontSize,titleWeight:ts?.fontWeight,backBorder:bs?.border,backRadius:bs?.borderRadius,backBg:bs?.backgroundColor,actionColor:as_?.color,actionSize:as_?.fontSize,mainPadTop:main?getComputedStyle(main).paddingTop:null,mainHasFilter:main?.classList.contains('pm-dash-main--filter')},timestamp:Date.now()})}).catch(()=>{});
   }, []);
   // #endregion
 
@@ -176,57 +176,20 @@ export function MakkerSearchFilterPage({ user, showToast }) {
 
   return (
     <div style={{ fontFamily: font }}>
-      {/* Transparent top-række — ingen hvid “boks” */}
-      <div style={{ height: 'env(safe-area-inset-top)', background: 'transparent' }} aria-hidden />
-      <div
-        ref={headerRef}
-        className="pm-filter-page-header"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          minHeight: 44,
-          padding: '4px 12px 8px',
-          background: 'transparent',
-          marginBottom: 0,
-        }}
-      >
+      <div className="pm-subpage-head">
         <button
           type="button"
+          className="pm-subpage-head-back"
           onClick={() => navigate(returnTo)}
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            border: 'none',
-            background: 'transparent',
-            color: theme.text,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            flexShrink: 0,
-          }}
-          aria-label="Tilbage"
+          aria-label={`Tilbage til ${returnLabel}`}
         >
-          <ChevronLeft size={22} aria-hidden />
+          <ChevronLeft size={20} aria-hidden />
         </button>
-        <h2 style={{ flex: 1, fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: theme.text }}>
-          Filtre
-        </h2>
+        <h2 className="pm-subpage-head-title">Filtre</h2>
         <button
           type="button"
+          className="pm-subpage-head-action"
           onClick={() => setPrefs(normalizeMakkerSearchPrefs({}, user))}
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: theme.accent,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: font,
-            padding: '8px 4px',
-          }}
         >
           Nulstil
         </button>

@@ -110,30 +110,19 @@ export function MatchSearchFilterPage({ user, showToast }) {
   };
 
   return (
-    <div style={{ fontFamily: font, maxWidth: 520, margin: '0 auto', paddingTop: 'max(8px, env(safe-area-inset-top))' }}>
-      <button
-        type="button"
-        onClick={() => navigate(returnTo)}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'none',
-          border: 'none',
-          color: theme.textMid,
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: 'pointer',
-          padding: '4px 0 16px',
-        }}
-      >
-        <ChevronLeft size={18} aria-hidden />
-        Tilbage til {returnLabel}
-      </button>
-
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: theme.text, margin: '0 0 6px' }}>
-        Mit kamp-filter
-      </h1>
+    <div style={{ fontFamily: font }}>
+      <div className="pm-subpage-head">
+        <button
+          type="button"
+          className="pm-subpage-head-back"
+          onClick={() => navigate(returnTo)}
+          aria-label={`Tilbage til ${returnLabel}`}
+        >
+          <ChevronLeft size={20} aria-hidden />
+        </button>
+        <h2 className="pm-subpage-head-title">Kamp-filter</h2>
+      </div>
+      <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px 0' }}>
       <p style={{ fontSize: 13, color: theme.textMid, lineHeight: 1.5, marginBottom: 20 }}>
         Dette styrer hvornår du får besked og hvilke kampe der matcher. Slå aktiv søgning til/fra på
         Hjem eller Kampe — her finjusterer du region, niveau og tid.
@@ -323,6 +312,7 @@ export function MatchSearchFilterPage({ user, showToast }) {
       >
         {saving ? 'Gemmer…' : 'Gem filter'}
       </button>
+      </div>
     </div>
   );
 }

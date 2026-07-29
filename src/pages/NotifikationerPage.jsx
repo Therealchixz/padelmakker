@@ -141,6 +141,18 @@ export function NotifikationerPage({ onBack }) {
     return () => window.removeEventListener(NOTIFICATIONS_SYNC_EVENT, onSync);
   }, [load]);
 
+  // #region agent log
+  useEffect(() => {
+    const head = document.querySelector('.pm-subpage-head');
+    if (!head) return;
+    const hs = getComputedStyle(head);
+    const back = head.querySelector('.pm-subpage-head-back');
+    const title = head.querySelector('.pm-subpage-head-title');
+    const action = head.querySelector('.pm-subpage-head-action');
+    fetch('http://127.0.0.1:7334/ingest/59c3ee52-adbe-4b45-a678-1218d4095144',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'79e22c'},body:JSON.stringify({sessionId:'79e22c',runId:'subpage-head-align',hypothesisId:'B',location:'NotifikationerPage.jsx:style-check',message:'Notifikationer subpage head computed styles',data:{headBg:hs.backgroundColor,headBorder:hs.borderBottom,headPad:hs.padding,titleSize:title?getComputedStyle(title).fontSize:null,titleWeight:title?getComputedStyle(title).fontWeight:null,backBorder:back?getComputedStyle(back).border:null,backBg:back?getComputedStyle(back).backgroundColor:null,actionColor:action?getComputedStyle(action).color:null},timestamp:Date.now()})}).catch(()=>{});
+  }, []);
+  // #endregion
+
   const displayNotifs = useMemo(() => {
     const rows = [];
     const groupedByMatchId = new Map();
@@ -269,29 +281,23 @@ export function NotifikationerPage({ onBack }) {
 
   return (
     <div className="pm-notifikationer-page" style={{ background: theme.bg, fontFamily: font }}>
-      <div className="pm-notifikationer-head" style={{ borderBottom: '1px solid ' + theme.border, background: theme.surface, flexShrink: 0 }}>
+      <div className="pm-subpage-head">
         <button
           type="button"
+          className="pm-subpage-head-back"
           onClick={goBack}
-          style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid ' + theme.border, background: theme.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
           aria-label="Tilbage til Hjem"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={20} aria-hidden />
         </button>
-        <h2 className="pm-notifikationer-head-title" style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Notifikationer</h2>
+        <h2 className="pm-subpage-head-title">Notifikationer</h2>
         <button
           type="button"
-          className="pm-notifikationer-mark-all"
+          className="pm-subpage-head-action pm-notifikationer-mark-all"
           onClick={() => void markAllRead()}
           disabled={unreadTotal === 0 || markingAll}
           aria-label="Markér alle notifikationer som læst"
           style={{
-            ...btn(false, { size: 'sm', radius: 'pill' }),
-            minHeight: 40,
-            color: theme.accent,
-            fontWeight: 600,
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
             opacity: unreadTotal === 0 || markingAll ? 0.45 : 1,
             cursor: unreadTotal === 0 || markingAll ? 'default' : 'pointer',
           }}
