@@ -10,8 +10,12 @@ const read = (rel) => readFileSync(join(dir, rel), 'utf8');
 test('Sprint C: toast supports typed modifiers', () => {
   const platform = read('../../src/padelmakker-platform.jsx');
   const css = read('../../src/responsive.css');
-  assert.match(platform, /showToast = useCallback\(\(msg, type = 'info'\)/);
-  assert.match(platform, /pm-toast--\$\{toast\.type\}/);
+  const toastUi = read('../../src/components/AppToast.jsx');
+  const toastUtils = read('../../src/lib/toastUtils.js');
+  assert.match(platform, /resolveToastType/);
+  assert.match(platform, /AppToast/);
+  assert.match(toastUi, /pm-toast--\$\{type\}/);
+  assert.match(toastUtils, /inferToastType/);
   assert.match(css, /\.pm-toast--success/);
   assert.match(css, /\.pm-toast--error/);
 });

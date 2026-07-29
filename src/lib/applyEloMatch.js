@@ -21,7 +21,7 @@ export async function calculateAndApplyElo(matchId, showToast, options = {}) {
 
       if (mrErr || !mr) {
         console.error('ELO: Kunne ikke finde bekræftet resultat:', mrErr);
-        if (showToast) showToast('ELO fejl: Resultat ikke fundet.');
+        if (showToast) showToast('ELO fejl: Resultat ikke fundet.', 'error');
         return { success: false, error: 'Resultat ikke fundet.' };
       }
 
@@ -34,19 +34,19 @@ export async function calculateAndApplyElo(matchId, showToast, options = {}) {
 
     if (error) {
       console.error('ELO rpc error:', error);
-      if (showToast) showToast('ELO fejl: ' + error.message);
+      if (showToast) showToast('ELO fejl: ' + error.message, 'error');
       return { success: false, error: error.message };
     }
 
     if (data?.error) {
       console.error('ELO function error:', data.error);
-      if (showToast) showToast('ELO fejl: ' + data.error);
+      if (showToast) showToast('ELO fejl: ' + data.error, 'error');
       return { success: false, error: data.error };
     }
 
     if (data?.success) {
       if (showToast) {
-        showToast(formatEloSuccessToast(data));
+        showToast(formatEloSuccessToast(data), 'success');
       }
       return { success: true, data };
     }
@@ -54,7 +54,7 @@ export async function calculateAndApplyElo(matchId, showToast, options = {}) {
     return { success: false, error: 'Ukendt ELO-svar fra databasen.' };
   } catch (e) {
     console.error('ELO exception:', e);
-    if (showToast) showToast('ELO fejl: ' + (e.message || 'Ukendt fejl'));
+    if (showToast) showToast('ELO fejl: ' + (e.message || 'Ukendt fejl'), 'error');
     return { success: false, error: e.message || 'Ukendt fejl' };
   }
 }

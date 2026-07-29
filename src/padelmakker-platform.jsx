@@ -22,6 +22,8 @@ const OnboardingPageLazy = lazy(() =>
   import("./pages/OnboardingPage").then((m) => ({ default: m.OnboardingPage }))
 );
 import { CookieNoticeBar } from "./components/CookieNoticeBar";
+import { AppToast } from "./components/AppToast";
+import { resolveToastType, toastDurationMs } from "./lib/toastUtils";
 
 const PrivacyPageLazy = lazy(() => import("./pages/PrivacyPage").then((m) => ({ default: m.PrivacyPage })));
 const TermsPageLazy = lazy(() => import("./pages/TermsPage").then((m) => ({ default: m.TermsPage })));
@@ -65,15 +67,15 @@ export default function PadelMakker() {
   const navigate = useNavigate();
   const location = useLocation();
   const showPublicLanding = new URLSearchParams(location.search).get("forside") === "1";
-  const showToast = useCallback((msg, type = 'info') => {
+  const showToast = useCallback((msg, type) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    const tone = type === 'success' || type === 'error' ? type : 'info';
-    setToast({ message: String(msg || ''), type: tone });
-    const ms = tone === 'error' ? 4500 : 3000;
+    const message = String(msg || '');
+    const tone = resolveToastType(type, message);
+    setToast({ message, type: tone });
     toastTimerRef.current = setTimeout(() => {
       setToast(null);
       toastTimerRef.current = null;
-    }, ms);
+    }, toastDurationMs(tone));
   }, []);
   const handleLogout = useCallback(async () => {
     await signOut();
@@ -131,9 +133,7 @@ export default function PadelMakker() {
     return (
       <ConfirmDialogProvider>
         <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text }}>
-          {toast && (
-            <div className={`pm-toast pm-toast--${toast.type}`} role="status">{toast.message}</div>
-          )}
+          {toast && <AppToast message={toast.message} type={toast.type} />}
           <Suspense fallback={<div className="pm-spinner" style={{ margin: "40px auto" }} />}>
             <ResetPasswordPageLazy onDone={() => { setResetMode(false); navigate("/dashboard"); showToast("Adgangskode opdateret!", "success"); }} />
           </Suspense>
@@ -146,9 +146,7 @@ export default function PadelMakker() {
   return (
     <ConfirmDialogProvider>
       <div className="pm-root" style={{ fontFamily: font, background: theme.bg, minHeight: "100dvh", color: theme.text, position: "relative" }}>
-        {toast && (
-          <div className={`pm-toast pm-toast--${toast.type}`} role="status">{toast.message}</div>
-        )}
+        {toast && <AppToast message={toast.message} type={toast.type} />}
         <Suspense
           fallback={
             <div
