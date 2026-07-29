@@ -1,7 +1,7 @@
 /**
  * Kuraterede faciliteter for Baner-centre (samme nøgler som courtFacilities.jsx / kampe-filter).
- * Kilder: MATCHi facility-desc, klub-/kædesider (manuel review 2026-07-29).
- * Udvid batchvist — undgå rå scrape uden kontekst-check.
+ * Kilder: MATCHi facility-desc, Match Padel/Smash/PADELPIT/Padel Lounge m.fl. klub-sider
+ * (review 2026-07-29). Udvid batchvist — undgå rå scrape uden kontekst-check.
  */
 
 /** @type {Record<string, string[]>} */
@@ -18,6 +18,24 @@ export const BANER_VENUE_FACILITIES = {
   link_thisted_thisted_tennis_og_padelklub: ['showers'],
   link_v_ggerl_se_padel_danmark_marielyst: ['parking', 'equipment_rental'],
   link_videb_k_videb_k_lawn_tennis_klub: ['showers'],
+
+  // Match Padel — matchpadel.dk/afdelinger/*
+  match_padel_aalborg: ['changing_rooms', 'showers', 'pro_shop', 'equipment_rental'],
+  match_padel_aarhus: ['cafe', 'equipment_rental'],
+  match_padel_ballerup: ['cafe'],
+  match_padel_ballerup_single: ['cafe'],
+  match_padel_bornholm_inde: ['cafe', 'equipment_rental'],
+  match_padel_bornholm_ude_ronne: ['cafe', 'equipment_rental'],
+  match_padel_hobro: ['changing_rooms', 'showers', 'cafe', 'pro_shop', 'equipment_rental'],
+  match_padel_klovermarken: ['cafe'],
+  match_padel_lemvig: ['equipment_rental'],
+  match_padel_naestved: ['changing_rooms', 'showers', 'pro_shop', 'equipment_rental'],
+  match_padel_nykobing_falster: ['parking', 'equipment_rental'],
+  match_padel_odense: ['parking', 'changing_rooms', 'showers', 'cafe', 'pro_shop', 'equipment_rental'],
+  match_padel_silkeborg: ['parking', 'changing_rooms', 'showers', 'cafe', 'equipment_rental'],
+  match_padel_silkeborg_syd: ['changing_rooms', 'showers', 'cafe', 'equipment_rental'],
+  match_padel_studio_kbh: ['parking', 'changing_rooms', 'cafe', 'equipment_rental'],
+
   matchi_bankagerpadel: ['equipment_rental'],
   matchi_baringgf: ['parking'],
   matchi_bogensepadelarena: ['parking'],
@@ -59,13 +77,23 @@ export const BANER_VENUE_FACILITIES = {
   matchi_vipadelslagelse: ['equipment_rental'],
   matchi_vipadelaarhus: ['parking', 'changing_rooms', 'cafe', 'equipment_rental'],
   matchi_vissenbjerg_padel: ['parking'],
-  padel_lounge_herning: ['parking', 'changing_rooms', 'showers', 'cafe', 'equipment_rental'],
-  padel_lounge_odense: ['parking', 'changing_rooms', 'showers', 'cafe', 'equipment_rental'],
+
   padel_lounge_aalborg: ['parking', 'changing_rooms', 'showers', 'cafe', 'equipment_rental'],
   padel_lounge_aarhus_halbooking: ['parking', 'changing_rooms', 'showers', 'cafe', 'equipment_rental'],
+  padel_lounge_herning: ['parking', 'changing_rooms', 'showers', 'cafe', 'equipment_rental'],
+  padel_lounge_odense: ['parking', 'changing_rooms', 'showers', 'cafe', 'equipment_rental'],
+  padel_zone_holstebro_halbooking: ['equipment_rental'],
   padelclub_roskilde_bookli: ['changing_rooms', 'showers', 'cafe', 'equipment_rental'],
+  padelmaster_hadsten: ['changing_rooms', 'showers', 'cafe'],
   padelpadel_aalborg: ['parking', 'changing_rooms', 'showers', 'pro_shop', 'equipment_rental'],
+  padelpit_karlslunde_halbooking: ['parking', 'changing_rooms', 'showers', 'equipment_rental'],
+  padelpit_roskilde_halbooking: ['parking', 'changing_rooms', 'showers', 'equipment_rental'],
   skansen_ntsc: ['parking', 'changing_rooms', 'showers', 'cafe', 'pro_shop', 'wifi'],
+
+  // Smash — smash.dk (+ Stensballe)
+  smash_horsens_double: ['parking', 'changing_rooms', 'showers', 'cafe', 'equipment_rental'],
+  smash_horsens_single: ['parking', 'changing_rooms', 'showers', 'cafe', 'equipment_rental'],
+  smash_stensballe: ['parking', 'changing_rooms', 'showers', 'cafe', 'equipment_rental'],
 };
 
 /**
