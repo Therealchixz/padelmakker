@@ -41,6 +41,32 @@ export function normalizeChatMessage(msg, userId) {
   };
 }
 
+/**
+ * DM-rækker har ikke sender_name/sender_avatar-kolonner — fyld fra profil-map.
+ * @param {ReturnType<typeof normalizeChatMessage>} message
+ * @param {{ profilesById?: Record<string, { full_name?: string, name?: string, avatar?: string }>, selfProfile?: { id?: string, full_name?: string, name?: string, avatar?: string }, userId?: string }} [opts]
+ */
+export function enrichChatMessageSender(message, opts = {}) {
+  if (!message) return null;
+  const { profilesById = null, selfProfile = null, userId = null } = opts;
+  if (message.senderName && message.senderAvatar) return message;
+
+  const sid = String(message.senderId || '');
+  const selfId = String(userId || selfProfile?.id || '');
+  const profile =
+    sid && selfId && sid === selfId
+      ? selfProfile
+      : (sid && profilesById ? profilesById[sid] : null);
+
+  if (!profile) return message;
+
+  return {
+    ...message,
+    senderName: message.senderName || profile.full_name || profile.name || '',
+    senderAvatar: message.senderAvatar || profile.avatar || null,
+  };
+}
+
 export function formatMatchInviteTitle(match) {
   if (!match?.date) return 'Kamp-invitation';
   const d = new Date(`${match.date}T${match.time || '12:00'}`);

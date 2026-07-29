@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { ChatBubble } from './ChatBubble';
 import { ChatTypingBubble } from './ChatTypingBubble';
 import { isSameSender, withDateDividers } from '../../lib/chatDisplayUtils';
-import { normalizeChatMessage } from '../../lib/chatMessageUtils';
+import { enrichChatMessageSender, normalizeChatMessage } from '../../lib/chatMessageUtils';
 
 export function ChatMessageList({
   messages = [],
@@ -17,6 +17,9 @@ export function ChatMessageList({
   onScroll,
   className = '',
   typingVisible = false,
+  /** Profil-lookup for DM (messages-tabellen har ikke sender_name/avatar). */
+  profilesById = null,
+  selfProfile = null,
   onReact,
   onJoinInvite,
   joiningInviteId = null,
@@ -27,7 +30,15 @@ export function ChatMessageList({
   const internalRef = useRef(null);
   const listRef = externalListRef || internalRef;
 
-  const normalized = messages.map((msg) => normalizeChatMessage(msg, userId)).filter(Boolean);
+  const normalized = messages
+    .map((msg) =>
+      enrichChatMessageSender(normalizeChatMessage(msg, userId), {
+        profilesById,
+        selfProfile,
+        userId,
+      }),
+    )
+    .filter(Boolean);
 
   const withDates = withDateDividers(normalized, (m) => m.createdAt);
 

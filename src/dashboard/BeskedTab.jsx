@@ -992,6 +992,16 @@ export function BeskedTab({ user, showToast, setTab, onMobileConversationStateCh
           }
           groupMode
           showSenderNames={isTeamThread}
+          profilesById={
+            isTeamThread
+              ? null
+              : {
+                  ...profiles,
+                  ...(otherProfile?.id ? { [otherProfile.id]: otherProfile } : {}),
+                  ...(selectedId && otherProfile ? { [selectedId]: otherProfile } : {}),
+                }
+          }
+          selfProfile={user}
           typingVisible={otherTyping}
           onReact={handleReact}
           onJoinInvite={handleJoinInvite}
