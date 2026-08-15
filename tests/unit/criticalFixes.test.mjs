@@ -53,6 +53,36 @@ test('KampeTab list load skips global completed dump and duplicate elo reload', 
   assert.doesNotMatch(kampeTab, /\.eq\("status",\s*"completed"\)[\s\S]{0,180}\.limit\(300\)/);
   assert.match(kampeTab, /\}, \[user\.id, showToast\]\);/);
   assert.match(kampeTab, /completedMatchIds/);
+  assert.match(kampeTab, /ELO-historik hentes på detail/);
+  const loadDataStart = kampeTab.indexOf('const loadData = useCallback');
+  const loadDataEnd = kampeTab.indexOf('}, [user.id, showToast]);');
+  assert.ok(loadDataStart >= 0 && loadDataEnd > loadDataStart);
+  assert.equal(kampeTab.slice(loadDataStart, loadDataEnd).includes('fetchEloByUserIdFromHistory'), false);
+});
+
+test('Americano list hydrates current tab roster before paint', async () => {
+  const americano = await readFile(new URL('../../src/features/americano/AmericanoTab.tsx', import.meta.url), 'utf8');
+
+  assert.match(americano, /hydrateAmericanoViewRoster/);
+  assert.match(americano, /americanoViewRef/);
+  assert.match(americano, /rosterLoading/);
+  assert.match(americano, /fetchRowsInChunks/);
+  assert.match(americano, /\.eq\('status', 'registration'\)/);
+  assert.match(americano, /\.eq\('status', 'playing'\)/);
+  assert.match(americano, /\.eq\('status', 'completed'\)/);
+  assert.doesNotMatch(americano, /\.limit\(200\)/);
+  assert.match(americano, /setParticipantSnippets\(\(prev\) => \(\{ \.\.\.prev, \.\.\.roster\.snippets \}\)\)/);
+});
+
+test('Liga list hydrates current view teams and matches before paint', async () => {
+  const liga = await readFile(new URL('../../src/dashboard/LigaTab.jsx', import.meta.url), 'utf8');
+
+  assert.match(liga, /leagueIdsForListPaint/);
+  assert.match(liga, /rosterLoading/);
+  assert.match(liga, /fetchRowsInChunks\(supabase, 'league_teams'/);
+  assert.match(liga, /fetchRowsInChunks\(supabase, 'league_matches'/);
+  assert.doesNotMatch(liga, /\.in\('league_id', ids\)/);
+  assert.match(liga, /loading \|\| rosterLoading/);
 });
 
 test('Americano and Liga hydrate detail routes without waiting for the full list', async () => {

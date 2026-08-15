@@ -26,6 +26,7 @@ import { getLigaBadge, ligaMatchSystemLabel } from '../lib/ligaDisplayUtils';
 import { kampeCreateHint } from '../lib/kampeCreateHint';
 import { notifyLeagueFull } from '../lib/notifyKampeEntityFull';
 import { fetchProfilesByIdMap } from '../lib/profileQueries';
+import { fetchRowsInChunks } from '../lib/supabaseChunkFetch';
 import { notifyLeagueStarted } from '../lib/notifyKampeEntityStarted';
 import { sendPushNotificationsForUsers } from '../lib/notifications';
 import { readLigaSessionPrefs, mergeLigaSessionPrefs } from '../lib/ligaSessionPrefs';
@@ -42,6 +43,48 @@ import {
 } from '../lib/kampeDetailRoutes';
 
 const SEASON_LABELS = { weekly: 'Ugentlig', monthly: 'Månedlig' };
+
+function leagueIdsForListPaint(lgList, view, myTeamMap, focusId) {
+  const ids = new Set();
+  for (const l of lgList || []) {
+    const st = String(l.status || '');
+    if (st === view) ids.add(l.id);
+    if (st === 'active') ids.add(l.id);
+    if (myTeamMap?.[l.id]) ids.add(l.id);
+  }
+  if (focusId) ids.add(focusId);
+  return [...ids];
+}
+
+function groupLeagueTeamRows(teamRows) {
+  const tMap = {};
+  const allMap = {};
+  for (const t of teamRows || []) {
+    if (!allMap[t.league_id]) allMap[t.league_id] = [];
+    allMap[t.league_id].push(t);
+    if (t.status !== 'ready') continue;
+    if (!tMap[t.league_id]) tMap[t.league_id] = [];
+    tMap[t.league_id].push(t);
+  }
+  return { tMap, allMap };
+}
+
+function groupLeagueMatchRows(matchRows) {
+  const mMap = {};
+  for (const m of matchRows || []) {
+    if (!mMap[m.league_id]) mMap[m.league_id] = [];
+    mMap[m.league_id].push(m);
+  }
+  return mMap;
+}
+
+function matchLeagueIdsForPaint(lgList, ids) {
+  const byId = new Map((lgList || []).map((l) => [l.id, l]));
+  return ids.filter((id) => {
+    const st = String(byId.get(id)?.status || '');
+    return st === 'active' || st === 'completed';
+  });
+}
 
 function buildNextMatchLabel(league, myTeam, teams, matches) {
   if (!myTeam || league.status !== 'active') return null;
@@ -127,6 +170,10 @@ export function LigaTab({
     }
     return 'registration';
   });
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const loadedLeagueIdsRef = useRef(new Set());
+  const [rosterLoading, setRosterLoading] = useState(false);
   const [scopeLocal, setScopeLocal] = useState(() => {
     const s = readLigaSessionPrefs(user?.id);
     if (s?.ligaScope === 'mine' || s?.ligaScope === 'alle') return s.ligaScope;
@@ -187,7 +234,9 @@ export function LigaTab({
   const load = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
+    setRosterLoading(false);
     setLoadError('');
+    loadedLeagueIdsRef.current = new Set();
     try {
       const [lgRes, teamsRes] = await Promise.all([
         supabase.from('leagues').select('*').order('created_at', { ascending: false }),
@@ -223,40 +272,31 @@ export function LigaTab({
       }
 
       const myTeams = teamsRes.data || [];
-      // Invitationer: hold hvor jeg er player2 og status = pending
       setPendingInvites(myTeams.filter(t => t.player2_id === user.id && t.status === 'pending'));
       const myTeamMap = {};
       for (const t of myTeams) {
-        // Mit hold i en liga: kun ready, eller pending hvis jeg selv oprettede det
         if (t.status === 'ready' || t.player1_id === user.id) myTeamMap[t.league_id] = t;
       }
       setMyTeamByLeague(myTeamMap);
 
-      if (lgList.length === 0) return;
-      const ids = lgList.map(l => l.id);
-      const [allTeamsRes, matchRes] = await Promise.all([
-        supabase.from('league_teams').select('*').in('league_id', ids),
-        supabase.from('league_matches').select('*').in('league_id', ids),
-      ]);
-      if (allTeamsRes.error) throw allTeamsRes.error;
-      if (matchRes.error) throw matchRes.error;
-      const tMap = {};
-      const allMap = {};
-      for (const t of (allTeamsRes.data || [])) {
-        if (!allMap[t.league_id]) allMap[t.league_id] = [];
-        allMap[t.league_id].push(t);
-        if (t.status !== 'ready') continue;
-        if (!tMap[t.league_id]) tMap[t.league_id] = [];
-        tMap[t.league_id].push(t);
+      if (lgList.length === 0) {
+        setTeamsByLeague({});
+        setAllTeamsByLeague({});
+        setMatchesByLeague({});
+        return;
       }
+
+      const needed = leagueIdsForListPaint(lgList, viewRef.current, myTeamMap, focusId);
+      const matchIds = matchLeagueIdsForPaint(lgList, needed);
+      const [teamRows, matchRows] = await Promise.all([
+        needed.length ? fetchRowsInChunks(supabase, 'league_teams', 'league_id', needed) : Promise.resolve([]),
+        matchIds.length ? fetchRowsInChunks(supabase, 'league_matches', 'league_id', matchIds) : Promise.resolve([]),
+      ]);
+      const { tMap, allMap } = groupLeagueTeamRows(teamRows);
       setTeamsByLeague(tMap);
       setAllTeamsByLeague(allMap);
-      const mMap = {};
-      for (const m of (matchRes.data || [])) {
-        if (!mMap[m.league_id]) mMap[m.league_id] = [];
-        mMap[m.league_id].push(m);
-      }
-      setMatchesByLeague(mMap);
+      setMatchesByLeague(groupLeagueMatchRows(matchRows));
+      loadedLeagueIdsRef.current = new Set(needed);
     } catch (e) {
       console.error(e);
       setLoadError('Kunne ikke hente liga-data lige nu.');
@@ -267,6 +307,40 @@ export function LigaTab({
   }, [user?.id, showToast]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (loading || !user?.id) return undefined;
+    const needed = leagueIdsForListPaint(leagues, view, myTeamByLeague, embedDetailLeagueId);
+    const missing = needed.filter((id) => !loadedLeagueIdsRef.current.has(id));
+    if (missing.length === 0) {
+      setRosterLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setRosterLoading(true);
+    void (async () => {
+      try {
+        const matchIds = matchLeagueIdsForPaint(leagues, missing);
+        const [teamRows, matchRows] = await Promise.all([
+          fetchRowsInChunks(supabase, 'league_teams', 'league_id', missing),
+          matchIds.length ? fetchRowsInChunks(supabase, 'league_matches', 'league_id', matchIds) : Promise.resolve([]),
+        ]);
+        if (cancelled) return;
+        const { tMap, allMap } = groupLeagueTeamRows(teamRows);
+        const mMap = groupLeagueMatchRows(matchRows);
+        setTeamsByLeague((prev) => ({ ...prev, ...tMap }));
+        setAllTeamsByLeague((prev) => ({ ...prev, ...allMap }));
+        setMatchesByLeague((prev) => ({ ...prev, ...mMap }));
+        missing.forEach((id) => loadedLeagueIdsRef.current.add(id));
+      } catch (e) {
+        console.warn('liga view roster:', e?.message || e);
+      } finally {
+        if (!cancelled) setRosterLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [view, leagues, loading, user?.id, myTeamByLeague, embedDetailLeagueId]);
 
   /* Hurtig fetch af én liga til detail-rute (chat/notifikation). */
   useEffect(() => {
@@ -312,6 +386,7 @@ export function LigaTab({
         setAllTeamsByLeague((prev) => ({ ...prev, [league.id]: allTeams }));
         setTeamsByLeague((prev) => ({ ...prev, [league.id]: readyTeams }));
         setMatchesByLeague((prev) => ({ ...prev, [league.id]: matchRes.data || [] }));
+        loadedLeagueIdsRef.current.add(league.id);
 
         const myTeam = allTeams.find((t) => (
           (t.status === 'ready' || t.player1_id === user.id)
@@ -1223,6 +1298,10 @@ export function LigaTab({
         tabs={leagueStatusTabs}
         value={view}
         onChange={(nextView) => {
+          const needed = leagueIdsForListPaint(leagues, nextView, myTeamByLeague, embedDetailLeagueId);
+          if (needed.some((id) => !loadedLeagueIdsRef.current.has(id))) {
+            setRosterLoading(true);
+          }
           setView(nextView);
           if (user?.id) mergeLigaSessionPrefs(user.id, { ligaView: nextView });
         }}
@@ -1230,7 +1309,7 @@ export function LigaTab({
         style={{ marginBottom: '16px' }}
       />
 
-      {loading ? (
+      {loading || rosterLoading ? (
         <div className="pm-state-card pm-state-card--loading">
           <div className="pm-spinner pm-state-spinner" />
           <div className="pm-state-title">Indlæser ligaer…</div>

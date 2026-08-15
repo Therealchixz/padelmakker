@@ -470,30 +470,24 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
         mm[mp.match_id].push(mp);
       });
 
-      /** ELO fra elo_history for alle på banen (+ dig) — undgår RLS hvor kun egen profiles-række returneres ved .in("id"). */
-      const idsForHist = new Set();
+      /** Liste-kort: navn/emoji fra match_players + profil-avatar/region. ELO-historik hentes på detail. */
+      const idsForProfiles = new Set();
       for (const arr of Object.values(mm)) {
         for (const row of arr || []) {
-          if (row?.user_id) idsForHist.add(String(row.user_id));
+          if (row?.user_id) idsForProfiles.add(String(row.user_id));
         }
       }
       for (const m of allMatches) {
-        if (m?.creator_id) idsForHist.add(String(m.creator_id));
+        if (m?.creator_id) idsForProfiles.add(String(m.creator_id));
       }
-      idsForHist.add(String(user.id));
-      const profileIdList = [...idsForHist];
-      const [histEloMap, pById] = await Promise.all([
-        fetchEloByUserIdFromHistory(profileIdList),
-        fetchProfilesByIdMap(profileIdList),
-      ]);
-      setEloFromHistoryByUserId(histEloMap);
-
+      idsForProfiles.add(String(user.id));
+      const pById = await fetchProfilesByIdMap([...idsForProfiles]);
       const eloMap = {};
       for (const [id, pr] of Object.entries(pById)) {
         eloMap[id] = eloOf(pr);
       }
-      setEloByUserId(eloMap);
-      setProfilesById(pById);
+      setEloByUserId((prev) => ({ ...prev, ...eloMap }));
+      setProfilesById((prev) => ({ ...prev, ...pById }));
       if (isStale()) return;
       setMatchPlayers(mm);
 

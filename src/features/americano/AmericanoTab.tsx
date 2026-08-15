@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/AuthContext'
 import { useConfirm } from '../../lib/ConfirmDialogProvider'
 import { fetchCourtsCached } from '../../lib/courtsCache'
 import { fetchProfilesByIdMap } from '../../lib/profileQueries'
+import { fetchRowsInChunks } from '../../lib/supabaseChunkFetch'
 import { CreateAmericanoTournamentForm, type CreatedTournamentInfo } from './CreateAmericanoTournamentForm'
 import { AmericanoResultsPanel } from './AmericanoResultsPanel'
 import { AmericanoListCard } from './AmericanoListCard'
@@ -93,6 +94,212 @@ type ProfileSnippet = {
   americano_elo_rating?: number | null
 }
 
+type AmericanoListMeta = {
+  myEloChange: Record<string, number>
+  liveRound: Record<string, number>
+  playedDurationMinutes: Record<string, number>
+  roundProgress: Record<
+    string,
+    { totalRounds: number; completedRounds: number; liveRound: number | null }
+  >
+}
+
+const EMPTY_AMERICANO_LIST_META: AmericanoListMeta = {
+  myEloChange: {},
+  liveRound: {},
+  playedDurationMinutes: {},
+  roundProgress: {},
+}
+
+const AMERICANO_OPEN_LIMIT = 150
+const AMERICANO_PLAYING_LIMIT = 150
+const AMERICANO_COMPLETED_LIMIT = 80
+const AMERICANO_PARTICIPANT_LIST_SELECT = 'id, tournament_id, user_id, display_name, joined_at'
+const AMERICANO_SNIPPET_SELECT = 'id, avatar, full_name, name, americano_elo_rating'
+
+function statusForAmericanoView(view: AmericanoSubTab): 'registration' | 'playing' | 'completed' {
+  if (view === 'open') return 'registration'
+  if (view === 'playing') return 'playing'
+  return 'completed'
+}
+
+function groupAmericanoParticipants(rawRows: Record<string, unknown>[]): Record<string, ParticipantListRow[]> {
+  const grouped: Record<string, ParticipantListRow[]> = {}
+  for (const raw of rawRows) {
+    const tid = String(raw.tournament_id)
+    const row: ParticipantListRow = {
+      id: String(raw.id),
+      tournament_id: tid,
+      user_id: String(raw.user_id),
+      display_name: String(raw.display_name || 'Spiller').trim() || 'Spiller',
+      joined_at: String(raw.joined_at || ''),
+    }
+    if (!grouped[tid]) grouped[tid] = []
+    grouped[tid].push(row)
+  }
+  Object.keys(grouped).forEach((tid) => {
+    grouped[tid].sort((a, b) => {
+      const c = a.joined_at.localeCompare(b.joined_at)
+      if (c !== 0) return c
+      return String(a.id).localeCompare(String(b.id))
+    })
+  })
+  return grouped
+}
+
+function mergeAmericanoListMeta(prev: AmericanoListMeta, extra: AmericanoListMeta): AmericanoListMeta {
+  return {
+    myEloChange: { ...prev.myEloChange, ...extra.myEloChange },
+    liveRound: { ...prev.liveRound, ...extra.liveRound },
+    playedDurationMinutes: { ...prev.playedDurationMinutes, ...extra.playedDurationMinutes },
+    roundProgress: { ...prev.roundProgress, ...extra.roundProgress },
+  }
+}
+
+function snippetsFromProfiles(profiles: Record<string, object>): Record<string, ProfileSnippet> {
+  const snippets: Record<string, ProfileSnippet> = {}
+  for (const [id, raw] of Object.entries(profiles)) {
+    const p = raw as ProfileSnippet
+    snippets[id] = {
+      avatar: p.avatar,
+      full_name: p.full_name,
+      name: p.name,
+      americano_elo_rating: p.americano_elo_rating,
+    }
+  }
+  return snippets
+}
+
+function sortAmericanoTournaments(list: AmericanoTournament[]): AmericanoTournament[] {
+  return [...list].sort((a, b) => {
+    const da = String(a.tournament_date || '')
+    const db = String(b.tournament_date || '')
+    if (da !== db) return db.localeCompare(da)
+    return String(b.created_at || '').localeCompare(String(a.created_at || ''))
+  })
+}
+
+async function fetchAmericanoListMeta(
+  viewTournaments: AmericanoTournament[],
+  profileId: string,
+  joinedIds: Set<string>,
+): Promise<AmericanoListMeta> {
+  const myEloChange: Record<string, number> = {}
+  const liveRound: Record<string, number> = {}
+  const playedDurationMinutes: Record<string, number> = {}
+  const roundProgress: Record<
+    string,
+    { totalRounds: number; completedRounds: number; liveRound: number | null }
+  > = {}
+
+  const completedJoined = viewTournaments.filter((t) => t.status === 'completed' && joinedIds.has(t.id))
+  const completedInView = viewTournaments.filter((t) => t.status === 'completed')
+  const playing = viewTournaments.filter((t) => t.status === 'playing')
+
+  if (completedJoined.length > 0) {
+    const eloRows = await fetchRowsInChunks(
+      supabase,
+      'americano_elo_history',
+      'tournament_id',
+      completedJoined.map((t) => t.id),
+      'tournament_id, user_id, change',
+    )
+    for (const row of eloRows as { tournament_id: string; user_id: string; change: number | null }[]) {
+      if (String(row.user_id) !== String(profileId)) continue
+      myEloChange[String(row.tournament_id)] = Number(row.change) || 0
+    }
+  }
+
+  if (completedInView.length > 0) {
+    const matchRows = await fetchRowsInChunks(
+      supabase,
+      'americano_matches',
+      'tournament_id',
+      completedInView.map((t) => t.id),
+      'tournament_id, round_number, created_at, updated_at, team_a_score, team_b_score, results_locked',
+    )
+    const byTournament: Record<string, typeof matchRows> = {}
+    for (const m of matchRows) {
+      const tid = String((m as { tournament_id: string }).tournament_id)
+      if (!byTournament[tid]) byTournament[tid] = []
+      byTournament[tid].push(m)
+    }
+    completedInView.forEach((t) => {
+      const ms = byTournament[t.id] || []
+      const mins = computeAmericanoPlayedDurationMinutes(t, ms)
+      if (mins != null) playedDurationMinutes[t.id] = mins
+      const prog = getAmericanoRoundProgressFromMatches(ms)
+      if (prog) roundProgress[t.id] = prog
+    })
+  }
+
+  if (playing.length > 0) {
+    const matchRows = await fetchRowsInChunks(
+      supabase,
+      'americano_matches',
+      'tournament_id',
+      playing.map((t) => t.id),
+      'tournament_id, round_number, team_a_score, team_b_score, results_locked',
+    )
+    const byTournament: Record<string, typeof matchRows> = {}
+    for (const m of matchRows) {
+      const tid = String((m as { tournament_id: string }).tournament_id)
+      if (!byTournament[tid]) byTournament[tid] = []
+      byTournament[tid].push(m)
+    }
+    playing.forEach((t) => {
+      const ms = byTournament[t.id] || []
+      const prog = getAmericanoRoundProgressFromMatches(ms)
+      if (prog) {
+        roundProgress[t.id] = prog
+        if (prog.liveRound != null) liveRound[t.id] = prog.liveRound
+      }
+    })
+  }
+
+  return { myEloChange, liveRound, playedDurationMinutes, roundProgress }
+}
+
+async function hydrateAmericanoViewRoster(
+  viewTournaments: AmericanoTournament[],
+  profileId: string,
+  joinedIds: Set<string>,
+): Promise<{
+  grouped: Record<string, ParticipantListRow[]>
+  snippets: Record<string, ProfileSnippet>
+  listMeta: AmericanoListMeta
+  tids: string[]
+}> {
+  const tids = viewTournaments.map((t) => t.id)
+  let grouped: Record<string, ParticipantListRow[]> = {}
+  if (tids.length > 0) {
+    const partRows = await fetchRowsInChunks(
+      supabase,
+      'americano_participants',
+      'tournament_id',
+      tids,
+      AMERICANO_PARTICIPANT_LIST_SELECT,
+    )
+    grouped = groupAmericanoParticipants((partRows || []) as Record<string, unknown>[])
+  }
+
+  const uidSet = new Set<string>()
+  for (const list of Object.values(grouped)) {
+    for (const p of list) uidSet.add(p.user_id)
+  }
+  const snippets =
+    uidSet.size > 0
+      ? snippetsFromProfiles(await fetchProfilesByIdMap([...uidSet], AMERICANO_SNIPPET_SELECT))
+      : {}
+
+  const listMeta =
+    tids.length > 0
+      ? await fetchAmericanoListMeta(viewTournaments, profileId, joinedIds)
+      : EMPTY_AMERICANO_LIST_META
+
+  return { grouped, snippets, listMeta, tids }
+}
+
 function resolveName(p: ProfileLike | null | undefined, authEmail?: string | null) {
   if (!p) {
     if (authEmail) return authEmail.split('@')[0]
@@ -167,16 +374,12 @@ export function AmericanoTab({
 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [americanoView, setAmericanoView] = useState<AmericanoSubTab>(() => initialSubTab ?? 'open')
+  const americanoViewRef = useRef<AmericanoSubTab>(americanoView)
+  americanoViewRef.current = americanoView
+  const loadedRosterIdsRef = useRef<Set<string>>(new Set())
+  const [rosterLoading, setRosterLoading] = useState(false)
   const [detailTournamentId, setDetailTournamentId] = useState<string | null>(null)
-  const [listMeta, setListMeta] = useState<{
-    myEloChange: Record<string, number>
-    liveRound: Record<string, number>
-    playedDurationMinutes: Record<string, number>
-    roundProgress: Record<
-      string,
-      { totalRounds: number; completedRounds: number; liveRound: number | null }
-    >
-  }>({ myEloChange: {}, liveRound: {}, playedDurationMinutes: {}, roundProgress: {} })
+  const [listMeta, setListMeta] = useState<AmericanoListMeta>(EMPTY_AMERICANO_LIST_META)
   const [completedDetailCache, setCompletedDetailCache] = useState<
     Record<
       string,
@@ -220,18 +423,42 @@ export function AmericanoTab({
 
   const load = useCallback(async () => {
     setLoading(true)
+    setRosterLoading(false)
     setLoadError('')
+    loadedRosterIdsRef.current = new Set()
     try {
       if (!profileId) {
         setCourts([])
         setRows([])
         setJoinedIds(new Set())
         setParticipantsByTournament({})
+        setParticipantSnippets({})
+        setListMeta(EMPTY_AMERICANO_LIST_META)
         return
       }
-      const [cd, trRes, myRes] = await Promise.all([
+      const [cd, regRes, playRes, doneRes, myRes] = await Promise.all([
         fetchCourtsCached(),
-        supabase.from('americano_tournaments').select('*').order('tournament_date', { ascending: false }).order('created_at', { ascending: false }).limit(200),
+        supabase
+          .from('americano_tournaments')
+          .select('*')
+          .eq('status', 'registration')
+          .order('tournament_date', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(AMERICANO_OPEN_LIMIT),
+        supabase
+          .from('americano_tournaments')
+          .select('*')
+          .eq('status', 'playing')
+          .order('tournament_date', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(AMERICANO_PLAYING_LIMIT),
+        supabase
+          .from('americano_tournaments')
+          .select('*')
+          .eq('status', 'completed')
+          .order('tournament_date', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(AMERICANO_COMPLETED_LIMIT),
         supabase.from('americano_participants').select('tournament_id').eq('user_id', profileId),
       ])
       setCourts(
@@ -240,19 +467,43 @@ export function AmericanoTab({
           name: c.name || 'Bane',
         }))
       )
-      if (trRes.error) throw trRes.error
-      const tournamentList: AmericanoTournament[] = [...((trRes.data || []) as AmericanoTournament[])]
-      const focusId = embedDetailIdRef.current
-      if (focusId && !tournamentList.some((t) => String(t.id) === String(focusId))) {
-        const { data: extra, error: extraErr } = await supabase
-          .from('americano_tournaments')
-          .select('*')
-          .eq('id', focusId)
-          .maybeSingle()
-        if (extraErr) console.warn('americano focus tournament:', extraErr.message)
-        else if (extra) tournamentList.unshift(extra as AmericanoTournament)
+      if (regRes.error) throw regRes.error
+      if (playRes.error) throw playRes.error
+      if (doneRes.error) throw doneRes.error
+      if (myRes.error) throw myRes.error
+
+      const byId = new Map<string, AmericanoTournament>()
+      for (const t of [
+        ...((regRes.data || []) as AmericanoTournament[]),
+        ...((playRes.data || []) as AmericanoTournament[]),
+        ...((doneRes.data || []) as AmericanoTournament[]),
+      ]) {
+        if (t?.id) byId.set(String(t.id), t)
       }
+
+      const joinedSet = new Set<string>(
+        ((myRes.data || []) as { tournament_id?: unknown }[])
+          .map((r) => String(r.tournament_id || ''))
+          .filter(Boolean),
+      )
+      const focusId = embedDetailIdRef.current
+      const extraIds = [...joinedSet].filter((id) => !byId.has(id))
+      if (focusId && !byId.has(String(focusId))) extraIds.push(String(focusId))
+      if (extraIds.length > 0) {
+        const extraRows = await fetchRowsInChunks(
+          supabase,
+          'americano_tournaments',
+          'id',
+          [...new Set(extraIds)],
+        )
+        for (const t of extraRows as AmericanoTournament[]) {
+          if (t?.id) byId.set(String(t.id), t)
+        }
+      }
+
+      const tournamentList = sortAmericanoTournaments([...byId.values()])
       setRows(tournamentList)
+      setJoinedIds(joinedSet)
 
       const creatorIds = [...new Set(tournamentList.map((t) => t.creator_id).filter(Boolean))]
       if (creatorIds.length > 0) {
@@ -267,46 +518,23 @@ export function AmericanoTab({
         setCreatorProfilesByUserId({})
         setCreatorAreasByUserId({})
       }
-      if (!myRes.error && myRes.data) {
-        setJoinedIds(new Set(myRes.data.map((r: { tournament_id: string }) => r.tournament_id)))
-      } else {
-        setJoinedIds(new Set())
-      }
 
-      const tids = tournamentList.map((t) => t.id)
-      if (tids.length === 0) {
+      const viewStatus = statusForAmericanoView(americanoViewRef.current)
+      const viewTournaments = tournamentList.filter((t) => t.status === viewStatus)
+      try {
+        const roster = await hydrateAmericanoViewRoster(viewTournaments, profileId, joinedSet)
+        setParticipantsByTournament(roster.grouped)
+        setParticipantSnippets(roster.snippets)
+        setListMeta(roster.listMeta)
+        loadedRosterIdsRef.current = new Set(roster.tids)
+      } catch (partErr) {
+        console.warn(
+          'americano list roster:',
+          partErr instanceof Error ? partErr.message : partErr,
+        )
         setParticipantsByTournament({})
-      } else {
-        const { data: allParts, error: partErr } = await supabase
-          .from('americano_participants')
-          .select('id, tournament_id, user_id, display_name, joined_at')
-          .in('tournament_id', tids)
-        if (partErr) {
-          console.warn('americano_participants list:', partErr.message)
-          setParticipantsByTournament({})
-        } else {
-          const grouped: Record<string, ParticipantListRow[]> = {}
-          ;(allParts || []).forEach((raw: Record<string, unknown>) => {
-            const tid = String(raw.tournament_id)
-            const row: ParticipantListRow = {
-              id: String(raw.id),
-              tournament_id: tid,
-              user_id: String(raw.user_id),
-              display_name: String(raw.display_name || 'Spiller').trim() || 'Spiller',
-              joined_at: String(raw.joined_at || ''),
-            }
-            if (!grouped[tid]) grouped[tid] = []
-            grouped[tid].push(row)
-          })
-          Object.keys(grouped).forEach((tid) => {
-            grouped[tid].sort((a, b) => {
-              const c = a.joined_at.localeCompare(b.joined_at)
-              if (c !== 0) return c
-              return String(a.id).localeCompare(String(b.id))
-            })
-          })
-          setParticipantsByTournament(grouped)
-        }
+        setParticipantSnippets({})
+        setListMeta(EMPTY_AMERICANO_LIST_META)
       }
     } catch (e) {
       console.warn(e)
@@ -314,6 +542,8 @@ export function AmericanoTab({
       showToast(TOURNAMENT_LOAD_ERROR_TOAST)
       setRows([])
       setParticipantsByTournament({})
+      setParticipantSnippets({})
+      setListMeta(EMPTY_AMERICANO_LIST_META)
     } finally {
       setLoading(false)
     }
@@ -375,6 +605,14 @@ export function AmericanoTab({
           return String(a.id).localeCompare(String(b.id))
         })
         setParticipantsByTournament((prev) => ({ ...prev, [tRow.id]: partRows }))
+        loadedRosterIdsRef.current.add(String(tRow.id))
+        if (partRows.length > 0) {
+          const extraSnippets = snippetsFromProfiles(
+            await fetchProfilesByIdMap(partRows.map((p) => p.user_id), AMERICANO_SNIPPET_SELECT),
+          )
+          if (cancelled) return
+          setParticipantSnippets((prev) => ({ ...prev, ...extraSnippets }))
+        }
 
         if (profileId && partRows.some((p) => String(p.user_id) === String(profileId))) {
           setJoinedIds((prev) => {
@@ -439,39 +677,21 @@ export function AmericanoTab({
   useEffect(() => {
     const uidSet = new Set<string>()
     for (const t of rows) {
-      /* Completed inkluderet for at vise avatar på podium */
       if (t.status !== 'playing' && t.status !== 'registration' && t.status !== 'completed') continue
       for (const p of participantsByTournament[t.id] || []) {
         uidSet.add(p.user_id)
       }
     }
-    if (uidSet.size === 0) {
-      setParticipantSnippets({})
-      return
-    }
-    const idList = [...uidSet]
+    const missing = [...uidSet].filter((id) => !participantSnippets[id])
+    if (missing.length === 0) return undefined
     let cancelled = false
-    ;(async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, avatar, full_name, name, americano_elo_rating')
-        .in('id', idList)
-      if (cancelled) return
-      if (error) {
-        console.warn('americano participant profiles:', error.message)
-        if (!cancelled) setParticipantSnippets({})
-        return
+    void (async () => {
+      try {
+        const extra = snippetsFromProfiles(await fetchProfilesByIdMap(missing, AMERICANO_SNIPPET_SELECT))
+        if (!cancelled) setParticipantSnippets((prev) => ({ ...prev, ...extra }))
+      } catch (e) {
+        console.warn('americano participant profiles:', e instanceof Error ? e.message : e)
       }
-      const next: Record<string, ProfileSnippet> = {}
-      ;(data || []).forEach((r: { id: string; avatar?: string | null; full_name?: string | null; name?: string | null; americano_elo_rating?: number | null }) => {
-        next[String(r.id)] = {
-          avatar: r.avatar,
-          full_name: r.full_name,
-          name: r.name,
-          americano_elo_rating: r.americano_elo_rating,
-        }
-      })
-      setParticipantSnippets(next)
     })()
     return () => {
       cancelled = true
@@ -479,123 +699,35 @@ export function AmericanoTab({
   }, [rows, participantsByTournament])
 
   useEffect(() => {
-    if (!profileId || loading) return
-
-    const matchesScope = (t: AmericanoTournament) => {
-      if (scope === 'mine' && !joinedIds.has(t.id)) return false
-      if (listRegionFilter) {
-        const creatorArea = creatorAreasByUserId[String(t.creator_id)] || ''
-        const courtName = resolveAmericanoCourtName(t.court_id, courts)
-        if (!tournamentPassesKampeRegionFilter(t, listRegionFilter, creatorArea, courtName)) return false
-      }
-      if (searchQuery && searchQuery.trim()) {
-        const q = searchQuery.toLowerCase()
-        if ((t.name || '').toLowerCase().includes(q)) return true
-        const parts = participantsByTournament[t.id] || []
-        return parts.some((p) => (p.display_name || '').toLowerCase().includes(q))
-      }
-      return true
-    }
-
-    const filtered = rows.filter(matchesScope)
-    const viewRows =
-      americanoView === 'open'
-        ? filtered.filter((t) => t.status === 'registration')
-        : americanoView === 'playing'
-          ? filtered.filter((t) => t.status === 'playing')
-          : filtered.filter((t) => t.status === 'completed')
-
-    const completedJoined = viewRows.filter((t) => t.status === 'completed' && joinedIds.has(t.id))
-    const completedInView = viewRows.filter((t) => t.status === 'completed')
-    const playing = viewRows.filter((t) => t.status === 'playing')
-
-    if (completedInView.length === 0 && playing.length === 0) {
-      setListMeta({ myEloChange: {}, liveRound: {}, playedDurationMinutes: {}, roundProgress: {} })
+    if (!profileId || loading) return undefined
+    const status = statusForAmericanoView(americanoView)
+    const viewTournaments = rows.filter((t) => t.status === status)
+    const missing = viewTournaments.filter((t) => !loadedRosterIdsRef.current.has(t.id))
+    if (missing.length === 0) {
+      setRosterLoading(false)
       return undefined
     }
 
     let cancelled = false
-    ;(async () => {
-      const myEloChange: Record<string, number> = {}
-      const liveRound: Record<string, number> = {}
-      const playedDurationMinutes: Record<string, number> = {}
-      const roundProgress: Record<
-        string,
-        { totalRounds: number; completedRounds: number; liveRound: number | null }
-      > = {}
-
-      if (completedJoined.length > 0) {
-        const tids = completedJoined.map((t) => t.id)
-        const { data } = await supabase
-          .from('americano_elo_history')
-          .select('tournament_id, change')
-          .in('tournament_id', tids)
-          .eq('user_id', profileId)
-        ;(data || []).forEach((row: { tournament_id: string; change: number | null }) => {
-          myEloChange[String(row.tournament_id)] = Number(row.change) || 0
-        })
+    setRosterLoading(true)
+    void (async () => {
+      try {
+        const roster = await hydrateAmericanoViewRoster(missing, profileId, joinedIds)
+        if (cancelled) return
+        setParticipantsByTournament((prev) => ({ ...prev, ...roster.grouped }))
+        setParticipantSnippets((prev) => ({ ...prev, ...roster.snippets }))
+        setListMeta((prev) => mergeAmericanoListMeta(prev, roster.listMeta))
+        roster.tids.forEach((id) => loadedRosterIdsRef.current.add(id))
+      } catch (e) {
+        console.warn('americano view roster:', e instanceof Error ? e.message : e)
+      } finally {
+        if (!cancelled) setRosterLoading(false)
       }
-
-      if (completedInView.length > 0) {
-        const tids = completedInView.map((t) => t.id)
-        const { data: matchRows } = await supabase
-          .from('americano_matches')
-          .select(
-            'tournament_id, round_number, created_at, updated_at, team_a_score, team_b_score, results_locked',
-          )
-          .in('tournament_id', tids)
-        const byTournament: Record<string, typeof matchRows> = {}
-        ;(matchRows || []).forEach((m) => {
-          const tid = String(m.tournament_id)
-          if (!byTournament[tid]) byTournament[tid] = []
-          byTournament[tid].push(m)
-        })
-        completedInView.forEach((t) => {
-          const ms = byTournament[t.id] || []
-          const mins = computeAmericanoPlayedDurationMinutes(t, ms)
-          if (mins != null) playedDurationMinutes[t.id] = mins
-          const prog = getAmericanoRoundProgressFromMatches(ms)
-          if (prog) roundProgress[t.id] = prog
-        })
-      }
-
-      if (playing.length > 0) {
-        const tids = playing.map((t) => t.id)
-        const { data } = await supabase
-          .from('americano_matches')
-          .select('tournament_id, round_number, team_a_score, team_b_score, results_locked')
-          .in('tournament_id', tids)
-        const byTournament: Record<
-          string,
-          {
-            round_number: number
-            team_a_score: number | null
-            team_b_score: number | null
-            results_locked?: boolean | null
-          }[]
-        > = {}
-        ;(data || []).forEach((m) => {
-          const tid = String(m.tournament_id)
-          if (!byTournament[tid]) byTournament[tid] = []
-          byTournament[tid].push(m)
-        })
-        playing.forEach((t) => {
-          const ms = byTournament[t.id] || []
-          const prog = getAmericanoRoundProgressFromMatches(ms)
-          if (prog) {
-            roundProgress[t.id] = prog
-            if (prog.liveRound != null) liveRound[t.id] = prog.liveRound
-          }
-        })
-      }
-
-      if (!cancelled) setListMeta({ myEloChange, liveRound, playedDurationMinutes, roundProgress })
     })()
-
     return () => {
       cancelled = true
     }
-  }, [rows, joinedIds, profileId, loading, americanoView, scope, searchQuery, participantsByTournament, listRegionFilter, creatorAreasByUserId])
+  }, [americanoView, rows, loading, profileId, joinedIds])
 
   useEffect(() => {
     const openDetailId = embedInKampe ? embedDetailId : detailTournamentId
@@ -1134,6 +1266,10 @@ export function AmericanoTab({
         tabs={americanoSubTabs}
         value={americanoView}
         onChange={(nextTab: AmericanoSubTab) => {
+          const nextStatus = statusForAmericanoView(nextTab)
+          if (rows.some((t) => t.status === nextStatus && !loadedRosterIdsRef.current.has(t.id))) {
+            setRosterLoading(true)
+          }
           setAmericanoView(nextTab)
           onAmericanoSubTabChange?.(nextTab)
         }}
@@ -1142,7 +1278,13 @@ export function AmericanoTab({
         style={{ marginBottom: 16 }}
       />
 
-      {rows.length === 0 ? (
+      {rosterLoading ? (
+        <div className="pm-state-card pm-state-card--loading" style={{ fontFamily: font }}>
+          <div className="pm-spinner pm-state-spinner" />
+          <div className="pm-state-title">{TOURNAMENT_LOADING}</div>
+          <div className="pm-state-copy">Vi henter Americano/Mexicano og deltagere.</div>
+        </div>
+      ) : rows.length === 0 ? (
         <div className="pm-state-card pm-state-card--empty">
           <EmptyStateIcon icon={CalendarDays} />
           <div className="pm-state-title">{TOURNAMENT_EMPTY.none}</div>
