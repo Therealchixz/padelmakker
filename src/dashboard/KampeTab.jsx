@@ -427,30 +427,29 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
 
       setCourts(cd || []);
 
-      const idSet = new Set();
-      (openPoolRes.data || []).forEach((m) => idSet.add(m.id));
-      (createdRes.data || []).forEach((m) => idSet.add(m.id));
-      (myMpRes.data || []).forEach((r) => idSet.add(r.match_id));
-      // Deep-link / chat "Se kamp": sørg for at den fokuserede kamp er med i poolen
-      // (åben-pool har limit + 30-dages cutoff og kan ellers mangle den).
+      const byId = new Map();
+      for (const m of [...(openPoolRes.data || []), ...(createdRes.data || [])]) {
+        if (m?.id) byId.set(String(m.id), m);
+      }
+      const extraIds = [];
+      for (const r of myMpRes.data || []) {
+        if (r?.match_id && !byId.has(String(r.match_id))) extraIds.push(r.match_id);
+      }
+      // Deep-link / chat "Se kamp": åben-pool har limit + 30-dages cutoff.
       const focusMatchId = detailMatchIdRef.current;
-      if (focusMatchId) idSet.add(focusMatchId);
+      if (focusMatchId && !byId.has(String(focusMatchId))) extraIds.push(focusMatchId);
 
-      const { data: recentCompleted, error: rcErr } = await supabase
-        .from("matches")
-        .select("id")
-        .eq("status", "completed")
-        .order("date", { ascending: false })
-        .limit(300);
-      if (rcErr) throw rcErr;
-      (recentCompleted || []).forEach((r) => idSet.add(r.id));
+      const uniqueExtraIds = [...new Set(extraIds)];
+      if (uniqueExtraIds.length > 0) {
+        const extraMatches = await fetchRowsInChunks(supabase, "matches", "id", uniqueExtraIds);
+        for (const m of extraMatches) {
+          if (m?.id) byId.set(String(m.id), m);
+        }
+      }
       if (isStale()) return;
 
-      const allMatchIds = [...idSet];
-
-      const allMatches =
-        allMatchIds.length > 0 ? await fetchRowsInChunks(supabase, "matches", "id", allMatchIds) : [];
-      if (isStale()) return;
+      const allMatches = [...byId.values()];
+      const allMatchIds = allMatches.map((m) => m.id);
       setMatches(allMatches);
 
       const vOpts = getMatchVenueOptions(cd || []);
@@ -498,8 +497,16 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       if (isStale()) return;
       setMatchPlayers(mm);
 
+      const resultMatchIds = allMatches
+        .filter((m) => {
+          const st = String(m?.status || "").toLowerCase();
+          return st === "completed" || st === "in_progress";
+        })
+        .map((m) => m.id);
       const mrd =
-        allMatchIds.length > 0 ? await fetchRowsInChunks(supabase, "match_results", "match_id", allMatchIds) : [];
+        resultMatchIds.length > 0
+          ? await fetchRowsInChunks(supabase, "match_results", "match_id", resultMatchIds)
+          : [];
       const mrMap = {};
       (mrd || []).forEach((mr) => {
         const mid = mr.match_id;
@@ -514,13 +521,16 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
       });
       setMatchResults(mrMap);
 
+      const completedMatchIds = allMatches
+        .filter((m) => String(m?.status || "").toLowerCase() === "completed")
+        .map((m) => m.id);
       const eloHistRows =
-        allMatchIds.length > 0
+        completedMatchIds.length > 0
           ? await fetchRowsInChunks(
               supabase,
               'elo_history',
               'match_id',
-              allMatchIds,
+              completedMatchIds,
               'match_id, user_id, change',
             )
           : [];
@@ -562,10 +572,9 @@ export function KampeTab({ user, showToast, tabActive = true, onCreatePanelChang
     } finally {
       if (reqId === loadDataReqIdRef.current) {
         setLoadingMatches(false);
-        void reloadKampeEloBundle();
       }
     }
-  }, [user.id, showToast, reloadKampeEloBundle]);
+  }, [user.id, showToast]);
 
   useEffect(() => { void loadData(); }, [loadData]);
 

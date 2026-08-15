@@ -122,6 +122,8 @@ export function AmericanoTab({
   const location = useLocation()
   const embedDetailRoute = embedInKampe ? parseKampeDetailRoute(location.pathname) : null
   const embedDetailId = embedDetailRoute?.kind === 'americano' ? embedDetailRoute.id : null
+  const embedDetailIdRef = useRef(embedDetailId)
+  embedDetailIdRef.current = embedDetailId
   const closeAmericanoDetail = useCallback(() => {
     navigate(buildKampeListPath(KAMPE_FORMAT_AMERICANO))
   }, [navigate])
@@ -146,6 +148,8 @@ export function AmericanoTab({
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [detailFetchStatus, setDetailFetchStatus] = useState<'idle' | 'loading' | 'ready' | 'missing' | 'error'>('idle')
+  const [detailHydrateNonce, setDetailHydrateNonce] = useState(0)
   const [createOpenInternal, setCreateOpenInternal] = useState(false)
   const createControlled = typeof createOpen === 'boolean'
   const showCreate = createControlled ? createOpen : createOpenInternal
@@ -237,7 +241,17 @@ export function AmericanoTab({
         }))
       )
       if (trRes.error) throw trRes.error
-      const tournamentList: AmericanoTournament[] = (trRes.data || []) as AmericanoTournament[]
+      const tournamentList: AmericanoTournament[] = [...((trRes.data || []) as AmericanoTournament[])]
+      const focusId = embedDetailIdRef.current
+      if (focusId && !tournamentList.some((t) => String(t.id) === String(focusId))) {
+        const { data: extra, error: extraErr } = await supabase
+          .from('americano_tournaments')
+          .select('*')
+          .eq('id', focusId)
+          .maybeSingle()
+        if (extraErr) console.warn('americano focus tournament:', extraErr.message)
+        else if (extra) tournamentList.unshift(extra as AmericanoTournament)
+      }
       setRows(tournamentList)
 
       const creatorIds = [...new Set(tournamentList.map((t) => t.creator_id).filter(Boolean))]
@@ -309,6 +323,94 @@ export function AmericanoTab({
     load()
   }, [load])
 
+  /* Hurtig fetch af én turnering til detail-rute (chat/notifikation). */
+  useEffect(() => {
+    if (!embedInKampe || !tabActive || !embedDetailId) {
+      setDetailFetchStatus('idle')
+      return undefined
+    }
+
+    let cancelled = false
+    setDetailFetchStatus('loading')
+
+    const hydrateDetailTournament = async () => {
+      try {
+        const { data: tournament, error: tErr } = await supabase
+          .from('americano_tournaments')
+          .select('*')
+          .eq('id', embedDetailId)
+          .maybeSingle()
+        if (cancelled) return
+        if (tErr) throw tErr
+        if (!tournament) {
+          setDetailFetchStatus('missing')
+          return
+        }
+
+        const tRow = tournament as AmericanoTournament
+        setRows((prev) => {
+          if (prev.some((x) => String(x.id) === String(tRow.id))) {
+            return prev.map((x) => (String(x.id) === String(tRow.id) ? tRow : x))
+          }
+          return [tRow, ...prev]
+        })
+
+        const { data: parts, error: pErr } = await supabase
+          .from('americano_participants')
+          .select('id, tournament_id, user_id, display_name, joined_at')
+          .eq('tournament_id', tRow.id)
+        if (cancelled) return
+        if (pErr) throw pErr
+
+        const partRows: ParticipantListRow[] = (parts || []).map((raw: Record<string, unknown>) => ({
+          id: String(raw.id),
+          tournament_id: String(raw.tournament_id),
+          user_id: String(raw.user_id),
+          display_name: String(raw.display_name || 'Spiller').trim() || 'Spiller',
+          joined_at: String(raw.joined_at || ''),
+        }))
+        partRows.sort((a, b) => {
+          const c = a.joined_at.localeCompare(b.joined_at)
+          if (c !== 0) return c
+          return String(a.id).localeCompare(String(b.id))
+        })
+        setParticipantsByTournament((prev) => ({ ...prev, [tRow.id]: partRows }))
+
+        if (profileId && partRows.some((p) => String(p.user_id) === String(profileId))) {
+          setJoinedIds((prev) => {
+            if (prev.has(tRow.id)) return prev
+            const next = new Set(prev)
+            next.add(tRow.id)
+            return next
+          })
+        }
+
+        if (tRow.creator_id) {
+          const creatorProfiles = await fetchProfilesByIdMap([String(tRow.creator_id)])
+          if (cancelled) return
+          setCreatorProfilesByUserId((prev) => ({ ...prev, ...creatorProfiles }))
+          const creator = creatorProfiles[String(tRow.creator_id)] as { area?: string | null } | undefined
+          if (creator) {
+            setCreatorAreasByUserId((prev) => ({
+              ...prev,
+              [String(tRow.creator_id)]: String(creator.area || ''),
+            }))
+          }
+        }
+
+        if (!cancelled) setDetailFetchStatus('ready')
+      } catch (e) {
+        console.warn('americano detail hydrate:', e instanceof Error ? e.message : e)
+        if (!cancelled) setDetailFetchStatus('error')
+      }
+    }
+
+    void hydrateDetailTournament()
+    return () => {
+      cancelled = true
+    }
+  }, [embedInKampe, tabActive, embedDetailId, detailHydrateNonce, profileId])
+
   useEffect(() => {
     if (initialSubTab === 'open' || initialSubTab === 'playing' || initialSubTab === 'completed') {
       setAmericanoView(initialSubTab)
@@ -317,17 +419,22 @@ export function AmericanoTab({
 
   useEffect(() => {
     const tid = embedDetailId
-    if (!tid || !tabActive || !embedInKampe || loading) return
+    if (!tid || !tabActive || !embedInKampe) return
+    if (detailFetchStatus === 'loading' || detailFetchStatus === 'error') return
+    if (loading && detailFetchStatus !== 'ready' && detailFetchStatus !== 'missing') return
+
     const t = rows.find((x) => String(x.id) === String(tid))
     if (!t) {
-      navigate(buildKampeListPath(KAMPE_FORMAT_AMERICANO), { replace: true })
+      if (detailFetchStatus !== 'missing') setDetailFetchStatus('missing')
       return
     }
+
+    if (detailFetchStatus !== 'ready') setDetailFetchStatus('ready')
     const st = String(t.status || '').toLowerCase()
     if (st === 'registration') setAmericanoView('open')
     else if (st === 'playing') setAmericanoView('playing')
     else setAmericanoView('completed')
-  }, [embedDetailId, tabActive, embedInKampe, loading, rows, navigate])
+  }, [embedDetailId, tabActive, embedInKampe, loading, rows, detailFetchStatus])
 
   useEffect(() => {
     const uidSet = new Set<string>()
@@ -839,7 +946,7 @@ export function AmericanoTab({
     }
   }
 
-  if (loading) {
+  if (!embedDetailId && loading) {
     return (
       <div className="pm-state-card pm-state-card--loading" style={{ fontFamily: font }}>
         <div className="pm-spinner pm-state-spinner" />
@@ -849,7 +956,7 @@ export function AmericanoTab({
     )
   }
 
-  if (loadError) {
+  if (!embedDetailId && loadError) {
     return (
       <div className="pm-state-card pm-state-card--error" style={{ fontFamily: font }}>
         <div className="pm-state-icon">⚠️</div>
@@ -1096,6 +1203,40 @@ export function AmericanoTab({
         </div>
       )}
         </>
+      ) : null}
+
+      {embedDetailId && !detailTournament ? (
+        detailFetchStatus === 'missing' ? (
+          <div className="pm-state-card pm-state-card--error" style={{ marginBottom: 14 }}>
+            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-title">Turneringen blev ikke fundet</div>
+            <div className="pm-state-copy">Den kan være slettet, eller du har ikke adgang til den længere.</div>
+            <div className="pm-state-actions">
+              <button type="button" onClick={closeAmericanoDetail} style={{ ...btn(true), fontSize: 13 }}>
+                Tilbage
+              </button>
+            </div>
+          </div>
+        ) : detailFetchStatus === 'error' ? (
+          <div className="pm-state-card pm-state-card--error" style={{ marginBottom: 14 }}>
+            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-title">Turneringen kunne ikke indlæses</div>
+            <div className="pm-state-copy">Tjek din forbindelse og prøv igen.</div>
+            <div className="pm-state-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button type="button" onClick={() => setDetailHydrateNonce((n) => n + 1)} style={{ ...btn(true), fontSize: 13 }}>
+                Prøv igen
+              </button>
+              <button type="button" onClick={closeAmericanoDetail} style={{ ...btn(false), fontSize: 13 }}>
+                Tilbage
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: 14 }}>
+            <div className="pm-spinner pm-state-spinner" />
+            <div className="pm-state-title">Indlæser turnering…</div>
+          </div>
+        )
       ) : null}
 
       {detailTournament ? (() => {

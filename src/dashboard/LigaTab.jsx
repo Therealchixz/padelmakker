@@ -73,7 +73,9 @@ export function LigaTab({
   const navigate = useNavigate();
   const location = useLocation();
   const embedDetailRoute = embedInKampe ? parseKampeDetailRoute(location.pathname) : null;
-  const embedDetailLeagueId = embedDetailRoute?.kind === 'liga' ? embedDetailRoute.id : null;
+  const embedDetailLeagueId = embedDetailRoute?.kind === 'liga' ? embedDetailRoute.id : null
+  const embedDetailLeagueIdRef = useRef(embedDetailLeagueId)
+  embedDetailLeagueIdRef.current = embedDetailLeagueId;;
   const embedLigaSub = embedDetailRoute?.kind === 'liga' ? embedDetailRoute.sub : null;
   const embedTeamId = embedLigaSub && typeof embedLigaSub === 'object' && embedLigaSub.team
     ? String(embedLigaSub.team)
@@ -144,6 +146,8 @@ export function LigaTab({
   const [pendingInvites, setPendingInvites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [detailFetchStatus, setDetailFetchStatus] = useState('idle');
+  const [detailHydrateNonce, setDetailHydrateNonce] = useState(0);
   const [creatorAreasByUserId, setCreatorAreasByUserId] = useState({});
   const [creatorProfilesByUserId, setCreatorProfilesByUserId] = useState({});
   const [busyId, setBusyId] = useState(null);
@@ -191,7 +195,17 @@ export function LigaTab({
       ]);
       if (lgRes.error) throw lgRes.error;
       if (teamsRes.error) throw teamsRes.error;
-      const lgList = lgRes.data || [];
+      const lgList = [...(lgRes.data || [])];
+      const focusId = embedDetailLeagueIdRef.current;
+      if (focusId && !lgList.some((l) => String(l.id) === String(focusId))) {
+        const { data: extra, error: extraErr } = await supabase
+          .from('leagues')
+          .select('*')
+          .eq('id', focusId)
+          .maybeSingle();
+        if (extraErr) console.warn('liga focus league:', extraErr.message);
+        else if (extra) lgList.unshift(extra);
+      }
       setLeagues(lgList);
 
       const creatorIds = [...new Set(lgList.map((l) => l.created_by).filter(Boolean))];
@@ -253,6 +267,83 @@ export function LigaTab({
   }, [user?.id, showToast]);
 
   useEffect(() => { load(); }, [load]);
+
+  /* Hurtig fetch af én liga til detail-rute (chat/notifikation). */
+  useEffect(() => {
+    if (!embedInKampe || !tabActive || !embedDetailLeagueId || !user?.id) {
+      setDetailFetchStatus('idle');
+      return undefined;
+    }
+
+    let cancelled = false;
+    setDetailFetchStatus('loading');
+
+    const hydrateDetailLeague = async () => {
+      try {
+        const { data: league, error: lErr } = await supabase
+          .from('leagues')
+          .select('*')
+          .eq('id', embedDetailLeagueId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (lErr) throw lErr;
+        if (!league) {
+          setDetailFetchStatus('missing');
+          return;
+        }
+
+        setLeagues((prev) => {
+          if (prev.some((l) => String(l.id) === String(league.id))) {
+            return prev.map((l) => (String(l.id) === String(league.id) ? league : l));
+          }
+          return [league, ...prev];
+        });
+
+        const [teamsRes, matchRes] = await Promise.all([
+          supabase.from('league_teams').select('*').eq('league_id', league.id),
+          supabase.from('league_matches').select('*').eq('league_id', league.id),
+        ]);
+        if (cancelled) return;
+        if (teamsRes.error) throw teamsRes.error;
+        if (matchRes.error) throw matchRes.error;
+
+        const allTeams = teamsRes.data || [];
+        const readyTeams = allTeams.filter((t) => t.status === 'ready');
+        setAllTeamsByLeague((prev) => ({ ...prev, [league.id]: allTeams }));
+        setTeamsByLeague((prev) => ({ ...prev, [league.id]: readyTeams }));
+        setMatchesByLeague((prev) => ({ ...prev, [league.id]: matchRes.data || [] }));
+
+        const myTeam = allTeams.find((t) => (
+          (t.status === 'ready' || t.player1_id === user.id)
+          && (t.player1_id === user.id || t.player2_id === user.id)
+        ));
+        if (myTeam) {
+          setMyTeamByLeague((prev) => ({ ...prev, [league.id]: myTeam }));
+        }
+
+        if (league.created_by) {
+          const creatorProfiles = await fetchProfilesByIdMap([String(league.created_by)]);
+          if (cancelled) return;
+          setCreatorProfilesByUserId((prev) => ({ ...prev, ...creatorProfiles }));
+          const creator = creatorProfiles[String(league.created_by)];
+          if (creator) {
+            setCreatorAreasByUserId((prev) => ({
+              ...prev,
+              [String(league.created_by)]: String(creator.area || ''),
+            }));
+          }
+        }
+
+        if (!cancelled) setDetailFetchStatus('ready');
+      } catch (e) {
+        console.warn('liga detail hydrate:', e?.message || e);
+        if (!cancelled) setDetailFetchStatus('error');
+      }
+    };
+
+    void hydrateDetailLeague();
+    return () => { cancelled = true; };
+  }, [embedInKampe, tabActive, embedDetailLeagueId, detailHydrateNonce, user?.id]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -645,14 +736,18 @@ export function LigaTab({
 
   useEffect(() => {
     const lid = embedDetailLeagueId;
-    if (!lid || !tabActive || !embedInKampe || loading) return;
+    if (!lid || !tabActive || !embedInKampe) return;
+    if (detailFetchStatus === 'loading' || detailFetchStatus === 'error') return;
+    if (loading && detailFetchStatus !== 'ready' && detailFetchStatus !== 'missing') return;
     const league = leagues.find((l) => String(l.id) === String(lid));
     if (!league) {
-      navigate(buildKampeListPath(KAMPE_FORMAT_LIGA), { replace: true });
+      if (detailFetchStatus !== 'missing') setDetailFetchStatus('missing');
       return;
     }
+    if (detailFetchStatus !== 'ready') setDetailFetchStatus('ready');
     if (embedTeamId) {
       const teams = teamsByLeague[lid] || [];
+      if (teams.length === 0 && (loading || detailFetchStatus === 'loading')) return;
       if (!teams.some((t) => String(t.id) === embedTeamId)) {
         navigate(buildKampeLigaDetailPath(lid), { replace: true });
         return;
@@ -662,7 +757,7 @@ export function LigaTab({
     if (st === 'registration' || st === 'active' || st === 'completed') {
       setView(st);
     }
-  }, [embedDetailLeagueId, embedTeamId, tabActive, embedInKampe, loading, leagues, teamsByLeague, navigate]);
+  }, [embedDetailLeagueId, embedTeamId, tabActive, embedInKampe, loading, leagues, teamsByLeague, navigate, detailFetchStatus]);
 
   const leaguesMatchingListFilters = useMemo(() => leagues.filter((l) => {
     if (scope === 'mine' && !myTeamByLeague[l.id] && l.created_by !== user.id) return false;
@@ -1221,6 +1316,40 @@ export function LigaTab({
         </div>
       )}
         </>
+      ) : null}
+
+      {embedDetailLeagueId && !selectedLeague ? (
+        detailFetchStatus === 'missing' ? (
+          <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '14px' }}>
+            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-title">Ligaen blev ikke fundet</div>
+            <div className="pm-state-copy">Den kan være slettet, eller du har ikke adgang til den længere.</div>
+            <div className="pm-state-actions">
+              <button type="button" onClick={closeLigaDetail} style={{ ...btn(true), fontSize: '13px' }}>
+                Tilbage
+              </button>
+            </div>
+          </div>
+        ) : detailFetchStatus === 'error' ? (
+          <div className="pm-state-card pm-state-card--error" style={{ marginBottom: '14px' }}>
+            <div className="pm-state-icon">⚠️</div>
+            <div className="pm-state-title">Ligaen kunne ikke indlæses</div>
+            <div className="pm-state-copy">Tjek din forbindelse og prøv igen.</div>
+            <div className="pm-state-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button type="button" onClick={() => setDetailHydrateNonce((n) => n + 1)} style={{ ...btn(true), fontSize: '13px' }}>
+                Prøv igen
+              </button>
+              <button type="button" onClick={closeLigaDetail} style={{ ...btn(false), fontSize: '13px' }}>
+                Tilbage
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="pm-state-card pm-state-card--loading" style={{ marginBottom: '14px' }}>
+            <div className="pm-spinner pm-state-spinner" />
+            <div className="pm-state-title">Indlæser liga…</div>
+          </div>
+        )
       ) : null}
 
       {selectedLeague && !(embedInKampe && embedLigaSub) && (() => {

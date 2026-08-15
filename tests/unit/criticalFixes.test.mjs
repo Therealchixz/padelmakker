@@ -47,6 +47,26 @@ test('KampeTab loads join requests for created matches and own requests', async 
   assert.doesNotMatch(kampeTab, /match_join_requests[\s\S]*\.slice\(0,\s*100\)/);
 });
 
+test('KampeTab list load skips global completed dump and duplicate elo reload', async () => {
+  const kampeTab = await readFile(new URL('../../src/dashboard/KampeTab.jsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(kampeTab, /\.eq\("status",\s*"completed"\)[\s\S]{0,180}\.limit\(300\)/);
+  assert.match(kampeTab, /\}, \[user\.id, showToast\]\);/);
+  assert.match(kampeTab, /completedMatchIds/);
+});
+
+test('Americano and Liga hydrate detail routes without waiting for the full list', async () => {
+  const americano = await readFile(new URL('../../src/features/americano/AmericanoTab.tsx', import.meta.url), 'utf8');
+  const liga = await readFile(new URL('../../src/dashboard/LigaTab.jsx', import.meta.url), 'utf8');
+
+  assert.match(americano, /if \(!embedDetailId && loading\)/);
+  assert.match(americano, /\.eq\('id', embedDetailId\)/);
+  assert.match(americano, /Turneringen blev ikke fundet/);
+  assert.match(liga, /embedDetailLeagueId && !selectedLeague/);
+  assert.match(liga, /\.eq\('id', embedDetailLeagueId\)/);
+  assert.match(liga, /Ligaen blev ikke fundet/);
+});
+
 test('Admin user editor fetches fresh profile instead of list snapshot', async () => {
   const adminTab = await readFile(new URL('../../src/dashboard/AdminTab.jsx', import.meta.url), 'utf8');
 
